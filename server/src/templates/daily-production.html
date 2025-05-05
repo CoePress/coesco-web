@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>CNC Daily Production Briefing</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen,
+        Ubuntu, Cantarell, &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;,
+        sans-serif;
+      background-color: #f9fafb;
+      color: #1f2937;
+    ">
+    <!-- Main Container -->
+    <div
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-top: 20px;
+        margin-bottom: 20px;
+      ">
+      <!-- Header -->
+      <div
+        style="
+          background-color: #1e40af;
+          color: #ffffff;
+          padding: 24px;
+          text-align: center;
+        ">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600">
+          Daily Production Briefing
+        </h1>
+        <p style="margin: 8px 0 0 0; color: #bfdbfe; font-size: 14px">
+          Tuesday, March 11, 2025
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div style="padding: 24px">
+        <!-- Yesterday's Performance Summary -->
+        <div
+          style="
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+          ">
+          <h2
+            style="
+              margin: 0 0 12px 0;
+              font-size: 18px;
+              font-weight: 600;
+              color: #111827;
+            ">
+            Yesterday's Performance
+          </h2>
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: space-between;
+            ">
+            <div style="min-width: 25%; margin-bottom: 12px">
+              <p style="margin: 0; font-size: 12px; color: #6b7280">OEE</p>
+              <p
+                style="
+                  margin: 4px 0 0 0;
+                  font-size: 18px;
+                  font-weight: 600;
+                  color: #059669;
+                ">
+                82.6%
+              </p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #10b981">
+                +3.2% vs target
+              </p>
+            </div>
+            <div style="min-width: 25%; margin-bottom: 12px">
+              <p style="margin: 0; font-size: 12px; color: #6b7280">
+                Parts Completed
+              </p>
+              <p
+                style="
+                  margin: 4px 0 0 0;
+                  font-size: 18px;
+                  font-weight: 600;
+                  color: #111827;
+                ">
+                218
+              </p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #10b981">
+                +8 vs target
+              </p>
+            </div>
+            <div style="min-width: 25%; margin-bottom: 12px">
+              <p style="margin: 0; font-size: 12px; color: #6b7280">
+                Scrap Rate
+              </p>
+              <p
+                style="
+                  margin: 4px 0 0 0;
+                  font-size: 18px;
+                  font-weight: 600;
+                  color: #111827;
+                ">
+                1.8%
+              </p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #10b981">
+                -0.7% vs target
+              </p>
+            </div>
+            <div style="min-width: 25%; margin-bottom: 12px">
+              <p style="margin: 0; font-size: 12px; color: #6b7280">Downtime</p>
+              <p
+                style="
+                  margin: 4px 0 0 0;
+                  font-size: 18px;
+                  font-weight: 600;
+                  color: #111827;
+                ">
+                42 min
+              </p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #10b981">
+                -18 min vs average
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Production Plan -->
+        <h2
+          style="
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+          ">
+          Today's Production Plan
+        </h2>
+
+        <div style="margin-bottom: 24px">
+          <table
+            style="
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 16px;
+              font-size: 14px;
+            ">
+            <thead>
+              <tr>
+                <th
+                  style="
+                    text-align: left;
+                    padding: 8px 12px;
+                    background-color: #f3f4f6;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-weight: 500;
+                    color: #374151;
+                  ">
+                  Job ID
+                </th>
+                <th
+                  style="
+                    text-align: left;
+                    padding: 8px 12px;
+                    background-color: #f3f4f6;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-weight: 500;
+                    color: #374151;
+                  ">
+                  Customer
+                </th>
+                <th
+                  style="
+                    text-align: center;
+                    padding: 8px 12px;
+                    background-color: #f3f4f6;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-weight: 500;
+                    color: #374151;
+                  ">
+                  Machine
+                </th>
+                <th
+                  style="
+                    text-align: right;
+                    padding: 8px 12px;
+                    background-color: #f3f4f6;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-weight: 500;
+                    color: #374151;
+                  ">
+                  Quantity
+                </th>
+                <th
+                  style="
+                    text-align: right;
+                    padding: 8px 12px;
+                    background-color: #f3f4f6;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-weight: 500;
+                    color: #374151;
+                  ">
+                  Est. Hours
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  <span
+                    style="
+                      display: inline-block;
+                      width: 8px;
+                      height: 8px;
+                      border-radius: 50%;
+                      background-color: #10b981;
+                      margin-right: 6px;
+                    "></span
+                  >JOB-4582
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  AeroTech Industries
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: center;
+                    color: #1f2937;
+                  ">
+                  CNC #1
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  86
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  7.2
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  <span
+                    style="
+                      display: inline-block;
+                      width: 8px;
+                      height: 8px;
+                      border-radius: 50%;
+                      background-color: #f59e0b;
+                      margin-right: 6px;
+                    "></span
+                  >JOB-4587
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  MediPrecision
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: center;
+                    color: #1f2937;
+                  ">
+                  CNC #3
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  124
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  8.5
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  <span
+                    style="
+                      display: inline-block;
+                      width: 8px;
+                      height: 8px;
+                      border-radius: 50%;
+                      background-color: #ef4444;
+                      margin-right: 6px;
+                    "></span
+                  >JOB-4591
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #1f2937;
+                  ">
+                  DefenseTech
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: center;
+                    color: #1f2937;
+                  ">
+                  CNC #4
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  42
+                </td>
+                <td
+                  style="
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    text-align: right;
+                    color: #1f2937;
+                  ">
+                  6.4
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div
+            style="
+              font-size: 12px;
+              color: #6b7280;
+              display: flex;
+              flex-wrap: wrap;
+            ">
+            <div
+              style="
+                margin-right: 16px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+              ">
+              <span
+                style="
+                  display: inline-block;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background-color: #10b981;
+                  margin-right: 6px;
+                "></span>
+              <span>In Progress</span>
+            </div>
+            <div
+              style="
+                margin-right: 16px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+              ">
+              <span
+                style="
+                  display: inline-block;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background-color: #f59e0b;
+                  margin-right: 6px;
+                "></span>
+              <span>Setup Required</span>
+            </div>
+            <div
+              style="
+                margin-right: 16px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+              ">
+              <span
+                style="
+                  display: inline-block;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background-color: #ef4444;
+                  margin-right: 6px;
+                "></span>
+              <span>Priority Job</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Machine Status -->
+        <h2
+          style="
+            margin: 24px 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+          ">
+          Machine Status
+        </h2>
+
+        <div
+          style="
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+          ">
+          <!-- Machine 1 -->
+          <div
+            style="
+              width: 48%;
+              background-color: #ecfdf5;
+              border-radius: 6px;
+              padding: 12px;
+              margin-bottom: 16px;
+            ">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              ">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 500">
+                CNC #1
+              </h3>
+              <span
+                style="
+                  font-size: 12px;
+                  font-weight: 500;
+                  color: #059669;
+                  background-color: #d1fae5;
+                  padding: 2px 8px;
+                  border-radius: 9999px;
+                "
+                >Running</span
+              >
+            </div>
+            <div style="font-size: 13px; color: #374151">
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Current Job:</span>
+                <span style="font-weight: 500">JOB-4582</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Started:</span>
+                <span style="font-weight: 500">06:35 AM</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Completed:</span>
+                <span style="font-weight: 500">42 of 86</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Est. Completion:</span>
+                <span style="font-weight: 500">01:45 PM</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Machine 2 -->
+          <div
+            style="
+              width: 48%;
+              background-color: #fff7ed;
+              border-radius: 6px;
+              padding: 12px;
+              margin-bottom: 16px;
+            ">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              ">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 500">
+                CNC #2
+              </h3>
+              <span
+                style="
+                  font-size: 12px;
+                  font-weight: 500;
+                  color: #b45309;
+                  background-color: #fef3c7;
+                  padding: 2px 8px;
+                  border-radius: 9999px;
+                "
+                >Maintenance</span
+              >
+            </div>
+            <div style="font-size: 13px; color: #374151">
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Current Status:</span>
+                <span style="font-weight: 500">Bearing Replacement</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Started:</span>
+                <span style="font-weight: 500">Yesterday, 03:20 PM</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Progress:</span>
+                <span style="font-weight: 500">80%</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Est. Completion:</span>
+                <span style="font-weight: 500">11:30 AM</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Machine 3 -->
+          <div
+            style="
+              width: 48%;
+              background-color: #f0f9ff;
+              border-radius: 6px;
+              padding: 12px;
+              margin-bottom: 16px;
+            ">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              ">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 500">
+                CNC #3
+              </h3>
+              <span
+                style="
+                  font-size: 12px;
+                  font-weight: 500;
+                  color: #1d4ed8;
+                  background-color: #dbeafe;
+                  padding: 2px 8px;
+                  border-radius: 9999px;
+                "
+                >Setup</span
+              >
+            </div>
+            <div style="font-size: 13px; color: #374151">
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Next Job:</span>
+                <span style="font-weight: 500">JOB-4587</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Setup Started:</span>
+                <span style="font-weight: 500">08:15 AM</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Progress:</span>
+                <span style="font-weight: 500">65%</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Est. Start Time:</span>
+                <span style="font-weight: 500">09:30 AM</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Machine 4 -->
+          <div
+            style="
+              width: 48%;
+              background-color: #fef2f2;
+              border-radius: 6px;
+              padding: 12px;
+              margin-bottom: 16px;
+            ">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              ">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 500">
+                CNC #4
+              </h3>
+              <span
+                style="
+                  font-size: 12px;
+                  font-weight: 500;
+                  color: #b91c1c;
+                  background-color: #fee2e2;
+                  padding: 2px 8px;
+                  border-radius: 9999px;
+                "
+                >Idle</span
+              >
+            </div>
+            <div style="font-size: 13px; color: #374151">
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Last Job:</span>
+                <span style="font-weight: 500">JOB-4573</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Completed:</span>
+                <span style="font-weight: 500">Yesterday, 11:42 PM</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Next Job:</span>
+                <span style="font-weight: 500">JOB-4591</span>
+              </p>
+              <p
+                style="
+                  margin: 4px 0;
+                  display: flex;
+                  justify-content: space-between;
+                ">
+                <span>Scheduled Start:</span>
+                <span style="font-weight: 500">10:30 AM</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <h2
+          style="
+            margin: 24px 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+          ">
+          Important Notifications
+        </h2>
+
+        <div style="margin-bottom: 24px">
+          <!-- Notification 1 -->
+          <div
+            style="
+              background-color: #fee2e2;
+              border-left: 4px solid #ef4444;
+              padding: 12px 16px;
+              border-radius: 6px;
+              margin-bottom: 12px;
+            ">
+            <h3
+              style="
+                margin: 0 0 4px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #b91c1c;
+              ">
+              Material Shortage Alert
+            </h3>
+            <p style="margin: 0; font-size: 13px; color: #7f1d1d">
+              Aluminum 6061 T6 (1" x 3") inventory below minimum. Reorder
+              required for jobs scheduled after Thursday.
+            </p>
+          </div>
+
+          <!-- Notification 2 -->
+          <div
+            style="
+              background-color: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 12px 16px;
+              border-radius: 6px;
+              margin-bottom: 12px;
+            ">
+            <h3
+              style="
+                margin: 0 0 4px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #92400e;
+              ">
+              Quality Inspection Required
+            </h3>
+            <p style="margin: 0; font-size: 13px; color: #78350f">
+              First article inspection for JOB-4591 (DefenseTech) must be
+              approved before full production run.
+            </p>
+          </div>
+
+          <!-- Notification 3 -->
+          <div
+            style="
+              background-color: #dbeafe;
+              border-left: 4px solid #3b82f6;
+              padding: 12px 16px;
+              border-radius: 6px;
+              margin-bottom: 12px;
+            ">
+            <h3
+              style="
+                margin: 0 0 4px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1e40af;
+              ">
+              Tooling Delivery
+            </h3>
+            <p style="margin: 0; font-size: 13px; color: #1e3a8a">
+              Special tooling for JOB-4602 will be delivered today at 2:00 PM.
+              Please have receiving ready.
+            </p>
+          </div>
+        </div>
+
+        <!-- Team Notes -->
+        <div
+          style="
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+          ">
+          <h3
+            style="
+              margin: 0 0 12px 0;
+              font-size: 16px;
+              font-weight: 600;
+              color: #111827;
+            ">
+            Shift Notes
+          </h3>
+          <div style="font-size: 14px; color: #4b5563">
+            <p style="margin: 0 0 8px 0">
+              <span style="font-weight: 500; color: #111827"
+                >Mike (Shift Lead):</span
+              >
+              Pay special attention to surface finish on JOB-4587 medical
+              components - client specifications updated yesterday.
+            </p>
+            <p style="margin: 0 0 8px 0">
+              <span style="font-weight: 500; color: #111827"
+                >Sarah (Quality):</span
+              >
+              New CMM program for DefenseTech parts is ready. Documentation in
+              shared folder.
+            </p>
+            <p style="margin: 0">
+              <span style="font-weight: 500; color: #111827"
+                >Carlos (Maintenance):</span
+              >
+              CNC #2 should be back online by noon. All replacement parts
+              installed, final calibration in progress.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-top: 32px;
+          ">
+          <a
+            href="#"
+            style="
+              display: inline-block;
+              background-color: #1e40af;
+              color: #ffffff;
+              font-weight: 500;
+              padding: 10px 16px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 14px;
+              text-align: center;
+              width: 48%;
+            "
+            >View Production Schedule</a
+          >
+          <a
+            href="#"
+            style="
+              display: inline-block;
+              background-color: #4b5563;
+              color: #ffffff;
+              font-weight: 500;
+              padding: 10px 16px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 14px;
+              text-align: center;
+              width: 48%;
+            "
+            >Report Issue</a
+          >
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        style="
+          background-color: #f3f4f6;
+          padding: 16px;
+          text-align: center;
+          font-size: 12px;
+          color: #6b7280;
+          border-top: 1px solid #e5e7eb;
+        ">
+        <p style="margin: 0 0 8px 0">
+          Daily briefing automatically generated at 06:00 AM.
+        </p>
+        <p style="margin: 0">
+          © 2025 CNC Monitoring Systems Inc. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
