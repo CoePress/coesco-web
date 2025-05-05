@@ -2,7 +2,7 @@ import User from "@/models/user";
 import { NextFunction, Request, Response } from "express";
 import { decode } from "jsonwebtoken";
 import { AppError } from "./error-handler";
-import { IAuthRequest, IPermission } from "@machining/types";
+import { IAuthRequest, IPermission } from "@/utils/types";
 
 export const protect = async (
   req: Request,

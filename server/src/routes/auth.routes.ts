@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { IAuthRequest } from "@machining/types";
 
 import { __prod__, env } from "@/config/env";
 import { protect } from "@/middleware/auth-middleware";
 import Services from "@/services";
+import { IAuthRequest } from "@/utils/types";
 
 export const authRoutes = (services: Services) => {
   const router = Router();

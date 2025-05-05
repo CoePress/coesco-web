@@ -3,13 +3,14 @@ import * as msal from "@azure/msal-node";
 
 import Services from ".";
 import { env } from "@/config/env";
-import { AuthResponse, SessionData, IUser } from "@machining/types";
 import { AppError } from "@/middleware/error-handler";
 import {
   ILoginResponse,
   ISessionResponse,
   IAuthService,
   IAuthResult,
+  IUser,
+  ISessionData,
 } from "@/utils/types";
 
 interface IMsalConfig {
@@ -99,7 +100,7 @@ class AuthService implements IAuthService {
 
     const authResult = await this.handleCallback(code, sessionData.verifier);
     const user = await this.services.user.getUserByMicrosoftId(
-      authResult.account.localAccountId
+      authResult.user.microsoftId
     );
 
     await Promise.all([
@@ -109,7 +110,7 @@ class AuthService implements IAuthService {
 
     return {
       user,
-      token: authResult.accessToken,
+      token: authResult.token,
     };
   }
 
@@ -151,8 +152,10 @@ class AuthService implements IAuthService {
     return { message: "Logged out successfully" };
   }
 
-  private async getSessionData(sessionId: string): Promise<SessionData | null> {
-    return this.services.redis.get<SessionData>(
+  private async getSessionData(
+    sessionId: string
+  ): Promise<ISessionData | null> {
+    return this.services.redis.get<ISessionData>(
       AuthService.REDIS_PREFIX + sessionId
     );
   }
@@ -164,7 +167,7 @@ class AuthService implements IAuthService {
   private async handleCallback(
     code: string,
     verifier: string
-  ): Promise<AuthResponse> {
+  ): Promise<IAuthResult> {
     let retryCount = 0;
 
     while (retryCount < AuthService.MAX_RETRIES) {
@@ -175,9 +178,13 @@ class AuthService implements IAuthService {
           throw new AppError(400, "Invalid token response");
         }
 
+        const user = await this.services.user.getUserByMicrosoftId(
+          tokenResponse.account.localAccountId
+        );
+
         return {
-          accessToken: tokenResponse.accessToken,
-          account: tokenResponse.account,
+          user,
+          token: tokenResponse.accessToken,
         };
       } catch (error) {
         retryCount++;

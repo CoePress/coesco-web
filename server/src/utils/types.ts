@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 // User
 export interface IUser {
   id: string;
@@ -45,9 +47,27 @@ export interface ISessionResponse {
   authenticated: boolean;
 }
 
+export interface IAuthRequest extends Request {
+  user: IUser;
+}
+
 export interface IAuthResult {
   user: IUser;
   token: string;
+}
+
+export type AllowedRoles = IUser["role"][];
+
+export interface IPermission {
+  roles?: AllowedRoles;
+  customCheck?: (user: IUser) => boolean;
+}
+
+export interface ISessionData {
+  verifier: string;
+  challenge: string;
+  attempts: number;
+  lastAttempt: number;
 }
 
 export interface ISyncResult {
