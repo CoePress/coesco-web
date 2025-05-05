@@ -6,18 +6,18 @@ export const machineRoutes = (services: Services) => {
   const router = Router();
 
   router.post("/", async (req: Request, res: Response) => {
-    const machine = await services.machine.createMachine(req.body);
+    const machine = await services.machineService.createMachine(req.body);
     res.json(machine);
   });
 
   router.get("/", async (req: Request, res: Response) => {
-    const machines = await services.machine.getMachines();
+    const machines = await services.machineService.getMachines();
     res.json(machines);
   });
 
   router.get("/connections", async (req: Request, res: Response) => {
-    const machines = await services.machine.getMachines();
-    const connections = await services.connection.getConnections();
+    const machines = await services.machineService.getMachines();
+    const connections = await services.connectionService.getConnections();
 
     const machineConnections = machines.map((machine) => {
       return {
@@ -32,12 +32,12 @@ export const machineRoutes = (services: Services) => {
   });
 
   router.get("/:id", async (req: Request, res: Response) => {
-    const machine = await services.machine.getMachine(req.params.id);
+    const machine = await services.machineService.getMachine(req.params.id);
     res.json(machine);
   });
 
   router.patch("/:id", async (req: Request, res: Response) => {
-    const machine = await services.machine.updateMachine(
+    const machine = await services.machineService.updateMachine(
       req.params.id,
       req.body
     );
@@ -45,7 +45,7 @@ export const machineRoutes = (services: Services) => {
   });
 
   router.delete("/:id", async (req: Request, res: Response) => {
-    const machine = await services.machine.deleteMachine(req.params.id);
+    const machine = await services.machineService.deleteMachine(req.params.id);
     res.json(machine);
   });
 

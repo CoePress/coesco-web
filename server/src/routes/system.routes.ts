@@ -12,7 +12,9 @@ export const systemRoutes = (services: Services) => {
 
   router.post("/start-fanuc", async (req, res) => {
     try {
-      const status = await services.socket.sendStartToFanuc(req.body.data);
+      const status = await services.socketService.sendStartToFanuc(
+        req.body.data
+      );
       res.status(200).json({
         message: status,
       });
@@ -25,7 +27,9 @@ export const systemRoutes = (services: Services) => {
 
   router.post("/stop-fanuc", async (req, res) => {
     try {
-      const status = await services.socket.sendStopToFanuc(req.body.data);
+      const status = await services.socketService.sendStopToFanuc(
+        req.body.data
+      );
       res.status(200).json({
         message: status,
       });

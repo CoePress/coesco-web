@@ -10,7 +10,7 @@ export const authRoutes = (services: Services) => {
 
   router.post("/login", async (req, res, next) => {
     try {
-      const response = await services.auth.login();
+      const response = await services.authService.login();
       res.cookie("auth_session", response.sessionId, {
         httpOnly: true,
         secure: __prod__,
@@ -27,7 +27,7 @@ export const authRoutes = (services: Services) => {
     const sessionId = req.query.state as string;
     const authSession = req.cookies.auth_session;
 
-    if (!services.auth.validateSession(sessionId, authSession)) {
+    if (!services.authService.validateSession(sessionId, authSession)) {
       res.clearCookie("auth_session");
       return res.redirect(
         `${env.AZURE_FAILURE_REDIRECT}?error=invalid_session`
@@ -35,7 +35,7 @@ export const authRoutes = (services: Services) => {
     }
 
     try {
-      const { token } = await services.auth.handleMicrosoftCallback(
+      const { token } = await services.authService.handleMicrosoftCallback(
         req.query.code as string,
         sessionId
       );
@@ -61,7 +61,7 @@ export const authRoutes = (services: Services) => {
 
   router.get("/session", protect, async (req: IAuthRequest, res, next) => {
     try {
-      const response = await services.auth.getSession(req.user);
+      const response = await services.authService.getSession(req.user);
       res.status(200).json(response);
     } catch (error) {
       next(error);
@@ -70,7 +70,7 @@ export const authRoutes = (services: Services) => {
 
   router.post("/logout", protect, async (req, res, next) => {
     try {
-      const response = await services.auth.logout();
+      const response = await services.authService.logout();
       res.clearCookie("auth_token");
       res.clearCookie("auth_session");
       res.status(200).json(response);

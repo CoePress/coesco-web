@@ -99,12 +99,12 @@ class AuthService implements IAuthService {
     }
 
     const authResult = await this.handleCallback(code, sessionData.verifier);
-    const user = await this.services.user.getUserByMicrosoftId(
+    const user = await this.services.userService.getUserByMicrosoftId(
       authResult.user.microsoftId
     );
 
     await Promise.all([
-      this.services.user.updateUser(user.id, { lastLogin: new Date() }),
+      this.services.userService.updateUser(user.id, { lastLogin: new Date() }),
       this.deleteSession(sessionId),
     ]);
 
@@ -118,7 +118,7 @@ class AuthService implements IAuthService {
     const { verifier, challenge } =
       await this.cryptoProvider.generatePkceCodes();
 
-    await this.services.redis.set(
+    await this.services.redisService.set(
       AuthService.REDIS_PREFIX + sessionId,
       {
         verifier,
@@ -155,13 +155,15 @@ class AuthService implements IAuthService {
   private async getSessionData(
     sessionId: string
   ): Promise<ISessionData | null> {
-    return this.services.redis.get<ISessionData>(
+    return this.services.redisService.get<ISessionData>(
       AuthService.REDIS_PREFIX + sessionId
     );
   }
 
   private async deleteSession(sessionId: string): Promise<void> {
-    await this.services.redis.delete(AuthService.REDIS_PREFIX + sessionId);
+    await this.services.redisService.delete(
+      AuthService.REDIS_PREFIX + sessionId
+    );
   }
 
   private async handleCallback(
@@ -178,7 +180,7 @@ class AuthService implements IAuthService {
           throw new AppError(400, "Invalid token response");
         }
 
-        const user = await this.services.user.getUserByMicrosoftId(
+        const user = await this.services.userService.getUserByMicrosoftId(
           tokenResponse.account.localAccountId
         );
 

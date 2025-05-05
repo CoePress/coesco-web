@@ -3,15 +3,34 @@ import { useEffect, useState } from "react";
 
 import env from "@/config/env";
 
-export interface IOverview {
-  totals: {
-    [key: string]: number;
-  };
-  machines: {
+export interface IStateOverview {
+  kpis: {
     [key: string]: {
-      [key: string]: number;
+      value: number;
+      change: number;
     };
   };
+  utilization: {
+    timestamp: Date;
+    utilization: number;
+  }[];
+  states: {
+    state: string;
+    value: number;
+  }[];
+  machines: {
+    id: string;
+    name: string;
+    type: string;
+  }[];
+  alerts: {
+    id: string;
+    machineId: string;
+    timestamp: Date;
+    type: string;
+    severity: string;
+    message?: string;
+  }[];
 }
 
 interface UseGetOverviewProps {
@@ -20,7 +39,7 @@ interface UseGetOverviewProps {
 }
 
 const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
-  const [overview, setOverview] = useState<IOverview | null>(null);
+  const [overview, setOverview] = useState<IStateOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);

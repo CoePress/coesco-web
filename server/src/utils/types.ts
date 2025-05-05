@@ -207,14 +207,31 @@ export interface ICreateMachineStateDTO {
 }
 
 export interface IStateOverview {
-  totals: {
-    [key: string]: number; // state
-  };
-  machineTotals: {
+  kpis: {
     [key: string]: {
-      [key: string]: number; // state
+      value: number;
+      change: number;
     };
   };
+  utilization: {
+    timestamp: Date;
+    utilization: number;
+  }[];
+  states: {
+    [key: string]: number;
+  };
+  machines: {
+    id: string;
+    name: string;
+  }[];
+  alerts: {
+    id: string;
+    machineId: string;
+    timestamp: Date;
+    type: string;
+    severity: string;
+    message?: string;
+  }[];
 }
 
 export interface IStateTimeline {

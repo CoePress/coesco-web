@@ -13,8 +13,11 @@ import {
   buildPaginationOptions,
   buildWhereClause,
 } from "@/utils";
+import Services from ".";
 
 class StateService implements IStateService {
+  constructor(private services: Services) {}
+
   async createState(state: ICreateMachineStateDTO): Promise<IMachineState> {
     if (!state.machineId) throw new ValidationError("Machine ID is required");
     if (!state.timestamp) throw new ValidationError("Timestamp is required");
@@ -83,7 +86,19 @@ class StateService implements IStateService {
       endDate
     );
 
-    return this.buildStateOverview(statesWithDuration);
+    const stateOverview = await this.buildStateOverview(
+      statesWithDuration,
+      startDate,
+      endDate
+    );
+
+    return {
+      kpis: stateOverview.kpis,
+      utilization: stateOverview.utilization,
+      states: stateOverview.states,
+      machines: stateOverview.machines,
+      alerts: stateOverview.alerts,
+    };
   }
 
   async getStateTimeline(
@@ -156,25 +171,41 @@ class StateService implements IStateService {
     return statesWithDuration;
   }
 
-  private buildStateOverview(states: StateWithDuration[]): IStateOverview {
-    const totals: { [state: string]: number } = {};
-    const machineTotals: { [machineId: string]: { [state: string]: number } } =
-      {};
+  private async buildStateOverview(
+    states: StateWithDuration[],
+    startDate: Date,
+    endDate: Date
+  ): Promise<IStateOverview> {
+    const kpis = {
+      utilization: {
+        value: 0,
+        change: 0,
+      },
+      averageRuntime: {
+        value: 0,
+        change: 0,
+      },
+      alertCount: {
+        value: 0,
+        change: 0,
+      },
+    };
 
-    for (const state of states) {
-      if (state.durationMs === undefined) continue;
+    const utilization = [];
 
-      totals[state.state] = (totals[state.state] || 0) + state.durationMs;
+    const stateDistribution = {};
 
-      if (!machineTotals[state.machineId]) {
-        machineTotals[state.machineId] = {};
-      }
+    const machines = await this.services.machineService.getMachines();
 
-      machineTotals[state.machineId][state.state] =
-        (machineTotals[state.machineId][state.state] || 0) + state.durationMs;
-    }
+    const alerts = [];
 
-    return { totals, machineTotals };
+    return {
+      kpis,
+      utilization,
+      states: stateDistribution,
+      machines,
+      alerts,
+    };
   }
 }
 

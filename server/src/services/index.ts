@@ -14,29 +14,29 @@ import { __prod__ } from "@/config/env";
 import { sampleStates } from "@/config/sample-data";
 
 class Services {
-  readonly alarm: AlarmService;
-  readonly auth: AuthService;
-  readonly config: ConfigService;
-  readonly connection: ConnectionService;
-  readonly dataCollector: DataCollectorService;
-  readonly machine: MachineService;
-  readonly redis: RedisService;
-  readonly socket: SocketService;
-  readonly state: StateService;
-  readonly user: UserService;
+  readonly alarmService: AlarmService;
+  readonly authService: AuthService;
+  readonly configService: ConfigService;
+  readonly connectionService: ConnectionService;
+  readonly dataCollectorService: DataCollectorService;
+  readonly machineService: MachineService;
+  readonly redisService: RedisService;
+  readonly socketService: SocketService;
+  readonly stateService: StateService;
+  readonly userService: UserService;
   private static instance: Services;
 
   private constructor(httpServer: any) {
-    this.alarm = new AlarmService();
-    this.auth = new AuthService(this);
-    this.config = new ConfigService();
-    this.connection = new ConnectionService();
-    this.dataCollector = new DataCollectorService();
-    this.machine = new MachineService();
-    this.redis = new RedisService();
-    this.socket = new SocketService(httpServer);
-    this.state = new StateService();
-    this.user = new UserService();
+    this.alarmService = new AlarmService();
+    this.authService = new AuthService(this);
+    this.configService = new ConfigService();
+    this.connectionService = new ConnectionService();
+    this.dataCollectorService = new DataCollectorService();
+    this.machineService = new MachineService();
+    this.redisService = new RedisService();
+    this.socketService = new SocketService(httpServer);
+    this.stateService = new StateService(this);
+    this.userService = new UserService();
   }
 
   static getInstance(httpServer?: any): Services {
@@ -51,17 +51,16 @@ class Services {
 
   async initialize() {
     info("Services initialized");
-    await this.user.initialize();
-
-    await this.machine.initialize();
-    await this.connection.initialize();
+    await this.userService.initialize();
+    await this.machineService.initialize();
+    await this.connectionService.initialize();
   }
 
   async seedSampleData() {
     if (__prod__) return;
 
     for (const state of sampleStates) {
-      await this.state.createState(state);
+      await this.stateService.createState(state);
     }
   }
 }

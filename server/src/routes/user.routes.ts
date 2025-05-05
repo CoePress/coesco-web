@@ -8,17 +8,17 @@ export const userRoutes = (services: Services) => {
 
   router.get("/", async (req: Request, res: Response) => {
     const params = req.query as IQueryParams;
-    const users = await services.user.getUsers(params);
+    const users = await services.userService.getUsers(params);
     res.json(users);
   });
 
   router.post("/sync", async (req: Request, res: Response) => {
-    const syncResult = await services.user.syncMicrosoftUsers();
+    const syncResult = await services.userService.syncMicrosoftUsers();
     res.json(syncResult);
   });
 
   router.patch("/:id", async (req: Request, res: Response) => {
-    const user = await services.user.updateUser(req.params.id, req.body);
+    const user = await services.userService.updateUser(req.params.id, req.body);
     res.json(user);
   });
 

@@ -6,7 +6,7 @@ type CardProps = {
 const Card = ({ children, className }: CardProps) => {
   return (
     <div
-      className={`bg-foreground rounded p-4 duration-300 border ${className}`}>
+      className={`bg-foreground rounded p-2 duration-300 border ${className}`}>
       {children}
     </div>
   );

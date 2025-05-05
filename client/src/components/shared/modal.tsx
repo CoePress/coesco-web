@@ -29,7 +29,7 @@ const Modal = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 text-white/80 px-4">
       <Card className={`max-h-[90vh] overflow-hidden ${sizeClass[size]}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">{title}</h2>
+          <h2 className="font-medium">{title}</h2>
           <Button
             variant="secondary-outline"
             size="sm"
