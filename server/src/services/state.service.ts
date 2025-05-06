@@ -260,19 +260,23 @@ class StateService implements IStateService {
     const stateDistribution = [
       {
         label: "Active",
-        value: Math.random() * 100,
+        duration: 5000,
+        percentage: 0.5,
       },
       {
         label: "Idle",
-        value: Math.random() * 100,
+        duration: 2000,
+        percentage: 0.2,
       },
       {
         label: "Alarm",
-        value: Math.random() * 100,
+        duration: 1000,
+        percentage: 0.1,
       },
       {
         label: "Offline",
-        value: Math.random() * 100,
+        duration: 2000,
+        percentage: 0.2,
       },
     ];
 

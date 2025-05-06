@@ -68,14 +68,35 @@ type MachineDetailsProps = {
 };
 
 const MachineDetails = ({ machine }: MachineDetailsProps) => {
+  const sampleProgramHistory = [
+    { label: "Program 1", timestamp: "06:00", duration: 10 },
+    { label: "Program 2", timestamp: "06:10", duration: 20 },
+    { label: "Program 3", timestamp: "06:20", duration: 30 },
+    { label: "Program 4", timestamp: "06:30", duration: 40 },
+    { label: "Program 5", timestamp: "06:40", duration: 50 },
+  ];
+
+  const sampleStateDistribution = [
+    { label: "Active", value: 70 },
+    { label: "Idle", value: 10 },
+    { label: "Alarm", value: 20 },
+    { label: "Offline", value: 10 },
+  ];
+
   return (
     <div className="space-y-2 pt-2 text-sm">
       <div className="grid grid-cols-2 gap-2">
         <Card>
-          <h4 className="text-sm font-medium mb-2">Status Information</h4>
-          <div className="grid grid-cols-[1fr_auto] gap-1">
+          <h4 className="text-sm font-medium mb-2 text-text-muted">
+            Status Information
+          </h4>
+          <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
             <span className="text-muted-foreground">Machine:</span>
             <span className="font-medium text-right">{machine.name}</span>
+            <span className="text-muted-foreground">Status:</span>
+            <span className="font-medium text-right uppercase">
+              {machine.status || "-"}
+            </span>
             <span className="text-muted-foreground">Controller:</span>
             <span className="font-medium text-right">
               {machine.controllerMode || "-"}
@@ -92,8 +113,10 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
         </Card>
 
         <Card>
-          <h4 className="text-sm font-medium mb-2">Program Information</h4>
-          <div className="grid grid-cols-[1fr_auto] gap-1">
+          <h4 className="text-sm font-medium mb-2 text-text-muted">
+            Program Information
+          </h4>
+          <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right">
               {machine.currentProgram || "-"}
@@ -103,85 +126,69 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="font-medium text-right">
               {machine.toolNumber || "-"}
             </span>
+            <span className="text-muted-foreground">Spindle (RPM):</span>
+            <span className="font-medium text-right">
+              {machine.spindleSpeed || "-"}
+            </span>
+            <span className="text-muted-foreground">Spindle (Load):</span>
+            <span className="font-medium text-right">
+              {machine.spindleLoad || "-"}
+            </span>
           </div>
         </Card>
       </div>
 
-      <Card>
-        <h4 className="text-sm font-medium mb-2">Spindle Information</h4>
-        {machine.spindles && machine.spindles.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
-            {machine.spindles.map((spindle, index) => (
+      <div className="grid grid-cols-2 gap-2">
+        <Card>
+          <h4 className="text-sm font-medium mb-2 text-text-muted">
+            Program History (Last 24h)
+          </h4>
+          <div className="flex flex-col gap-2">
+            {sampleProgramHistory.map((item) => (
               <div
-                key={index}
-                className="flex items-center border rounded p-2 bg-muted/30">
-                <div>
-                  <div className="text-xs text-muted-foreground">
-                    Spindle {spindle.name || `#${index + 1}`}
-                  </div>
-                  <div className="text-sm font-bold">
-                    {spindle.speed || "0"} RPM
-                    {spindle.override && (
-                      <span className="text-xs ml-1 text-muted-foreground">
-                        ({spindle.override}%)
-                      </span>
-                    )}
-                  </div>
-                </div>
+                key={item.label}
+                className="flex items-center gap-2">
+                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-sm text-text-muted">
+                  {item.timestamp}
+                </span>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center text-muted-foreground text-sm py-2">
-            No spindle data available
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <h4 className="text-sm font-medium mb-2">Axis Information</h4>
-        {machine.axes && machine.axes.length > 0 ? (
-          <div className="grid grid-cols-4 gap-2">
-            {machine.axes.map((axis, index) => (
-              <div
-                key={index}
-                className="border rounded p-2 bg-muted/30">
-                <h5 className="text-sm font-medium">{axis.name} Axis</h5>
-                <div className="mt-1 text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pos:</span>
-                    <span>
-                      {axis.position !== undefined
-                        ? axis.position.toFixed(3)
-                        : "-"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Feed:</span>
-                    <span>
-                      {axis.feedRate !== undefined
-                        ? axis.feedRate.toFixed(1)
-                        : "-"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Load:</span>
-                    <span>
-                      {axis.load !== undefined
-                        ? `${axis.load.toFixed(0)}%`
-                        : "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground text-sm py-2">
-            No axis data available
-          </div>
-        )}
-      </Card>
+        </Card>
+        <Card>
+          <h4 className="text-sm font-medium mb-2 text-text-muted">
+            State History (Last 24h)
+          </h4>
+          {/* Pie Chart */}
+          <ResponsiveContainer
+            width="100%"
+            height={200}>
+            <PieChart>
+              <Pie
+                data={sampleStateDistribution}
+                dataKey="value"
+                nameKey="label"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                isAnimationActive={false}>
+                {sampleStateDistribution.map((entry, idx) => (
+                  <Cell
+                    key={`cell-${idx}`}
+                    strokeWidth={0}
+                    fill={
+                      entry.label === "Offline"
+                        ? "var(--surface)"
+                        : getStatusColor(entry.label)
+                    }
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -552,6 +559,8 @@ const Dashboard = () => {
                     tickFormatter={(value, index) =>
                       index % 2 === 0 ? value : ""
                     }
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis
                     domain={[0, 100]}
@@ -579,6 +588,7 @@ const Dashboard = () => {
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
+                    isAnimationActive={false}
                   />
                   <Line
                     type="monotone"
@@ -587,6 +597,7 @@ const Dashboard = () => {
                     opacity={0.5}
                     name="Previous"
                     strokeWidth={2}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -604,7 +615,7 @@ const Dashboard = () => {
                 <PieChart>
                   <Pie
                     data={stateDistribution}
-                    dataKey="value"
+                    dataKey="duration"
                     nameKey="label"
                     cx="50%"
                     cy="50%"
@@ -644,13 +655,8 @@ const Dashboard = () => {
                             {entry.payload.label}
                           </div>
                           <div className="mt-1">
-                            <p>{entry.payload.value} min</p>
-                            <p>
-                              {parseFloat(
-                                entry?.value?.toString() || "0"
-                              ).toFixed(2)}
-                              %
-                            </p>
+                            <p>{entry.payload.duration}</p>
+                            <p>{entry.payload.percentage * 100}%</p>
                           </div>
                         </div>
                       );

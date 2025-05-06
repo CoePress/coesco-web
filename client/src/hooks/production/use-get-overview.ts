@@ -18,7 +18,8 @@ export interface IStateOverview {
   }[];
   states: {
     label: string;
-    value: number;
+    duration: number;
+    percentage: number;
   }[];
   machines: {
     id: string;
