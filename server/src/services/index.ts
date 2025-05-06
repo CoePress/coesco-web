@@ -31,7 +31,7 @@ class Services {
     this.authService = new AuthService(this);
     this.configService = new ConfigService();
     this.connectionService = new ConnectionService();
-    this.dataCollectorService = new DataCollectorService();
+    this.dataCollectorService = new DataCollectorService(this);
     this.machineService = new MachineService();
     this.redisService = new RedisService();
     this.socketService = new SocketService(httpServer);
@@ -54,6 +54,8 @@ class Services {
     await this.userService.initialize();
     await this.machineService.initialize();
     await this.connectionService.initialize();
+
+    this.dataCollectorService.startBroadcastingMachineStates();
   }
 
   async seedSampleData() {

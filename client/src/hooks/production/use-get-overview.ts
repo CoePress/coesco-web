@@ -23,7 +23,7 @@ export interface IStateOverview {
     name: string;
     type: string;
   }[];
-  alerts: {
+  alarms: {
     id: string;
     machineId: string;
     timestamp: Date;

@@ -224,7 +224,7 @@ export interface IStateOverview {
     id: string;
     name: string;
   }[];
-  alerts: {
+  alarms: {
     id: string;
     machineId: string;
     timestamp: Date;
@@ -351,8 +351,7 @@ export interface IAlarmService {
 }
 
 export interface IDataCollectorService {
-  startPolling(connectionId: string): Promise<void>;
-  stopPolling(connectionId: string): Promise<void>;
+  startBroadcastingMachineStates(): void;
   processMTConnectData(machineId: string, xmlData: string): Promise<void>;
   processFanucData(machineId: string, data: any): Promise<void>;
 }

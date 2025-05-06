@@ -12,7 +12,7 @@ type MachineStatus = {
 };
 
 type MachineMapProps = {
-  machines: MachineStatus[];
+  machines: MachineStatus[] | any[];
 };
 
 const MACHINE_POSITIONS: Record<string, { row: number; col: number }> = {

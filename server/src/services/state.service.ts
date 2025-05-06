@@ -97,7 +97,7 @@ class StateService implements IStateService {
       utilization: stateOverview.utilization,
       states: stateOverview.states,
       machines: stateOverview.machines,
-      alerts: stateOverview.alerts,
+      alarms: stateOverview.alarms,
     };
   }
 
@@ -197,14 +197,17 @@ class StateService implements IStateService {
 
     const machines = await this.services.machineService.getMachines();
 
-    const alerts = [];
+    const alarms = await this.services.alarmService.getAlarms({
+      startDate,
+      endDate,
+    });
 
     return {
       kpis,
       utilization,
       states: stateDistribution,
       machines,
-      alerts,
+      alarms,
     };
   }
 }

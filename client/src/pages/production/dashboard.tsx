@@ -7,7 +7,6 @@ import {
   RefreshCcw,
   Clock,
   Map,
-  Calendar,
 } from "lucide-react";
 import {
   LineChart,
@@ -29,6 +28,8 @@ import Modal from "@/components/shared/modal";
 import DatePicker from "@/components/v1/date-picker";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
+import { useSocket } from "@/contexts/socket-context";
+import { cn } from "@/utils";
 
 interface IMachine {
   name: string;
@@ -121,89 +122,6 @@ const timeSeriesData = [
   },
 ];
 
-const machineStatus = [
-  {
-    id: "M1",
-    name: "Haas VF-2",
-    status: "running",
-    uptime: "12h 30m",
-    currentJob: "Housing Block #JB-2234",
-    operator: "Mike K.",
-    estimatedCompletion: "2h 15m",
-    spindleLoad: 45,
-  },
-  {
-    id: "M2",
-    name: "DMG MORI NLX 2500",
-    status: "setup",
-    uptime: "5h 45m",
-    currentJob: "Setup in progress",
-    operator: "Sarah L.",
-    estimatedCompletion: "-",
-    spindleLoad: 0,
-  },
-  {
-    id: "M3",
-    name: "Mazak QTN-200",
-    status: "running",
-    uptime: "8h 15m",
-    currentJob: "Shaft Series #PS-789",
-    operator: "John D.",
-    estimatedCompletion: "45m",
-    spindleLoad: 65,
-  },
-  {
-    id: "M4",
-    name: "Okuma LB3000",
-    status: "stopped",
-    uptime: "0h 0m",
-    currentJob: "Maintenance Required",
-    operator: "-",
-    estimatedCompletion: "-",
-    spindleLoad: 0,
-  },
-  {
-    id: "M5",
-    name: "Haas ST-20",
-    status: "running",
-    uptime: "16h 20m",
-    currentJob: "Custom Flanges #CF-445",
-    operator: "Rob M.",
-    estimatedCompletion: "3h 30m",
-    spindleLoad: 35,
-  },
-  {
-    id: "M6",
-    name: "DMG MORI DMU 50",
-    status: "running",
-    uptime: "4h 10m",
-    currentJob: "Mold Base #MB-112",
-    operator: "Dave S.",
-    estimatedCompletion: "5h 45m",
-    spindleLoad: 80,
-  },
-  {
-    id: "M7",
-    name: "Doosan Puma 2600",
-    status: "maintenance",
-    uptime: "2h 30m",
-    currentJob: "Scheduled Maintenance",
-    operator: "Tech Team",
-    estimatedCompletion: "1h 15m",
-    spindleLoad: 0,
-  },
-  {
-    id: "M8",
-    name: "Mazak VTC-300C",
-    status: "running",
-    uptime: "10h 45m",
-    currentJob: "Prototype Parts #PP-556",
-    operator: "Alex W.",
-    estimatedCompletion: "1h 50m",
-    spindleLoad: 55,
-  },
-];
-
 const machineStateEvents = {
   M1: [
     { timestamp: "06:45", state: "POWER_ON", duration: 180 }, // 3 mins
@@ -251,6 +169,17 @@ const getStateColor = (state: string) => {
     MAINTENANCE: "#f97316", // Orange
   };
   return colors[state as keyof typeof colors] || "#6b7280";
+};
+
+const getColor = (state: string) => {
+  const s = state.toUpperCase();
+  const colors = {
+    ACTIVE: "bg-success", // Green
+    IDLE: "bg-warning", // Yellow
+    ALARM: "bg-error", // Red
+    OFFLINE: "bg-text-muted/50", // Gray
+  };
+  return colors[s as keyof typeof colors] || "#6b7280";
 };
 
 const utilizationGraphData = timeSeriesData.map((data) => ({
@@ -571,6 +500,8 @@ const Dashboard = () => {
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
+  const { machineStates } = useSocket();
+
   const navigate = useNavigate();
 
   const parseDateParam = (param: string | null, fallback: Date) => {
@@ -594,44 +525,6 @@ const Dashboard = () => {
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
   });
-
-  const sampleAlarms = [
-    {
-      id: 1,
-      machine: "M1",
-      timestamp: "2024-01-01 12:00:00",
-      type: "alarm",
-      message: "Spindle 1 is overheating",
-    },
-    {
-      id: 2,
-      machine: "M2",
-      timestamp: "2024-01-01 12:00:00",
-      type: "alarm",
-      message: "Spindle 2 is overheating",
-    },
-    {
-      id: 2,
-      machine: "M2",
-      timestamp: "2024-01-01 12:00:00",
-      type: "alarm",
-      message: "Spindle 2 is overheating",
-    },
-    {
-      id: 2,
-      machine: "M2",
-      timestamp: "2024-01-01 12:00:00",
-      type: "alarm",
-      message: "Spindle 2 is overheating",
-    },
-    {
-      id: 2,
-      machine: "M2",
-      timestamp: "2024-01-01 12:00:00",
-      type: "alarm",
-      message: "Spindle 2 is overheating",
-    },
-  ];
 
   const kpis = [
     {
@@ -663,16 +556,14 @@ const Dashboard = () => {
     },
   ];
 
-  const utilization = overview?.utilization || [];
-
-  const states =
+  const stateDistribution =
     overview?.states ||
     Object.entries(stateDurations).map(([state, value]) => ({
       state,
       value,
     }));
 
-  const machines = overview?.machines
+  const machines = (overview?.machines || [])
     .sort((a, b) => {
       const typeCompare = a.type.localeCompare(b.type);
       if (typeCompare === 0) {
@@ -680,10 +571,18 @@ const Dashboard = () => {
       }
       return typeCompare;
     })
-    .map((machine) => ({
-      ...machine,
-      status: "running",
-    }));
+    .map((machine) => {
+      const realTime = machineStates.find(
+        (state) => state.machineId === machine.id
+      );
+      return {
+        ...machine,
+        status: realTime?.currentState?.toLowerCase() || "unknown",
+        currentProgram: realTime?.currentProgram || "-",
+        estimatedCompletion: realTime?.estimatedCompletion || "-",
+        spindleLoad: realTime?.spindleLoad || 0,
+      };
+    });
 
   const alarms = overview?.alerts || [];
 
@@ -925,7 +824,7 @@ const Dashboard = () => {
             }`}>
             <div className="p-2 border-b">
               <h3 className="text-sm text-text-muted">
-                Machines ({machineStatus.length})
+                Machines ({machines.length})
               </h3>
             </div>
 
@@ -937,18 +836,14 @@ const Dashboard = () => {
                     onClick={() => {
                       setSelectedMachine(machine);
                     }}
-                    className="flex flex-col p-2 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted">
+                    className="flex flex-col p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div
-                          className={`w-2 h-2 rounded-full ${
-                            machine.status === "running"
-                              ? "bg-success"
-                              : machine.status === "setup" ||
-                                machine.status === "maintenance"
-                              ? "bg-warning"
-                              : "bg-error"
-                          }`}
+                          className={cn(
+                            "w-2 h-2 rounded-full border border-border",
+                            getColor(machine.status)
+                          )}
                         />
                         <p className="text-sm font-medium text-text-muted truncate">
                           {machine.name}
@@ -956,14 +851,14 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <Box
                           size={12}
                           className="text-text-muted"
                         />
-                        <span className="truncate">
-                          {machine.currentJob || "-"}
+                        <span className="truncate text-xs">
+                          {machine.currentProgram || "-"}
                         </span>
                       </div>
 
@@ -972,169 +867,79 @@ const Dashboard = () => {
                           size={12}
                           className="text-text-muted"
                         />
-                        <span>{machine.estimatedCompletion || "-"}</span>
+                        <span className="text-xs">
+                          {machine.estimatedCompletion || "-"}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-text-muted">Load</span>
-                        <span
-                          className={`${
-                            machine.spindleLoad > 80
-                              ? "text-error"
-                              : machine.spindleLoad > 60
-                              ? "text-warning"
-                              : "text-success"
-                          }`}>
-                          {machine.spindleLoad}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-surface rounded-full h-1">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            machine.spindleLoad > 80
-                              ? "bg-error"
-                              : machine.spindleLoad > 60
-                              ? "bg-warning"
-                              : "bg-success"
-                          }`}
-                          style={{ width: `${machine.spindleLoad}%` }}
-                        />
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-muted text-xs">Load</span>
+                      <span className="text-xs text-text-muted">
+                        {machine.spindleLoad}%
+                      </span>
+                    </div>
+                    <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all bg-text-muted/50"
+                        style={{ width: `${machine.spindleLoad}%` }}
+                      />
                     </div>
                   </div>
                 ))}
             </div>
           </div>
 
-          <div className="bg-foreground rounded border flex-col h-[235px] hidden lg:flex">
+          <div className="bg-foreground rounded border flex-col h-[239px] hidden lg:flex">
             <div className="p-2 border-b flex-shrink-0">
               <h3 className="text-sm text-text-muted">Alarms</h3>
             </div>
 
             <div className="overflow-y-auto flex-grow">
               <div className="p-2 space-y-2">
-                {sampleAlarms.map((alarm, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2 bg-surface rounded border border-border flex justify-between">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle
-                        size={16}
-                        className={
-                          alarm.type === "alarm" ? "text-error" : "text-warning"
-                        }
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-text-muted">
-                          {alarm.message}
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          {alarm.machine}
-                        </p>
+                {loading ? (
+                  <div className="text-center text-text-muted text-sm py-2">
+                    Loading...
+                  </div>
+                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
+                  overview?.alarms.map((alarm, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-surface rounded border border-border flex justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle
+                          size={16}
+                          className={
+                            alarm.type === "alarm"
+                              ? "text-error"
+                              : "text-warning"
+                          }
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-text-muted">
+                            {alarm.message}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {alarm.machineId}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-text-muted leading-none">
+                        {formatDistance(new Date(alarm.timestamp), new Date(), {
+                          addSuffix: true,
+                        })}
                       </div>
                     </div>
-                    <div className="text-xs text-text-muted leading-none">
-                      {formatDistance(new Date(alarm.timestamp), new Date(), {
-                        addSuffix: true,
-                      })}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-text-muted text-sm py-2">
+                    No alarms
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 items-stretch">
-          <div
-            className={`bg-foreground rounded border col-span-2 lg:col-span-3 ${
-              !isToday ? "opacity-50" : ""
-            }`}>
-            <div className="p-2 border-b">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm text-text-muted">
-                  Machines ({machineStatus.length})
-                </h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary-outline"
-                    size="sm"
-                    onClick={() => setIsMapModalOpen(true)}>
-                    <Map size={16} />
-                    Map
-                  </Button>
-                  <Button
-                    variant="secondary-outline"
-                    size="sm"
-                    onClick={() => setIsTimelineModalOpen(true)}>
-                    <Clock size={16} />
-                    Timeline
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2">
-              {machines &&
-                machines.map((machine) => (
-                  <div
-                    key={machine.id}
-                    className="flex flex-col p-2 bg-surface rounded hover:bg-surface/80 border border-border h-[120px] cursor-pointer text-text-muted"
-                    onClick={() => {
-                      setSelectedMachine(machine);
-                    }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            machine.status === "running"
-                              ? "bg-success"
-                              : machine.status === "setup" ||
-                                machine.status === "maintenance"
-                              ? "bg-warning"
-                              : "bg-error"
-                          }`}
-                        />
-                        <p className="text-sm font-medium text-text-muted truncate">
-                          {machine.name}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      <div className="flex items-center gap-1">
-                        <Box
-                          size={12}
-                          className="text-text-muted"
-                        />
-                        <span className="truncate">
-                          {machine.currentJob || "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 justify-end">
-                        <Clock
-                          size={12}
-                          className="text-text-muted"
-                        />
-                        <span>{machine.estimatedCompletion || "-"}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Box
-                          size={12}
-                          className="text-text-muted"
-                        />
-                        <span className="truncate">
-                          {machine.currentJob || "-"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-          </div>
-        </div> */}
       </div>
 
       {selectedMachine && (
@@ -1156,7 +961,7 @@ const Dashboard = () => {
           title="Machine Map"
           size="md">
           <div className="p-2">
-            <MachineMap machines={machineStatus} />
+            <MachineMap machines={machines} />
           </div>
         </Modal>
       )}

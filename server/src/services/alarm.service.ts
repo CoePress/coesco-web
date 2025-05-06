@@ -3,8 +3,10 @@ import {
   IAlarmService,
   ICreateMachineAlarmDTO,
   IMachineAlarm,
+  IQueryParams,
   ValidationError,
 } from "@/utils/types";
+import { Op } from "sequelize";
 
 class AlarmService implements IAlarmService {
   async createAlarm(alarm: ICreateMachineAlarmDTO): Promise<IMachineAlarm> {
@@ -13,8 +15,21 @@ class AlarmService implements IAlarmService {
     return machineAlarm;
   }
 
-  async getAlarms(): Promise<IMachineAlarm[]> {
-    const alarms = await MachineAlarm.findAll();
+  async getAlarms(params?: IQueryParams): Promise<IMachineAlarm[]> {
+    const { page, limit, sortBy, sortOrder, search, startDate, endDate } =
+      params || {};
+
+    const where: any = {
+      resolved: false,
+    };
+
+    if (startDate) where.timestamp = { [Op.gte]: startDate };
+    if (endDate) where.timestamp = { [Op.lte]: endDate };
+
+    const alarms = await MachineAlarm.findAll({
+      where,
+    });
+
     return alarms;
   }
 

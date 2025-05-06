@@ -6,6 +6,7 @@ type SocketContextType = {
   isConnected: boolean;
   socket: Socket | null;
   emit: (event: string, data: any) => void;
+  machineStates: any[];
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -17,14 +18,11 @@ type SocketProviderProps = {
   listenTo: string[];
 };
 
-export const SocketProvider = ({
-  children,
-  listenTo = [],
-}: SocketProviderProps) => {
+export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const [machineStates, setMachineStates] = useState<any[]>([]);
 
-  // 1. Only create the socket once, on mount
   useEffect(() => {
     if (!socketRef.current) {
       socketRef.current = io(`${env.VITE_API_URL}/client`, {
@@ -38,33 +36,26 @@ export const SocketProvider = ({
       socket.on("disconnect", () => setIsConnected(false));
     }
 
-    // 3. Only disconnect on unmount
     return () => {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
   }, []);
 
-  // 2. Add/remove event listeners when listenTo changes
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
 
-    console.log("[SocketProvider] Listening to events:", listenTo);
+    const handleMachineStates = (data: any[]) => {
+      setMachineStates(data);
+    };
 
-    // Add listeners
-    listenTo.forEach((event) => {
-      socket.on(event, (data) => {
-        console.log(`Received ${event} event:`, data);
-      });
-    });
+    socket.on("machine_states", handleMachineStates);
 
     return () => {
-      listenTo.forEach((event) => {
-        socket.off(event);
-      });
+      socket.off("machine_states", handleMachineStates);
     };
-  }, [listenTo]);
+  }, []);
 
   const emit = (event: string, data: any) => {
     if (socketRef.current?.connected) {
@@ -76,6 +67,7 @@ export const SocketProvider = ({
     isConnected,
     socket: socketRef.current,
     emit,
+    machineStates,
   };
 
   return (
