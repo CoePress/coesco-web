@@ -1,6 +1,6 @@
 import { ICreateMachineStateDTO, IMachineState } from "../utils/types";
 
-const states = ["RUNNING", "IDLE", "ALARM", "HOLD", "STOPPED"];
+const states = ["ACTIVE", "IDLE", "ALARM", "OFFLINE"];
 const executions = ["RUNNING", "STOPPED", "READY", "FEED_HOLD", "INTERRUPTED"];
 const controllerModes = [
   "JOB",
@@ -20,12 +20,16 @@ const machineIds = [
 ];
 
 export const sampleStates: ICreateMachineStateDTO[] = Array.from(
-  { length: 1000 },
+  { length: 15000 },
   (_, i) => {
     const now = new Date();
+    const oneYearAgo = new Date(now.getTime() - 1 * 365 * 24 * 60 * 60 * 1000);
+    const timestamp = new Date(
+      oneYearAgo.getTime() + ((now.getTime() - oneYearAgo.getTime()) * i) / 999
+    );
     return {
       machineId: machineIds[Math.floor(Math.random() * machineIds.length)],
-      timestamp: new Date(now.getTime() - i * 60000),
+      timestamp,
       state: states[Math.floor(Math.random() * states.length)],
       execution: executions[Math.floor(Math.random() * executions.length)],
       controller:

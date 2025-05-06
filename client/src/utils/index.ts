@@ -24,6 +24,28 @@ export const formatCurrency = (amount: number, showCents: boolean = true) => {
   }).format(amount);
 };
 
+export const formatDuration = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+
+  const days = Math.floor(totalSeconds / (24 * 60 * 60));
+  const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+  const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+  const seconds = totalSeconds % 60;
+
+  const parts: string[] = [];
+
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0) parts.push(`${seconds}s`);
+
+  if (parts.length === 0) {
+    return "0s";
+  }
+
+  return parts.join(" ");
+};
+
 export const openPopup = (module: string, params: string[]) => {
   window.open(
     `/${module}/popup?${params.join("&")}`,

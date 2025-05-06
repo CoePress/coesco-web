@@ -52,6 +52,7 @@ export interface IStateOverview {
   machines: {
     id: string;
     name: string;
+    type: MachineType;
   }[];
   alarms: {
     id: string;

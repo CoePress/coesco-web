@@ -14,6 +14,7 @@ import {
   buildWhereClause,
 } from "@/utils";
 import Services from ".";
+import { Op } from "sequelize";
 
 class StateService implements IStateService {
   constructor(private services: Services) {}
@@ -32,19 +33,38 @@ class StateService implements IStateService {
   }
 
   async getStates(params?: IQueryParams): Promise<IMachineState[]> {
-    const searchableFields = [
-      "state",
-      "execution",
-      "controller",
-      "program",
-      "tool",
-    ];
+    const queryOptions: any = {};
 
-    const queryOptions = {
-      where: buildWhereClause(params, searchableFields),
-      order: buildOrderClause(params),
-      ...buildPaginationOptions(params),
-    };
+    if (params?.sortBy) {
+      queryOptions.order = [[params.sortBy, params?.sortOrder || "ASC"]];
+    }
+
+    if (params?.page && params?.limit) {
+      queryOptions.offset = (params.page - 1) * params.limit;
+      queryOptions.limit = params.limit;
+    }
+
+    if (params?.search) {
+      queryOptions.where = {
+        [Op.or]: [
+          { name: { [Op.like]: `%${params.search}%` } },
+          { description: { [Op.like]: `%${params.search}%` } },
+        ],
+      };
+    }
+
+    if (params?.startDate || params?.endDate) {
+      queryOptions.where = queryOptions.where || {};
+      queryOptions.where.timestamp = {};
+
+      if (params.startDate) {
+        queryOptions.where.timestamp[Op.gte] = params.startDate;
+      }
+
+      if (params.endDate) {
+        queryOptions.where.timestamp[Op.lte] = params.endDate;
+      }
+    }
 
     const states = await MachineState.findAll(queryOptions);
     return states;
@@ -125,10 +145,40 @@ class StateService implements IStateService {
 
     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
 
-    const statesByMachine = this.groupStatesByMachine(states);
+    // Group states by machineId and sort by timestamp
+    const statesByMachine: { [machineId: string]: any[] } = {};
+    for (const s of states) {
+      const state =
+        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
+      if (!statesByMachine[state.machineId])
+        statesByMachine[state.machineId] = [];
+      statesByMachine[state.machineId].push(state);
+    }
+    for (const machineId in statesByMachine) {
+      statesByMachine[machineId].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+    }
+
+    // Flatten and calculate durations
+    const processedStates: any[] = [];
+    for (const machineId in statesByMachine) {
+      const machineStates = statesByMachine[machineId];
+      for (let i = 0; i < machineStates.length; i++) {
+        const current = machineStates[i];
+        const next = machineStates[i + 1];
+        const end = next ? new Date(next.timestamp) : endDateEST;
+        processedStates.push({
+          ...current,
+          durationMs:
+            new Date(end).getTime() - new Date(current.timestamp).getTime(),
+        });
+      }
+    }
 
     const statesWithDuration = this.calculateStateDurations(
-      statesByMachine,
+      processedStates,
       endDateEST
     );
 
@@ -176,59 +226,134 @@ class StateService implements IStateService {
   }
 
   private calculateStateDurations(
-    statesByMachine: { [machineId: string]: IMachineState[] },
+    states: any[],
     endDate: Date
   ): StateWithDuration[] {
     const statesWithDuration: StateWithDuration[] = [];
 
-    Object.values(statesByMachine).forEach((machineStates) => {
-      for (let i = 0; i < machineStates.length; i++) {
-        const currentState = machineStates[i];
-
-        const stateWithDuration: StateWithDuration = {
-          ...currentState,
-        };
-
-        if (i < machineStates.length - 1) {
-          const nextState = machineStates[i + 1];
-          stateWithDuration.durationMs =
-            nextState.timestamp.getTime() - currentState.timestamp.getTime();
-        } else {
-          stateWithDuration.durationMs =
-            endDate.getTime() - currentState.timestamp.getTime();
-        }
-
-        statesWithDuration.push(stateWithDuration);
-      }
-    });
+    for (let i = 0; i < states.length; i++) {
+      const currentState = states[i];
+      const nextState = states[i + 1];
+      const end = nextState ? new Date(nextState.timestamp) : endDate;
+      const stateWithDuration: StateWithDuration = {
+        ...currentState,
+        durationMs:
+          new Date(end).getTime() - new Date(currentState.timestamp).getTime(),
+      };
+      statesWithDuration.push(stateWithDuration);
+    }
 
     return statesWithDuration;
   }
 
   private async buildStateOverview(
-    states: StateWithDuration[],
+    states: any[],
     startDate: Date,
     endDate: Date
   ): Promise<IStateOverview> {
+    // 1. Group by machineId and sort by timestamp
+    const statesByMachine: { [machineId: string]: any[] } = {};
+    for (const s of states) {
+      const state =
+        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
+      if (!statesByMachine[state.machineId])
+        statesByMachine[state.machineId] = [];
+      statesByMachine[state.machineId].push(state);
+    }
+    for (const machineId in statesByMachine) {
+      statesByMachine[machineId].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+    }
+
+    // 2. Flatten and calculate durations
+    const processedStates: any[] = [];
+    for (const machineId in statesByMachine) {
+      const machineStates = statesByMachine[machineId];
+      for (let i = 0; i < machineStates.length; i++) {
+        const current = machineStates[i];
+        const next = machineStates[i + 1];
+        const end = next ? new Date(next.timestamp) : endDate;
+        processedStates.push({
+          ...current,
+          durationMs:
+            new Date(end).getTime() - new Date(current.timestamp).getTime(),
+        });
+      }
+    }
+
+    // 3. Use processedStates for all further calculations
+    let activeDuration = 0;
+    let alertCount = 0;
+    const stateDurations: Record<string, number> = {};
+    const stateTypeCounts: Record<string, number> = {};
+
+    console.log("Total states:", processedStates.length);
+
+    for (const state of processedStates) {
+      const duration = state.durationMs || 0;
+      if (typeof state.state === "string") {
+        stateDurations[state.state] =
+          (stateDurations[state.state] || 0) + duration;
+        stateTypeCounts[state.state] = (stateTypeCounts[state.state] || 0) + 1;
+        if (state.state.toLowerCase() === "active") {
+          activeDuration += duration;
+        }
+      }
+    }
+
+    console.log("State counts per type:", stateTypeCounts);
+
+    const overviewDuration = endDate.getTime() - startDate.getTime() + 1;
+    const utilizationValue =
+      overviewDuration > 0 ? (activeDuration / overviewDuration) * 100 : 0;
+    const averageRuntimeValue =
+      processedStates.length > 0 ? activeDuration / processedStates.length : 0;
+
+    const formatDuration = (ms: number): string => {
+      const totalSeconds = Math.floor(ms / 1000);
+
+      const days = Math.floor(totalSeconds / (24 * 60 * 60));
+      const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+      const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+      const seconds = totalSeconds % 60;
+
+      const parts: string[] = [];
+
+      if (days > 0) parts.push(`${days}d`);
+      if (hours > 0) parts.push(`${hours}h`);
+      if (minutes > 0) parts.push(`${minutes}m`);
+      if (seconds > 0) parts.push(`${seconds}s`);
+
+      if (parts.length === 0) {
+        return "0s";
+      }
+
+      return parts.join(" ");
+    };
+
+    console.log("Overview duration:", formatDuration(overviewDuration));
+    console.log("Average runtime:", formatDuration(averageRuntimeValue));
+    console.log("Active duration:", formatDuration(activeDuration));
+
     const kpis = {
       utilization: {
-        value: 0,
+        value: utilizationValue,
         change: 0,
       },
       averageRuntime: {
-        value: 0,
+        value: averageRuntimeValue,
         change: 0,
       },
       alertCount: {
-        value: 0,
+        value: alertCount,
         change: 0,
       },
     };
 
     const { scale, divisionCount } = this.getOverviewScale(startDate, endDate);
-
     const divisions = [];
-
     for (let i = 0; i < divisionCount; i++) {
       const divisionStart = this.calculateDivisionStart(startDate, scale, i);
       const divisionEnd = this.calculateDivisionEnd(
@@ -243,44 +368,73 @@ class StateService implements IStateService {
         end: divisionEnd,
         label: divisionLabel,
       });
-      console.log(divisionStart, divisionEnd, divisionLabel);
     }
 
-    const utilizationOverTime = await Promise.all(
-      divisions.map(async (division) => {
+    const utilizationOverTime = divisions.map((division) => {
+      // If the division is in the future, utilization should be null
+      if (division.start > new Date()) {
         return {
           label: division.label,
           start: division.start,
           end: division.end,
-          utilization: Math.random() * 100,
+          utilization: null,
         };
+      }
+      let divisionTotal = 0;
+      let divisionActive = 0;
+      for (let i = 0; i < processedStates.length; i++) {
+        const state = processedStates[i];
+        if (
+          !(state.timestamp instanceof Date) ||
+          isNaN(state.timestamp.getTime())
+        ) {
+          continue;
+        }
+        const stateStart = state.timestamp;
+        const stateEnd = new Date(
+          state.timestamp.getTime() + (state.durationMs || 0)
+        );
+        const overlapStart =
+          stateStart > division.start ? stateStart : division.start;
+        const overlapEnd = stateEnd < division.end ? stateEnd : division.end;
+        const overlap = Math.max(
+          0,
+          overlapEnd.getTime() - overlapStart.getTime()
+        );
+        if (overlap > 0) {
+          divisionTotal += overlap;
+          if (
+            typeof state.state === "string" &&
+            state.state.toLowerCase() === "active"
+          ) {
+            divisionActive += overlap;
+          }
+        }
+      }
+      return {
+        label: division.label,
+        start: division.start,
+        end: division.end,
+        utilization:
+          divisionTotal > 0 ? (divisionActive / divisionTotal) * 100 : 0,
+      };
+    });
+
+    const stateDistribution = Object.entries(stateDurations).map(
+      ([label, duration]) => ({
+        label,
+        duration,
+        percentage: overviewDuration > 0 ? duration / overviewDuration : 0,
       })
     );
 
-    const stateDistribution = [
-      {
-        label: "Active",
-        duration: 5000,
-        percentage: 0.5,
-      },
-      {
-        label: "Idle",
-        duration: 2000,
-        percentage: 0.2,
-      },
-      {
-        label: "Alarm",
-        duration: 1000,
-        percentage: 0.1,
-      },
-      {
-        label: "Offline",
-        duration: 2000,
-        percentage: 0.2,
-      },
-    ];
-
-    const machines = await this.services.machineService.getMachines();
+    const machines = (await this.services.machineService.getMachines()).map(
+      (m) => ({
+        id: m.id,
+        name: m.name,
+        type: m.type,
+      })
+    );
 
     const alarms = await this.services.alarmService.getAlarms({
       startDate,

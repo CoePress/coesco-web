@@ -23,13 +23,18 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Button, Card, MachineMap, PageHeader } from "@/components";
-import Modal from "@/components/shared/modal";
-import DatePicker from "@/components/v1/date-picker";
+import {
+  Button,
+  Card,
+  DatePicker,
+  MachineMap,
+  Modal,
+  PageHeader,
+} from "@/components";
+import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
-import { useSocket } from "@/contexts/socket.context";
-import { getStateColor, getStatusColor } from "@/utils";
+import { formatDuration, getStateColor, getStatusColor } from "@/utils";
 
 const machineStateEvents = {
   M1: [
@@ -160,12 +165,14 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           <h4 className="text-sm font-medium mb-2 text-text-muted">
             State History (Last 24h)
           </h4>
-          {/* Pie Chart */}
           <ResponsiveContainer
             width="100%"
             height={200}>
             <PieChart>
               <Pie
+                key={sampleStateDistribution
+                  .map((e) => e.label + e.value)
+                  .join("-")}
                 data={sampleStateDistribution}
                 dataKey="value"
                 nameKey="label"
@@ -391,30 +398,42 @@ const Dashboard = () => {
   const kpis = [
     {
       title: "Active Machines",
-      value: "-/-",
+      value:
+        overview?.kpis.activeMachines?.value !== undefined
+          ? `${overview.kpis.activeMachines.value.toString()}/-`
+          : "-/-",
       description: "Number of active machines",
       icon: <Activity size={16} />,
     },
     {
       title: "Utilization",
-      value: overview?.kpis.utilization?.value || "-",
+      value:
+        overview?.kpis.utilization?.value !== undefined
+          ? `${overview.kpis.utilization.value.toFixed(2)}%`
+          : "-",
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      change: overview?.kpis.utilization?.change || 0,
+      change: overview?.kpis.utilization?.change ?? 0,
     },
     {
       title: "Average Runtime",
-      value: overview?.kpis.averageRuntime?.value || "-",
+      value:
+        overview?.kpis.averageRuntime?.value !== undefined
+          ? formatDuration(overview.kpis.averageRuntime.value)
+          : "-",
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      change: overview?.kpis.averageRuntime?.change || 0,
+      change: overview?.kpis.averageRuntime?.change ?? 0,
     },
     {
       title: "Alarms",
-      value: overview?.kpis.alarmCount?.value || "-",
+      value:
+        overview?.kpis.alarmCount?.value !== undefined
+          ? overview.kpis.alarmCount.value.toString()
+          : "-",
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: overview?.kpis.alarmCount?.change || 0,
+      change: overview?.kpis.alarmCount?.change ?? 0,
     },
   ];
 
@@ -588,7 +607,7 @@ const Dashboard = () => {
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
-                    isAnimationActive={false}
+                    animationDuration={1000}
                   />
                   <Line
                     type="monotone"
@@ -597,7 +616,7 @@ const Dashboard = () => {
                     opacity={0.5}
                     name="Previous"
                     strokeWidth={2}
-                    isAnimationActive={false}
+                    animationDuration={1000}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -614,20 +633,24 @@ const Dashboard = () => {
                 height="100%">
                 <PieChart>
                   <Pie
+                    key={stateDistribution
+                      .map((e) => e.label + e.duration)
+                      .join("-")}
                     data={stateDistribution}
                     dataKey="duration"
                     nameKey="label"
                     cx="50%"
                     cy="50%"
                     outerRadius="80%"
-                    isAnimationActive={false}
-                    stroke="var(--border)">
+                    stroke="var(--border)"
+                    strokeWidth={1}
+                    isAnimationActive={true}
+                    animationDuration={1000}>
                     {stateDistribution.map((entry, idx) => (
                       <Cell
                         key={`cell-${idx}`}
-                        strokeWidth={0}
                         fill={
-                          entry.label === "Offline"
+                          entry.label === "OFFLINE"
                             ? "var(--surface)"
                             : getStatusColor(entry.label)
                         }
@@ -638,6 +661,10 @@ const Dashboard = () => {
                     content={({ active, payload }) => {
                       if (!active || !payload || !payload.length) return null;
                       const entry = payload[0];
+
+                      const duration = entry.payload.duration;
+                      const percentage = entry.payload.percentage * 100;
+
                       return (
                         <div
                           style={{
@@ -655,8 +682,10 @@ const Dashboard = () => {
                             {entry.payload.label}
                           </div>
                           <div className="mt-1">
-                            <p>{entry.payload.duration}</p>
-                            <p>{entry.payload.percentage * 100}%</p>
+                            <p>
+                              {formatDuration(duration)} (
+                              {percentage.toFixed(2)}%)
+                            </p>
                           </div>
                         </div>
                       );
