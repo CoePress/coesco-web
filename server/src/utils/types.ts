@@ -214,7 +214,9 @@ export interface IStateOverview {
     };
   };
   utilization: {
-    timestamp: Date;
+    label: string;
+    start: Date;
+    end: Date;
     utilization: number;
   }[];
   states: {

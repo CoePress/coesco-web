@@ -49,12 +49,12 @@ export const isProductClassDescendant = (
 export const getStatusColor = (status: string) => {
   const s = status.toUpperCase();
   const colors = {
-    ACTIVE: "var(--success)",
-    IDLE: "var(--warning)",
-    ALARM: "var(--error)",
-    OFFLINE: "var(--text-muted)",
+    ACTIVE: "#34d399",
+    IDLE: "#ffab00",
+    ALARM: "#f44336",
+    OFFLINE: "#a0a0a0",
   };
-  return colors[s as keyof typeof colors] || "var(--text-muted)";
+  return colors[s as keyof typeof colors] || "#a0a0a0";
 };
 
 export const getStateColor = (state: string) => {

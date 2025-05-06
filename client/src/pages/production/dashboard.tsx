@@ -53,75 +53,6 @@ interface IMachine {
   }[];
 }
 
-const timeSeriesData = [
-  {
-    time: "00:00",
-    utilization: 78.4,
-    quality: 99.1,
-    oee: 77.6,
-    previous: {
-      utilization: 67.2,
-      quality: 98.8,
-      oee: 66.4,
-    },
-  },
-  {
-    time: "04:00",
-    utilization: 92.3,
-    quality: 99.3,
-    oee: 91.7,
-    previous: {
-      utilization: 86.5,
-      quality: 99.6,
-      oee: 86.2,
-    },
-  },
-  {
-    time: "08:00",
-    utilization: 45.2,
-    quality: 99.5,
-    oee: 45.0,
-    previous: {
-      utilization: 54.8,
-      quality: 99.1,
-      oee: 54.3,
-    },
-  },
-  {
-    time: "12:00",
-    utilization: 98.8,
-    quality: 99.8,
-    oee: 98.6,
-    previous: {
-      utilization: 94.3,
-      quality: 99.4,
-      oee: 93.8,
-    },
-  },
-  {
-    time: "16:00",
-    utilization: 65.7,
-    quality: 99.2,
-    oee: 65.2,
-    previous: {
-      utilization: 72.4,
-      quality: 98.9,
-      oee: 71.6,
-    },
-  },
-  {
-    time: "20:00",
-    utilization: 81.9,
-    quality: 99.0,
-    oee: 81.1,
-    previous: {
-      utilization: 76.3,
-      quality: 99.3,
-      oee: 75.8,
-    },
-  },
-];
-
 const machineStateEvents = {
   M1: [
     { timestamp: "06:45", state: "POWER_ON", duration: 180 }, // 3 mins
@@ -153,12 +84,6 @@ const machineStateEvents = {
     { timestamp: "06:55", state: "ACTIVE", duration: 7200 },
   ],
 };
-
-const utilizationGraphData = timeSeriesData.map((data) => ({
-  time: data.time,
-  utilization: data.utilization,
-  previous: data.previous.utilization,
-}));
 
 const stateDurations: Record<string, number> = {};
 
@@ -283,12 +208,6 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
                         : "-"}
                     </span>
                   </div>
-                  {axis.load !== undefined && (
-                    <Progress
-                      value={axis.load}
-                      className="h-1 mt-1"
-                    />
-                  )}
                 </div>
               </div>
             ))}
@@ -345,7 +264,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
       <div className="overflow-x-auto">
         <div className="min-w-[2500px]">
           <div className="space-y-1">
-            {machineStatus.map((machine) => (
+            {machineStates.map((machine) => (
               <div
                 key={machine.id}
                 className="flex items-center group hover:bg-surface/50 rounded">
@@ -528,6 +447,8 @@ const Dashboard = () => {
     },
   ];
 
+  const utilizationOverTime = overview?.utilization || [];
+
   const stateDistribution =
     overview?.states ||
     Object.entries(stateDurations).map(([state, value]) => ({
@@ -650,7 +571,7 @@ const Dashboard = () => {
                 width="100%"
                 height="100%">
                 <LineChart
-                  data={utilizationGraphData}
+                  data={utilizationOverTime}
                   margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -659,10 +580,13 @@ const Dashboard = () => {
                     stroke="var(--border)"
                   />
                   <XAxis
-                    dataKey="time"
+                    dataKey="label"
                     padding={{ left: 0, right: 0 }}
                     tick={{ fontSize: 12 }}
                     tickMargin={5}
+                    tickFormatter={(value, index) =>
+                      index % 2 === 0 ? value : ""
+                    }
                   />
                   <YAxis
                     domain={[0, 100]}
@@ -686,7 +610,7 @@ const Dashboard = () => {
                     type="monotone"
                     dataKey="utilization"
                     stroke="var(--primary)"
-                    name="Current"
+                    name="Utilization"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}

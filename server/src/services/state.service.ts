@@ -85,6 +85,19 @@ class StateService implements IStateService {
     });
   }
 
+  async getNextState(
+    machineId: string,
+    timestamp: Date
+  ): Promise<IMachineState | null> {
+    return await MachineState.findOne({
+      where: {
+        machineId,
+        timestamp: { $gt: timestamp },
+      },
+      order: [["timestamp", "ASC"]],
+    });
+  }
+
   async getStateOverview(
     startDate: Date,
     endDate: Date
@@ -233,10 +246,18 @@ class StateService implements IStateService {
       console.log(divisionStart, divisionEnd, divisionLabel);
     }
 
-    const utilizationOverTime = [];
+    const utilizationOverTime = await Promise.all(
+      divisions.map(async (division) => {
+        return {
+          label: division.label,
+          start: division.start,
+          end: division.end,
+          utilization: 0,
+        };
+      })
+    );
 
     const stateDistribution = {};
-
     const machines = await this.services.machineService.getMachines();
 
     const alarms = await this.services.alarmService.getAlarms({

@@ -260,74 +260,7 @@ export class AnalyticsService {
     return { scale, divisionCount, divisions };
   }
 
-  private getTimeScale(start: Date, end: Date): TimeScale {
-    const diffMs = end.getTime() - start.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-    if (diffDays <= 3)
-      return { scale: "hourly", divisionCount: Math.ceil(diffDays * 24) };
-    if (diffDays <= 20)
-      return { scale: "daily", divisionCount: Math.ceil(diffDays) };
-    if (diffDays <= 84)
-      return { scale: "weekly", divisionCount: Math.ceil(diffDays / 7) };
-    if (diffDays <= 548)
-      return { scale: "monthly", divisionCount: Math.ceil(diffDays / 30.4375) };
-    return { scale: "quarterly", divisionCount: Math.ceil(diffDays / 91.3125) };
-  }
-
   private mapState(state: string): StateType {
     return this.STATE_MAPPINGS[state.toLowerCase()] || "offline";
-  }
-
-  private formatDivisionLabel(date: Date, scale: string): string {
-    const formatters = {
-      hourly: (d: Date) => {
-        const hours = (d.getUTCHours() - 4 + 24) % 12 || 12;
-        const ampm = (d.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
-        return `${hours}:00 ${ampm}`;
-      },
-      daily: (d: Date) =>
-        d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      weekly: (d: Date) =>
-        `Week of ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-      monthly: (d: Date) =>
-        d.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      quarterly: (d: Date) =>
-        `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`,
-    };
-
-    return formatters[scale]?.(date) || "";
-  }
-
-  private calculateDivisionEnd(start: Date, scale: string, maxEnd: Date): Date {
-    const end = new Date(start);
-    switch (scale) {
-      case "hourly":
-        end.setHours(end.getHours() + 1);
-        break;
-      case "daily":
-        end.setDate(end.getDate() + 1);
-        break;
-      case "weekly":
-        end.setDate(end.getDate() + 7);
-        break;
-      case "monthly":
-        end.setMonth(end.getMonth() + 1);
-        break;
-      case "quarterly":
-        end.setMonth(end.getMonth() + 3);
-        break;
-    }
-    return end > maxEnd ? maxEnd : end;
-  }
-
-  private isStateInDivision(
-    state: MachineState,
-    start: Date,
-    end: Date
-  ): boolean {
-    const stateStart = new Date(state.startedAt);
-    const stateEnd = state.endedAt ? new Date(state.endedAt) : new Date();
-    return stateStart < end && stateEnd > start;
   }
 }
