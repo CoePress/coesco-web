@@ -22,7 +22,6 @@ export const stateRoutes = (services: Services) => {
 
   router.get("/timeline", async (req, res) => {
     const timeline = await services.stateService.getStateTimeline(
-      req.query.machineId as string,
       new Date(req.query.startDate as string),
       new Date(req.query.endDate as string)
     );

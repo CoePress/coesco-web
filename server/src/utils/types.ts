@@ -238,7 +238,9 @@ export interface IStateOverview {
 }
 
 export interface IStateTimeline {
-  [key: string]: {
+  machineId: string;
+  machineName: string;
+  timeline: {
     timestamp: Date;
     state: string;
     durationMs: number;
@@ -338,11 +340,7 @@ export interface IStateService {
   ): Promise<IMachineState[]>;
   getCurrentStates(): Promise<IMachineState[]>;
   getStateOverview(from: Date, to: Date): Promise<IStateOverview>;
-  getStateTimeline(
-    machineId: string,
-    from: Date,
-    to: Date
-  ): Promise<IMachineState[]>;
+  getStateTimeline(from: Date, to: Date): Promise<IMachineState[]>;
 }
 
 export interface IAlarmService {

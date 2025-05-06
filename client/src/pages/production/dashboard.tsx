@@ -36,38 +36,6 @@ import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { formatDuration, getStateColor, getStatusColor } from "@/utils";
 
-const machineStateEvents = {
-  M1: [
-    { timestamp: "06:45", state: "POWER_ON", duration: 180 }, // 3 mins
-    { timestamp: "06:48", state: "HOMING", duration: 240 }, // 4 mins
-    { timestamp: "06:52", state: "IDLE", duration: 480 }, // 8 mins
-    { timestamp: "07:00", state: "SETUP", duration: 300 }, // 5 mins
-    { timestamp: "07:05", state: "TOOL_CHANGE", duration: 300 }, // 5 mins
-    { timestamp: "07:10", state: "ACTIVE", duration: 2100 }, // 35 mins
-    { timestamp: "07:45", state: "FEED_HOLD", duration: 300 }, // 5 mins
-    { timestamp: "07:50", state: "ACTIVE", duration: 2400 }, // 40 mins
-    { timestamp: "08:30", state: "TOOL_CHANGE", duration: 120 }, // 2 mins
-    { timestamp: "08:32", state: "ACTIVE", duration: 2580 }, // 43 mins
-    { timestamp: "09:15", state: "E-STOP", duration: 300 }, // 5 mins
-    { timestamp: "09:20", state: "RESET", duration: 300 }, // 5 mins
-    { timestamp: "09:25", state: "HOMING", duration: 300 }, // 5 mins
-    { timestamp: "09:30", state: "ACTIVE", duration: 1800 }, // 30 mins
-    { timestamp: "10:00", state: "FEED_HOLD", duration: 300 }, // 5 mins
-    { timestamp: "10:05", state: "ACTIVE", duration: 2400 }, // 40 mins
-    { timestamp: "10:45", state: "IDLE", duration: 900 }, // 15 mins
-  ],
-  M2: [
-    { timestamp: "07:00", state: "POWER_ON", duration: 180 },
-    { timestamp: "07:03", state: "ALARM", duration: 420 },
-    { timestamp: "07:10", state: "MAINTENANCE", duration: 3600 },
-  ],
-  M3: [
-    { timestamp: "06:30", state: "POWER_ON", duration: 300 },
-    { timestamp: "06:35", state: "SETUP", duration: 1200 },
-    { timestamp: "06:55", state: "ACTIVE", duration: 7200 },
-  ],
-};
-
 type MachineDetailsProps = {
   machine: any;
 };
@@ -211,123 +179,116 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
     endDate: endDate.toISOString().slice(0, 10),
   });
 
-  useEffect(() => {
-    console.log("API Timeline (on modal open):", {
-      timeline,
-      loading,
-      error,
-    });
-  }, [timeline, loading, error]);
+  useEffect(() => {}, [timeline, loading, error]);
 
   return (
     <div className="space-y-4 p-2">
-      <div className="sticky top-0 z-10 bg-background">
-        <div className="flex border-b">
-          <div className="w-32 flex-shrink-0 p-2 font-medium text-sm">
-            Machine
-          </div>
-          <div className="flex flex-1">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-shrink-0 w-[100px] text-xs text-text-muted border-l px-1">
-                {String(6 + Math.floor(i / 2)).padStart(2, "0")}:
-                {i % 2 ? "30" : "00"}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
         <div className="min-w-[2500px]">
+          <div className="flex border-b bg-background sticky top-0 z-10">
+            <div
+              className="w-32 flex-shrink-0 p-2 font-medium text-sm bg-background sticky left-0 z-20"
+              style={{ minWidth: 128 }}>
+              Machine
+            </div>
+            <div className="flex flex-1">
+              {Array.from({ length: 25 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-[100px] text-xs text-text-muted border-l px-1">
+                  {String(6 + Math.floor(i / 2)).padStart(2, "0")}:
+                  {i % 2 ? "30" : "00"}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-1">
-            {machineStates.map((machine) => (
-              <div
-                key={machine.id}
-                className="flex items-center group hover:bg-surface/50 rounded">
-                <div className="w-32 flex-shrink-0 p-2">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        machine.status === "running"
-                          ? "bg-success"
-                          : machine.status === "setup"
-                          ? "bg-warning"
-                          : "bg-error"
-                      }`}
-                    />
-                    <span className="text-sm font-medium">{machine.name}</span>
+            {timeline &&
+              timeline.map((machine) => (
+                <div
+                  key={machine.machineId}
+                  className="flex items-center group hover:bg-surface/50 rounded">
+                  <div
+                    className="w-32 flex-shrink-0 p-2 bg-background sticky left-0 z-10"
+                    style={{ minWidth: 128 }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium whitespace-nowrap truncate">
+                        {machine.machineId}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 h-12 relative">
+                    {Array.from({ length: 49 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`absolute h-full border-l ${
+                          i % 2 === 0 ? "border-border" : "border-border/30"
+                        }`}
+                        style={{ left: `${i * 50}px` }}
+                      />
+                    ))}
+                    {machine.timeline.map((event, index) => {
+                      // Calculate left and width based on time since 6:00
+                      const eventDate = new Date(event.timestamp);
+                      const startMinutes =
+                        (eventDate.getHours() - 6) * 60 +
+                        eventDate.getMinutes();
+                      const widthMinutes = event.durationMs / 1000 / 60;
+
+                      // Use group-hover:block on the parent, but only hover:block on the segment itself
+                      return (
+                        <div
+                          key={index}
+                          className="absolute h-8 top-2 transition-opacity hover:opacity-90 group"
+                          style={{
+                            left: `${(startMinutes / 30) * 100}px`,
+                            width: `${(widthMinutes / 30) * 100}px`,
+                            backgroundColor: getStatusColor(event.state),
+                          }}>
+                          <div className="h-full flex items-center justify-center text-xs text-white font-medium truncate px-2">
+                            {event.state}
+                          </div>
+                          <div className="absolute bottom-full mb-1 left-0 bg-background border rounded p-2 hidden hover:block whitespace-nowrap z-20 text-xs">
+                            <p className="font-medium">{event.state}</p>
+                            <p>
+                              {eventDate.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {" ("}
+                              {Math.floor(event.durationMs / 1000 / 60)}m{")"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                <div className="flex-1 h-12 relative">
-                  {Array.from({ length: 49 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`absolute h-full border-l ${
-                        i % 2 === 0 ? "border-border" : "border-border/30"
-                      }`}
-                      style={{ left: `${i * 50}px` }}
-                    />
-                  ))}
-
-                  {machineStateEvents[machine.id]?.map((event, index) => {
-                    const [hours, minutes] = event.timestamp
-                      .split(":")
-                      .map(Number);
-                    const startMinutes = (hours - 6) * 60 + minutes;
-                    const widthMinutes = event.duration / 60;
-
-                    return (
-                      <div
-                        key={index}
-                        className="absolute h-8 top-2 transition-opacity hover:opacity-90 group"
-                        style={{
-                          left: `${(startMinutes / 30) * 100}px`,
-                          width: `${(widthMinutes / 30) * 100}px`,
-                          backgroundColor: getStateColor(event.state),
-                        }}>
-                        <div className="h-full flex items-center justify-center text-xs text-white font-medium truncate px-2">
-                          {event.state}
-                        </div>
-
-                        {/* Hover Tooltip */}
-                        <div className="absolute bottom-full mb-1 left-0 bg-background border rounded p-2 hidden group-hover:block whitespace-nowrap z-20 text-xs">
-                          <p className="font-medium">{event.state}</p>
-                          <p>
-                            {event.timestamp} ({Math.floor(event.duration / 60)}
-                            m)
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>
 
       <div className="border-t pt-4 flex flex-wrap gap-2">
-        {Array.from(
-          new Set(
-            Object.values(machineStateEvents)
-              .flat()
-              .map((x) => x.state)
-          )
-        ).map((state) => (
-          <div
-            key={state}
-            className="flex items-center gap-2">
+        {timeline &&
+          Array.from(
+            new Set(
+              timeline
+                .flatMap((machine) => machine.timeline)
+                .map((x) => x.state)
+            )
+          ).map((state) => (
             <div
-              className="w-3 h-3 rounded"
-              style={{ backgroundColor: getStateColor(state) }}
-            />
-            <span className="text-sm">{state}</span>
-          </div>
-        ))}
+              key={state}
+              className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: getStatusColor(state) }}
+              />
+              <span className="text-sm">{state}</span>
+            </div>
+          ))}
       </div>
     </div>
   );

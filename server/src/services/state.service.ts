@@ -146,17 +146,18 @@ class StateService implements IStateService {
     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
 
     // Group states by machineId and sort by timestamp
-    const statesByMachine: { [machineId: string]: any[] } = {};
-    for (const s of states) {
-      const state =
-        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
-      if (!statesByMachine[state.machineId])
+    const statesByMachine = {};
+
+    for (const state of states) {
+      if (!statesByMachine[state.machineId]) {
         statesByMachine[state.machineId] = [];
+      }
       statesByMachine[state.machineId].push(state);
     }
+
     for (const machineId in statesByMachine) {
       statesByMachine[machineId].sort(
-        (a, b) =>
+        (a: IMachineState, b: IMachineState) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
     }
@@ -197,24 +198,34 @@ class StateService implements IStateService {
     };
   }
 
-  async getStateTimeline(
-    machineId: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<IMachineState[]> {
-    const states = await this.getStates({
-      startDate,
-      endDate,
-    });
+  async getStateTimeline(startDate: Date, endDate: Date): Promise<any[]> {
+    if (startDate > endDate) {
+      throw new ValidationError("Start date must be before end date");
+    }
 
-    return states;
-  }
+    const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+    let endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
 
-  private groupStatesByMachine(states: IMachineState[]): {
-    [machineId: string]: IMachineState[];
-  } {
-    const statesByMachine: { [machineId: string]: IMachineState[] } = {};
+    if (startDateEST.getTime() === endDateEST.getTime()) {
+      endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
+    } else {
+      endDateEST.setTime(endDateEST.getTime() - 1);
+    }
 
+    // Cap at now (in EST)
+    const now = new Date();
+    const nowEST = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+    if (endDateEST > nowEST) {
+      endDateEST = nowEST;
+    }
+
+    const states = await this.getStatesByDateRange(startDateEST, endDateEST);
+
+    // Get all machines
+    const machines = await this.services.machineService.getMachines();
+
+    // Group states by machineId
+    const statesByMachine: { [machineId: string]: any[] } = {};
     for (const state of states) {
       if (!statesByMachine[state.machineId]) {
         statesByMachine[state.machineId] = [];
@@ -222,7 +233,82 @@ class StateService implements IStateService {
       statesByMachine[state.machineId].push(state);
     }
 
-    return statesByMachine;
+    const timelines: {
+      machineId: string;
+      machineName: string;
+      timeline: any[];
+    }[] = [];
+
+    for (const machine of machines) {
+      const machineId = machine.id;
+      const machineName = machine.name;
+      const machineStates = (statesByMachine[machineId] || []).sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      const timeline: any[] = [];
+      let cursor = new Date(startDateEST);
+
+      if (machineStates.length === 0) {
+        // No states at all: fill the whole range with OFFLINE (up to endDateEST)
+        if (cursor < endDateEST) {
+          timeline.push({
+            state: "OFFLINE",
+            timestamp: cursor.toISOString(),
+            durationMs: endDateEST.getTime() - cursor.getTime(),
+          });
+        }
+      } else {
+        for (let i = 0; i < machineStates.length; i++) {
+          const state = machineStates[i];
+          const stateStart = new Date(state.timestamp);
+          const nextStateTime =
+            i < machineStates.length - 1
+              ? new Date(machineStates[i + 1].timestamp)
+              : new Date(endDateEST);
+
+          // Fill gap before this state with OFFLINE
+          if (stateStart > cursor) {
+            const offlineEnd =
+              stateStart < endDateEST ? stateStart : endDateEST;
+            if (cursor < offlineEnd) {
+              timeline.push({
+                state: "OFFLINE",
+                timestamp: cursor.toISOString(),
+                durationMs: offlineEnd.getTime() - cursor.getTime(),
+              });
+            }
+            cursor = new Date(offlineEnd);
+          }
+
+          // State duration is until next state or endDateEST, but not past endDateEST
+          const stateEnd =
+            nextStateTime < endDateEST ? nextStateTime : endDateEST;
+          if (stateStart < stateEnd) {
+            timeline.push({
+              state: state.state,
+              timestamp: state.timestamp,
+              durationMs: stateEnd.getTime() - stateStart.getTime(),
+            });
+            cursor = new Date(stateEnd);
+          }
+        }
+
+        // Fill gap after last state with OFFLINE (up to endDateEST)
+        if (cursor < endDateEST) {
+          timeline.push({
+            state: "OFFLINE",
+            timestamp: cursor.toISOString(),
+            durationMs: endDateEST.getTime() - cursor.getTime(),
+          });
+        }
+      }
+
+      timelines.push({ machineId, machineName, timeline });
+    }
+
+    return timelines;
   }
 
   private calculateStateDurations(
@@ -539,19 +625,6 @@ class StateService implements IStateService {
     };
 
     return formatters[scale]?.(date) || "";
-  }
-
-  private isStateInDivision(
-    stateTimestamp: Date,
-    nextStateTimestamp: Date | null,
-    divisionStart: Date,
-    divisionEnd: Date
-  ): boolean {
-    const stateStart = new Date(stateTimestamp);
-    const stateEnd = nextStateTimestamp
-      ? new Date(nextStateTimestamp)
-      : new Date();
-    return stateStart < divisionEnd && stateEnd > divisionStart;
   }
 }
 
