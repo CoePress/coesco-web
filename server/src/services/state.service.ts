@@ -126,43 +126,35 @@ class StateService implements IStateService {
       throw new ValidationError("Start date must be before end date");
     }
 
-    // Convert to EST from UTC (ADD 4 hours to adjust timezone)
     const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
     const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
 
-    // If a single day was requested, set end date to end of that day
     if (startDateEST.getTime() === endDateEST.getTime()) {
-      // Set endDateEST to end of the day
       endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
     } else {
-      // If a range was requested, set end date to end of the day
       endDateEST.setTime(endDateEST.getTime() - 1);
     }
 
-    // Convert back to UTC for processing (SUBTRACT 4 hours)
     // const startDateUTC = new Date(startDateEST.getTime() - 4 * 60 * 60 * 1000);
     // const endDateUTC = new Date(endDateEST.getTime() - 4 * 60 * 60 * 1000);
 
     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
 
-    // Group states by machineId and sort by timestamp
-    const statesByMachine = {};
-
-    for (const state of states) {
-      if (!statesByMachine[state.machineId]) {
+    const statesByMachine: { [machineId: string]: any[] } = {};
+    for (const s of states) {
+      const state =
+        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
+      if (!statesByMachine[state.machineId])
         statesByMachine[state.machineId] = [];
-      }
       statesByMachine[state.machineId].push(state);
     }
-
     for (const machineId in statesByMachine) {
       statesByMachine[machineId].sort(
-        (a: IMachineState, b: IMachineState) =>
+        (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
     }
 
-    // Flatten and calculate durations
     const processedStates: any[] = [];
     for (const machineId in statesByMachine) {
       const machineStates = statesByMachine[machineId];
@@ -204,19 +196,12 @@ class StateService implements IStateService {
     }
 
     const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-    let endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
+    const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
 
     if (startDateEST.getTime() === endDateEST.getTime()) {
       endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
     } else {
       endDateEST.setTime(endDateEST.getTime() - 1);
-    }
-
-    // Cap at now (in EST)
-    const now = new Date();
-    const nowEST = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-    if (endDateEST > nowEST) {
-      endDateEST = nowEST;
     }
 
     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
@@ -251,51 +236,48 @@ class StateService implements IStateService {
       let cursor = new Date(startDateEST);
 
       if (machineStates.length === 0) {
-        // No states at all: fill the whole range with OFFLINE (up to endDateEST)
-        if (cursor < endDateEST) {
-          timeline.push({
-            state: "OFFLINE",
-            timestamp: cursor.toISOString(),
-            durationMs: endDateEST.getTime() - cursor.getTime(),
-          });
-        }
+        // No states at all: fill the whole range with OFFLINE
+        timeline.push({
+          state: "OFFLINE",
+          timestamp: cursor.toISOString(),
+          durationMs: endDateEST.getTime() - cursor.getTime(),
+        });
       } else {
         for (let i = 0; i < machineStates.length; i++) {
           const state = machineStates[i];
           const stateStart = new Date(state.timestamp);
-          const nextStateTime =
+          const stateEnd =
             i < machineStates.length - 1
               ? new Date(machineStates[i + 1].timestamp)
               : new Date(endDateEST);
 
           // Fill gap before this state with OFFLINE
           if (stateStart > cursor) {
-            const offlineEnd =
-              stateStart < endDateEST ? stateStart : endDateEST;
-            if (cursor < offlineEnd) {
-              timeline.push({
-                state: "OFFLINE",
-                timestamp: cursor.toISOString(),
-                durationMs: offlineEnd.getTime() - cursor.getTime(),
-              });
-            }
-            cursor = new Date(offlineEnd);
+            timeline.push({
+              state: "OFFLINE",
+              timestamp: cursor.toISOString(),
+              durationMs: stateStart.getTime() - cursor.getTime(),
+            });
+            cursor = new Date(stateStart);
           }
 
-          // State duration is until next state or endDateEST, but not past endDateEST
-          const stateEnd =
-            nextStateTime < endDateEST ? nextStateTime : endDateEST;
-          if (stateStart < stateEnd) {
-            timeline.push({
-              state: state.state,
-              timestamp: state.timestamp,
-              durationMs: stateEnd.getTime() - stateStart.getTime(),
-            });
-            cursor = new Date(stateEnd);
-          }
+          // State duration is until next state or endDateEST
+          const durationMs =
+            (i < machineStates.length - 1
+              ? new Date(machineStates[i + 1].timestamp)
+              : endDateEST
+            ).getTime() - stateStart.getTime();
+
+          timeline.push({
+            state: state.state,
+            timestamp: state.timestamp,
+            durationMs,
+          });
+
+          cursor = new Date(stateStart.getTime() + durationMs);
         }
 
-        // Fill gap after last state with OFFLINE (up to endDateEST)
+        // Fill gap after last state with OFFLINE
         if (cursor < endDateEST) {
           timeline.push({
             state: "OFFLINE",
