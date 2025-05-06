@@ -83,7 +83,10 @@ const Employees = () => {
     },
   ];
 
-  const { employees, loading, error, refresh } = useGetEmployees(page, limit);
+  const { employees, loading, error, refresh } = useGetEmployees({
+    page,
+    limit,
+  });
 
   return (
     <div className="w-full flex flex-1 flex-col">

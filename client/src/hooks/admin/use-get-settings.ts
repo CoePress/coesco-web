@@ -2,15 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-
-// You can adjust this interface based on your settings structure
-export interface ISettings {
-  id: string;
-  moduleSlug: string;
-  settings: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { ISettings } from "@/utils/t";
 
 const useGetSettings = (moduleSlug: string) => {
   const [settings, setSettings] = useState<ISettings | null>(null);

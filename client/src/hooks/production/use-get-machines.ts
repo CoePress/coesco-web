@@ -2,34 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-
-export type MachineType = "LATHE" | "MILL";
-export type MachineController = "MAZAK" | "FANUC";
-
-export interface IMachine {
-  id: string;
-  slug: string;
-  name: string;
-  type: MachineType;
-  controller: MachineController;
-  controllerModel: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-export interface IQueryParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
-  search?: string;
-  startDate?: Date;
-  endDate?: Date;
-}
-
-export interface IMachineQueryParams extends IQueryParams {
-  type?: MachineType;
-  controller?: MachineController;
-}
+import { IMachine, IMachineQueryParams } from "@/utils/t";
 
 const useGetMachines = ({
   page,

@@ -1,12 +1,18 @@
 import axios from "axios";
-import { createContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useContext,
+} from "react";
 
 import env from "@/config/env";
-import { IUser } from "@/utils/types";
+import { IEmployee } from "@/utils/t";
 
 interface IAuthContextType {
-  user: IUser | null;
-  setUser: (user: IUser | null) => void;
+  user: IEmployee | null;
+  setUser: (user: IEmployee | null) => void;
   isLoading: boolean;
 }
 
@@ -17,7 +23,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<IUser | null>(null);
+  const [user, setUser] = useState<IEmployee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -48,4 +54,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-export default AuthContext;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

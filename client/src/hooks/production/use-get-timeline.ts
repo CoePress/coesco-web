@@ -2,21 +2,15 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
+import { IStateTimeline } from "@/utils/t";
 
-export interface IStateTimeline {
-  [key: string]: {
-    timestamp: Date;
-    state: string;
-    durationMs: number;
-  }[];
-}
-
-interface UseGetTimelineProps {
+const useGetTimeline = ({
+  startDate,
+  endDate,
+}: {
   startDate?: string;
   endDate?: string;
-}
-
-const useGetTimeline = ({ startDate, endDate }: UseGetTimelineProps = {}) => {
+}) => {
   const [timeline, setTimeline] = useState<IStateTimeline | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

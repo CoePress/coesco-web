@@ -2,40 +2,9 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
+import { IStateOverview } from "@/utils/t";
 
-export interface IStateOverview {
-  kpis: {
-    [key: string]: {
-      value: number;
-      change: number;
-    };
-  };
-  utilization: {
-    label: string;
-    start: Date;
-    end: Date;
-    utilization: number;
-  }[];
-  states: {
-    label: string;
-    duration: number;
-    percentage: number;
-  }[];
-  machines: {
-    id: string;
-    name: string;
-  }[];
-  alarms: {
-    id: string;
-    machineId: string;
-    timestamp: Date;
-    type: string;
-    severity: string;
-    message?: string;
-  }[];
-}
-
-interface UseGetOverviewProps {
+export interface UseGetOverviewProps {
   startDate?: string;
   endDate?: string;
 }

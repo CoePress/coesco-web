@@ -2,8 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Button, Card } from "@/components";
 import modules from "@/config/modules";
-import useTheme from "@/hooks/context/use-theme";
 import { Moon, MessageCircle, Settings, Sun } from "lucide-react";
+import { useTheme } from "@/contexts/theme.context";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();

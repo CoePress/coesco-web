@@ -2,38 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-
-export type MachineAxis = "X" | "Y" | "Z" | "A" | "B" | "C";
-
-export interface IMachineState {
-  id: string;
-  machineId: string;
-  timestamp: Date;
-  state: string;
-  execution: string;
-  controller: string;
-  program: string;
-  tool: string;
-  position: Record<MachineAxis, number>;
-  feedRate: number;
-  spindleSpeed: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IQueryParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
-  search?: string;
-  startDate?: Date;
-  endDate?: Date;
-}
-
-export interface IStateQueryParams extends IQueryParams {
-  machineId?: string;
-}
+import { IMachineState, IStateQueryParams } from "@/utils/t";
 
 const useGetStates = ({
   page,

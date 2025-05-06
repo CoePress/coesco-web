@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import modules from "@/config/modules";
 import Header from "./header";
-import useTheme from "@/hooks/context/use-theme";
 import CommandBar from "./command-bar";
+import { useTheme } from "@/contexts/theme.context";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -20,7 +20,6 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
   const navigate = useNavigate();
 
   let sidebarLabel = "Dashboard";
-  let sidebarContent = null;
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");

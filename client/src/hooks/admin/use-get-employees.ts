@@ -2,31 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-
-export interface IEmployee {
-  id: string;
-  microsoftId: string;
-  name: string;
-  email: string;
-  department: string;
-  role: string;
-  isActive: boolean;
-  receivesReports: boolean;
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface UseGetEmployeesProps {
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  page?: number;
-  limit?: number;
-  department?: string;
-  isActive?: boolean;
-  receivesReports?: boolean;
-  search?: string;
-}
+import { IEmployee, IEmployeeQueryParams } from "@/utils/t";
 
 const useGetEmployees = ({
   sortBy = "name",
@@ -37,7 +13,7 @@ const useGetEmployees = ({
   isActive,
   receivesReports,
   search,
-}: UseGetEmployeesProps = {}) => {
+}: IEmployeeQueryParams = {}) => {
   const [employees, setEmployees] = useState<IEmployee[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +25,6 @@ const useGetEmployees = ({
       setError(null);
 
       try {
-        // Build query parameters
         const params: Record<string, string | number | boolean> = {
           sortBy,
           sortOrder,
