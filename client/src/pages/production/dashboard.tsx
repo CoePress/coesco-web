@@ -85,20 +85,6 @@ const machineStateEvents = {
   ],
 };
 
-const stateDurations: Record<string, number> = {};
-
-Object.values(machineStateEvents).forEach((events) => {
-  events.forEach((event) => {
-    stateDurations[event.state] =
-      (stateDurations[event.state] || 0) + event.duration / 60; // minutes
-  });
-});
-
-const statePieData = Object.entries(stateDurations).map(([state, value]) => ({
-  state,
-  value,
-}));
-
 type MachineDetailsProps = {
   machine: IMachine;
 };
@@ -449,12 +435,7 @@ const Dashboard = () => {
 
   const utilizationOverTime = overview?.utilization || [];
 
-  const stateDistribution =
-    overview?.states ||
-    Object.entries(stateDurations).map(([state, value]) => ({
-      state,
-      value,
-    }));
+  const stateDistribution = overview?.states || [];
 
   const machines = (overview?.machines || [])
     .sort((a, b) => {
@@ -550,6 +531,12 @@ const Dashboard = () => {
         }
       />
 
+      {error && (
+        <div className="p-2">
+          <p className="text-error">Error loading data</p>
+        </div>
+      )}
+
       <div className="p-2 gap-2 flex flex-col flex-1">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           {kpis.map((metric) => (
@@ -598,7 +585,7 @@ const Dashboard = () => {
                     tickLine={false}
                   />
                   <Tooltip
-                    formatter={(v) => `${v}%`}
+                    formatter={(v) => `${parseFloat(v as string).toFixed(2)}%`}
                     contentStyle={{
                       backgroundColor: "var(--foreground)",
                       color: "var(--text-muted)",
@@ -638,18 +625,21 @@ const Dashboard = () => {
                 height="100%">
                 <PieChart>
                   <Pie
-                    data={statePieData}
+                    data={stateDistribution}
                     dataKey="value"
-                    nameKey="state"
+                    nameKey="label"
                     cx="50%"
                     cy="50%"
                     outerRadius="80%"
                     isAnimationActive={false}
                     stroke="var(--border)">
-                    {statePieData.map((entry, idx) => (
+                    {stateDistribution.map((entry, idx) => (
                       <Cell
                         key={`cell-${idx}`}
-                        fill={getStateColor(entry.state)}
+                        fill={getStatusColor(entry.label)}
+                        style={{
+                          fontSize: 12,
+                        }}
                       />
                     ))}
                   </Pie>
@@ -669,14 +659,18 @@ const Dashboard = () => {
                           <div
                             style={{
                               fontWeight: 500,
-                              color: "var(--text-muted)",
+                              color: getStatusColor(entry.payload.label),
                             }}>
-                            {entry.payload.state}
+                            {entry.payload.label}
                           </div>
-                          <div
-                            className="mt-1"
-                            style={{ color: "var(--text-muted)" }}>
-                            {entry.value} min
+                          <div className="mt-1">
+                            <p>{entry.payload.value} min</p>
+                            <p>
+                              {parseFloat(
+                                entry?.value?.toString() || "0"
+                              ).toFixed(2)}
+                              %
+                            </p>
                           </div>
                         </div>
                       );
@@ -685,23 +679,21 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="hidden md:flex items-center gap-2 text-text-muted flex-wrap justify-center pb-2">
-              {statePieData
-                .slice()
-                .sort((a, b) => b.value - a.value)
-                .slice(0, 5)
-                .map((entry) => (
-                  <div
-                    key={entry.state}
-                    className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded"
-                      style={{ backgroundColor: getStateColor(entry.state) }}
-                    />
-                    <span className="text-xs font-medium">{entry.state}</span>
-                  </div>
-                ))}
-            </div>
+            {/* <div className="hidden md:flex items-center gap-2 text-text-muted flex-wrap justify-center pb-2">
+              {stateDistribution.map((entry) => (
+                <div
+                  key={entry.label}
+                  className="flex items-center gap-2">
+                  <span
+                    className="w-3 h-3 rounded"
+                    style={{
+                      backgroundColor: getStatusColor(entry.label),
+                    }}
+                  />
+                  <span className="text-xs font-medium">{entry.label}</span>
+                </div>
+              ))}
+            </div> */}
           </div>
 
           <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] lg:hidden">

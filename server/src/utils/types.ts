@@ -220,8 +220,9 @@ export interface IStateOverview {
     utilization: number;
   }[];
   states: {
-    [key: string]: number;
-  };
+    label: string;
+    value: number;
+  }[];
   machines: {
     id: string;
     name: string;

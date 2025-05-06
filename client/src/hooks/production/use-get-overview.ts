@@ -11,17 +11,18 @@ export interface IStateOverview {
     };
   };
   utilization: {
-    timestamp: Date;
+    label: string;
+    start: Date;
+    end: Date;
     utilization: number;
   }[];
   states: {
-    state: string;
+    label: string;
     value: number;
   }[];
   machines: {
     id: string;
     name: string;
-    type: string;
   }[];
   alarms: {
     id: string;

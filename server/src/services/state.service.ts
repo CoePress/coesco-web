@@ -252,12 +252,30 @@ class StateService implements IStateService {
           label: division.label,
           start: division.start,
           end: division.end,
-          utilization: 0,
+          utilization: Math.random() * 100,
         };
       })
     );
 
-    const stateDistribution = {};
+    const stateDistribution = [
+      {
+        label: "Active",
+        value: Math.random() * 100,
+      },
+      {
+        label: "Idle",
+        value: Math.random() * 100,
+      },
+      {
+        label: "Alarm",
+        value: Math.random() * 100,
+      },
+      {
+        label: "Offline",
+        value: Math.random() * 100,
+      },
+    ];
+
     const machines = await this.services.machineService.getMachines();
 
     const alarms = await this.services.alarmService.getAlarms({
