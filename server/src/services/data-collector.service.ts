@@ -24,7 +24,6 @@ class DataCollectorService implements IDataCollectorService {
     sendSampleData();
 
     if (!this.interval) {
-      console.log("Starting machine state broadcasting");
       this.interval = setInterval(sendSampleData, this.POLLING_INTERVAL);
     }
   }

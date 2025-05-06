@@ -29,7 +29,7 @@ import DatePicker from "@/components/v1/date-picker";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { useSocket } from "@/contexts/socket-context";
-import { cn } from "@/utils";
+import { getStateColor, getStatusColor } from "@/utils";
 
 interface IMachine {
   name: string;
@@ -152,34 +152,6 @@ const machineStateEvents = {
     { timestamp: "06:35", state: "SETUP", duration: 1200 },
     { timestamp: "06:55", state: "ACTIVE", duration: 7200 },
   ],
-};
-
-const getStateColor = (state: string) => {
-  const colors = {
-    ACTIVE: "#22c55e", // Green
-    IDLE: "#3b82f6", // Blue
-    FEED_HOLD: "#eab308", // Yellow
-    "E-STOP": "#ef4444", // Red
-    ALARM: "#ef4444", // Red
-    SETUP: "#f97316", // Orange
-    TOOL_CHANGE: "#8b5cf6", // Purple
-    POWER_ON: "#6b7280", // Gray
-    HOMING: "#6b7280", // Gray
-    RESET: "#6b7280", // Gray
-    MAINTENANCE: "#f97316", // Orange
-  };
-  return colors[state as keyof typeof colors] || "#6b7280";
-};
-
-const getColor = (state: string) => {
-  const s = state.toUpperCase();
-  const colors = {
-    ACTIVE: "bg-success", // Green
-    IDLE: "bg-warning", // Yellow
-    ALARM: "bg-error", // Red
-    OFFLINE: "bg-text-muted/50", // Gray
-  };
-  return colors[s as keyof typeof colors] || "#6b7280";
 };
 
 const utilizationGraphData = timeSeriesData.map((data) => ({
@@ -584,8 +556,6 @@ const Dashboard = () => {
       };
     });
 
-  const alarms = overview?.alerts || [];
-
   const isToday =
     isSameDay(dateRange.start, startOfToday()) &&
     isSameDay(dateRange.end, startOfToday());
@@ -840,10 +810,10 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div
-                          className={cn(
-                            "w-2 h-2 rounded-full border border-border",
-                            getColor(machine.status)
-                          )}
+                          className="w-2 h-2 rounded-full border border-border"
+                          style={{
+                            backgroundColor: getStatusColor(machine.status),
+                          }}
                         />
                         <p className="text-sm font-medium text-text-muted truncate">
                           {machine.name}

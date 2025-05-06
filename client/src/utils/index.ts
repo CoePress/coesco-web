@@ -45,3 +45,31 @@ export const isProductClassDescendant = (
   }
   return false;
 };
+
+export const getStatusColor = (status: string) => {
+  const s = status.toUpperCase();
+  const colors = {
+    ACTIVE: "var(--success)",
+    IDLE: "var(--warning)",
+    ALARM: "var(--error)",
+    OFFLINE: "var(--text-muted)",
+  };
+  return colors[s as keyof typeof colors] || "var(--text-muted)";
+};
+
+export const getStateColor = (state: string) => {
+  const colors = {
+    ACTIVE: "#22c55e", // Green
+    IDLE: "#3b82f6", // Blue
+    FEED_HOLD: "#eab308", // Yellow
+    "E-STOP": "#ef4444", // Red
+    ALARM: "#ef4444", // Red
+    SETUP: "#f97316", // Orange
+    TOOL_CHANGE: "#8b5cf6", // Purple
+    POWER_ON: "#6b7280", // Gray
+    HOMING: "#6b7280", // Gray
+    RESET: "#6b7280", // Gray
+    MAINTENANCE: "#f97316", // Orange
+  };
+  return colors[state as keyof typeof colors] || "#6b7280";
+};

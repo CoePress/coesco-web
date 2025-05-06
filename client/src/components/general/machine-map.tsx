@@ -1,48 +1,24 @@
+import { getStatusColor } from "@/utils";
 import { useState } from "react";
 
-type MachineStatus = {
-  id: string;
-  name: string;
-  status: "running" | "setup" | "stopped" | "maintenance";
-  uptime: string;
-  currentJob: string;
-  operator: string;
-  estimatedCompletion: string;
-  spindleLoad: number;
-};
-
 type MachineMapProps = {
-  machines: MachineStatus[] | any[];
+  machines: any[];
 };
 
 const MACHINE_POSITIONS: Record<string, { row: number; col: number }> = {
-  "Haas VF-2": { row: 1, col: 1 },
-  "DMG MORI NLX 2500": { row: 3, col: 1 },
-  "Mazak QTN-200": { row: 1, col: 3 },
-  "Okuma LB3000": { row: 3, col: 3 },
-  "Haas ST-20": { row: 1, col: 6 },
-  "DMG MORI DMU 50": { row: 1, col: 8 },
-  "Doosan Puma 2600": { row: 3, col: 6 },
-  "Mazak VTC-300C": { row: 3, col: 8 },
-};
-
-const getStatusColor = (status: MachineStatus["status"]) => {
-  switch (status) {
-    case "running":
-      return "#22c55e"; // green
-    case "setup":
-      return "#eab308"; // yellow
-    case "maintenance":
-      return "#f97316"; // orange
-    case "stopped":
-    default:
-      return "#ef4444"; // red
-  }
+  OKK: { row: 1, col: 1 },
+  "Niigata SPN63": { row: 3, col: 1 },
+  "Kuraki Boring Mill": { row: 1, col: 3 },
+  "Niigata HN80": { row: 3, col: 3 },
+  "Doosan 3100LS": { row: 1, col: 6 },
+  "Mazak 200": { row: 1, col: 8 },
+  "Mazak 350": { row: 3, col: 6 },
+  "Mazak 450": { row: 3, col: 8 },
 };
 
 const shadeColor = (color: string | undefined, percent: number) => {
-  if (!color || !color.startsWith("#") || color.length !== 7) {
-    return "#808080";
+  if (!color) {
+    return "#A0A0A0";
   }
   let R = parseInt(color.substring(1, 3), 16);
   let G = parseInt(color.substring(3, 5), 16);
@@ -86,7 +62,7 @@ const MachineMap = ({ machines }: MachineMapProps) => {
     return { x: x + width / 2, y: y + cellSize };
   };
 
-  const drawIsoBlock = (machine: MachineStatus, index: number) => {
+  const drawIsoBlock = (machine: any, index: number) => {
     const position = MACHINE_POSITIONS[machine.name] || {
       row: Math.floor(index / 5),
       col: index % 5,
