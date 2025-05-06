@@ -130,7 +130,6 @@ export interface IMachineConnection {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface ICreateMachineConnectionDTO {
   machineSlug: string;
   protocol: MachineConnectionProtocol;
@@ -348,8 +347,6 @@ export interface IStateService {
 
 export interface IAlarmService {
   createAlarm(alarm: ICreateMachineAlarmDTO): Promise<IMachineAlarm>;
-  getAlarms(): Promise<IMachineAlarm[]>;
-  getActiveAlarms(): Promise<IMachineAlarm[]>;
   getAlarmsByMachineId(machineId: string): Promise<IMachineAlarm[]>;
   resolveAlarm(id: string): Promise<IMachineAlarm>;
 }
@@ -382,6 +379,7 @@ export class InternalServerError extends Error {
   }
 }
 
+// Query/response
 export interface IQueryParams {
   page?: number;
   limit?: number;
