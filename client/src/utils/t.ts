@@ -121,7 +121,9 @@ export interface IMachineState {
 }
 
 export interface IStateTimeline {
-  [key: string]: {
+  machineId: string;
+  machineName: string;
+  timeline: {
     timestamp: Date;
     state: string;
     durationMs: number;

@@ -20,7 +20,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -34,7 +34,7 @@ import {
 import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
-import { formatDuration, getStateColor, getStatusColor } from "@/utils";
+import { formatDuration, getStatusColor } from "@/utils";
 
 type MachineDetailsProps = {
   machine: any;
@@ -173,31 +173,44 @@ type MachineTimelineProps = {
   endDate: Date;
 };
 
+const getESTDate = (date: Date) => {
+  // Convert to EST (UTC-5 or UTC-4 for DST)
+  // This uses the 'America/New_York' timezone for EST/EDT
+  return new Date(
+    date.toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
+};
+
 const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
   const { timeline, loading, error } = useGetTimeline({
     startDate: startDate.toISOString().slice(0, 10),
     endDate: endDate.toISOString().slice(0, 10),
   });
 
-  useEffect(() => {}, [timeline, loading, error]);
+  const intervals = Array.from({ length: 24 }, (_, i) => {
+    return `${i.toString().padStart(2, "0")}:00`;
+  });
+
+  const intervalRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="space-y-4 p-2">
       <div className="overflow-x-auto">
-        <div className="min-w-[2500px]">
-          <div className="flex border-b bg-background sticky top-0 z-10">
+        <div className="min-w-[2600px]">
+          <div className="flex border-b bg-background sticky top-0 z-10 w-full">
             <div
               className="w-32 flex-shrink-0 p-2 font-medium text-sm bg-background sticky left-0 z-20"
               style={{ minWidth: 128 }}>
               Machine
             </div>
             <div className="flex flex-1">
-              {Array.from({ length: 25 }).map((_, i) => (
+              {intervals.map((label, i) => (
                 <div
                   key={i}
-                  className="flex-shrink-0 w-[100px] text-xs text-text-muted border-l px-1">
-                  {String(6 + Math.floor(i / 2)).padStart(2, "0")}:
-                  {i % 2 ? "30" : "00"}
+                  ref={intervalRef}
+                  className="flex-shrink-0 flex-1 text-xs text-text-muted border-l px-1 text-center"
+                  style={{ minWidth: 50 }}>
+                  {label}
                 </div>
               ))}
             </div>
@@ -208,7 +221,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
               timeline.map((machine) => (
                 <div
                   key={machine.machineId}
-                  className="flex items-center group hover:bg-surface/50 rounded">
+                  className="flex items-center group hover:bg-surface/50">
                   <div
                     className="w-32 flex-shrink-0 p-2 bg-background sticky left-0 z-10"
                     style={{ minWidth: 128 }}>
@@ -218,32 +231,36 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 h-12 relative">
+                  <div className="flex-1 flex h-12 relative gap-2">
                     {Array.from({ length: 49 }).map((_, i) => (
                       <div
                         key={i}
                         className={`absolute h-full border-l ${
                           i % 2 === 0 ? "border-border" : "border-border/30"
                         }`}
-                        style={{ left: `${i * 50}px` }}
+                        style={
+                          intervalRef.current
+                            ? {
+                                left: `${(i / 48) * 100}%`,
+                              }
+                            : {}
+                        }
                       />
                     ))}
                     {machine.timeline.map((event, index) => {
-                      // Calculate left and width based on time since 6:00
-                      const eventDate = new Date(event.timestamp);
+                      // Convert event timestamp to EST
+                      const eventDate = getESTDate(new Date(event.timestamp));
                       const startMinutes =
-                        (eventDate.getHours() - 6) * 60 +
-                        eventDate.getMinutes();
+                        eventDate.getHours() * 60 + eventDate.getMinutes();
                       const widthMinutes = event.durationMs / 1000 / 60;
 
-                      // Use group-hover:block on the parent, but only hover:block on the segment itself
                       return (
                         <div
                           key={index}
-                          className="absolute h-8 top-2 transition-opacity hover:opacity-90 group"
+                          className="absolute h-8 top-2 transition-opacity hover:opacity-90 group flex-1"
                           style={{
-                            left: `${(startMinutes / 30) * 100}px`,
-                            width: `${(widthMinutes / 30) * 100}px`,
+                            left: `${(startMinutes / 30) * 50}px`,
+                            width: `${(widthMinutes / 30) * 50}px`,
                             backgroundColor: getStatusColor(event.state),
                           }}>
                           <div className="h-full flex items-center justify-center text-xs text-white font-medium truncate px-2">
