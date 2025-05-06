@@ -31,28 +31,6 @@ import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { useSocket } from "@/contexts/socket-context";
 import { getStateColor, getStatusColor } from "@/utils";
 
-interface IMachine {
-  name: string;
-  status: string;
-  lastUpdated: string;
-  execution: string;
-  controllerMode: string;
-  mainProgram: string;
-  subProgram: string;
-  toolNumber: string;
-  spindles: {
-    name: string;
-    speed: number;
-    override: number;
-  }[];
-  axes: {
-    name: string;
-    position: number;
-    feedRate: number;
-    load: number;
-  }[];
-}
-
 const machineStateEvents = {
   M1: [
     { timestamp: "06:45", state: "POWER_ON", duration: 180 }, // 3 mins
@@ -86,7 +64,7 @@ const machineStateEvents = {
 };
 
 type MachineDetailsProps = {
-  machine: IMachine;
+  machine: any;
 };
 
 const MachineDetails = ({ machine }: MachineDetailsProps) => {
@@ -118,7 +96,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           <div className="grid grid-cols-[1fr_auto] gap-1">
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right">
-              {machine.mainProgram || "-"}
+              {machine.currentProgram || "-"}
             </span>
 
             <span className="text-muted-foreground">Tool:</span>
@@ -373,7 +351,7 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
 };
 
 const Dashboard = () => {
-  const [selectedMachine, setSelectedMachine] = useState<IMachine | null>(null);
+  const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
@@ -547,7 +525,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
           <div className="md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border flex flex-col min-h-[250px]">
             <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">Utilization Over Time</h3>
@@ -636,10 +614,12 @@ const Dashboard = () => {
                     {stateDistribution.map((entry, idx) => (
                       <Cell
                         key={`cell-${idx}`}
-                        fill={getStatusColor(entry.label)}
-                        style={{
-                          fontSize: 12,
-                        }}
+                        strokeWidth={0}
+                        fill={
+                          entry.label === "Offline"
+                            ? "var(--surface)"
+                            : getStatusColor(entry.label)
+                        }
                       />
                     ))}
                   </Pie>
@@ -705,7 +685,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           <div
-            className={`md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border ${
+            className={`md:col-span-2 lg:col-span-3 w-full h-full bg-foreground flex flex-col rounded border ${
               !isToday ? "opacity-50" : ""
             }`}>
             <div className="p-2 border-b">
@@ -714,7 +694,7 @@ const Dashboard = () => {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
               {machines &&
                 machines.map((machine) => (
                   <div
@@ -722,7 +702,7 @@ const Dashboard = () => {
                     onClick={() => {
                       setSelectedMachine(machine);
                     }}
-                    className="flex flex-col p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
+                    className="flex flex-col justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div
@@ -776,7 +756,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-foreground rounded border flex-col h-[239px] hidden lg:flex">
+          <div className="bg-foreground rounded border flex-col h-[300px] hidden lg:flex">
             <div className="p-2 border-b flex-shrink-0">
               <h3 className="text-sm text-text-muted">Alarms</h3>
             </div>
