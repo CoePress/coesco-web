@@ -6,7 +6,7 @@ import { ChatPLK, MainMenu, NotFound } from "./pages";
 import Home from "./pages/website/home";
 import Example from "./pages/website/example";
 import Design from "./pages/design";
-import { SocketProvider } from "@/contexts/socket-context";
+import { SocketProvider } from "@/contexts/socket.context";
 
 interface RouteItem {
   path: string;

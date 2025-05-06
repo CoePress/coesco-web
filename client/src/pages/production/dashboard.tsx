@@ -28,7 +28,7 @@ import Modal from "@/components/shared/modal";
 import DatePicker from "@/components/v1/date-picker";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
-import { useSocket } from "@/contexts/socket-context";
+import { useSocket } from "@/contexts/socket.context";
 import { getStateColor, getStatusColor } from "@/utils";
 
 const machineStateEvents = {

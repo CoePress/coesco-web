@@ -138,3 +138,17 @@ export enum ConfigurationStatus {
   INVALID = "INVALID",
   PUBLISHED = "PUBLISHED",
 }
+
+export interface IUser {
+  id: string;
+  microsoftId: string;
+  name: string;
+  email: string;
+  department: string;
+  role: string;
+  isActive: boolean;
+  receivesReports: boolean;
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
