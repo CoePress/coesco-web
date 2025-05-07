@@ -1,4 +1,5 @@
 import { Button } from "@/components";
+import useLogout from "@/hooks/auth/use-logout";
 import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
 import { MenuIcon, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -14,6 +15,8 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const quickAddRef = useRef<HTMLDivElement>(null);
+
+  const { logout } = useLogout();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,7 +171,9 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                     Settings
                   </button>
                   <div className="border-t border-border"></div>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-surface">
+                  <button
+                    onClick={logout}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-surface">
                     <LogOut size={16} />
                     Sign out
                   </button>

@@ -2,18 +2,28 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Button, Card } from "@/components";
 import modules from "@/config/modules";
-import { Moon, MessageCircle, Settings, Sun } from "lucide-react";
+import { Moon, MessageCircle, Settings, Sun, LogOut } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
+import { useAuth } from "@/contexts/auth.context";
+import useLogout from "@/hooks/auth/use-logout";
+import { useState } from "react";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const { logout } = useLogout();
+
+  const firstName = user?.name.split(" ")[0] || "User";
+
   const navigate = useNavigate();
+
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-background">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl leading-none text-primary text-center mb-2">
-          Good morning, Jacob
+          Good morning, {firstName}
         </h1>
 
         <div className="grid grid-cols-4 gap-2">
@@ -63,6 +73,14 @@ const MainMenu = () => {
           variant="secondary-outline"
           onClick={toggleTheme}>
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </Button>
+      </div>
+
+      <div className="absolute bottom-2 right-2">
+        <Button
+          variant="secondary-outline"
+          onClick={logout}>
+          <LogOut size={16} />
         </Button>
       </div>
     </div>

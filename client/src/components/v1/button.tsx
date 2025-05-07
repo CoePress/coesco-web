@@ -16,6 +16,7 @@ type ButtonProps = {
   disabled?: boolean;
   as?: "button" | "a";
   href?: string;
+  className?: string;
 };
 
 const Button = ({
@@ -26,6 +27,7 @@ const Button = ({
   disabled = false,
   as = "button",
   href = "#",
+  className,
 }: ButtonProps) => {
   const variantStyles: {
     [key in NonNullable<ButtonProps["variant"]>]: string;
@@ -65,7 +67,7 @@ const Button = ({
       <Link
         to={href}
         onClick={disabled ? undefined : onClick}
-        className={finalStyles}
+        className={`${finalStyles} ${className}`}
         aria-disabled={disabled}>
         {children}
       </Link>
@@ -76,7 +78,7 @@ const Button = ({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={finalStyles}
+      className={`${finalStyles} ${className}`}
       type="button">
       {children}
     </button>

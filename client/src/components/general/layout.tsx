@@ -239,6 +239,7 @@ const Layout = ({ children }: LayoutProps) => {
                 defaultModule={defaultModule}
                 isOpen={isCommandBarOpen}
               />
+              {/* TODO: Move to command bar */}
               <div className="mt-2 text-sm text-center opacity-70 select-none text-text-muted">
                 <div className="bg-foreground rounded p-2 flex items-center gap-2 w-max mx-auto">
                   <kbd className="bg-surface px-2 py-1 rounded text-xs">
