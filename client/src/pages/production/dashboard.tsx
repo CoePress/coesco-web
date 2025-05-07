@@ -198,9 +198,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
       <div className="overflow-x-auto">
         <div className="min-w-[2600px]">
           <div className="flex border-b bg-background sticky top-0 z-10 w-full">
-            <div
-              className="w-32 flex-shrink-0 p-2 font-medium text-sm bg-background sticky left-0 z-20"
-              style={{ minWidth: 128 }}>
+            <div className="w-44 flex-shrink-0 p-2 font-medium text-sm bg-background sticky left-0 z-20">
               Machine
             </div>
             <div className="flex flex-1">
@@ -222,12 +220,10 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                 <div
                   key={machine.machineId}
                   className="flex items-center group hover:bg-surface/50">
-                  <div
-                    className="w-32 flex-shrink-0 p-2 bg-background sticky left-0 z-10"
-                    style={{ minWidth: 128 }}>
+                  <div className="w-44 flex-shrink-0 p-2 bg-background sticky left-0 z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium whitespace-nowrap truncate">
-                        {machine.machineId}
+                        {machine.machineName}
                       </span>
                     </div>
                   </div>

@@ -15,6 +15,7 @@ import {
 } from "@/utils";
 import Services from ".";
 import { Op } from "sequelize";
+import { Sequelize } from "sequelize";
 
 class StateService implements IStateService {
   constructor(private services: Services) {}
@@ -55,19 +56,62 @@ class StateService implements IStateService {
 
     if (params?.startDate || params?.endDate) {
       queryOptions.where = queryOptions.where || {};
-      queryOptions.where.timestamp = {};
-
-      if (params.startDate) {
-        queryOptions.where.timestamp[Op.gte] = params.startDate;
-      }
-
-      if (params.endDate) {
-        queryOptions.where.timestamp[Op.lte] = params.endDate;
-      }
+      queryOptions.where[Op.or] = [
+        { timestamp: { [Op.between]: [params.startDate, params.endDate] } },
+        {
+          [Op.and]: [
+            { timestamp: { [Op.lte]: params.startDate } },
+            {
+              [Op.or]: [
+                {
+                  [Op.and]: [
+                    { machineId: { [Op.eq]: Sequelize.col("machine_id") } },
+                    { timestamp: { [Op.gt]: params.startDate } },
+                  ],
+                },
+                { timestamp: { [Op.gt]: params.startDate } },
+              ],
+            },
+          ],
+        },
+      ];
     }
 
     const states = await MachineState.findAll(queryOptions);
-    return states;
+
+    // Group states by machineId
+    const statesByMachine: { [machineId: string]: IMachineState[] } = {};
+    for (const state of states) {
+      if (!statesByMachine[state.machineId]) {
+        statesByMachine[state.machineId] = [];
+      }
+      statesByMachine[state.machineId].push(state);
+    }
+
+    // Calculate durations
+    const now = new Date();
+    const statesWithDuration: IMachineState[] = [];
+
+    for (const machineId in statesByMachine) {
+      const machineStates = statesByMachine[machineId].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      for (let i = 0; i < machineStates.length; i++) {
+        const currentState = machineStates[i];
+        const nextState = machineStates[i + 1];
+        const end = nextState ? new Date(nextState.timestamp) : now;
+
+        statesWithDuration.push({
+          ...(currentState as any).toJSON(),
+          durationMs:
+            end.getTime() - new Date(currentState.timestamp).getTime(),
+        });
+      }
+    }
+
+    return statesWithDuration;
   }
 
   async getStatesByMachineId(
@@ -353,7 +397,7 @@ class StateService implements IStateService {
 
     // 3. Use processedStates for all further calculations
     let activeDuration = 0;
-    let alertCount = 0;
+    let alarmCount = 0;
     const stateDurations: Record<string, number> = {};
     const stateTypeCounts: Record<string, number> = {};
 
@@ -414,8 +458,8 @@ class StateService implements IStateService {
         value: averageRuntimeValue,
         change: 0,
       },
-      alertCount: {
-        value: alertCount,
+      alarmCount: {
+        value: alarmCount,
         change: 0,
       },
     };

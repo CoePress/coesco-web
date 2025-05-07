@@ -108,6 +108,7 @@ export interface IMachineState {
   id: string;
   machineId: string;
   timestamp: Date;
+  durationMs: number;
   state: string;
   execution: string;
   controller: string;

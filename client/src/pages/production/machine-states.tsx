@@ -4,11 +4,12 @@ import PageHeader from "@/components/v1/page-header";
 import { Download } from "lucide-react";
 import { startOfToday } from "date-fns";
 import { useState } from "react";
-import useGetStates, { IMachineState } from "@/hooks/production/use-get-states";
-import useGetMachines, { IMachine } from "@/hooks/production/use-get-machines";
+import useGetStates from "@/hooks/production/use-get-states";
+import useGetMachines from "@/hooks/production/use-get-machines";
+import { IMachineState } from "@/utils/t";
+import { formatDuration } from "@/utils";
 
 const MachineStates = () => {
-  const [selectedMachine, setSelectedMachine] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState({
     start: startOfToday(),
     end: new Date(),
@@ -92,8 +93,11 @@ const MachineStates = () => {
       },
     },
     {
-      key: "duration",
+      key: "durationMs",
       header: "Duration",
+      render: (value: number) => {
+        return <div>{formatDuration(value)}</div>;
+      },
     },
   ];
 
