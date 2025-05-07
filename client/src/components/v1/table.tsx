@@ -121,8 +121,9 @@ const Table = <T extends Record<string, any>>({
         </table>
       </div>
 
+      {/* TODO: Add proper pagination */}
       {pagination && (
-        <div className="flex h-max items-center justify-between px-4 py-3 bg-foreground border-t w-full">
+        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
             Showing <span className="font-medium">1</span> to{" "}
             <span className="font-medium">{total}</span> of{" "}
