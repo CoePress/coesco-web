@@ -5,7 +5,7 @@ import modules from "@/config/modules";
 import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
-
+import { IUser } from "@/utils/types";
 type SidebarProps = {
   isOpen: boolean;
   theme: string;
@@ -14,6 +14,7 @@ type SidebarProps = {
 
 type LayoutProps = {
   children: React.ReactNode;
+  user: IUser;
 };
 
 const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
@@ -116,7 +117,7 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
   );
 };
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ user, children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
@@ -227,7 +228,10 @@ const Layout = ({ children }: LayoutProps) => {
         toggleTheme={toggleTheme}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebar} />
+        <Header
+          user={user}
+          toggleSidebar={toggleSidebar}
+        />
 
         {isCommandBarOpen && (
           <div className="fixed inset-0 flex items-start justify-center pt-32 z-50 bg-background/50 backdrop-blur-sm">

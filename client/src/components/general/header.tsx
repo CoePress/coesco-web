@@ -3,12 +3,14 @@ import useLogout from "@/hooks/auth/use-logout";
 import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
 import { MenuIcon, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { IUser } from "@/utils/types";
 
 type HeaderProps = {
+  user: IUser;
   toggleSidebar: () => void;
 };
 
-const Header = ({ toggleSidebar }: HeaderProps) => {
+const Header = ({ user, toggleSidebar }: HeaderProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -17,6 +19,9 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
   const quickAddRef = useRef<HTMLDivElement>(null);
 
   const { logout } = useLogout();
+
+  const firstName = user.name.split(" ")[0];
+  const lastInitial = user.name.split(" ")[1].charAt(0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,7 +72,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               <Plus size={16} />
             </button>
 
-            {isQuickAddOpen && (
+            {/* {isQuickAddOpen && (
               <div className="absolute right-0 mt-2 w-64 bg-foreground border border-border rounded-lg shadow-lg z-[99]">
                 <div className="p-2 bg-surface border-b border-border">
                   <h3 className="text-sm font-medium text-text-muted">
@@ -101,7 +106,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           <div
@@ -147,9 +152,11 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               className="flex items-center gap-3 hover:bg-surface rounded-lg p-2">
               <div className="flex flex-col items-end">
                 <span className="text-sm font-medium text-text-muted">
-                  John Doe
+                  {firstName} {lastInitial}.
                 </span>
-                <span className="text-xs text-text-muted">Administrator</span>
+                <span className="text-xs text-text-muted">
+                  {user.department}
+                </span>
               </div>
               <img
                 src="https://via.placeholder.com/150"

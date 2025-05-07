@@ -1,4 +1,4 @@
-import { Button, Input, Card, PageHeader } from "@/components";
+import { Button, Input, Card } from "@/components";
 import { AuthContext } from "@/contexts/auth.context";
 import useGetSystemStatus from "@/hooks/admin/use-get-system-status";
 import useLogin from "@/hooks/auth/use-login";
@@ -27,24 +27,19 @@ const getErrorMessage = (error: string | null) => {
 const BackgroundImage = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/images/background.png";
-    img.onload = () => setIsLoaded(true);
-  }, []);
-
   return (
-    <div
-      className={`absolute inset-0 z-0 transition-opacity duration-500 ${
-        isLoaded ? "opacity-20" : "opacity-0"
-      }`}
-      style={{
-        backgroundImage: "url('/images/background.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    />
+    <div className="absolute inset-0 z-0">
+      <img
+        src="/images/background.png"
+        alt=""
+        loading="lazy"
+        fetchPriority="low"
+        onLoad={() => setIsLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${
+          isLoaded ? "opacity-20" : "opacity-0"
+        }`}
+      />
+    </div>
   );
 };
 

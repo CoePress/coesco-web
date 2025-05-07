@@ -78,7 +78,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }
 
   return (
-    <Layout>
+    <Layout user={user}>
       <Outlet />
     </Layout>
   );

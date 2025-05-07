@@ -2,6 +2,28 @@ import Services from "./index";
 import { hasThisChanged } from "@/utils";
 import { IDataCollectorService } from "@/utils/types";
 
+export interface IAxis {
+  label: string;
+  position: number;
+}
+
+export interface ISpindle {
+  speed: number;
+  load: number;
+}
+
+export interface IState {
+  machineId: string;
+  machineName: string;
+  state: string;
+  controller: string;
+  execution: string;
+  program: string;
+  tool: string;
+  spindle: ISpindle;
+  axes: IAxis[];
+}
+
 class DataCollectorService implements IDataCollectorService {
   private readonly POLLING_INTERVAL = 1000;
   private interval: NodeJS.Timeout | null = null;
