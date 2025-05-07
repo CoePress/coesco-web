@@ -1,5 +1,4 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
-
 import { Layout } from "./components";
 import modules from "./config/modules";
 import { ChatPLK, Login, MainMenu, NotFound } from "./pages";
@@ -7,6 +6,7 @@ import Home from "./pages/website/home";
 import Example from "./pages/website/example";
 import Design from "./pages/design";
 import { SocketProvider } from "@/contexts/socket.context";
+import { PublicRoute, ProtectedRoute } from "./components";
 
 interface RouteItem {
   path: string;
@@ -84,41 +84,40 @@ const App = () => {
 
   const content = (
     <Routes>
-      <Route
-        path="/login"
-        element={<Login />}
-      />
-      <Route
-        path="/"
-        element={<MainMenu />}
-      />
-      <Route
-        path="/chat"
-        element={
-          <Layout>
-            <ChatPLK />
-          </Layout>
-        }
-      />
+      <Route element={<PublicRoute />}>
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/"
+          element={<MainMenu />}
+        />
+        <Route
+          path="/chat"
+          element={<ChatPLK />}
+        />
+        <Route
+          path="/website"
+          element={<Home />}
+        />
+        <Route
+          path="/website/example"
+          element={<Example />}
+        />
+        <Route
+          path="/design"
+          element={<Design />}
+        />
+        {moduleRoutes}
+      </Route>
+
       <Route
         path="*"
         element={<NotFound />}
-      />
-
-      {moduleRoutes}
-
-      {/* Misc */}
-      <Route
-        path="/website"
-        element={<Home />}
-      />
-      <Route
-        path="/website/example"
-        element={<Example />}
-      />
-      <Route
-        path="/design"
-        element={<Design />}
       />
     </Routes>
   );
