@@ -146,7 +146,7 @@ export const connectionSeed = [
   {
     machineSlug: "niigata-spn63",
     protocol: "CUSTOM",
-    host: "192.231.64.x",
+    host: "192.231.64.201",
     port: 8193,
     status: "DISCONNECTED",
   },

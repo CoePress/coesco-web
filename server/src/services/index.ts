@@ -56,7 +56,7 @@ class Services {
     await this.connectionService.initialize();
 
     this.dataCollectorService.startBroadcastingMachineStates();
-    // await this.seedSampleData();
+    await this.seedSampleData();
   }
 
   async seedSampleData() {

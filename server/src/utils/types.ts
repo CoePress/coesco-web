@@ -130,6 +130,7 @@ export interface IMachineConnection {
   createdAt: Date;
   updatedAt: Date;
 }
+
 export interface ICreateMachineConnectionDTO {
   machineSlug: string;
   protocol: MachineConnectionProtocol;
@@ -139,7 +140,6 @@ export interface ICreateMachineConnectionDTO {
 }
 
 // Machine State
-export type MachineAxis = "X" | "Y" | "Z" | "A" | "B" | "C";
 
 export enum FanucControllerMode {
   MDI = "MDI",
@@ -168,16 +168,15 @@ export enum FanucExecutionMode {
 export interface IMachineState {
   id: string;
   machineId: string;
-  timestamp: Date;
-  durationMs?: number;
   state: string;
   execution: string;
   controller: string;
   program: string;
   tool: string;
-  position: Record<MachineAxis, number>;
+  spindle: ISpindle;
+  axes: IAxis[];
   feedRate: number;
-  spindleSpeed: number;
+  timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -188,22 +187,15 @@ export interface StateWithDuration extends IMachineState {
 
 export interface ICreateMachineStateDTO {
   machineId: string;
-  timestamp: Date;
   state: string;
   execution: string;
   controller: string;
   program: string;
   tool: string;
-  position: {
-    X: number;
-    Y: number;
-    Z: number;
-    A: number;
-    B: number;
-    C: number;
-  };
+  spindle: ISpindle;
+  axes: IAxis[];
   feedRate: number;
-  spindleSpeed: number;
+  timestamp: Date;
 }
 
 export interface IStateOverview {
@@ -352,10 +344,33 @@ export interface IAlarmService {
 
 export interface IDataCollectorService {
   startBroadcastingMachineStates(): void;
-  pollMazakData(machineId: string): Promise<void>;
+  pollMazakData(machineId: string): Promise<ICurrentState>;
   pollAllMazakData(): Promise<void>;
-  processMazakData(data: any): Promise<any>;
+  processMazakData(data: any, machineId: string): Promise<ICurrentState>;
   processFanucData(data: any): Promise<any>;
+  processData(data: any): Promise<any>;
+}
+
+export interface IAxis {
+  label: string;
+  position: number;
+}
+
+export interface ISpindle {
+  speed: number;
+  load: number;
+}
+
+export interface ICurrentState {
+  machineId: string;
+  machineName: string;
+  state: string;
+  controller: string;
+  execution: string;
+  program: string;
+  tool: string;
+  spindle: ISpindle;
+  axes: IAxis[];
 }
 
 // Errors

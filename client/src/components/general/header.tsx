@@ -149,7 +149,7 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
             ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center gap-3 hover:bg-surface rounded-lg p-2">
+              className="flex items-center gap-3 hover:bg-surface rounded-lg p-2 cursor-pointer text-text-muted">
               <div className="flex flex-col items-end">
                 <span className="text-sm font-medium text-text-muted">
                   {firstName} {lastInitial}.
