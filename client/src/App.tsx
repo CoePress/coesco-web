@@ -1,5 +1,4 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
-import { Layout } from "./components";
 import modules from "./config/modules";
 import { ChatPLK, Login, MainMenu, NotFound } from "./pages";
 import Home from "./pages/website/home";
@@ -7,6 +6,7 @@ import Example from "./pages/website/example";
 import Design from "./pages/design";
 import { SocketProvider } from "@/contexts/socket.context";
 import { PublicRoute, ProtectedRoute } from "./components";
+import { ProtectedRouteWithoutLayout } from "./components/general/routes";
 
 interface RouteItem {
   path: string;
@@ -26,19 +26,12 @@ const App = () => {
 
   const generateRoutes = (
     basePath: string,
-    routes: RouteItem[],
-    withLayout: boolean = false
+    routes: RouteItem[]
   ): React.ReactNode[] => {
     return routes
       .map((route) => {
         const fullPath = `${basePath}${route.path}`;
-        const element = withLayout ? (
-          <Layout>
-            <route.component />
-          </Layout>
-        ) : (
-          <route.component />
-        );
+        const element = <route.component />;
 
         return [
           <Route
@@ -46,9 +39,7 @@ const App = () => {
             path={fullPath}
             element={element}
           />,
-          ...(route.children
-            ? generateRoutes(fullPath, route.children, true)
-            : []),
+          ...(route.children ? generateRoutes(fullPath, route.children) : []),
         ];
       })
       .flat();
@@ -62,10 +53,8 @@ const App = () => {
         path={module.path}
         element={<Outlet />}
       />,
-      ...(module.pages ? generateRoutes(module.path, module.pages, true) : []),
-      ...(module.popups
-        ? generateRoutes(module.path, module.popups, false)
-        : []),
+      ...(module.pages ? generateRoutes(module.path, module.pages) : []),
+      ...(module.popups ? generateRoutes(module.path, module.popups) : []),
     ])
     .flat();
 
@@ -91,14 +80,10 @@ const App = () => {
         />
       </Route>
 
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRouteWithoutLayout />}>
         <Route
           path="/"
           element={<MainMenu />}
-        />
-        <Route
-          path="/chat"
-          element={<ChatPLK />}
         />
         <Route
           path="/website"
@@ -107,6 +92,13 @@ const App = () => {
         <Route
           path="/website/example"
           element={<Example />}
+        />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/chat"
+          element={<ChatPLK />}
         />
         <Route
           path="/design"

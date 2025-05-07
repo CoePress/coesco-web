@@ -84,6 +84,25 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   );
 };
 
+export const ProtectedRouteWithoutLayout = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+  return <Outlet />;
+};
+
 export const AdminRoute = () => {
   return <ProtectedRoute allowedRoles={["admin"]} />;
 };
