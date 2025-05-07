@@ -16,7 +16,9 @@ interface IAuthContextType {
   isLoading: boolean;
 }
 
-const AuthContext = createContext<IAuthContextType | undefined>(undefined);
+export const AuthContext = createContext<IAuthContextType | undefined>(
+  undefined
+);
 
 interface AuthProviderProps {
   children: ReactNode;

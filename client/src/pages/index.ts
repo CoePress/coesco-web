@@ -20,6 +20,6 @@ export { default as SalesConfigBuilder } from "./sales/config-builder";
 export { default as SalesReports } from "./sales/reports";
 
 // General
-export { default as ChatPLK } from "./chat-plk";
-export { default as MainMenu } from "./main-menu";
-export { default as NotFound } from "./not-found";
+export { default as ChatPLK } from "./general/chat-plk";
+export { default as MainMenu } from "./general/main-menu";
+export { default as NotFound } from "./general/not-found";
