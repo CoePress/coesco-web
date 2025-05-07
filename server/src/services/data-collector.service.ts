@@ -1,5 +1,6 @@
-import { IDataCollectorService } from "@/utils/types";
 import Services from "./index";
+import { hasThisChanged } from "@/utils";
+import { IDataCollectorService } from "@/utils/types";
 
 class DataCollectorService implements IDataCollectorService {
   private readonly POLLING_INTERVAL = 1000;
@@ -79,10 +80,34 @@ class DataCollectorService implements IDataCollectorService {
   }
 
   async processMazakData(data: any) {
-    return data;
+    // format the data
+
+    // process the data
+    return this.processData(data);
   }
 
   async processFanucData(data: any) {
+    // format the data
+
+    // process the data
+    return this.processData(data);
+  }
+
+  async processData(data: any) {
+    // fetch cached data from redis
+    const cachedData = await this.services.redisService.get(data.machineId);
+
+    // determine if the data has changed
+    const hasChanged = await hasThisChanged(data, cachedData);
+
+    // if it has, update the cached data & saved to database
+    if (hasChanged) {
+      await this.services.redisService.set(data.machineId, data);
+      await this.services.stateService.createState(data);
+    } else {
+      return cachedData;
+    }
+
     return data;
   }
 }
