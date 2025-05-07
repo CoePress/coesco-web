@@ -47,12 +47,44 @@ class DataCollectorService implements IDataCollectorService {
     return Math.floor(Math.random() * 100);
   }
 
-  async processMTConnectData(
-    machineId: string,
-    xmlData: string
-  ): Promise<void> {}
+  async pollMazakData(machineId: string) {
+    const machine = await this.services.machineService.getMachine(machineId);
+    if (!machine) {
+      throw new Error("Machine not found");
+    }
 
-  async processFanucData(machineId: string, data: any): Promise<void> {}
+    const machineConnection =
+      await this.services.connectionService.getConnectionByMachineId(machineId);
+
+    if (!machineConnection) {
+      throw new Error("Machine connection not found");
+    }
+
+    const url = `${machineConnection.host}:${machineConnection.port}${machineConnection.path}`;
+
+    const response = await fetch(url);
+    const data = await response.text();
+
+    await this.processMazakData(data);
+  }
+
+  async pollAllMazakData() {
+    const machines = await this.services.machineService.getMachines();
+    const mazakMachines = machines.filter(
+      (machine) => machine.controller === "MAZAK"
+    );
+    for (const machine of mazakMachines) {
+      await this.pollMazakData(machine.id);
+    }
+  }
+
+  async processMazakData(data: any) {
+    return data;
+  }
+
+  async processFanucData(data: any) {
+    return data;
+  }
 }
 
 export default DataCollectorService;

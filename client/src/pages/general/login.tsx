@@ -110,13 +110,13 @@ const LoginPage = () => {
       <div className="relative z-10 w-full max-w-md">
         <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/70">
           <div className="p-2 space-y-2">
-            <div className="flex flex-col items-center mb-2">
+            {/* <div className="flex flex-col items-center mb-2">
               <img
                 src="/images/logo-text.png"
                 alt="Logo"
                 className="h-12 mb-2"
               />
-            </div>
+            </div> */}
 
             {errorMessage && (
               <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded-lg flex items-start">

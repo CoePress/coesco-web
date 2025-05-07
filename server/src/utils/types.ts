@@ -352,8 +352,10 @@ export interface IAlarmService {
 
 export interface IDataCollectorService {
   startBroadcastingMachineStates(): void;
-  processMTConnectData(machineId: string, xmlData: string): Promise<void>;
-  processFanucData(machineId: string, data: any): Promise<void>;
+  pollMazakData(machineId: string): Promise<void>;
+  pollAllMazakData(): Promise<void>;
+  processMazakData(data: any): Promise<any>;
+  processFanucData(data: any): Promise<any>;
 }
 
 // Errors

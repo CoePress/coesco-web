@@ -2,12 +2,13 @@ import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 
 import { error, info } from "@/utils/logger";
+import Services from ".";
 
 class SocketService {
   public io: Server;
   private readonly PING_INTERVAL = 5000;
 
-  constructor(httpServer: HttpServer) {
+  constructor(httpServer: HttpServer, private services: Services) {
     this.io = new Server(httpServer, {
       cors: {
         origin: "*",
@@ -47,20 +48,20 @@ class SocketService {
     fanucNS.on("connection", (socket: Socket) => {
       info(`Fanuc adapter connected: ${socket.id}`);
 
-      socket.on("data", (data) => {
+      socket.on("data", async (data) => {
         info(`Fanuc data received: ${JSON.stringify(data)}`);
-        this.processFanucData(data);
+        const processData =
+          await this.services.dataCollectorService.processFanucData(data);
+        if (processData) {
+          this.broadcastDashboardMetrics(processData);
+          this.broadcastMachineStates(processData);
+        }
       });
 
       socket.on("disconnect", () => {
         info(`Fanuc adapter disconnected: ${socket.id}`);
       });
     });
-  }
-
-  private processFanucData(data: any): void {
-    this.broadcastDashboardMetrics(data);
-    this.broadcastMachineStates(data);
   }
 
   public broadcastDashboardMetrics(data: any): void {

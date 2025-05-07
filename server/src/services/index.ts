@@ -34,7 +34,7 @@ class Services {
     this.dataCollectorService = new DataCollectorService(this);
     this.machineService = new MachineService();
     this.redisService = new RedisService();
-    this.socketService = new SocketService(httpServer);
+    this.socketService = new SocketService(httpServer, this);
     this.stateService = new StateService(this);
     this.userService = new UserService();
   }
