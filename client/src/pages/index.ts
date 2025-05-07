@@ -21,5 +21,6 @@ export { default as SalesReports } from "./sales/reports";
 
 // General
 export { default as ChatPLK } from "./general/chat-plk";
+export { default as Login } from "./general/login";
 export { default as MainMenu } from "./general/main-menu";
 export { default as NotFound } from "./general/not-found";

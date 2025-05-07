@@ -2,7 +2,7 @@ import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 
 import { Layout } from "./components";
 import modules from "./config/modules";
-import { ChatPLK, MainMenu, NotFound } from "./pages";
+import { ChatPLK, Login, MainMenu, NotFound } from "./pages";
 import Home from "./pages/website/home";
 import Example from "./pages/website/example";
 import Design from "./pages/design";
@@ -86,7 +86,7 @@ const App = () => {
     <Routes>
       <Route
         path="/login"
-        element={<></>}
+        element={<Login />}
       />
       <Route
         path="/"
