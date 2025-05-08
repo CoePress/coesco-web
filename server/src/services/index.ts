@@ -11,7 +11,6 @@ import UserService from "./user.service";
 import { AppError } from "@/middleware/error-handler";
 import { info } from "@/utils/logger";
 import { __prod__ } from "@/config/env";
-import { sampleStates } from "@/config/sample-data";
 
 class Services {
   readonly alarmService: AlarmService;
@@ -54,17 +53,15 @@ class Services {
     await this.userService.initialize();
     await this.machineService.initialize();
     await this.connectionService.initialize();
+    // await this.seedSampleData();
 
     this.dataCollectorService.startBroadcastingMachineStates();
-    // await this.seedSampleData();
   }
 
   async seedSampleData() {
     if (__prod__) return;
 
-    for (const state of sampleStates) {
-      await this.stateService.createState(state);
-    }
+    await this.stateService.createSampleStates();
   }
 }
 

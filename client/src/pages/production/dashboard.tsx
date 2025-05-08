@@ -608,11 +608,11 @@ const Dashboard = () => {
                 <PieChart>
                   <Pie
                     key={stateDistribution
-                      .map((e) => e.label + e.duration)
+                      .map((e) => e.state + e.total)
                       .join("-")}
                     data={stateDistribution}
-                    dataKey="duration"
-                    nameKey="label"
+                    dataKey="total"
+                    nameKey="state"
                     cx="50%"
                     cy="50%"
                     outerRadius="80%"
@@ -624,9 +624,9 @@ const Dashboard = () => {
                       <Cell
                         key={`cell-${idx}`}
                         fill={
-                          entry.label === "OFFLINE"
+                          entry.state === "OFFLINE"
                             ? "var(--surface)"
-                            : getStatusColor(entry.label)
+                            : getStatusColor(entry.state)
                         }
                       />
                     ))}
@@ -636,8 +636,8 @@ const Dashboard = () => {
                       if (!active || !payload || !payload.length) return null;
                       const entry = payload[0];
 
-                      const duration = entry.payload.duration;
-                      const percentage = entry.payload.percentage * 100;
+                      const total = entry.payload.total;
+                      const percentage = entry.payload.percentage;
 
                       return (
                         <div
@@ -651,14 +651,13 @@ const Dashboard = () => {
                           <div
                             style={{
                               fontWeight: 500,
-                              color: getStatusColor(entry.payload.label),
+                              color: getStatusColor(entry.payload.state),
                             }}>
-                            {entry.payload.label}
+                            {entry.payload.state}
                           </div>
                           <div className="mt-1">
                             <p>
-                              {formatDuration(duration)} (
-                              {percentage.toFixed(2)}%)
+                              {formatDuration(total)} ({percentage.toFixed(2)}%)
                             </p>
                           </div>
                         </div>

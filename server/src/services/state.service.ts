@@ -396,26 +396,55 @@ class StateService implements IStateService {
       endDate: dateRange.previousEnd,
     });
 
+    console.log(`Previous state count: ${previousStates.items.length}`);
+
     const totalsByState = states.items.reduce((acc, state) => {
       if (!acc[state.state]) {
         acc[state.state] = 0;
       }
+
       if (state.durationMs) {
-        acc[state.state] += state.durationMs;
+        acc[state.state] += Number(state.durationMs);
       } else {
-        acc[state.state] += now.getTime() - state.timestamp.getTime();
+        acc[state.state] += Number(now.getTime() - state.timestamp.getTime());
       }
 
       return acc;
     }, {});
+
+    const percentsByState = Object.entries(totalsByState).map(
+      ([state, total]) => {
+        return {
+          state,
+          total: Number(total),
+          percentage:
+            (Number(total) / (dateRange.totalDuration * machineCount)) * 100,
+        };
+      }
+    );
+
+    console.log(`Totals by state: ${JSON.stringify(totalsByState)}`);
+
+    console.log(`Percents by state: ${JSON.stringify(percentsByState)}`);
 
     const previousTotalsByState = previousStates.items.reduce((acc, state) => {
       if (!acc[state.state]) {
         acc[state.state] = 0;
       }
-      acc[state.state] += state.durationMs;
+      acc[state.state] += Number(state.durationMs);
       return acc;
     }, {});
+
+    const previousPercentsByState = Object.entries(previousTotalsByState).map(
+      ([state, total]) => {
+        return {
+          state,
+          total: Number(total),
+          percentage:
+            (Number(total) / (dateRange.totalDuration * machineCount)) * 100,
+        };
+      }
+    );
 
     const utilization =
       (totalsByState["ACTIVE"] / dateRange.totalDuration) * machineCount;
@@ -462,20 +491,20 @@ class StateService implements IStateService {
     return {
       kpis: {
         utilization: {
-          value: utilization || 0,
-          change: utilizationChange || 0,
+          value: Number(utilization.toFixed(2)) || 0,
+          change: Number(utilizationChange.toFixed(2)) || 0,
         },
         averageRuntime: {
           value: 0,
           change: 0,
         },
         alarmCount: {
-          value: alarmCount || 0,
-          change: alarmChange || 0,
+          value: Number(alarmCount.toFixed(2)) || 0,
+          change: Number(alarmChange.toFixed(2)) || 0,
         },
       },
       utilization: [],
-      states: [],
+      states: percentsByState,
       machines: [],
       alarms: [],
     };
@@ -713,6 +742,78 @@ class StateService implements IStateService {
     };
 
     return formatters[scale]?.(date) || "";
+  }
+
+  async createSampleStates(): Promise<void> {
+    const now = new Date();
+    const states = ["ACTIVE", "IDLE", "ALARM", "OFFLINE"];
+    const executions = [
+      "RUNNING",
+      "STOPPED",
+      "READY",
+      "FEED_HOLD",
+      "INTERRUPTED",
+    ];
+    const controllerModes = [
+      "JOB",
+      "EDIT",
+      "MDI",
+      "HANDLE",
+      "JOG",
+      "ZERO_RETURN",
+      "REF",
+      "TEACH",
+    ];
+
+    // Get all machines
+    const machines = await this.services.machineService.getMachines();
+    if (machines.length === 0) {
+      throw new ValidationError("No machines found to create sample states");
+    }
+
+    // Generate states for each machine separately
+    for (const machine of machines) {
+      // First create the current state (most recent) with NO duration
+      const currentState: ICreateMachineStateDTO = {
+        machineId: machine.id,
+        timestamp: now, // Current time
+        state: states[Math.floor(Math.random() * states.length)],
+        execution: executions[Math.floor(Math.random() * executions.length)],
+        controller:
+          controllerModes[Math.floor(Math.random() * controllerModes.length)],
+        program: "P1000",
+        // No durationMs for current state
+      };
+
+      await this.createState(currentState);
+
+      // Start the historical data from now
+      let endTimestamp = now.getTime();
+
+      // Generate historical states going backwards in time
+      for (let i = 1; i < 5000; i++) {
+        const randomDuration = Math.floor(
+          Math.random() * (120000 - 30000) + 30000
+        ); // 30s to 2min
+        const startTimestamp = endTimestamp - randomDuration;
+
+        const state: ICreateMachineStateDTO = {
+          machineId: machine.id,
+          timestamp: new Date(startTimestamp),
+          state: states[Math.floor(Math.random() * states.length)],
+          execution: executions[Math.floor(Math.random() * executions.length)],
+          controller:
+            controllerModes[Math.floor(Math.random() * controllerModes.length)],
+          program: `P${1000 + i}`,
+          durationMs: randomDuration,
+        };
+
+        await this.createState(state);
+
+        // Next state starts where this one ended
+        endTimestamp = startTimestamp;
+      }
+    }
   }
 }
 

@@ -202,8 +202,8 @@ export interface IStateOverview {
     utilization: number;
   }[];
   states: {
-    label: string;
-    duration: number;
+    state: string;
+    total: number;
     percentage: number;
   }[];
   machines: {
