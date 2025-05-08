@@ -13,7 +13,7 @@ import {
   IQueryParams,
 } from "./types";
 import { NextFunction, Request, Response } from "express";
-import { Op } from "sequelize";
+import { Op, fn, literal } from "sequelize";
 import { toZonedTime } from "date-fns-tz";
 import {
   addMilliseconds,
@@ -21,6 +21,7 @@ import {
   format,
   parse,
 } from "date-fns";
+import { sequelize } from "@/config/database";
 
 const emailConfig = {
   host: env.SMTP_HOST,
@@ -310,4 +311,98 @@ export const formatInEasternTime = (
   const timeZone = "America/New_York";
   const dateInET = toZonedTime(date, timeZone);
   return format(dateInET, formatStr);
+};
+
+export const buildStateQuery = (params: IQueryParams): IQueryBuilderResult => {
+  const {
+    page,
+    limit,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    ...filters
+  } = params;
+
+  const whereClause: any = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      key !== "startDate" &&
+      key !== "endDate" &&
+      key !== "search"
+    ) {
+      whereClause[key] = value;
+    }
+  });
+
+  if (filters.startDate && filters.endDate) {
+    const dateConditions = [
+      {
+        timestamp: {
+          [Op.between]: [filters.startDate, filters.endDate],
+        },
+      },
+      {
+        timestamp: { [Op.lte]: filters.endDate },
+        [Op.or]: [
+          {
+            durationMs: {
+              [Op.gte]: literal(
+                `(EXTRACT(EPOCH FROM '${filters.endDate.toISOString()}'::timestamp) * 1000 - EXTRACT(EPOCH FROM timestamp) * 1000)`
+              ),
+            },
+          },
+          { durationMs: null },
+        ],
+      },
+      {
+        timestamp: { [Op.lte]: filters.startDate },
+        [Op.or]: [
+          {
+            durationMs: {
+              [Op.gte]: literal(
+                `(EXTRACT(EPOCH FROM '${filters.endDate.toISOString()}'::timestamp) * 1000 - EXTRACT(EPOCH FROM timestamp) * 1000)`
+              ),
+            },
+          },
+          { durationMs: null },
+        ],
+      },
+    ];
+
+    whereClause[Op.or] = dateConditions;
+  }
+
+  if (filters.search) {
+    const searchCondition = [
+      { name: { [Op.iLike]: `%${filters.search}%` } },
+      { description: { [Op.iLike]: `%${filters.search}%` } },
+    ];
+
+    if (whereClause[Op.or]) {
+      const existingOr = whereClause[Op.or];
+
+      whereClause[Op.and] = [
+        { [Op.or]: existingOr },
+        { [Op.or]: searchCondition },
+      ];
+
+      delete whereClause[Op.or];
+    } else {
+      whereClause[Op.or] = searchCondition;
+    }
+  }
+
+  const result: IQueryBuilderResult = {
+    whereClause,
+    orderClause: [[sortBy, sortOrder]],
+    page,
+  };
+
+  if (page !== undefined && limit !== undefined) {
+    result.offset = (page - 1) * limit;
+    result.limit = limit;
+  }
+
+  return result;
 };

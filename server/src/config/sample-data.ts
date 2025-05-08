@@ -26,11 +26,11 @@ const machineIds = [
 
 export const sampleStates: ICreateMachineStateDTO[] = (() => {
   const now = new Date();
-  const sixMonthsAgo = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000);
+  const twoMonthsAgo = new Date(now.getTime() - 2 * 30 * 24 * 60 * 60 * 1000);
 
   const result: ICreateMachineStateDTO[] = [];
 
-  let currentTimestamp = sixMonthsAgo.getTime();
+  let currentTimestamp = twoMonthsAgo.getTime();
 
   for (let i = 0; i < 20000; i++) {
     const randomIncrement = Math.floor(

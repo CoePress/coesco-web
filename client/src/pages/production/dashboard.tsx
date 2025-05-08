@@ -382,7 +382,7 @@ const Dashboard = () => {
     {
       title: "Utilization",
       value:
-        overview?.kpis.utilization?.value !== undefined
+        overview?.kpis.utilization?.value != null
           ? `${overview.kpis.utilization.value.toFixed(2)}%`
           : "-",
       description: "Utilization of machines",

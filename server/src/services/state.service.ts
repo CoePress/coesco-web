@@ -10,7 +10,7 @@ import {
   IPaginatedResponse,
   IStateTimeline,
 } from "@/utils/types";
-import { buildQuery, createDateRange } from "@/utils";
+import { buildStateQuery, createDateRange } from "@/utils";
 import Services from ".";
 import { Op } from "sequelize";
 import { sequelize } from "@/config/database";
@@ -333,7 +333,7 @@ class StateService implements IStateService {
     params?: IQueryParams
   ): Promise<IPaginatedResponse<IMachineState>> {
     const { whereClause, orderClause, offset, limit, page } =
-      buildQuery(params);
+      buildStateQuery(params);
 
     const [states, total] = await Promise.all([
       MachineState.findAll({
@@ -344,8 +344,6 @@ class StateService implements IStateService {
       }),
       MachineState.count({ where: whereClause }),
     ]);
-
-    console.log(`States: ${states.length}`);
 
     return {
       items: states,
@@ -487,9 +485,17 @@ class StateService implements IStateService {
     startDate: string,
     endDate: string
   ): Promise<IStateTimeline> {
+    const dateRange = createDateRange(startDate, endDate);
+    console.log(`Start date: ${dateRange.startDate}`);
+    console.log(`End date: ${dateRange.endDate}`);
+    console.log(`Total duration: ${dateRange.totalDuration}`);
+    console.log(`Total days: ${dateRange.totalDays}`);
+    console.log(`Previous start: ${dateRange.previousStart}`);
+    console.log(`Previous end: ${dateRange.previousEnd}`);
+
     return {
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
       machines: [],
     };
   }
@@ -616,12 +622,6 @@ class StateService implements IStateService {
         timestamp.getTime() - previousState.timestamp.getTime();
       await previousState.save({ transaction });
     }
-  }
-
-  private async convertToEST(date: Date): Promise<Date> {
-    return new Date(
-      date.toLocaleString("en-US", { timeZone: "America/New_York" })
-    );
   }
 
   private getOverviewScale(startDate: Date, endDate: Date) {

@@ -1,6 +1,6 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
 
-import { IAxis, IMachineState, ISpindle } from "@/utils/types";
+import { IMachineState } from "@/utils/types";
 
 type MachineStateAttributes = Omit<IMachineState, "createdAt" | "updatedAt">;
 
@@ -48,7 +48,7 @@ class MachineState
           allowNull: false,
         },
         durationMs: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.BIGINT,
           allowNull: true,
         },
         timestamp: {
