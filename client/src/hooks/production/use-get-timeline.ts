@@ -34,7 +34,7 @@ const useGetTimeline = ({
           }
         );
 
-        setTimeline(data.items);
+        setTimeline(data);
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);

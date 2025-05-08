@@ -329,22 +329,40 @@ class StateService implements IStateService {
 
     const machines = await this.services.machineService.getMachines();
 
-    const timeline = await MachineState.findAll({
-      where: {
-        startTime: { [Op.gte]: dateRange.startDate },
-        endTime: { [Op.lte]: dateRange.endDate },
-      },
+    const states = await this.getStates({
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
     });
+
+    const machineTimeline = machines.map((machine) => {
+      return {
+        id: machine.id,
+        name: machine.name,
+        type: machine.type,
+        timeline: [],
+      };
+    });
+
+    console.log(machineTimeline);
+
+    machineTimeline.forEach((machine) => {
+      machine.timeline = states.items
+        .filter((state) => state.machineId === machine.id)
+        .map((state) => ({
+          state: state.state,
+          startTime: state.startTime,
+          endTime: state.endTime,
+          durationMs:
+            (state.endTime || new Date()).getTime() - state.startTime.getTime(),
+        }));
+    });
+
+    console.log(machineTimeline);
 
     return {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
-      machines: machines.map((machine) => ({
-        id: machine.id,
-        name: machine.name,
-        type: machine.type,
-        timeline: timeline.filter((state) => state.machineId === machine.id),
-      })),
+      machines: machineTimeline,
     };
   }
 

@@ -244,11 +244,14 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                       />
                     ))}
                     {machine.timeline.map((event, index) => {
-                      // Convert event timestamp to EST
-                      const eventDate = getESTDate(new Date(event.timestamp));
+                      // Convert event timestamps to EST
+                      const startDate = getESTDate(new Date(event.startTime));
+                      const endDate = getESTDate(event.endTime || new Date());
+
                       const startMinutes =
-                        eventDate.getHours() * 60 + eventDate.getMinutes();
-                      const widthMinutes = event.durationMs / 1000 / 60;
+                        startDate.getHours() * 60 + startDate.getMinutes();
+                      const durationMinutes =
+                        (endDate.getTime() - startDate.getTime()) / (1000 * 60);
 
                       return (
                         <div
@@ -256,7 +259,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                           className="absolute h-8 top-2 transition-opacity hover:opacity-90 group flex-1"
                           style={{
                             left: `${(startMinutes / 30) * 50}px`,
-                            width: `${(widthMinutes / 30) * 50}px`,
+                            width: `${(durationMinutes / 30) * 50}px`,
                             backgroundColor: getStatusColor(event.state),
                           }}>
                           <div className="h-full flex items-center justify-center text-xs text-white font-medium truncate px-2">
@@ -265,12 +268,17 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                           <div className="absolute bottom-full mb-1 left-0 bg-background border rounded p-2 hidden hover:block whitespace-nowrap z-20 text-xs">
                             <p className="font-medium">{event.state}</p>
                             <p>
-                              {eventDate.toLocaleTimeString([], {
+                              {startDate.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {" - "}
+                              {endDate.toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
                               {" ("}
-                              {Math.floor(event.durationMs / 1000 / 60)}m{")"}
+                              {Math.floor(durationMinutes)}m{")"}
                             </p>
                           </div>
                         </div>

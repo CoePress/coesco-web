@@ -227,8 +227,9 @@ export interface IStateTimeline {
     id: string;
     name: string;
     timeline: {
-      timestamp: Date;
       state: string;
+      startTime: Date;
+      endTime: Date;
       durationMs: number;
     }[];
   }[];
