@@ -83,8 +83,8 @@ export interface IQueryParams {
   sortBy?: string;
   sortOrder?: string;
   search?: string;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: Date | string;
+  endDate?: Date | string;
 }
 
 export interface IMachineQueryParams extends IQueryParams {

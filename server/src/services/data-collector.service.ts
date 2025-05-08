@@ -86,9 +86,6 @@ class DataCollectorService implements IDataCollectorService {
       // Save to database
       await this.services.stateService.createState({
         ...newState,
-        spindle: newState.spindle,
-        axes: newState.axes,
-        feedRate: 0,
         timestamp: new Date(),
       });
     }

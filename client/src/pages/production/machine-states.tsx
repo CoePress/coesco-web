@@ -10,14 +10,26 @@ import { IMachineState } from "@/utils/t";
 import { formatDuration } from "@/utils";
 
 const MachineStates = () => {
-  const [dateRange, setDateRange] = useState({
-    start: startOfToday(),
-    end: new Date(),
-  });
+  const parseDateParam = (param: string | null, fallback: Date) => {
+    if (!param) return fallback;
+    const [year, month, day] = param.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
+    return isNaN(d.getTime()) ? fallback : d;
+  };
+
+  const getInitialDateRange = () => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      start: parseDateParam(params.get("startDate"), startOfToday()),
+      end: parseDateParam(params.get("endDate"), new Date()),
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getInitialDateRange);
 
   const { states, loading, error, refresh } = useGetStates({
-    startDate: dateRange.start,
-    endDate: dateRange.end,
+    startDate: dateRange.start.toISOString().slice(0, 10),
+    endDate: dateRange.end.toISOString().slice(0, 10),
   });
 
   const {

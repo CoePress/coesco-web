@@ -6,473 +6,496 @@ import {
   ValidationError,
   IQueryParams,
   IStateOverview,
-  StateWithDuration,
+  NotFoundError,
+  IPaginatedResponse,
+  IStateTimeline,
 } from "@/utils/types";
-import {
-  buildOrderClause,
-  buildPaginationOptions,
-  buildWhereClause,
-} from "@/utils";
+import { buildQuery } from "@/utils";
 import Services from ".";
 import { Op } from "sequelize";
-import { Sequelize } from "sequelize";
+import { sequelize } from "@/config/database";
+import { differenceInMilliseconds, addMilliseconds, parse } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+
+// class Test {
+//   constructor(private services: Services) {}
+
+//   async getStateTimeline(startDate: Date, endDate: Date): Promise<any[]> {
+//     if (startDate > endDate) {
+//       throw new ValidationError("Start date must be before end date");
+//     }
+
+//     const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+//     const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
+
+//     if (startDateEST.getTime() === endDateEST.getTime()) {
+//       endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
+//     } else {
+//       endDateEST.setTime(endDateEST.getTime() - 1);
+//     }
+
+//     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
+
+//     // Get all machines
+//     const machines = await this.services.machineService.getMachines();
+
+//     // Group states by machineId
+//     const statesByMachine: { [machineId: string]: any[] } = {};
+//     for (const state of states) {
+//       if (!statesByMachine[state.machineId]) {
+//         statesByMachine[state.machineId] = [];
+//       }
+//       statesByMachine[state.machineId].push(state);
+//     }
+
+//     const timelines: {
+//       machineId: string;
+//       machineName: string;
+//       timeline: any[];
+//     }[] = [];
+
+//     for (const machine of machines) {
+//       const machineId = machine.id;
+//       const machineName = machine.name;
+//       const machineStates = (statesByMachine[machineId] || []).sort(
+//         (a, b) =>
+//           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+//       );
+
+//       const timeline: any[] = [];
+//       let cursor = new Date(startDateEST);
+
+//       if (machineStates.length === 0) {
+//         // No states at all: fill the whole range with OFFLINE
+//         timeline.push({
+//           state: "OFFLINE",
+//           timestamp: cursor.toISOString(),
+//           durationMs: endDateEST.getTime() - cursor.getTime(),
+//         });
+//       } else {
+//         for (let i = 0; i < machineStates.length; i++) {
+//           const state = machineStates[i];
+//           const stateStart = new Date(state.timestamp);
+//           const stateEnd =
+//             i < machineStates.length - 1
+//               ? new Date(machineStates[i + 1].timestamp)
+//               : new Date(endDateEST);
+
+//           // Fill gap before this state with OFFLINE
+//           if (stateStart > cursor) {
+//             timeline.push({
+//               state: "OFFLINE",
+//               timestamp: cursor.toISOString(),
+//               durationMs: stateStart.getTime() - cursor.getTime(),
+//             });
+//             cursor = new Date(stateStart);
+//           }
+
+//           // State duration is until next state or endDateEST
+//           const durationMs =
+//             (i < machineStates.length - 1
+//               ? new Date(machineStates[i + 1].timestamp)
+//               : endDateEST
+//             ).getTime() - stateStart.getTime();
+
+//           timeline.push({
+//             state: state.state,
+//             timestamp: state.timestamp,
+//             durationMs,
+//           });
+
+//           cursor = new Date(stateStart.getTime() + durationMs);
+//         }
+
+//         // Fill gap after last state with OFFLINE
+//         if (cursor < endDateEST) {
+//           timeline.push({
+//             state: "OFFLINE",
+//             timestamp: cursor.toISOString(),
+//             durationMs: endDateEST.getTime() - cursor.getTime(),
+//           });
+//         }
+//       }
+
+//       timelines.push({ machineId, machineName, timeline });
+//     }
+
+//     return timelines;
+//   }
+
+//   private async buildStateOverview(
+//     states: any[],
+//     startDate: Date,
+//     endDate: Date
+//   ): Promise<IStateOverview> {
+//     // 1. Group by machineId and sort by timestamp
+//     const statesByMachine: { [machineId: string]: any[] } = {};
+//     for (const s of states) {
+//       const state =
+//         typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
+//       if (!statesByMachine[state.machineId])
+//         statesByMachine[state.machineId] = [];
+//       statesByMachine[state.machineId].push(state);
+//     }
+//     for (const machineId in statesByMachine) {
+//       statesByMachine[machineId].sort(
+//         (a, b) =>
+//           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+//       );
+//     }
+
+//     // 2. Flatten and calculate durations
+//     const processedStates: any[] = [];
+//     for (const machineId in statesByMachine) {
+//       const machineStates = statesByMachine[machineId];
+//       for (let i = 0; i < machineStates.length; i++) {
+//         const current = machineStates[i];
+//         const next = machineStates[i + 1];
+//         const end = next ? new Date(next.timestamp) : endDate;
+//         processedStates.push({
+//           ...current,
+//           durationMs:
+//             new Date(end).getTime() - new Date(current.timestamp).getTime(),
+//         });
+//       }
+//     }
+
+//     // 3. Use processedStates for all further calculations
+//     let activeDuration = 0;
+//     let alarmCount = 0;
+//     const stateDurations: Record<string, number> = {};
+//     const stateTypeCounts: Record<string, number> = {};
+
+//     console.log("Total states:", processedStates.length);
+
+//     for (const state of processedStates) {
+//       const duration = state.durationMs || 0;
+//       if (typeof state.state === "string") {
+//         stateDurations[state.state] =
+//           (stateDurations[state.state] || 0) + duration;
+//         stateTypeCounts[state.state] = (stateTypeCounts[state.state] || 0) + 1;
+//         if (state.state.toLowerCase() === "active") {
+//           activeDuration += duration;
+//         }
+//       }
+//     }
+
+//     console.log("State counts per type:", stateTypeCounts);
+
+//     const overviewDuration = endDate.getTime() - startDate.getTime() + 1;
+//     const utilizationValue =
+//       overviewDuration > 0 ? (activeDuration / overviewDuration) * 100 : 0;
+//     const averageRuntimeValue =
+//       processedStates.length > 0 ? activeDuration / processedStates.length : 0;
+
+//     const formatDuration = (ms: number): string => {
+//       const totalSeconds = Math.floor(ms / 1000);
+
+//       const days = Math.floor(totalSeconds / (24 * 60 * 60));
+//       const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+//       const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+//       const seconds = totalSeconds % 60;
+
+//       const parts: string[] = [];
+
+//       if (days > 0) parts.push(`${days}d`);
+//       if (hours > 0) parts.push(`${hours}h`);
+//       if (minutes > 0) parts.push(`${minutes}m`);
+//       if (seconds > 0) parts.push(`${seconds}s`);
+
+//       if (parts.length === 0) {
+//         return "0s";
+//       }
+
+//       return parts.join(" ");
+//     };
+
+//     console.log("Overview duration:", formatDuration(overviewDuration));
+//     console.log("Average runtime:", formatDuration(averageRuntimeValue));
+//     console.log("Active duration:", formatDuration(activeDuration));
+
+//     const kpis = {
+//       utilization: {
+//         value: utilizationValue,
+//         change: 0,
+//       },
+//       averageRuntime: {
+//         value: averageRuntimeValue,
+//         change: 0,
+//       },
+//       alarmCount: {
+//         value: alarmCount,
+//         change: 0,
+//       },
+//     };
+
+//     const { scale, divisionCount } = this.getOverviewScale(startDate, endDate);
+//     const divisions = [];
+//     for (let i = 0; i < divisionCount; i++) {
+//       const divisionStart = this.calculateDivisionStart(startDate, scale, i);
+//       const divisionEnd = this.calculateDivisionEnd(
+//         startDate,
+//         scale,
+//         i,
+//         endDate
+//       );
+//       const divisionLabel = this.formatDivisionLabel(divisionStart, scale);
+//       divisions.push({
+//         start: divisionStart,
+//         end: divisionEnd,
+//         label: divisionLabel,
+//       });
+//     }
+
+//     const utilizationOverTime = divisions.map((division) => {
+//       // If the division is in the future, utilization should be null
+//       if (division.start > new Date()) {
+//         return {
+//           label: division.label,
+//           start: division.start,
+//           end: division.end,
+//           utilization: null,
+//         };
+//       }
+//       let divisionTotal = 0;
+//       let divisionActive = 0;
+//       for (let i = 0; i < processedStates.length; i++) {
+//         const state = processedStates[i];
+//         if (
+//           !(state.timestamp instanceof Date) ||
+//           isNaN(state.timestamp.getTime())
+//         ) {
+//           continue;
+//         }
+//         const stateStart = state.timestamp;
+//         const stateEnd = new Date(
+//           state.timestamp.getTime() + (state.durationMs || 0)
+//         );
+//         const overlapStart =
+//           stateStart > division.start ? stateStart : division.start;
+//         const overlapEnd = stateEnd < division.end ? stateEnd : division.end;
+//         const overlap = Math.max(
+//           0,
+//           overlapEnd.getTime() - overlapStart.getTime()
+//         );
+//         if (overlap > 0) {
+//           divisionTotal += overlap;
+//           if (
+//             typeof state.state === "string" &&
+//             state.state.toLowerCase() === "active"
+//           ) {
+//             divisionActive += overlap;
+//           }
+//         }
+//       }
+//       return {
+//         label: division.label,
+//         start: division.start,
+//         end: division.end,
+//         utilization:
+//           divisionTotal > 0 ? (divisionActive / divisionTotal) * 100 : 0,
+//       };
+//     });
+
+//     const stateDistribution = Object.entries(stateDurations).map(
+//       ([label, duration]) => ({
+//         label,
+//         duration,
+//         percentage: overviewDuration > 0 ? duration / overviewDuration : 0,
+//       })
+//     );
+
+//     const machines = (await this.services.machineService.getMachines()).map(
+//       (m) => ({
+//         id: m.id,
+//         name: m.name,
+//         type: m.type,
+//       })
+//     );
+
+//     const alarms = await this.services.alarmService.getAlarms({
+//       startDate,
+//       endDate,
+//     });
+
+//     return {
+//       kpis,
+//       utilization: utilizationOverTime,
+//       states: stateDistribution,
+//       machines,
+//       alarms,
+//     };
+//   }
+// }
 
 class StateService implements IStateService {
   constructor(private services: Services) {}
 
-  async createState(state: ICreateMachineStateDTO): Promise<IMachineState> {
-    if (!state.machineId) throw new ValidationError("Machine ID is required");
-    if (!state.timestamp) throw new ValidationError("Timestamp is required");
-    if (!state.state) throw new ValidationError("State is required");
-    if (!state.execution) throw new ValidationError("Execution is required");
-    if (!state.controller) throw new ValidationError("Controller is required");
-    if (!state.program) throw new ValidationError("Program is required");
-    if (!state.tool) throw new ValidationError("Tool is required");
-
-    const machineState = await MachineState.create(state);
-    return machineState;
-  }
-
-  async getStates(params?: IQueryParams): Promise<IMachineState[]> {
-    const queryOptions: any = {};
-
-    if (params?.sortBy) {
-      queryOptions.order = [[params.sortBy, params?.sortOrder || "ASC"]];
-    }
-
-    if (params?.page && params?.limit) {
-      queryOptions.offset = (params.page - 1) * params.limit;
-      queryOptions.limit = params.limit;
-    }
-
-    if (params?.search) {
-      queryOptions.where = {
-        [Op.or]: [
-          { name: { [Op.like]: `%${params.search}%` } },
-          { description: { [Op.like]: `%${params.search}%` } },
-        ],
-      };
-    }
-
-    if (params?.startDate || params?.endDate) {
-      queryOptions.where = queryOptions.where || {};
-      queryOptions.where[Op.or] = [
-        { timestamp: { [Op.between]: [params.startDate, params.endDate] } },
-        {
-          [Op.and]: [
-            { timestamp: { [Op.lte]: params.startDate } },
-            {
-              [Op.or]: [
-                {
-                  [Op.and]: [
-                    { machineId: { [Op.eq]: Sequelize.col("machine_id") } },
-                    { timestamp: { [Op.gt]: params.startDate } },
-                  ],
-                },
-                { timestamp: { [Op.gt]: params.startDate } },
-              ],
-            },
-          ],
-        },
-      ];
-    }
-
-    const states = await MachineState.findAll(queryOptions);
-
-    // Group states by machineId
-    const statesByMachine: { [machineId: string]: IMachineState[] } = {};
-    for (const state of states) {
-      if (!statesByMachine[state.machineId]) {
-        statesByMachine[state.machineId] = [];
-      }
-      statesByMachine[state.machineId].push(state);
-    }
-
-    // Calculate durations
-    const now = new Date();
-    const statesWithDuration: IMachineState[] = [];
-
-    for (const machineId in statesByMachine) {
-      const machineStates = statesByMachine[machineId].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-
-      for (let i = 0; i < machineStates.length; i++) {
-        const currentState = machineStates[i];
-        const nextState = machineStates[i + 1];
-        const end = nextState ? new Date(nextState.timestamp) : now;
-
-        statesWithDuration.push({
-          ...(currentState as any).toJSON(),
-          durationMs:
-            end.getTime() - new Date(currentState.timestamp).getTime(),
-        });
-      }
-    }
-
-    return statesWithDuration;
-  }
-
-  async getStatesByMachineId(
-    machineId: string,
+  async getStates(
     params?: IQueryParams
-  ): Promise<IMachineState[]> {
-    const searchableFields = ["state", "name", "description"];
+  ): Promise<IPaginatedResponse<IMachineState>> {
+    const { whereClause, orderClause, offset, limit, page } =
+      buildQuery(params);
 
-    const whereClause = buildWhereClause(params, searchableFields, {
-      machineId,
-    });
+    console.log(`Where clause: ${JSON.stringify(whereClause)}`);
+    console.log(`Order clause: ${JSON.stringify(orderClause)}`);
+    console.log(`Offset: ${offset}`);
+    console.log(`Limit: ${limit}`);
+    console.log(`Page: ${page}`);
 
-    const states = await MachineState.findAll({
-      where: whereClause,
-      order: buildOrderClause(params),
-      ...buildPaginationOptions(params),
-    });
+    const [states, total] = await Promise.all([
+      MachineState.findAll({
+        where: whereClause,
+        order: orderClause.length ? orderClause : [["timestamp", "DESC"]],
+        offset,
+        limit,
+      }),
+      MachineState.count({ where: whereClause }),
+    ]);
 
-    return states;
+    console.log(`States: ${states.length}`);
+
+    return {
+      items: states,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async getCurrentStates(): Promise<IMachineState[]> {
-    return;
-  }
+  async getState(id: string): Promise<MachineState> {
+    if (!id) throw new ValidationError("ID is required");
 
-  async getStatesByDateRange(
-    startDate: Date,
-    endDate: Date
-  ): Promise<IMachineState[]> {
-    return this.getStates({
-      startDate,
-      endDate,
-      sortBy: "timestamp",
-      sortOrder: "ASC",
-    });
-  }
+    const trimmedId = typeof id === "string" ? id.trim() : id;
 
-  async getNextState(
-    machineId: string,
-    timestamp: Date
-  ): Promise<IMachineState | null> {
-    return await MachineState.findOne({
-      where: {
-        machineId,
-        timestamp: { $gt: timestamp },
-      },
-      order: [["timestamp", "ASC"]],
-    });
+    const state = await MachineState.findByPk(trimmedId);
+    if (!state) throw new NotFoundError(`State with ID ${trimmedId} not found`);
+
+    return state;
   }
 
   async getStateOverview(
-    startDate: Date,
-    endDate: Date
+    startDate: string,
+    endDate: string
   ): Promise<IStateOverview> {
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(endDate)
+    ) {
+      throw new ValidationError("Invalid date format. Use YYYY-MM-DD");
+    }
+
+    // Compare as strings for validation
     if (startDate > endDate) {
       throw new ValidationError("Start date must be before end date");
     }
 
-    const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-    const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
+    const now = new Date();
+    const timeZone = "America/New_York";
 
-    if (startDateEST.getTime() === endDateEST.getTime()) {
-      endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
-    } else {
-      endDateEST.setTime(endDateEST.getTime() - 1);
-    }
-
-    // const startDateUTC = new Date(startDateEST.getTime() - 4 * 60 * 60 * 1000);
-    // const endDateUTC = new Date(endDateEST.getTime() - 4 * 60 * 60 * 1000);
-
-    const states = await this.getStatesByDateRange(startDateEST, endDateEST);
-
-    const statesByMachine: { [machineId: string]: any[] } = {};
-    for (const s of states) {
-      const state =
-        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
-      if (!statesByMachine[state.machineId])
-        statesByMachine[state.machineId] = [];
-      statesByMachine[state.machineId].push(state);
-    }
-    for (const machineId in statesByMachine) {
-      statesByMachine[machineId].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-    }
-
-    const processedStates: any[] = [];
-    for (const machineId in statesByMachine) {
-      const machineStates = statesByMachine[machineId];
-      for (let i = 0; i < machineStates.length; i++) {
-        const current = machineStates[i];
-        const next = machineStates[i + 1];
-        const end = next ? new Date(next.timestamp) : endDateEST;
-        processedStates.push({
-          ...current,
-          durationMs:
-            new Date(end).getTime() - new Date(current.timestamp).getTime(),
-        });
-      }
-    }
-
-    const statesWithDuration = this.calculateStateDurations(
-      processedStates,
-      endDateEST
+    // Parse the date strings directly with date-fns to create dates at midnight Eastern Time
+    const startDateEST = toZonedTime(
+      parse(`${startDate} 00:00:00`, "yyyy-MM-dd HH:mm:ss", new Date()),
+      timeZone
     );
 
-    const stateOverview = await this.buildStateOverview(
-      statesWithDuration,
+    const endDateEST = toZonedTime(
+      parse(`${endDate} 23:59:59.999`, "yyyy-MM-dd HH:mm:ss.SSS", new Date()),
+      timeZone
+    );
+
+    console.log(`Start date: ${startDateEST}`);
+    console.log(`End date: ${endDateEST}`);
+
+    // Calculate duration and days
+    const totalDuration =
+      differenceInMilliseconds(endDateEST, startDateEST) + 1;
+    const totalDays = Math.ceil(totalDuration / (1000 * 60 * 60 * 24));
+
+    console.log(`Total duration: ${totalDuration}`);
+    console.log(`Total days: ${totalDays}`);
+
+    // Calculate previous period
+    const previousStart = toZonedTime(
+      addMilliseconds(startDateEST, -totalDuration),
+      timeZone
+    );
+
+    const previousEnd = toZonedTime(
+      addMilliseconds(startDateEST, -1),
+      timeZone
+    );
+
+    console.log(`Previous start: ${previousStart}`);
+    console.log(`Previous end: ${previousEnd}`);
+
+    const machines = await this.services.machineService.getMachines();
+    const machineCount = machines.length;
+
+    console.log(`Machine count: ${machineCount}`);
+
+    const states = await this.getStates({
+      startDate: startDateEST,
+      endDate: endDateEST,
+    });
+
+    console.log(`State count: ${states.items.length}`);
+
+    const previousStates = await this.getStates({
+      startDate: previousStart,
+      endDate: previousEnd,
+    });
+
+    const totalsByState = states.items.reduce((acc, state) => {
+      if (!acc[state.state]) {
+        acc[state.state] = 0;
+      }
+      if (state.durationMs) {
+        acc[state.state] += state.durationMs;
+      } else {
+        acc[state.state] += now.getTime() - state.timestamp.getTime();
+      }
+
+      return acc;
+    }, {});
+
+    const previousTotalsByState = previousStates.items.reduce((acc, state) => {
+      if (!acc[state.state]) {
+        acc[state.state] = 0;
+      }
+      acc[state.state] += state.durationMs;
+      return acc;
+    }, {});
+
+    const utilization =
+      (totalsByState["ACTIVE"] / totalDuration) * machineCount;
+
+    const previousUtilization =
+      (previousTotalsByState["ACTIVE"] / totalDuration) * machineCount;
+
+    const utilizationChange =
+      ((utilization - previousUtilization) / previousUtilization) * 100;
+
+    const alarmCount = 0;
+    const previousAlarmCount = 0;
+
+    const alarmChange =
+      ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
+
+    const { scale, divisionCount } = this.getOverviewScale(
       startDateEST,
       endDateEST
     );
 
-    return {
-      kpis: stateOverview.kpis,
-      utilization: stateOverview.utilization,
-      states: stateOverview.states,
-      machines: stateOverview.machines,
-      alarms: stateOverview.alarms,
-    };
-  }
-
-  async getStateTimeline(startDate: Date, endDate: Date): Promise<any[]> {
-    if (startDate > endDate) {
-      throw new ValidationError("Start date must be before end date");
-    }
-
-    const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-    const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
-
-    if (startDateEST.getTime() === endDateEST.getTime()) {
-      endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
-    } else {
-      endDateEST.setTime(endDateEST.getTime() - 1);
-    }
-
-    const states = await this.getStatesByDateRange(startDateEST, endDateEST);
-
-    // Get all machines
-    const machines = await this.services.machineService.getMachines();
-
-    // Group states by machineId
-    const statesByMachine: { [machineId: string]: any[] } = {};
-    for (const state of states) {
-      if (!statesByMachine[state.machineId]) {
-        statesByMachine[state.machineId] = [];
-      }
-      statesByMachine[state.machineId].push(state);
-    }
-
-    const timelines: {
-      machineId: string;
-      machineName: string;
-      timeline: any[];
-    }[] = [];
-
-    for (const machine of machines) {
-      const machineId = machine.id;
-      const machineName = machine.name;
-      const machineStates = (statesByMachine[machineId] || []).sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-
-      const timeline: any[] = [];
-      let cursor = new Date(startDateEST);
-
-      if (machineStates.length === 0) {
-        // No states at all: fill the whole range with OFFLINE
-        timeline.push({
-          state: "OFFLINE",
-          timestamp: cursor.toISOString(),
-          durationMs: endDateEST.getTime() - cursor.getTime(),
-        });
-      } else {
-        for (let i = 0; i < machineStates.length; i++) {
-          const state = machineStates[i];
-          const stateStart = new Date(state.timestamp);
-          const stateEnd =
-            i < machineStates.length - 1
-              ? new Date(machineStates[i + 1].timestamp)
-              : new Date(endDateEST);
-
-          // Fill gap before this state with OFFLINE
-          if (stateStart > cursor) {
-            timeline.push({
-              state: "OFFLINE",
-              timestamp: cursor.toISOString(),
-              durationMs: stateStart.getTime() - cursor.getTime(),
-            });
-            cursor = new Date(stateStart);
-          }
-
-          // State duration is until next state or endDateEST
-          const durationMs =
-            (i < machineStates.length - 1
-              ? new Date(machineStates[i + 1].timestamp)
-              : endDateEST
-            ).getTime() - stateStart.getTime();
-
-          timeline.push({
-            state: state.state,
-            timestamp: state.timestamp,
-            durationMs,
-          });
-
-          cursor = new Date(stateStart.getTime() + durationMs);
-        }
-
-        // Fill gap after last state with OFFLINE
-        if (cursor < endDateEST) {
-          timeline.push({
-            state: "OFFLINE",
-            timestamp: cursor.toISOString(),
-            durationMs: endDateEST.getTime() - cursor.getTime(),
-          });
-        }
-      }
-
-      timelines.push({ machineId, machineName, timeline });
-    }
-
-    return timelines;
-  }
-
-  private calculateStateDurations(
-    states: any[],
-    endDate: Date
-  ): StateWithDuration[] {
-    const statesWithDuration: StateWithDuration[] = [];
-
-    for (let i = 0; i < states.length; i++) {
-      const currentState = states[i];
-      const nextState = states[i + 1];
-      const end = nextState ? new Date(nextState.timestamp) : endDate;
-      const stateWithDuration: StateWithDuration = {
-        ...currentState,
-        durationMs:
-          new Date(end).getTime() - new Date(currentState.timestamp).getTime(),
-      };
-      statesWithDuration.push(stateWithDuration);
-    }
-
-    return statesWithDuration;
-  }
-
-  private async buildStateOverview(
-    states: any[],
-    startDate: Date,
-    endDate: Date
-  ): Promise<IStateOverview> {
-    // 1. Group by machineId and sort by timestamp
-    const statesByMachine: { [machineId: string]: any[] } = {};
-    for (const s of states) {
-      const state =
-        typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
-      if (!statesByMachine[state.machineId])
-        statesByMachine[state.machineId] = [];
-      statesByMachine[state.machineId].push(state);
-    }
-    for (const machineId in statesByMachine) {
-      statesByMachine[machineId].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-    }
-
-    // 2. Flatten and calculate durations
-    const processedStates: any[] = [];
-    for (const machineId in statesByMachine) {
-      const machineStates = statesByMachine[machineId];
-      for (let i = 0; i < machineStates.length; i++) {
-        const current = machineStates[i];
-        const next = machineStates[i + 1];
-        const end = next ? new Date(next.timestamp) : endDate;
-        processedStates.push({
-          ...current,
-          durationMs:
-            new Date(end).getTime() - new Date(current.timestamp).getTime(),
-        });
-      }
-    }
-
-    // 3. Use processedStates for all further calculations
-    let activeDuration = 0;
-    let alarmCount = 0;
-    const stateDurations: Record<string, number> = {};
-    const stateTypeCounts: Record<string, number> = {};
-
-    console.log("Total states:", processedStates.length);
-
-    for (const state of processedStates) {
-      const duration = state.durationMs || 0;
-      if (typeof state.state === "string") {
-        stateDurations[state.state] =
-          (stateDurations[state.state] || 0) + duration;
-        stateTypeCounts[state.state] = (stateTypeCounts[state.state] || 0) + 1;
-        if (state.state.toLowerCase() === "active") {
-          activeDuration += duration;
-        }
-      }
-    }
-
-    console.log("State counts per type:", stateTypeCounts);
-
-    const overviewDuration = endDate.getTime() - startDate.getTime() + 1;
-    const utilizationValue =
-      overviewDuration > 0 ? (activeDuration / overviewDuration) * 100 : 0;
-    const averageRuntimeValue =
-      processedStates.length > 0 ? activeDuration / processedStates.length : 0;
-
-    const formatDuration = (ms: number): string => {
-      const totalSeconds = Math.floor(ms / 1000);
-
-      const days = Math.floor(totalSeconds / (24 * 60 * 60));
-      const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
-      const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
-      const seconds = totalSeconds % 60;
-
-      const parts: string[] = [];
-
-      if (days > 0) parts.push(`${days}d`);
-      if (hours > 0) parts.push(`${hours}h`);
-      if (minutes > 0) parts.push(`${minutes}m`);
-      if (seconds > 0) parts.push(`${seconds}s`);
-
-      if (parts.length === 0) {
-        return "0s";
-      }
-
-      return parts.join(" ");
-    };
-
-    console.log("Overview duration:", formatDuration(overviewDuration));
-    console.log("Average runtime:", formatDuration(averageRuntimeValue));
-    console.log("Active duration:", formatDuration(activeDuration));
-
-    const kpis = {
-      utilization: {
-        value: utilizationValue,
-        change: 0,
-      },
-      averageRuntime: {
-        value: averageRuntimeValue,
-        change: 0,
-      },
-      alarmCount: {
-        value: alarmCount,
-        change: 0,
-      },
-    };
-
-    const { scale, divisionCount } = this.getOverviewScale(startDate, endDate);
     const divisions = [];
     for (let i = 0; i < divisionCount; i++) {
-      const divisionStart = this.calculateDivisionStart(startDate, scale, i);
+      const divisionStart = this.calculateDivisionStart(startDateEST, scale, i);
       const divisionEnd = this.calculateDivisionEnd(
-        startDate,
+        startDateEST,
         scale,
         i,
-        endDate
+        endDateEST
       );
       const divisionLabel = this.formatDivisionLabel(divisionStart, scale);
       divisions.push({
@@ -482,84 +505,167 @@ class StateService implements IStateService {
       });
     }
 
-    const utilizationOverTime = divisions.map((division) => {
-      // If the division is in the future, utilization should be null
-      if (division.start > new Date()) {
-        return {
-          label: division.label,
-          start: division.start,
-          end: division.end,
-          utilization: null,
-        };
-      }
-      let divisionTotal = 0;
-      let divisionActive = 0;
-      for (let i = 0; i < processedStates.length; i++) {
-        const state = processedStates[i];
-        if (
-          !(state.timestamp instanceof Date) ||
-          isNaN(state.timestamp.getTime())
-        ) {
-          continue;
-        }
-        const stateStart = state.timestamp;
-        const stateEnd = new Date(
-          state.timestamp.getTime() + (state.durationMs || 0)
-        );
-        const overlapStart =
-          stateStart > division.start ? stateStart : division.start;
-        const overlapEnd = stateEnd < division.end ? stateEnd : division.end;
-        const overlap = Math.max(
-          0,
-          overlapEnd.getTime() - overlapStart.getTime()
-        );
-        if (overlap > 0) {
-          divisionTotal += overlap;
-          if (
-            typeof state.state === "string" &&
-            state.state.toLowerCase() === "active"
-          ) {
-            divisionActive += overlap;
-          }
-        }
-      }
-      return {
-        label: division.label,
-        start: division.start,
-        end: division.end,
-        utilization:
-          divisionTotal > 0 ? (divisionActive / divisionTotal) * 100 : 0,
-      };
-    });
-
-    const stateDistribution = Object.entries(stateDurations).map(
-      ([label, duration]) => ({
-        label,
-        duration,
-        percentage: overviewDuration > 0 ? duration / overviewDuration : 0,
-      })
-    );
-
-    const machines = (await this.services.machineService.getMachines()).map(
-      (m) => ({
-        id: m.id,
-        name: m.name,
-        type: m.type,
-      })
-    );
-
-    const alarms = await this.services.alarmService.getAlarms({
-      startDate,
-      endDate,
-    });
-
     return {
-      kpis,
-      utilization: utilizationOverTime,
-      states: stateDistribution,
-      machines,
-      alarms,
+      kpis: {
+        utilization: {
+          value: utilization || 0,
+          change: utilizationChange || 0,
+        },
+        averageRuntime: {
+          value: 0,
+          change: 0,
+        },
+        alarmCount: {
+          value: alarmCount || 0,
+          change: alarmChange || 0,
+        },
+      },
+      utilization: [],
+      states: [],
+      machines: [],
+      alarms: [],
     };
+  }
+
+  async getStateTimeline(
+    startDate: string,
+    endDate: string
+  ): Promise<IStateTimeline> {
+    return {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      machines: [],
+    };
+  }
+
+  async createState(stateData: ICreateMachineStateDTO): Promise<MachineState> {
+    this.validateState(stateData);
+
+    try {
+      return await sequelize.transaction(async (t) => {
+        await this.closePreviousState(
+          stateData.machineId,
+          stateData.timestamp,
+          t
+        );
+        return await MachineState.create(stateData, { transaction: t });
+      });
+    } catch (error) {
+      if (error.name === "SequelizeUniqueConstraintError") {
+        throw new ValidationError(
+          `A state already exists for this machine at this timestamp`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateState(
+    id: string,
+    stateData: Partial<ICreateMachineStateDTO>
+  ): Promise<MachineState> {
+    if (stateData.timestamp !== undefined) {
+      throw new ValidationError("Timestamp cannot be updated");
+    }
+
+    const existingState = await this.getState(id);
+
+    const allowedFields = [
+      "machineId",
+      "state",
+      "execution",
+      "controller",
+      "program",
+      "durationMs",
+    ];
+
+    let isUpdated = false;
+
+    allowedFields.forEach((field) => {
+      if (
+        stateData[field] !== undefined &&
+        stateData[field] !== existingState[field]
+      ) {
+        existingState[field] = stateData[field];
+        isUpdated = true;
+      }
+    });
+
+    if (isUpdated) {
+      return await existingState.save();
+    }
+
+    return existingState;
+  }
+
+  async deleteState(id: string): Promise<boolean> {
+    if (!id) throw new ValidationError("ID is required");
+
+    try {
+      await this.getState(id);
+
+      const deletedCount = await MachineState.destroy({ where: { id } });
+
+      return deletedCount > 0;
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new Error(`Error deleting state: ${error.message}`);
+    }
+  }
+
+  private validateState(state: ICreateMachineStateDTO): void {
+    if (!state) throw new ValidationError("State data is required");
+
+    const requiredFields = {
+      machineId: "Machine ID is required",
+      timestamp: "Timestamp is required",
+      state: "State is required",
+      execution: "Execution is required",
+      controller: "Controller is required",
+      program: "Program is required",
+    };
+
+    for (const [field, message] of Object.entries(requiredFields)) {
+      if (!state[field]) throw new ValidationError(message);
+    }
+
+    if (
+      state.timestamp &&
+      !(state.timestamp instanceof Date) &&
+      isNaN(new Date(state.timestamp).getTime())
+    ) {
+      throw new ValidationError("Invalid timestamp format");
+    }
+  }
+
+  private async closePreviousState(
+    machineId: string,
+    timestamp: Date,
+    transaction?: any
+  ): Promise<void> {
+    const previousState = await MachineState.findOne({
+      where: {
+        machineId,
+        timestamp: { [Op.lt]: timestamp },
+        durationMs: null,
+      },
+      order: [["timestamp", "DESC"]],
+      transaction,
+    });
+
+    if (previousState) {
+      previousState.durationMs =
+        timestamp.getTime() - previousState.timestamp.getTime();
+      await previousState.save({ transaction });
+    }
+  }
+
+  private async convertToEST(date: Date): Promise<Date> {
+    return new Date(
+      date.toLocaleString("en-US", { timeZone: "America/New_York" })
+    );
   }
 
   private getOverviewScale(startDate: Date, endDate: Date) {

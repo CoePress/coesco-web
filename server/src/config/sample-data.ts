@@ -24,36 +24,34 @@ const machineIds = [
   "e997eb7f-d2dd-41b0-bea1-f95bc6cb1b60",
 ];
 
-export const sampleStates: ICreateMachineStateDTO[] = Array.from(
-  { length: 15000 },
-  (_, i) => {
-    const now = new Date();
-    const oneYearAgo = new Date(now.getTime() - 1 * 365 * 24 * 60 * 60 * 1000);
-    const timestamp = new Date(
-      oneYearAgo.getTime() + ((now.getTime() - oneYearAgo.getTime()) * i) / 999
+export const sampleStates: ICreateMachineStateDTO[] = (() => {
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000);
+
+  const result: ICreateMachineStateDTO[] = [];
+
+  let currentTimestamp = sixMonthsAgo.getTime();
+
+  for (let i = 0; i < 20000; i++) {
+    const randomIncrement = Math.floor(
+      Math.random() * (120000 - 30000) + 30000
     );
-    return {
+
+    currentTimestamp = Math.min(
+      now.getTime(),
+      currentTimestamp + randomIncrement
+    );
+
+    result.push({
       machineId: machineIds[Math.floor(Math.random() * machineIds.length)],
-      timestamp,
+      timestamp: new Date(currentTimestamp),
       state: states[Math.floor(Math.random() * states.length)],
       execution: executions[Math.floor(Math.random() * executions.length)],
       controller:
         controllerModes[Math.floor(Math.random() * controllerModes.length)],
       program: `P${1000 + i}`,
-      tool: `T${200 + i}`,
-      spindle: {
-        speed: 1000 + Math.floor(Math.random() * 500),
-        load: 100 + Math.floor(Math.random() * 50),
-      },
-      axes: [
-        { label: "X", position: 100 + Math.random() * 50 },
-        { label: "Y", position: 100 + Math.random() * 50 },
-        { label: "Z", position: 100 + Math.random() * 50 },
-        { label: "A", position: 0 },
-        { label: "B", position: 0 },
-        { label: "C", position: 0 },
-      ],
-      feedRate: 100 + Math.floor(Math.random() * 50),
-    };
+    });
   }
-);
+
+  return result;
+})();

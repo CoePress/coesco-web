@@ -14,16 +14,16 @@ export const stateRoutes = (services: Services) => {
 
   router.get("/overview", async (req, res) => {
     const overview = await services.stateService.getStateOverview(
-      new Date(req.query.startDate as string),
-      new Date(req.query.endDate as string)
+      req.query.startDate as string,
+      req.query.endDate as string
     );
     res.json(overview);
   });
 
   router.get("/timeline", async (req, res) => {
     const timeline = await services.stateService.getStateTimeline(
-      new Date(req.query.startDate as string),
-      new Date(req.query.endDate as string)
+      req.query.startDate as string,
+      req.query.endDate as string
     );
     res.json(timeline);
   });

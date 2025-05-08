@@ -5,7 +5,12 @@ import path from "path";
 
 import { env } from "@/config/env";
 import { error } from "./logger";
-import { FanucControllerMode, FanucExecutionMode, IQueryParams } from "./types";
+import {
+  FanucControllerMode,
+  FanucExecutionMode,
+  IQueryBuilderResult,
+  IQueryParams,
+} from "./types";
 import { NextFunction, Request, Response } from "express";
 import { Op } from "sequelize";
 
@@ -193,4 +198,51 @@ export const hasThisChanged = async (a: any, b: any): Promise<boolean> => {
     return JSON.stringify(a) !== JSON.stringify(b);
   }
   return a !== b;
+};
+
+export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
+  const {
+    page,
+    limit,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    ...filters
+  } = params;
+
+  const whereClause = Object.entries(filters).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+
+  if (filters.startDate && filters.endDate) {
+    whereClause.createdAt = {
+      $gte: filters.startDate,
+      $lte: filters.endDate,
+    };
+    delete whereClause.startDate;
+    delete whereClause.endDate;
+  }
+
+  if (filters.search) {
+    whereClause.$or = [
+      { name: { $regex: filters.search, $options: "i" } },
+      { description: { $regex: filters.search, $options: "i" } },
+    ];
+    delete whereClause.search;
+  }
+
+  const result: IQueryBuilderResult = {
+    whereClause,
+    orderClause: [[sortBy, sortOrder]],
+    page,
+  };
+
+  if (page !== undefined && limit !== undefined) {
+    result.offset = (page - 1) * limit;
+    result.limit = limit;
+  }
+
+  return result;
 };

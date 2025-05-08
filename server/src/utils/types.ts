@@ -172,17 +172,10 @@ export interface IMachineState {
   execution: string;
   controller: string;
   program: string;
-  tool: string;
-  spindle: ISpindle;
-  axes: IAxis[];
-  feedRate: number;
+  durationMs?: number;
   timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface StateWithDuration extends IMachineState {
-  durationMs?: number;
 }
 
 export interface ICreateMachineStateDTO {
@@ -191,10 +184,7 @@ export interface ICreateMachineStateDTO {
   execution: string;
   controller: string;
   program: string;
-  tool: string;
-  spindle: ISpindle;
-  axes: IAxis[];
-  feedRate: number;
+  durationMs?: number;
   timestamp: Date;
 }
 
@@ -231,12 +221,16 @@ export interface IStateOverview {
 }
 
 export interface IStateTimeline {
-  machineId: string;
-  machineName: string;
-  timeline: {
-    timestamp: Date;
-    state: string;
-    durationMs: number;
+  startDate: Date;
+  endDate: Date;
+  machines: {
+    id: string;
+    name: string;
+    timeline: {
+      timestamp: Date;
+      state: string;
+      durationMs: number;
+    }[];
   }[];
 }
 
@@ -325,15 +319,16 @@ export interface IConnectionService {
 }
 
 export interface IStateService {
-  createState(state: ICreateMachineStateDTO): Promise<IMachineState>;
-  getStates(params?: IQueryParams): Promise<IMachineState[]>;
-  getStatesByMachineId(
-    machineId: string,
-    params?: IQueryParams
-  ): Promise<IMachineState[]>;
-  getCurrentStates(): Promise<IMachineState[]>;
-  getStateOverview(from: Date, to: Date): Promise<IStateOverview>;
-  getStateTimeline(from: Date, to: Date): Promise<IMachineState[]>;
+  getStates(params?: IQueryParams): Promise<IPaginatedResponse<IMachineState>>;
+  getState(id: string): Promise<IMachineState>;
+  getStateOverview(startDate: string, endDate: string): Promise<IStateOverview>;
+  getStateTimeline(startDate: string, endDate: string): Promise<IStateTimeline>;
+  createState(stateData: ICreateMachineStateDTO): Promise<IMachineState>;
+  updateState(
+    id: string,
+    stateData: Partial<ICreateMachineStateDTO>
+  ): Promise<IMachineState>;
+  deleteState(id: string): Promise<boolean>;
 }
 
 export interface IAlarmService {
@@ -400,16 +395,39 @@ export interface IQueryParams {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: string;
-  search?: string;
+  sortOrder?: "asc" | "desc";
   startDate?: Date;
   endDate?: Date;
+  search?: string;
+  [key: string]: any;
 }
 
-export interface IResponse<T> {
+export interface IQueryBuilderResult {
+  whereClause: any;
+  orderClause: Array<[any, string]>;
+  page: number;
+  offset?: number;
+  limit?: number;
+}
+
+export interface IPaginatedResponse<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface IApiResponse<T> {
   success: boolean;
-  message?: string;
-  data?: T;
-  error?: string;
+  message: string;
+  data: T | null;
+  error: string | null;
   timestamp: Date;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

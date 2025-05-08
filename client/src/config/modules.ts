@@ -13,6 +13,8 @@ import {
   Wrench,
   Factory,
   Box,
+  Warehouse,
+  Shield,
 } from "lucide-react";
 import { ComponentType } from "react";
 
@@ -133,6 +135,14 @@ const salesModule: Module = {
   ],
 };
 
+const warehouseModule: Module = {
+  path: "/warehouse",
+  label: "Warehouse",
+  icon: Warehouse,
+  status: "inactive",
+  pages: [],
+  popups: [],
+};
 const serviceModule: Module = {
   path: "/service",
   label: "Service",
@@ -167,7 +177,7 @@ const productionModule: Module = {
 const adminModule: Module = {
   path: "/admin",
   label: "Admin",
-  icon: SettingsIcon,
+  icon: Shield,
   status: "active",
   pages: [
     {
@@ -194,8 +204,8 @@ const adminModule: Module = {
 
 const modules = {
   salesModule,
-  serviceModule,
   productionModule,
+  serviceModule,
   adminModule,
 };
 

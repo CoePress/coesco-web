@@ -34,7 +34,7 @@ const MainMenu = () => {
                   <Card className="hover:bg-surface transition-all duration-200">
                     <div className="text-center flex flex-col items-center justify-center gap-2 w-24 aspect-square select-none">
                       <div className="text-primary">
-                        <module.icon size={24} />
+                        <module.icon size={20} />
                       </div>
                       <span className="text-primary">{module.label}</span>
                     </div>
@@ -44,7 +44,7 @@ const MainMenu = () => {
                 <Card>
                   <div className="text-center flex flex-col items-center justify-center gap-2 w-24 aspect-square select-none">
                     <div className="text-text-muted/50">
-                      <module.icon size={24} />
+                      <module.icon size={20} />
                     </div>
                     <span className="text-text-muted/50">{module.label}</span>
                   </div>

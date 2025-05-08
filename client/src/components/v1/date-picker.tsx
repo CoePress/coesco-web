@@ -1,4 +1,4 @@
-import { format, startOfToday, subDays } from "date-fns";
+import { format, startOfToday, subDays, startOfDay } from "date-fns";
 import { useState } from "react";
 
 import { Button } from "@/components";
@@ -13,18 +13,23 @@ type DatePickerProps = {
 
 const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [customStartDate, setCustomStartDate] = useState(dateRange.start);
-  const [customEndDate, setCustomEndDate] = useState(dateRange.end);
+  const [customStartDate, setCustomStartDate] = useState(
+    startOfDay(dateRange.start)
+  );
+  const [customEndDate, setCustomEndDate] = useState(startOfDay(dateRange.end));
 
   const dateRangePresets = [
     {
       label: "Today",
-      getValue: () => ({ start: startOfToday(), end: new Date() }),
+      getValue: () => ({
+        start: startOfDay(startOfToday()),
+        end: startOfDay(new Date()),
+      }),
     },
     {
       label: "Yesterday",
       getValue: () => {
-        const yesterday = subDays(startOfToday(), 1);
+        const yesterday = startOfDay(subDays(startOfToday(), 1));
         return { start: yesterday, end: yesterday };
       },
     },
@@ -33,17 +38,18 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
       getValue: () => {
         const now = new Date();
         const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday as start
-        startOfWeek.setHours(0, 0, 0, 0);
-        return { start: startOfWeek, end: now };
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        return { start: startOfDay(startOfWeek), end: startOfDay(now) };
       },
     },
     {
       label: "This Month",
       getValue: () => {
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { start, end: now };
+        const start = startOfDay(
+          new Date(now.getFullYear(), now.getMonth(), 1)
+        );
+        return { start, end: startOfDay(now) };
       },
     },
     {
@@ -51,16 +57,16 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
       getValue: () => {
         const now = new Date();
         const quarter = Math.floor(now.getMonth() / 3);
-        const start = new Date(now.getFullYear(), quarter * 3, 1);
-        return { start, end: now };
+        const start = startOfDay(new Date(now.getFullYear(), quarter * 3, 1));
+        return { start, end: startOfDay(now) };
       },
     },
     {
       label: "This Year",
       getValue: () => {
         const now = new Date();
-        const start = new Date(now.getFullYear(), 0, 1);
-        return { start, end: now };
+        const start = startOfDay(new Date(now.getFullYear(), 0, 1));
+        return { start, end: startOfDay(now) };
       },
     },
     {
@@ -69,22 +75,21 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
         const now = new Date();
         const startOfThisWeek = new Date(now);
         startOfThisWeek.setDate(now.getDate() - now.getDay());
-        startOfThisWeek.setHours(0, 0, 0, 0);
         const start = new Date(startOfThisWeek);
         start.setDate(start.getDate() - 7);
         const end = new Date(startOfThisWeek);
         end.setDate(end.getDate() - 1);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
+        return { start: startOfDay(start), end: startOfDay(end) };
       },
     },
     {
       label: "Last Month",
       getValue: () => {
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const end = new Date(now.getFullYear(), now.getMonth(), 0);
-        end.setHours(23, 59, 59, 999);
+        const start = startOfDay(
+          new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        );
+        const end = startOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
         return { start, end };
       },
     },
@@ -93,9 +98,12 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
       getValue: () => {
         const now = new Date();
         const currentQuarter = Math.floor(now.getMonth() / 3);
-        const start = new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1);
-        const end = new Date(now.getFullYear(), currentQuarter * 3, 0);
-        end.setHours(23, 59, 59, 999);
+        const start = startOfDay(
+          new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1)
+        );
+        const end = startOfDay(
+          new Date(now.getFullYear(), currentQuarter * 3, 0)
+        );
         return { start, end };
       },
     },
@@ -103,8 +111,8 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
       label: "Last Year",
       getValue: () => {
         const now = new Date();
-        const start = new Date(now.getFullYear() - 1, 0, 1);
-        const end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+        const start = startOfDay(new Date(now.getFullYear() - 1, 0, 1));
+        const end = startOfDay(new Date(now.getFullYear() - 1, 11, 31));
         return { start, end };
       },
     },

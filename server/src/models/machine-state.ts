@@ -14,10 +14,7 @@ class MachineState
   declare execution: string;
   declare controller: string;
   declare program: string;
-  declare tool: string;
-  declare spindle: ISpindle;
-  declare axes: IAxis[];
-  declare feedRate: number;
+  declare durationMs: number;
   declare timestamp: Date;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -34,7 +31,6 @@ class MachineState
           type: DataTypes.UUID,
           allowNull: false,
         },
-
         state: {
           type: DataTypes.STRING,
           allowNull: false,
@@ -51,21 +47,9 @@ class MachineState
           type: DataTypes.STRING,
           allowNull: false,
         },
-        tool: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        spindle: {
-          type: DataTypes.JSONB,
-          allowNull: false,
-        },
-        axes: {
-          type: DataTypes.JSONB,
-          allowNull: false,
-        },
-        feedRate: {
-          type: DataTypes.FLOAT,
-          allowNull: false,
+        durationMs: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
         },
         timestamp: {
           type: DataTypes.DATE,
