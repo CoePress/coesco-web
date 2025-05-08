@@ -267,7 +267,11 @@ class StateService implements IStateService {
       },
       utilization: activePercentagesWithinEachDivisionTime,
       states: percentsByState,
-      machines: [],
+      machines: machines.map((machine) => ({
+        id: machine.id,
+        name: machine.name,
+        type: machine.type,
+      })),
       alarms: [],
     };
   }

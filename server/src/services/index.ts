@@ -54,7 +54,7 @@ class Services {
     await this.machineService.initialize();
     await this.connectionService.initialize();
     // await this.seedSampleData();
-    await this.stateService.createTestStates();
+    // await this.stateService.createTestStates();
 
     this.dataCollectorService.startBroadcastingMachineStates();
   }
