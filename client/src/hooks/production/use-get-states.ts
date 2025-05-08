@@ -7,8 +7,8 @@ import { IMachineState, IStateQueryParams } from "@/utils/t";
 const useGetStates = ({
   page,
   limit,
-  sortBy = "timestamp",
-  sortOrder = "desc",
+  sortBy,
+  sortOrder,
   search,
   startDate,
   endDate,
@@ -44,7 +44,7 @@ const useGetStates = ({
           withCredentials: true,
         });
 
-        setStates(data);
+        setStates(data.items);
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);

@@ -2,7 +2,7 @@ import { Button, StatusBadge, Table } from "@/components";
 import DatePicker from "@/components/v1/date-picker";
 import PageHeader from "@/components/v1/page-header";
 import { Download } from "lucide-react";
-import { startOfToday } from "date-fns";
+import { format, startOfToday } from "date-fns";
 import { useState } from "react";
 import useGetStates from "@/hooks/production/use-get-states";
 import useGetMachines from "@/hooks/production/use-get-machines";
@@ -91,24 +91,27 @@ const MachineStates = () => {
       header: "Program",
     },
     {
-      key: "alarm",
-      header: "Alarm",
+      key: "startTime",
+      header: "Start",
       render: (value: string) => {
-        if (value === "No alarm" || !value) return "-";
-
-        return (
-          <StatusBadge
-            label={value}
-            variant="error"
-          />
-        );
+        return format(new Date(value), "MMM dd, hh:mm:ss a");
       },
     },
     {
-      key: "durationMs",
+      key: "endTime",
+      header: "End",
+      render: (value: string) => {
+        return value ? format(new Date(value), "MMM dd, hh:mm:ss a") : "-";
+      },
+    },
+    {
+      key: "duration",
       header: "Duration",
-      render: (value: number) => {
-        return <div>{formatDuration(value)}</div>;
+      render: (_: any, row: any) => {
+        const start = new Date(row.startTime);
+        const end = row.endTime ? new Date(row.endTime) : new Date();
+        const durationMs = end.getTime() - start.getTime();
+        return formatDuration(durationMs);
       },
     },
   ];

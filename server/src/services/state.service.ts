@@ -26,7 +26,7 @@ class StateService implements IStateService {
     const [states, total] = await Promise.all([
       MachineState.findAll({
         where: whereClause,
-        order: orderClause.length ? orderClause : [["timestamp", "DESC"]],
+        order: orderClause.length ? orderClause : [["endDate", "DESC"]],
         offset,
         limit,
       }),
@@ -58,10 +58,10 @@ class StateService implements IStateService {
     endDate: string
   ): Promise<IStateOverview> {
     const now = new Date();
-    console.log(`[getStateOverview] Starting with now: ${now.toISOString()}`);
+    console.log(`Starting with now: ${now.toISOString()}`);
 
     const dateRange = createDateRange(startDate, endDate);
-    console.log(`[getStateOverview] Date range details:`);
+    console.log(`Date range details:`);
     console.log(`  Start date: ${dateRange.startDate}`);
     console.log(`  End date: ${dateRange.endDate}`);
     console.log(`  Total duration: ${dateRange.totalDuration}`);
@@ -71,17 +71,17 @@ class StateService implements IStateService {
 
     const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5; // 7.5 hours in milliseconds
     console.log(
-      `[getStateOverview] Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
+      `Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
     );
 
     const machineDurationPerMachinePerDateRange =
       machineDurationPerMachinePerDay * dateRange.totalDays;
     console.log(
-      `[getStateOverview] Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
+      `Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
     );
 
     // Get all machines and states for the date range
-    console.log(`[getStateOverview] Fetching machines and states...`);
+    console.log(`Fetching machines and states...`);
     const [machines, states, previousStates] = await Promise.all([
       this.services.machineService.getMachines(),
       this.getStates({
@@ -95,24 +95,18 @@ class StateService implements IStateService {
     ]);
 
     const machineCount = machines.length;
-    console.log(`[getStateOverview] Machine count: ${machineCount}`);
-    console.log(
-      `[getStateOverview] Current states count: ${states.items.length}`
-    );
-    console.log(
-      `[getStateOverview] Previous states count: ${previousStates.items.length}`
-    );
+    console.log(`Machine count: ${machineCount}`);
+    console.log(`Current states count: ${states.items.length}`);
+    console.log(`Previous states count: ${previousStates.items.length}`);
 
     if (machineCount === 0) {
-      console.log(`[getStateOverview] ERROR: No machines found`);
+      console.log(`ERROR: No machines found`);
       throw new ValidationError("No machines found");
     }
 
     const totalMachineDuration =
       machineDurationPerMachinePerDateRange * machineCount;
-    console.log(
-      `[getStateOverview] Total machine duration: ${totalMachineDuration}`
-    );
+    console.log(`Total machine duration: ${totalMachineDuration}`);
 
     // Calculate total available time (7.5h per machine per day)
     const hoursPerDay = 7.5;
@@ -125,14 +119,13 @@ class StateService implements IStateService {
       states.items,
       dateRange.startDate,
       dateRange.endDate,
-      now,
-      machineCount
+      now
     );
 
     // Calculate utilization
     const utilization = (activeTime / totalAvailableTime) * 100;
 
-    console.log(`[getStateOverview] Metrics:`);
+    console.log(`Metrics:`);
     console.log(`  Total available time: ${totalAvailableTime}ms`);
     console.log(`  Total active time: ${activeTime}ms`);
     console.log(`  Utilization: ${utilization.toFixed(2)}%`);
@@ -142,7 +135,7 @@ class StateService implements IStateService {
       (acc, total) => acc + total,
       0
     );
-    console.log(`[getStateOverview] Total state duration: ${stateTotal}`);
+    console.log(`Total state duration: ${stateTotal}`);
 
     const percentsByState = Object.entries(totalsByState).map(
       ([state, total]) => ({
@@ -151,20 +144,15 @@ class StateService implements IStateService {
         percentage: stateTotal === 0 ? 0 : (total / stateTotal) * 100,
       })
     );
-    console.log(
-      `[getStateOverview] State percentages:`,
-      JSON.stringify(percentsByState, null, 2)
-    );
+    console.log(`State percentages:`, JSON.stringify(percentsByState, null, 2));
 
     // Calculate time divisions
-    console.log(`[getStateOverview] Calculating time divisions...`);
+    console.log(`Calculating time divisions...`);
     const { scale, divisionCount } = this.getOverviewScale(
       dateRange.startDate,
       dateRange.endDate
     );
-    console.log(
-      `[getStateOverview] Scale: ${scale}, Division count: ${divisionCount}`
-    );
+    console.log(`Scale: ${scale}, Division count: ${divisionCount}`);
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => {
       const start = this.calculateDivisionStart(dateRange.startDate, scale, i);
@@ -180,21 +168,18 @@ class StateService implements IStateService {
         label: this.formatDivisionLabel(start, scale),
       };
     });
-    console.log(`[getStateOverview] Created ${divisions.length} divisions`);
+    console.log(`Created ${divisions.length} divisions`);
 
     // Calculate utilization for each division
-    console.log(`[getStateOverview] Calculating division utilizations...`);
+    console.log(`Calculating division utilizations...`);
     const activePercentagesWithinEachDivisionTime = divisions.map(
       (division) => {
-        console.log(
-          `[getStateOverview] Processing division: ${division.label}`
-        );
+        console.log(`Processing division: ${division.label}`);
         const { activeTime: divisionActiveTime } = this.calculateStateTotals(
           states.items,
           division.start,
           division.end,
-          now,
-          machineCount
+          now
         );
 
         const divisionDuration =
@@ -205,7 +190,7 @@ class StateService implements IStateService {
             ? 0
             : (divisionActiveTime / divisionTotalTime) * 100;
 
-        console.log(`[getStateOverview] Division ${division.label} metrics:`);
+        console.log(`Division ${division.label} metrics:`);
         console.log(`  Duration: ${divisionDuration}`);
         console.log(`  Total time: ${divisionTotalTime}`);
         console.log(`  Active time: ${divisionActiveTime}`);
@@ -220,8 +205,7 @@ class StateService implements IStateService {
             states.items,
             division.start,
             division.end,
-            now,
-            machineCount
+            now
           ).totalsByState,
         };
       }
@@ -232,8 +216,7 @@ class StateService implements IStateService {
       previousStates.items,
       dateRange.previousStart,
       dateRange.previousEnd,
-      now,
-      machineCount
+      now
     );
 
     // Then the existing alarm metrics code will work
@@ -244,12 +227,12 @@ class StateService implements IStateService {
         ? 0
         : ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
 
-    console.log(`[getStateOverview] Alarm metrics:`);
+    console.log(`Alarm metrics:`);
     console.log(`  Current alarms: ${alarmCount}`);
     console.log(`  Previous alarms: ${previousAlarmCount}`);
     console.log(`  Alarm change: ${alarmChange.toFixed(2)}%`);
 
-    console.log(`[getStateOverview] Returning final overview`);
+    console.log(`Returning final overview`);
     return {
       kpis: {
         utilization: {
@@ -280,8 +263,7 @@ class StateService implements IStateService {
     states: IMachineState[],
     startDate: Date,
     endDate: Date,
-    now: Date,
-    machineCount: number
+    now: Date
   ): { totalsByState: Record<string, number>; activeTime: number } {
     const totalsByState: Record<string, number> = {};
     let activeTime = 0;
