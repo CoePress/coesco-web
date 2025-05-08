@@ -8,11 +8,19 @@ import { error } from "./logger";
 import {
   FanucControllerMode,
   FanucExecutionMode,
+  IDateRange,
   IQueryBuilderResult,
   IQueryParams,
 } from "./types";
 import { NextFunction, Request, Response } from "express";
 import { Op } from "sequelize";
+import { toZonedTime } from "date-fns-tz";
+import {
+  addMilliseconds,
+  differenceInMilliseconds,
+  format,
+  parse,
+} from "date-fns";
 
 const emailConfig = {
   host: env.SMTP_HOST,
@@ -192,6 +200,7 @@ export const buildPaginationOptions = (
   };
 };
 
+// Utils
 export const hasThisChanged = async (a: any, b: any): Promise<boolean> => {
   if (typeof a !== typeof b) return false;
   if (typeof a === "object") {
@@ -245,4 +254,60 @@ export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   }
 
   return result;
+};
+
+export const createDateRange = (
+  startDate: string,
+  endDate: string
+): IDateRange => {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate)
+  ) {
+    throw new Error("Invalid date format. Use YYYY-MM-DD");
+  }
+
+  if (startDate > endDate) {
+    throw new Error("Start date must be before end date");
+  }
+
+  const timeZone = "America/New_York";
+
+  const startDateEST = toZonedTime(
+    parse(`${startDate} 00:00:00`, "yyyy-MM-dd HH:mm:ss", new Date()),
+    timeZone
+  );
+
+  const endDateEST = toZonedTime(
+    parse(`${endDate} 23:59:59.999`, "yyyy-MM-dd HH:mm:ss.SSS", new Date()),
+    timeZone
+  );
+
+  const totalDuration = differenceInMilliseconds(endDateEST, startDateEST) + 1;
+  const totalDays = Math.ceil(totalDuration / (1000 * 60 * 60 * 24));
+
+  const previousStart = toZonedTime(
+    addMilliseconds(startDateEST, -totalDuration),
+    timeZone
+  );
+
+  const previousEnd = toZonedTime(addMilliseconds(startDateEST, -1), timeZone);
+
+  return {
+    startDate: startDateEST,
+    endDate: endDateEST,
+    totalDuration,
+    totalDays,
+    previousStart,
+    previousEnd,
+  };
+};
+
+export const formatInEasternTime = (
+  date: Date,
+  formatStr = "yyyy-MM-dd"
+): string => {
+  const timeZone = "America/New_York";
+  const dateInET = toZonedTime(date, timeZone);
+  return format(dateInET, formatStr);
 };

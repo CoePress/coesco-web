@@ -431,3 +431,12 @@ export interface IApiResponse<T> {
     totalPages: number;
   };
 }
+
+export interface IDateRange {
+  startDate: Date;
+  endDate: Date;
+  totalDuration: number;
+  totalDays: number;
+  previousStart: Date;
+  previousEnd: Date;
+}

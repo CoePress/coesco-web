@@ -10,12 +10,10 @@ import {
   IPaginatedResponse,
   IStateTimeline,
 } from "@/utils/types";
-import { buildQuery } from "@/utils";
+import { buildQuery, createDateRange } from "@/utils";
 import Services from ".";
 import { Op } from "sequelize";
 import { sequelize } from "@/config/database";
-import { differenceInMilliseconds, addMilliseconds, parse } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
 
 // class Test {
 //   constructor(private services: Services) {}
@@ -337,12 +335,6 @@ class StateService implements IStateService {
     const { whereClause, orderClause, offset, limit, page } =
       buildQuery(params);
 
-    console.log(`Where clause: ${JSON.stringify(whereClause)}`);
-    console.log(`Order clause: ${JSON.stringify(orderClause)}`);
-    console.log(`Offset: ${offset}`);
-    console.log(`Limit: ${limit}`);
-    console.log(`Page: ${page}`);
-
     const [states, total] = await Promise.all([
       MachineState.findAll({
         where: whereClause,
@@ -379,56 +371,15 @@ class StateService implements IStateService {
     startDate: string,
     endDate: string
   ): Promise<IStateOverview> {
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(endDate)
-    ) {
-      throw new ValidationError("Invalid date format. Use YYYY-MM-DD");
-    }
-
-    // Compare as strings for validation
-    if (startDate > endDate) {
-      throw new ValidationError("Start date must be before end date");
-    }
-
     const now = new Date();
-    const timeZone = "America/New_York";
 
-    // Parse the date strings directly with date-fns to create dates at midnight Eastern Time
-    const startDateEST = toZonedTime(
-      parse(`${startDate} 00:00:00`, "yyyy-MM-dd HH:mm:ss", new Date()),
-      timeZone
-    );
-
-    const endDateEST = toZonedTime(
-      parse(`${endDate} 23:59:59.999`, "yyyy-MM-dd HH:mm:ss.SSS", new Date()),
-      timeZone
-    );
-
-    console.log(`Start date: ${startDateEST}`);
-    console.log(`End date: ${endDateEST}`);
-
-    // Calculate duration and days
-    const totalDuration =
-      differenceInMilliseconds(endDateEST, startDateEST) + 1;
-    const totalDays = Math.ceil(totalDuration / (1000 * 60 * 60 * 24));
-
-    console.log(`Total duration: ${totalDuration}`);
-    console.log(`Total days: ${totalDays}`);
-
-    // Calculate previous period
-    const previousStart = toZonedTime(
-      addMilliseconds(startDateEST, -totalDuration),
-      timeZone
-    );
-
-    const previousEnd = toZonedTime(
-      addMilliseconds(startDateEST, -1),
-      timeZone
-    );
-
-    console.log(`Previous start: ${previousStart}`);
-    console.log(`Previous end: ${previousEnd}`);
+    const dateRange = createDateRange(startDate, endDate);
+    console.log(`Start date: ${dateRange.startDate}`);
+    console.log(`End date: ${dateRange.endDate}`);
+    console.log(`Total duration: ${dateRange.totalDuration}`);
+    console.log(`Total days: ${dateRange.totalDays}`);
+    console.log(`Previous start: ${dateRange.previousStart}`);
+    console.log(`Previous end: ${dateRange.previousEnd}`);
 
     const machines = await this.services.machineService.getMachines();
     const machineCount = machines.length;
@@ -436,15 +387,15 @@ class StateService implements IStateService {
     console.log(`Machine count: ${machineCount}`);
 
     const states = await this.getStates({
-      startDate: startDateEST,
-      endDate: endDateEST,
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
     });
 
     console.log(`State count: ${states.items.length}`);
 
     const previousStates = await this.getStates({
-      startDate: previousStart,
-      endDate: previousEnd,
+      startDate: dateRange.previousStart,
+      endDate: dateRange.previousEnd,
     });
 
     const totalsByState = states.items.reduce((acc, state) => {
@@ -469,10 +420,11 @@ class StateService implements IStateService {
     }, {});
 
     const utilization =
-      (totalsByState["ACTIVE"] / totalDuration) * machineCount;
+      (totalsByState["ACTIVE"] / dateRange.totalDuration) * machineCount;
 
     const previousUtilization =
-      (previousTotalsByState["ACTIVE"] / totalDuration) * machineCount;
+      (previousTotalsByState["ACTIVE"] / dateRange.totalDuration) *
+      machineCount;
 
     const utilizationChange =
       ((utilization - previousUtilization) / previousUtilization) * 100;
@@ -484,18 +436,22 @@ class StateService implements IStateService {
       ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
 
     const { scale, divisionCount } = this.getOverviewScale(
-      startDateEST,
-      endDateEST
+      dateRange.startDate,
+      dateRange.endDate
     );
 
     const divisions = [];
     for (let i = 0; i < divisionCount; i++) {
-      const divisionStart = this.calculateDivisionStart(startDateEST, scale, i);
+      const divisionStart = this.calculateDivisionStart(
+        dateRange.startDate,
+        scale,
+        i
+      );
       const divisionEnd = this.calculateDivisionEnd(
-        startDateEST,
+        dateRange.startDate,
         scale,
         i,
-        endDateEST
+        dateRange.endDate
       );
       const divisionLabel = this.formatDivisionLabel(divisionStart, scale);
       divisions.push({
