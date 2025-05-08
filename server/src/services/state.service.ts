@@ -13,6 +13,7 @@ import {
 import { buildStateQuery, createDateRange } from "@/utils";
 import Services from ".";
 import { sequelize } from "@/config/database";
+import { Op } from "sequelize";
 
 class StateService implements IStateService {
   constructor(private services: Services) {}
@@ -326,10 +327,24 @@ class StateService implements IStateService {
     console.log(`Previous start: ${dateRange.previousStart}`);
     console.log(`Previous end: ${dateRange.previousEnd}`);
 
+    const machines = await this.services.machineService.getMachines();
+
+    const timeline = await MachineState.findAll({
+      where: {
+        startTime: { [Op.gte]: dateRange.startDate },
+        endTime: { [Op.lte]: dateRange.endDate },
+      },
+    });
+
     return {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
-      machines: [],
+      machines: machines.map((machine) => ({
+        id: machine.id,
+        name: machine.name,
+        type: machine.type,
+        timeline: timeline.filter((state) => state.machineId === machine.id),
+      })),
     };
   }
 

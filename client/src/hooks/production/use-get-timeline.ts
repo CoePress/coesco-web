@@ -11,7 +11,7 @@ const useGetTimeline = ({
   startDate?: string;
   endDate?: string;
 }) => {
-  const [timeline, setTimeline] = useState<IStateTimeline[] | null>(null);
+  const [timeline, setTimeline] = useState<IStateTimeline | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
@@ -34,7 +34,7 @@ const useGetTimeline = ({
           }
         );
 
-        setTimeline(data);
+        setTimeline(data.items);
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);

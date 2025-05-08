@@ -216,14 +216,14 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
 
           <div className="space-y-1">
             {timeline &&
-              timeline.map((machine) => (
+              timeline.machines.map((machine) => (
                 <div
-                  key={machine.machineId}
+                  key={machine.id}
                   className="flex items-center group hover:bg-surface/50">
                   <div className="w-44 flex-shrink-0 p-2 bg-background sticky left-0 z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium whitespace-nowrap truncate">
-                        {machine.machineName}
+                        {machine.name}
                       </span>
                     </div>
                   </div>
@@ -287,7 +287,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
         {timeline &&
           Array.from(
             new Set(
-              timeline
+              timeline.machines
                 .flatMap((machine) => machine.timeline)
                 .map((x) => x.state)
             )
