@@ -172,8 +172,8 @@ export interface IMachineState {
   execution: string;
   controller: string;
   program: string;
-  durationMs?: number;
-  timestamp: Date;
+  startTime: Date; // When the state started
+  endTime: Date | null; // When the state ended (null if still active)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -184,8 +184,8 @@ export interface ICreateMachineStateDTO {
   execution: string;
   controller: string;
   program: string;
-  durationMs?: number;
-  timestamp: Date;
+  startTime: Date;
+  endTime: Date | null;
 }
 
 export interface IStateOverview {

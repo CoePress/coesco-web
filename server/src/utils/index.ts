@@ -317,7 +317,7 @@ export const buildStateQuery = (params: IQueryParams): IQueryBuilderResult => {
   const {
     page,
     limit,
-    sortBy = "createdAt",
+    sortBy = "startTime",
     sortOrder = "desc",
     ...filters
   } = params;
@@ -336,41 +336,17 @@ export const buildStateQuery = (params: IQueryParams): IQueryBuilderResult => {
   });
 
   if (filters.startDate && filters.endDate) {
-    const dateConditions = [
+    whereClause[Op.and] = [
+      // State starts before division ends
+      { startTime: { [Op.lte]: filters.endDate } },
+      // State either hasn't ended or ends after division starts
       {
-        timestamp: {
-          [Op.between]: [filters.startDate, filters.endDate],
-        },
-      },
-      {
-        timestamp: { [Op.lte]: filters.endDate },
         [Op.or]: [
-          {
-            durationMs: {
-              [Op.gte]: literal(
-                `(EXTRACT(EPOCH FROM '${filters.endDate.toISOString()}'::timestamp) * 1000 - EXTRACT(EPOCH FROM timestamp) * 1000)`
-              ),
-            },
-          },
-          { durationMs: null },
-        ],
-      },
-      {
-        timestamp: { [Op.lte]: filters.startDate },
-        [Op.or]: [
-          {
-            durationMs: {
-              [Op.gte]: literal(
-                `(EXTRACT(EPOCH FROM '${filters.endDate.toISOString()}'::timestamp) * 1000 - EXTRACT(EPOCH FROM timestamp) * 1000)`
-              ),
-            },
-          },
-          { durationMs: null },
+          { endTime: null },
+          { endTime: { [Op.gte]: filters.startDate } },
         ],
       },
     ];
-
-    whereClause[Op.or] = dateConditions;
   }
 
   if (filters.search) {
@@ -381,12 +357,10 @@ export const buildStateQuery = (params: IQueryParams): IQueryBuilderResult => {
 
     if (whereClause[Op.or]) {
       const existingOr = whereClause[Op.or];
-
       whereClause[Op.and] = [
         { [Op.or]: existingOr },
         { [Op.or]: searchCondition },
       ];
-
       delete whereClause[Op.or];
     } else {
       whereClause[Op.or] = searchCondition;

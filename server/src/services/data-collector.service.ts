@@ -86,7 +86,8 @@ class DataCollectorService implements IDataCollectorService {
       // Save to database
       await this.services.stateService.createState({
         ...newState,
-        timestamp: new Date(),
+        startTime: new Date(),
+        endTime: null,
       });
     }
 

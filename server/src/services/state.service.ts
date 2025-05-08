@@ -12,7 +12,6 @@ import {
 } from "@/utils/types";
 import { buildStateQuery, createDateRange } from "@/utils";
 import Services from ".";
-import { Op } from "sequelize";
 import { sequelize } from "@/config/database";
 
 class StateService implements IStateService {
@@ -59,199 +58,211 @@ class StateService implements IStateService {
     endDate: string
   ): Promise<IStateOverview> {
     const now = new Date();
+    console.log(`[getStateOverview] Starting with now: ${now.toISOString()}`);
 
     const dateRange = createDateRange(startDate, endDate);
-    console.log(`Start date: ${dateRange.startDate}`);
-    console.log(`End date: ${dateRange.endDate}`);
-    console.log(`Total duration: ${dateRange.totalDuration}`);
-    console.log(`Total days: ${dateRange.totalDays}`);
-    console.log(`Previous start: ${dateRange.previousStart}`);
-    console.log(`Previous end: ${dateRange.previousEnd}`);
+    console.log(`[getStateOverview] Date range details:`);
+    console.log(`  Start date: ${dateRange.startDate}`);
+    console.log(`  End date: ${dateRange.endDate}`);
+    console.log(`  Total duration: ${dateRange.totalDuration}`);
+    console.log(`  Total days: ${dateRange.totalDays}`);
+    console.log(`  Previous start: ${dateRange.previousStart}`);
+    console.log(`  Previous end: ${dateRange.previousEnd}`);
 
-    const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
+    const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5; // 7.5 hours in milliseconds
     console.log(
-      `Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
+      `[getStateOverview] Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
     );
 
     const machineDurationPerMachinePerDateRange =
       machineDurationPerMachinePerDay * dateRange.totalDays;
     console.log(
-      `Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
+      `[getStateOverview] Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
     );
 
-    const machines = await this.services.machineService.getMachines();
+    // Get all machines and states for the date range
+    console.log(`[getStateOverview] Fetching machines and states...`);
+    const [machines, states, previousStates] = await Promise.all([
+      this.services.machineService.getMachines(),
+      this.getStates({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      }),
+      this.getStates({
+        startDate: dateRange.previousStart,
+        endDate: dateRange.previousEnd,
+      }),
+    ]);
+
     const machineCount = machines.length;
-    console.log(`Machine count: ${machineCount}`);
+    console.log(`[getStateOverview] Machine count: ${machineCount}`);
+    console.log(
+      `[getStateOverview] Current states count: ${states.items.length}`
+    );
+    console.log(
+      `[getStateOverview] Previous states count: ${previousStates.items.length}`
+    );
+
+    if (machineCount === 0) {
+      console.log(`[getStateOverview] ERROR: No machines found`);
+      throw new ValidationError("No machines found");
+    }
 
     const totalMachineDuration =
       machineDurationPerMachinePerDateRange * machineCount;
-    console.log(`Total machine duration: ${totalMachineDuration}`);
+    console.log(
+      `[getStateOverview] Total machine duration: ${totalMachineDuration}`
+    );
 
-    const states = await this.getStates({
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate,
-    });
+    // Calculate total available time (7.5h per machine per day)
+    const hoursPerDay = 7.5;
+    const msPerHour = 60 * 60 * 1000;
+    const totalAvailableTime =
+      hoursPerDay * msPerHour * dateRange.totalDays * machineCount;
 
-    console.log(`State count: ${states.items.length}`);
+    // Calculate active time
+    const { totalsByState, activeTime } = this.calculateStateTotals(
+      states.items,
+      dateRange.startDate,
+      dateRange.endDate,
+      now,
+      machineCount
+    );
 
-    const previousStates = await this.getStates({
-      startDate: dateRange.previousStart,
-      endDate: dateRange.previousEnd,
-    });
+    // Calculate utilization
+    const utilization = (activeTime / totalAvailableTime) * 100;
 
-    const totalsByState = states.items.reduce((acc, state) => {
-      if (!acc[state.state]) {
-        acc[state.state] = 0;
-      }
+    console.log(`[getStateOverview] Metrics:`);
+    console.log(`  Total available time: ${totalAvailableTime}ms`);
+    console.log(`  Total active time: ${activeTime}ms`);
+    console.log(`  Utilization: ${utilization.toFixed(2)}%`);
 
-      if (state.durationMs) {
-        acc[state.state] += Number(state.durationMs);
-      } else {
-        acc[state.state] += Number(now.getTime() - state.timestamp.getTime());
-      }
-
-      return acc;
-    }, {} as Record<string, number>);
-
+    // Calculate state percentages
     const stateTotal = Object.values(totalsByState).reduce(
       (acc, total) => acc + total,
       0
     );
+    console.log(`[getStateOverview] Total state duration: ${stateTotal}`);
 
     const percentsByState = Object.entries(totalsByState).map(
-      ([state, total]) => {
-        return {
-          state,
-          total: total,
-          percentage: (total / stateTotal) * 100,
-        };
-      }
+      ([state, total]) => ({
+        state,
+        total,
+        percentage: stateTotal === 0 ? 0 : (total / stateTotal) * 100,
+      })
+    );
+    console.log(
+      `[getStateOverview] State percentages:`,
+      JSON.stringify(percentsByState, null, 2)
     );
 
-    console.log(`Totals by state: ${JSON.stringify(totalsByState)}`);
-
-    console.log(`Percents by state: ${JSON.stringify(percentsByState)}`);
-
-    const totalStateDuration = Object.values(totalsByState).reduce(
-      (acc, total) => acc + total,
-      0
-    );
-
-    console.log(`Total state duration: ${totalStateDuration}`);
-
-    const previousTotalsByState = previousStates.items.reduce((acc, state) => {
-      if (!acc[state.state]) {
-        acc[state.state] = 0;
-      }
-      acc[state.state] += this.getStateDuration(state, now);
-      return acc;
-    }, {} as Record<string, number>);
-
-    const utilization =
-      (totalsByState["ACTIVE"] / dateRange.totalDuration) * machineCount;
-
-    const previousUtilization =
-      (previousTotalsByState["ACTIVE"] / dateRange.totalDuration) *
-      machineCount;
-
-    const utilizationChange =
-      ((utilization - previousUtilization) / previousUtilization) * 100;
-
-    const alarmCount = 0;
-    const previousAlarmCount = 0;
-
-    const alarmChange =
-      ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
-
+    // Calculate time divisions
+    console.log(`[getStateOverview] Calculating time divisions...`);
     const { scale, divisionCount } = this.getOverviewScale(
       dateRange.startDate,
       dateRange.endDate
     );
+    console.log(
+      `[getStateOverview] Scale: ${scale}, Division count: ${divisionCount}`
+    );
 
-    const divisions = [];
-    for (let i = 0; i < divisionCount; i++) {
-      const divisionStart = this.calculateDivisionStart(
-        dateRange.startDate,
-        scale,
-        i
-      );
-      const divisionEnd = this.calculateDivisionEnd(
+    const divisions = Array.from({ length: divisionCount }, (_, i) => {
+      const start = this.calculateDivisionStart(dateRange.startDate, scale, i);
+      const end = this.calculateDivisionEnd(
         dateRange.startDate,
         scale,
         i,
         dateRange.endDate
       );
-      const divisionLabel = this.formatDivisionLabel(divisionStart, scale);
-      divisions.push({
-        start: divisionStart,
-        end: divisionEnd,
-        label: divisionLabel,
-      });
-    }
+      return {
+        start,
+        end,
+        label: this.formatDivisionLabel(start, scale),
+      };
+    });
+    console.log(`[getStateOverview] Created ${divisions.length} divisions`);
 
+    // Calculate utilization for each division
+    console.log(`[getStateOverview] Calculating division utilizations...`);
     const activePercentagesWithinEachDivisionTime = divisions.map(
       (division) => {
-        const statesInDivision = states.items.filter((state) => {
-          const stateEnd = state.durationMs
-            ? new Date(state.timestamp.getTime() + state.durationMs)
-            : now;
-          return state.timestamp <= division.end && stateEnd >= division.start;
-        });
+        console.log(
+          `[getStateOverview] Processing division: ${division.label}`
+        );
+        const { activeTime: divisionActiveTime } = this.calculateStateTotals(
+          states.items,
+          division.start,
+          division.end,
+          now,
+          machineCount
+        );
 
         const divisionDuration =
           division.end.getTime() - division.start.getTime();
+        const divisionTotalTime = divisionDuration * machineCount;
+        const divisionUtilization =
+          divisionTotalTime === 0
+            ? 0
+            : (divisionActiveTime / divisionTotalTime) * 100;
 
-        const totalsByState = statesInDivision.reduce((acc, state) => {
-          if (!acc[state.state]) {
-            acc[state.state] = 0;
-          }
-
-          const stateStart = state.timestamp;
-          const stateEnd = new Date(
-            stateStart.getTime() + this.getStateDuration(state, now)
-          );
-
-          const overlapStart = Math.max(
-            stateStart.getTime(),
-            division.start.getTime()
-          );
-          const overlapEnd = Math.min(
-            stateEnd.getTime(),
-            division.end.getTime()
-          );
-          const overlapDuration = (overlapEnd - overlapStart) * machineCount;
-
-          acc[state.state] += overlapDuration;
-          return acc;
-        }, {} as Record<string, number>);
-
-        const activeDuration = totalsByState["ACTIVE"] || 0;
-        const utilization =
-          (activeDuration / (divisionDuration * machineCount)) * 100;
+        console.log(`[getStateOverview] Division ${division.label} metrics:`);
+        console.log(`  Duration: ${divisionDuration}`);
+        console.log(`  Total time: ${divisionTotalTime}`);
+        console.log(`  Active time: ${divisionActiveTime}`);
+        console.log(`  Utilization: ${divisionUtilization.toFixed(2)}%`);
 
         return {
           label: division.label,
           start: division.start,
           end: division.end,
-          utilization: Number(utilization.toFixed(2)) || 0,
-          stateTotals: totalsByState,
+          utilization: Number(divisionUtilization.toFixed(2)),
+          stateTotals: this.calculateStateTotals(
+            states.items,
+            division.start,
+            division.end,
+            now,
+            machineCount
+          ).totalsByState,
         };
       }
     );
 
+    // Add this before the alarm metrics calculation
+    const { totalsByState: previousTotalsByState } = this.calculateStateTotals(
+      previousStates.items,
+      dateRange.previousStart,
+      dateRange.previousEnd,
+      now,
+      machineCount
+    );
+
+    // Then the existing alarm metrics code will work
+    const alarmCount = totalsByState["ALARM"] || 0;
+    const previousAlarmCount = previousTotalsByState["ALARM"] || 0;
+    const alarmChange =
+      previousAlarmCount === 0
+        ? 0
+        : ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
+
+    console.log(`[getStateOverview] Alarm metrics:`);
+    console.log(`  Current alarms: ${alarmCount}`);
+    console.log(`  Previous alarms: ${previousAlarmCount}`);
+    console.log(`  Alarm change: ${alarmChange.toFixed(2)}%`);
+
+    console.log(`[getStateOverview] Returning final overview`);
     return {
       kpis: {
         utilization: {
-          value: Number(utilization.toFixed(2)) || 0,
-          change: Number(utilizationChange.toFixed(2)) || 0,
+          value: Number(utilization.toFixed(2)),
+          change: 0,
         },
         averageRuntime: {
-          value: 0,
+          value: 0, // TODO: Implement average runtime calculation
           change: 0,
         },
         alarmCount: {
-          value: Number(alarmCount.toFixed(2)) || 0,
-          change: Number(alarmChange.toFixed(2)) || 0,
+          value: Number(alarmCount.toFixed(2)),
+          change: Number(alarmChange.toFixed(2)),
         },
       },
       utilization: activePercentagesWithinEachDivisionTime,
@@ -259,6 +270,62 @@ class StateService implements IStateService {
       machines: [],
       alarms: [],
     };
+  }
+
+  private calculateStateTotals(
+    states: IMachineState[],
+    startDate: Date,
+    endDate: Date,
+    now: Date,
+    machineCount: number
+  ): { totalsByState: Record<string, number>; activeTime: number } {
+    const totalsByState: Record<string, number> = {};
+    let activeTime = 0;
+
+    // Group states by machine
+    const statesByMachine = states.reduce((acc, state) => {
+      if (!acc[state.machineId]) {
+        acc[state.machineId] = [];
+      }
+      acc[state.machineId].push(state);
+      return acc;
+    }, {} as Record<string, IMachineState[]>);
+
+    // Calculate for each machine
+    Object.values(statesByMachine).forEach((machineStates) => {
+      // Filter states within the date range
+      const relevantStates = machineStates.filter((state) => {
+        const stateEnd = state.endTime || now;
+        return state.startTime <= endDate && stateEnd >= startDate;
+      });
+
+      // Calculate totals for each state
+      relevantStates.forEach((state) => {
+        if (!totalsByState[state.state]) {
+          totalsByState[state.state] = 0;
+        }
+
+        const stateStart = state.startTime;
+        const stateEnd = state.endTime || now;
+
+        // Calculate overlap with the date range
+        const overlapStart = Math.max(
+          stateStart.getTime(),
+          startDate.getTime()
+        );
+        const overlapEnd = Math.min(stateEnd.getTime(), endDate.getTime());
+        const overlapDuration = overlapEnd - overlapStart;
+
+        totalsByState[state.state] += overlapDuration;
+
+        // Track active time separately
+        if (state.state === "ACTIVE") {
+          activeTime += overlapDuration;
+        }
+      });
+    });
+
+    return { totalsByState, activeTime };
   }
 
   async getStateTimeline(
@@ -287,10 +354,17 @@ class StateService implements IStateService {
       return await sequelize.transaction(async (t) => {
         await this.closePreviousState(
           stateData.machineId,
-          stateData.timestamp,
+          stateData.startTime,
           t
         );
-        return await MachineState.create(stateData, { transaction: t });
+        return await MachineState.create(
+          {
+            ...stateData,
+            startTime: stateData.startTime,
+            endTime: null,
+          },
+          { transaction: t }
+        );
       });
     } catch (error) {
       if (error.name === "SequelizeUniqueConstraintError") {
@@ -306,8 +380,8 @@ class StateService implements IStateService {
     id: string,
     stateData: Partial<ICreateMachineStateDTO>
   ): Promise<MachineState> {
-    if (stateData.timestamp !== undefined) {
-      throw new ValidationError("Timestamp cannot be updated");
+    if (stateData.endTime !== undefined) {
+      throw new ValidationError("End time cannot be updated");
     }
 
     const existingState = await this.getState(id);
@@ -318,7 +392,7 @@ class StateService implements IStateService {
       "execution",
       "controller",
       "program",
-      "durationMs",
+      "endTime",
     ];
 
     let isUpdated = false;
@@ -362,7 +436,7 @@ class StateService implements IStateService {
 
     const requiredFields = {
       machineId: "Machine ID is required",
-      timestamp: "Timestamp is required",
+      startTime: "Start time is required",
       state: "State is required",
       execution: "Execution is required",
       controller: "Controller is required",
@@ -374,40 +448,38 @@ class StateService implements IStateService {
     }
 
     if (
-      state.timestamp &&
-      !(state.timestamp instanceof Date) &&
-      isNaN(new Date(state.timestamp).getTime())
+      state.startTime &&
+      !(state.startTime instanceof Date) &&
+      isNaN(new Date(state.startTime).getTime())
     ) {
-      throw new ValidationError("Invalid timestamp format");
+      throw new ValidationError("Invalid start time format");
     }
 
     if (
-      state.durationMs !== null &&
-      state.durationMs !== undefined &&
-      state.durationMs <= 0
+      state.endTime !== null &&
+      state.endTime !== undefined &&
+      state.endTime <= state.startTime
     ) {
-      throw new ValidationError("Duration must be positive if provided");
+      throw new ValidationError("End time must be greater than start time");
     }
   }
 
   private async closePreviousState(
     machineId: string,
-    timestamp: Date,
+    startTime: Date,
     transaction?: any
   ): Promise<void> {
     const previousState = await MachineState.findOne({
       where: {
         machineId,
-        timestamp: { [Op.lt]: timestamp },
-        durationMs: null,
+        endTime: null,
       },
-      order: [["timestamp", "DESC"]],
+      order: [["startTime", "DESC"]],
       transaction,
     });
 
     if (previousState) {
-      previousState.durationMs =
-        timestamp.getTime() - previousState.timestamp.getTime();
+      previousState.endTime = startTime;
       await previousState.save({ transaction });
     }
   }
@@ -503,13 +575,9 @@ class StateService implements IStateService {
     return formatters[scale]?.(date) || "";
   }
 
-  private getStateDuration(state: IMachineState, now: Date): number {
-    return state.durationMs || now.getTime() - state.timestamp.getTime();
-  }
-
   async createSampleStates(): Promise<void> {
     const now = new Date();
-    const states = ["ACTIVE", "IDLE", "ALARM", "OFFLINE"];
+    const states = ["ACTIVE"]; // Only ACTIVE states
     const executions = [
       "RUNNING",
       "STOPPED",
@@ -528,54 +596,74 @@ class StateService implements IStateService {
       "TEACH",
     ];
 
-    // Get all machines
     const machines = await this.services.machineService.getMachines();
     if (machines.length === 0) {
       throw new ValidationError("No machines found to create sample states");
     }
 
-    // Generate states for each machine separately
     for (const machine of machines) {
-      // First create the current state (most recent) with NO duration
+      // Current state (only one with null endTime)
       const currentState: ICreateMachineStateDTO = {
         machineId: machine.id,
-        timestamp: now, // Current time
-        state: states[Math.floor(Math.random() * states.length)],
+        startTime: now,
+        endTime: null, // Only current state should have null endTime
+        state: "ACTIVE", // Always ACTIVE
         execution: executions[Math.floor(Math.random() * executions.length)],
         controller:
           controllerModes[Math.floor(Math.random() * controllerModes.length)],
         program: "P1000",
-        // No durationMs for current state
       };
 
       await this.createState(currentState);
 
-      // Start the historical data from now
-      let endTimestamp = now.getTime();
+      // Historical states
+      let endTime = now;
 
-      // Generate historical states going backwards in time
-      for (let i = 1; i < 5000; i++) {
+      for (let i = 1; i < 2000; i++) {
         const randomDuration = Math.floor(
           Math.random() * (120000 - 30000) + 30000
-        ); // 30s to 2min
-        const startTimestamp = endTimestamp - randomDuration;
+        );
+        const startTime = new Date(endTime.getTime() - randomDuration);
 
         const state: ICreateMachineStateDTO = {
           machineId: machine.id,
-          timestamp: new Date(startTimestamp),
-          state: states[Math.floor(Math.random() * states.length)],
+          startTime,
+          endTime, // Set the endTime to the previous state's start time
+          state: "ACTIVE", // Always ACTIVE
           execution: executions[Math.floor(Math.random() * executions.length)],
           controller:
             controllerModes[Math.floor(Math.random() * controllerModes.length)],
           program: `P${1000 + i}`,
-          durationMs: randomDuration,
         };
 
         await this.createState(state);
-
-        // Next state starts where this one ended
-        endTimestamp = startTimestamp;
+        endTime = startTime;
       }
+    }
+  }
+
+  async createTestStates(): Promise<void> {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+    const machines = await this.services.machineService.getMachines();
+    if (machines.length === 0) {
+      throw new ValidationError("No machines found to create test states");
+    }
+
+    for (const machine of machines) {
+      // Create a single ACTIVE state that started a week ago and is still active
+      const state: ICreateMachineStateDTO = {
+        machineId: machine.id,
+        startTime: oneWeekAgo,
+        endTime: null, // Still active
+        state: "ACTIVE",
+        execution: "RUNNING",
+        controller: "JOB",
+        program: "P1000",
+      };
+
+      await this.createState(state);
     }
   }
 }

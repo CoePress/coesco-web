@@ -14,8 +14,8 @@ class MachineState
   declare execution: string;
   declare controller: string;
   declare program: string;
-  declare durationMs: number;
-  declare timestamp: Date;
+  declare startTime: Date;
+  declare endTime: Date | null;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 
@@ -47,13 +47,13 @@ class MachineState
           type: DataTypes.STRING,
           allowNull: false,
         },
-        durationMs: {
-          type: DataTypes.BIGINT,
-          allowNull: true,
-        },
-        timestamp: {
+        startTime: {
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        endTime: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
       },
       {
@@ -61,7 +61,7 @@ class MachineState
         tableName: "machine_states",
         timestamps: true,
         underscored: true,
-        indexes: [{ fields: ["machine_id"] }, { fields: ["timestamp"] }],
+        indexes: [{ fields: ["machine_id"] }],
       }
     );
   }
