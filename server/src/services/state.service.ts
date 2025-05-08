@@ -15,317 +15,6 @@ import Services from ".";
 import { Op } from "sequelize";
 import { sequelize } from "@/config/database";
 
-// class Test {
-//   constructor(private services: Services) {}
-
-//   async getStateTimeline(startDate: Date, endDate: Date): Promise<any[]> {
-//     if (startDate > endDate) {
-//       throw new ValidationError("Start date must be before end date");
-//     }
-
-//     const startDateEST = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-//     const endDateEST = new Date(endDate.getTime() + 4 * 60 * 60 * 1000);
-
-//     if (startDateEST.getTime() === endDateEST.getTime()) {
-//       endDateEST.setTime(startDateEST.getTime() + 24 * 60 * 60 * 1000 - 1);
-//     } else {
-//       endDateEST.setTime(endDateEST.getTime() - 1);
-//     }
-
-//     const states = await this.getStatesByDateRange(startDateEST, endDateEST);
-
-//     // Get all machines
-//     const machines = await this.services.machineService.getMachines();
-
-//     // Group states by machineId
-//     const statesByMachine: { [machineId: string]: any[] } = {};
-//     for (const state of states) {
-//       if (!statesByMachine[state.machineId]) {
-//         statesByMachine[state.machineId] = [];
-//       }
-//       statesByMachine[state.machineId].push(state);
-//     }
-
-//     const timelines: {
-//       machineId: string;
-//       machineName: string;
-//       timeline: any[];
-//     }[] = [];
-
-//     for (const machine of machines) {
-//       const machineId = machine.id;
-//       const machineName = machine.name;
-//       const machineStates = (statesByMachine[machineId] || []).sort(
-//         (a, b) =>
-//           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-//       );
-
-//       const timeline: any[] = [];
-//       let cursor = new Date(startDateEST);
-
-//       if (machineStates.length === 0) {
-//         // No states at all: fill the whole range with OFFLINE
-//         timeline.push({
-//           state: "OFFLINE",
-//           timestamp: cursor.toISOString(),
-//           durationMs: endDateEST.getTime() - cursor.getTime(),
-//         });
-//       } else {
-//         for (let i = 0; i < machineStates.length; i++) {
-//           const state = machineStates[i];
-//           const stateStart = new Date(state.timestamp);
-//           const stateEnd =
-//             i < machineStates.length - 1
-//               ? new Date(machineStates[i + 1].timestamp)
-//               : new Date(endDateEST);
-
-//           // Fill gap before this state with OFFLINE
-//           if (stateStart > cursor) {
-//             timeline.push({
-//               state: "OFFLINE",
-//               timestamp: cursor.toISOString(),
-//               durationMs: stateStart.getTime() - cursor.getTime(),
-//             });
-//             cursor = new Date(stateStart);
-//           }
-
-//           // State duration is until next state or endDateEST
-//           const durationMs =
-//             (i < machineStates.length - 1
-//               ? new Date(machineStates[i + 1].timestamp)
-//               : endDateEST
-//             ).getTime() - stateStart.getTime();
-
-//           timeline.push({
-//             state: state.state,
-//             timestamp: state.timestamp,
-//             durationMs,
-//           });
-
-//           cursor = new Date(stateStart.getTime() + durationMs);
-//         }
-
-//         // Fill gap after last state with OFFLINE
-//         if (cursor < endDateEST) {
-//           timeline.push({
-//             state: "OFFLINE",
-//             timestamp: cursor.toISOString(),
-//             durationMs: endDateEST.getTime() - cursor.getTime(),
-//           });
-//         }
-//       }
-
-//       timelines.push({ machineId, machineName, timeline });
-//     }
-
-//     return timelines;
-//   }
-
-//   private async buildStateOverview(
-//     states: any[],
-//     startDate: Date,
-//     endDate: Date
-//   ): Promise<IStateOverview> {
-//     // 1. Group by machineId and sort by timestamp
-//     const statesByMachine: { [machineId: string]: any[] } = {};
-//     for (const s of states) {
-//       const state =
-//         typeof (s as any).toJSON === "function" ? (s as any).toJSON() : s;
-//       if (!statesByMachine[state.machineId])
-//         statesByMachine[state.machineId] = [];
-//       statesByMachine[state.machineId].push(state);
-//     }
-//     for (const machineId in statesByMachine) {
-//       statesByMachine[machineId].sort(
-//         (a, b) =>
-//           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-//       );
-//     }
-
-//     // 2. Flatten and calculate durations
-//     const processedStates: any[] = [];
-//     for (const machineId in statesByMachine) {
-//       const machineStates = statesByMachine[machineId];
-//       for (let i = 0; i < machineStates.length; i++) {
-//         const current = machineStates[i];
-//         const next = machineStates[i + 1];
-//         const end = next ? new Date(next.timestamp) : endDate;
-//         processedStates.push({
-//           ...current,
-//           durationMs:
-//             new Date(end).getTime() - new Date(current.timestamp).getTime(),
-//         });
-//       }
-//     }
-
-//     // 3. Use processedStates for all further calculations
-//     let activeDuration = 0;
-//     let alarmCount = 0;
-//     const stateDurations: Record<string, number> = {};
-//     const stateTypeCounts: Record<string, number> = {};
-
-//     console.log("Total states:", processedStates.length);
-
-//     for (const state of processedStates) {
-//       const duration = state.durationMs || 0;
-//       if (typeof state.state === "string") {
-//         stateDurations[state.state] =
-//           (stateDurations[state.state] || 0) + duration;
-//         stateTypeCounts[state.state] = (stateTypeCounts[state.state] || 0) + 1;
-//         if (state.state.toLowerCase() === "active") {
-//           activeDuration += duration;
-//         }
-//       }
-//     }
-
-//     console.log("State counts per type:", stateTypeCounts);
-
-//     const overviewDuration = endDate.getTime() - startDate.getTime() + 1;
-//     const utilizationValue =
-//       overviewDuration > 0 ? (activeDuration / overviewDuration) * 100 : 0;
-//     const averageRuntimeValue =
-//       processedStates.length > 0 ? activeDuration / processedStates.length : 0;
-
-//     const formatDuration = (ms: number): string => {
-//       const totalSeconds = Math.floor(ms / 1000);
-
-//       const days = Math.floor(totalSeconds / (24 * 60 * 60));
-//       const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
-//       const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
-//       const seconds = totalSeconds % 60;
-
-//       const parts: string[] = [];
-
-//       if (days > 0) parts.push(`${days}d`);
-//       if (hours > 0) parts.push(`${hours}h`);
-//       if (minutes > 0) parts.push(`${minutes}m`);
-//       if (seconds > 0) parts.push(`${seconds}s`);
-
-//       if (parts.length === 0) {
-//         return "0s";
-//       }
-
-//       return parts.join(" ");
-//     };
-
-//     console.log("Overview duration:", formatDuration(overviewDuration));
-//     console.log("Average runtime:", formatDuration(averageRuntimeValue));
-//     console.log("Active duration:", formatDuration(activeDuration));
-
-//     const kpis = {
-//       utilization: {
-//         value: utilizationValue,
-//         change: 0,
-//       },
-//       averageRuntime: {
-//         value: averageRuntimeValue,
-//         change: 0,
-//       },
-//       alarmCount: {
-//         value: alarmCount,
-//         change: 0,
-//       },
-//     };
-
-//     const { scale, divisionCount } = this.getOverviewScale(startDate, endDate);
-//     const divisions = [];
-//     for (let i = 0; i < divisionCount; i++) {
-//       const divisionStart = this.calculateDivisionStart(startDate, scale, i);
-//       const divisionEnd = this.calculateDivisionEnd(
-//         startDate,
-//         scale,
-//         i,
-//         endDate
-//       );
-//       const divisionLabel = this.formatDivisionLabel(divisionStart, scale);
-//       divisions.push({
-//         start: divisionStart,
-//         end: divisionEnd,
-//         label: divisionLabel,
-//       });
-//     }
-
-//     const utilizationOverTime = divisions.map((division) => {
-//       // If the division is in the future, utilization should be null
-//       if (division.start > new Date()) {
-//         return {
-//           label: division.label,
-//           start: division.start,
-//           end: division.end,
-//           utilization: null,
-//         };
-//       }
-//       let divisionTotal = 0;
-//       let divisionActive = 0;
-//       for (let i = 0; i < processedStates.length; i++) {
-//         const state = processedStates[i];
-//         if (
-//           !(state.timestamp instanceof Date) ||
-//           isNaN(state.timestamp.getTime())
-//         ) {
-//           continue;
-//         }
-//         const stateStart = state.timestamp;
-//         const stateEnd = new Date(
-//           state.timestamp.getTime() + (state.durationMs || 0)
-//         );
-//         const overlapStart =
-//           stateStart > division.start ? stateStart : division.start;
-//         const overlapEnd = stateEnd < division.end ? stateEnd : division.end;
-//         const overlap = Math.max(
-//           0,
-//           overlapEnd.getTime() - overlapStart.getTime()
-//         );
-//         if (overlap > 0) {
-//           divisionTotal += overlap;
-//           if (
-//             typeof state.state === "string" &&
-//             state.state.toLowerCase() === "active"
-//           ) {
-//             divisionActive += overlap;
-//           }
-//         }
-//       }
-//       return {
-//         label: division.label,
-//         start: division.start,
-//         end: division.end,
-//         utilization:
-//           divisionTotal > 0 ? (divisionActive / divisionTotal) * 100 : 0,
-//       };
-//     });
-
-//     const stateDistribution = Object.entries(stateDurations).map(
-//       ([label, duration]) => ({
-//         label,
-//         duration,
-//         percentage: overviewDuration > 0 ? duration / overviewDuration : 0,
-//       })
-//     );
-
-//     const machines = (await this.services.machineService.getMachines()).map(
-//       (m) => ({
-//         id: m.id,
-//         name: m.name,
-//         type: m.type,
-//       })
-//     );
-
-//     const alarms = await this.services.alarmService.getAlarms({
-//       startDate,
-//       endDate,
-//     });
-
-//     return {
-//       kpis,
-//       utilization: utilizationOverTime,
-//       states: stateDistribution,
-//       machines,
-//       alarms,
-//     };
-//   }
-// }
-
 class StateService implements IStateService {
   constructor(private services: Services) {}
 
@@ -379,10 +68,24 @@ class StateService implements IStateService {
     console.log(`Previous start: ${dateRange.previousStart}`);
     console.log(`Previous end: ${dateRange.previousEnd}`);
 
+    const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
+    console.log(
+      `Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
+    );
+
+    const machineDurationPerMachinePerDateRange =
+      machineDurationPerMachinePerDay * dateRange.totalDays;
+    console.log(
+      `Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
+    );
+
     const machines = await this.services.machineService.getMachines();
     const machineCount = machines.length;
-
     console.log(`Machine count: ${machineCount}`);
+
+    const totalMachineDuration =
+      machineDurationPerMachinePerDateRange * machineCount;
+    console.log(`Total machine duration: ${totalMachineDuration}`);
 
     const states = await this.getStates({
       startDate: dateRange.startDate,
@@ -396,8 +99,6 @@ class StateService implements IStateService {
       endDate: dateRange.previousEnd,
     });
 
-    console.log(`Previous state count: ${previousStates.items.length}`);
-
     const totalsByState = states.items.reduce((acc, state) => {
       if (!acc[state.state]) {
         acc[state.state] = 0;
@@ -410,15 +111,19 @@ class StateService implements IStateService {
       }
 
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
+
+    const stateTotal = Object.values(totalsByState).reduce(
+      (acc, total) => acc + total,
+      0
+    );
 
     const percentsByState = Object.entries(totalsByState).map(
       ([state, total]) => {
         return {
           state,
-          total: Number(total),
-          percentage:
-            (Number(total) / (dateRange.totalDuration * machineCount)) * 100,
+          total: total,
+          percentage: (total / stateTotal) * 100,
         };
       }
     );
@@ -427,24 +132,20 @@ class StateService implements IStateService {
 
     console.log(`Percents by state: ${JSON.stringify(percentsByState)}`);
 
+    const totalStateDuration = Object.values(totalsByState).reduce(
+      (acc, total) => acc + total,
+      0
+    );
+
+    console.log(`Total state duration: ${totalStateDuration}`);
+
     const previousTotalsByState = previousStates.items.reduce((acc, state) => {
       if (!acc[state.state]) {
         acc[state.state] = 0;
       }
-      acc[state.state] += Number(state.durationMs);
+      acc[state.state] += this.getStateDuration(state, now);
       return acc;
-    }, {});
-
-    const previousPercentsByState = Object.entries(previousTotalsByState).map(
-      ([state, total]) => {
-        return {
-          state,
-          total: Number(total),
-          percentage:
-            (Number(total) / (dateRange.totalDuration * machineCount)) * 100,
-        };
-      }
-    );
+    }, {} as Record<string, number>);
 
     const utilization =
       (totalsByState["ACTIVE"] / dateRange.totalDuration) * machineCount;
@@ -488,6 +189,56 @@ class StateService implements IStateService {
       });
     }
 
+    const activePercentagesWithinEachDivisionTime = divisions.map(
+      (division) => {
+        const statesInDivision = states.items.filter((state) => {
+          const stateEnd = state.durationMs
+            ? new Date(state.timestamp.getTime() + state.durationMs)
+            : now;
+          return state.timestamp <= division.end && stateEnd >= division.start;
+        });
+
+        const divisionDuration =
+          division.end.getTime() - division.start.getTime();
+
+        const totalsByState = statesInDivision.reduce((acc, state) => {
+          if (!acc[state.state]) {
+            acc[state.state] = 0;
+          }
+
+          const stateStart = state.timestamp;
+          const stateEnd = new Date(
+            stateStart.getTime() + this.getStateDuration(state, now)
+          );
+
+          const overlapStart = Math.max(
+            stateStart.getTime(),
+            division.start.getTime()
+          );
+          const overlapEnd = Math.min(
+            stateEnd.getTime(),
+            division.end.getTime()
+          );
+          const overlapDuration = (overlapEnd - overlapStart) * machineCount;
+
+          acc[state.state] += overlapDuration;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const activeDuration = totalsByState["ACTIVE"] || 0;
+        const utilization =
+          (activeDuration / (divisionDuration * machineCount)) * 100;
+
+        return {
+          label: division.label,
+          start: division.start,
+          end: division.end,
+          utilization: Number(utilization.toFixed(2)) || 0,
+          stateTotals: totalsByState,
+        };
+      }
+    );
+
     return {
       kpis: {
         utilization: {
@@ -503,7 +254,7 @@ class StateService implements IStateService {
           change: Number(alarmChange.toFixed(2)) || 0,
         },
       },
-      utilization: [],
+      utilization: activePercentagesWithinEachDivisionTime,
       states: percentsByState,
       machines: [],
       alarms: [],
@@ -629,6 +380,14 @@ class StateService implements IStateService {
     ) {
       throw new ValidationError("Invalid timestamp format");
     }
+
+    if (
+      state.durationMs !== null &&
+      state.durationMs !== undefined &&
+      state.durationMs <= 0
+    ) {
+      throw new ValidationError("Duration must be positive if provided");
+    }
   }
 
   private async closePreviousState(
@@ -742,6 +501,10 @@ class StateService implements IStateService {
     };
 
     return formatters[scale]?.(date) || "";
+  }
+
+  private getStateDuration(state: IMachineState, now: Date): number {
+    return state.durationMs || now.getTime() - state.timestamp.getTime();
   }
 
   async createSampleStates(): Promise<void> {
