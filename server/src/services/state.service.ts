@@ -13,7 +13,6 @@ import {
 import { buildStateQuery, createDateRange } from "@/utils";
 import Services from ".";
 import { sequelize } from "@/config/database";
-import { Op } from "sequelize";
 
 class StateService implements IStateService {
   constructor(private services: Services) {}
@@ -596,7 +595,9 @@ class StateService implements IStateService {
 
   async createSampleStates(): Promise<void> {
     const now = new Date();
-    const states = ["ACTIVE"]; // Only ACTIVE states
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
+
+    const states = ["ACTIVE", "IDLE", "ALARM", "OFFLINE"];
     const executions = [
       "RUNNING",
       "STOPPED",
@@ -621,12 +622,12 @@ class StateService implements IStateService {
     }
 
     for (const machine of machines) {
-      // Current state (only one with null endTime)
+      // Start with current open state
       const currentState: ICreateMachineStateDTO = {
         machineId: machine.id,
         startTime: now,
-        endTime: null, // Only current state should have null endTime
-        state: "ACTIVE", // Always ACTIVE
+        endTime: null,
+        state: states[Math.floor(Math.random() * states.length)],
         execution: executions[Math.floor(Math.random() * executions.length)],
         controller:
           controllerModes[Math.floor(Math.random() * controllerModes.length)],
@@ -635,28 +636,37 @@ class StateService implements IStateService {
 
       await this.createState(currentState);
 
-      // Historical states
-      let endTime = now;
+      // Now work backwards
+      let currentEndTime = now;
+      let stateCount = 1;
+      const maxStates = 8760; // 24 states per day * 365 days = 8760 states per year
 
-      for (let i = 1; i < 2000; i++) {
+      while (currentEndTime > oneYearAgo && stateCount < maxStates) {
+        // Random duration between 30 minutes and 2 hours
         const randomDuration = Math.floor(
-          Math.random() * (120000 - 30000) + 30000
+          Math.random() * (7200000 - 1800000) + 1800000
         );
-        const startTime = new Date(endTime.getTime() - randomDuration);
+        const startTime = new Date(currentEndTime.getTime() - randomDuration);
+
+        // If we've gone past one year ago, adjust the start time
+        if (startTime < oneYearAgo) {
+          startTime.setTime(oneYearAgo.getTime());
+        }
 
         const state: ICreateMachineStateDTO = {
           machineId: machine.id,
           startTime,
-          endTime, // Set the endTime to the previous state's start time
-          state: "ACTIVE", // Always ACTIVE
+          endTime: currentEndTime,
+          state: states[Math.floor(Math.random() * states.length)],
           execution: executions[Math.floor(Math.random() * executions.length)],
           controller:
             controllerModes[Math.floor(Math.random() * controllerModes.length)],
-          program: `P${1000 + i}`,
+          program: `P${1000 + stateCount}`,
         };
 
         await this.createState(state);
-        endTime = startTime;
+        currentEndTime = startTime;
+        stateCount++;
       }
     }
   }
