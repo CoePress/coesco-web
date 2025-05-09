@@ -15,6 +15,7 @@ import {
   Box,
   Warehouse,
   Shield,
+  Map,
 } from "lucide-react";
 import { ComponentType } from "react";
 
@@ -33,6 +34,7 @@ import {
   SalesQuotes,
   SalesReports,
   Settings,
+  WarehouseMap,
 } from "@/pages";
 
 import PopupWindow from "@/components/shared/popup-window";
@@ -139,10 +141,18 @@ const warehouseModule: Module = {
   path: "/warehouse",
   label: "Warehouse",
   icon: Warehouse,
-  status: "inactive",
-  pages: [],
+  status: "active",
+  pages: [
+    {
+      path: "/",
+      label: "Map",
+      icon: Map,
+      component: WarehouseMap,
+    },
+  ],
   popups: [],
 };
+
 const serviceModule: Module = {
   path: "/service",
   label: "Service",
@@ -204,8 +214,9 @@ const adminModule: Module = {
 
 const modules = {
   salesModule,
+  warehouseModule,
   productionModule,
-  serviceModule,
+  // serviceModule,
   adminModule,
 };
 

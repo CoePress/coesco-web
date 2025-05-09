@@ -24,3 +24,6 @@ export { default as ChatPLK } from "./general/chat-plk";
 export { default as Login } from "./general/login";
 export { default as MainMenu } from "./general/main-menu";
 export { default as NotFound } from "./general/not-found";
+
+// Warehouse
+export { default as WarehouseMap } from "./warehouse/map";

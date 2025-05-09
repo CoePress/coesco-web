@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc && tsc-alias && cp -r src/templates dist/",
-    "start": "npm run build && node dist/index.js",
-    "generate-glossary": "ts-node src/utils/generate-glossary.ts"
+    "start": "npm run build && node dist/index.js"
   },
   "keywords": [],
   "author": "",
