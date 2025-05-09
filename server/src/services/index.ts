@@ -53,16 +53,9 @@ class Services {
     await this.userService.initialize();
     await this.machineService.initialize();
     await this.connectionService.initialize();
-    await this.seedSampleData();
     // await this.stateService.createTestStates();
-
+    // await this.stateService.createSampleStates();
     this.dataCollectorService.startBroadcastingMachineStates();
-  }
-
-  async seedSampleData() {
-    if (__prod__) return;
-
-    await this.stateService.createSampleStates();
   }
 }
 

@@ -28,7 +28,7 @@ export const routes = (services: Services) => {
       if (err) {
         const defaultPath = path.join(
           __dirname,
-          "../templates/oee-report.html"
+          "../templates/1.html"
         );
 
         fs.readFile(defaultPath, "utf8", (defaultErr, defaultData) => {
