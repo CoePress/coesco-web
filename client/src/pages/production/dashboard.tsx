@@ -421,7 +421,12 @@ const Dashboard = () => {
 
   const utilizationOverTime = overview?.utilization || [];
 
-  const stateDistribution = overview?.states || [];
+  const stateDistribution = [
+    { state: "ACTIVE", total: 3600000, percentage: 45 },
+    { state: "IDLE", total: 1800000, percentage: 22.5 },
+    { state: "ALARM", total: 900000, percentage: 11.25 },
+    { state: "OFFLINE", total: 1800000, percentage: 21.25 },
+  ];
 
   const machines = (overview?.machines || [])
     .sort((a, b) => {

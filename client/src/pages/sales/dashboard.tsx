@@ -264,10 +264,11 @@ const Dashboard = () => {
                     data={wonLostData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    paddingAngle={5}
+                    outerRadius="80%"
+                    stroke="var(--border)"
+                    strokeWidth={1}
+                    isAnimationActive={true}
+                    animationDuration={1000}
                     dataKey="value">
                     {wonLostData.map((entry, index) => (
                       <Cell
@@ -277,24 +278,45 @@ const Dashboard = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--foreground)",
-                      color: "var(--text-muted)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "4px",
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const entry = payload[0];
+                      return (
+                        <div
+                          style={{
+                            background: "var(--foreground)",
+                            color: "var(--text-muted)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 4,
+                            padding: 8,
+                          }}>
+                          <div
+                            style={{
+                              fontWeight: 500,
+                              color:
+                                COLORS[
+                                  payload[0].payload.name === "Won" ? 0 : 1
+                                ],
+                            }}>
+                            {entry.payload.name}
+                          </div>
+                          <div className="mt-1">
+                            <p>{entry.value}%</p>
+                          </div>
+                        </div>
+                      );
                     }}
-                    formatter={(value) => [`${value}%`, ""]}
                   />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex gap-4 mt-2">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-success"></div>
-                  <span className="text-xs text-text-muted">Won (65%)</span>
+                  <span className="text-xs text-text-muted">Won (67%)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-error"></div>
-                  <span className="text-xs text-text-muted">Lost (35%)</span>
+                  <span className="text-xs text-text-muted">Lost (33%)</span>
                 </div>
               </div>
             </div>
