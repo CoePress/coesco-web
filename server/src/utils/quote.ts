@@ -315,6 +315,10 @@ export interface IQuoteService {
 
   // Document Generation
   generateQuotePDF(quoteHeaderId: string, detailId?: string): Promise<Blob>;
+  generateQuoteExcel(quoteHeaderId: string, detailId?: string): Promise<Blob>;
+
+  // Email Operations
+  sendQuoteEmail(quoteHeaderId: string, detailId?: string): Promise<void>;
 
   // Search & Advanced Queries
   searchQuotes(searchParams: {
