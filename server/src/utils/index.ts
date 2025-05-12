@@ -3,8 +3,6 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
 
-import { env } from "@/config/env";
-import { error } from "./logger";
 import {
   FanucControllerMode,
   FanucExecutionMode,
@@ -21,11 +19,12 @@ import {
   format,
   parse,
 } from "date-fns";
-import { sequelize } from "@/config/database";
+import { config } from "@/config/config";
+import { logger } from "./logger";
 
 const emailConfig = {
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
+  host: config.smtp.host,
+  port: config.smtp.port,
   tls: { rejectUnauthorized: true },
 };
 
@@ -44,7 +43,7 @@ export const sendEmail = async (
       html,
     });
   } catch (err) {
-    error(`Email error: ${err.message}`);
+    logger.error(`Email error: ${err.message}`);
     throw err;
   }
 };
