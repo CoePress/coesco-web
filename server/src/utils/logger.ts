@@ -1,124 +1,98 @@
 import { Request, Response } from "express";
-import winston, { Logger } from "winston";
+import { appendFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 const colors = {
-  reset: (text: string): string => `\x1b[0m${text}`,
-  cyan: (text: string): string => `\x1b[36m${text}\x1b[0m`,
-  green: (text: string): string => `\x1b[32m${text}\x1b[0m`,
-  yellow: (text: string): string => `\x1b[33m${text}\x1b[0m`,
-  red: (text: string): string => `\x1b[31m${text}\x1b[0m`,
-  magenta: (text: string): string => `\x1b[35m${text}\x1b[0m`,
-  blue: (text: string): string => `\x1b[34m${text}\x1b[0m`,
-  white: (text: string): string => `\x1b[37m${text}\x1b[0m`,
-  gray: (text: string): string => `\x1b[90m${text}\x1b[0m`,
+  info: (text: string) => `\x1b[36m${text}\x1b[0m`, // cyan
+  success: (text: string) => `\x1b[32m${text}\x1b[0m`, // green
+  warn: (text: string) => `\x1b[33m${text}\x1b[0m`, // yellow
+  error: (text: string) => `\x1b[31m${text}\x1b[0m`, // red
+  debug: (text: string) => `\x1b[35m${text}\x1b[0m`, // magenta
 };
 
-const winstonLogger: Logger = winston.createLogger({
-  format: winston.format.printf(({ message }) => message as string),
-  transports: [
-    new winston.transports.File({
-      filename: "logs/error.log",
-      level: "error",
-      format: winston.format.printf(({ message }) =>
-        (message as string).replace(/\u001b\[\d+m/g, "")
-      ),
-    }),
-    new winston.transports.File({
-      filename: "logs/combined.log",
-      format: winston.format.printf(({ message }) =>
-        (message as string).replace(/\u001b\[\d+m/g, "")
-      ),
-    }),
-    new winston.transports.Console({
-      format: winston.format.printf(({ message }) => message as string),
-    }),
-  ],
-});
-
-const uptimeLogger: Logger = winston.createLogger({
-  format: winston.format.printf(({ message }) => message as string),
-  transports: [
-    new winston.transports.File({
-      filename: "logs/uptime.log",
-      format: winston.format.printf(({ message }) =>
-        (message as string).replace(/\u001b\[\d+m/g, "")
-      ),
-    }),
-  ],
-});
-
-const formatMessage = (level: string, message: string): string => {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
-
-  const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  return `[${level}] [${timestamp}] ${message}`;
+const getTimestamp = () => {
+  return new Date().toISOString().replace("T", " ").split(".")[0];
 };
 
-const log = (
-  level: "info" | "warn" | "error" | "debug",
-  colorFunc: (text: string) => string,
-  message: string,
-  metaData?: any
-): void => {
-  const formattedMessage = formatMessage(level.toUpperCase(), message);
-  const metaStr = metaData ? `\n${JSON.stringify(metaData, null, 2)}` : "";
-
-  winstonLogger.log({
-    level,
-    message: colorFunc(formattedMessage + metaStr),
-  });
+const getDateString = () => {
+  return new Date().toISOString().split("T")[0];
 };
 
-export const info = (message: string, metaData?: any): void => {
-  log("info", colors.cyan, message, metaData);
-};
+class Logger {
+  private async logToFile(message: string, isError = false) {
+    const date = getDateString();
+    const logDir = join("logs");
 
-export const success = (message: string, metaData?: any): void => {
-  log("info", colors.green, message, metaData);
-};
+    try {
+      await mkdir(logDir, { recursive: true });
 
-export const warn = (message: string, metaData?: any): void => {
-  log("warn", colors.yellow, message, metaData);
-};
+      await appendFile(join(logDir, `combined-${date}.log`), message + "\n");
 
-export const error = (message: string, metaData?: any): void => {
-  log("error", colors.red, message, metaData);
-};
+      if (isError) {
+        await appendFile(join(logDir, `error-${date}.log`), message + "\n");
+      }
+    } catch (err) {
+      console.error("Failed to write to log file:", err);
+    }
+  }
 
-export const debug = (message: string, metaData?: any): void => {
-  log("debug", colors.magenta, message, metaData);
-};
+  private log(
+    level: keyof typeof colors,
+    message: string,
+    metaData?: any
+  ): void {
+    const timestamp = getTimestamp();
+    const formattedMessage = `[${level.toUpperCase()}] [${timestamp}] ${message} ${
+      metaData ? JSON.stringify(metaData) : ""
+    }`;
 
-export const logRequest = (req: Request, res: Response): void => {
-  const { method, url } = req;
-  info(`[${method}] [${url}]`);
+    console.log(colors[level](formattedMessage));
 
-  res.on("finish", () => {
-    const { statusCode } = res;
+    this.logToFile(formattedMessage, level === "error").catch(console.error);
+  }
 
-    if (statusCode >= 400) return;
+  info(message: string, metaData?: any): void {
+    this.log("info", message, metaData);
+  }
 
-    const logFn = statusCode >= 300 ? warn : statusCode >= 200 ? success : info;
+  success(message: string, metaData?: any): void {
+    this.log("success", message, metaData);
+  }
 
-    logFn(`[${method}] [${url}] [${statusCode}]`);
-  });
-};
+  warn(message: string, metaData?: any): void {
+    this.log("warn", message, metaData);
+  }
 
-export const startedAt = new Date();
+  error(message: string, metaData?: any): void {
+    this.log("error", message, metaData);
+  }
 
-export const logUptime = (message: string, metaData?: any): void => {
-  const uptimeData = {
-    ...metaData,
-    uptime: `${(new Date().getTime() - startedAt.getTime()) / 1000}s`,
-  };
-  const formattedMessage = formatMessage("UPTIME", message);
-  const metaStr = uptimeData ? `\n${JSON.stringify(uptimeData, null, 2)}` : "";
+  debug(message: string, metaData?: any): void {
+    this.log("debug", message, metaData);
+  }
 
-  uptimeLogger.info(colors.blue(formattedMessage + metaStr));
-};
+  request(req: Request, res: Response): void {
+    const { method, url } = req;
+    const startTime = Date.now();
+
+    this.info(`${method} ${url}`);
+
+    res.on("finish", () => {
+      const duration = Date.now() - startTime;
+      const { statusCode } = res;
+      const message = `${method} ${url} ${statusCode} ${duration}ms`;
+
+      if (statusCode >= 500) {
+        this.error(message);
+      } else if (statusCode >= 400) {
+        this.warn(message);
+      } else if (statusCode >= 300) {
+        this.info(message);
+      } else {
+        this.success(message);
+      }
+    });
+  }
+}
+
+export const logger = new Logger();

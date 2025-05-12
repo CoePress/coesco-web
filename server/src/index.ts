@@ -21,7 +21,11 @@ const services = Services.getInstance(httpServer);
 
 const allowedOrigins = __prod__
   ? [env.ALLOWED_ORIGIN]
-  : ["http://localhost:5173", "http://localhost:5174"];
+  : [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://coesco-web.vercel.app",
+    ];
 
 const limiterOptions = {
   windowMs: 60 * 1000, // 1 minute

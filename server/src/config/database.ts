@@ -1,13 +1,12 @@
 import { Sequelize } from "sequelize";
+import { config } from "./config";
 
-import { env, __prod__ } from "./env";
-
-export const dbConfig = {
-  HOST: env.DB_HOST || "localhost",
-  PORT: env.DB_PORT || 5433,
-  USER: env.DB_USER || "postgres",
-  PASSWORD: env.DB_PASSWORD || "password",
-  DB: env.DB_NAME || "machining_dev",
+export const database = {
+  HOST: config.database.host || "localhost",
+  PORT: config.database.port || 5433,
+  USER: config.database.user || "postgres",
+  PASSWORD: config.database.password || "password",
+  DB: config.database.name || "machining_dev",
   pool: {
     max: 5,
     min: 0,
@@ -17,18 +16,18 @@ export const dbConfig = {
 };
 
 export const sequelize = new Sequelize(
-  dbConfig.DB,
-  dbConfig.USER,
-  dbConfig.PASSWORD,
+  database.DB,
+  database.USER,
+  database.PASSWORD,
   {
-    host: dbConfig.HOST,
+    host: database.HOST,
     dialect: "postgres",
-    port: dbConfig.PORT,
+    port: database.PORT,
     pool: {
-      max: dbConfig.pool.max,
-      min: dbConfig.pool.min,
-      acquire: dbConfig.pool.acquire,
-      idle: dbConfig.pool.idle,
+      max: database.pool.max,
+      min: database.pool.min,
+      acquire: database.pool.acquire,
+      idle: database.pool.idle,
     },
     logging: false,
   }
