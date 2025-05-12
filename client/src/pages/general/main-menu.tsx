@@ -6,18 +6,15 @@ import { Moon, MessageCircle, Settings, Sun, LogOut } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";
-import { useState } from "react";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { employee } = useAuth();
   const { logout } = useLogout();
 
-  const firstName = user?.name.split(" ")[0] || "User";
+  const firstName = employee?.name.split(" ")[0] || "Employee";
 
   const navigate = useNavigate();
-
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-background">

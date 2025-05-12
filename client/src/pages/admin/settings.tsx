@@ -2,7 +2,6 @@ import { Button, PageHeader, Tabs } from "@/components";
 import { SaveIcon } from "lucide-react";
 import { useState } from "react";
 
-// Sample settings data for General and Production
 const settingsData = {
   general: [
     {
@@ -57,7 +56,16 @@ const settingsData = {
   ],
 };
 
-const SettingInput = ({ field }) => {
+type SettingField = {
+  id: string;
+  label: string;
+  type: string;
+  value: any;
+  units?: string;
+  options?: string[];
+};
+
+const SettingInput = ({ field }: { field: SettingField }) => {
   switch (field.type) {
     case "text":
     case "email":
@@ -74,7 +82,7 @@ const SettingInput = ({ field }) => {
         <select
           defaultValue={field.value}
           className="border border-border rounded px-2 py-1 w-full bg-background">
-          {field.options.map((opt) => (
+          {field.options?.map((opt: string) => (
             <option
               key={opt}
               value={opt}>
@@ -96,10 +104,14 @@ const SettingInput = ({ field }) => {
   }
 };
 
-const SettingsForm = ({ module }) => {
-  const sections = settingsData[module];
-  if (!sections)
+const SettingsForm = ({ module }: { module: string }) => {
+  const sections = settingsData[module as keyof typeof settingsData] as {
+    section: string;
+    fields: SettingField[];
+  }[];
+  if (!sections) {
     return <div className="text-error">No settings for {module}</div>;
+  }
   return (
     <form className="space-y-4 max-w-2xl mx-auto">
       {sections.map((section) => (
@@ -122,12 +134,14 @@ const SettingsForm = ({ module }) => {
                 <div className="flex-1">
                   <SettingInput field={field} />
                 </div>
-                {field.units && (
-                  <div className="text-sm text-text-muted">{field.units}</div>
-                )}
               </div>
             ))}
           </div>
+          {section.fields.some((field) => field.units) && (
+            <div className="text-sm text-text-muted">
+              {section.fields.map((field) => field.units).join(", ")}
+            </div>
+          )}
         </div>
       ))}
     </form>

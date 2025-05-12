@@ -1,13 +1,13 @@
 import { Button, StatusBadge, Table } from "@/components";
 import DatePicker from "@/components/v1/date-picker";
 import PageHeader from "@/components/v1/page-header";
-import { Download } from "lucide-react";
+import { Download, Loader } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { useState } from "react";
 import useGetStates from "@/hooks/production/use-get-states";
 import useGetMachines from "@/hooks/production/use-get-machines";
-import { IMachineState } from "@/utils/t";
 import { formatDuration } from "@/utils";
+import { IMachineState } from "@/utils/types";
 
 const MachineStates = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
@@ -27,7 +27,11 @@ const MachineStates = () => {
 
   const [dateRange, setDateRange] = useState(getInitialDateRange);
 
-  const { states, loading, error, refresh } = useGetStates({
+  const {
+    states,
+    loading: statesLoading,
+    error: statesError,
+  } = useGetStates({
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
   });
@@ -36,14 +40,13 @@ const MachineStates = () => {
     machines,
     loading: machinesLoading,
     error: machinesError,
-    refresh: machinesRefresh,
   } = useGetMachines();
 
   const columns = [
     {
       key: "machineId",
       header: "Machine",
-      render: (_: string, row: IMachineState) => {
+      render: (_: any, row: IMachineState) => {
         const machine = machines?.find(
           (machine) => machine.id === row.machineId
         );
@@ -53,7 +56,7 @@ const MachineStates = () => {
     {
       key: "state",
       header: "State",
-      render: (value: string) => {
+      render: (value: any) => {
         return (
           <StatusBadge
             label={value.toUpperCase()}
@@ -115,6 +118,12 @@ const MachineStates = () => {
       },
     },
   ];
+
+  if (statesLoading) return <Loader />;
+  if (statesError) return <div>Error</div>;
+
+  if (machinesLoading) return <Loader />;
+  if (machinesError) return <div>Error</div>;
 
   return (
     <div className="w-full flex flex-1 flex-col">

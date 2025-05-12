@@ -1,8 +1,6 @@
-import { PublicRoute, ProtectedRoute, AdminRoute } from "./general/routes";
-
 export { default as Layout } from "./general/layout";
 export { default as Loader } from "./general/loader";
-export { PublicRoute, ProtectedRoute, AdminRoute };
+export { PublicRoute, ProtectedRoute, AdminRoute } from "./general/routes";
 
 export { default as Button } from "./v1/button";
 export { default as DatePicker } from "./v1/date-picker";

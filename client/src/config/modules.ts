@@ -153,15 +153,6 @@ const warehouseModule: Module = {
   popups: [],
 };
 
-const serviceModule: Module = {
-  path: "/service",
-  label: "Service",
-  icon: Wrench,
-  status: "inactive",
-  pages: [],
-  popups: [],
-};
-
 const productionModule: Module = {
   path: "/production",
   label: "Production",
@@ -216,7 +207,6 @@ const modules = {
   salesModule,
   warehouseModule,
   productionModule,
-  // serviceModule,
   adminModule,
 };
 

@@ -1,20 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import modules from "@/config/modules";
 import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
-import { IUser } from "@/utils/types";
+import { IEmployee } from "@/utils/types";
+
 type SidebarProps = {
   isOpen: boolean;
   theme: string;
   toggleTheme: () => void;
-};
-
-type LayoutProps = {
-  children: React.ReactNode;
-  user: IUser;
 };
 
 const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
@@ -117,7 +113,12 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
   );
 };
 
-const Layout = ({ user, children }: LayoutProps) => {
+type LayoutProps = {
+  children: React.ReactNode;
+  employee: IEmployee;
+};
+
+const Layout = ({ employee, children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
@@ -229,7 +230,7 @@ const Layout = ({ user, children }: LayoutProps) => {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
-          user={user}
+          employee={employee}
           toggleSidebar={toggleSidebar}
         />
 

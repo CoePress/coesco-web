@@ -4,9 +4,9 @@ import {
   Download,
   MoreHorizontal,
   ChevronDown,
+  Loader,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   StatusBadge,
@@ -17,13 +17,12 @@ import {
 } from "@/components";
 import { formatDate } from "@/utils";
 import { TableColumn } from "@/components/v1/table";
-import useGetEmployees, { IEmployee } from "@/hooks/admin/use-get-employees";
+import useGetEmployees from "@/hooks/admin/use-get-employees";
+import { IEmployee } from "@/utils/types";
 
 const Employees = () => {
-  const navigate = useNavigate();
-  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page] = useState(1);
+  const [limit] = useState(10);
 
   const columns: TableColumn<IEmployee>[] = [
     {
@@ -83,10 +82,18 @@ const Employees = () => {
     },
   ];
 
-  const { employees, loading, error, refresh } = useGetEmployees({
+  const { employees, loading, error } = useGetEmployees({
     page,
     limit,
   });
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return <div>Error</div>;
+  }
 
   return (
     <div className="w-full flex flex-1 flex-col">

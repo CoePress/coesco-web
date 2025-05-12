@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
-// Define types for module pages and popups
 interface ModulePage {
   path: string;
   label: string;
@@ -22,7 +21,6 @@ interface ModuleConfig {
   };
 }
 
-// Define types for our suggestion items
 interface SuggestionItem {
   text: string;
   description: string;
@@ -32,7 +30,6 @@ interface SuggestionItem {
   entity?: string;
 }
 
-// Props interface
 interface CommandBarProps {
   onNavigate?: (path: string) => void;
   defaultModule?: string;
@@ -47,7 +44,6 @@ export const openPopup = (module: string, params: string[]) => {
   );
 };
 
-// Define available modules and their pages/popups
 const moduleConfig: ModuleConfig = {
   sales: {
     pages: [
@@ -107,7 +103,6 @@ const moduleConfig: ModuleConfig = {
       },
     ],
   },
-  // Add more modules here as needed
 };
 
 const CommandBar: React.FC<CommandBarProps> = ({
@@ -125,17 +120,14 @@ const CommandBar: React.FC<CommandBarProps> = ({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const suggestionItemsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Effect to focus input when opened
   useEffect(() => {
     if (externalIsOpen && inputRef.current) {
-      // Use a slight delay to ensure the input is rendered
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
     }
   }, [externalIsOpen]);
 
-  // Effect to scroll to the selected item
   useEffect(() => {
     if (
       isOpen &&
@@ -146,23 +138,18 @@ const CommandBar: React.FC<CommandBarProps> = ({
       const selectedElement = suggestionItemsRef.current[selectedIndex];
 
       if (selectedElement) {
-        // Calculate positions
         const containerRect = container.getBoundingClientRect();
         const selectedRect = selectedElement.getBoundingClientRect();
 
-        // Check if the selected element is outside the visible area
         if (selectedRect.bottom > containerRect.bottom) {
-          // Element is below visible area
           container.scrollTop += selectedRect.bottom - containerRect.bottom;
         } else if (selectedRect.top < containerRect.top) {
-          // Element is above visible area
           container.scrollTop -= containerRect.top - selectedRect.top;
         }
       }
     }
   }, [selectedIndex, isOpen]);
 
-  // Get ID suggestions based on entity
   const getIdSuggestions = (
     entity: string,
     type: "page" | "popup",
@@ -198,7 +185,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
       }));
   };
 
-  // Get all suggestions based on input query
   const getSuggestions = (query: string): SuggestionItem[] => {
     const module = moduleConfig[defaultModule];
     if (!module) return [];
@@ -206,12 +192,10 @@ const CommandBar: React.FC<CommandBarProps> = ({
     const normalizedQuery = query.toLowerCase();
     const suggestions: SuggestionItem[] = [];
 
-    // If waiting for ID, only show ID suggestions
     if (waitingForId && activeItem) {
       return getIdSuggestions(activeItem.text, activeItem.type, query);
     }
 
-    // Add page suggestions with header
     if (!suggestions.length) {
       suggestions.push({
         text: "Pages",
@@ -220,7 +204,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
       });
     }
 
-    // Add matching pages
     module.pages
       .filter(
         (page) =>
@@ -238,14 +221,12 @@ const CommandBar: React.FC<CommandBarProps> = ({
         });
       });
 
-    // Add popup header
     suggestions.push({
       text: "Popups",
       description: "",
       type: "popup",
     });
 
-    // Add matching popups
     module.popups
       .filter(
         (popup) =>
@@ -266,7 +247,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
     return suggestions;
   };
 
-  // Navigate to a page
   const navigateToPage = (page: string, id?: string) => {
     const module = moduleConfig[defaultModule];
     if (!module) return;
@@ -289,7 +269,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
     }
   };
 
-  // Open a popup
   const openPopupView = (popupName: string, id?: string) => {
     const module = moduleConfig[defaultModule];
     if (!module) return;
@@ -306,15 +285,12 @@ const CommandBar: React.FC<CommandBarProps> = ({
     }
   };
 
-  // Execute a selected item
   const executeItem = (item: SuggestionItem, id?: string) => {
     if (item.requiresId && !id) {
-      // We need an ID but don't have one
       setWaitingForId(true);
       setActiveItem(item);
       setInput("");
 
-      // Immediately show ID suggestions
       const idSuggestions = getIdSuggestions(item.text, item.type, "");
       setSuggestions(idSuggestions);
       setIsOpen(idSuggestions.length > 0);
@@ -322,26 +298,22 @@ const CommandBar: React.FC<CommandBarProps> = ({
       return;
     }
 
-    // Execute based on type
     if (item.type === "page") {
       navigateToPage(item.text, id);
     } else if (item.type === "popup") {
       openPopupView(item.text, id);
     }
 
-    // Reset state
     setInput("");
     setIsOpen(false);
     setWaitingForId(false);
     setActiveItem(null);
   };
 
-  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInput(value);
 
-    // If waiting for ID, only filter ID suggestions
     if (waitingForId && activeItem) {
       const idSuggestions = getIdSuggestions(
         activeItem.text,
@@ -354,41 +326,31 @@ const CommandBar: React.FC<CommandBarProps> = ({
       return;
     }
 
-    // Otherwise filter all suggestions
     const newSuggestions = getSuggestions(value);
     setSuggestions(newSuggestions);
     setIsOpen(newSuggestions.length > 0);
     setSelectedIndex(0);
   };
 
-  // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Execute on Enter
     if (e.key === "Enter") {
       if (suggestions.length > 0 && isOpen && selectedIndex >= 0) {
         const selectedItem = suggestions[selectedIndex];
 
-        // Skip headers
         if (selectedItem.text === "Pages" || selectedItem.text === "Popups") {
           return;
         }
 
         if (selectedItem.isId && activeItem) {
-          // It's an ID selection
           executeItem(activeItem, selectedItem.text);
         } else {
-          // It's a regular item
           executeItem(selectedItem);
         }
         e.preventDefault();
       }
-    }
-
-    // Navigate through suggestions
-    else if (e.key === "ArrowDown" && isOpen) {
+    } else if (e.key === "ArrowDown" && isOpen) {
       let newIndex = selectedIndex + 1;
 
-      // Skip headers when navigating down
       while (
         newIndex < suggestions.length &&
         (suggestions[newIndex].text === "Pages" ||
@@ -398,7 +360,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
       }
 
       if (newIndex >= suggestions.length) {
-        // Wrap around, find first non-header
         newIndex = 0;
         while (
           newIndex < suggestions.length &&
@@ -414,7 +375,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
     } else if (e.key === "ArrowUp" && isOpen) {
       let newIndex = selectedIndex - 1;
 
-      // Skip headers when navigating up
       while (
         newIndex >= 0 &&
         (suggestions[newIndex].text === "Pages" ||
@@ -424,7 +384,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
       }
 
       if (newIndex < 0) {
-        // Wrap around, find last non-header
         newIndex = suggestions.length - 1;
         while (
           newIndex >= 0 &&
@@ -437,12 +396,8 @@ const CommandBar: React.FC<CommandBarProps> = ({
 
       setSelectedIndex(newIndex);
       e.preventDefault();
-    }
-
-    // Close suggestions on Escape
-    else if (e.key === "Escape") {
+    } else if (e.key === "Escape") {
       if (waitingForId) {
-        // If waiting for ID, go back to entity selection
         setWaitingForId(false);
         setActiveItem(null);
         setInput("");
@@ -451,13 +406,9 @@ const CommandBar: React.FC<CommandBarProps> = ({
         setIsOpen(true);
         setSelectedIndex(0);
       } else {
-        // Just close
         setIsOpen(false);
       }
-    }
-
-    // Open suggestions on any key if closed
-    else if (!isOpen) {
+    } else if (!isOpen) {
       const newSuggestions = getSuggestions("");
       setSuggestions(newSuggestions);
       setIsOpen(true);
@@ -465,30 +416,24 @@ const CommandBar: React.FC<CommandBarProps> = ({
     }
   };
 
-  // Handle suggestion click
   const handleSuggestionClick = (item: SuggestionItem) => {
-    // Skip headers
     if (item.text === "Pages" || item.text === "Popups") {
       return;
     }
 
     if (item.isId && activeItem) {
-      // It's an ID selection
       executeItem(activeItem, item.text);
     } else {
-      // It's a regular item
       executeItem(item);
     }
   };
 
-  // Focus input on / key
   useEffect(() => {
     const handleSlashKey = (e: KeyboardEvent) => {
       if (e.key === "/" && document.activeElement !== inputRef.current) {
         e.preventDefault();
         inputRef.current?.focus();
 
-        // Show suggestions
         const newSuggestions = getSuggestions("");
         setSuggestions(newSuggestions);
         setIsOpen(true);
@@ -502,7 +447,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
     };
   }, []);
 
-  // Get placeholder text based on current state
   const getPlaceholderText = () => {
     if (waitingForId && activeItem) {
       return `Enter ${activeItem.text} ID`;
@@ -510,7 +454,6 @@ const CommandBar: React.FC<CommandBarProps> = ({
     return "Type to filter pages and popups...";
   };
 
-  // Reset refs array when suggestions change
   useEffect(() => {
     suggestionItemsRef.current = suggestionItemsRef.current.slice(
       0,

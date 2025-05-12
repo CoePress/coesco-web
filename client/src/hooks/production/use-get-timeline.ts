@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { IStateTimeline } from "@/utils/t";
+import { IStateTimeline } from "@/utils/types";
 
 const useGetTimeline = ({
   startDate,

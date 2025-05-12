@@ -7,6 +7,7 @@ import {
   RefreshCcw,
   Clock,
   Map,
+  Loader,
 } from "lucide-react";
 import {
   LineChart,
@@ -35,6 +36,7 @@ import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { formatDuration, getStatusColor } from "@/utils";
+import { IMachine, IOverviewAlarm, IOverviewMachine } from "@/utils/types";
 
 type MachineDetailsProps = {
   machine: any;
@@ -192,6 +194,14 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
   });
 
   const intervalRef = useRef<HTMLDivElement>(null);
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return <div>Error</div>;
+  }
 
   return (
     <div className="space-y-4 p-2">
@@ -429,14 +439,14 @@ const Dashboard = () => {
   ];
 
   const machines = (overview?.machines || [])
-    .sort((a, b) => {
+    .sort((a: IMachine, b: IMachine) => {
       const typeCompare = a.type.localeCompare(b.type);
       if (typeCompare === 0) {
         return a.name.localeCompare(b.name);
       }
       return typeCompare;
     })
-    .map((machine) => {
+    .map((machine: IMachine) => {
       const realTime = machineStates.find(
         (state) => state.machineId === machine.id
       );
@@ -717,7 +727,7 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
               {machines &&
-                machines.map((machine) => (
+                machines.map((machine: IOverviewMachine) => (
                   <div
                     key={machine.id}
                     onClick={() => {
@@ -789,7 +799,7 @@ const Dashboard = () => {
                     Loading...
                   </div>
                 ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
-                  overview?.alarms.map((alarm, idx) => (
+                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
                     <div
                       key={idx}
                       className="p-2 bg-surface rounded border border-border flex justify-between">

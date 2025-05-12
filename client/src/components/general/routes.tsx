@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const PublicRoute = () => {
-  const { user, isLoading } = useAuth();
+  const { employee, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -19,8 +19,8 @@ export const PublicRoute = () => {
     );
   }
 
-  if (user) {
-    if (user.isActive === false) {
+  if (employee) {
+    if (employee.isActive === false) {
       return (
         <Navigate
           to="/request-access"
@@ -40,7 +40,7 @@ export const PublicRoute = () => {
 };
 
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+  const { employee, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -50,7 +50,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (!user) {
+  if (!employee) {
     return (
       <Navigate
         to="/login"
@@ -59,7 +59,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (user.isActive === false) {
+  if (employee.isActive === false) {
     return (
       <Navigate
         to="/request-access"
@@ -68,7 +68,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !allowedRoles.includes(employee.role)) {
     return (
       <Navigate
         to="/unauthorized"
@@ -78,20 +78,20 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }
 
   return (
-    <Layout user={user}>
+    <Layout employee={employee}>
       <Outlet />
     </Layout>
   );
 };
 
 export const ProtectedRouteWithoutLayout = () => {
-  const { user, isLoading } = useAuth();
+  const { employee, isLoading } = useAuth();
 
   if (isLoading) {
     return <Loader />;
   }
 
-  if (!user) {
+  if (!employee) {
     return (
       <Navigate
         to="/login"

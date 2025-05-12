@@ -1,27 +1,23 @@
 import { Button } from "@/components";
 import useLogout from "@/hooks/auth/use-logout";
-import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
-import { MenuIcon, Plus } from "lucide-react";
+import { IEmployee } from "@/utils/types";
+import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { IUser } from "@/utils/types";
 
 type HeaderProps = {
-  user: IUser;
+  employee: IEmployee;
   toggleSidebar: () => void;
 };
 
-const Header = ({ user, toggleSidebar }: HeaderProps) => {
+const Header = ({ employee, toggleSidebar }: HeaderProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
-  const quickAddRef = useRef<HTMLDivElement>(null);
 
   const { logout } = useLogout();
 
-  const firstName = user.name.split(" ")[0];
-  const lastInitial = user.name.split(" ")[1].charAt(0);
+  const firstName = employee.name.split(" ")[0];
+  const lastInitial = employee.name.split(" ")[1].charAt(0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,18 +26,6 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
         !userMenuRef.current.contains(event.target as Node)
       ) {
         setIsUserMenuOpen(false);
-      }
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationsOpen(false);
-      }
-      if (
-        quickAddRef.current &&
-        !quickAddRef.current.contains(event.target as Node)
-      ) {
-        setIsQuickAddOpen(false);
       }
     };
 
@@ -65,87 +49,6 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
         <div className="flex items-center gap-4">
           <div
             className="relative"
-            ref={quickAddRef}>
-            <button
-              onClick={() => setIsQuickAddOpen(!isQuickAddOpen)}
-              className="p-2 rounded-lg hover:bg-surface">
-              <Plus size={16} />
-            </button>
-
-            {/* {isQuickAddOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-foreground border border-border rounded-lg shadow-lg z-[99]">
-                <div className="p-2 bg-surface border-b border-border">
-                  <h3 className="text-sm font-medium text-text-muted">
-                    Quick Add
-                  </h3>
-                </div>
-                <div className="p-2">
-                  <button className="w-full text-left p-3 hover:bg-surface rounded">
-                    <div className="font-medium text-sm text-text ">
-                      New Quote
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      Create a new quote
-                    </div>
-                  </button>
-                  <button className="w-full text-left p-3 hover:bg-surface rounded">
-                    <div className="font-medium text-sm text-text">
-                      New Order
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      Create a new order
-                    </div>
-                  </button>
-                  <button className="w-full text-left p-3 hover:bg-surface rounded">
-                    <div className="font-medium text-sm text-text">
-                      Schedule Maintenance
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      Add maintenance task
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )} */}
-          </div>
-
-          <div
-            className="relative"
-            ref={notificationsRef}>
-            <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="p-2 rounded-lg hover:bg-surface relative">
-              <Bell className="w-5 h-5 text-text-muted" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
-            </button>
-
-            {isNotificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-foreground border border-border rounded-lg shadow-lg z-[99]">
-                <div className="p-2 bg-surface border-b border-border">
-                  <h3 className="text-sm font-medium text-text-muted">
-                    Notifications
-                  </h3>
-                </div>
-                <div className="p-2">
-                  <button className="w-full text-left p-3 hover:bg-surface rounded">
-                    <div className="font-medium text-sm text-text ">
-                      New maintenance schedule
-                    </div>
-                    <div className="text-xs text-text-muted">2 minutes ago</div>
-                  </button>
-                  <button className="w-full text-left p-3 hover:bg-surface rounded">
-                    <div className="font-medium text-sm text-text">
-                      Production target achieved
-                    </div>
-                    <div className="text-xs text-text-muted">1 hour ago</div>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="relative"
             ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -155,7 +58,7 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
                   {firstName} {lastInitial}.
                 </span>
                 <span className="text-xs text-text-muted">
-                  {user.department}
+                  {employee.department}
                 </span>
               </div>
               <img
