@@ -35,8 +35,8 @@ const gracefulShutdown = () => {
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
 
-process.on("unhandledRejection", (err) => {
-  logger.error("Unhandled Rejection:", err);
+process.on("unhandledRejection", (error: any) => {
+  logger.error("Unhandled Rejection:", error.message);
   gracefulShutdown();
 });
 

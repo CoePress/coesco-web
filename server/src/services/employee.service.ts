@@ -29,4 +29,8 @@ export class EmployeeService implements IEmployeeService {
   async deleteEmployee(id: string): Promise<IApiResponse<boolean>> {
     return Promise.resolve({} as IApiResponse<boolean>);
   }
+
+  async syncEmployees(): Promise<IApiResponse<boolean>> {
+    return Promise.resolve({} as IApiResponse<boolean>);
+  }
 }

@@ -13,7 +13,11 @@ import { toZonedTime } from "date-fns-tz";
 import { addMilliseconds, differenceInMilliseconds, parse } from "date-fns";
 import { config } from "@/config/config";
 import { logger } from "./logger";
-import { IQueryBuilderResult, IQueryParams } from "@/types/api.types";
+import {
+  IApiResponse,
+  IQueryBuilderResult,
+  IQueryParams,
+} from "@/types/api.types";
 
 export const asyncHandler =
   (fn: any) => (req: Request, res: Response, next: NextFunction) => {
@@ -249,4 +253,9 @@ export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   result.orderClause = [[sort, order]];
 
   return result;
+};
+
+export const extractData = <T>(response: IApiResponse<T>): T => {
+  if (!response.success) throw new Error(response.message);
+  return response.data as T;
 };

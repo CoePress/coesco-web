@@ -46,11 +46,13 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  logger.error(`${err.name}: ${err.message}`);
+  logger.error(`${err.name}: ${err.message}`, { stack: err.stack });
 
   let statusCode = 500;
   let errorMessage: string | Array<{ field: string; message: string }> =
     err.message;
+  let errorDetails =
+    process.env.NODE_ENV === "production" ? undefined : { stack: err.stack };
 
   if (err instanceof ZodError) {
     statusCode = 400;
@@ -63,7 +65,10 @@ export const errorHandler = (
     errorMessage = err.message;
   }
 
-  res.status(statusCode).json({
+  const responseBody = {
     error: errorMessage,
-  });
+    ...(errorDetails && { details: errorDetails }),
+  };
+
+  res.status(statusCode).json(responseBody);
 };
