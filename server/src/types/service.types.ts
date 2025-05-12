@@ -15,18 +15,11 @@ import {
 } from "./schema.types";
 
 export interface IAuthService {
-  login(): Promise<IAuthResponse>;
-  logout(): Promise<IAuthResponse>;
-  validateSession(
-    sessionId: string,
-    authSession: string
-  ): Promise<IAuthResponse>;
-  handleMicrosoftCallback(
-    code: string,
-    sessionId: string
-  ): Promise<IAuthResponse>;
-  getAuthUrl(sessionId: string): Promise<string>;
-  getSession(user: any): Promise<IAuthResponse>;
+  login(email: string, password: string): Promise<IAuthResponse>;
+  loginWithMicrosoft(): Promise<IAuthResponse>;
+  callback(code: string, sessionId: string): Promise<IAuthResponse>;
+  logout(sessionId: string): Promise<IAuthResponse>;
+  session(sessionId: string, authSession: string): Promise<IAuthResponse>;
 }
 
 export interface IEmployeeService {
