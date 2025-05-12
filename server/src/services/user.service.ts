@@ -1,5 +1,4 @@
 import axios from "axios";
-import { Op, literal } from "sequelize";
 
 import { __prod__, env } from "@/config/env";
 import { AppError } from "@/middleware/error-handler";
@@ -14,11 +13,6 @@ import {
   ISyncResult,
   IMachineState,
 } from "@/utils/types";
-import {
-  buildOrderClause,
-  buildPaginationOptions,
-  buildWhereClause,
-} from "@/utils";
 
 class UserService implements IUserService {
   private static readonly BLOCKED_EMAILS = [
@@ -58,13 +52,7 @@ class UserService implements IUserService {
   async getUsers(params?: IQueryParams): Promise<User[]> {
     const searchableFields = ["name", "email"];
 
-    const queryOptions = {
-      where: buildWhereClause(params, searchableFields),
-      order: buildOrderClause(params),
-      ...buildPaginationOptions(params),
-    };
-
-    return User.findAll(queryOptions);
+    return User.findAll({});
   }
 
   async getReportSubscribers(): Promise<User[]> {

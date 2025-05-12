@@ -10,7 +10,7 @@ import {
   IPaginatedResponse,
   IStateTimeline,
 } from "@/utils/types";
-import { buildStateQuery, createDateRange } from "@/utils";
+import { createDateRange } from "@/utils";
 import Services from ".";
 import { sequelize } from "@/config/database";
 
