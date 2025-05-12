@@ -269,12 +269,7 @@ export const Navbar = () => {
         )}
       </div>
 
-      {isSideSheetOpen && (
-        <SideSheet
-          isSideSheetOpen={isSideSheetOpen}
-          setIsSideSheetOpen={setIsSideSheetOpen}
-        />
-      )}
+      {isSideSheetOpen && <SideSheet setIsSideSheetOpen={setIsSideSheetOpen} />}
     </div>
   );
 };
@@ -322,11 +317,10 @@ const MegaMenu = ({ category, megaMenuRef, onMouseLeave }: MegaMenuProps) => {
 };
 
 type SideSheetProps = {
-  isSideSheetOpen: boolean;
   setIsSideSheetOpen: (isSideSheetOpen: boolean) => void;
 };
 
-const SideSheet = ({ isSideSheetOpen, setIsSideSheetOpen }: SideSheetProps) => {
+const SideSheet = ({ setIsSideSheetOpen }: SideSheetProps) => {
   return (
     <div className="fixed top-0 right-0 w-96 h-full bg-[#1d1d1d] text-white z-50 shadow-lg p-4">
       <div className="container max-w-screen-2xl mx-auto h-full">

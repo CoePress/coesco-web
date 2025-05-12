@@ -11,8 +11,8 @@ import env from "@/config/env";
 import { IEmployee } from "@/utils/types";
 
 interface IAuthContextType {
-  employee: IEmployee | null;
-  setEmployee: (employee: IEmployee | null) => void;
+  user: IEmployee | null;
+  setUser: (user: IEmployee | null) => void;
   isLoading: boolean;
 }
 
@@ -25,7 +25,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [employee, setEmployee] = useState<IEmployee | null>(null);
+  const [user, setUser] = useState<IEmployee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,9 +38,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           withCredentials: true,
         });
 
-        setEmployee(data.employee);
+        setUser(data.user);
       } catch (error) {
-        setEmployee(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ employee, setEmployee, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

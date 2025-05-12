@@ -115,10 +115,10 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
 
 type LayoutProps = {
   children: React.ReactNode;
-  employee: IEmployee;
+  user: IEmployee;
 };
 
-const Layout = ({ employee, children }: LayoutProps) => {
+const Layout = ({ user, children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
@@ -230,7 +230,7 @@ const Layout = ({ employee, children }: LayoutProps) => {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
-          employee={employee}
+          user={user}
           toggleSidebar={toggleSidebar}
         />
 

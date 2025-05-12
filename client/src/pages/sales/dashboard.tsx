@@ -3,7 +3,6 @@ import {
   FileText,
   Users,
   DollarSign,
-  Plus,
   MoreHorizontal,
   Filter,
   List,
@@ -12,8 +11,6 @@ import {
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -270,7 +267,7 @@ const Dashboard = () => {
                     isAnimationActive={true}
                     animationDuration={1000}
                     dataKey="value">
-                    {wonLostData.map((entry, index) => (
+                    {wonLostData.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}

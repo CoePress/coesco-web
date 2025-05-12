@@ -99,7 +99,7 @@ const Reports = () => {
           <>
             <Button
               onClick={() => {}}
-              variant="outline">
+              variant="secondary-outline">
               <Filter size={16} />
               Filter
             </Button>

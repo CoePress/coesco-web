@@ -5,7 +5,7 @@ import env from "@/config/env";
 import { AuthContext } from "@/contexts/auth.context";
 
 const useLogout = () => {
-  const { setEmployee } = useContext(AuthContext)!;
+  const { setUser } = useContext(AuthContext)!;
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,14 +18,11 @@ const useLogout = () => {
         `${env.VITE_API_URL}/auth/logout`,
         {},
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
           withCredentials: true,
         }
       );
 
-      setEmployee(null);
+      setUser(null);
     } catch (error) {
       if (error instanceof AxiosError) {
         setError(error.response?.data.message);

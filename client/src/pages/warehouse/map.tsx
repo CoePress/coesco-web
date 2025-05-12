@@ -5,10 +5,6 @@ const BOX_SIZE = 40;
 const ROWS = 8;
 const COLS = 16;
 
-const BUILDING_ROWS = 1;
-const BUILDING_COLS = 16;
-
-// Virtual location grid size
 const VIRTUAL_ROWS = 3;
 const VIRTUAL_COLS = 3;
 
@@ -23,9 +19,7 @@ const LOCATION_TYPES = {
   aisle: { color: "#ffffff", label: "Aisle" },
 };
 
-// Updated to include aisles and stacking
 const getBoxColor = (row: number, col: number) => {
-  // Create aisles every 3 columns
   if (col % 3 === 0) return LOCATION_TYPES.aisle.color;
 
   if (row < 2) return LOCATION_TYPES.dock.color;
@@ -35,17 +29,14 @@ const getBoxColor = (row: number, col: number) => {
   return LOCATION_TYPES.empty.color;
 };
 
-// Add stacking logic
 const getStackHeight = (row: number, col: number) => {
-  // Skip stacking for aisles
   if (col % 3 === 0) return 0;
 
-  // Consistent stacking based on location type
-  if (col < 3) return 3; // Storage areas always have 3 levels
-  if (row < 2) return 2; // Dock areas have 2 levels
-  if (col > 12) return 2; // Packing areas have 2 levels
-  if (row > 5) return 2; // Picking areas have 2 levels
-  return 2; // Empty areas have 2 levels
+  if (col < 3) return 3;
+  if (row < 2) return 2;
+  if (col > 12) return 2;
+  if (row > 5) return 2;
+  return 2;
 };
 
 const shadeColor = (color: string, percent: number) => {
@@ -163,14 +154,12 @@ const VirtualLocation = ({
   );
 };
 
-// Add layer control interface
 interface FilterState {
   jobNumber?: string;
   partNumber?: string;
-  visibleLayers: number; // Track how many layers are visible
+  visibleLayers: number;
 }
 
-// Add building types and data
 const BUILDING_TYPES = {
   neighbor: { color: "#404040", label: "Neighbor" },
   coe: { color: "#e8a80c", label: "COE" },
@@ -183,7 +172,6 @@ interface Building {
   position: { row: number; col: number };
 }
 
-// Mock buildings data
 const MOCK_BUILDINGS: Building[] = [
   {
     id: "w1",
@@ -241,7 +229,6 @@ const MOCK_BUILDINGS: Building[] = [
   },
 ];
 
-// Add building view component
 const BuildingView = ({
   onSelectBuilding,
 }: {
@@ -261,7 +248,6 @@ const BuildingView = ({
     return { x: x + width / 2, y: y + cellSize };
   };
 
-  // Add renderGrid function
   const renderGrid = () => {
     const cells = [];
     for (let row = 0; row < ROWS; row++) {
@@ -381,7 +367,6 @@ const WarehouseMap = () => {
     visibleLayers: 3,
   });
 
-  // Add function to handle layer visibility
   const handleLayerVisibility = (action: "add" | "remove") => {
     setFilters((prev) => {
       const currentMaxLayers = Math.max(
@@ -404,17 +389,14 @@ const WarehouseMap = () => {
     });
   };
 
-  // Add mock data for demonstration (replace with real data later)
   const mockLocationData = useMemo(() => {
     const data: Record<
       string,
       { jobNumber?: string; partNumber?: string; isFilled: boolean }
     > = {};
-    // Populate some random data for demonstration
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         if (col % 3 !== 0) {
-          // Skip aisles
           const key = `${row}-${col}`;
           data[key] = {
             jobNumber:
@@ -425,7 +407,7 @@ const WarehouseMap = () => {
               Math.random() > 0.7
                 ? `PART-${Math.floor(Math.random() * 1000)}`
                 : undefined,
-            isFilled: Math.random() > 0.5, // Random fill status
+            isFilled: Math.random() > 0.5,
           };
         }
       }
@@ -433,12 +415,11 @@ const WarehouseMap = () => {
     return data;
   }, []);
 
-  // Update locationMatchesFilters to make blocks to the right transparent
   const locationMatchesFilters = (row: number, col: number) => {
     const key = `${row}-${col}`;
     const locationData = mockLocationData[key];
 
-    if (!locationData) return true; // Aisles always match
+    if (!locationData) return true;
 
     if (filters.jobNumber && locationData.jobNumber !== filters.jobNumber)
       return false;
@@ -462,7 +443,6 @@ const WarehouseMap = () => {
     return { x: x + width / 2, y: y + cellSize };
   };
 
-  // Update drawIsoBlock to use column-based focus
   const drawIsoBlock = (row: number, col: number) => {
     const baseColor = getBoxColor(row, col);
     const { x, y } = isoCoord(row, col);
@@ -470,23 +450,19 @@ const WarehouseMap = () => {
     const maxStackHeight = getStackHeight(row, col);
     const depth = size * cellSize * sin30;
 
-    // Calculate opacity based on filters and focus
     let opacity = 1;
     if (!locationMatchesFilters(row, col)) {
       opacity = 0.3;
     }
 
-    // Get fill status from mock data
     const key = `${row}-${col}`;
     const locationData = mockLocationData[key];
     const isFilled = locationData?.isFilled ?? false;
 
-    // Use base color if filled, otherwise use dark grey
     const color = isFilled ? baseColor : LOCATION_TYPES.empty.color;
 
     const blocks = [];
 
-    // Draw stacked blocks up to visible layers
     for (let i = 0; i < Math.min(maxStackHeight, filters.visibleLayers); i++) {
       const yOffset = i * depth;
 
@@ -559,7 +535,6 @@ const WarehouseMap = () => {
     return <g key={`block-${row}-${col}`}>{blocks}</g>;
   };
 
-  // Add renderGrid function for warehouse view
   const renderWarehouseGrid = () => {
     const cells = [];
     for (let row = 0; row < ROWS; row++) {
@@ -636,7 +611,6 @@ const WarehouseMap = () => {
             </button>
           </div>
 
-          {/* Add layer controls */}
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Button
@@ -654,8 +628,7 @@ const WarehouseMap = () => {
             </div>
           </div>
 
-          {/* Add filter controls */}
-          <div className="flex gap-4 mb-4">
+          <div className="flex gap-4 mb-4 text-text">
             <div className="flex-1">
               <input
                 type="text"

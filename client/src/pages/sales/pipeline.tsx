@@ -6,9 +6,6 @@ import {
   Plus,
   Layout,
   List as ListIcon,
-  AlertCircle,
-  CheckCircle,
-  DollarSign,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -100,7 +97,7 @@ const Pipeline = () => {
     {
       key: "name",
       header: "Deal Name",
-      render: (value: string, row: any) => (
+      render: (value: string, _: any) => (
         <div className="text-sm font-medium text-primary">{value}</div>
       ),
     },
@@ -117,7 +114,7 @@ const Pipeline = () => {
     {
       key: "stage",
       header: "Stage",
-      render: (value: number, row: any) => {
+      render: (value: number, _: any) => {
         const stage = pipelineStages.find((s) => s.id === value);
         return (
           <div className="flex items-center gap-2">
@@ -224,7 +221,7 @@ const Pipeline = () => {
             </div>
             <Button
               onClick={() => {}}
-              variant="outline">
+              variant="secondary-outline">
               <Download size={16} />
               Export
             </Button>

@@ -6,18 +6,18 @@ import { MenuIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type HeaderProps = {
-  employee: IEmployee;
+  user: IEmployee;
   toggleSidebar: () => void;
 };
 
-const Header = ({ employee, toggleSidebar }: HeaderProps) => {
+const Header = ({ user, toggleSidebar }: HeaderProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { logout } = useLogout();
 
-  const firstName = employee.name.split(" ")[0];
-  const lastInitial = employee.name.split(" ")[1].charAt(0);
+  const firstName = user.name.split(" ")[0];
+  const lastInitial = user.name.split(" ")[1].charAt(0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,7 +58,7 @@ const Header = ({ employee, toggleSidebar }: HeaderProps) => {
                   {firstName} {lastInitial}.
                 </span>
                 <span className="text-xs text-text-muted">
-                  {employee.department}
+                  {user.department}
                 </span>
               </div>
               <img

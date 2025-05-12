@@ -43,16 +43,16 @@ export interface ILoginResponse {
 }
 
 export interface ISessionResponse {
-  employee: IUser;
+  user: IUser;
   authenticated: boolean;
 }
 
 export interface IAuthRequest extends Request {
-  employee: IUser;
+  user: IUser;
 }
 
 export interface IAuthResult {
-  employee: IUser;
+  user: IUser;
   token: string;
 }
 

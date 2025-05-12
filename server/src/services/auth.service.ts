@@ -99,19 +99,19 @@ class AuthService implements IAuthService {
     }
 
     const authResult = await this.handleCallback(code, sessionData.verifier);
-    const employee = await this.services.userService.getUserByMicrosoftId(
-      authResult.employee.microsoftId
+    const user = await this.services.userService.getUserByMicrosoftId(
+      authResult.user.microsoftId
     );
 
     await Promise.all([
-      this.services.userService.updateUser(employee.id, {
+      this.services.userService.updateUser(user.id, {
         lastLogin: new Date(),
       }),
       this.deleteSession(sessionId),
     ]);
 
     return {
-      employee,
+      user,
       token: authResult.token,
     };
   }
@@ -143,10 +143,10 @@ class AuthService implements IAuthService {
     return this.msalClient.getAuthCodeUrl(authUrlRequest);
   }
 
-  async getSession(employee: IUser): Promise<ISessionResponse> {
+  async getSession(user: IUser): Promise<ISessionResponse> {
     return {
-      employee,
-      authenticated: !!employee,
+      user,
+      authenticated: !!user,
     };
   }
 
@@ -182,12 +182,12 @@ class AuthService implements IAuthService {
           throw new AppError(400, "Invalid token response");
         }
 
-        const employee = await this.services.userService.getUserByMicrosoftId(
+        const user = await this.services.userService.getUserByMicrosoftId(
           tokenResponse.account.localAccountId
         );
 
         return {
-          employee,
+          user,
           token: tokenResponse.accessToken,
         };
       } catch (error) {

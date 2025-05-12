@@ -9,10 +9,10 @@ import useLogout from "@/hooks/auth/use-logout";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
-  const { employee } = useAuth();
+  const { user } = useAuth();
   const { logout } = useLogout();
 
-  const firstName = employee?.name.split(" ")[0] || "Employee";
+  const firstName = user?.name.split(" ")[0] || "Employee";
 
   const navigate = useNavigate();
 
