@@ -45,7 +45,7 @@ const BackgroundImage = () => {
 
 const LoginPage = () => {
   const { login, loading: loginLoading, error: loginError } = useLogin();
-  const { user } = useContext(AuthContext)!;
+  const { employee } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const { status, refetch: refetchHealth } = useGetSystemStatus({
     enabled: true,
@@ -62,14 +62,14 @@ const LoginPage = () => {
   useEffect(() => {
     let mounted = true;
 
-    if (mounted && user) {
+    if (mounted && employee) {
       navigate("/", { replace: true });
     }
 
     return () => {
       mounted = false;
     };
-  }, [user, navigate]);
+  }, [employee, navigate]);
 
   const systemDown = status !== "good";
 

@@ -6,7 +6,6 @@ import {
   Import,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader, PageSearch } from "@/components";
@@ -61,7 +60,6 @@ const QuoteModal = ({
   };
 
   const handleConfirm = () => {
-    // Here you would handle the actual addition
     setShowConfirmation(false);
     onClose();
   };
@@ -135,7 +133,7 @@ const QuoteModal = ({
 };
 
 const Catalog = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode] = useState<"grid" | "list">("grid");
   const [selections, setSelections] = useState<string[]>([]);
   const [categoryFilters, setCategoryFilters] = useState<{
     [key: string]: string;
@@ -182,7 +180,6 @@ const Catalog = () => {
 
   const visibleLevels = selections.length + 1;
 
-  // Get configurations based on product class hierarchy selections
   const getFilteredByProductClass = () => {
     if (selections.length === 0) return sampleConfigurations;
 
@@ -194,9 +191,6 @@ const Catalog = () => {
       );
       if (!configClass) return false;
 
-      // Check if this config is either:
-      // 1. Exactly matches the last selection
-      // 2. Is a descendant of the last selection
       return (
         configClass.id === lastSelection ||
         isDescendantOf(configClass.id, lastSelection)
@@ -204,27 +198,20 @@ const Catalog = () => {
     });
   };
 
-  // Apply option category filters
   const getVisibleConfigurations = () => {
     const productClassFiltered = getFilteredByProductClass();
 
-    // If no category filters are applied, return all product class filtered results
     if (Object.keys(categoryFilters).length === 0) {
       return productClassFiltered;
     }
 
-    // Apply category filters
     return productClassFiltered.filter((config) => {
-      // All selected category filters must match
       return Object.entries(categoryFilters).every(([categoryId, optionId]) => {
-        // Find options in this category
         const categoryOptions = sampleOptions.filter(
           (opt) => opt.categoryId === categoryId
         );
-        // Find option IDs in this config that belong to this category
         const configOptionIds = config.options.map((opt) => opt.optionId);
 
-        // Check if any of the config's options in this category match the selected filter
         return categoryOptions.some(
           (opt) => opt.id === optionId && configOptionIds.includes(opt.id)
         );
@@ -232,12 +219,9 @@ const Catalog = () => {
     });
   };
 
-  const navigate = useNavigate();
-
   const pageTitle = "Equipment Catalog";
   const pageDescription = "Browse our complete range of processing equipment";
 
-  // Sort categories by display order
   const sortedCategories = [...sampleOptionCategories].sort(
     (a, b) => a.displayOrder - b.displayOrder
   );
@@ -364,12 +348,10 @@ const Catalog = () => {
                   : "space-y-4"
               }>
               {getVisibleConfigurations().map((config) => {
-                // Find product class for this configuration
                 const productClass = sampleProductClasses.find(
                   (pc) => pc.id === config.productClassId
                 );
 
-                // Get options with more details
                 const configOptions = config.options.map((configOpt) => {
                   const option = sampleOptions.find(
                     (opt) => opt.id === configOpt.optionId

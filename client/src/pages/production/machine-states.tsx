@@ -8,6 +8,7 @@ import useGetStates from "@/hooks/production/use-get-states";
 import useGetMachines from "@/hooks/production/use-get-machines";
 import { formatDuration } from "@/utils";
 import { IMachineState } from "@/utils/types";
+import { TableColumn } from "@/components/v1/table";
 
 const MachineStates = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
@@ -145,7 +146,7 @@ const MachineStates = () => {
       />
 
       <Table<IMachineState>
-        columns={columns}
+        columns={columns as TableColumn<IMachineState>[]}
         data={states || []}
         total={states?.length || 0}
         idField="id"

@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { IEmployee, IEmployeeQueryParams } from "@/utils/t";
+import { IEmployee, IEmployeeQueryParams } from "@/utils/types";
 
 const useGetEmployees = ({
   sortBy = "name",

@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { IStateOverview } from "@/utils/t";
+import { IStateOverview } from "@/utils/types";
 
 export interface UseGetOverviewProps {
   startDate?: string;

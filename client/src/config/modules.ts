@@ -10,7 +10,6 @@ import {
   PieChart,
   Folders,
   Settings as SettingsIcon,
-  Wrench,
   Factory,
   Box,
   Warehouse,

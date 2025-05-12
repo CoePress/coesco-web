@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { IMachineState, IStateQueryParams } from "@/utils/t";
+import { IMachineState, IStateQueryParams } from "@/utils/types";
 
 const useGetStates = ({
   page,

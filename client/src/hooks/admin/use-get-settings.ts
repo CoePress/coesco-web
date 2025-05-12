@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { ISettings } from "@/utils/t";
+import { ISettings } from "@/utils/types";
 
 const useGetSettings = (moduleSlug: string) => {
   const [settings, setSettings] = useState<ISettings | null>(null);

@@ -5,7 +5,7 @@ import env from "@/config/env";
 import { AuthContext } from "@/contexts/auth.context";
 
 const useLogout = () => {
-  const { setUser } = useContext(AuthContext)!;
+  const { setEmployee } = useContext(AuthContext)!;
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ const useLogout = () => {
         }
       );
 
-      setUser(null);
+      setEmployee(null);
     } catch (error) {
       if (error instanceof AxiosError) {
         setError(error.response?.data.message);
