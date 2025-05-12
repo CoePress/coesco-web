@@ -45,8 +45,8 @@ const SaveConfigModal = ({
   totalPrice: number;
   onSave: (data: { name: string; isTemplate: boolean }) => void;
 }) => {
-  const [name, setName] = useState(configName);
-  const [isTemplate, setIsTemplate] = useState(false);
+  const [name] = useState(configName);
+  const [isTemplate] = useState(false);
 
   const handleSave = () => {
     onSave({ name, isTemplate });
@@ -481,18 +481,10 @@ const ConfigBuilder = () => {
           <>
             <Button
               onClick={() => {}}
-              variant="outline">
+              variant="secondary-outline">
               <Import size={16} />
               Import
             </Button>
-            {/* <Button
-              onClick={() => {
-                setSelectedOptions([]);
-                setConfigName("Untitled Configuration");
-              }}
-              variant="outline">
-              Clear
-            </Button> */}
             <Button
               onClick={() => setIsSaveModalOpen(true)}
               disabled={validationResults.some((r) => r.type === "error")}>
@@ -504,7 +496,6 @@ const ConfigBuilder = () => {
       />
 
       <div className="flex h-full">
-        {/* Product Class Selector */}
         <div className="w-80 border-r bg-foreground overflow-y-auto">
           <div className="p-4 border-b bg-foreground">
             <h2 className="font-semibold text-neutral-400">Product Class</h2>
@@ -646,7 +637,6 @@ const ConfigBuilder = () => {
             </h2>
           </div>
 
-          {/* Validation Messages */}
           {validationResults.length > 0 && (
             <div className="p-4 space-y-2">
               {validationResults.map((result, index) => (
@@ -670,7 +660,6 @@ const ConfigBuilder = () => {
             </div>
           )}
 
-          {/* Configuration Summary */}
           <div className="px-4">
             <div className="space-y-4">
               {sortedCategories.map((category) => {
@@ -730,7 +719,6 @@ const ConfigBuilder = () => {
         </div>
       </div>
 
-      {/* Add the modal at the end of the component */}
       <SaveConfigModal
         isOpen={isSaveModalOpen}
         onClose={() => setIsSaveModalOpen(false)}
