@@ -36,7 +36,7 @@ import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { formatDuration, getStatusColor } from "@/utils";
-import { IMachine, IOverviewAlarm, IOverviewMachine } from "@/utils/types";
+import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
 
 type MachineDetailsProps = {
   machine: any;
@@ -439,14 +439,14 @@ const Dashboard = () => {
   ];
 
   const machines = (overview?.machines || [])
-    .sort((a: IMachine, b: IMachine) => {
+    .sort((a: IOverviewMachine, b: IOverviewMachine) => {
       const typeCompare = a.type.localeCompare(b.type);
       if (typeCompare === 0) {
         return a.name.localeCompare(b.name);
       }
       return typeCompare;
     })
-    .map((machine: IMachine) => {
+    .map((machine: IOverviewMachine) => {
       const realTime = machineStates.find(
         (state) => state.machineId === machine.id
       );
@@ -755,7 +755,7 @@ const Dashboard = () => {
                           className="text-text-muted"
                         />
                         <span className="truncate text-xs">
-                          {machine.currentProgram || "-"}
+                          {machine.program || "-"}
                         </span>
                       </div>
 
@@ -765,7 +765,13 @@ const Dashboard = () => {
                           className="text-text-muted"
                         />
                         <span className="text-xs">
-                          {machine.estimatedCompletion || "-"}
+                          {machine.estimatedCompletion
+                            ? formatDistance(
+                                machine.estimatedCompletion,
+                                new Date(),
+                                { addSuffix: true }
+                              )
+                            : "-"}
                         </span>
                       </div>
                     </div>

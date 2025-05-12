@@ -43,7 +43,7 @@ const CustomerDetails = () => {
           <>
             <Button
               onClick={() => {}}
-              variant="outline">
+              variant="secondary-outline">
               <Download size={16} />
               Export
             </Button>

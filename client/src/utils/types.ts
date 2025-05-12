@@ -195,10 +195,12 @@ export interface IOverviewMachine {
   name: string;
   type: MachineType;
   status: string;
-  currentProgram: string;
-  estimatedCompletion: string;
+  program: string;
+  tool: string;
+  position: Record<MachineAxis, number>;
   spindleLoad: number;
   spindleSpeed: number;
+  estimatedCompletion: Date;
 }
 
 export interface IOverviewAlarm {
