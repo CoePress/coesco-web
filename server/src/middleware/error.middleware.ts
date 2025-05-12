@@ -2,6 +2,44 @@ import { logger } from "@/utils/logger";
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 
+export class AppError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message: string) {
+    super(message, 404);
+  }
+}
+
+export class BadRequestError extends AppError {
+  constructor(message: string) {
+    super(message, 400);
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(message, 401);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string) {
+    super(message, 403);
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(message: string) {
+    super(message, 500);
+  }
+}
+
 export const errorHandler = (
   err: Error,
   req: Request,
@@ -16,21 +54,16 @@ export const errorHandler = (
 
   if (err instanceof ZodError) {
     statusCode = 400;
-    errorMessage = err.errors
-      .map((e) => `${e.path.join(".")}: ${e.message}`)
-      .join(", ");
-  } else if (err.name === "ValidationError") {
-    statusCode = 400;
-  } else if (err.name === "UnauthorizedError") {
-    statusCode = 401;
-  } else if (err.name === "ForbiddenError") {
-    statusCode = 403;
-  } else if (err.name === "NotFoundError") {
-    statusCode = 404;
+    errorMessage = err.errors.map((e) => ({
+      field: e.path.join("."),
+      message: e.message,
+    }));
+  } else if (err instanceof AppError) {
+    statusCode = err.status;
+    errorMessage = err.message;
   }
 
   res.status(statusCode).json({
     error: errorMessage,
   });
-  return;
 };

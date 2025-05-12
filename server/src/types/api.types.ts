@@ -11,7 +11,9 @@ export interface IQueryParams {
   sort?: string;
   order?: "asc" | "desc";
   search?: string;
-  filter?: string;
+  filter?: string | Record<string, any>;
+  dateFrom?: string | Date;
+  dateTo?: string | Date;
   fields?: string[];
   include?: string[];
 }

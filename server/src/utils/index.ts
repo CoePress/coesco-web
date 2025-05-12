@@ -7,33 +7,29 @@ import {
   FanucControllerMode,
   FanucExecutionMode,
   IDateRange,
-  IQueryBuilderResult,
-  IQueryParams,
-} from "./types";
+} from "@/types/schema.types";
 import { NextFunction, Request, Response } from "express";
-import { Op, fn, literal } from "sequelize";
 import { toZonedTime } from "date-fns-tz";
-import {
-  addMilliseconds,
-  differenceInMilliseconds,
-  format,
-  parse,
-} from "date-fns";
+import { addMilliseconds, differenceInMilliseconds, parse } from "date-fns";
 import { config } from "@/config/config";
 import { logger } from "./logger";
+import { IQueryBuilderResult, IQueryParams } from "@/types/api.types";
 
-const emailConfig = {
-  host: config.smtp.host,
-  port: config.smtp.port,
-  tls: { rejectUnauthorized: true },
-};
+export const asyncHandler =
+  (fn: any) => (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 
-export const sendEmail = async (
+export const send = async (
   to: string | string[],
   subject: string,
   html: string
 ) => {
-  const transporter = nodemailer.createTransport(emailConfig);
+  const transporter = nodemailer.createTransport({
+    host: config.smtp.host,
+    port: config.smtp.port,
+    tls: { rejectUnauthorized: true },
+  });
 
   try {
     return await transporter.sendMail({
@@ -48,17 +44,21 @@ export const sendEmail = async (
   }
 };
 
-export const sendTemplate = async (
+export const sendEmail = async (
   templateName: string,
   data: Record<string, any>,
   to: string | string[],
   subject: string
 ): Promise<nodemailer.SentMessageInfo> => {
-  const templatePath = path.resolve("templates", `${templateName}.ejs`);
+  const templatePath = path.resolve(
+    __dirname,
+    "templates/emails",
+    `${templateName}.ejs`
+  );
   const template = fs.readFileSync(templatePath, "utf-8");
   const html = ejs.render(template, data);
 
-  return sendEmail(to, subject, html);
+  return send(to, subject, html);
 };
 
 export const getBlockedIps = (): string[] => {
@@ -136,124 +136,12 @@ export const expandFanucExecutionMode = (mode: FanucExecutionMode): string => {
   }
 };
 
-export const asyncHandler =
-  (fn: any) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
-export const buildWhereClause = (
-  params?: IQueryParams,
-  searchableFields: string[] = [],
-  additionalConditions: Record<string, any> = {}
-): any => {
-  if (!params && Object.keys(additionalConditions).length === 0) return {};
-
-  const { search, startDate, endDate } = params || {};
-  let whereClause: any = { ...additionalConditions };
-
-  if (startDate && endDate) {
-    whereClause.createdAt = { [Op.between]: [startDate, endDate] };
-  }
-
-  if (search && searchableFields.length > 0) {
-    if (Object.keys(whereClause).length > 0) {
-      return {
-        [Op.and]: [
-          whereClause,
-          {
-            [Op.or]: searchableFields.map((field) => ({
-              [field]: { [Op.iLike]: `%${search}%` },
-            })),
-          },
-        ],
-      };
-    } else {
-      return {
-        [Op.or]: searchableFields.map((field) => ({
-          [field]: { [Op.iLike]: `%${search}%` },
-        })),
-      };
-    }
-  }
-
-  return whereClause;
-};
-
-export const buildOrderClause = (params?: IQueryParams): any[] => {
-  if (!params) return [["createdAt", "DESC"]];
-
-  const { sortBy, sortOrder = "ASC" } = params;
-
-  return sortBy ? [[sortBy, sortOrder.toUpperCase()]] : [["createdAt", "DESC"]];
-};
-
-export const buildPaginationOptions = (
-  params?: IQueryParams
-): { limit: number; offset: number } => {
-  if (!params) return { limit: 10, offset: 0 };
-
-  const { page = 1, limit = 10 } = params;
-
-  return {
-    limit,
-    offset: (page - 1) * limit,
-  };
-};
-
-// Utils
 export const hasThisChanged = async (a: any, b: any): Promise<boolean> => {
   if (typeof a !== typeof b) return false;
   if (typeof a === "object") {
     return JSON.stringify(a) !== JSON.stringify(b);
   }
   return a !== b;
-};
-
-export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
-  const {
-    page,
-    limit,
-    sortBy = "createdAt",
-    sortOrder = "desc",
-    ...filters
-  } = params;
-
-  const whereClause = Object.entries(filters).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      acc[key] = value;
-    }
-    return acc;
-  }, {} as Record<string, any>);
-
-  if (filters.startDate && filters.endDate) {
-    whereClause.createdAt = {
-      $gte: filters.startDate,
-      $lte: filters.endDate,
-    };
-    delete whereClause.startDate;
-    delete whereClause.endDate;
-  }
-
-  if (filters.search) {
-    whereClause.$or = [
-      { name: { $regex: filters.search, $options: "i" } },
-      { description: { $regex: filters.search, $options: "i" } },
-    ];
-    delete whereClause.search;
-  }
-
-  const result: IQueryBuilderResult = {
-    whereClause,
-    orderClause: [[sortBy, sortOrder]],
-    page,
-  };
-
-  if (page !== undefined && limit !== undefined) {
-    result.offset = (page - 1) * limit;
-    result.limit = limit;
-  }
-
-  return result;
 };
 
 export const createDateRange = (
@@ -284,7 +172,6 @@ export const createDateRange = (
   );
 
   const totalDuration = differenceInMilliseconds(endDateEST, startDateEST) + 1;
-  const totalDays = Math.ceil(totalDuration / (1000 * 60 * 60 * 24));
 
   const previousStart = toZonedTime(
     addMilliseconds(startDateEST, -totalDuration),
@@ -296,86 +183,74 @@ export const createDateRange = (
   return {
     startDate: startDateEST,
     endDate: endDateEST,
-    totalDuration,
-    totalDays,
-    previousStart,
-    previousEnd,
+    duration: totalDuration,
+    previousStartDate: previousStart,
+    previousEndDate: previousEnd,
   };
 };
 
-export const formatInEasternTime = (
-  date: Date,
-  formatStr = "yyyy-MM-dd"
-): string => {
-  const timeZone = "America/New_York";
-  const dateInET = toZonedTime(date, timeZone);
-  return format(dateInET, formatStr);
-};
-
-export const buildStateQuery = (params: IQueryParams): IQueryBuilderResult => {
-  const {
-    page,
-    limit,
-    sortBy = "startTime",
-    sortOrder = "desc",
-    ...filters
-  } = params;
-
-  const whereClause: any = {};
-
-  Object.entries(filters).forEach(([key, value]) => {
-    if (
-      value !== undefined &&
-      key !== "startDate" &&
-      key !== "endDate" &&
-      key !== "search"
-    ) {
-      whereClause[key] = value;
-    }
-  });
-
-  if (filters.startDate && filters.endDate) {
-    whereClause[Op.and] = [
-      // State starts before division ends
-      { startTime: { [Op.lte]: filters.endDate } },
-      // State either hasn't ended or ends after division starts
-      {
-        [Op.or]: [
-          { endTime: null },
-          { endTime: { [Op.gte]: filters.startDate } },
-        ],
-      },
-    ];
-  }
-
-  if (filters.search) {
-    const searchCondition = [
-      { name: { [Op.iLike]: `%${filters.search}%` } },
-      { description: { [Op.iLike]: `%${filters.search}%` } },
-    ];
-
-    if (whereClause[Op.or]) {
-      const existingOr = whereClause[Op.or];
-      whereClause[Op.and] = [
-        { [Op.or]: existingOr },
-        { [Op.or]: searchCondition },
-      ];
-      delete whereClause[Op.or];
-    } else {
-      whereClause[Op.or] = searchCondition;
-    }
-  }
-
+export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   const result: IQueryBuilderResult = {
-    whereClause,
-    orderClause: [[sortBy, sortOrder]],
-    page,
+    whereClause: {},
+    orderClause: [],
+    page: params.page || 1,
   };
 
-  if (page !== undefined && limit !== undefined) {
-    result.offset = (page - 1) * limit;
-    result.limit = limit;
+  // Pagination
+  if (params.limit !== undefined) {
+    result.limit = params.limit;
+    result.offset = ((result.page || 1) - 1) * result.limit;
   }
+
+  // Search
+  if (params.search) {
+    result.whereClause.$or = [
+      { name: { $regex: params.search, $options: "i" } },
+      { description: { $regex: params.search, $options: "i" } },
+    ];
+  }
+
+  // Filter
+  if (params.filter) {
+    if (typeof params.filter === "string") {
+      try {
+        const parsedFilter = JSON.parse(params.filter);
+        result.whereClause = { ...result.whereClause, ...parsedFilter };
+      } catch (error) {
+        console.error("Invalid filter format:", error);
+      }
+    } else if (typeof params.filter === "object") {
+      result.whereClause = { ...result.whereClause, ...params.filter };
+    }
+  }
+
+  // Date Range
+  if (params.dateFrom || params.dateTo) {
+    result.whereClause.createdAt = {};
+
+    if (params.dateFrom) {
+      const dateFrom =
+        params.dateFrom instanceof Date
+          ? params.dateFrom
+          : new Date(params.dateFrom);
+      result.whereClause.createdAt.$gte = dateFrom;
+    }
+
+    if (params.dateTo) {
+      const dateTo =
+        params.dateTo instanceof Date ? params.dateTo : new Date(params.dateTo);
+      result.whereClause.createdAt.$lte = dateTo;
+    }
+  }
+
+  // Sort
+  const defaultSort = "createdAt";
+  const defaultOrder = "desc";
+
+  const sort = params.sort || defaultSort;
+  const order = params.order || defaultOrder;
+
+  result.orderClause = [[sort, order]];
 
   return result;
 };
