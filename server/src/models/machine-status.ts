@@ -80,7 +80,7 @@ class MachineStatus
       },
       {
         sequelize,
-        tableName: "machine_status",
+        tableName: "machine_statuses",
         timestamps: true,
         underscored: true,
       }
