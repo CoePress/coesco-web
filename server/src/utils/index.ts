@@ -38,7 +38,7 @@ export const send = async (
       subject,
       html,
     });
-  } catch (err) {
+  } catch (err: any) {
     logger.error(`Email error: ${err.message}`);
     throw err;
   }
@@ -50,11 +50,7 @@ export const sendEmail = async (
   to: string | string[],
   subject: string
 ): Promise<nodemailer.SentMessageInfo> => {
-  const templatePath = path.resolve(
-    __dirname,
-    "templates/emails",
-    `${templateName}.ejs`
-  );
+  const templatePath = path.resolve("templates", `${templateName}.ejs`);
   const template = fs.readFileSync(templatePath, "utf-8");
   const html = ejs.render(template, data);
 

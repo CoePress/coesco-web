@@ -1,9 +1,10 @@
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { Router } from "express";
+import express from "express";
 import { rateLimit } from "express-rate-limit";
 
+import routes from "./routes";
 import { config } from "./config/config";
 import { errorHandler } from "./middleware/error.middleware";
 import {
@@ -11,8 +12,6 @@ import {
   securityHeaders,
 } from "./middleware/security.middleware";
 import { logger } from "./utils/logger";
-
-const routes = Router();
 
 const app = express();
 app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
