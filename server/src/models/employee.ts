@@ -1,5 +1,4 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-
 import { EmployeeStatus, IEmployee } from "@/types/schema.types";
 
 type EmployeeAttributes = Omit<IEmployee, "createdAt" | "updatedAt">;
@@ -89,25 +88,19 @@ class Employee
   }
 
   public static associate(models: any): void {
-    Employee.belongsTo(models.Department, {
-      foreignKey: "primaryDepartmentId",
-      as: "primaryDepartment",
-    });
-
     Employee.belongsTo(models.Employee, {
       foreignKey: "reportsToId",
       as: "reportsTo",
     });
 
-    Employee.belongsToMany(models.Department, {
-      through: "employee_departments",
-      foreignKey: "employeeId",
-      otherKey: "departmentId",
-    });
-
     Employee.hasMany(models.Employee, {
       foreignKey: "reportsToId",
       as: "reports",
+    });
+
+    Employee.belongsTo(models.Auth, {
+      foreignKey: "userId",
+      as: "auth",
     });
   }
 }

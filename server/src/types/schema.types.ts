@@ -13,7 +13,7 @@ export interface IAuth extends IBaseEntity {
   email: string;
   password: string;
   microsoftId?: string;
-  userId?: string;
+  userId: string;
   userType: UserType;
   isActive: boolean;
   isVerified: boolean;
