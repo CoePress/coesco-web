@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
-    "build": "tsc && tsc-alias && cp -r src/templates dist/",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "start": "npm run build && node dist/index.js"
   },
   "keywords": [],
