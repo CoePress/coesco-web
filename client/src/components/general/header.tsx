@@ -16,8 +16,8 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
 
   const { logout } = useLogout();
 
-  const firstName = user.name.split(" ")[0];
-  const lastInitial = user.name.split(" ")[1].charAt(0);
+  const firstName = user.firstName;
+  const lastInitial = user.lastName.charAt(0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -1,20 +1,19 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
-import { IEmployee, IEmployeeQueryParams } from "@/utils/types";
+import { IEmployee, IQueryParams } from "@/utils/types";
 import { instance } from "@/utils";
 
 const useGetEmployees = ({
-  sortBy = "name",
-  sortOrder = "asc",
-  page,
-  limit,
-  department,
-  isActive,
-  receivesReports,
+  sort = "lastName",
+  order = "asc",
+  page = 1,
+  limit = 25,
   search,
-}: IEmployeeQueryParams = {}) => {
+  filter,
+  dateFrom,
+  dateTo,
+}: IQueryParams = {}) => {
   const [employees, setEmployees] = useState<IEmployee[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,20 +25,22 @@ const useGetEmployees = ({
       setError(null);
 
       try {
-        const params: Record<string, string | number | boolean> = {
-          sortBy,
-          sortOrder,
+        const params: Record<
+          string,
+          string | number | boolean | Record<string, any> | Date
+        > = {
+          sort,
+          order,
+          page,
+          limit,
         };
 
-        if (page !== undefined) params.page = page;
-        if (limit !== undefined) params.limit = limit;
-        if (department !== undefined) params.department = department;
-        if (isActive !== undefined) params.isActive = isActive;
-        if (receivesReports !== undefined)
-          params.receivesReports = receivesReports;
-        if (search !== undefined) params.search = search;
+        if (search) params.search = search;
+        if (filter) params.filter = filter;
+        if (dateFrom) params.dateFrom = dateFrom;
+        if (dateTo) params.dateTo = dateTo;
 
-        const { data } = await instance.get(`/users`, {
+        const { data } = await instance.get(`/employees`, {
           params,
         });
 
@@ -59,14 +60,14 @@ const useGetEmployees = ({
     getEmployees();
   }, [
     refreshToggle,
-    sortBy,
-    sortOrder,
+    sort,
+    order,
     page,
     limit,
-    department,
-    isActive,
-    receivesReports,
     search,
+    filter,
+    dateFrom,
+    dateTo,
   ]);
 
   const refresh = () => setRefreshToggle((prev) => !prev);

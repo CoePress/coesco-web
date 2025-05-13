@@ -152,142 +152,128 @@ export interface IEmployee extends IBaseEntity {
   updatedAt: Date;
 }
 
-export interface UseGetEmployeesProps {
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  page?: number;
-  limit?: number;
-  department?: string;
-  isActive?: boolean;
-  receivesReports?: boolean;
-  search?: string;
-}
-
-export interface ISettings extends IBaseEntity {
-  moduleSlug: string;
-  settings: Record<string, any>;
-}
-
-export interface IStateOverview {
-  kpis: {
-    [key: string]: {
-      value: number;
-      change: number;
-    };
-  };
-  utilization: {
-    label: string;
-    start: Date;
-    end: Date;
-    utilization: number;
-  }[];
-  states: {
-    state: string;
-    total: number;
-    percentage: number;
-  }[];
-  machines: IOverviewMachine[];
-  alarms: IOverviewAlarm[];
-}
-
-export interface IOverviewMachine {
-  id: string;
-  name: string;
-  type: MachineType;
-  status: string;
-  program: string;
-  tool: string;
-  position: Record<MachineAxis, number>;
-  spindleLoad: number;
-  spindleSpeed: number;
-  estimatedCompletion: Date;
-}
-
-export interface IOverviewAlarm {
-  id: string;
-  machineId: string;
-  timestamp: Date;
-  type: string;
-  severity: string;
-  message?: string;
-}
-
-export type MachineType = "LATHE" | "MILL";
-export type MachineController = "MAZAK" | "FANUC";
-
-export interface IMachine extends IBaseEntity {
-  slug: string;
-  name: string;
-  type: MachineType;
-  controller: MachineController;
-  controllerModel: string;
-}
-
 export interface IQueryParams {
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  sort?: string;
+  order?: "asc" | "desc";
   search?: string;
-  startDate?: Date | string;
-  endDate?: Date | string;
+  filter?: string | Record<string, any>;
+  dateFrom?: string | Date;
+  dateTo?: string | Date;
+  fields?: string[];
+  include?: string[];
 }
 
-export interface IMachineQueryParams extends IQueryParams {
-  type?: MachineType;
-  controller?: MachineController;
-}
+// export interface ISettings extends IBaseEntity {
+//   moduleSlug: string;
+//   settings: Record<string, any>;
+// }
 
-export interface IEmployeeQueryParams extends IQueryParams {
-  department?: string;
-  isActive?: boolean;
-  receivesReports?: boolean;
-}
+// export interface IStateOverview {
+//   kpis: {
+//     [key: string]: {
+//       value: number;
+//       change: number;
+//     };
+//   };
+//   utilization: {
+//     label: string;
+//     start: Date;
+//     end: Date;
+//     utilization: number;
+//   }[];
+//   states: {
+//     state: string;
+//     total: number;
+//     percentage: number;
+//   }[];
+//   machines: IOverviewMachine[];
+//   alarms: IOverviewAlarm[];
+// }
 
-export interface IStateQueryParams extends IQueryParams {
-  machineId?: string;
-}
+// export interface IOverviewMachine {
+//   id: string;
+//   name: string;
+//   type: MachineType;
+//   status: string;
+//   program: string;
+//   tool: string;
+//   position: Record<MachineAxis, number>;
+//   spindleLoad: number;
+//   spindleSpeed: number;
+//   estimatedCompletion: Date;
+// }
 
-export type MachineAxis = "X" | "Y" | "Z" | "A" | "B" | "C";
+// export interface IOverviewAlarm {
+//   id: string;
+//   machineId: string;
+//   timestamp: Date;
+//   type: string;
+//   severity: string;
+//   message?: string;
+// }
 
-export interface IMachineState extends IBaseEntity {
-  machineId: string;
-  timestamp: Date;
-  durationMs: number;
-  state: string;
-  execution: string;
-  controller: string;
-  program: string;
-  tool: string;
-  position: Record<MachineAxis, number>;
-  feedRate: number;
-  spindleSpeed: number;
-}
+// export type MachineType = "LATHE" | "MILL";
+// export type MachineController = "MAZAK" | "FANUC";
 
-export interface IStateTimeline {
-  startDate: Date;
-  endDate: Date;
-  machines: {
-    id: string;
-    name: string;
-    timeline: {
-      state: string;
-      startTime: Date;
-      endTime: Date;
-      durationMs: number;
-    }[];
-  }[];
-}
+// export interface IMachine extends IBaseEntity {
+//   slug: string;
+//   name: string;
+//   type: MachineType;
+//   controller: MachineController;
+//   controllerModel: string;
+// }
 
-export interface ICurrentState {
-  machineId: string;
-  state: string;
-  startTime: Date;
-  endTime: Date;
-  durationMs: number;
-  program: string;
-  tool: string;
-  position: Record<MachineAxis, number>;
-  feedRate: number;
-  spindleSpeed: number;
-}
+// export interface IMachineQueryParams extends IQueryParams {
+//   type?: MachineType;
+//   controller?: MachineController;
+// }
+
+// export interface IStateQueryParams extends IQueryParams {
+//   machineId?: string;
+// }
+
+// export type MachineAxis = "X" | "Y" | "Z" | "A" | "B" | "C";
+
+// export interface IMachineState extends IBaseEntity {
+//   machineId: string;
+//   timestamp: Date;
+//   durationMs: number;
+//   state: string;
+//   execution: string;
+//   controller: string;
+//   program: string;
+//   tool: string;
+//   position: Record<MachineAxis, number>;
+//   feedRate: number;
+//   spindleSpeed: number;
+// }
+
+// export interface IStateTimeline {
+//   startDate: Date;
+//   endDate: Date;
+//   machines: {
+//     id: string;
+//     name: string;
+//     timeline: {
+//       state: string;
+//       startTime: Date;
+//       endTime: Date;
+//       durationMs: number;
+//     }[];
+//   }[];
+// }
+
+// export interface ICurrentState {
+//   machineId: string;
+//   state: string;
+//   startTime: Date;
+//   endTime: Date;
+//   durationMs: number;
+//   program: string;
+//   tool: string;
+//   position: Record<MachineAxis, number>;
+//   feedRate: number;
+//   spindleSpeed: number;
+// }

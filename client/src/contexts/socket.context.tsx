@@ -1,6 +1,7 @@
 import env from "@/config/env";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { useLocation } from "react-router-dom";
 
 type SocketContextType = {
   isConnected: boolean;
@@ -22,10 +23,18 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
+  const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname === "/login") {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
+      return;
+    }
+
     if (!socketRef.current) {
-      socketRef.current = io(`${env.VITE_API_URL}/client`, {
+      socketRef.current = io(`${env.VITE_BASE_URL}/client`, {
         reconnectionDelayMax: 10000,
         transports: ["websocket", "polling"],
       });
@@ -40,7 +49,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     const socket = socketRef.current;
