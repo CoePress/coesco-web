@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 import env from "@/config/env";
-import { IStateOverview } from "@/utils/types";
+import { IMachineOverview } from "@/utils/types";
 
 export interface UseGetOverviewProps {
   startDate?: string;
@@ -10,7 +10,7 @@ export interface UseGetOverviewProps {
 }
 
 const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
-  const [overview, setOverview] = useState<IStateOverview | null>(null);
+  const [overview, setOverview] = useState<IMachineOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
@@ -26,7 +26,7 @@ const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
         if (endDate) params.endDate = endDate;
 
         const { data } = await axios.get(
-          `${env.VITE_API_URL}/states/overview`,
+          `${env.VITE_API_URL}/machines/data/overview`,
           {
             params,
             withCredentials: true,

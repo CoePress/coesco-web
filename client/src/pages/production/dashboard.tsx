@@ -2,7 +2,6 @@ import { startOfToday, isSameDay, formatDistance } from "date-fns";
 import {
   Activity,
   Gauge,
-  Box,
   AlertTriangle,
   RefreshCcw,
   Clock,
@@ -175,14 +174,6 @@ type MachineTimelineProps = {
   endDate: Date;
 };
 
-const getESTDate = (date: Date) => {
-  // Convert to EST (UTC-5 or UTC-4 for DST)
-  // This uses the 'America/New_York' timezone for EST/EDT
-  return new Date(
-    date.toLocaleString("en-US", { timeZone: "America/New_York" })
-  );
-};
-
 const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
   const { timeline, loading, error } = useGetTimeline({
     startDate: startDate.toISOString().slice(0, 10),
@@ -226,7 +217,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
 
           <div className="space-y-1">
             {timeline &&
-              timeline.machines.map((machine) => (
+              timeline.machines.map((machine: IOverviewMachine) => (
                 <div
                   key={machine.id}
                   className="flex items-center group hover:bg-surface/50">
@@ -253,7 +244,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                         }
                       />
                     ))}
-                    {machine.timeline.map((event, index) => {
+                    {/* {machine.timeline.map((event, index) => {
                       // Convert event timestamps to EST
                       const startDate = getESTDate(new Date(event.startTime));
                       const endDate = getESTDate(event.endTime || new Date());
@@ -293,7 +284,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                           </div>
                         </div>
                       );
-                    })}
+                    })} */}
                   </div>
                 </div>
               ))}
@@ -302,7 +293,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
       </div>
 
       <div className="border-t pt-4 flex flex-wrap gap-2">
-        {timeline &&
+        {/* {timeline &&
           Array.from(
             new Set(
               timeline.machines
@@ -319,7 +310,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
               />
               <span className="text-sm">{state}</span>
             </div>
-          ))}
+          ))} */}
       </div>
     </div>
   );
@@ -390,46 +381,34 @@ const Dashboard = () => {
   const kpis = [
     {
       title: "Active Machines",
-      value:
-        overview?.kpis.activeMachines?.value !== undefined
-          ? `${overview.kpis.activeMachines.value.toString()}/-`
-          : "-/-",
+      value: 0,
       description: "Number of active machines",
       icon: <Activity size={16} />,
     },
     {
       title: "Utilization",
-      value:
-        overview?.kpis.utilization?.value != null
-          ? `${overview.kpis.utilization.value.toFixed(2)}%`
-          : "-",
+      value: 0,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      change: overview?.kpis.utilization?.change ?? 0,
+      change: 0,
     },
     {
       title: "Average Runtime",
-      value:
-        overview?.kpis.averageRuntime?.value !== undefined
-          ? formatDuration(overview.kpis.averageRuntime.value)
-          : "-",
+      value: 0,
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      change: overview?.kpis.averageRuntime?.change ?? 0,
+      change: 0,
     },
     {
       title: "Alarms",
-      value:
-        overview?.kpis.alarmCount?.value !== undefined
-          ? overview.kpis.alarmCount.value.toString()
-          : "-",
+      value: 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: overview?.kpis.alarmCount?.change ?? 0,
+      change: 0,
     },
   ];
 
-  const utilizationOverTime = overview?.utilization || [];
+  const utilizationOverTime = overview?.utilizationOverTime || [];
 
   const stateDistribution = [
     { state: "ACTIVE", total: 3600000, percentage: 45 },
@@ -726,7 +705,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
-              {machines &&
+              {/* {machines &&
                 machines.map((machine: IOverviewMachine) => (
                   <div
                     key={machine.id}
@@ -789,7 +768,7 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
-                ))}
+                ))} */}
             </div>
           </div>
 
@@ -812,11 +791,7 @@ const Dashboard = () => {
                       <div className="flex items-start gap-2">
                         <AlertTriangle
                           size={16}
-                          className={
-                            alarm.type === "alarm"
-                              ? "text-error"
-                              : "text-warning"
-                          }
+                          className="text-error"
                         />
                         <div>
                           <p className="text-sm font-medium text-text-muted">

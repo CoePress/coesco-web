@@ -297,3 +297,45 @@ export interface IQueryParams {
 //   feedRate: number;
 //   spindleSpeed: number;
 // }
+
+export enum MachineType {
+  LATHE = "LATHE",
+  MILL = "MILL",
+}
+
+export interface IUtilization {
+  label: string;
+  start: Date;
+  end: Date;
+  utilization: number;
+}
+
+export interface IStateDistribution {
+  state: string;
+  duration: number;
+  percentage: number;
+}
+
+export interface IOverviewMachine {
+  id: string;
+  name: string;
+  type: MachineType;
+}
+
+export interface IOverviewAlarm {
+  machineId: string;
+  timestamp: Date;
+  message: string;
+}
+
+export interface IMachineOverview {
+  startDate: Date;
+  endDate: Date;
+  utilization: number;
+  averageRuntime: number;
+  alarmCount: number;
+  utilizationOverTime: IUtilization[];
+  stateDistribution: IStateDistribution[];
+  machines: IOverviewMachine[];
+  alarms: IOverviewAlarm[];
+}

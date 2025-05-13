@@ -32,6 +32,13 @@ export class MachineDataController {
   async getMachineOverview(req: Request, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate } = req.query;
+
+      const overview = await machineDataService.getMachineOverview(
+        startDate as string,
+        endDate as string
+      );
+
+      res.status(200).json(overview);
     } catch (error) {
       next(error);
     }
@@ -40,6 +47,13 @@ export class MachineDataController {
   async getMachineTimeline(req: Request, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate } = req.query;
+
+      const timeline = await machineDataService.getMachineTimeline(
+        startDate as string,
+        endDate as string
+      );
+
+      res.status(200).json(timeline);
     } catch (error) {
       next(error);
     }

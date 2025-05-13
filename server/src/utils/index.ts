@@ -11,7 +11,12 @@ import {
 } from "@/types/schema.types";
 import { NextFunction, Request, Response } from "express";
 import { toZonedTime } from "date-fns-tz";
-import { addMilliseconds, differenceInMilliseconds, parse } from "date-fns";
+import {
+  addMilliseconds,
+  differenceInDays,
+  differenceInMilliseconds,
+  parse,
+} from "date-fns";
 import { config } from "@/config/config";
 import { logger } from "./logger";
 import {
@@ -173,6 +178,7 @@ export const createDateRange = (
   );
 
   const totalDuration = differenceInMilliseconds(endDateEST, startDateEST) + 1;
+  const totalDays = differenceInDays(endDateEST, startDateEST) + 1;
 
   const previousStart = toZonedTime(
     addMilliseconds(startDateEST, -totalDuration),
@@ -185,6 +191,7 @@ export const createDateRange = (
     startDate: startDateEST,
     endDate: endDateEST,
     duration: totalDuration,
+    totalDays: totalDays,
     previousStartDate: previousStart,
     previousEndDate: previousEnd,
   };

@@ -291,7 +291,7 @@ export interface IMachineStatus extends IBaseEntity {
   };
   alarmCode?: string;
   alarmMessage?: string;
-  startTime?: Date;
+  startTime: Date;
   endTime?: Date;
   duration?: number;
 }
@@ -341,6 +341,7 @@ export interface IMachineTimeline {
 
 export interface IDateRange {
   duration: number;
+  totalDays: number;
   startDate: Date;
   endDate: Date;
   previousStartDate: Date;
