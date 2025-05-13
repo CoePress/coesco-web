@@ -3,7 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
-
+import { createServer } from "http";
 import routes from "./routes";
 import { config } from "./config/config";
 import { errorHandler } from "./middleware/error.middleware";
@@ -12,8 +12,20 @@ import {
   securityHeaders,
 } from "./middleware/security.middleware";
 import { logger } from "./utils/logger";
+import { Server } from "socket.io";
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  pingInterval: 5000,
+  pingTimeout: 5000,
+});
+
 app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 app.use(cspMiddleware);
@@ -59,4 +71,5 @@ app.get("/health", (req, res) => {
 
 app.use(errorHandler);
 
+export { httpServer, io };
 export default app;

@@ -14,18 +14,20 @@ const useGetSystemStatus = (
   const [status, setStatus] = useState<"good" | "bad" | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastChecked, setLastChecked] = useState<string | null>(null);
 
   const getStatus = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axios.get(`${env.VITE_API_URL}/system/status`, {
+      const response = await axios.get(`${env.VITE_BASE_URL}/health`, {
         withCredentials: true,
       });
 
-      if (response.status >= 200) {
+      if (response.data.status === "ok") {
         setStatus("good");
+        setLastChecked(response.data.timestamp);
       } else {
         setStatus("bad");
       }
@@ -51,6 +53,7 @@ const useGetSystemStatus = (
     status,
     loading,
     error,
+    lastChecked,
     refetch: getStatus,
   };
 };

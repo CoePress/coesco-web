@@ -1,22 +1,23 @@
-import app from "./app";
+import { httpServer } from "./app";
 
 import { config } from "./config/config";
 import { sequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
 
-const server = app.listen(config.port, async () => {
+httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
   await sequelize.sync();
   logger.info("Database connected & synced");
   logger.info(
     `Server running in ${config.nodeEnv} mode on port ${config.port}`
   );
+  logger.info("Socket.IO server initialized");
 });
 
 const gracefulShutdown = () => {
   logger.info("Shutting down gracefully...");
-  server.close(async () => {
+  httpServer.close(async () => {
     logger.info("HTTP server closed");
     try {
       process.exit(0);
@@ -40,4 +41,4 @@ process.on("unhandledRejection", (error: any) => {
   gracefulShutdown();
 });
 
-export default server;
+export default httpServer;

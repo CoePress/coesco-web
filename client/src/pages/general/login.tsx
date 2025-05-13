@@ -71,7 +71,7 @@ const LoginPage = () => {
     };
   }, [user, navigate]);
 
-  const systemDown = status !== "good";
+  const systemDown = status === "bad" || status === null;
 
   if (systemDown) {
     return (

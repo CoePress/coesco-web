@@ -1,6 +1,7 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
 import {
   IMachine,
+  ICreateMachineDto,
   MachineConnectionType,
   MachineControllerType,
   MachineType,
@@ -9,7 +10,7 @@ import {
 type MachineAttributes = Omit<IMachine, "createdAt" | "updatedAt">;
 
 class Machine
-  extends Model<MachineAttributes, IMachine>
+  extends Model<MachineAttributes, ICreateMachineDto>
   implements MachineAttributes
 {
   declare id: string;

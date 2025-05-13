@@ -250,6 +250,9 @@ export interface IMachine extends IBaseEntity {
   connectionUrl?: string;
 }
 
+export interface ICreateMachineDto
+  extends Omit<IMachine, "id" | "createdAt" | "updatedAt"> {}
+
 export enum MachineState {
   ACTIVE = "ACTIVE",
   IDLE = "IDLE",
