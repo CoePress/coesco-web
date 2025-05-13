@@ -1,12 +1,18 @@
 import { buildQuery, createDateRange } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
-import { IMachineStatus } from "@/types/schema.types";
 import MachineStatus from "@/models/machine-status";
-import { machineService } from ".";
+import { getSocketService, machineService } from ".";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
+import { IMachineStatus } from "@/types/schema.types";
 
 export class MachineDataService {
+  private pollInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    this.startPolling();
+  }
+
   async getMachineStatuses(params: IQueryParams) {
     const { whereClause, orderClause, page, limit, offset } = buildQuery(
       params,
@@ -268,28 +274,31 @@ export class MachineDataService {
 
     console.log(`Returning final overview`);
     return {
-      kpis: {
-        utilization: {
-          value: Number(utilization.toFixed(2)),
-          change: 0,
+      success: true,
+      data: {
+        kpis: {
+          utilization: {
+            value: Number(utilization.toFixed(2)),
+            change: 0,
+          },
+          averageRuntime: {
+            value: 0, // TODO: Implement average runtime calculation
+            change: 0,
+          },
+          alarmCount: {
+            value: Number(alarmCount.toFixed(2)),
+            change: Number(alarmChange.toFixed(2)),
+          },
         },
-        averageRuntime: {
-          value: 0, // TODO: Implement average runtime calculation
-          change: 0,
-        },
-        alarmCount: {
-          value: Number(alarmCount.toFixed(2)),
-          change: Number(alarmChange.toFixed(2)),
-        },
+        utilization: activePercentagesWithinEachDivisionTime,
+        states: percentsByState,
+        machines: machines.data.map((machine) => ({
+          id: machine.id,
+          name: machine.name,
+          type: machine.type,
+        })),
+        alarms: [],
       },
-      utilization: activePercentagesWithinEachDivisionTime,
-      states: percentsByState,
-      machines: machines.data.map((machine) => ({
-        id: machine.id,
-        name: machine.name,
-        type: machine.type,
-      })),
-      alarms: [],
     };
   }
 
@@ -443,5 +452,52 @@ export class MachineDataService {
 
   async processFanucData(data: any) {
     return data;
+  }
+
+  async pollMachines() {
+    const machines = await machineService.getMachines({});
+
+    const current = [];
+    for (const machine of machines.data) {
+      const data = {
+        machineId: machine.id,
+        machineName: machine.name,
+        machineType: machine.type,
+        state: "UNKNOWN",
+        execution: "UNKNOWN",
+        controller: "UNKNOWN",
+        program: "UNKNOWN",
+        tool: "UNKNOWN",
+        metrics: {
+          spindleSpeed: 0,
+          feedRate: 0,
+          axisPositions: {
+            X: 0,
+            Y: 0,
+            Z: 0,
+          },
+        },
+      };
+      current.push(data);
+    }
+    const socketService = getSocketService();
+
+    socketService.broadcastMachineStates(current);
+
+    return current;
+  }
+
+  startPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  }
+
+  stopPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
   }
 }

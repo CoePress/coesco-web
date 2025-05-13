@@ -7,6 +7,7 @@ import {
   Clock,
   Map,
   Loader,
+  Box,
 } from "lucide-react";
 import {
   LineChart,
@@ -36,6 +37,20 @@ import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { formatDuration, getStatusColor } from "@/utils";
 import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
+
+type ExpandedMachine = IOverviewMachine & {
+  status: string;
+  program: string;
+  execution: string;
+  controller: string;
+  tool: string;
+  spindleSpeed: number;
+  feedRate: number;
+  axisPositions: Record<string, number>;
+  alarmCode?: string;
+  alarmMessage?: string;
+  startTime: string;
+};
 
 type MachineDetailsProps = {
   machine: any;
@@ -73,7 +88,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             </span>
             <span className="text-muted-foreground">Controller:</span>
             <span className="font-medium text-right">
-              {machine.controllerMode || "-"}
+              {machine.controller || "-"}
             </span>
             <span className="text-muted-foreground">Execution:</span>
             <span className="font-medium text-right">
@@ -98,7 +113,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
 
             <span className="text-muted-foreground">Tool:</span>
             <span className="font-medium text-right">
-              {machine.toolNumber || "-"}
+              {machine.tool || "-"}
             </span>
             <span className="text-muted-foreground">Spindle (RPM):</span>
             <span className="font-medium text-right">
@@ -425,16 +440,23 @@ const Dashboard = () => {
       }
       return typeCompare;
     })
-    .map((machine: IOverviewMachine) => {
+    .map((machine: IOverviewMachine): ExpandedMachine => {
       const realTime = machineStates.find(
         (state) => state.machineId === machine.id
       );
       return {
         ...machine,
-        status: realTime?.currentState?.toLowerCase() || "unknown",
-        currentProgram: realTime?.currentProgram || "-",
-        estimatedCompletion: realTime?.estimatedCompletion || "-",
-        spindleLoad: realTime?.spindleLoad || 0,
+        status: realTime?.state?.toLowerCase() || "unknown",
+        program: realTime?.program || "-",
+        execution: realTime?.execution || "-",
+        controller: realTime?.controller || "-",
+        tool: realTime?.tool || "-",
+        spindleSpeed: realTime?.metrics?.spindleSpeed || 0,
+        feedRate: realTime?.metrics?.feedRate || 0,
+        axisPositions: realTime?.metrics?.axisPositions || { X: 0, Y: 0, Z: 0 },
+        alarmCode: realTime?.alarmCode,
+        alarmMessage: realTime?.alarmMessage,
+        startTime: realTime?.startTime || new Date().toISOString(),
       };
     });
 
@@ -705,8 +727,8 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
-              {/* {machines &&
-                machines.map((machine: IOverviewMachine) => (
+              {machines &&
+                machines.map((machine: ExpandedMachine) => (
                   <div
                     key={machine.id}
                     onClick={() => {
@@ -744,9 +766,9 @@ const Dashboard = () => {
                           className="text-text-muted"
                         />
                         <span className="text-xs">
-                          {machine.estimatedCompletion
+                          {machine.startTime
                             ? formatDistance(
-                                machine.estimatedCompletion,
+                                new Date(machine.startTime),
                                 new Date(),
                                 { addSuffix: true }
                               )
@@ -756,19 +778,21 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-text-muted text-xs">Load</span>
+                      <span className="text-text-muted text-xs">Spindle</span>
                       <span className="text-xs text-text-muted">
-                        {machine.spindleLoad}%
+                        {machine.spindleSpeed || 0} RPM
                       </span>
                     </div>
                     <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all bg-text-muted/50"
-                        style={{ width: `${machine.spindleLoad}%` }}
+                        style={{
+                          width: `${(machine.spindleSpeed || 0) / 100}%`,
+                        }}
                       />
                     </div>
                   </div>
-                ))} */}
+                ))}
             </div>
           </div>
 

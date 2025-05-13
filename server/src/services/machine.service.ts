@@ -43,7 +43,12 @@ export class MachineService {
 
   async deleteMachine(id: string) {}
 
-  async getMachineStatuses(id: string) {}
+  async getMachineStatuses(params: IQueryParams) {
+    const { whereClause, orderClause, page, limit, offset } = buildQuery(
+      params,
+      ["machineId"]
+    );
+  }
 
   // Private Methods
   private async validateMachine(machine: ICreateMachineDto) {
