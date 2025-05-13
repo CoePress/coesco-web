@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Loader } from "@/components";
+
 export const MicrosoftCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -36,5 +37,9 @@ export const MicrosoftCallback = () => {
     handleCallback();
   }, [searchParams, navigate, setUser]);
 
-  return <Loader />;
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader />
+    </div>
+  );
 };

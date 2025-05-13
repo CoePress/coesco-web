@@ -18,6 +18,9 @@ type TableProps<T> = {
   onRowClick?: (row: T) => void;
   idField?: keyof T;
   pagination?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 };
 
 const Table = <T extends Record<string, any>>({
@@ -31,6 +34,9 @@ const Table = <T extends Record<string, any>>({
   onRowClick,
   idField = "id",
   pagination = false,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
 }: TableProps<T>) => {
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -121,17 +127,29 @@ const Table = <T extends Record<string, any>>({
         </table>
       </div>
 
-      {/* TODO: Add proper pagination */}
       {pagination && (
         <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
-            Showing <span className="font-medium">1</span> to{" "}
-            <span className="font-medium">{total}</span> of{" "}
-            <span className="font-medium">{total}</span> results
+            Showing{" "}
+            <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(currentPage * 25, total)}
+            </span>{" "}
+            of <span className="font-medium">{total}</span> results
           </div>
           <div className="flex gap-1">
-            <Button variant="secondary-outline">Previous</Button>
-            <Button variant="secondary-outline">Next</Button>
+            <Button
+              variant="secondary-outline"
+              onClick={() => onPageChange?.(currentPage - 1)}
+              disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <Button
+              variant="secondary-outline"
+              onClick={() => onPageChange?.(currentPage + 1)}
+              disabled={currentPage === totalPages}>
+              Next
+            </Button>
           </div>
         </div>
       )}

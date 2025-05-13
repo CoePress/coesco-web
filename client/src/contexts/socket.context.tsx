@@ -26,6 +26,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Only handle login page disconnection
     if (location.pathname === "/login") {
       socketRef.current?.disconnect();
       socketRef.current = null;
@@ -33,7 +34,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       return;
     }
 
-    if (!socketRef.current) {
+    // Connect only if not connected and not on login page
+    if (!socketRef.current && location.pathname !== "/login") {
       socketRef.current = io(`${env.VITE_BASE_URL}/client`, {
         reconnectionDelayMax: 10000,
         transports: ["websocket", "polling"],
@@ -46,8 +48,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }
 
     return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      // Only disconnect on unmount, not on every location change
+      if (location.pathname === "/login") {
+        socketRef.current?.disconnect();
+        socketRef.current = null;
+      }
     };
   }, [location.pathname]);
 

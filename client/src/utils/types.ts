@@ -139,17 +139,37 @@ export enum ConfigurationStatus {
   PUBLISHED = "PUBLISHED",
 }
 
+export enum EmployeeStatus {
+  ACTIVE = "ACTIVE",
+  ON_LEAVE = "ON_LEAVE",
+  TERMINATED = "TERMINATED",
+}
+
 export interface IEmployee extends IBaseEntity {
-  microsoftId: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  department: string;
+  phone?: string;
   role: string;
-  isActive: boolean;
-  receivesReports: boolean;
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  jobTitle: string;
+  departmentIds?: string[];
+  primaryDepartmentId?: string;
+  reportsToId?: string;
+  status: EmployeeStatus;
+  microsoftId?: string;
+  hiredAt?: Date;
+  terminatedAt?: Date;
+}
+
+export interface IApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
 }
 
 export interface IQueryParams {

@@ -21,13 +21,20 @@ import useGetEmployees from "@/hooks/admin/use-get-employees";
 import { IEmployee } from "@/utils/types";
 
 const Employees = () => {
-  const [page] = useState(1);
-  const [limit] = useState(10);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
 
   const columns: TableColumn<IEmployee>[] = [
     {
       key: "name",
       header: "Name",
+      render: (_, row) => (
+        <p>
+          <span>
+            {row.firstName} {row.lastName}
+          </span>
+        </p>
+      ),
     },
     {
       key: "email",
@@ -46,7 +53,7 @@ const Employees = () => {
           variant={
             value === "admin"
               ? "error"
-              : value === "user"
+              : value === "employee"
               ? "success"
               : "default"
           }
@@ -82,7 +89,7 @@ const Employees = () => {
     },
   ];
 
-  const { employees, loading, error } = useGetEmployees({
+  const { employees, loading, error, pagination } = useGetEmployees({
     page,
     limit,
   });
@@ -99,7 +106,7 @@ const Employees = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Employees"
-        description={`${employees?.length} total employees`}
+        description={`${pagination.total} total employees`}
         actions={
           <>
             <Button
@@ -127,9 +134,12 @@ const Employees = () => {
       <Table<IEmployee>
         columns={columns}
         data={employees || []}
-        total={employees?.length || 0}
+        total={pagination.total}
         idField="id"
         pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        onPageChange={setPage}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import { IEmployee, IQueryParams } from "@/utils/types";
+import { IEmployee, IQueryParams, IApiResponse } from "@/utils/types";
 import { instance } from "@/utils";
 
 const useGetEmployees = ({
@@ -18,6 +18,17 @@ const useGetEmployees = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  }>({
+    total: 0,
+    totalPages: 0,
+    page: 1,
+    limit: 25,
+  });
 
   useEffect(() => {
     const getEmployees = async () => {
@@ -40,11 +51,24 @@ const useGetEmployees = ({
         if (dateFrom) params.dateFrom = dateFrom;
         if (dateTo) params.dateTo = dateTo;
 
-        const { data } = await instance.get(`/employees`, {
-          params,
-        });
+        const { data } = await instance.get<IApiResponse<IEmployee[]>>(
+          `/employees`,
+          {
+            params,
+          }
+        );
 
-        setEmployees(data);
+        if (data.success) {
+          setEmployees(data.data || []);
+          setPagination({
+            total: data.total || 0,
+            totalPages: data.totalPages || 0,
+            page: data.page || 1,
+            limit: data.limit || 25,
+          });
+        } else {
+          setError(data.error || "Failed to fetch employees");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -77,6 +101,7 @@ const useGetEmployees = ({
     loading,
     error,
     refresh,
+    pagination,
   };
 };
 
