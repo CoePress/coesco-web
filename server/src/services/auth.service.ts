@@ -14,6 +14,7 @@ import { ConfidentialClientApplication } from "@azure/msal-node";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
+import { EmployeeStatus } from "@/types/schema.types";
 
 type AuthWithEmployee = Auth & {
   employee: Employee;
@@ -133,12 +134,14 @@ export class AuthService implements IAuthService {
     };
   }
 
-  async logout(sessionId: string): Promise<IAuthResponse> {
-    if (!sessionId) {
-      throw new UnauthorizedError("Session ID is required");
+  async logout(refreshToken: string): Promise<IAuthResponse> {
+    if (!refreshToken) {
+      throw new UnauthorizedError("Refresh token is required");
     }
 
-    const decoded = verify(sessionId, config.jwt.secret) as { userId: string };
+    const decoded = verify(refreshToken, config.jwt.secret) as {
+      userId: string;
+    };
     await Auth.update(
       { refreshToken: "" },
       { where: { userId: decoded.userId } }
@@ -197,22 +200,49 @@ export class AuthService implements IAuthService {
   }
 
   async testLogin(): Promise<IAuthResponse> {
-    const testUserId = "test-user-id";
-    const { token, refreshToken } = this.generateTokens(testUserId);
+    let testEmployee = await Employee.findOne({
+      where: { email: "test@example.com" },
+    });
+
+    if (!testEmployee) {
+      testEmployee = await Employee.create({
+        id: uuidv4(),
+        firstName: "Test",
+        lastName: "User",
+        email: "test@example.com",
+        role: "Test Role",
+        jobTitle: "Test Job",
+        status: EmployeeStatus.ACTIVE,
+        departmentIds: [],
+      });
+    }
+
+    let auth = await Auth.findOne({
+      where: { email: "test@example.com" },
+    });
+
+    if (!auth) {
+      auth = await Auth.create({
+        id: uuidv4(),
+        email: "test@example.com",
+        password: "",
+        userId: testEmployee.id,
+        userType: UserType.EMPLOYEE,
+        isActive: true,
+        isVerified: true,
+        refreshToken: "",
+      });
+    }
+
+    const { token, refreshToken } = this.generateTokens(testEmployee.id);
+
+    await auth.update({ refreshToken });
 
     return {
       token,
       refreshToken,
       userType: UserType.EMPLOYEE,
-      user: {
-        id: 1,
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        role: "Test Role",
-        department: "Test Department",
-        isActive: true,
-      } as unknown as IEmployee,
+      user: testEmployee as unknown as IEmployee,
     };
   }
 }

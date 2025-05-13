@@ -190,7 +190,10 @@ export const createDateRange = (
   };
 };
 
-export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
+export const buildQuery = (
+  params: IQueryParams,
+  searchFields?: string[]
+): IQueryBuilderResult => {
   const result: IQueryBuilderResult = {
     whereClause: {},
     orderClause: {},
@@ -204,13 +207,11 @@ export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   }
 
   // Search
-  if (params.search) {
+  if (params.search && searchFields) {
     result.whereClause = {
-      [Op.or]: [
-        { firstName: { [Op.iLike]: `%${params.search}%` } },
-        { lastName: { [Op.iLike]: `%${params.search}%` } },
-        { email: { [Op.iLike]: `%${params.search}%` } },
-      ],
+      [Op.or]: searchFields.map((field) => ({
+        [field]: { [Op.iLike]: `%${params.search}%` },
+      })),
     };
   }
 

@@ -1,8 +1,9 @@
-import { machineService } from "@/services";
+import { machineDataService } from "@/services";
 import { IQueryParams } from "@/types/api.types";
 import { NextFunction, Request, Response } from "express";
-export class MachineController {
-  async getMachines(req: Request, res: Response, next: NextFunction) {
+
+export class MachineDataController {
+  async getMachineStatuses(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, limit, sort, order, search, filter, dateFrom, dateTo } =
         req.query;
@@ -18,20 +19,13 @@ export class MachineController {
         dateTo: dateTo as string,
       };
 
-      const machines = await machineService.getMachines(params);
+      const machineStatuses = await machineDataService.getMachineStatuses(
+        params
+      );
 
-      res.status(200).json(machines);
+      res.status(200).json(machineStatuses);
     } catch (error) {
       next(error);
     }
   }
-  async getMachine() {}
-
-  async createMachine() {}
-
-  async updateMachine() {}
-
-  async deleteMachine() {}
-
-  async getMachineStatuses() {}
 }

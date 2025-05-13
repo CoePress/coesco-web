@@ -1,12 +1,34 @@
 import Machine from "@/models/machine";
-import {
-  ICreateMachineDto,
-  IMachine,
-  MachineConnectionType,
-} from "@/types/schema.types";
+import { IQueryParams } from "@/types/api.types";
+import { ICreateMachineDto, IMachine } from "@/types/schema.types";
+import { buildQuery } from "@/utils";
 
 export class MachineService {
-  async getMachines() {}
+  async getMachines(params: IQueryParams) {
+    const { whereClause, orderClause, page, limit, offset } = buildQuery(
+      params,
+      ["name", "slug", "type", "controllerType"]
+    );
+
+    const machines = await Machine.findAll({
+      where: whereClause,
+      order: Object.entries(orderClause).map(([key, value]) => [key, value]),
+      limit,
+      offset,
+    });
+
+    const total = await Machine.count({ where: whereClause });
+    const totalPages = limit ? Math.ceil(total / limit) : 1;
+
+    return {
+      success: true,
+      data: machines.map((machine) => machine.toJSON() as IMachine),
+      total,
+      totalPages,
+      page,
+      limit,
+    };
+  }
 
   async getMachine(id: string) {}
 

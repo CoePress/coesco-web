@@ -23,10 +23,10 @@ const employeeEmailRegex = /^[a-z]{3}@cpec\.com$/i;
 
 export class EmployeeService implements IEmployeeService {
   async getEmployees(params: IQueryParams): Promise<IApiResponse<IEmployee[]>> {
-    console.log(params);
-
-    const { whereClause, orderClause, page, limit, offset } =
-      buildQuery(params);
+    const { whereClause, orderClause, page, limit, offset } = buildQuery(
+      params,
+      ["firstName", "lastName", "email"]
+    );
 
     const employees = await Employee.findAll({
       where: whereClause,

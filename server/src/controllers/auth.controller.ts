@@ -22,7 +22,19 @@ export class AuthController {
 
   async callback() {}
 
-  async logout() {}
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      const response = await authService.logout(refreshToken);
+
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async session() {}
 
