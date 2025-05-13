@@ -1,18 +1,28 @@
 import { Link, useNavigate } from "react-router-dom";
-
-import { Button, Card } from "@/components";
+import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
 import { Moon, MessageCircle, Settings, Sun, LogOut } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";
+import { useState } from "react";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const { logout } = useLogout();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setIsLogoutModalOpen(false);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-background">
@@ -74,10 +84,32 @@ const MainMenu = () => {
       <div className="absolute bottom-2 right-2">
         <Button
           variant="secondary-outline"
-          onClick={logout}>
+          onClick={handleLogout}>
           <LogOut size={16} />
         </Button>
       </div>
+
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        title="Confirm Logout"
+        size="xs">
+        <div className="flex flex-col gap-4">
+          <p>Are you sure you want to log out?</p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsLogoutModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmLogout}>
+              Logout
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
