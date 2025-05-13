@@ -4,7 +4,7 @@ import {
   MachineConnectionType,
   MachineType,
 } from "@/types/schema.types";
-import { machineService } from "@/services";
+import { employeeService, machineService } from "@/services";
 import { initializeModels } from "@/models";
 import { sequelize } from "@/config/database";
 import { logger } from "@/utils/logger";
@@ -87,6 +87,8 @@ const seedMachines: ICreateMachineDto[] = [
 const seed = async () => {
   await initializeModels(sequelize);
   await sequelize.sync();
+
+  await employeeService.syncEmployees();
 
   for (const machine of seedMachines) {
     try {

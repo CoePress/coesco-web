@@ -58,7 +58,7 @@ class Employee
         },
         primaryDepartmentId: {
           type: DataTypes.UUID,
-          allowNull: false,
+          allowNull: true,
         },
         reportsToId: {
           type: DataTypes.UUID,

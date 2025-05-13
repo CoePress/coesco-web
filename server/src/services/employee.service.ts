@@ -2,85 +2,19 @@ import { IApiResponse } from "@/types/api.types";
 import { IQueryParams } from "@/types/api.types";
 import { EmployeeStatus, IEmployee } from "@/types/schema.types";
 import { IEmployeeService } from "@/types/service.types";
-import { ConfidentialClientApplication } from "@azure/msal-node";
 import { config } from "@/config/config";
 import Employee from "@/models/employee";
 import Auth from "@/models/auth";
 import { UserType } from "@/types/auth.types";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+import { logger } from "@/utils/logger";
+
+const blacklistedEmails = ["ads@cpec.com"];
+
+const employeeEmailRegex = /^[a-z]{3}@cpec\.com$/i;
 
 export class EmployeeService implements IEmployeeService {
-  private async getMicrosoftEmployees() {
-    const msalConfig = {
-      auth: {
-        clientId: config.azure.clientId,
-        clientSecret: config.azure.clientSecret,
-        authority: `https://login.microsoftonline.com/${config.azure.tenantId}`,
-      },
-    };
-
-    const msalClient = new ConfidentialClientApplication(msalConfig);
-    const tokenResponse = await msalClient.acquireTokenByClientCredential({
-      scopes: ["https://graph.microsoft.com/.default"],
-    });
-
-    const response = await fetch("https://graph.microsoft.com/v1.0/users", {
-      headers: {
-        Authorization: `Bearer ${tokenResponse?.accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch Microsoft users");
-    }
-
-    return response.json();
-  }
-
-  async syncEmployees(): Promise<IApiResponse<boolean>> {
-    try {
-      const msUsers = await this.getMicrosoftEmployees();
-
-      for (const user of msUsers.value) {
-        const existingEmployee = await Employee.findOne({
-          where: { microsoftId: user.id },
-        });
-
-        const [employee] = await Employee.upsert({
-          id: existingEmployee?.id || uuidv4(),
-          firstName: user.givenName,
-          lastName: user.surname,
-          email: user.mail,
-          jobTitle: user.jobTitle || "Employee",
-          status: EmployeeStatus.ACTIVE,
-          role: "employee",
-          microsoftId: user.id,
-          departmentIds: [],
-          primaryDepartmentId: "",
-        });
-
-        const existingAuth = await Auth.findOne({
-          where: { microsoftId: user.id },
-        });
-
-        await Auth.upsert({
-          id: existingAuth?.id || uuidv4(),
-          email: user.mail,
-          microsoftId: user.id,
-          userId: employee.id,
-          userType: UserType.EMPLOYEE,
-          isActive: true,
-          isVerified: true,
-          password: "",
-        });
-      }
-
-      return { success: true, data: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
-  }
-
   async getEmployees(
     params?: IQueryParams
   ): Promise<IApiResponse<IEmployee[]>> {
@@ -104,5 +38,128 @@ export class EmployeeService implements IEmployeeService {
 
   async deleteEmployee(id: string): Promise<IApiResponse<boolean>> {
     return Promise.resolve({} as IApiResponse<boolean>);
+  }
+
+  async syncEmployees(): Promise<IApiResponse<boolean>> {
+    try {
+      logger.info("Starting Microsoft user sync...");
+      const msUsers = await this.getMicrosoftUsers();
+      logger.info(`Found ${msUsers.length} Microsoft users`);
+
+      for (const user of msUsers) {
+        if (blacklistedEmails.includes(user.mail)) {
+          logger.info(`Skipping blacklisted email: ${user.mail}`);
+          continue;
+        }
+
+        if (!user.mail || !user.id) {
+          logger.warn(
+            `Skipping user with missing required fields: ${
+              user.mail || "no email"
+            }`
+          );
+          continue;
+        }
+
+        if (!employeeEmailRegex.test(user.mail)) {
+          logger.info(`Skipping non-standard email format: ${user.mail}`);
+          continue;
+        }
+
+        logger.info(`Processing user: ${user.displayName} (${user.mail})`);
+
+        const existingEmployee = await Employee.findOne({
+          where: { microsoftId: user.id },
+        });
+        logger.info(
+          `Existing employee found: ${existingEmployee ? "Yes" : "No"}`
+        );
+
+        const isAdmin = user.department === "MIS";
+
+        const [employee] = await Employee.upsert({
+          id: existingEmployee?.id || uuidv4(),
+          firstName: user.givenName || "Unknown",
+          lastName: user.surname || "User",
+          email: user.mail,
+          jobTitle: user.jobTitle || "Employee",
+          status: EmployeeStatus.ACTIVE,
+          role: isAdmin ? "admin" : "employee",
+          microsoftId: user.id,
+          departmentIds: [],
+        });
+        logger.info(
+          `Employee ${existingEmployee ? "updated" : "created"}: ${employee.id}`
+        );
+
+        const existingAuth = await Auth.findOne({
+          where: { microsoftId: user.id },
+        });
+        logger.info(`Existing auth found: ${existingAuth ? "Yes" : "No"}`);
+
+        await Auth.upsert({
+          id: existingAuth?.id || uuidv4(),
+          email: user.mail,
+          microsoftId: user.id,
+          userId: employee.id,
+          userType: UserType.EMPLOYEE,
+          isActive: true,
+          isVerified: true,
+          password: "",
+        });
+        logger.info(`Auth record ${existingAuth ? "updated" : "created"}`);
+      }
+
+      logger.info("Sync completed successfully");
+      return { success: true, data: true };
+    } catch (error: any) {
+      logger.error("Sync failed:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  private async getMicrosoftUsers() {
+    try {
+      const allUsers = [];
+      let url =
+        "https://graph.microsoft.com/v1.0/users?$select=id,mail,displayName,givenName,surname,jobTitle,department";
+
+      while (url) {
+        const token = await this.generateMicrosoftToken();
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 30000,
+        });
+
+        allUsers.push(...response.data.value);
+
+        url = response.data["@odata.nextLink"] || null;
+      }
+
+      return allUsers;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error?.message || error.message;
+      throw new Error(`Failed to fetch Microsoft users: ${errorMessage}`);
+    }
+  }
+
+  private async generateMicrosoftToken() {
+    const tokenUrl = `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/token`;
+
+    try {
+      const params = new URLSearchParams({
+        client_id: config.azure.clientId,
+        client_secret: config.azure.clientSecret,
+        scope: "https://graph.microsoft.com/.default",
+        grant_type: "client_credentials",
+      });
+
+      const response = await axios.post(tokenUrl, params);
+
+      return response.data.access_token;
+    } catch (error) {
+      throw new Error("Failed to generate token");
+    }
   }
 }
