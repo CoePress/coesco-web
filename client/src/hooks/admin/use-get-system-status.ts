@@ -1,7 +1,7 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
+import { instance } from "@/utils";
 
 const useGetSystemStatus = (
   options = {
@@ -21,12 +21,7 @@ const useGetSystemStatus = (
     setError(null);
 
     try {
-      const response = await axios.get(`${env.VITE_API_URL}/health`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const response = await instance.get(`/health`);
 
       if (response.data.status === "ok") {
         setStatus("good");

@@ -1,6 +1,7 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useState } from "react";
-import env from "@/config/env";
+
+import { instance } from "@/utils";
 
 const useLogin = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -11,12 +12,8 @@ const useLogin = () => {
     setError(null);
 
     try {
-      const { data } = await axios.get(
-        `${env.VITE_API_URL}/auth/login/microsoft`,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await instance.get(`/auth/login/microsoft`);
+
       window.location.href = data.url;
     } catch (error) {
       if (error instanceof AxiosError) {

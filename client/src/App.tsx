@@ -7,6 +7,7 @@ import Design from "./pages/design";
 import { SocketProvider } from "@/contexts/socket.context";
 import { PublicRoute, ProtectedRoute } from "./components";
 import { ProtectedRouteWithoutLayout } from "./components/general/routes";
+import { MicrosoftCallback } from "./components/microsoft-callback";
 
 interface RouteItem {
   path: string;
@@ -77,6 +78,10 @@ const App = () => {
         <Route
           path="/login"
           element={<Login />}
+        />
+        <Route
+          path="/auth/microsoft/callback"
+          element={<MicrosoftCallback />}
         />
       </Route>
 

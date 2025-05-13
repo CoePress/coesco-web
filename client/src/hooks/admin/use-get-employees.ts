@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import env from "@/config/env";
 import { IEmployee, IEmployeeQueryParams } from "@/utils/types";
+import { instance } from "@/utils";
 
 const useGetEmployees = ({
   sortBy = "name",
@@ -38,9 +39,8 @@ const useGetEmployees = ({
           params.receivesReports = receivesReports;
         if (search !== undefined) params.search = search;
 
-        const { data } = await axios.get(`${env.VITE_API_URL}/users`, {
+        const { data } = await instance.get(`/users`, {
           params,
-          withCredentials: true,
         });
 
         setEmployees(data);

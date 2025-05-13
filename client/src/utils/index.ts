@@ -1,6 +1,8 @@
+import axios from "axios";
 import { ProductClass } from "./types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import env from "@/config/env";
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
@@ -95,3 +97,8 @@ export const getStateColor = (state: string) => {
   };
   return colors[state as keyof typeof colors] || "#6b7280";
 };
+
+export const instance = axios.create({
+  baseURL: env.VITE_API_URL,
+  withCredentials: true,
+});

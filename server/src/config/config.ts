@@ -37,6 +37,9 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("1d"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
+  // Cookie
+  COOKIE_DOMAIN: z.string().default(""),
+
   // Redis
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string().transform(Number).default("6379"),
@@ -102,10 +105,10 @@ export const config = {
   },
   cookieOptions: {
     httpOnly: true,
-    secure: false,
+    secure: __prod__,
     sameSite: "lax" as const,
     path: "/",
-    domain: undefined,
+    domain: env.data.COOKIE_DOMAIN || undefined,
   },
   fanucAdapter: {
     ip: env.data.FANUC_ADAPTER_IP,

@@ -29,7 +29,7 @@ export class AuthController {
 
   async callback(req: Request, res: Response, next: NextFunction) {
     try {
-      const { code, state } = req.query;
+      const { code, state } = req.body;
       const response = await authService.callback(
         code as string,
         state as string
@@ -38,7 +38,7 @@ export class AuthController {
       res.cookie("accessToken", response.token, config.cookieOptions);
       res.cookie("refreshToken", response.refreshToken, config.cookieOptions);
 
-      res.redirect(config.azure.successRedirect);
+      res.json(response);
     } catch (error) {
       next(error);
     }

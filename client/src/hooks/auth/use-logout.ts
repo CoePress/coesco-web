@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useState, useContext } from "react";
 
-import env from "@/config/env";
 import { AuthContext } from "@/contexts/auth.context";
+import { instance } from "@/utils";
 
 const useLogout = () => {
   const { setUser } = useContext(AuthContext)!;
@@ -14,13 +14,7 @@ const useLogout = () => {
     setError(null);
 
     try {
-      await axios.post(
-        `${env.VITE_API_URL}/auth/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      await instance.post(`/auth/logout`);
 
       setUser(null);
     } catch (error) {

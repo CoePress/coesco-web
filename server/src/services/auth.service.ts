@@ -77,7 +77,7 @@ export class AuthService implements IAuthService {
       `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/authorize?` +
       `client_id=${config.azure.clientId}&` +
       `response_type=code&` +
-      `redirect_uri=${config.azure.redirectUri}&` +
+      `redirect_uri=${config.azure.successRedirect}&` +
       `response_mode=query&` +
       `scope=openid profile email&` +
       `prompt=select_account&` +

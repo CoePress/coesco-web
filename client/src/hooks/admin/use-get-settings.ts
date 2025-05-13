@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
 import { ISettings } from "@/utils/types";
+import { instance } from "@/utils";
 
 const useGetSettings = (moduleSlug: string) => {
   const [settings, setSettings] = useState<ISettings | null>(null);
@@ -22,12 +22,7 @@ const useGetSettings = (moduleSlug: string) => {
       setError(null);
 
       try {
-        const { data } = await axios.get(
-          `${env.VITE_API_URL}/settings/${moduleSlug}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const { data } = await instance.get(`/settings/${moduleSlug}`);
 
         setSettings(data);
       } catch (error) {
