@@ -58,7 +58,7 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
                   {firstName} {lastInitial}.
                 </span>
                 <span className="text-xs text-text-muted">
-                  {user.department}
+                  {user.jobTitle}
                 </span>
               </div>
               <img

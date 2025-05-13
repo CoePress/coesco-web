@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import Layout from "./layout";
 import Loader from "./loader";
 import { useAuth } from "@/contexts/auth.context";
-
+import { EmployeeStatus } from "@/utils/types";
 interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
@@ -20,7 +20,7 @@ export const PublicRoute = () => {
   }
 
   if (user) {
-    if (user.isActive === false) {
+    if (user.status !== EmployeeStatus.ACTIVE) {
       return (
         <Navigate
           to="/request-access"
@@ -59,7 +59,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (user.isActive === false) {
+  if (user.status !== EmployeeStatus.ACTIVE) {
     return (
       <Navigate
         to="/request-access"

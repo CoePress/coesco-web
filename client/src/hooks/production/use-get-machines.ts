@@ -1,22 +1,34 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
-import { IMachine, IMachineQueryParams } from "@/utils/types";
+import { IApiResponse, IMachine, IQueryParams } from "@/utils/types";
+import { instance } from "@/utils";
 
 const useGetMachines = ({
-  page,
-  limit,
-  sortBy = "name",
-  sortOrder = "asc",
+  sort = "createdAt",
+  order = "desc",
+  page = 1,
+  limit = 25,
   search,
-  type,
-  controller,
-}: IMachineQueryParams = {}) => {
+  filter,
+  dateFrom,
+  dateTo,
+}: IQueryParams = {}) => {
   const [machines, setMachines] = useState<IMachine[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  }>({
+    total: 0,
+    totalPages: 0,
+    page: 1,
+    limit: 25,
+  });
 
   useEffect(() => {
     const getMachines = async () => {
@@ -24,25 +36,39 @@ const useGetMachines = ({
       setError(null);
 
       try {
-        const params: IMachineQueryParams = {
-          sortBy,
-          sortOrder,
+        const params: Record<
+          string,
+          string | number | boolean | Record<string, any> | Date
+        > = {
+          sort,
+          order,
+          page,
+          limit,
         };
 
-        if (page !== undefined) params.page = page;
-        if (limit !== undefined) params.limit = limit;
-        if (sortBy !== undefined) params.sortBy = sortBy;
-        if (sortOrder !== undefined) params.sortOrder = sortOrder;
-        if (search !== undefined) params.search = search;
-        if (type !== undefined) params.type = type;
-        if (controller !== undefined) params.controller = controller;
+        if (search) params.search = search;
+        if (filter) params.filter = filter;
+        if (dateFrom) params.dateFrom = dateFrom;
+        if (dateTo) params.dateTo = dateTo;
 
-        const { data } = await axios.get(`${env.VITE_API_URL}/machines`, {
-          params,
-          withCredentials: true,
-        });
+        const { data } = await instance.get<IApiResponse<IMachine[]>>(
+          `/machines`,
+          {
+            params,
+          }
+        );
 
-        setMachines(data);
+        if (data.success) {
+          setMachines(data.data || []);
+          setPagination({
+            total: data.total || 0,
+            totalPages: data.totalPages || 0,
+            page: data.page || 1,
+            limit: data.limit || 25,
+          });
+        } else {
+          setError(data.error || "Failed to fetch employees");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -56,7 +82,17 @@ const useGetMachines = ({
     };
 
     getMachines();
-  }, [refreshToggle, sortBy, sortOrder, page, limit, type, controller]);
+  }, [
+    refreshToggle,
+    sort,
+    order,
+    page,
+    limit,
+    search,
+    filter,
+    dateFrom,
+    dateTo,
+  ]);
 
   const refresh = () => setRefreshToggle((prev) => !prev);
 
@@ -65,6 +101,7 @@ const useGetMachines = ({
     loading,
     error,
     refresh,
+    pagination,
   };
 };
 

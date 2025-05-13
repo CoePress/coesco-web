@@ -330,6 +330,32 @@ export enum MachineType {
   MILL = "MILL",
 }
 
+export enum MachineControllerType {
+  FANUC = "FANUC",
+  SIEMENS = "SIEMENS",
+  HAAS = "HAAS",
+  MAZAK = "MAZAK",
+  OKUMA = "OKUMA",
+  OTHER = "OTHER",
+}
+
+export enum MachineConnectionType {
+  MTCONNECT = "MTCONNECT",
+  CUSTOM = "CUSTOM",
+}
+
+export interface IMachine extends IBaseEntity {
+  slug: string;
+  name: string;
+  type: MachineType;
+  controllerType: MachineControllerType;
+  controllerModel?: string;
+  connectionType: MachineConnectionType;
+  connectionHost?: string;
+  connectionPort?: number;
+  connectionUrl?: string;
+}
+
 export interface IUtilization {
   label: string;
   start: Date;

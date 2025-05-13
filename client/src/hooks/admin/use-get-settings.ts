@@ -1,8 +1,13 @@
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import { ISettings } from "@/utils/types";
 import { instance } from "@/utils";
+
+interface ISettings {
+  [key: string]: {
+    [key: string]: string;
+  };
+}
 
 const useGetSettings = (moduleSlug: string) => {
   const [settings, setSettings] = useState<ISettings | null>(null);
