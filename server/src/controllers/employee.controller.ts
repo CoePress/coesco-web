@@ -27,11 +27,28 @@ export class EmployeeController {
     }
   }
 
-  async getEmployee() {}
+  async getEmployee(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const employee = await employeeService.getEmployee(id);
+      res.status(200).json(employee);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async createEmployee() {}
 
   async updateEmployee() {}
 
   async deleteEmployee() {}
+
+  async syncEmployees(req: Request, res: Response, next: NextFunction) {
+    try {
+      const employees = await employeeService.syncEmployees();
+      res.status(200).json(employees);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

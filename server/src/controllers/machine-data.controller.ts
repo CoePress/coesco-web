@@ -28,4 +28,20 @@ export class MachineDataController {
       next(error);
     }
   }
+
+  async getMachineOverview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { startDate, endDate } = req.query;
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMachineTimeline(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { startDate, endDate } = req.query;
+    } catch (error) {
+      next(error);
+    }
+  }
 }

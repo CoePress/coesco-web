@@ -10,7 +10,12 @@ import { EmployeeStatus, IEmployee } from "@/types/schema.types";
 import { IEmployeeService } from "@/types/service.types";
 import { UserType } from "@/types/auth.types";
 import { logger } from "@/utils/logger";
-import { buildQuery } from "@/utils";
+import { buildQuery, validateUuid } from "@/utils";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+} from "@/middleware/error.middleware";
 
 const blacklistedEmails = [
   "ads@cpec.com",
@@ -49,7 +54,24 @@ export class EmployeeService implements IEmployeeService {
   }
 
   async getEmployee(id: string): Promise<IApiResponse<IEmployee>> {
-    return Promise.resolve({} as IApiResponse<IEmployee>);
+    if (!id) {
+      throw new BadRequestError("Employee ID is required");
+    }
+
+    if (!validateUuid(id)) {
+      throw new BadRequestError("Invalid employee ID");
+    }
+
+    const employee = await Employee.findByPk(id);
+
+    if (!employee) {
+      throw new NotFoundError("Employee not found");
+    }
+
+    return {
+      success: true,
+      data: employee?.toJSON() as IEmployee,
+    };
   }
 
   async createEmployee(employee: IEmployee): Promise<IApiResponse<IEmployee>> {
@@ -142,8 +164,7 @@ export class EmployeeService implements IEmployeeService {
       logger.info("Sync completed successfully");
       return { success: true, data: true };
     } catch (error: any) {
-      logger.error("Sync failed:", error);
-      return { success: false, error: error.message };
+      throw new InternalServerError("Sync failed");
     }
   }
 

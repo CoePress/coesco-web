@@ -264,3 +264,9 @@ export const extractData = <T>(response: IApiResponse<T>): T => {
   if (!response.success) throw new Error(response.message);
   return response.data as T;
 };
+
+export const validateUuid = (uuid: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    uuid
+  );
+};

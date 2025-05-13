@@ -52,7 +52,16 @@ export const errorHandler = (
   let errorMessage: string | Array<{ field: string; message: string }> =
     err.message;
   let errorDetails =
-    process.env.NODE_ENV === "production" ? undefined : { stack: err.stack };
+    process.env.NODE_ENV === "production"
+      ? undefined
+      : {
+          stack: err.stack
+            ?.split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.startsWith("at "))
+            .map((line) => line.replace(/at\s+/, ""))
+            .join("\n"),
+        };
 
   if (err instanceof ZodError) {
     statusCode = 400;
