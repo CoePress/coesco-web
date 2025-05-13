@@ -14,6 +14,7 @@
   "dependencies": {
     "@azure/msal-node": "^2.16.2",
     "axios": "^1.9.0",
+    "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -35,12 +36,14 @@
     "redis": "^4.7.0",
     "sequelize": "^6.37.5",
     "socket.io": "^4.8.1",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "ws": "^8.18.0",
     "xml-js": "^1.6.11",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.7.5",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",

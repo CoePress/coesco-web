@@ -1,11 +1,9 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { EmployeeStatus, IEmployee } from "@/types/schema.types";
-
-type EmployeeAttributes = Omit<IEmployee, "createdAt" | "updatedAt">;
+import { EmployeeStatus, IEmployeeAttributes } from "@/types/schema.types";
 
 class Employee
-  extends Model<EmployeeAttributes, IEmployee>
-  implements EmployeeAttributes
+  extends Model<IEmployeeAttributes>
+  implements IEmployeeAttributes
 {
   declare id: string;
   declare firstName: string;
@@ -13,6 +11,7 @@ class Employee
   declare email: string;
   declare phone: string;
   declare role: string;
+  declare jobTitle: string;
   declare departmentIds: string[];
   declare primaryDepartmentId: string;
   declare reportsToId: string;
@@ -46,6 +45,10 @@ class Employee
           allowNull: true,
         },
         role: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        jobTitle: {
           type: DataTypes.STRING,
           allowNull: false,
         },

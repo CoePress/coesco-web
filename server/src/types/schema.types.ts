@@ -10,8 +10,9 @@ export enum UserType {
 }
 
 export interface IAuth extends IBaseEntity {
-  email: string;
-  password: string;
+  email?: string;
+  username?: string;
+  password?: string;
   microsoftId?: string;
   userId: string;
   userType: UserType;
@@ -19,6 +20,14 @@ export interface IAuth extends IBaseEntity {
   isVerified: boolean;
   lastLogin?: Date;
 }
+
+export interface IAuthIncludes extends IAuth {
+  employee?: IEmployee;
+  customer?: ICustomer;
+}
+
+export interface ICreateAuthDto
+  extends Omit<IAuth, "id" | "createdAt" | "updatedAt"> {}
 
 export interface IAuthResponse {
   token: string;
@@ -45,6 +54,7 @@ export interface IEmployee extends IBaseEntity {
   email: string;
   phone?: string;
   role: string;
+  jobTitle: string;
   departmentIds?: string[];
   primaryDepartmentId?: string;
   reportsToId?: string;
@@ -53,6 +63,12 @@ export interface IEmployee extends IBaseEntity {
   hiredAt?: Date;
   terminatedAt?: Date;
 }
+
+export interface IEmployeeAttributes
+  extends Omit<IEmployee, "createdAt" | "updatedAt"> {}
+
+export interface ICreateEmployeeDto
+  extends Omit<IEmployee, "id" | "createdAt" | "updatedAt"> {}
 
 export interface IEmployeeIncludes extends IEmployee {
   departments: IDepartment[];

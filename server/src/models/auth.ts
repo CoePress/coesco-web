@@ -1,9 +1,7 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { IAuth, UserType } from "@/types/schema.types";
+import { IAuthAttributes, UserType } from "@/types/auth.types";
 
-type AuthAttributes = Omit<IAuth, "createdAt" | "updatedAt">;
-
-class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
+class Auth extends Model<IAuthAttributes> implements IAuthAttributes {
   declare id: string;
   declare email: string;
   declare password: string;
@@ -13,6 +11,11 @@ class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
   declare isActive: boolean;
   declare isVerified: boolean;
   declare lastLogin: Date;
+  declare refreshToken: string;
+  declare sessionId: string;
+  declare expiresAt: Date;
+  declare createdAt: Date;
+  declare updatedAt: Date;
 
   public static initialize(sequelize: Sequelize): void {
     Auth.init(
@@ -25,6 +28,7 @@ class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
         email: {
           type: DataTypes.STRING,
           allowNull: false,
+          unique: true,
         },
         password: {
           type: DataTypes.STRING,
@@ -36,7 +40,7 @@ class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
         },
         userId: {
           type: DataTypes.UUID,
-          allowNull: true,
+          allowNull: false,
         },
         userType: {
           type: DataTypes.ENUM(...Object.values(UserType)),
@@ -45,12 +49,26 @@ class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
         isActive: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
+          defaultValue: true,
         },
         isVerified: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
+          defaultValue: false,
         },
         lastLogin: {
+          type: DataTypes.DATE,
+          allowNull: true,
+        },
+        refreshToken: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        sessionId: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        expiresAt: {
           type: DataTypes.DATE,
           allowNull: true,
         },
@@ -69,11 +87,6 @@ class Auth extends Model<AuthAttributes, IAuth> implements AuthAttributes {
       foreignKey: "userId",
       as: "employee",
     });
-
-    // Auth.belongsTo(models.Customer, {
-    //   foreignKey: "userId",
-    //   as: "customer",
-    // });
   }
 }
 
