@@ -302,6 +302,74 @@ export class MachineDataService {
     };
   }
 
+  async getMachineTimeline(startDate: string, endDate: string) {
+    return [];
+  }
+
+  async processFanucData(data: any) {
+    return data;
+  }
+
+  async pollMachines() {
+    const machines = await machineService.getMachines({});
+
+    const possibleStates = [
+      MachineState.ACTIVE,
+      MachineState.ALARM,
+      MachineState.IDLE,
+      MachineState.MAINTENANCE,
+      MachineState.OFFLINE,
+    ];
+
+    const possiblePrograms = ["Program 1", "Program 2", "Program 3"];
+
+    const current = [];
+    for (const machine of machines.data) {
+      const data = {
+        machineId: machine.id,
+        machineName: machine.name,
+        machineType: machine.type,
+        state:
+          possibleStates[Math.floor(Math.random() * possibleStates.length)],
+        execution: "UNKNOWN",
+        controller: "UNKNOWN",
+        program:
+          possiblePrograms[Math.floor(Math.random() * possiblePrograms.length)],
+        tool: "UNKNOWN",
+        metrics: {
+          spindleSpeed: 0,
+          feedRate: 0,
+          axisPositions: {
+            X: 0,
+            Y: 0,
+            Z: 0,
+          },
+        },
+      };
+      current.push(data);
+    }
+    const socketService = getSocketService();
+
+    socketService.broadcastMachineStates(current);
+
+    return current;
+  }
+
+  startPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  }
+
+  stopPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  }
+
+  // Private methods
   private calculateStatusTotals(
     statuses: IMachineStatus[],
     startDate: Date,
@@ -446,70 +514,5 @@ export class MachineDataService {
     };
 
     return formatters[scale as keyof typeof formatters]?.(date) || "";
-  }
-
-  async getMachineTimeline(startDate: string, endDate: string) {}
-
-  async processFanucData(data: any) {
-    return data;
-  }
-
-  async pollMachines() {
-    const machines = await machineService.getMachines({});
-
-    const possibleStates = [
-      MachineState.ACTIVE,
-      MachineState.ALARM,
-      MachineState.IDLE,
-      MachineState.MAINTENANCE,
-      MachineState.OFFLINE,
-    ];
-
-    const possiblePrograms = ["Program 1", "Program 2", "Program 3"];
-
-    const current = [];
-    for (const machine of machines.data) {
-      const data = {
-        machineId: machine.id,
-        machineName: machine.name,
-        machineType: machine.type,
-        state:
-          possibleStates[Math.floor(Math.random() * possibleStates.length)],
-        execution: "UNKNOWN",
-        controller: "UNKNOWN",
-        program:
-          possiblePrograms[Math.floor(Math.random() * possiblePrograms.length)],
-        tool: "UNKNOWN",
-        metrics: {
-          spindleSpeed: 0,
-          feedRate: 0,
-          axisPositions: {
-            X: 0,
-            Y: 0,
-            Z: 0,
-          },
-        },
-      };
-      current.push(data);
-    }
-    const socketService = getSocketService();
-
-    socketService.broadcastMachineStates(current);
-
-    return current;
-  }
-
-  startPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
-  }
-
-  stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
-    }
   }
 }
