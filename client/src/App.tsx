@@ -80,7 +80,7 @@ const App = () => {
           element={<Login />}
         />
         <Route
-          path="/auth/microsoft/callback"
+          path="/callback"
           element={<MicrosoftCallback />}
         />
       </Route>

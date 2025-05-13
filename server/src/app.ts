@@ -30,30 +30,7 @@ app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 app.use(
   cors({
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow: boolean) => void
-    ) => {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      const baseOrigin = new URL(origin).origin;
-
-      const allowedOrigins = config.cors.allowedOrigins.map((o) => o.trim());
-
-      if (allowedOrigins.includes(baseOrigin)) {
-        callback(null, true);
-      } else {
-        logger.warn("CORS Debug:", {
-          baseOrigin,
-          allowedOrigins,
-          rawOrigins: config.cors.allowedOrigins,
-        });
-        callback(new Error(`Not Allowed: ${baseOrigin}`), false);
-      }
-    },
+    origin: config.cors.allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

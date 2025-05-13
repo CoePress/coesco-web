@@ -101,4 +101,7 @@ export const getStateColor = (state: string) => {
 export const instance = axios.create({
   baseURL: env.VITE_API_URL,
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });

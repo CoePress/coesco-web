@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
-
+import { instance } from "@/utils";
+import { useAuth } from "@/contexts/auth.context";
+import { Loader } from "@/components";
 export const MicrosoftCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -17,25 +19,22 @@ export const MicrosoftCallback = () => {
       }
 
       try {
-        await axios.post(
-          "/auth/microsoft/callback",
-          {
-            code,
-            state,
-          },
-          {
-            withCredentials: true,
-          }
-        );
+        const { data } = await instance.post("/auth/callback/microsoft", {
+          code,
+          state,
+        });
 
-        navigate("/dashboard");
+        setUser(data.user);
+
+        navigate("/");
       } catch (error) {
+        console.error("Auth error:", error);
         navigate("/login?error=auth_failed");
       }
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, setUser]);
 
-  return <div>Processing login...</div>;
+  return <Loader />;
 };

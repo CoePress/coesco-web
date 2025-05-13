@@ -25,8 +25,6 @@ const envSchema = z.object({
   AZURE_CLIENT_ID: z.string(),
   AZURE_CLIENT_SECRET: z.string(),
   AZURE_REDIRECT_URI: z.string(),
-  AZURE_SUCCESS_REDIRECT: z.string(),
-  AZURE_FAILURE_REDIRECT: z.string(),
 
   // SMTP
   SMTP_HOST: z.string().default(""),
@@ -82,8 +80,6 @@ export const config = {
     clientId: env.data.AZURE_CLIENT_ID,
     clientSecret: env.data.AZURE_CLIENT_SECRET,
     redirectUri: env.data.AZURE_REDIRECT_URI,
-    successRedirect: env.data.AZURE_SUCCESS_REDIRECT,
-    failureRedirect: env.data.AZURE_FAILURE_REDIRECT,
   },
   smtp: {
     host: env.data.SMTP_HOST,
@@ -109,6 +105,7 @@ export const config = {
     sameSite: "lax" as const,
     path: "/",
     domain: env.data.COOKIE_DOMAIN || undefined,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   },
   fanucAdapter: {
     ip: env.data.FANUC_ADAPTER_IP,

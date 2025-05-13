@@ -12,15 +12,13 @@ const MainMenu = () => {
   const { user } = useAuth();
   const { logout } = useLogout();
 
-  const firstName = user?.name.split(" ")[0] || "Employee";
-
   const navigate = useNavigate();
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-background">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl leading-none text-primary text-center mb-2">
-          Good morning, {firstName}
+          Good morning, {user?.firstName}
         </h1>
 
         <div className="grid grid-cols-4 gap-2">
