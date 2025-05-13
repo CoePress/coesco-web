@@ -4,11 +4,11 @@ import PageHeader from "@/components/v1/page-header";
 import { Download, Loader } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { useState } from "react";
-import useGetStates from "@/hooks/production/use-get-states";
 import useGetMachines from "@/hooks/production/use-get-machines";
 import { formatDuration } from "@/utils";
-import { IMachineState } from "@/utils/types";
 import { TableColumn } from "@/components/v1/table";
+import { IMachineStatus } from "@/utils/types";
+import useGetStatuses from "@/hooks/production/use-get-statuses";
 
 const MachineStates = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
@@ -32,9 +32,9 @@ const MachineStates = () => {
     states,
     loading: statesLoading,
     error: statesError,
-  } = useGetStates({
-    startDate: dateRange.start.toISOString().slice(0, 10),
-    endDate: dateRange.end.toISOString().slice(0, 10),
+  } = useGetStatuses({
+    dateFrom: dateRange.start.toISOString().slice(0, 10),
+    dateTo: dateRange.end.toISOString().slice(0, 10),
   });
 
   const {
@@ -47,7 +47,7 @@ const MachineStates = () => {
     {
       key: "machineId",
       header: "Machine",
-      render: (_: any, row: IMachineState) => {
+      render: (_: any, row: IMachineStatus) => {
         const machine = machines?.find(
           (machine) => machine.id === row.machineId
         );
@@ -145,8 +145,8 @@ const MachineStates = () => {
         }
       />
 
-      <Table<IMachineState>
-        columns={columns as TableColumn<IMachineState>[]}
+      <Table<IMachineStatus>
+        columns={columns as TableColumn<IMachineStatus>[]}
         data={states || []}
         total={states?.length || 0}
         idField="id"

@@ -161,6 +161,33 @@ export interface IEmployee extends IBaseEntity {
   terminatedAt?: Date;
 }
 
+export enum MachineState {
+  ACTIVE = "ACTIVE",
+  IDLE = "IDLE",
+  ALARM = "ALARM",
+  MAINTENANCE = "MAINTENANCE",
+  OFFLINE = "OFFLINE",
+}
+
+export interface IMachineStatus extends IBaseEntity {
+  machineId: string;
+  state: MachineState;
+  execution: string;
+  controller: string;
+  program?: string;
+  tool?: string;
+  metrics?: {
+    spindleSpeed?: number;
+    feedRate?: number;
+    axisPositions?: Record<string, number>;
+  };
+  alarmCode?: string;
+  alarmMessage?: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+}
+
 export interface IApiResponse<T> {
   success: boolean;
   message?: string;
