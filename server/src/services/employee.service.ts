@@ -10,7 +10,12 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { logger } from "@/utils/logger";
 
-const blacklistedEmails = ["ads@cpec.com"];
+const blacklistedEmails = [
+  "ads@cpec.com",
+  "asy@cpec.com",
+  "COE@cpec.com",
+  "ele@cpec.com",
+];
 
 const employeeEmailRegex = /^[a-z]{3}@cpec\.com$/i;
 
