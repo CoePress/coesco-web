@@ -4,7 +4,7 @@ import MachineStatus from "@/models/machine-status";
 import { getSocketService, machineService } from ".";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
-import { IMachineStatus } from "@/types/schema.types";
+import { IMachineStatus, MachineState } from "@/types/schema.types";
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
@@ -457,16 +457,28 @@ export class MachineDataService {
   async pollMachines() {
     const machines = await machineService.getMachines({});
 
+    const possibleStates = [
+      MachineState.ACTIVE,
+      MachineState.ALARM,
+      MachineState.IDLE,
+      MachineState.MAINTENANCE,
+      MachineState.OFFLINE,
+    ];
+
+    const possiblePrograms = ["Program 1", "Program 2", "Program 3"];
+
     const current = [];
     for (const machine of machines.data) {
       const data = {
         machineId: machine.id,
         machineName: machine.name,
         machineType: machine.type,
-        state: "UNKNOWN",
+        state:
+          possibleStates[Math.floor(Math.random() * possibleStates.length)],
         execution: "UNKNOWN",
         controller: "UNKNOWN",
-        program: "UNKNOWN",
+        program:
+          possiblePrograms[Math.floor(Math.random() * possiblePrograms.length)],
         tool: "UNKNOWN",
         metrics: {
           spindleSpeed: 0,
