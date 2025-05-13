@@ -149,38 +149,32 @@ export class AuthService implements IAuthService {
     return {} as IAuthResponse;
   }
 
-  async session(
-    sessionId: string,
-    authSession: string
-  ): Promise<IAuthResponse> {
-    if (!sessionId || !authSession) {
-      throw new UnauthorizedError("Session ID and auth session are required");
+  async session(accessToken: string): Promise<IAuthResponse> {
+    if (!accessToken) {
+      throw new UnauthorizedError("Access token is required");
     }
 
-    const decoded = verify(sessionId, config.jwt.secret) as { userId: string };
+    const decoded = verify(accessToken, config.jwt.secret) as {
+      userId: string;
+      userType: UserType;
+    };
 
     const auth = (await Auth.findOne({
       where: {
         userId: decoded.userId,
-        refreshToken: authSession,
+        isActive: true,
       },
       include: [{ model: Employee, as: "employee" }],
     })) as AuthWithEmployee;
 
-    if (!auth || !auth.isActive) {
-      throw new UnauthorizedError("Invalid session");
+    if (!auth) {
+      throw new UnauthorizedError("User not found");
     }
 
-    const { token, refreshToken: newRefreshToken } = this.generateTokens(
-      auth.userId
-    );
-
-    await auth.update({ refreshToken: newRefreshToken });
-
     return {
-      token,
-      refreshToken: newRefreshToken,
-      userType: UserType.EMPLOYEE,
+      token: accessToken,
+      refreshToken: auth.refreshToken,
+      userType: decoded.userType,
       user: auth.employee as unknown as IEmployee,
     };
   }

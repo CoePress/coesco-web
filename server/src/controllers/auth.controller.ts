@@ -25,18 +25,26 @@ export class AuthController {
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
       const refreshToken = req.cookies.refreshToken;
-      const response = await authService.logout(refreshToken);
+      await authService.logout(refreshToken);
 
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
-      res.json(response);
+      res.json({ message: "Logged out successfully" });
     } catch (error) {
       next(error);
     }
   }
 
-  async session() {}
+  async session(req: Request, res: Response, next: NextFunction) {
+    try {
+      const accessToken = req.cookies.accessToken;
+      const response = await authService.session(accessToken);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async testLogin(req: Request, res: Response, next: NextFunction) {
     if (__prod__) {
