@@ -80,6 +80,7 @@ export class AuthService implements IAuthService {
       `redirect_uri=${config.azure.redirectUri}&` +
       `response_mode=query&` +
       `scope=openid profile email&` +
+      `prompt=select_account&` +
       `state=${sessionId}`
     );
   }

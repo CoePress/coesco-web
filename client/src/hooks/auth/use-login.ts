@@ -1,6 +1,5 @@
 import axios, { AxiosError } from "axios";
 import { useState } from "react";
-
 import env from "@/config/env";
 
 const useLogin = () => {
@@ -12,9 +11,8 @@ const useLogin = () => {
     setError(null);
 
     try {
-      const { data } = await axios.post(
-        `${env.VITE_API_URL}/auth/login`,
-        {},
+      const { data } = await axios.get(
+        `${env.VITE_API_URL}/auth/login/microsoft`,
         {
           withCredentials: true,
         }
@@ -26,7 +24,6 @@ const useLogin = () => {
       } else {
         setError("An error occurred. Please try again.");
       }
-      return null;
     } finally {
       setLoading(false);
     }

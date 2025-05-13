@@ -18,9 +18,31 @@ export class AuthController {
     }
   }
 
-  async loginWithMicrosoft() {}
+  async loginWithMicrosoft(req: Request, res: Response, next: NextFunction) {
+    try {
+      const url = await authService.loginWithMicrosoft();
+      res.json({ url });
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async callback() {}
+  async callback(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { code, state } = req.query;
+      const response = await authService.callback(
+        code as string,
+        state as string
+      );
+
+      res.cookie("accessToken", response.token, config.cookieOptions);
+      res.cookie("refreshToken", response.refreshToken, config.cookieOptions);
+
+      res.redirect(config.azure.successRedirect);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
