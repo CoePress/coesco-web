@@ -10,9 +10,9 @@ import quoteRoutes from "./quote.routes";
 const router = Router();
 
 router.use("/auth", authRoutes);
-router.use("/employee", protect, employeeRoutes);
-router.use("/machine-data", protect, machineDataRoutes);
-router.use("/machine", protect, machineRoutes);
-router.use("/quote", protect, quoteRoutes);
+router.use("/employees", protect, employeeRoutes);
+router.use("/machines/data", protect, machineDataRoutes);
+router.use("/machines", protect, machineRoutes);
+router.use("/quotes", protect, quoteRoutes);
 
 export default router;

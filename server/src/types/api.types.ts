@@ -3,6 +3,10 @@ export interface IApiResponse<T> {
   message?: string;
   data?: T;
   error?: string;
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
 }
 
 export interface IQueryParams {
@@ -20,19 +24,8 @@ export interface IQueryParams {
 
 export interface IQueryBuilderResult {
   whereClause: any;
-  orderClause: Array<[any, string]>;
+  orderClause: Record<string, "asc" | "desc">;
   page: number;
   offset?: number;
   limit?: number;
-}
-
-export interface IPaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-export interface IPaginatedApiResponse<T> extends IApiResponse<T> {
-  pagination: IPaginationMeta;
 }

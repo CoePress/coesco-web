@@ -12,21 +12,23 @@ export const protect = asyncHandler(
       return;
     }
 
-    const decoded = decode(accessToken) as { oid: string };
+    const decoded = decode(accessToken) as { userId: string; userType: string };
 
-    if (!decoded?.oid) {
+    if (!decoded?.userId) {
       throw new UnauthorizedError(`Unauthorized`);
     }
 
-    const user = { id: decoded.oid, email: "test@test.com", password: "test" };
+    const user = {
+      id: decoded.userId,
+      email: "test@test.com",
+      userType: decoded.userType,
+    };
 
     if (!user) {
       throw new UnauthorizedError("Unauthorized");
     }
 
-    const { password, ...userWithoutPassword } = user;
-
-    req.user = userWithoutPassword;
+    req.user = user;
     next();
   }
 );

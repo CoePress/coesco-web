@@ -2,6 +2,7 @@ import ejs from "ejs";
 import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
+import { Op } from "sequelize";
 
 import {
   FanucControllerMode,
@@ -192,7 +193,7 @@ export const createDateRange = (
 export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   const result: IQueryBuilderResult = {
     whereClause: {},
-    orderClause: [],
+    orderClause: {},
     page: params.page || 1,
   };
 
@@ -204,10 +205,13 @@ export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
 
   // Search
   if (params.search) {
-    result.whereClause.$or = [
-      { name: { $regex: params.search, $options: "i" } },
-      { description: { $regex: params.search, $options: "i" } },
-    ];
+    result.whereClause = {
+      [Op.or]: [
+        { firstName: { [Op.iLike]: `%${params.search}%` } },
+        { lastName: { [Op.iLike]: `%${params.search}%` } },
+        { email: { [Op.iLike]: `%${params.search}%` } },
+      ],
+    };
   }
 
   // Filter
@@ -250,7 +254,7 @@ export const buildQuery = (params: IQueryParams): IQueryBuilderResult => {
   const sort = params.sort || defaultSort;
   const order = params.order || defaultOrder;
 
-  result.orderClause = [[sort, order]];
+  result.orderClause = { [sort]: order };
 
   return result;
 };

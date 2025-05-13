@@ -195,4 +195,24 @@ export class AuthService implements IAuthService {
 
     return response.json();
   }
+
+  async testLogin(): Promise<IAuthResponse> {
+    const testUserId = "test-user-id";
+    const { token, refreshToken } = this.generateTokens(testUserId);
+
+    return {
+      token,
+      refreshToken,
+      userType: UserType.EMPLOYEE,
+      user: {
+        id: 1,
+        firstName: "Test",
+        lastName: "User",
+        email: "test@example.com",
+        role: "Test Role",
+        department: "Test Department",
+        isActive: true,
+      } as unknown as IEmployee,
+    };
+  }
 }

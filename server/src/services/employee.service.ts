@@ -1,14 +1,16 @@
-import { IApiResponse } from "@/types/api.types";
-import { IQueryParams } from "@/types/api.types";
-import { EmployeeStatus, IEmployee } from "@/types/schema.types";
-import { IEmployeeService } from "@/types/service.types";
-import { config } from "@/config/config";
-import Employee from "@/models/employee";
-import Auth from "@/models/auth";
-import { UserType } from "@/types/auth.types";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { Op } from "sequelize";
+
+import { config } from "@/config/config";
+import Auth from "@/models/auth";
+import Employee from "@/models/employee";
+import { IApiResponse, IQueryParams } from "@/types/api.types";
+import { EmployeeStatus, IEmployee } from "@/types/schema.types";
+import { IEmployeeService } from "@/types/service.types";
+import { UserType } from "@/types/auth.types";
 import { logger } from "@/utils/logger";
+import { buildQuery } from "@/utils";
 
 const blacklistedEmails = [
   "ads@cpec.com",
@@ -20,10 +22,30 @@ const blacklistedEmails = [
 const employeeEmailRegex = /^[a-z]{3}@cpec\.com$/i;
 
 export class EmployeeService implements IEmployeeService {
-  async getEmployees(
-    params?: IQueryParams
-  ): Promise<IApiResponse<IEmployee[]>> {
-    return Promise.resolve({} as IApiResponse<IEmployee[]>);
+  async getEmployees(params: IQueryParams): Promise<IApiResponse<IEmployee[]>> {
+    console.log(params);
+
+    const { whereClause, orderClause, page, limit, offset } =
+      buildQuery(params);
+
+    const employees = await Employee.findAll({
+      where: whereClause,
+      order: Object.entries(orderClause).map(([key, value]) => [key, value]),
+      limit,
+      offset,
+    });
+
+    const total = await Employee.count({ where: whereClause });
+    const totalPages = limit ? Math.ceil(total / limit) : 1;
+
+    return {
+      success: true,
+      data: employees.map((emp) => emp.toJSON() as IEmployee),
+      total,
+      totalPages,
+      page,
+      limit,
+    };
   }
 
   async getEmployee(id: string): Promise<IApiResponse<IEmployee>> {
@@ -31,6 +53,8 @@ export class EmployeeService implements IEmployeeService {
   }
 
   async createEmployee(employee: IEmployee): Promise<IApiResponse<IEmployee>> {
+    await this.validateEmployee(employee);
+
     return Promise.resolve({} as IApiResponse<IEmployee>);
   }
 
@@ -165,6 +189,24 @@ export class EmployeeService implements IEmployeeService {
       return response.data.access_token;
     } catch (error) {
       throw new Error("Failed to generate token");
+    }
+  }
+
+  private async validateEmployee(employee: IEmployee) {
+    const existingEmail = await Employee.findOne({
+      where: { email: employee.email },
+    });
+
+    if (existingEmail) {
+      throw new Error("Employee already exists");
+    }
+
+    const existingMicrosoftId = await Auth.findOne({
+      where: { microsoftId: employee.microsoftId },
+    });
+
+    if (existingMicrosoftId) {
+      throw new Error("Employee already exists");
     }
   }
 }
