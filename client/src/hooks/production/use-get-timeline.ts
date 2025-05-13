@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
-import { IStateTimeline } from "@/utils/types";
+import { instance } from "@/utils";
+import { IApiResponse, IMachineTimeline } from "@/utils/types";
 
 const useGetTimeline = ({
   startDate,
@@ -11,7 +11,7 @@ const useGetTimeline = ({
   startDate?: string;
   endDate?: string;
 }) => {
-  const [timeline, setTimeline] = useState<IStateTimeline | null>(null);
+  const [timeline, setTimeline] = useState<IMachineTimeline | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
@@ -26,15 +26,19 @@ const useGetTimeline = ({
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
 
-        const { data } = await axios.get(
-          `${env.VITE_API_URL}/states/timeline`,
+        const { data } = await instance.get<IApiResponse<IMachineTimeline>>(
+          `/machines/timeline`,
           {
             params,
             withCredentials: true,
           }
         );
 
-        setTimeline(data);
+        if (data.success) {
+          setTimeline(data.data || null);
+        } else {
+          setError(data.error || "Failed to fetch timeline");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);

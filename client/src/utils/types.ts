@@ -392,3 +392,9 @@ export interface IMachineOverview {
   machines: IOverviewMachine[];
   alarms: IOverviewAlarm[];
 }
+
+export interface IMachineTimeline {
+  startDate: Date;
+  endDate: Date;
+  machines: IOverviewMachine[];
+}

@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import env from "@/config/env";
-import { IMachineOverview } from "@/utils/types";
+import { instance } from "@/utils";
+import { IApiResponse, IMachineOverview } from "@/utils/types";
 
 export interface UseGetOverviewProps {
   startDate?: string;
@@ -25,15 +25,18 @@ const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
 
-        const { data } = await axios.get(
-          `${env.VITE_API_URL}/machines/data/overview`,
+        const { data } = await instance.get<IApiResponse<IMachineOverview>>(
+          `/machines/data/overview`,
           {
             params,
-            withCredentials: true,
           }
         );
 
-        setOverview(data);
+        if (data.success) {
+          setOverview(data.data || null);
+        } else {
+          setError(data.error || "Failed to fetch overview");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
