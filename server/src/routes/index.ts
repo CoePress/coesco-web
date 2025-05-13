@@ -17,4 +17,8 @@ router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
 router.use("/quotes", protect, quoteRoutes);
 
+router.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 export default router;

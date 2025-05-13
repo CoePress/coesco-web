@@ -28,16 +28,41 @@ const io = new Server(httpServer, {
 
 app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
-app.use(cspMiddleware);
-app.use(securityHeaders);
-
 app.use(
   cors({
-    origin: config.cors.allowedOrigins,
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow: boolean) => void
+    ) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const baseOrigin = new URL(origin).origin;
+
+      const allowedOrigins = config.cors.allowedOrigins.map((o) => o.trim());
+
+      if (allowedOrigins.includes(baseOrigin)) {
+        callback(null, true);
+      } else {
+        logger.warn("CORS Debug:", {
+          baseOrigin,
+          allowedOrigins,
+          rawOrigins: config.cors.allowedOrigins,
+        });
+        callback(new Error(`Not Allowed: ${baseOrigin}`), false);
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
   })
 );
+
+app.use(cspMiddleware);
+app.use(securityHeaders);
 
 app.use(cookieParser());
 
@@ -64,10 +89,6 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", routes);
-
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-});
 
 app.use(errorHandler);
 

@@ -21,7 +21,10 @@ const useGetSystemStatus = (
     setError(null);
 
     try {
-      const response = await axios.get(`${env.VITE_BASE_URL}/health`, {
+      const response = await axios.get(`${env.VITE_API_URL}/health`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
         withCredentials: true,
       });
 

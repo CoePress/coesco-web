@@ -14,7 +14,6 @@ httpServer.listen(config.port, async () => {
     `Server running in ${config.nodeEnv} mode on port ${config.port}`
   );
 
-  // Initialize socket service after server starts
   initializeSocketService();
   logger.info("Socket.IO server initialized");
 });
