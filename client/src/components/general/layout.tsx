@@ -42,11 +42,11 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
   return (
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-64" : "w-0"
+        isOpen ? "w-60" : "w-0"
       }`}>
       <div
         className={`flex flex-col h-full transition-opacity duration-300 ${
-          isOpen ? "w-64 opacity-100" : "w-0 opacity-0"
+          isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
         }`}>
         <div className="flex items-center justify-center h-16 border-b border-border">
           <h1

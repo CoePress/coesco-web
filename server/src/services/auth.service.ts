@@ -14,12 +14,24 @@ import { ConfidentialClientApplication } from "@azure/msal-node";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
+import * as msal from "@azure/msal-node";
 
 type AuthWithEmployee = Auth & {
   employee: Employee;
 };
 
 export class AuthService implements IAuthService {
+  private msalClient: ConfidentialClientApplication;
+
+  constructor() {
+    this.msalClient = new ConfidentialClientApplication({
+      auth: {
+        clientId: config.azure.clientId,
+        clientSecret: config.azure.clientSecret,
+        authority: `https://login.microsoftonline.com/${config.azure.tenantId}`,
+      },
+    });
+  }
   private generateTokens(userId: string): IAuthTokens {
     const token = sign(
       { userId, userType: UserType.INTERNAL },
@@ -89,16 +101,7 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError("Code and session ID are required");
     }
 
-    const msalConfig = {
-      auth: {
-        clientId: config.azure.clientId,
-        clientSecret: config.azure.clientSecret,
-        authority: `https://login.microsoftonline.com/${config.azure.tenantId}`,
-      },
-    };
-
-    const msalClient = new ConfidentialClientApplication(msalConfig);
-    const tokenResponse = await msalClient.acquireTokenByCode({
+    const tokenResponse = await this.msalClient.acquireTokenByCode({
       code,
       redirectUri: config.azure.redirectUri,
       scopes: ["openid", "profile", "email"],
