@@ -23,6 +23,7 @@ import {
   MachineStates,
   ProductionDashboard,
   ProductRules,
+  Reports,
   SalesCatalog,
   SalesConfigBuilder,
   SalesCustomerDetails,
@@ -165,8 +166,14 @@ const productionModule: Module = {
       component: ProductionDashboard,
     },
     {
-      path: "/machine-states",
-      label: "Machine States",
+      path: "/reports",
+      label: "Reports",
+      icon: PieChart,
+      component: Reports,
+    },
+    {
+      path: "/machine-data",
+      label: "Machine Data",
       icon: Box,
       component: MachineStates,
     },
@@ -182,15 +189,15 @@ const adminModule: Module = {
   pages: [
     {
       path: "/",
-      label: "Settings",
-      icon: SettingsIcon,
-      component: Settings,
-    },
-    {
-      path: "/employees",
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
+    },
+    {
+      path: "/settings",
+      label: "Settings",
+      icon: SettingsIcon,
+      component: Settings,
     },
     {
       path: "/product-rules",

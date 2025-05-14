@@ -7,7 +7,7 @@ export { default as Settings } from "./admin/settings";
 // Production
 export { default as ProductionDashboard } from "./production/dashboard";
 export { default as MachineStates } from "./production/machine-states";
-
+export { default as Reports } from "./production/reports";
 // Sales
 export { default as SalesDashboard } from "./sales/dashboard";
 export { default as SalesPipeline } from "./sales/pipeline";

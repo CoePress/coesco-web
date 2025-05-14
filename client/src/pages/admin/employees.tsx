@@ -97,7 +97,7 @@ const Employees = () => {
         description={`${pagination.total} total employees`}
         actions={
           <>
-            <div className="relative flex-1">
+            {/* <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search
                   size={18}
@@ -109,7 +109,7 @@ const Employees = () => {
                 placeholder="Search"
                 className="block w-full pl-10 pr-3 py-1.5 border rounded-md text-sm text-text-muted"
               />
-            </div>
+            </div> */}
             <Button
               onClick={() => {
                 syncEmployees();
