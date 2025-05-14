@@ -1,7 +1,7 @@
 import { IApiResponse, IQueryParams } from "./api.types";
 import {
-  IAuthResponse,
   ICustomer,
+  IEmailTemplate,
   IEmployee,
   IMachine,
   IMachineOverview,
@@ -11,16 +11,9 @@ import {
   IQuoteHeader,
   IQuoteHeaderIncludes,
   IQuoteItem,
+  ISendEmailOptions,
   QuoteStatus,
 } from "./schema.types";
-
-export interface IAuthService {
-  login(email: string, password: string): Promise<IAuthResponse>;
-  loginWithMicrosoft(): Promise<string>;
-  callback(code: string, sessionId: string): Promise<IAuthResponse>;
-  logout(sessionId: string): Promise<IAuthResponse>;
-  session(sessionId: string, authSession: string): Promise<IAuthResponse>;
-}
 
 export interface IEmployeeService {
   getEmployees(params?: IQueryParams): Promise<IApiResponse<IEmployee[]>>;
@@ -160,4 +153,11 @@ export interface IQuoteService {
     dateTo?: Date;
     search?: string;
   }): Promise<IQuoteHeader[]>;
+}
+
+export interface IEmailTemplateService {
+  getTemplate(id: string): Promise<IEmailTemplate>;
+  saveTemplate(template: IEmailTemplate): Promise<IEmailTemplate>;
+  deleteTemplate(id: string): Promise<boolean>;
+  sendEmail(options: ISendEmailOptions): Promise<boolean>;
 }

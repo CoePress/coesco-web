@@ -27,10 +27,9 @@ const useGetTimeline = ({
         if (endDate) params.endDate = endDate;
 
         const { data } = await instance.get<IApiResponse<IMachineTimeline>>(
-          `/machines/timeline`,
+          `/machines/data/timeline`,
           {
             params,
-            withCredentials: true,
           }
         );
 

@@ -303,7 +303,10 @@ export class MachineDataService {
   }
 
   async getMachineTimeline(startDate: string, endDate: string) {
-    return [];
+    return {
+      success: true,
+      data: [],
+    };
   }
 
   async pollMachines() {

@@ -14,8 +14,13 @@ const useSyncEmployees = () => {
     setSuccess(false);
 
     try {
-      const response = await instance.post("/employees/sync");
-      setSuccess(response.data);
+      const { data } = await instance.post("/employees/sync");
+
+      if (data.success) {
+        setSuccess(data.success);
+      } else {
+        setError(data.error || "Failed to sync employees");
+      }
     } catch (error) {
       if (error instanceof AxiosError) {
         setError(error.response?.data.message || "Failed to fetch employees");

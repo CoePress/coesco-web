@@ -37,11 +37,39 @@ export class EmployeeController {
     }
   }
 
-  async createEmployee() {}
+  async createEmployee(req: Request, res: Response, next: NextFunction) {
+    try {
+      const employee = req.body;
+      const createdEmployee = await employeeService.createEmployee(employee);
+      res.status(201).json(createdEmployee);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async updateEmployee() {}
+  async updateEmployee(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const employee = req.body;
+      const updatedEmployee = await employeeService.updateEmployee(
+        id,
+        employee
+      );
+      res.status(200).json(updatedEmployee);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async deleteEmployee() {}
+  async deleteEmployee(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const deletedEmployee = await employeeService.deleteEmployee(id);
+      res.status(200).json(deletedEmployee);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async syncEmployees(req: Request, res: Response, next: NextFunction) {
     try {

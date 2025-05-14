@@ -349,3 +349,18 @@ export interface IMicrosoftUser {
   jobTitle: string;
   department: string;
 }
+
+export interface IEmailTemplate {
+  id: string;
+  name: string;
+  html: string;
+  subject: string;
+}
+
+export interface ISendEmailOptions {
+  templateId: string;
+  to: string | string[];
+  data: Record<string, any>;
+  cc?: string[];
+  bcc?: string[];
+}

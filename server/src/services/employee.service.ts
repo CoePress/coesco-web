@@ -82,7 +82,20 @@ export class EmployeeService implements IEmployeeService {
     id: string,
     employee: IEmployee
   ): Promise<IApiResponse<IEmployee>> {
-    return Promise.resolve({} as IApiResponse<IEmployee>);
+    await this.validateEmployee(employee);
+
+    const existingEmployee = await Employee.findByPk(id);
+
+    if (!existingEmployee) {
+      throw new NotFoundError("Employee not found");
+    }
+
+    const updatedEmployee = await existingEmployee.update(employee);
+
+    return {
+      success: true,
+      data: updatedEmployee?.toJSON() as IEmployee,
+    };
   }
 
   async deleteEmployee(id: string): Promise<IApiResponse<boolean>> {

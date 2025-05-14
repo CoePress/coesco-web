@@ -21,11 +21,11 @@ const useGetSystemStatus = (
     setError(null);
 
     try {
-      const response = await instance.get(`/health`);
+      const { data } = await instance.get(`/health`);
 
-      if (response.data.status === "ok") {
+      if (data.status === "ok") {
         setStatus("good");
-        setLastChecked(response.data.timestamp);
+        setLastChecked(data.timestamp);
       } else {
         setStatus("bad");
       }

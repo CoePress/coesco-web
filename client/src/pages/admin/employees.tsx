@@ -12,6 +12,7 @@ import {
 import { TableColumn } from "@/components/v1/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
+import useUpdateEmployee from "@/hooks/admin/use-update-employee";
 import { IEmployee, EmployeeRole } from "@/utils/types";
 import { format } from "date-fns";
 
@@ -29,6 +30,8 @@ const Employees = () => {
     loading: syncLoading,
     error: syncError,
   } = useSyncEmployees();
+
+  const { updateEmployee, loading: updateLoading } = useUpdateEmployee();
 
   const columns: TableColumn<IEmployee>[] = [
     {
@@ -92,7 +95,7 @@ const Employees = () => {
     },
   ];
 
-  const { employees, loading, error, pagination } = useGetEmployees({
+  const { employees, loading, error, pagination, refresh } = useGetEmployees({
     page,
     limit,
   });
@@ -192,10 +195,18 @@ const Employees = () => {
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                // TODO: Implement role update logic
-                setIsEditModalOpen(false);
-              }}>
+              onClick={async () => {
+                if (selectedEmployee) {
+                  const result = await updateEmployee(selectedEmployee.id, {
+                    role: selectedRole as EmployeeRole,
+                  });
+                  if (result) {
+                    setIsEditModalOpen(false);
+                    refresh();
+                  }
+                }
+              }}
+              disabled={updateLoading}>
               Save Changes
             </Button>
           </div>
