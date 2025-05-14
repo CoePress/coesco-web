@@ -1,4 +1,4 @@
-import { Plus, MoreHorizontal, Search, RefreshCcw } from "lucide-react";
+import { Plus, MoreHorizontal, RefreshCcw } from "lucide-react";
 import { useState } from "react";
 
 import { StatusBadge, PageHeader, Table, Button, Loader } from "@/components";

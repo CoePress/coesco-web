@@ -527,9 +527,10 @@ const Reports = () => {
                 />
                 <Button
                   variant="secondary-outline"
-                  onClick={(e: any) => {
-                    const input = e.currentTarget
-                      .previousElementSibling as HTMLInputElement;
+                  onClick={() => {
+                    const input = document.querySelector(
+                      'input[type="text"]'
+                    ) as HTMLInputElement;
                     if (input.value) {
                       setSelectedRecipients([
                         ...selectedRecipients,
