@@ -10,10 +10,6 @@ class Auth extends Model<IAuthAttributes> implements IAuthAttributes {
   declare userType: UserType;
   declare isActive: boolean;
   declare isVerified: boolean;
-  declare lastLogin: Date;
-  declare refreshToken: string;
-  declare sessionId: string;
-  declare expiresAt: Date;
   declare createdAt: Date;
   declare updatedAt: Date;
 
@@ -32,7 +28,7 @@ class Auth extends Model<IAuthAttributes> implements IAuthAttributes {
         },
         password: {
           type: DataTypes.STRING,
-          allowNull: false,
+          allowNull: true,
         },
         microsoftId: {
           type: DataTypes.STRING,
@@ -55,22 +51,6 @@ class Auth extends Model<IAuthAttributes> implements IAuthAttributes {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
-        },
-        lastLogin: {
-          type: DataTypes.DATE,
-          allowNull: true,
-        },
-        refreshToken: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        sessionId: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        expiresAt: {
-          type: DataTypes.DATE,
-          allowNull: true,
         },
       },
       {

@@ -85,19 +85,29 @@ const seedMachines: ICreateMachineDto[] = [
 ];
 
 const seed = async () => {
-  await initializeModels(sequelize);
-  await sequelize.sync();
+  try {
+    await initializeModels(sequelize);
+    await sequelize.sync();
 
-  await employeeService.syncEmployees();
+    await employeeService.syncEmployees();
 
-  for (const machine of seedMachines) {
-    try {
-      const m = await machineService.createMachine(machine);
-      logger.info(`Machine ${m.slug} created`);
-    } catch (error) {
-      logger.error(`Error creating machine ${machine.slug}: ${error}`);
+    for (const machine of seedMachines) {
+      try {
+        const m = await machineService.createMachine(machine);
+        logger.info(`Machine ${m.slug} created`);
+      } catch (error) {
+        logger.error(`Error creating machine ${machine.slug}: ${error}`);
+      }
     }
+  } catch (error) {
+    logger.error("Error during seeding:", error);
+  } finally {
+    await sequelize.close();
+    process.exit(0);
   }
 };
 
-seed();
+seed().catch((error) => {
+  logger.error("Fatal error during seeding:", error);
+  process.exit(1);
+});

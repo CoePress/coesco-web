@@ -1,14 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { Op } from "sequelize";
 
 import { config } from "@/config/config";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { IApiResponse, IQueryParams } from "@/types/api.types";
-import { EmployeeStatus, IEmployee } from "@/types/schema.types";
+import { EmployeeRole, IEmployee, UserType } from "@/types/schema.types";
 import { IEmployeeService } from "@/types/service.types";
-import { UserType } from "@/types/auth.types";
 import { logger } from "@/utils/logger";
 import { buildQuery, validateUuid } from "@/utils";
 import {
@@ -134,10 +132,8 @@ export class EmployeeService implements IEmployeeService {
           lastName: user.surname || "User",
           email: user.mail,
           jobTitle: user.jobTitle || "Employee",
-          status: EmployeeStatus.ACTIVE,
-          role: isAdmin ? "admin" : "employee",
+          role: isAdmin ? EmployeeRole.ADMIN : EmployeeRole.INACTIVE,
           microsoftId: user.id,
-          departmentIds: [],
         });
         logger.info(
           `Employee ${existingEmployee ? "updated" : "created"}: ${employee.id}`
@@ -153,10 +149,9 @@ export class EmployeeService implements IEmployeeService {
           email: user.mail,
           microsoftId: user.id,
           userId: employee.id,
-          userType: UserType.EMPLOYEE,
+          userType: UserType.INTERNAL,
           isActive: true,
           isVerified: true,
-          password: "",
         });
         logger.info(`Auth record ${existingAuth ? "updated" : "created"}`);
       }
@@ -164,7 +159,8 @@ export class EmployeeService implements IEmployeeService {
       logger.info("Sync completed successfully");
       return { success: true, data: true };
     } catch (error: any) {
-      throw new InternalServerError("Sync failed");
+      logger.error("Sync failed with error:", error);
+      throw new InternalServerError(`Sync failed: ${error.message}`);
     }
   }
 

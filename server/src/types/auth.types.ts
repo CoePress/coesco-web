@@ -1,25 +1,26 @@
-import { ICustomer, IEmployee } from "./schema.types";
+import { ICustomer, IEmployee } from "@/types/schema.types";
 
 export enum UserType {
-  EMPLOYEE = "employee",
-  CUSTOMER = "customer",
+  INTERNAL = "INTERNAL",
+  EXTERNAL = "EXTERNAL",
 }
 
 export interface IAuth {
   id: string;
   email: string;
-  password: string;
+  password?: string;
   microsoftId?: string;
   userId: string;
   userType: UserType;
   isActive: boolean;
   isVerified: boolean;
-  lastLogin?: Date;
-  refreshToken?: string;
-  sessionId?: string;
-  expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IAuthIncludes extends IAuth {
+  employee?: IEmployee;
+  customer?: ICustomer;
 }
 
 export interface IAuthAttributes

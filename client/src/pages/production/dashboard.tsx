@@ -202,7 +202,11 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
   const intervalRef = useRef<HTMLDivElement>(null);
 
   if (loading) {
-    return <Loader />;
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {

@@ -3,18 +3,12 @@ import {
   Filter,
   Download,
   MoreHorizontal,
-  ChevronDown,
   Loader,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 
-import {
-  StatusBadge,
-  PageHeader,
-  Table,
-  PageSearch,
-  Button,
-} from "@/components";
+import { StatusBadge, PageHeader, Table, Button } from "@/components";
 import { formatDate } from "@/utils";
 import { TableColumn } from "@/components/v1/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
@@ -51,9 +45,9 @@ const Employees = () => {
         <StatusBadge
           label={value as string}
           variant={
-            value === "admin"
+            value === "ADMIN"
               ? "error"
-              : value === "employee"
+              : value === "EMPLOYEE"
               ? "success"
               : "default"
           }
@@ -61,12 +55,12 @@ const Employees = () => {
       ),
     },
     {
-      key: "isActive",
+      key: "status",
       header: "Status",
       render: (value) => (
         <StatusBadge
-          label={value ? "Active" : "Inactive"}
-          variant={value ? "success" : "default"}
+          label={value as string}
+          variant={value === "ACTIVE" ? "success" : "default"}
         />
       ),
     },
@@ -95,7 +89,11 @@ const Employees = () => {
   });
 
   if (loading) {
-    return <Loader />;
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {
@@ -109,6 +107,25 @@ const Employees = () => {
         description={`${pagination.total} total employees`}
         actions={
           <>
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search
+                  size={18}
+                  className="text-text-muted"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Search"
+                className="block w-full pl-10 pr-3 py-1.5 border rounded-md text-sm text-text-muted"
+              />
+            </div>
+            <Button
+              onClick={() => {}}
+              variant="secondary-outline">
+              <Filter size={16} />
+              Filters
+            </Button>
             <Button
               onClick={() => {}}
               variant="secondary-outline">
@@ -121,14 +138,6 @@ const Employees = () => {
             </Button>
           </>
         }
-      />
-
-      <PageSearch
-        placeholder="Search employees..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
       />
 
       <Table<IEmployee>

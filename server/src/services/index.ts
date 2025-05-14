@@ -12,7 +12,6 @@ export const machineService = new MachineService();
 export const quoteService = new QuoteService();
 export const machineDataService = new MachineDataService();
 
-// Initialize socket service after io is ready
 let socketService: SocketService;
 export const initializeSocketService = () => {
   socketService = new SocketService(io);
@@ -21,7 +20,7 @@ export const initializeSocketService = () => {
 
 export const getSocketService = () => {
   if (!socketService) {
-    throw new Error("SocketService not initialized");
+    return initializeSocketService();
   }
   return socketService;
 };

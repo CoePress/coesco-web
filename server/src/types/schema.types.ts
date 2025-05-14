@@ -5,47 +5,20 @@ export interface IBaseEntity {
 }
 
 export enum UserType {
-  EMPLOYEE = "employee",
-  CUSTOMER = "customer",
+  INTERNAL = "INTERNAL",
+  EXTERNAL = "EXTERNAL",
 }
 
-export interface IAuth extends IBaseEntity {
-  email?: string;
-  username?: string;
-  password?: string;
-  microsoftId?: string;
-  userId: string;
-  userType: UserType;
-  isActive: boolean;
-  isVerified: boolean;
-  lastLogin?: Date;
-}
-
-export interface IAuthIncludes extends IAuth {
-  employee?: IEmployee;
-  customer?: ICustomer;
-}
-
-export interface ICreateAuthDto
-  extends Omit<IAuth, "id" | "createdAt" | "updatedAt"> {}
-
-export interface IAuthResponse {
-  token: string;
-  refreshToken: string;
-  userType: UserType;
-  user: IEmployee | ICustomer;
-}
-
-export enum EmployeeStatus {
-  ACTIVE = "ACTIVE",
-  ON_LEAVE = "ON_LEAVE",
-  TERMINATED = "TERMINATED",
+export enum EmployeeRole {
+  INACTIVE = "INACTIVE",
+  ADMIN = "ADMIN",
+  MANAGER = "MANAGER",
+  EMPLOYEE = "EMPLOYEE",
 }
 
 export interface IDepartment extends IBaseEntity {
   name: string;
   description?: string;
-  leaderId?: string;
 }
 
 export interface IEmployee extends IBaseEntity {
@@ -53,15 +26,11 @@ export interface IEmployee extends IBaseEntity {
   lastName: string;
   email: string;
   phone?: string;
-  role: string;
   jobTitle: string;
-  departmentIds?: string[];
-  primaryDepartmentId?: string;
-  reportsToId?: string;
-  status: EmployeeStatus;
+  departmentId?: string;
   microsoftId?: string;
-  hiredAt?: Date;
-  terminatedAt?: Date;
+  role: EmployeeRole;
+  lastLogin?: Date;
 }
 
 export interface IEmployeeAttributes

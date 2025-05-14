@@ -13,7 +13,7 @@ export const PublicRoute = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-screen">
         <Loader />
       </div>
     );
@@ -44,7 +44,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-screen">
         <Loader />
       </div>
     );
@@ -88,7 +88,11 @@ export const ProtectedRouteWithoutLayout = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader />
+      </div>
+    );
   }
 
   if (!user) {

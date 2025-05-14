@@ -4,7 +4,7 @@ import {
   UserType,
   IAuthService,
 } from "@/types/auth.types";
-import { IEmployee } from "@/types/schema.types";
+import { EmployeeRole, IEmployee } from "@/types/schema.types";
 import { sign, verify } from "jsonwebtoken";
 import { config } from "@/config/config";
 import { UnauthorizedError } from "@/middleware/error.middleware";
@@ -14,7 +14,6 @@ import { ConfidentialClientApplication } from "@azure/msal-node";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
-import { EmployeeStatus } from "@/types/schema.types";
 
 type AuthWithEmployee = Auth & {
   employee: Employee;
@@ -23,13 +22,13 @@ type AuthWithEmployee = Auth & {
 export class AuthService implements IAuthService {
   private generateTokens(userId: string): IAuthTokens {
     const token = sign(
-      { userId, userType: UserType.EMPLOYEE },
+      { userId, userType: UserType.INTERNAL },
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn } as SignOptions
     );
 
     const refreshToken = sign(
-      { userId, userType: UserType.EMPLOYEE },
+      { userId, userType: UserType.INTERNAL },
       config.jwt.secret,
       { expiresIn: config.jwt.refreshExpiresIn } as SignOptions
     );
@@ -56,17 +55,17 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError("Invalid credentials");
     }
 
-    const { token, refreshToken } = this.generateTokens(auth.userId);
+    await Employee.update(
+      { lastLogin: new Date() },
+      { where: { id: auth.employee.id } }
+    );
 
-    await auth.update({
-      lastLogin: new Date(),
-      refreshToken,
-    });
+    const { token, refreshToken } = this.generateTokens(auth.userId);
 
     return {
       token,
       refreshToken,
-      userType: UserType.EMPLOYEE,
+      userType: UserType.INTERNAL,
       user: auth.employee as unknown as IEmployee,
     };
   }
@@ -120,17 +119,17 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError("No account found for this Microsoft user");
     }
 
-    const { token, refreshToken } = this.generateTokens(auth.userId);
+    await Employee.update(
+      { lastLogin: new Date() },
+      { where: { id: auth.employee.id } }
+    );
 
-    await auth.update({
-      lastLogin: new Date(),
-      refreshToken,
-    });
+    const { token, refreshToken } = this.generateTokens(auth.userId);
 
     return {
       token,
       refreshToken,
-      userType: UserType.EMPLOYEE,
+      userType: UserType.INTERNAL,
       user: auth.employee as unknown as IEmployee,
     };
   }
@@ -144,7 +143,7 @@ export class AuthService implements IAuthService {
       userId: string;
     };
     await Auth.update(
-      { refreshToken: "" },
+      { isActive: false },
       { where: { userId: decoded.userId } }
     );
     return {} as IAuthResponse;
@@ -174,7 +173,7 @@ export class AuthService implements IAuthService {
 
     return {
       token: accessToken,
-      refreshToken: auth.refreshToken,
+      refreshToken: "",
       userType: decoded.userType,
       user: auth.employee as unknown as IEmployee,
     };
@@ -205,10 +204,9 @@ export class AuthService implements IAuthService {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "Test Role",
         jobTitle: "Test Job",
-        status: EmployeeStatus.ACTIVE,
-        departmentIds: [],
+        departmentId: "",
+        role: EmployeeRole.EMPLOYEE,
       });
     }
 
@@ -222,21 +220,23 @@ export class AuthService implements IAuthService {
         email: "test@example.com",
         password: "",
         userId: testEmployee.id,
-        userType: UserType.EMPLOYEE,
+        userType: UserType.INTERNAL,
         isActive: true,
         isVerified: true,
-        refreshToken: "",
       });
     }
 
-    const { token, refreshToken } = this.generateTokens(testEmployee.id);
+    await Employee.update(
+      { lastLogin: new Date() },
+      { where: { id: testEmployee.id } }
+    );
 
-    await auth.update({ refreshToken });
+    const { token, refreshToken } = this.generateTokens(testEmployee.id);
 
     return {
       token,
       refreshToken,
-      userType: UserType.EMPLOYEE,
+      userType: UserType.INTERNAL,
       user: testEmployee as unknown as IEmployee,
     };
   }

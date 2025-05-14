@@ -1,5 +1,5 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { EmployeeStatus, IEmployeeAttributes } from "@/types/schema.types";
+import { EmployeeRole, IEmployeeAttributes } from "@/types/schema.types";
 
 class Employee
   extends Model<IEmployeeAttributes>
@@ -10,15 +10,11 @@ class Employee
   declare lastName: string;
   declare email: string;
   declare phone: string;
-  declare role: string;
   declare jobTitle: string;
-  declare departmentIds: string[];
-  declare primaryDepartmentId: string;
-  declare reportsToId: string;
-  declare status: EmployeeStatus;
+  declare departmentId: string;
   declare microsoftId: string;
-  declare hiredAt: Date;
-  declare terminatedAt: Date;
+  declare role: EmployeeRole;
+  declare lastLogin: Date;
 
   public static initialize(sequelize: Sequelize): void {
     Employee.init(
@@ -38,9 +34,21 @@ class Employee
         },
         email: {
           type: DataTypes.STRING,
-          allowNull: false,
+          allowNull: true,
         },
         phone: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        jobTitle: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        departmentId: {
+          type: DataTypes.UUID,
+          allowNull: true,
+        },
+        microsoftId: {
           type: DataTypes.STRING,
           allowNull: true,
         },
@@ -48,35 +56,7 @@ class Employee
           type: DataTypes.STRING,
           allowNull: false,
         },
-        jobTitle: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        departmentIds: {
-          type: DataTypes.ARRAY(DataTypes.UUID),
-          allowNull: false,
-        },
-        primaryDepartmentId: {
-          type: DataTypes.UUID,
-          allowNull: true,
-        },
-        reportsToId: {
-          type: DataTypes.UUID,
-          allowNull: true,
-        },
-        status: {
-          type: DataTypes.ENUM(...Object.values(EmployeeStatus)),
-          allowNull: false,
-        },
-        microsoftId: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        hiredAt: {
-          type: DataTypes.DATE,
-          allowNull: true,
-        },
-        terminatedAt: {
+        lastLogin: {
           type: DataTypes.DATE,
           allowNull: true,
         },
@@ -91,17 +71,7 @@ class Employee
   }
 
   public static associate(models: any): void {
-    Employee.belongsTo(models.Employee, {
-      foreignKey: "reportsToId",
-      as: "reportsTo",
-    });
-
-    Employee.hasMany(models.Employee, {
-      foreignKey: "reportsToId",
-      as: "reports",
-    });
-
-    Employee.belongsTo(models.Auth, {
+    Employee.hasOne(models.Auth, {
       foreignKey: "userId",
       as: "auth",
     });
