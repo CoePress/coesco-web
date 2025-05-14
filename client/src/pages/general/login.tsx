@@ -77,21 +77,19 @@ const LoginPage = () => {
     return (
       <div className="relative h-screen w-screen flex items-center justify-center p-2">
         <BackgroundImage />
-        <div className="relative z-10 w-full max-w-md">
+        <div className="relative z-10 w-full max-w-sm">
           <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/95">
-            <div className="p-2 space-y-2">
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-center">
-                <p className="font-semibold mb-2">System Unavailable</p>
-                <p className="text-sm mb-4">
-                  Our services are currently down. Please try again later.
-                </p>
-                <Button
-                  variant="secondary-outline"
-                  onClick={refetchHealth}
-                  className="w-full">
-                  Retry Connection
-                </Button>
-              </div>
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-2 rounded-lg text-center">
+              <p className="font-semibold mb-2">System Unavailable</p>
+              <p className="text-sm mb-4">
+                Our services are currently down. Please try again later.
+              </p>
+              <Button
+                variant="secondary-outline"
+                onClick={refetchHealth}
+                className="w-max mx-auto">
+                Retry Connection
+              </Button>
             </div>
           </Card>
         </div>

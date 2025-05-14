@@ -102,7 +102,7 @@ const MainMenu = () => {
         onClose={() => setIsLogoutModalOpen(false)}
         title="Confirm Logout"
         size="xs">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           <p>Are you sure you want to log out?</p>
           <div className="flex justify-end gap-2">
             <Button
