@@ -30,7 +30,13 @@ export class MachineService {
     };
   }
 
-  async getMachine(id: string) {}
+  async getMachine(id: string) {
+    const machine = await Machine.findByPk(id);
+    if (!machine) {
+      throw new Error("Machine not found");
+    }
+    return machine;
+  }
 
   async createMachine(machine: ICreateMachineDto) {
     await this.validateMachine(machine);

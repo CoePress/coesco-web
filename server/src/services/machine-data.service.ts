@@ -1,4 +1,4 @@
-import { buildQuery, createDateRange } from "@/utils";
+import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
 import { getSocketService, machineService } from ".";
@@ -309,6 +309,17 @@ export class MachineDataService {
     };
   }
 
+  async createMachineStatus(machineStatus: IMachineStatus) {
+    this.validateMachineStatus(machineStatus);
+
+    await MachineStatus.update(
+      { endTime: new Date() },
+      { where: { machineId: machineStatus.machineId } }
+    );
+
+    await MachineStatus.create(machineStatus);
+  }
+
   async pollMachines() {
     const machines = await machineService.getMachines({});
 
@@ -368,11 +379,50 @@ export class MachineDataService {
     }
   }
 
-  async processMazakData(data: any) {
+  async pollMazakData(machineId: string): Promise<ICurrentState> {
+    const machine = await machineService.getMachine(machineId);
+
+    if (!machine) {
+      throw new Error("Machine not found");
+    }
+
+    if (!machine.connectionHost || !machine.connectionPort) {
+      throw new Error("Machine is missing connection information");
+    }
+
+    const url = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
+    const data = await this.fetchMachineData(url);
+    const newState = await this.processMazakData(data, machineId);
+
+    const cachedState = await this.services.redisService.get(
+      `machine:${machineId}:current_state`
+    );
+
+    const hasChanged = await hasThisChanged(newState, cachedState);
+
+    if (hasChanged) {
+      await this.services.redisService.set(
+        `machine:${machineId}:current_state`,
+        newState,
+        this.STATE_HISTORY_TTL
+      );
+
+      await this.createMachineStatus({
+        ...newState,
+        machineId,
+        startTime: new Date(),
+        endTime: null,
+      });
+    }
+
+    return newState;
+  }
+
+  async processMazakData(data: any, machineId: string) {
     return data;
   }
 
-  async processFanucData(data: any) {
+  async processFanucData(data: any, machineId: string) {
     return data;
   }
 
@@ -521,5 +571,26 @@ export class MachineDataService {
     };
 
     return formatters[scale as keyof typeof formatters]?.(date) || "";
+  }
+
+  private validateMachineStatus(machineStatus: IMachineStatus) {
+    if (!machineStatus.machineId) {
+      throw new Error("Machine ID is required");
+    }
+
+    if (!machineStatus.startTime) {
+      throw new Error("Start time is required");
+    }
+
+    if (!machineStatus.state) {
+      throw new Error("State is required");
+    }
+
+    if (
+      machineStatus.endTime &&
+      machineStatus.endTime < machineStatus.startTime
+    ) {
+      throw new Error("End time cannot be before start time");
+    }
   }
 }
