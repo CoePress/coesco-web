@@ -1,22 +1,22 @@
-import {
-  Plus,
-  Filter,
-  Download,
-  MoreHorizontal,
-  Loader,
-  Search,
-} from "lucide-react";
+import { Plus, MoreHorizontal, Search, RefreshCcw } from "lucide-react";
 import { useState } from "react";
 
-import { StatusBadge, PageHeader, Table, Button } from "@/components";
-import { formatDate } from "@/utils";
+import { StatusBadge, PageHeader, Table, Button, Loader } from "@/components";
 import { TableColumn } from "@/components/v1/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
+import useSyncEmployees from "@/hooks/admin/use-sync-employees";
 import { IEmployee } from "@/utils/types";
+import { format } from "date-fns";
 
 const Employees = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+
+  const {
+    syncEmployees,
+    loading: syncLoading,
+    error: syncError,
+  } = useSyncEmployees();
 
   const columns: TableColumn<IEmployee>[] = [
     {
@@ -55,21 +55,11 @@ const Employees = () => {
       ),
     },
     {
-      key: "status",
-      header: "Status",
-      render: (value) => (
-        <StatusBadge
-          label={value as string}
-          variant={value === "ACTIVE" ? "success" : "default"}
-        />
-      ),
-    },
-    {
       key: "lastLogin",
       header: "Last Login",
       render: (value) => {
         if (!value) return null;
-        return formatDate(value as string);
+        return format(value as string, "MM/dd/yyyy hh:mm a");
       },
     },
     {
@@ -88,15 +78,15 @@ const Employees = () => {
     limit,
   });
 
-  if (loading) {
+  if (loading || syncLoading) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
+      <div className="w-full flex flex-1 flex-col items-center justify-center">
         <Loader />
       </div>
     );
   }
 
-  if (error) {
+  if (error || syncError) {
     return <div>Error</div>;
   }
 
@@ -121,16 +111,13 @@ const Employees = () => {
               />
             </div>
             <Button
-              onClick={() => {}}
+              onClick={() => {
+                syncEmployees();
+              }}
+              disabled={syncLoading}
               variant="secondary-outline">
-              <Filter size={16} />
-              Filters
-            </Button>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
+              <RefreshCcw size={16} />
+              Sync
             </Button>
             <Button onClick={() => {}}>
               <Plus size={16} />

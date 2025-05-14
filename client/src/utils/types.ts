@@ -145,20 +145,23 @@ export enum EmployeeStatus {
   TERMINATED = "TERMINATED",
 }
 
+export enum EmployeeRole {
+  INACTIVE = "INACTIVE",
+  ADMIN = "ADMIN",
+  MANAGER = "MANAGER",
+  EMPLOYEE = "EMPLOYEE",
+}
+
 export interface IEmployee extends IBaseEntity {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
-  role: string;
   jobTitle: string;
-  departmentIds?: string[];
-  primaryDepartmentId?: string;
-  reportsToId?: string;
-  status: EmployeeStatus;
+  departmentId?: string;
   microsoftId?: string;
-  hiredAt?: Date;
-  terminatedAt?: Date;
+  role: EmployeeRole;
+  lastLogin?: Date;
 }
 
 export enum MachineState {

@@ -134,21 +134,6 @@ export class AuthService implements IAuthService {
     };
   }
 
-  async logout(refreshToken: string): Promise<IAuthResponse> {
-    if (!refreshToken) {
-      throw new UnauthorizedError("Refresh token is required");
-    }
-
-    const decoded = verify(refreshToken, config.jwt.secret) as {
-      userId: string;
-    };
-    await Auth.update(
-      { isActive: false },
-      { where: { userId: decoded.userId } }
-    );
-    return {} as IAuthResponse;
-  }
-
   async session(accessToken: string): Promise<IAuthResponse> {
     if (!accessToken) {
       throw new UnauthorizedError("Access token is required");
@@ -205,7 +190,6 @@ export class AuthService implements IAuthService {
         lastName: "User",
         email: "test@example.com",
         jobTitle: "Test Job",
-        departmentId: "",
         role: EmployeeRole.EMPLOYEE,
       });
     }
@@ -218,7 +202,6 @@ export class AuthService implements IAuthService {
       auth = await Auth.create({
         id: uuidv4(),
         email: "test@example.com",
-        password: "",
         userId: testEmployee.id,
         userType: UserType.INTERNAL,
         isActive: true,

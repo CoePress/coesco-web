@@ -18,7 +18,7 @@ const useSyncEmployees = () => {
       setSuccess(response.data);
     } catch (error) {
       if (error instanceof AxiosError) {
-        setError(error.response?.data.message);
+        setError(error.response?.data.message || "Failed to fetch employees");
       } else {
         setError("An error occurred. Please try again.");
       }

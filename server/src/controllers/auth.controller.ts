@@ -10,6 +10,7 @@ export class AuthController {
       const response = await authService.login(email, password);
 
       res.cookie("accessToken", response.token, config.cookieOptions);
+      res.cookie("refreshToken", response.refreshToken, config.cookieOptions);
 
       res.json(response);
     } catch (error) {
@@ -35,6 +36,7 @@ export class AuthController {
       );
 
       res.cookie("accessToken", response.token, config.cookieOptions);
+      res.cookie("refreshToken", response.refreshToken, config.cookieOptions);
 
       res.json(response);
     } catch (error) {
@@ -44,9 +46,7 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const refreshToken = req.cookies.refreshToken;
-      await authService.logout(refreshToken);
-
+      res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
       res.json({ message: "Logged out successfully" });
@@ -74,6 +74,7 @@ export class AuthController {
       const response = await authService.testLogin();
 
       res.cookie("accessToken", response.token, config.cookieOptions);
+      res.cookie("refreshToken", response.refreshToken, config.cookieOptions);
 
       res.json(response);
     } catch (error) {

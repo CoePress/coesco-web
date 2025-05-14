@@ -42,6 +42,5 @@ export interface IAuthService {
   login(email: string, password: string): Promise<IAuthResponse>;
   loginWithMicrosoft(): Promise<string>;
   callback(code: string, sessionId: string): Promise<IAuthResponse>;
-  logout(sessionId: string): Promise<IAuthResponse>;
   session(sessionId: string, authSession: string): Promise<IAuthResponse>;
 }
