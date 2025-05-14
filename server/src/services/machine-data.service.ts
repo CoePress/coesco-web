@@ -1,10 +1,11 @@
 import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
-import { getSocketService, machineService } from ".";
+import { cacheService, getSocketService, machineService } from ".";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
+import { xml2json } from "xml-js";
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
@@ -379,7 +380,7 @@ export class MachineDataService {
     }
   }
 
-  async pollMazakData(machineId: string): Promise<ICurrentState> {
+  async pollMazakData(machineId: string) {
     const machine = await machineService.getMachine(machineId);
 
     if (!machine) {
@@ -394,18 +395,14 @@ export class MachineDataService {
     const data = await this.fetchMachineData(url);
     const newState = await this.processMazakData(data, machineId);
 
-    const cachedState = await this.services.redisService.get(
+    const cachedState = await cacheService.get(
       `machine:${machineId}:current_state`
     );
 
     const hasChanged = await hasThisChanged(newState, cachedState);
 
     if (hasChanged) {
-      await this.services.redisService.set(
-        `machine:${machineId}:current_state`,
-        newState,
-        this.STATE_HISTORY_TTL
-      );
+      await cacheService.set(`machine:${machineId}:current_state`, newState);
 
       await this.createMachineStatus({
         ...newState,
@@ -416,6 +413,20 @@ export class MachineDataService {
     }
 
     return newState;
+  }
+
+  private async fetchMachineData(url: string): Promise<any> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      const xml = await response.text();
+      return JSON.parse(xml2json(xml, { compact: true, spaces: 2 }));
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async processMazakData(data: any, machineId: string) {
@@ -574,23 +585,18 @@ export class MachineDataService {
   }
 
   private validateMachineStatus(machineStatus: IMachineStatus) {
-    if (!machineStatus.machineId) {
-      throw new Error("Machine ID is required");
-    }
+    if (!machineStatus.machineId)
+      throw new BadRequestError("Machine ID is required");
 
-    if (!machineStatus.startTime) {
-      throw new Error("Start time is required");
-    }
+    if (!machineStatus.startTime)
+      throw new BadRequestError("Start time is required");
 
-    if (!machineStatus.state) {
-      throw new Error("State is required");
-    }
+    if (!machineStatus.state) throw new BadRequestError("State is required");
 
     if (
       machineStatus.endTime &&
       machineStatus.endTime < machineStatus.startTime
-    ) {
-      throw new Error("End time cannot be before start time");
-    }
+    )
+      throw new BadRequestError("End time cannot be before start time");
   }
 }

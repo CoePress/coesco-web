@@ -39,7 +39,10 @@ export class SocketService {
 
       socket.on("data", async (data) => {
         logger.info(`Fanuc data received: ${JSON.stringify(data)}`);
-        const processedData = await machineDataService.processFanucData(data);
+        const processedData = await machineDataService.processFanucData(
+          data,
+          data.machineId
+        );
         if (processedData) {
           this.broadcastDashboardMetrics(processedData);
           this.broadcastMachineStates(processedData);
