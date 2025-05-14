@@ -1,23 +1,40 @@
 import { useState } from "react";
-import {
-  FileText,
-  Mail,
-  Clock,
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Copy,
-  RefreshCcw,
-  Send,
-  Settings,
-} from "lucide-react";
+import { FileText, Mail, Clock, Plus, RefreshCcw, Send } from "lucide-react";
 
-import { Button, Card, PageHeader } from "@/components";
+import { Button, Card, PageHeader, Modal } from "@/components";
 
 const Reports = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [scheduleTime, setScheduleTime] = useState("06:00");
+  const [scheduleType, setScheduleType] = useState<
+    "daily" | "weekly" | "monthly"
+  >("daily");
+  const [selectedDay, setSelectedDay] = useState<number>(1); // 1-7 for weekly
+  const [selectedDate, setSelectedDate] = useState<number>(1); // 1-31 for monthly
+  const [timezone, setTimezone] = useState("America/New_York");
+
+  const timezones = [
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Anchorage",
+    "America/Adak",
+    "Pacific/Honolulu",
+  ];
+
+  const weekDays = [
+    { value: 1, label: "Monday" },
+    { value: 2, label: "Tuesday" },
+    { value: 3, label: "Wednesday" },
+    { value: 4, label: "Thursday" },
+    { value: 5, label: "Friday" },
+    { value: 6, label: "Saturday" },
+    { value: 7, label: "Sunday" },
+  ];
 
   const reportTemplates = [
     {
@@ -120,7 +137,7 @@ const Reports = () => {
               <RefreshCcw size={16} />
               Refresh
             </Button>
-            <Button>
+            <Button onClick={() => setIsScheduleModalOpen(true)}>
               <Plus size={16} />
               New Report
             </Button>
@@ -130,23 +147,12 @@ const Reports = () => {
 
       <div className="p-2 gap-2 flex flex-col flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 flex-1">
-          <div className="space-y-2">
-            <Card>
+          <div className="space-y-2 flex flex-col">
+            <Card className="flex-1 flex flex-col">
               <div className="p-2 border-b flex items-center justify-between">
                 <h3 className="text-sm font-medium text-text-muted">
                   Report Templates
                 </h3>
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search templates..."
-                    className="pl-8 pr-2 py-1 text-sm bg-surface rounded border border-border focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
               </div>
               <div className="h-[calc(50vh-200px)] overflow-y-auto">
                 <div className="divide-y">
@@ -188,7 +194,7 @@ const Reports = () => {
               </div>
             </Card>
 
-            <Card>
+            <Card className="flex-1 flex flex-col">
               <div className="p-2 border-b">
                 <h3 className="text-sm font-medium text-text-muted">
                   Sent Reports
@@ -260,7 +266,7 @@ const Reports = () => {
                     ? "Report Details"
                     : "Preview"}
                 </h3>
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   {selectedTemplate && (
                     <>
                       <Button
@@ -293,7 +299,7 @@ const Reports = () => {
                       </Button>
                     </>
                   )}
-                </div>
+                </div> */}
               </div>
               <div className="flex-1 overflow-y-auto">
                 {selectedTemplate ? (
@@ -395,6 +401,177 @@ const Reports = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        title="Schedule Report"
+        size="md">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">
+              Report Template
+            </label>
+            <select className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+              {reportTemplates.map((template) => (
+                <option
+                  key={template.id}
+                  value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">
+              Schedule
+            </label>
+            <select
+              value={scheduleType}
+              onChange={(e) =>
+                setScheduleType(
+                  e.target.value as "daily" | "weekly" | "monthly"
+                )
+              }
+              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          {scheduleType === "weekly" && (
+            <div>
+              <label className="text-sm text-text-muted mb-2 block">
+                Day of Week
+              </label>
+              <select
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(Number(e.target.value))}
+                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                {weekDays.map((day) => (
+                  <option
+                    key={day.value}
+                    value={day.value}>
+                    {day.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {scheduleType === "monthly" && (
+            <div>
+              <label className="text-sm text-text-muted mb-2 block">
+                Day of Month
+              </label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(Number(e.target.value))}
+                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
+                  <option
+                    key={date}
+                    value={date}>
+                    {date}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">Time</label>
+            <div className="flex gap-2">
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+              />
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                {timezones.map((tz) => (
+                  <option
+                    key={tz}
+                    value={tz}>
+                    {tz.replace("America/", "")}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">
+              Recipients
+            </label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add email address"
+                  className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value) {
+                      setSelectedRecipients([
+                        ...selectedRecipients,
+                        e.currentTarget.value,
+                      ]);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+                <Button
+                  variant="secondary-outline"
+                  onClick={(e: any) => {
+                    const input = e.currentTarget
+                      .previousElementSibling as HTMLInputElement;
+                    if (input.value) {
+                      setSelectedRecipients([
+                        ...selectedRecipients,
+                        input.value,
+                      ]);
+                      input.value = "";
+                    }
+                  }}>
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedRecipients.map((email) => (
+                  <div
+                    key={email}
+                    className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-1 text-sm">
+                    <span>{email}</span>
+                    <button
+                      onClick={() =>
+                        setSelectedRecipients(
+                          selectedRecipients.filter((e) => e !== email)
+                        )
+                      }
+                      className="text-text-muted hover:text-text">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsScheduleModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button>Schedule Report</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

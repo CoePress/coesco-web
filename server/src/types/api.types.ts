@@ -29,3 +29,13 @@ export interface IQueryBuilderResult {
   offset?: number;
   limit?: number;
 }
+
+export interface IApiKey {
+  id: string;
+  key: string;
+  ownerId: string;
+  name: string;
+  createdAt: Date;
+  expiresAt?: Date;
+  scopes: string[];
+}

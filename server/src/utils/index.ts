@@ -277,3 +277,52 @@ export const validateUuid = (uuid: string): boolean => {
     uuid
   );
 };
+
+export const generateApiKey = ({
+  length = 32,
+  prefix = "",
+  segments = 4,
+  segmentLength = 8,
+  encoding = "base64",
+} = {}) => {
+  const crypto = require("crypto");
+
+  const bytesNeeded = Math.ceil((length * 3) / 4);
+  const randomBytes = crypto.randomBytes(bytesNeeded);
+
+  let randomString;
+  switch (encoding.toLowerCase()) {
+    case "hex":
+      randomString = randomBytes.toString("hex");
+      break;
+    case "url-safe":
+      randomString = randomBytes
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      break;
+    case "base64":
+    default:
+      randomString = randomBytes.toString("base64");
+      break;
+  }
+
+  randomString = randomString.slice(0, length);
+
+  if (segments > 1 && segmentLength > 0) {
+    const formattedSegments = [];
+    for (
+      let i = 0;
+      i < segments && i * segmentLength < randomString.length;
+      i++
+    ) {
+      formattedSegments.push(
+        randomString.slice(i * segmentLength, (i + 1) * segmentLength)
+      );
+    }
+    randomString = formattedSegments.join("-");
+  }
+
+  return prefix ? `${prefix}-${randomString}` : randomString;
+};
