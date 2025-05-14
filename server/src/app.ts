@@ -72,4 +72,4 @@ app.use(errorHandler);
 export { httpServer, io };
 export default app;
 
-// this is just a test
+// this is a server side test
