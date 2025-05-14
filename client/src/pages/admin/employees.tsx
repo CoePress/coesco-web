@@ -1,16 +1,28 @@
-import { Plus, MoreHorizontal, RefreshCcw } from "lucide-react";
+import { Plus, RefreshCcw } from "lucide-react";
 import { useState } from "react";
 
-import { StatusBadge, PageHeader, Table, Button, Loader } from "@/components";
+import {
+  StatusBadge,
+  PageHeader,
+  Table,
+  Button,
+  Loader,
+  Modal,
+} from "@/components";
 import { TableColumn } from "@/components/v1/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
-import { IEmployee } from "@/utils/types";
+import { IEmployee, EmployeeRole } from "@/utils/types";
 import { format } from "date-fns";
 
 const Employees = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<IEmployee | null>(
+    null
+  );
+  const [selectedRole, setSelectedRole] = useState<string>("");
 
   const {
     syncEmployees,
@@ -64,11 +76,18 @@ const Employees = () => {
     },
     {
       key: "actions",
-      header: "",
-      render: () => (
-        <button onClick={(e) => e.stopPropagation()}>
-          <MoreHorizontal size={16} />
-        </button>
+      header: "Actions",
+      render: (_, row) => (
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={() => {
+            setSelectedEmployee(row);
+            setSelectedRole(row.role);
+            setIsEditModalOpen(true);
+          }}>
+          Edit
+        </Button>
       ),
     },
   ];
@@ -137,6 +156,51 @@ const Employees = () => {
         totalPages={pagination.totalPages}
         onPageChange={setPage}
       />
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Employee Role"
+        size="xs">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">
+              Employee
+            </label>
+            <div className="block w-full rounded-md border border-border px-3 py-2 text-sm text-text-muted bg-surface">
+              {selectedEmployee?.firstName} {selectedEmployee?.lastName}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-text-muted mb-2 block">Role</label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+              <option value={EmployeeRole.ADMIN}>Admin</option>
+              <option value={EmployeeRole.MANAGER}>Manager</option>
+              <option value={EmployeeRole.EMPLOYEE}>Employee</option>
+              <option value={EmployeeRole.INACTIVE}>Inactive</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: Implement role update logic
+                setIsEditModalOpen(false);
+              }}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

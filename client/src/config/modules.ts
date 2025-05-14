@@ -38,8 +38,10 @@ import {
 } from "@/pages";
 
 import PopupWindow from "@/components/shared/popup-window";
+import { __dev__ } from "./env";
 
 export type Module = {
+  sequence: number;
   path: string;
   label: string;
   icon: LucideIcon;
@@ -62,6 +64,7 @@ export type Popup = {
 };
 
 const salesModule: Module = {
+  sequence: 1,
   path: "/sales",
   label: "Sales",
   icon: DollarSign,
@@ -138,6 +141,7 @@ const salesModule: Module = {
 };
 
 const warehouseModule: Module = {
+  sequence: 2,
   path: "/warehouse",
   label: "Warehouse",
   icon: Warehouse,
@@ -154,6 +158,7 @@ const warehouseModule: Module = {
 };
 
 const productionModule: Module = {
+  sequence: 3,
   path: "/production",
   label: "Production",
   icon: Factory,
@@ -182,6 +187,7 @@ const productionModule: Module = {
 };
 
 const adminModule: Module = {
+  sequence: 4,
   path: "/admin",
   label: "Admin",
   icon: Shield,
@@ -209,11 +215,20 @@ const adminModule: Module = {
   popups: [],
 };
 
-const modules = {
+const devModules = {
   salesModule,
   warehouseModule,
-  productionModule,
-  adminModule,
 };
+
+const unorderedModules = {
+  adminModule,
+  productionModule,
+
+  ...(__dev__ ? devModules : {}),
+};
+
+const modules = Object.values(unorderedModules).sort(
+  (a, b) => a.sequence - b.sequence
+);
 
 export default modules;

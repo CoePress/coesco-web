@@ -12,6 +12,11 @@
 - [] Record program history
 - [] Record alarm history
 
+## To Do Later
+
+- [] Sort by table columns
+- [] Sticky table header
+
 ## Urls
 
 - cpec.com (website)

@@ -79,7 +79,7 @@ const Table = <T extends Record<string, any>>({
                 <th
                   key={column.key}
                   scope="col"
-                  className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider`}>
+                  className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-nowrap`}>
                   {column.header}
                 </th>
               ))}

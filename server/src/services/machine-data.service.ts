@@ -306,10 +306,6 @@ export class MachineDataService {
     return [];
   }
 
-  async processFanucData(data: any) {
-    return data;
-  }
-
   async pollMachines() {
     const machines = await machineService.getMachines({});
 
@@ -367,6 +363,14 @@ export class MachineDataService {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
+  }
+
+  async processMazakData(data: any) {
+    return data;
+  }
+
+  async processFanucData(data: any) {
+    return data;
   }
 
   // Private methods

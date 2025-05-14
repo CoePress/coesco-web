@@ -1,7 +1,6 @@
 import env from "@/config/env";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { useLocation } from "react-router-dom";
 
 type SocketContextType = {
   isConnected: boolean;
@@ -19,23 +18,14 @@ type SocketProviderProps = {
   listenTo: string[];
 };
 
-export const SocketProvider = ({ children }: SocketProviderProps) => {
+export const SocketProvider = ({ children, listenTo }: SocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
-  const location = useLocation();
 
+  // Single connection effect
   useEffect(() => {
-    // Only handle login page disconnection
-    if (location.pathname === "/login") {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-      setIsConnected(false);
-      return;
-    }
-
-    // Connect only if not connected and not on login page
-    if (!socketRef.current && location.pathname !== "/login") {
+    if (!socketRef.current) {
       socketRef.current = io(`${env.VITE_BASE_URL}/client`, {
         reconnectionDelayMax: 10000,
         transports: ["websocket", "polling"],
@@ -48,14 +38,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }
 
     return () => {
-      // Only disconnect on unmount, not on every location change
-      if (location.pathname === "/login") {
-        socketRef.current?.disconnect();
-        socketRef.current = null;
-      }
+      socketRef.current?.disconnect();
+      socketRef.current = null;
     };
-  }, [location.pathname]);
+  }, []); // Empty dependency array - only run once
 
+  // Handle machine states
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -70,6 +58,31 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("machine_states", handleMachineStates);
     };
   }, []);
+
+  // Handle dynamic event subscriptions
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    // Remove all existing listeners
+    socket.removeAllListeners();
+
+    // Re-add the essential listeners
+    socket.on("connect", () => setIsConnected(true));
+    socket.on("disconnect", () => setIsConnected(false));
+    socket.on("machine_states", (data: any[]) => setMachineStates(data));
+
+    // Add dynamic listeners
+    listenTo.forEach((event) => {
+      socket.on(event, () => {
+        // Handle dynamic events here if needed
+      });
+    });
+
+    return () => {
+      socket.removeAllListeners();
+    };
+  }, [listenTo]); // Only re-run when listenTo changes
 
   const emit = (event: string, data: any) => {
     if (socketRef.current?.connected) {

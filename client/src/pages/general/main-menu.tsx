@@ -31,7 +31,15 @@ const MainMenu = () => {
           Good morning, {user?.firstName}
         </h1>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div
+          className="grid gap-2 justify-center"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(
+              Object.values(modules).filter((m) => m.status === "active")
+                .length,
+              4
+            )}, auto)`,
+          }}>
           {Object.entries(modules).map(([key, module]) => (
             <div key={key}>
               {module.status === "active" ? (
@@ -59,7 +67,7 @@ const MainMenu = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 w-max mx-auto">
           <Button
             variant="secondary-outline"
             onClick={() => navigate("/chat")}>
