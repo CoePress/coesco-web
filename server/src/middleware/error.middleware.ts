@@ -1,4 +1,4 @@
-import { __dev__ } from "@/config/config";
+import { __prod__ } from "@/config/config";
 import { logger } from "@/utils/logger";
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
@@ -47,21 +47,24 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  logger.error(`${err.name}: ${err.message}`, { stack: err.stack });
+  logger.error(
+    `${err.name}: ${err.message}`,
+    __prod__ ? undefined : { stack: err.stack }
+  );
 
   let statusCode = 500;
   let errorMessage: string | Array<{ field: string; message: string }> =
     err.message;
-  let errorDetails = __dev__
-    ? {
+  let errorDetails = __prod__
+    ? undefined
+    : {
         stack: err.stack
           ?.split("\n")
           .map((line) => line.trim())
           .filter((line) => line.startsWith("at "))
           .map((line) => line.replace(/at\s+/, ""))
           .join("\n"),
-      }
-    : undefined;
+      };
 
   if (err instanceof ZodError) {
     statusCode = 400;
