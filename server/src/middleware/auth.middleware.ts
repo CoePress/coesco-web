@@ -20,7 +20,7 @@ export const protect = asyncHandler(
     const { accessToken, refreshToken } = req.cookies;
 
     if (!accessToken && !refreshToken) {
-      throw new UnauthorizedError("Unauthorized - No tokens");
+      throw new UnauthorizedError("Unauthorized");
     }
 
     const decoded = decode(accessToken) as { userId: string; userType: string };

@@ -466,17 +466,19 @@ export class MachineDataService {
     return newState;
   }
 
-  private async fetchMachineData(url: string): Promise<string> {
+  async fetchMachineData(url: string) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000);
+    const timeout = setTimeout(() => controller.abort(), 2000);
 
     try {
-      const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok)
-        throw new BadRequestError(`HTTP error: ${response.status}`);
-      return await response.text();
-    } finally {
-      clearTimeout(timeoutId);
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      return response.text();
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
     }
   }
 
