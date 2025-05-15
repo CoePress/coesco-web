@@ -57,6 +57,11 @@ type MachineDetailsProps = {
 };
 
 const MachineDetails = ({ machine }: MachineDetailsProps) => {
+  const { machineStates } = useSocket();
+  const realTimeData = machineStates.find(
+    (state) => state.machineId === machine.id
+  );
+
   const sampleProgramHistory = [
     { label: "Program 1", timestamp: "06:00", duration: 10 },
     { label: "Program 2", timestamp: "06:10", duration: 20 },
@@ -84,19 +89,21 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="font-medium text-right">{machine.name}</span>
             <span className="text-muted-foreground">Status:</span>
             <span className="font-medium text-right uppercase">
-              {machine.status || "-"}
+              {realTimeData?.state || machine.status || "-"}
             </span>
             <span className="text-muted-foreground">Controller:</span>
             <span className="font-medium text-right">
-              {machine.controller || "-"}
+              {realTimeData?.controller || machine.controller || "-"}
             </span>
             <span className="text-muted-foreground">Execution:</span>
             <span className="font-medium text-right">
-              {machine.execution || "-"}
+              {realTimeData?.execution || machine.execution || "-"}
             </span>
             <span className="text-muted-foreground">Updated:</span>
             <span className="font-medium text-right">
-              {new Date(machine.lastUpdated || Date.now()).toLocaleString()}
+              {new Date(
+                realTimeData?.timestamp || machine.lastUpdated || Date.now()
+              ).toLocaleString()}
             </span>
           </div>
         </Card>
@@ -108,20 +115,22 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right truncate max-w-[200px]">
-              {machine.program || "-"}
+              {realTimeData?.program || machine.program || "-"}
             </span>
 
             <span className="text-muted-foreground">Tool:</span>
             <span className="font-medium text-right truncate max-w-[200px]">
-              {machine.tool || "-"}
+              {realTimeData?.tool || machine.tool || "-"}
             </span>
             <span className="text-muted-foreground">Spindle (RPM):</span>
             <span className="font-medium text-right">
-              {machine.spindleSpeed || "-"}
+              {realTimeData?.metrics?.spindleSpeed ||
+                machine.spindleSpeed ||
+                "-"}
             </span>
             <span className="text-muted-foreground">Spindle (Load):</span>
             <span className="font-medium text-right">
-              {machine.spindleLoad || "-"}
+              {realTimeData?.metrics?.spindleLoad || machine.spindleLoad || "-"}
             </span>
           </div>
         </Card>
