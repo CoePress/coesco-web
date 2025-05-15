@@ -419,7 +419,7 @@ export class MachineDataService {
     return newState;
   }
 
-  private async fetchMachineData(url: string): Promise<any> {
+  private async fetchMachineData(url: string): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1000);
 
@@ -427,47 +427,47 @@ export class MachineDataService {
       const response = await fetch(url, { signal: controller.signal });
       if (!response.ok)
         throw new BadRequestError(`HTTP error: ${response.status}`);
-      const xml = await response.text();
-      return JSON.parse(xml2json(xml, { compact: true, spaces: 2 }));
+      return await response.text();
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  async processMazakData(data: any): Promise<any> {
-    const streams = data.MTConnectStreams?.Streams?.DeviceStream;
-    if (!streams) {
-      return this.offlineState;
-    }
-
-    // Helper function to find value by dataItemId
-    const findValueById = (items: any[], id: string) => {
-      const item = items.find((i: any) => i._attributes?.dataItemId === id);
-      return item?._text || "UNKNOWN";
+  async processMazakData(xml: string): Promise<any> {
+    const extractValue = (xml: string, dataItemId: string): string => {
+      const regex = new RegExp(
+        `<[^>]*dataItemId="${dataItemId}"[^>]*>([^<]*)</[^>]*>`
+      );
+      const match = xml.match(regex);
+      return match ? match[1] : "UNKNOWN";
     };
 
-    // Get all events and samples from all components
-    const allEvents = streams.ComponentStream.flatMap((stream: any) =>
-      stream.Events ? Object.values(stream.Events) : []
-    );
-    const allSamples = streams.ComponentStream.flatMap((stream: any) =>
-      stream.Samples ? Object.values(stream.Samples) : []
-    );
+    const cleanProgramComment = (comment: string): string => {
+      return comment
+        .replace(/&quot;/g, '"')
+        .replace(/[&<>]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
 
-    // Get program info from path1
-    const program = findValueById(allEvents, "pgm");
-    const programComment = findValueById(allEvents, "pcmt");
-    const tool = findValueById(allEvents, "tid");
+    // Get program info
+    const program = extractValue(xml, "pgm");
+    const programComment = cleanProgramComment(extractValue(xml, "pcmt"));
+    const tool = extractValue(xml, "tid");
 
-    // Get feed rate from path1
-    const feedRate = findValueById(allSamples, "pf");
+    // Get execution state
+    const execution = extractValue(xml, "exec");
+    const controller = extractValue(xml, "mode");
 
-    // Get spindle speeds from all available spindles
+    // Get feed rate
+    const feedRate = extractValue(xml, "pf");
+
+    // Get spindle speeds
     const spindleSpeeds = [
-      findValueById(allSamples, "cs"), // C axis
-      findValueById(allSamples, "cs2"), // C2 axis
-      findValueById(allSamples, "cs3"), // C3 axis
-      findValueById(allSamples, "cs4"), // C4 axis
+      extractValue(xml, "cs"), // C axis
+      extractValue(xml, "cs2"), // C2 axis
+      extractValue(xml, "cs3"), // C3 axis
+      extractValue(xml, "cs4"), // C4 axis
     ].filter((speed) => speed !== "UNKNOWN" && speed !== "UNAVAILABLE");
 
     const spindleSpeed =
@@ -476,14 +476,14 @@ export class MachineDataService {
         : 0;
 
     // Get axis positions
-    const xPos = findValueById(allSamples, "xp");
-    const yPos = findValueById(allSamples, "yp");
-    const zPos = findValueById(allSamples, "zp");
+    const xPos = extractValue(xml, "xp");
+    const yPos = extractValue(xml, "yp");
+    const zPos = extractValue(xml, "zp");
 
     return {
       state: MachineState.ACTIVE,
-      execution: findValueById(allEvents, "exec"),
-      controller: findValueById(allEvents, "mode"),
+      execution,
+      controller,
       program: `${program} - ${programComment}`,
       tool,
       metrics: {

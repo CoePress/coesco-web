@@ -107,12 +107,12 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           </h4>
           <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
             <span className="text-muted-foreground">Program:</span>
-            <span className="font-medium text-right">
-              {machine.currentProgram || "-"}
+            <span className="font-medium text-right truncate max-w-[200px]">
+              {machine.program || "-"}
             </span>
 
             <span className="text-muted-foreground">Tool:</span>
-            <span className="font-medium text-right">
+            <span className="font-medium text-right truncate max-w-[200px]">
               {machine.tool || "-"}
             </span>
             <span className="text-muted-foreground">Spindle (RPM):</span>
@@ -754,22 +754,22 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 min-w-0 flex-1">
                         <Box
                           size={12}
-                          className="text-text-muted"
+                          className="text-text-muted flex-shrink-0"
                         />
                         <span className="truncate text-xs">
                           {machine.program || "-"}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1 justify-end">
+                      <div className="flex items-center gap-1 justify-end flex-shrink-0 ml-2">
                         <Clock
                           size={12}
                           className="text-text-muted"
                         />
-                        <span className="text-xs">
+                        <span className="text-xs whitespace-nowrap">
                           {machine.startTime
                             ? formatDistance(
                                 new Date(machine.startTime),
