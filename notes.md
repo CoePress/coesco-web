@@ -17,6 +17,8 @@
 - [] Remove program comment prefix if no comment
 - [] Update machine card time to be duration of current state
 - [] Add spindle load
+- [] Setup Test env
+- [] Steal sidebar from v1 
 
 ## Urls
 

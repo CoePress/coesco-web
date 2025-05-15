@@ -1,6 +1,6 @@
 import { format, startOfToday, subDays, startOfDay } from "date-fns";
 import { useState } from "react";
-
+import { Calendar } from "lucide-react";
 import { Button } from "@/components";
 
 type DatePickerProps = {
@@ -129,15 +129,17 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
   }
 
   return (
-    <div className="relative">
+    <>
       <Button
         variant="secondary-outline"
-        onClick={() => setDatePickerOpen(!datePickerOpen)}>
-        <span>{dateLabel}</span>
+        onClick={() => setDatePickerOpen(!datePickerOpen)}
+        className="flex items-center gap-2 w-full sm:w-auto">
+        <Calendar size={16} />
+        <span className="hidden sm:inline">{dateLabel}</span>
       </Button>
 
       {datePickerOpen && (
-        <div className="absolute right-0 mt-2 w-96 rounded bg-foreground p-2 shadow-lg ring-1 ring-border ring-opacity-5">
+        <div className="absolute right-0 mt-2 w-96 rounded bg-foreground p-2 shadow-lg ring-1 ring-border ring-opacity-5 z-50">
           <label
             htmlFor="startDate"
             className="text-sm text-text-muted mb-2 block">
@@ -196,7 +198,7 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

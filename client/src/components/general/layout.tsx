@@ -222,7 +222,7 @@ const Layout = ({ user, children }: LayoutProps) => {
   const defaultModule = currentModule?.path.replace("/", "") || "sales";
 
   return (
-    <div className="flex h-screen w-screen bg-background text-foreground font-sans antialiased">
+    <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
       <Sidebar
         isOpen={isSidebarOpen}
         theme={theme}

@@ -8,6 +8,7 @@ import {
   Map,
   Loader,
   Box,
+  Calendar,
 } from "lucide-react";
 import {
   LineChart,
@@ -518,34 +519,35 @@ const Dashboard = () => {
       <PageHeader
         title="Production Dashboard"
         description="Real-time machine status and metrics"
-        actions={
-          <>
-            <Button
-              variant="secondary-outline"
-              size="sm"
-              onClick={() => setIsMapModalOpen(true)}>
-              <Map size={16} />
-              Map
-            </Button>
-            <Button
-              variant="secondary-outline"
-              size="sm"
-              onClick={() => setIsTimelineModalOpen(true)}>
-              <Clock size={16} />
-              Timeline
-            </Button>
-            <DatePicker
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
-            <Button
-              variant="primary"
-              onClick={refresh}>
-              <RefreshCcw size={16} />
-              Refresh
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Map",
+            variant: "secondary-outline",
+            icon: <Map size={16} />,
+            onClick: () => setIsMapModalOpen(true),
+          },
+          {
+            type: "button",
+            label: "Timeline",
+            variant: "secondary-outline",
+            icon: <Clock size={16} />,
+            onClick: () => setIsTimelineModalOpen(true),
+          },
+          {
+            type: "datepicker",
+            dateRange: dateRange,
+            setDateRange: setDateRange,
+            icon: <Calendar size={16} />,
+          },
+          {
+            type: "button",
+            label: "Refresh",
+            variant: "primary",
+            icon: <RefreshCcw size={16} />,
+            onClick: refresh,
+          },
+        ]}
       />
 
       {error && (
