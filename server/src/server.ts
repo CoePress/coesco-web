@@ -4,7 +4,7 @@ import { config } from "./config/config";
 import { sequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
-import { initializeSocketService } from "./services";
+import { initializeSocketService, machineDataService } from "./services";
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
@@ -20,6 +20,9 @@ httpServer.listen(config.port, async () => {
 
 const gracefulShutdown = () => {
   logger.info("Shutting down gracefully...");
+
+  machineDataService.stopPolling();
+
   httpServer.close(async () => {
     logger.info("HTTP server closed");
     try {

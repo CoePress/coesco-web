@@ -2,13 +2,31 @@ import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
 import { cacheService, getSocketService, machineService } from ".";
-import { BadRequestError } from "@/middleware/error.middleware";
+import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
 import { xml2json } from "xml-js";
+import { MachineConnectionType } from "@/types/schema.types";
+import { logger } from "@/utils/logger";
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
+  private readonly offlineState = {
+    state: MachineState.OFFLINE,
+    execution: "UNKNOWN",
+    controller: "UNKNOWN",
+    program: "UNKNOWN",
+    tool: "UNKNOWN",
+    metrics: {
+      spindleSpeed: 0,
+      feedRate: 0,
+      axisPositions: {
+        X: 0,
+        Y: 0,
+        Z: 0,
+      },
+    },
+  };
 
   constructor() {
     this.startPolling();
@@ -323,46 +341,32 @@ export class MachineDataService {
 
   async pollMachines() {
     const machines = await machineService.getMachines({});
-
-    const possibleStates = [
-      MachineState.ACTIVE,
-      MachineState.ALARM,
-      MachineState.IDLE,
-      MachineState.MAINTENANCE,
-      MachineState.OFFLINE,
-    ];
-
-    const possiblePrograms = ["Program 1", "Program 2", "Program 3"];
-
     const current = [];
+
     for (const machine of machines.data) {
-      const data = {
-        machineId: machine.id,
-        machineName: machine.name,
-        machineType: machine.type,
-        state:
-          possibleStates[Math.floor(Math.random() * possibleStates.length)],
-        execution: "UNKNOWN",
-        controller: "UNKNOWN",
-        program:
-          possiblePrograms[Math.floor(Math.random() * possiblePrograms.length)],
-        tool: "UNKNOWN",
-        metrics: {
-          spindleSpeed: 0,
-          feedRate: 0,
-          axisPositions: {
-            X: 0,
-            Y: 0,
-            Z: 0,
-          },
-        },
-      };
-      current.push(data);
+      if (machine.connectionType === MachineConnectionType.MTCONNECT) {
+        try {
+          const data = await this.pollMazakData(machine.id);
+          current.push({
+            machineId: machine.id,
+            machineName: machine.name,
+            machineType: machine.type,
+            ...data,
+          });
+        } catch (error) {
+          logger.error(`Error polling machine ${machine.id}:`, error);
+          current.push({
+            machineId: machine.id,
+            machineName: machine.name,
+            machineType: machine.type,
+            ...this.offlineState,
+          });
+        }
+      }
     }
+
     const socketService = getSocketService();
-
     socketService.broadcastMachineStates(current);
-
     return current;
   }
 
@@ -384,33 +388,33 @@ export class MachineDataService {
     const machine = await machineService.getMachine(machineId);
 
     if (!machine) {
-      throw new Error("Machine not found");
+      throw new NotFoundError("Machine not found");
     }
 
     if (!machine.connectionHost || !machine.connectionPort) {
-      throw new Error("Machine is missing connection information");
+      throw new BadRequestError("Machine is missing connection information");
     }
 
     const url = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
     const data = await this.fetchMachineData(url);
-    const newState = await this.processMazakData(data, machineId);
+    const newState = await this.processMazakData(data);
 
-    const cachedState = await cacheService.get(
-      `machine:${machineId}:current_state`
-    );
+    // const cachedState = await cacheService.get(
+    //   `machine:${machineId}:current_state`
+    // );
 
-    const hasChanged = await hasThisChanged(newState, cachedState);
+    // const hasChanged = await hasThisChanged(newState, cachedState);
 
-    if (hasChanged) {
-      await cacheService.set(`machine:${machineId}:current_state`, newState);
+    // if (hasChanged) {
+    //   await cacheService.set(`machine:${machineId}:current_state`, newState);
 
-      await this.createMachineStatus({
-        ...newState,
-        machineId,
-        startTime: new Date(),
-        endTime: null,
-      });
-    }
+    //   await this.createMachineStatus({
+    //     ...newState,
+    //     machineId,
+    //     startTime: new Date(),
+    //     endTime: null,
+    //   });
+    // }
 
     return newState;
   }
@@ -421,7 +425,8 @@ export class MachineDataService {
 
     try {
       const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      if (!response.ok)
+        throw new BadRequestError(`HTTP error: ${response.status}`);
       const xml = await response.text();
       return JSON.parse(xml2json(xml, { compact: true, spaces: 2 }));
     } finally {
@@ -429,12 +434,63 @@ export class MachineDataService {
     }
   }
 
-  async processMazakData(data: any, machineId: string) {
-    return data;
+  async processMazakData(data: any): Promise<any> {
+    const streams = data.MTConnectStreams?.Streams?.DeviceStream;
+    if (!streams) {
+      return this.offlineState;
+    }
+
+    const path = this.findComponent(streams, "Path");
+    if (!path) {
+      return this.offlineState;
+    }
+
+    return {
+      state: MachineState.ACTIVE,
+      execution: path.Events?.Execution?._text || "",
+      controller: path.Events?.Controller?._text || "",
+      program: path.Events?.Program?._text || "",
+      tool: path.Events?.ToolNumber?._text || "",
+      metrics: {
+        spindleSpeed: parseFloat(path.Samples?.SpindleSpeed?._text) || 0,
+        feedRate: parseFloat(path.Samples?.FeedRate?._text) || 0,
+        axisPositions: {
+          X: 0,
+          Y: 0,
+          Z: 0,
+        },
+      },
+    };
   }
 
   async processFanucData(data: any, machineId: string) {
     return data;
+  }
+
+  private extractAxesData(streams: any): any[] {
+    const axes: any[] = [];
+    const linear = this.findComponent(streams, "Linear");
+
+    if (Array.isArray(linear)) {
+      linear.forEach((axis) => {
+        if (axis._attributes?.name) {
+          axes.push({
+            label: axis._attributes.name,
+            position: parseFloat(axis.Samples?.Position?._text) || 0,
+          });
+        }
+      });
+    }
+
+    return axes;
+  }
+
+  private findComponent(streams: any, type: string) {
+    return Array.isArray(streams.ComponentStream)
+      ? streams.ComponentStream.find(
+          (s: any) => s._attributes?.component === type
+        )
+      : streams.ComponentStream;
   }
 
   // Private methods
