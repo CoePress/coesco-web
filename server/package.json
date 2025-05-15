@@ -1,10 +1,11 @@
 {
   "name": "@machining/server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
-    "start": "npm run build && node dist/index.js",
+    "build": "tsc && tsc-alias",
+    "start": "npm run build && node dist/server.js",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts"
   },
   "keywords": [],
