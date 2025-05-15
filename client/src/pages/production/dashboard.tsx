@@ -89,19 +89,19 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="font-medium text-right">{machine.name}</span>
             <span className="text-muted-foreground">Status:</span>
             <span className="font-medium text-right uppercase">
-              {realTimeData?.state || machine.status || "-"}
+              {realTimeData?.state || "-"}
             </span>
             <span className="text-muted-foreground">Controller:</span>
             <span className="font-medium text-right">
-              {realTimeData?.controller || machine.controller || "-"}
+              {realTimeData?.controller || "-"}
             </span>
             <span className="text-muted-foreground">Execution:</span>
             <span className="font-medium text-right">
-              {realTimeData?.execution || machine.execution || "-"}
+              {realTimeData?.execution || "-"}
             </span>
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right truncate max-w-[200px]">
-              {realTimeData?.program || machine.program || "-"}
+              {realTimeData?.program || "-"}
             </span>
           </div>
         </Card>
@@ -113,21 +113,19 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
             <span className="text-muted-foreground">Tool:</span>
             <span className="font-medium text-right">
-              {realTimeData?.tool || machine.tool || "-"}
+              {realTimeData?.tool || "-"}
             </span>
-            <span className="text-muted-foreground">Spindle (RPM):</span>
+            <span className="text-muted-foreground">Spindle RPM:</span>
             <span className="font-medium text-right">
-              {realTimeData?.metrics?.spindleSpeed ||
-                machine.spindleSpeed ||
-                "-"}
+              {realTimeData?.metrics?.spindleSpeed || "-"}
             </span>
-            <span className="text-muted-foreground">Spindle (Load):</span>
+            <span className="text-muted-foreground">Spindle Load:</span>
             <span className="font-medium text-right">
-              {realTimeData?.metrics?.spindleLoad || machine.spindleLoad || "-"}
+              {realTimeData?.metrics?.spindleLoad || "-"}
             </span>
             <span className="text-muted-foreground">Feed Rate:</span>
             <span className="font-medium text-right">
-              {realTimeData?.metrics?.feedRate || machine.feedRate || "-"}
+              {realTimeData?.metrics?.feedRate || "-"}
             </span>
             <span className="text-muted-foreground">Position:</span>
             <span className="font-medium text-right">

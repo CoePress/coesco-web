@@ -1,29 +1,27 @@
 import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
-import { cacheService, getSocketService, machineService } from ".";
+import { getSocketService, machineService } from ".";
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
-import { xml2json } from "xml-js";
 import { MachineConnectionType } from "@/types/schema.types";
-import { logger } from "@/utils/logger";
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
   private readonly offlineState = {
     state: MachineState.OFFLINE,
-    execution: "UNKNOWN",
-    controller: "UNKNOWN",
-    program: "UNKNOWN",
-    tool: "UNKNOWN",
+    execution: null,
+    controller: null,
+    program: null,
+    tool: null,
     metrics: {
-      spindleSpeed: 0,
-      feedRate: 0,
+      spindleSpeed: null,
+      feedRate: null,
       axisPositions: {
-        X: 0,
-        Y: 0,
-        Z: 0,
+        X: null,
+        Y: null,
+        Z: null,
       },
     },
   };
@@ -434,12 +432,12 @@ export class MachineDataService {
   }
 
   async processMazakData(xml: string): Promise<any> {
-    const extractValue = (xml: string, dataItemId: string): string => {
+    const extractValue = (xml: string, dataItemId: string): string | null => {
       const regex = new RegExp(
         `<[^>]*dataItemId="${dataItemId}"[^>]*>([^<]*)</[^>]*>`
       );
       const match = xml.match(regex);
-      return match ? match[1] : "UNKNOWN";
+      return match ? match[1] : null;
     };
 
     const cleanProgramComment = (comment: string): string => {
@@ -452,7 +450,7 @@ export class MachineDataService {
 
     // Get program info
     const program = extractValue(xml, "pgm");
-    const programComment = cleanProgramComment(extractValue(xml, "pcmt"));
+    const programComment = cleanProgramComment(extractValue(xml, "pcmt") || "");
     const tool = extractValue(xml, "tid");
 
     // Get execution state
@@ -468,11 +466,11 @@ export class MachineDataService {
       extractValue(xml, "cs2"), // C2 axis
       extractValue(xml, "cs3"), // C3 axis
       extractValue(xml, "cs4"), // C4 axis
-    ].filter((speed) => speed !== "UNKNOWN" && speed !== "UNAVAILABLE");
+    ].filter((speed) => speed !== null);
 
     const spindleSpeed =
       spindleSpeeds.length > 0
-        ? Math.max(...spindleSpeeds.map((s) => parseFloat(s)))
+        ? Math.max(...spindleSpeeds.map((s) => parseFloat(s || "0")))
         : 0;
 
     // Get axis positions
@@ -488,11 +486,11 @@ export class MachineDataService {
       tool,
       metrics: {
         spindleSpeed,
-        feedRate: parseFloat(feedRate) || 0,
+        feedRate: parseFloat(feedRate || "0"),
         axisPositions: {
-          X: parseFloat(xPos) || 0,
-          Y: parseFloat(yPos) || 0,
-          Z: parseFloat(zPos) || 0,
+          X: parseFloat(xPos || "0"),
+          Y: parseFloat(yPos || "0"),
+          Z: parseFloat(zPos || "0"),
         },
       },
     };
