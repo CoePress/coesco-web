@@ -5,22 +5,17 @@ import fs from "fs";
 import ejs from "ejs";
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
+import { config } from "@/config/config";
 
 export class EmailService implements IEmailService {
   private templatesPath = path.join(__dirname, "..", "templates", "emails");
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Initialize email transporter
     this.transporter = nodemailer.createTransport({
-      // Configure based on your email provider
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      host: config.smtp.host,
+      port: config.smtp.port,
+      tls: { rejectUnauthorized: true },
     });
   }
 
