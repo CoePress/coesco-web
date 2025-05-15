@@ -351,7 +351,7 @@ export interface IMicrosoftUser {
 }
 
 export interface IEmailTemplate {
-  id: string;
+  slug: string;
   name: string;
   html: string;
   subject: string;

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FileText, Mail, Clock, Plus, RefreshCcw, Send } from "lucide-react";
 
 import { Button, Card, PageHeader, Modal } from "@/components";
+import useGetTemplates from "@/hooks/emails/use-get-templates";
+import { instance } from "@/utils";
 
 const Reports = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -15,6 +17,9 @@ const Reports = () => {
   const [selectedDay, setSelectedDay] = useState<number>(1); // 1-7 for weekly
   const [selectedDate, setSelectedDate] = useState<number>(1); // 1-31 for monthly
   const [timezone, setTimezone] = useState("America/New_York");
+  const [templateHtml, setTemplateHtml] = useState<string | null>(null);
+
+  const { templates, loading, error, refresh } = useGetTemplates();
 
   const timezones = [
     "America/New_York",
@@ -34,64 +39,6 @@ const Reports = () => {
     { value: 5, label: "Friday" },
     { value: 6, label: "Saturday" },
     { value: 7, label: "Sunday" },
-  ];
-
-  const reportTemplates = [
-    {
-      id: "daily-oee",
-      name: "Daily OEE Report",
-      description: "Daily Overall Equipment Effectiveness metrics",
-      icon: <FileText size={20} />,
-      category: "Production",
-      lastUsed: "2 days ago",
-      popular: true,
-    },
-    {
-      id: "machine-status",
-      name: "Machine Status Report",
-      description: "Detailed machine status and performance metrics",
-      icon: <FileText size={20} />,
-      category: "Production",
-      lastUsed: "1 week ago",
-      popular: true,
-    },
-    {
-      id: "alarm-summary",
-      name: "Alarm Summary Report",
-      description: "Summary of machine alarms and alerts",
-      icon: <FileText size={20} />,
-      category: "Production",
-      lastUsed: "3 days ago",
-      popular: false,
-    },
-    {
-      id: "utilization",
-      name: "Utilization Report",
-      description: "Machine utilization and efficiency metrics",
-      icon: <FileText size={20} />,
-      category: "Production",
-      lastUsed: "1 month ago",
-      popular: true,
-    },
-    // Add more templates to demonstrate scrolling
-    {
-      id: "quality-metrics",
-      name: "Quality Metrics Report",
-      description: "Quality control and inspection metrics",
-      icon: <FileText size={20} />,
-      category: "Quality",
-      lastUsed: "5 days ago",
-      popular: false,
-    },
-    {
-      id: "maintenance-schedule",
-      name: "Maintenance Schedule",
-      description: "Upcoming and completed maintenance tasks",
-      icon: <FileText size={20} />,
-      category: "Maintenance",
-      lastUsed: "1 day ago",
-      popular: true,
-    },
   ];
 
   const sentReports = [
@@ -124,6 +71,150 @@ const Reports = () => {
     },
   ];
 
+  useEffect(() => {
+    const fetchTemplateHtml = async () => {
+      if (selectedTemplate) {
+        try {
+          const { data } = await instance.get(
+            `/email/templates/${selectedTemplate}`
+          );
+          setTemplateHtml(data.data.html);
+        } catch (error) {
+          console.error("Error fetching template HTML:", error);
+          setTemplateHtml(null);
+        }
+      } else {
+        setTemplateHtml(null);
+      }
+    };
+
+    fetchTemplateHtml();
+  }, [selectedTemplate]);
+
+  const TemplatePreview = ({ html }: { html: string }) => {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const isDark = document.documentElement.classList.contains("dark");
+
+    useEffect(() => {
+      if (iframeRef.current) {
+        const iframe = iframeRef.current;
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+
+        if (doc) {
+          doc.open();
+          doc.write(`
+            <!DOCTYPE html>
+            <html class="${isDark ? "dark" : ""}">
+              <head>
+                <style>
+                  :root {
+                    --primary: #e8a80c;
+                    --secondary: #c4930d;
+                    --background: #f8f8f8;
+                    --foreground: #ffffff;
+                    --surface: #f0f0f0;
+                    --text: #202020;
+                    --text-muted: #707070;
+                    --border: #d4d4d4;
+                    --error: #d93026;
+                    --success: #05843e;
+                    --warning: #ffa500;
+                    --info: #0284c7;
+                    --shadow: rgba(0, 0, 0, 0.08);
+                  }
+
+                  .dark {
+                    --primary: #e8a80c;
+                    --secondary: #ffc547;
+                    --background: #121212;
+                    --foreground: #1c1c1c;
+                    --surface: #262626;
+                    --text: #efefef;
+                    --text-muted: #a0a0a0;
+                    --border: #404040;
+                    --error: #f44336;
+                    --success: #34d399;
+                    --warning: #ffab00;
+                    --info: #38bdf8;
+                    --shadow: rgba(0, 0, 0, 0.25);
+                  }
+
+                  body { 
+                    margin: 0; 
+                    padding: 0;
+                    font-family: "Roboto Mono", monospace;
+                    background: var(--background);
+                    color: var(--text);
+                  }
+
+                  /* Scrollbar styles */
+                  ::-webkit-scrollbar {
+                    width: 12px;
+                    height: 12px;
+                  }
+
+                  ::-webkit-scrollbar-track {
+                    background: var(--background);
+                    border-radius: 8px;
+                  }
+
+                  ::-webkit-scrollbar-thumb {
+                    background: var(--border);
+                    border-radius: 8px;
+                    border: 3px solid var(--background);
+                  }
+
+                  ::-webkit-scrollbar-thumb:hover {
+                    background: var(--primary);
+                  }
+
+                  /* Firefox */
+                  * {
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--border) var(--background);
+                  }
+
+                  /* For all elements with scrollable overflow */
+                  *:not(body)::-webkit-scrollbar {
+                    width: 12px;
+                    height: 12px;
+                  }
+
+                  *:not(body)::-webkit-scrollbar-track {
+                    background: var(--background);
+                    border-radius: 8px;
+                  }
+
+                  *:not(body)::-webkit-scrollbar-thumb {
+                    background: var(--border);
+                    border-radius: 8px;
+                    border: 3px solid var(--background);
+                  }
+
+                  *:not(body)::-webkit-scrollbar-thumb:hover {
+                    background: var(--primary);
+                  }
+                </style>
+              </head>
+              <body>
+                ${html}
+              </body>
+            </html>
+          `);
+          doc.close();
+        }
+      }
+    }, [html, isDark]);
+
+    return (
+      <iframe
+        ref={iframeRef}
+        className="w-full h-full border-0"
+        title="Template Preview"
+      />
+    );
+  };
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
@@ -133,7 +224,8 @@ const Reports = () => {
           <>
             <Button
               variant="secondary-outline"
-              size="sm">
+              size="sm"
+              onClick={refresh}>
               <RefreshCcw size={16} />
               Refresh
             </Button>
@@ -154,42 +246,49 @@ const Reports = () => {
                   Report Templates
                 </h3>
               </div>
-              <div className="h-[calc(50vh-200px)] overflow-y-auto">
-                <div className="divide-y">
-                  {reportTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      className={`p-2 cursor-pointer transition-all hover:bg-surface/80 ${
-                        selectedTemplate === template.id ? "bg-surface" : ""
-                      }`}
-                      onClick={() => {
-                        setSelectedTemplate(template.id);
-                        setSelectedReport(null);
-                      }}>
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-surface">
-                          {template.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-text-muted truncate">
-                            {template.name}
-                          </h3>
-                          <p className="text-xs text-text-muted mt-1">
-                            {template.description}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Clock
-                              size={12}
-                              className="text-text-muted"
-                            />
-                            <span className="text-xs text-text-muted">
-                              {template.lastUsed}
-                            </span>
+              <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-auto">
+                  <div className="divide-y">
+                    {loading ? (
+                      <div className="p-4 text-center text-text-muted">
+                        Loading templates...
+                      </div>
+                    ) : error ? (
+                      <div className="p-4 text-center text-red-500">
+                        {error}
+                      </div>
+                    ) : (
+                      templates?.map((template) => (
+                        <div
+                          key={template.slug}
+                          className={`p-2 cursor-pointer transition-all hover:bg-surface/80 ${
+                            selectedTemplate === template.slug
+                              ? "bg-surface"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            setSelectedTemplate(template.slug);
+                            setSelectedReport(null);
+                          }}>
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-surface">
+                              <FileText size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-medium text-text-muted truncate">
+                                {template.name}
+                              </h3>
+                              {template.subject && (
+                                <p className="text-xs text-text-muted mt-1">
+                                  {template.subject}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -200,57 +299,59 @@ const Reports = () => {
                   Sent Reports
                 </h3>
               </div>
-              <div className="h-[calc(50vh-200px)] overflow-y-auto">
-                <div className="divide-y">
-                  {sentReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="p-2 hover:bg-surface/50 cursor-pointer"
-                      onClick={() => {
-                        setSelectedReport(report);
-                        setSelectedTemplate(null);
-                      }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-text-muted truncate">
-                            {report.name}
-                          </h4>
-                          <p className="text-xs text-text-muted mt-1">
-                            {report.template}
-                          </p>
+              <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-auto">
+                  <div className="divide-y">
+                    {sentReports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="p-2 hover:bg-surface/50 cursor-pointer"
+                        onClick={() => {
+                          setSelectedReport(report);
+                          setSelectedTemplate(null);
+                        }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-text-muted truncate">
+                              {report.name}
+                            </h4>
+                            <p className="text-xs text-text-muted mt-1">
+                              {report.template}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">
+                              <Send
+                                size={12}
+                                className="mr-1"
+                              />
+                              Sent
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">
-                            <Send
+                        <div className="flex items-center gap-4 mt-2">
+                          <div className="flex items-center gap-2">
+                            <Mail
                               size={12}
-                              className="mr-1"
+                              className="text-text-muted"
                             />
-                            Sent
-                          </span>
+                            <span className="text-xs text-text-muted">
+                              {report.recipients.join(", ")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock
+                              size={12}
+                              className="text-text-muted"
+                            />
+                            <span className="text-xs text-text-muted">
+                              {new Date(report.sentAt).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-2">
-                          <Mail
-                            size={12}
-                            className="text-text-muted"
-                          />
-                          <span className="text-xs text-text-muted">
-                            {report.recipients.join(", ")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock
-                            size={12}
-                            className="text-text-muted"
-                          />
-                          <span className="text-xs text-text-muted">
-                            {new Date(report.sentAt).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -266,55 +367,27 @@ const Reports = () => {
                     ? "Report Details"
                     : "Preview"}
                 </h3>
-                {/* <div className="flex items-center gap-2">
-                  {selectedTemplate && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm">
-                        <Settings size={16} />
-                        Configure
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm">
-                        <Send size={16} />
-                        Send Report
-                      </Button>
-                    </>
-                  )}
-                  {selectedReport && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm">
-                        <Eye size={16} />
-                        View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm">
-                        <Copy size={16} />
-                        Duplicate
-                      </Button>
-                    </>
-                  )}
-                </div> */}
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-hidden">
                 {selectedTemplate ? (
-                  <div className="pt-2">
-                    <div className="aspect-[8.5/11] bg-surface rounded-lg border border-dashed flex items-center justify-center">
-                      <div className="text-center">
-                        <FileText
-                          size={48}
-                          className="mx-auto text-text-muted mb-2"
-                        />
-                        <p className="text-sm text-text-muted">
-                          Template preview will be shown here
-                        </p>
+                  <div className="h-full">
+                    {templateHtml ? (
+                      <div className="h-full overflow-auto">
+                        <TemplatePreview html={templateHtml} />
                       </div>
-                    </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center">
+                          <FileText
+                            size={48}
+                            className="mx-auto text-text-muted mb-2"
+                          />
+                          <p className="text-sm text-text-muted">
+                            Loading template preview...
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : selectedReport ? (
                   <div className="p-2 space-y-2">
@@ -413,10 +486,10 @@ const Reports = () => {
               Report Template
             </label>
             <select className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-              {reportTemplates.map((template) => (
+              {templates?.map((template) => (
                 <option
-                  key={template.id}
-                  value={template.id}>
+                  key={template.slug}
+                  value={template.slug}>
                   {template.name}
                 </option>
               ))}

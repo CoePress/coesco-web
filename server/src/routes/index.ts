@@ -5,6 +5,7 @@ import fs from "fs";
 import { protect } from "@/middleware/auth.middleware";
 import authRoutes from "./auth.routes";
 import configRoutes from "./config.routes";
+import emailRoutes from "./email.routes";
 import employeeRoutes from "./employee.routes";
 import machineDataRoutes from "./machine-data.routes";
 import machineRoutes from "./machine.routes";
@@ -14,6 +15,7 @@ const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);
+router.use("/email", protect, emailRoutes);
 router.use("/employees", protect, employeeRoutes);
 router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);

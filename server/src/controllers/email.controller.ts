@@ -5,7 +5,10 @@ export class EmailController {
   async getTemplates(req: Request, res: Response, next: NextFunction) {
     try {
       const templates = await emailService.getTemplates();
-      res.status(200).json(templates);
+      res.status(200).json({
+        success: true,
+        data: templates,
+      });
     } catch (error) {
       next(error);
     }
@@ -13,8 +16,12 @@ export class EmailController {
 
   async getTemplate(req: Request, res: Response, next: NextFunction) {
     try {
-      const template = await emailService.getTemplate(req.params.id);
-      res.status(200).json(template);
+      const { slug } = req.params;
+      const template = await emailService.getTemplate(slug);
+      res.status(200).json({
+        success: true,
+        data: template,
+      });
     } catch (error) {
       next(error);
     }
@@ -31,7 +38,8 @@ export class EmailController {
 
   async deleteTemplate(req: Request, res: Response, next: NextFunction) {
     try {
-      const template = await emailService.deleteTemplate(req.params.id);
+      const { slug } = req.params;
+      const template = await emailService.deleteTemplate(slug);
       res.status(200).json(template);
     } catch (error) {
       next(error);
