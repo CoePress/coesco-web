@@ -354,7 +354,7 @@ export class MachineDataService {
             ...data,
           });
         } catch (error) {
-          logger.error(`Error polling machine ${machine.id}:`, error);
+          // logger.error(`Error polling machine ${machine.id}:`, error);
           current.push({
             machineId: machine.id,
             machineName: machine.name,
@@ -440,24 +440,59 @@ export class MachineDataService {
       return this.offlineState;
     }
 
-    const path = this.findComponent(streams, "Path");
-    if (!path) {
-      return this.offlineState;
-    }
+    // Helper function to find value by dataItemId
+    const findValueById = (items: any[], id: string) => {
+      const item = items.find((i: any) => i._attributes?.dataItemId === id);
+      return item?._text || "UNKNOWN";
+    };
+
+    // Get all events and samples from all components
+    const allEvents = streams.ComponentStream.flatMap((stream: any) =>
+      stream.Events ? Object.values(stream.Events) : []
+    );
+    const allSamples = streams.ComponentStream.flatMap((stream: any) =>
+      stream.Samples ? Object.values(stream.Samples) : []
+    );
+
+    // Get program info from path1
+    const program = findValueById(allEvents, "pgm");
+    const programComment = findValueById(allEvents, "pcmt");
+    const tool = findValueById(allEvents, "tid");
+
+    // Get feed rate from path1
+    const feedRate = findValueById(allSamples, "pf");
+
+    // Get spindle speeds from all available spindles
+    const spindleSpeeds = [
+      findValueById(allSamples, "cs"), // C axis
+      findValueById(allSamples, "cs2"), // C2 axis
+      findValueById(allSamples, "cs3"), // C3 axis
+      findValueById(allSamples, "cs4"), // C4 axis
+    ].filter((speed) => speed !== "UNKNOWN" && speed !== "UNAVAILABLE");
+
+    const spindleSpeed =
+      spindleSpeeds.length > 0
+        ? Math.max(...spindleSpeeds.map((s) => parseFloat(s)))
+        : 0;
+
+    // Get axis positions
+    const xPos = findValueById(allSamples, "xp");
+    const yPos = findValueById(allSamples, "yp");
+    const zPos = findValueById(allSamples, "zp");
 
     return {
       state: MachineState.ACTIVE,
-      execution: path.Events?.Execution?._text || "",
-      controller: path.Events?.Controller?._text || "",
-      program: path.Events?.Program?._text || "",
-      tool: path.Events?.ToolNumber?._text || "",
+      execution: findValueById(allEvents, "exec"),
+      controller: findValueById(allEvents, "mode"),
+      program: `${program} - ${programComment}`,
+      tool,
       metrics: {
-        spindleSpeed: parseFloat(path.Samples?.SpindleSpeed?._text) || 0,
-        feedRate: parseFloat(path.Samples?.FeedRate?._text) || 0,
+        spindleSpeed,
+        feedRate: parseFloat(feedRate) || 0,
         axisPositions: {
-          X: 0,
-          Y: 0,
-          Z: 0,
+          X: parseFloat(xPos) || 0,
+          Y: parseFloat(yPos) || 0,
+          Z: parseFloat(zPos) || 0,
         },
       },
     };
