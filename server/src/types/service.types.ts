@@ -3,6 +3,7 @@ import {
   ICustomer,
   IEmailTemplate,
   IEmployee,
+  IInvoiceData,
   IMachine,
   IMachineOverview,
   IMachineStatus,
@@ -156,8 +157,24 @@ export interface IQuoteService {
 }
 
 export interface IEmailService {
-  getTemplate(id: string): Promise<IEmailTemplate>;
+  getTemplates(): Promise<IEmailTemplate[]>;
+  getTemplate(slug: string): Promise<IEmailTemplate>;
   saveTemplate(template: IEmailTemplate): Promise<IEmailTemplate>;
-  deleteTemplate(id: string): Promise<boolean>;
+  deleteTemplate(slug: string): Promise<boolean>;
+  renderTemplate(slug: string, data: any): Promise<string>;
+  generatePDF(
+    slug: string,
+    data: any,
+    outputPath?: string
+  ): Promise<Buffer | string>;
   sendEmail(options: ISendEmailOptions): Promise<boolean>;
+  sendEmailWithPDF(
+    options: ISendEmailOptions,
+    pdfFilename: string
+  ): Promise<boolean>;
+  sendInvoiceEmail(
+    to: string,
+    invoiceData: IInvoiceData,
+    options?: Partial<ISendEmailOptions>
+  ): Promise<boolean>;
 }

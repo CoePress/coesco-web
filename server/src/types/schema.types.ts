@@ -350,17 +350,99 @@ export interface IMicrosoftUser {
   department: string;
 }
 
+// schema.types.ts
 export interface IEmailTemplate {
   slug: string;
   name: string;
+  description?: string;
+  subject?: string;
   html: string;
-  subject: string;
+}
+
+export interface IEmailAttachment {
+  filename: string;
+  content?: string | Buffer;
+  path?: string;
+  contentType?: string;
+  cid?: string;
 }
 
 export interface ISendEmailOptions {
-  templateId: string;
+  template: string;
+  data: any;
   to: string | string[];
-  data: Record<string, any>;
-  cc?: string[];
-  bcc?: string[];
+  from?: string;
+  subject?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
+  attachments?: IEmailAttachment[];
 }
+
+export interface IInvoiceData {
+  // Company details
+  companyName: string;
+  companyStreet: string;
+  companyCity: string;
+  companyState: string;
+  companyZip: string;
+  companyCountry: string;
+  companyTaxId: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyWebsite: string;
+
+  // Invoice details
+  invoiceNumber: string;
+  invoiceDate: string;
+
+  // Client details
+  clientName: string;
+  clientStreet: string;
+  clientBuilding?: string;
+  clientCity: string;
+  clientState: string;
+  clientZip: string;
+  clientCountry: string;
+  clientAccountNumber?: string;
+  clientPurchaseOrder?: string;
+
+  // Line items
+  items: {
+    id: string;
+    description: string;
+    material: string;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+  }[];
+
+  // Totals
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  totalDue: number;
+
+  // Payment methods
+  wireTransfer?: {
+    bank: string;
+    accountName: string;
+    accountNumber: string;
+    routingNumber: string;
+    swift?: string;
+  };
+
+  checkPayment?: {
+    payableTo: string;
+    mailingAddress: string;
+  };
+
+  // Contact information
+  contactDepartment: string;
+  contactEmail: string;
+  contactPhone: string;
+
+  // Optional payment URL
+  payOnlineUrl?: string;
+}
+
+// service.types.ts

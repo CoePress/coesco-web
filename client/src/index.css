@@ -21,9 +21,8 @@
 }
 
 :root {
-  /* Light mode with your specified primary color and neutral grays */
   --primary: #e8a80c;
-  --secondary: #c4930d; /* Complementary darker yellow */
+  --secondary: #c4930d;
   --background: #f8f8f8;
   --foreground: #ffffff;
   --surface: #f0f0f0;
@@ -38,9 +37,8 @@
 }
 
 .dark {
-  /* Dark mode with complementary colors to your primary and neutral grays */
   --primary: #e8a80c;
-  --secondary: #ffc547; /* Complementary lighter yellow */
+  --secondary: #ffc547;
   --background: #121212;
   --foreground: #1c1c1c;
   --surface: #262626;

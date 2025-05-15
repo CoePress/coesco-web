@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice - <%= companyName %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* CSS Variables for theming */
+      :root {
+        --primary: #e8a80c;
+        --secondary: #c4930d;
+        --background: #f8f8f8;
+        --foreground: #ffffff;
+        --surface: #f0f0f0;
+        --text: #202020;
+        --text-muted: #707070;
+        --border: #d4d4d4;
+        --error: #d93026;
+        --success: #05843e;
+        --warning: #ffa500;
+        --info: #0284c7;
+        --shadow: rgba(0, 0, 0, 0.08);
+      }
+
+      /* Dark mode support for clients that support prefers-color-scheme */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary: #e8a80c;
+          --secondary: #ffc547;
+          --background: #121212;
+          --foreground: #1c1c1c;
+          --surface: #262626;
+          --text: #efefef;
+          --text-muted: #a0a0a0;
+          --border: #404040;
+          --error: #f44336;
+          --success: #34d399;
+          --warning: #ffab00;
+          --info: #38bdf8;
+          --shadow: rgba(0, 0, 0, 0.25);
+        }
+      }
+
+      /* Reset and base styles */
+      .coe-invoice * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Roboto Mono", monospace;
+      }
+
+      .coe-invoice {
+        background-color: var(--background);
+        color: var(--text);
+        line-height: 1.6;
+        font-size: 16px;
+        padding: 20px;
+      }
+
+      .coe-invoice__container {
+        max-width: 850px;
+        margin: 0 auto;
+        background-color: var(--foreground);
+        border: 1px solid var(--border);
+        padding: 40px;
+      }
+
+      /* Header styles */
+      .coe-invoice__header {
+        border-bottom: 3px solid var(--primary);
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
+
+      .coe-invoice__header-content {
+        display: table;
+        width: 100%;
+      }
+
+      .coe-invoice__logo {
+        display: table-cell;
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .coe-invoice__header-info {
+        display: table-cell;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      /* Address section */
+      .coe-invoice__addresses {
+        display: table;
+        width: 100%;
+        margin-bottom: 30px;
+      }
+
+      .coe-invoice__address {
+        display: table-cell;
+        width: 50%;
+        padding-right: 30px;
+        vertical-align: top;
+      }
+
+      .coe-invoice__address:last-child {
+        padding-right: 0;
+      }
+
+      .coe-invoice__address-label {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+      }
+
+      /* Invoice details */
+      .coe-invoice__details {
+        margin-bottom: 30px;
+      }
+
+      .coe-invoice__table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+      }
+
+      .coe-invoice__table th {
+        background-color: var(--surface);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary);
+      }
+
+      .coe-invoice__table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .coe-invoice__table tr:nth-child(even) {
+        background-color: var(--background);
+      }
+
+      /* Totals section */
+      .coe-invoice__totals {
+        width: 300px;
+        margin-left: auto;
+        margin-bottom: 30px;
+      }
+
+      .coe-invoice__total-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 8px;
+      }
+
+      .coe-invoice__total-label,
+      .coe-invoice__total-value {
+        display: table-cell;
+        padding: 8px 0;
+      }
+
+      .coe-invoice__total-value {
+        text-align: right;
+        font-weight: 600;
+      }
+
+      .coe-invoice__grand-total {
+        font-weight: 700;
+        font-size: 18px;
+        border-top: 2px solid var(--primary);
+        padding-top: 12px;
+      }
+
+      /* Payment section */
+      .coe-invoice__payment {
+        background-color: var(--surface);
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .coe-invoice__payment-methods {
+        display: table;
+        width: 100%;
+      }
+
+      .coe-invoice__payment-method {
+        display: table-cell;
+        width: 50%;
+        padding-right: 20px;
+        vertical-align: top;
+      }
+
+      .coe-invoice__payment-method:last-child {
+        padding-right: 0;
+      }
+
+      /* Footer */
+      .coe-invoice__footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .coe-invoice__button {
+        display: inline-block;
+        background-color: var(--primary);
+        color: white;
+        padding: 14px 28px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      /* Responsive adjustments */
+      @media screen and (max-width: 600px) {
+        .coe-invoice {
+          padding: 10px;
+        }
+
+        .coe-invoice__container {
+          padding: 20px;
+        }
+
+        .coe-invoice__header-content {
+          display: block;
+        }
+
+        .coe-invoice__logo {
+          display: block;
+          margin-bottom: 15px;
+        }
+
+        .coe-invoice__header-info {
+          display: block;
+          text-align: left;
+        }
+
+        .coe-invoice__addresses {
+          display: block;
+        }
+
+        .coe-invoice__address {
+          display: block;
+          width: 100%;
+          padding-right: 0;
+          margin-bottom: 30px;
+        }
+
+        .coe-invoice__table {
+          display: block;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .coe-invoice__table th,
+        .coe-invoice__table td {
+          min-width: 120px;
+        }
+
+        .coe-invoice__totals {
+          width: 100%;
+        }
+
+        .coe-invoice__payment-methods {
+          display: block;
+        }
+
+        .coe-invoice__payment-method {
+          display: block;
+          width: 100%;
+          padding-right: 0;
+          margin-bottom: 20px;
+        }
+
+        .coe-invoice__button {
+          display: block;
+          width: 100%;
+          text-align: center;
+        }
+      }
+
+      /* Add these styles for better table handling */
+      .coe-invoice__table {
+        min-width: 600px;
+      }
+
+      .coe-invoice__table-wrapper {
+        overflow-x: auto;
+        margin: 0 -20px;
+        padding: 0 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="coe-invoice">
+      <div class="coe-invoice__container">
+        <div class="coe-invoice__header">
+          <div class="coe-invoice__header-content">
+            <div class="coe-invoice__logo"><%= companyName %></div>
+            <div class="coe-invoice__header-info">
+              <div>Invoice #: <strong><%= invoiceNumber %></strong></div>
+              <div>Date: <strong><%= invoiceDate %></strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="coe-invoice__addresses">
+          <div class="coe-invoice__address">
+            <div class="coe-invoice__address-label">From</div>
+            <div>
+              <strong><%= companyName %></strong><br />
+              <%= companyStreet %><br />
+              <%= companyCity %>, <%= companyState %> <%= companyZip %><br />
+              <%= companyCountry %><br /><br />
+              Tax ID: <%= companyTaxId %><br />
+              Phone: <%= companyPhone %><br />
+              Email: <%= companyEmail %>
+            </div>
+          </div>
+
+          <div class="coe-invoice__address">
+            <div class="coe-invoice__address-label">Bill To</div>
+            <div>
+              <strong><%= clientName %></strong><br />
+              <%= clientStreet %><br />
+              <% if (clientBuilding) { %>
+              <%= clientBuilding %><br />
+              <% } %>
+              <%= clientCity %>, <%= clientState %> <%= clientZip %><br />
+              <%= clientCountry %><br /><br />
+              <% if (clientAccountNumber) { %>
+              Account #: <%= clientAccountNumber %><br />
+              <% } %>
+              <% if (clientPurchaseOrder) { %>
+              Purchase Order #: <%= clientPurchaseOrder %>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <div class="coe-invoice__details">
+          <div class="coe-invoice__table-wrapper">
+            <table class="coe-invoice__table">
+              <thead>
+                <tr>
+                  <th>Item #</th>
+                  <th>Description</th>
+                  <th>Material</th>
+                  <th style="text-align: center">Qty</th>
+                  <th style="text-align: right">Unit Price</th>
+                  <th style="text-align: right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% items.forEach(function(item) { %>
+                <tr>
+                  <td><%= item.id %></td>
+                  <td><%= item.description %></td>
+                  <td><%= item.material %></td>
+                  <td style="text-align: center"><%= item.quantity %></td>
+                  <td style="text-align: right"><%= formatCurrency(item.unitPrice) %></td>
+                  <td style="text-align: right"><%= formatCurrency(item.amount) %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="coe-invoice__totals">
+          <div class="coe-invoice__total-row">
+            <div class="coe-invoice__total-label">Subtotal</div>
+            <div class="coe-invoice__total-value"><%= formatCurrency(subtotal) %></div>
+          </div>
+          <div class="coe-invoice__total-row">
+            <div class="coe-invoice__total-label">Tax (<%= taxRate %>%)</div>
+            <div class="coe-invoice__total-value"><%= formatCurrency(taxAmount) %></div>
+          </div>
+          <div class="coe-invoice__total-row coe-invoice__grand-total">
+            <div class="coe-invoice__total-label">Total Due</div>
+            <div class="coe-invoice__total-value"><%= formatCurrency(totalDue) %></div>
+          </div>
+        </div>
+
+        <div class="coe-invoice__payment">
+          <div class="coe-invoice__payment-methods">
+            <% if (wireTransfer) { %>
+            <div class="coe-invoice__payment-method">
+              <strong>Wire Transfer</strong><br />
+              Bank: <%= wireTransfer.bank %><br />
+              Account Name: <%= wireTransfer.accountName %><br />
+              Account #: <%= wireTransfer.accountNumber %><br />
+              Routing #: <%= wireTransfer.routingNumber %><br />
+              <% if (wireTransfer.swift) { %>
+              SWIFT: <%= wireTransfer.swift %>
+              <% } %>
+            </div>
+            <% } %>
+            
+            <% if (checkPayment) { %>
+            <div class="coe-invoice__payment-method">
+              <strong>Check</strong><br />
+              Make checks payable to:<br />
+              <%= checkPayment.payableTo %><br /><br />
+              Mail to:<br />
+              <%= checkPayment.mailingAddress %>
+            </div>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="coe-invoice__footer">
+          <div>
+            Thank you for your business. If you have any questions concerning
+            this invoice, please contact:
+          </div>
+          <div style="margin-top: 10px">
+            <%= contactDepartment %><br />
+            <%= contactEmail %> | <%= contactPhone %>
+          </div>
+          <div style="margin-top: 15px">
+            <%= companyName %> | <%= companyStreet %>, <%= companyCity %>, <%= companyState %> <%= companyZip %> |
+            <%= companyPhone %> | <%= companyWebsite %>
+          </div>
+        </div>
+
+        <% if (payOnlineUrl) { %>
+        
+          href="<%= payOnlineUrl %>"
+          class="coe-invoice__button"
+          >Pay Invoice Online</a
+        >
+        <% } %>
+      </div>
+    </div>
+  </body>
+</html>

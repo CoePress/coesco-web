@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>Shipping Confirmation - Coe Press Equipment</title>
+    <style>
+      .coe-shipping * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      .coe-shipping {
+        background-color: #f8f8f8;
+        color: #202020;
+        line-height: 1.6;
+        font-size: 16px;
+        padding: 20px;
+      }
+      .coe-shipping__container {
+        max-width: 850px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border: 1px solid #d4d4d4;
+        padding: 40px;
+      }
+      .coe-shipping__header {
+        border-bottom: 3px solid #e8a80c;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
+      .coe-shipping__header-content {
+        display: table;
+        width: 100%;
+      }
+      .coe-shipping__logo {
+        display: table-cell;
+        font-size: 26px;
+        font-weight: 700;
+        color: #e8a80c;
+      }
+      .coe-shipping__header-info {
+        display: table-cell;
+        text-align: right;
+        font-size: 15px;
+      }
+      .coe-shipping__section-title {
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #e8a80c;
+        border-bottom: 1px solid #d4d4d4;
+        padding-bottom: 8px;
+        font-size: 17px;
+      }
+      .coe-shipping__box-highlight {
+        background-color: #f0f0f0;
+        border: 1px solid #d4d4d4;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .coe-shipping__tracking-info {
+        flex-grow: 1;
+      }
+      .coe-shipping__tracking-number {
+        font-weight: 600;
+        font-size: 18px;
+        margin-bottom: 6px;
+      }
+      .coe-shipping__tracking-carrier {
+        color: #707070;
+        font-size: 14px;
+      }
+      .coe-shipping__qr-placeholder {
+        width: 100px;
+        height: 100px;
+        background-color: #f8f8f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #707070;
+        border: 1px solid #d4d4d4;
+      }
+      .coe-shipping__info-grid {
+        display: table;
+        width: 100%;
+        margin-bottom: 30px;
+      }
+      .coe-shipping__info-column {
+        display: table-cell;
+        width: 50%;
+        vertical-align: top;
+        padding-right: 30px;
+      }
+      .coe-shipping__info-column:last-child {
+        padding-right: 0;
+      }
+      .coe-shipping__info-item {
+        margin-bottom: 12px;
+      }
+      .coe-shipping__info-label {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #707070;
+        margin-bottom: 4px;
+      }
+      .coe-shipping__info-value {
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      .coe-shipping__table-wrapper {
+        overflow-x: auto;
+        margin: 0 -20px;
+        padding: 0 20px;
+      }
+      .coe-shipping__table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+        min-width: 600px;
+      }
+      .coe-shipping__table th {
+        background-color: #f0f0f0;
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid #e8a80c;
+      }
+      .coe-shipping__table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #d4d4d4;
+      }
+      .coe-shipping__table tr:nth-child(even) {
+        background-color: #f8f8f8;
+      }
+      .coe-shipping__note {
+        font-size: 14px;
+        margin-top: 15px;
+        padding: 15px;
+        background-color: #f0f0f0;
+        border-left: 4px solid #0284c7;
+        border-radius: 0 4px 4px 0;
+        margin-bottom: 30px;
+      }
+      .coe-shipping__note strong {
+        color: #0284c7;
+      }
+      .coe-shipping__buttons {
+        margin-bottom: 30px;
+      }
+      .coe-shipping__button {
+        display: inline-block;
+        background-color: #e8a80c;
+        color: white;
+        padding: 14px 28px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 10px;
+        margin-right: 10px;
+        border-radius: 6px;
+        text-align: center;
+      }
+      .coe-shipping__button--secondary {
+        background-color: #f0f0f0;
+        color: #202020;
+        border: 1px solid #d4d4d4;
+      }
+      .coe-shipping__footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #d4d4d4;
+        color: #707070;
+        font-size: 14px;
+      }
+      @media screen and (max-width: 600px) {
+        .coe-shipping {
+          padding: 10px;
+        }
+        .coe-shipping__container {
+          padding: 20px;
+        }
+        .coe-shipping__header-content {
+          display: block;
+        }
+        .coe-shipping__logo {
+          display: block;
+          margin-bottom: 15px;
+        }
+        .coe-shipping__header-info {
+          display: block;
+          text-align: left;
+        }
+        .coe-shipping__info-grid {
+          display: block;
+        }
+        .coe-shipping__info-column {
+          display: block;
+          width: 100%;
+          padding-right: 0;
+          margin-bottom: 20px;
+        }
+        .coe-shipping__table {
+          display: block;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .coe-shipping__table th,
+        .coe-shipping__table td {
+          min-width: 120px;
+        }
+        .coe-shipping__button {
+          display: block;
+          width: 100%;
+          margin-right: 0;
+        }
+        .coe-shipping__box-highlight {
+          flex-direction: column;
+        }
+        .coe-shipping__qr-placeholder {
+          margin-top: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="coe-shipping">
+      <div class="coe-shipping__container">
+        <div class="coe-shipping__header">
+          <div class="coe-shipping__header-content">
+            <div class="coe-shipping__logo">Coe Press Equipment</div>
+            <div class="coe-shipping__header-info">
+              <div>Order #: <strong>ORD-2025-7842</strong></div>
+              <div>Ship Date: <strong>May 25, 2025</strong></div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="coe-shipping__section-title"
+          style="
+            color: #05843e;
+            border-left: 5px solid #05843e;
+            background: #f0f0f0;
+            padding: 18px 24px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 30px;
+          ">
+          Your Order Has Shipped!
+        </div>
+        <div class="coe-shipping__box-highlight">
+          <div class="coe-shipping__tracking-info">
+            <div class="coe-shipping__tracking-number">TRK# 7Z986X42501</div>
+            <div class="coe-shipping__tracking-carrier">
+              Express Freight Logistics
+            </div>
+          </div>
+          <div class="coe-shipping__qr-placeholder">QR Code</div>
+        </div>
+        <div class="coe-shipping__section-title">Delivery Information</div>
+        <div class="coe-shipping__info-grid">
+          <div class="coe-shipping__info-column">
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Shipping Address</div>
+              <div class="coe-shipping__info-value">
+                Automotive Stamping Solutions<br />
+                4200 Industrial Parkway<br />
+                Building C<br />
+                Troy, MI 48084
+              </div>
+            </div>
+          </div>
+          <div class="coe-shipping__info-column">
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Delivery Details</div>
+              <div class="coe-shipping__info-value">
+                Carrier: Express Freight Logistics<br />
+                Estimated Delivery: May 27, 2025<br />
+                Service Type: Express Commercial<br />
+                Signature Required: Yes
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coe-shipping__section-title">Shipment Contents</div>
+        <div class="coe-shipping__table-wrapper">
+          <table class="coe-shipping__table">
+            <thead>
+              <tr>
+                <th>Part No.</th>
+                <th>Description</th>
+                <th>Material</th>
+                <th style="text-align: center">Qty</th>
+                <th>Package</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CP-5842-B</td>
+                <td>Servo Feed Roll Set</td>
+                <td>Hardened Steel</td>
+                <td style="text-align: center">2</td>
+                <td>Package 1 of 3</td>
+              </tr>
+              <tr>
+                <td>CP-6721-C</td>
+                <td>Hydraulic Press Components</td>
+                <td>Alloy Steel</td>
+                <td style="text-align: center">4</td>
+                <td>Package 2 of 3</td>
+              </tr>
+              <tr>
+                <td>CP-9905-A</td>
+                <td>Coil Reel Assembly</td>
+                <td>Tool Steel</td>
+                <td style="text-align: center">1</td>
+                <td>Package 3 of 3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="coe-shipping__section-title">Package Details</div>
+        <div class="coe-shipping__info-grid">
+          <div class="coe-shipping__info-column">
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Total Packages</div>
+              <div class="coe-shipping__info-value">3</div>
+            </div>
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Total Weight</div>
+              <div class="coe-shipping__info-value">387 lbs</div>
+            </div>
+          </div>
+          <div class="coe-shipping__info-column">
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Special Handling</div>
+              <div class="coe-shipping__info-value">Forklift Required</div>
+            </div>
+            <div class="coe-shipping__info-item">
+              <div class="coe-shipping__info-label">Shipping Documents</div>
+              <div class="coe-shipping__info-value">
+                Commercial Invoice, Packing List
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coe-shipping__note">
+          <strong>Important:</strong> Please ensure that receiving personnel are
+          available on the estimated delivery date. If you need to change the
+          delivery date or have any special receiving instructions, please
+          contact us immediately.
+        </div>
+        <div class="coe-shipping__buttons">
+          <a
+            href="#"
+            class="coe-shipping__button"
+            >Track Shipment</a
+          >
+          <a
+            href="#"
+            class="coe-shipping__button coe-shipping__button--secondary"
+            >View Order Details</a
+          >
+        </div>
+        <div class="coe-shipping__footer">
+          <div>
+            Thank you for choosing Coe Press Equipment. We appreciate your
+            business.
+          </div>
+          <div style="margin-top: 10px">
+            If you have any questions about your shipment, please contact your
+            account manager:<br />
+            David Wilson | d.wilson@coepress.com | (248) 555-4321
+          </div>
+          <div style="margin-top: 15px">
+            Coe Press Equipment | 2100 Manufacturing Drive, Troy, MI 48083 |
+            (248) 555-1000 | info@coepress.com
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
