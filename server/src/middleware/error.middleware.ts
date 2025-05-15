@@ -82,5 +82,10 @@ export const errorHandler = (
     ...(errorDetails && { details: errorDetails }),
   };
 
+  res.locals.errorMessage =
+    typeof errorMessage === "string"
+      ? errorMessage
+      : JSON.stringify(errorMessage);
+
   res.status(statusCode).json(responseBody);
 };

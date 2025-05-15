@@ -80,11 +80,12 @@ class Logger {
     res.on("finish", () => {
       const duration = Date.now() - startTime;
       const { statusCode } = res;
-      const message = `${method} ${url} ${statusCode} ${duration}ms`;
+      const errorMessage = res.locals.errorMessage;
+      const message = `${method} ${url} ${statusCode} ${duration}ms${
+        errorMessage ? ` - ${errorMessage}` : ""
+      }`;
 
-      if (statusCode >= 500) {
-        this.error(message);
-      } else if (statusCode === 404) {
+      if (statusCode >= 500 || statusCode === 401 || statusCode === 404) {
         this.error(message);
       } else if (statusCode >= 400 || statusCode === 304) {
         this.warn(message);
