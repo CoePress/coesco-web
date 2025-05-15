@@ -450,7 +450,7 @@ const Dashboard = () => {
       );
       return {
         ...machine,
-        status: realTime?.state?.toLowerCase() || "unknown",
+        status: realTime?.state || "OFFLINE",
         program: realTime?.program || "-",
         execution: realTime?.execution || "-",
         controller: realTime?.controller || "-",
