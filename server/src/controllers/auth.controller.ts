@@ -2,6 +2,7 @@ import { __prod__ } from "@/config/config";
 import { authService } from "@/services";
 import { NextFunction, Request, Response } from "express";
 import { config } from "@/config/config";
+import { BadRequestError } from "@/middleware/error.middleware";
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
@@ -66,11 +67,11 @@ export class AuthController {
   }
 
   async testLogin(req: Request, res: Response, next: NextFunction) {
-    if (__prod__) {
-      throw new Error("Not available in production");
-    }
-
     try {
+      if (__prod__) {
+        throw new BadRequestError("Not available in production");
+      }
+
       const response = await authService.testLogin();
 
       res.cookie("accessToken", response.token, config.cookieOptions);

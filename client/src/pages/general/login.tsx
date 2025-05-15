@@ -155,6 +155,7 @@ const LoginPage = () => {
                 type="text"
                 label="Username"
                 value={username}
+                disabled={true}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
@@ -164,6 +165,7 @@ const LoginPage = () => {
                 type="password"
                 label="Password"
                 value={password}
+                disabled={true}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
