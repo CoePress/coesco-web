@@ -14,6 +14,9 @@
 
 - [] Sort by table columns
 - [] Sticky table header
+- [] Remove program comment prefix if no comment
+- [] Update machine card time to be duration of current state
+- [] Add spindle load
 
 ## Urls
 
@@ -25,7 +28,7 @@
 
 - What are the core modules? (sales, production, etc..)
 - Admin module combined with admin only pages in other modules? ie machine management
-- Remote ssh? 
+- Remote ssh?
 
 ## Non Module Pages
 

@@ -75,7 +75,7 @@ const LoginPage = () => {
 
   if (systemDown) {
     return (
-      <div className="relative h-screen w-screen flex items-center justify-center p-2">
+      <div className="relative h-[100dvh] w-screen flex items-center justify-center p-2">
         <BackgroundImage />
         <div className="relative z-10 w-full max-w-sm">
           <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/95">
@@ -98,7 +98,7 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="relative h-screen w-screen flex items-center justify-center p-2">
+    <div className="relative h-[100dvh] w-screen flex items-center justify-center p-2">
       <BackgroundImage />
       <div className="relative z-10 w-full max-w-md">
         <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/70">
