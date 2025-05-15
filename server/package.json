@@ -33,6 +33,7 @@
     "nodemailer": "^6.9.16",
     "openai": "^4.95.1",
     "pg": "^8.13.3",
+    "puppeteer": "^24.8.2",
     "redis": "^4.7.0",
     "sequelize": "^6.37.5",
     "socket.io": "^4.8.1",
