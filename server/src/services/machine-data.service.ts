@@ -1,7 +1,7 @@
 import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
-import { getSocketService, machineService } from ".";
+import { cacheService, getSocketService, machineService } from ".";
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
@@ -28,6 +28,58 @@ export class MachineDataService {
 
   constructor() {
     this.startPolling();
+  }
+
+  async initialize() {
+    await this.initializeMachineStates();
+  }
+
+  private async initializeMachineStates() {
+    try {
+      const machines = await machineService.getMachines({});
+
+      if (!machines?.data) {
+        console.error("No machines found or invalid response");
+        return;
+      }
+
+      for (const machine of machines.data) {
+        if (!machine?.id) {
+          console.error("Invalid machine data:", machine);
+          continue;
+        }
+
+        const cachedState = await cacheService.get(
+          `machine:${machine.id}:current_state`
+        );
+
+        if (!cachedState) {
+          const initialState = {
+            execution: null,
+            controller: null,
+            program: null,
+            tool: null,
+            metrics: {
+              spindleSpeed: 0,
+              feedRate: 0,
+              axisPositions: {
+                X: 0,
+                Y: 0,
+                Z: 0,
+              },
+            },
+            state: MachineState.IDLE,
+          };
+
+          await cacheService.set(
+            `machine:${machine.id}:current_state`,
+            initialState
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing machine states:", error);
+    }
   }
 
   async getMachineStatuses(params: IQueryParams) {
@@ -397,22 +449,19 @@ export class MachineDataService {
     const data = await this.fetchMachineData(url);
     const newState = await this.processMazakData(data);
 
-    // const cachedState = await cacheService.get(
-    //   `machine:${machineId}:current_state`
-    // );
+    const cachedState = await cacheService.get(
+      `machine:${machineId}:current_state`
+    );
 
-    // const hasChanged = await hasThisChanged(newState, cachedState);
+    // Always determine state based on the data we have
+    const state = await this.determineMachineState(newState, cachedState);
+    newState.state = state;
 
-    // if (hasChanged) {
-    //   await cacheService.set(`machine:${machineId}:current_state`, newState);
+    const hasChanged = await hasThisChanged(newState, cachedState);
 
-    //   await this.createMachineStatus({
-    //     ...newState,
-    //     machineId,
-    //     startTime: new Date(),
-    //     endTime: null,
-    //   });
-    // }
+    if (hasChanged) {
+      await cacheService.set(`machine:${machineId}:current_state`, newState);
+    }
 
     return newState;
   }
@@ -479,7 +528,6 @@ export class MachineDataService {
     const zPos = extractValue(xml, "zp");
 
     return {
-      state: MachineState.ACTIVE,
       execution,
       controller,
       program: `${program} - ${programComment}`,
@@ -500,33 +548,48 @@ export class MachineDataService {
     return data;
   }
 
-  private extractAxesData(streams: any): any[] {
-    const axes: any[] = [];
-    const linear = this.findComponent(streams, "Linear");
+  private async determineMachineState(current: any, previous: any) {
+    if (!current) return MachineState.OFFLINE;
 
-    if (Array.isArray(linear)) {
-      linear.forEach((axis) => {
-        if (axis._attributes?.name) {
-          axes.push({
-            label: axis._attributes.name,
-            position: parseFloat(axis.Samples?.Position?._text) || 0,
-          });
-        }
-      });
+    if (current.execution === "ACTIVE") return MachineState.ACTIVE;
+
+    if (current.execution === "STOPPED") return MachineState.IDLE;
+
+    if (this.hasMovement(current, previous)) {
+      return MachineState.SETUP;
     }
 
-    return axes;
+    return MachineState.IDLE;
   }
 
-  private findComponent(streams: any, type: string) {
-    return Array.isArray(streams.ComponentStream)
-      ? streams.ComponentStream.find(
-          (s: any) => s._attributes?.component === type
-        )
-      : streams.ComponentStream;
+  private hasMovement(current: any, previous: any): boolean {
+    if (!previous) return false;
+
+    if (current.metrics.spindleSpeed !== previous.metrics.spindleSpeed) {
+      return true;
+    }
+
+    if (current.metrics.feedRate !== previous.metrics.feedRate) {
+      return true;
+    }
+
+    const axes = ["X", "Y", "Z"];
+    for (const axis of axes) {
+      if (
+        current.metrics.axisPositions[axis] !==
+        previous.metrics.axisPositions[axis]
+      ) {
+        return true;
+      }
+    }
+
+    if (current.tool !== previous.tool) {
+      return true;
+    }
+
+    return false;
   }
 
-  // Private methods
   private calculateStatusTotals(
     statuses: IMachineStatus[],
     startDate: Date,

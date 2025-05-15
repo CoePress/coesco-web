@@ -240,9 +240,9 @@ export interface ICreateMachineDto
 
 export enum MachineState {
   ACTIVE = "ACTIVE",
+  SETUP = "SETUP",
   IDLE = "IDLE",
   ALARM = "ALARM",
-  MAINTENANCE = "MAINTENANCE",
   OFFLINE = "OFFLINE",
 }
 
