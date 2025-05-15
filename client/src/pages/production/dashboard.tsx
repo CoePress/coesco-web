@@ -99,27 +99,20 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="font-medium text-right">
               {realTimeData?.execution || machine.execution || "-"}
             </span>
-            <span className="text-muted-foreground">Updated:</span>
-            <span className="font-medium text-right">
-              {new Date(
-                realTimeData?.timestamp || machine.lastUpdated || Date.now()
-              ).toLocaleString()}
+            <span className="text-muted-foreground">Program:</span>
+            <span className="font-medium text-right truncate max-w-[200px]">
+              {realTimeData?.program || machine.program || "-"}
             </span>
           </div>
         </Card>
 
         <Card>
           <h4 className="text-sm font-medium mb-2 text-text-muted">
-            Program Information
+            Machine Information
           </h4>
           <div className="grid grid-cols-[1fr_auto] gap-1 text-text-muted">
-            <span className="text-muted-foreground">Program:</span>
-            <span className="font-medium text-right truncate max-w-[200px]">
-              {realTimeData?.program || machine.program || "-"}
-            </span>
-
             <span className="text-muted-foreground">Tool:</span>
-            <span className="font-medium text-right truncate max-w-[200px]">
+            <span className="font-medium text-right">
               {realTimeData?.tool || machine.tool || "-"}
             </span>
             <span className="text-muted-foreground">Spindle (RPM):</span>
@@ -131,6 +124,16 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="text-muted-foreground">Spindle (Load):</span>
             <span className="font-medium text-right">
               {realTimeData?.metrics?.spindleLoad || machine.spindleLoad || "-"}
+            </span>
+            <span className="text-muted-foreground">Feed Rate:</span>
+            <span className="font-medium text-right">
+              {realTimeData?.metrics?.feedRate || machine.feedRate || "-"}
+            </span>
+            <span className="text-muted-foreground">Position:</span>
+            <span className="font-medium text-right">
+              X:{realTimeData?.metrics?.axisPositions?.X?.toFixed(3) || "-"} Y:
+              {realTimeData?.metrics?.axisPositions?.Y?.toFixed(3) || "-"} Z:
+              {realTimeData?.metrics?.axisPositions?.Z?.toFixed(3) || "-"}
             </span>
           </div>
         </Card>
@@ -154,6 +157,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             ))}
           </div>
         </Card>
+
         <Card>
           <h4 className="text-sm font-medium mb-2 text-text-muted">
             State History (Last 24h)
