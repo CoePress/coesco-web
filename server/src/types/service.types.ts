@@ -155,7 +155,7 @@ export interface IQuoteService {
   }): Promise<IQuoteHeader[]>;
 }
 
-export interface IEmailTemplateService {
+export interface IEmailService {
   getTemplate(id: string): Promise<IEmailTemplate>;
   saveTemplate(template: IEmailTemplate): Promise<IEmailTemplate>;
   deleteTemplate(id: string): Promise<boolean>;

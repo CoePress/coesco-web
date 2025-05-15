@@ -1,6 +1,6 @@
 ## To Do
 
-- [] Client CI/CD
+- [x] Client CI/CD
 - [] Server CI/CD
 - [] Poll all mazaks
 - [] Poll all fanucs
