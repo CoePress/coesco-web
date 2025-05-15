@@ -5,9 +5,6 @@ import path from "path";
 import fs from "fs";
 
 export class EmailController {
-  /**
-   * Get all email templates
-   */
   getTemplates = async (
     req: Request,
     res: Response,
@@ -24,9 +21,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Get a specific email template by slug
-   */
   getTemplate = async (
     req: Request,
     res: Response,
@@ -44,9 +38,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Save an email template
-   */
   saveTemplate = async (
     req: Request,
     res: Response,
@@ -63,9 +54,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Delete an email template
-   */
   deleteTemplate = async (
     req: Request,
     res: Response,
@@ -85,9 +73,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Preview a rendered email template
-   */
   previewTemplate = async (
     req: Request,
     res: Response,
@@ -99,7 +84,6 @@ export class EmailController {
 
       const html = await emailService.renderTemplate(slug, data);
 
-      // Respond with HTML content
       res.setHeader("Content-Type", "text/html");
       res.send(html);
     } catch (error) {
@@ -107,9 +91,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Generate a PDF from an email template
-   */
   generatePDF = async (
     req: Request,
     res: Response,

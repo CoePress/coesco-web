@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FileText, Mail, Clock, Plus, RefreshCcw, Send } from "lucide-react";
+import { FileText, Mail, Clock, Plus, Send } from "lucide-react";
 
 import { Button, Card, PageHeader, Modal } from "@/components";
 import useGetTemplates from "@/hooks/emails/use-get-templates";
@@ -19,7 +19,7 @@ const Reports = () => {
   const [timezone, setTimezone] = useState("America/New_York");
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
 
-  const { templates, loading, error, refresh } = useGetTemplates();
+  const { templates, loading, error } = useGetTemplates();
 
   const timezones = [
     "America/New_York",
@@ -222,13 +222,6 @@ const Reports = () => {
         description="Create and manage production reports"
         actions={
           <>
-            <Button
-              variant="secondary-outline"
-              size="sm"
-              onClick={refresh}>
-              <RefreshCcw size={16} />
-              Refresh
-            </Button>
             <Button onClick={() => setIsScheduleModalOpen(true)}>
               <Plus size={16} />
               New Report

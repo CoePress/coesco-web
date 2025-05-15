@@ -6,6 +6,7 @@ import ejs from "ejs";
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
 import { config } from "@/config/config";
+import juice from "juice";
 
 export class EmailService implements IEmailService {
   private templatesPath = path.join(__dirname, "..", "templates", "emails");
@@ -149,7 +150,11 @@ export class EmailService implements IEmailService {
   /**
    * Render an email template with data
    */
-  async renderTemplate(slug: string, data: any): Promise<string> {
+  async renderTemplate(
+    slug: string,
+    data: any,
+    inlineStyles: boolean = false
+  ): Promise<string> {
     const template = await this.getTemplate(slug);
 
     // Add helper functions to the data
@@ -160,7 +165,14 @@ export class EmailService implements IEmailService {
 
     try {
       // Render the template with EJS
-      return ejs.render(template.html, templateData);
+      let html = ejs.render(template.html, templateData);
+
+      // Inline CSS styles if requested
+      if (inlineStyles) {
+        html = juice(html);
+      }
+
+      return html;
     } catch (error: any) {
       console.error(`Error rendering template ${slug}:`, error);
       throw new Error(`Failed to render template: ${error.message}`);
@@ -232,8 +244,8 @@ export class EmailService implements IEmailService {
       const { template, data, to, subject, from, cc, bcc, attachments } =
         options;
 
-      // Render the template
-      const html = await this.renderTemplate(template, data);
+      // Render the template with inlined styles
+      const html = await this.renderTemplate(template, data, true);
 
       // Send email
       const result = await this.transporter.sendMail({
