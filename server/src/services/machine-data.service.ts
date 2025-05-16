@@ -529,10 +529,14 @@ export class MachineDataService {
     const yPos = extractValue(xml, "yp");
     const zPos = extractValue(xml, "zp");
 
+    const programFull = `${program} ${
+      programComment ? `- ${programComment}` : ""
+    }`;
+
     return {
       execution,
       controller,
-      program: `${program} - ${programComment}`,
+      program: programFull,
       tool,
       metrics: {
         spindleSpeed,

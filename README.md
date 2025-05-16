@@ -39,9 +39,6 @@ npm install
 coesco-web/
 ├── client/             # Frontend React application
 ├── server/             # Backend Node.js server
-├── .env.template       # Template for environment variables
-├── .gitignore          # Git ignore rules
-├── package.json        # Project configuration and scripts
 └── README.md           # Project documentation
 ```
 
