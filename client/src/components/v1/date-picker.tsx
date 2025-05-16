@@ -129,7 +129,7 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
   }
 
   return (
-    <>
+    <div className="w-full sm:w-auto relative hidden sm:block">
       <Button
         variant="secondary-outline"
         onClick={() => setDatePickerOpen(!datePickerOpen)}
@@ -198,7 +198,7 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

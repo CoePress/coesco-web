@@ -72,8 +72,8 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
   ];
 
   return (
-    <div className="space-y-2 pt-2 text-sm">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="pt-2 text-sm flex flex-col gap-2">
+      <div className="grid md:grid-cols-2 gap-2">
         <Card>
           <h4 className="text-sm font-medium mb-2 text-text-muted">
             Status Information
@@ -131,7 +131,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="hidden md:grid grid-cols-2 gap-2">
         <Card>
           <h4 className="text-sm font-medium mb-2 text-text-muted">
             Program History (Last 24h)
@@ -770,7 +770,7 @@ const Dashboard = () => {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1 justify-end flex-shrink-0 ml-2">
+                      {/* <div className="flex items-center gap-1 justify-end flex-shrink-0 ml-2">
                         <Clock
                           size={12}
                           className="text-text-muted"
@@ -784,7 +784,7 @@ const Dashboard = () => {
                               )
                             : "-"}
                         </span>
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="flex justify-between">
