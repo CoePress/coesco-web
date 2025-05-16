@@ -1,4 +1,4 @@
-import { Button, PageHeader, Tabs } from "@/components";
+import { PageHeader, Tabs } from "@/components";
 import { SaveIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -156,12 +156,15 @@ const Settings = () => {
       <PageHeader
         title="Settings"
         description="System settings"
-        actions={
-          <Button variant="primary">
-            <SaveIcon size={16} />
-            Save
-          </Button>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Save",
+            variant: "primary",
+            icon: <SaveIcon size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <Tabs

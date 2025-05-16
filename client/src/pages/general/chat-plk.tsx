@@ -97,23 +97,23 @@ const ChatPLK = () => {
       <PageHeader
         title="Chat Assistant"
         description="Ask anything – powered by Paul"
-        actions={
-          <Button variant="secondary-outline">
-            <MessageSquare size={16} />
-            New Chat
-          </Button>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "New Chat",
+            variant: "secondary-outline",
+            icon: <MessageSquare size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
-      {/* Main content: chat and artifact side by side */}
       <div className="flex flex-1 min-h-0 bg-background relative">
-        {/* Chat area */}
         <div
           className={`
             flex flex-col h-full transition-all duration-300 w-full
             ${artifactOpen ? "" : "mx-auto"}
           `}>
-          {/* Chat messages */}
           <div className="flex-1 overflow-y-auto p-2 ">
             <div className="flex flex-col gap-3 max-w-screen-md mx-auto">
               {messages.map((msg) =>
@@ -198,7 +198,6 @@ const ChatPLK = () => {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          {/* Input Area (fixed at bottom of chat area) */}
           <div className="bg-foreground border-t p-4 ">
             <div className="relative max-w-screen-md mx-auto flex justify-center items-center">
               <textarea
@@ -221,7 +220,6 @@ const ChatPLK = () => {
             </div>
           </div>
         </div>
-        {/* Artifact panel */}
         {artifactOpen && (
           <div className="flex flex-col h-full bg-foreground border-l shadow-lg z-10 transition-all duration-300 w-full">
             <div className="flex items-center justify-between p-4 border-b">

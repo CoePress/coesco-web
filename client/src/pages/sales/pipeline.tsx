@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import { Button, PageHeader, PageSearch, StatusBadge } from "@/components";
+import { PageHeader, PageSearch, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleDeals } from "@/utils/sample-data";
 import Table from "@/components/v1/table";
@@ -195,42 +195,42 @@ const Pipeline = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <div className="flex border rounded-md overflow-hidden">
-              <button
-                className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${
-                  viewMode === "kanban"
-                    ? "bg-primary text-white"
-                    : "bg-foreground text-neutral-400"
-                }`}
-                onClick={() => setViewMode("kanban")}>
-                <Layout size={16} />
-                Kanban
-              </button>
-              <button
-                className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${
-                  viewMode === "list"
-                    ? "bg-primary text-white"
-                    : "bg-foreground text-neutral-400"
-                }`}
-                onClick={() => setViewMode("list")}>
-                <ListIcon size={16} />
-                List
-              </button>
-            </div>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
-            </Button>
-            <Button onClick={() => {}}>
-              <Plus size={16} />
-              Add Deal
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "View",
+            icon: <Layout size={16} />,
+            onClick: () => setViewMode("kanban"),
+          },
+          {
+            type: "button",
+            label: "List",
+            icon: <ListIcon size={16} />,
+            onClick: () => setViewMode("list"),
+          },
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Add Deal",
+            icon: <Plus size={16} />,
+            onClick: () => {},
+          },
+        ]}
+      />
+
+      <PageSearch
+        placeholder="Search deals..."
+        filters={[
+          { label: "Filters", icon: Filter, onClick: () => {} },
+          { label: "Status", icon: ChevronDown, onClick: () => {} },
+        ]}
+        label="Deals"
+        labelTrigger={false}
       />
 
       <PageSearch

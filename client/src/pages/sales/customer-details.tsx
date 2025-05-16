@@ -18,7 +18,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Button, PageHeader, StatusBadge, Tabs } from "@/components";
+import { PageHeader, StatusBadge, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomer } from "@/utils/sample-data";
 
@@ -39,20 +39,20 @@ const CustomerDetails = () => {
         description={pageDescription}
         backButton
         onBack={() => navigate("/sales/customers")}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
-            </Button>
-            <Button onClick={() => {}}>
-              <Edit size={16} />
-              Edit
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Edit",
+            icon: <Edit size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <Tabs

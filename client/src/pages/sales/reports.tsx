@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 
 import { formatDate } from "@/utils";
-import { Button, PageHeader } from "@/components";
+import { PageHeader } from "@/components";
 
 const Reports = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -95,20 +95,20 @@ const Reports = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Filter size={16} />
-              Filter
-            </Button>
-            <Button onClick={() => {}}>
-              <Plus size={16} />
-              New Report
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Filter",
+            icon: <Filter size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Add Report",
+            icon: <Plus size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <div className="p-4">

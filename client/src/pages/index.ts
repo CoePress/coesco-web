@@ -1,6 +1,5 @@
 // Admin
 export { default as Employees } from "./admin/employees";
-export { default as Integrations } from "./admin/integrations";
 export { default as ProductRules } from "./admin/product-rules";
 export { default as Settings } from "./admin/settings";
 

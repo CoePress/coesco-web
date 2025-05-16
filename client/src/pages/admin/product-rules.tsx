@@ -81,20 +81,22 @@ const ProductRules = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Filter size={16} />
-              Filter
-            </Button>
-            <Button onClick={() => setIsModalOpen(true)}>
-              <Plus size={16} />
-              New Rule
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Filter",
+            variant: "secondary-outline",
+            icon: <Filter size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "New Rule",
+            variant: "secondary-outline",
+            icon: <Plus size={16} />,
+            onClick: () => setIsModalOpen(true),
+          },
+        ]}
       />
 
       <Table

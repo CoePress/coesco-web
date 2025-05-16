@@ -50,20 +50,20 @@ const QuoteDetails = () => {
         description={pageDescription}
         backButton
         onBack={() => navigate("/sales/quotes")}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
-            </Button>
-            <Button onClick={() => {}}>
-              <Edit size={16} />
-              Revise
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Revise",
+            icon: <Edit size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <div className="bg-foreground border-b px-4 py-2">

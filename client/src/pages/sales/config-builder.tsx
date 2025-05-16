@@ -477,22 +477,21 @@ const ConfigBuilder = () => {
         description={pageDescription}
         backButton
         onBack={() => navigate("/sales/catalog")}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Import size={16} />
-              Import
-            </Button>
-            <Button
-              onClick={() => setIsSaveModalOpen(true)}
-              disabled={validationResults.some((r) => r.type === "error")}>
-              <Save size={16} />
-              Save
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Import",
+            icon: <Import size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Save",
+            icon: <Save size={16} />,
+            onClick: () => setIsSaveModalOpen(true),
+            disabled: validationResults.some((r) => r.type === "error"),
+          },
+        ]}
       />
 
       <div className="flex h-full">

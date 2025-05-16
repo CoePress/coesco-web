@@ -231,22 +231,26 @@ const Catalog = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Import size={16} />
-              Import
-            </Button>
-            <Button
-              as="a"
-              href="/sales/catalog/builder">
-              <Plus size={16} />
-              Create New
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Import",
+            icon: <Import size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Create New",
+            icon: <Plus size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Create New",
+            icon: <Plus size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <PageSearch

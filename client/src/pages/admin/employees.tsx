@@ -117,36 +117,24 @@ const Employees = () => {
       <PageHeader
         title="Employees"
         description={`${pagination.total} total employees`}
-        actions={
-          <>
-            {/* <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search
-                  size={18}
-                  className="text-text-muted"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Search"
-                className="block w-full pl-10 pr-3 py-1.5 border rounded-md text-sm text-text-muted"
-              />
-            </div> */}
-            <Button
-              onClick={() => {
-                syncEmployees();
-              }}
-              disabled={syncLoading}
-              variant="secondary-outline">
-              <RefreshCcw size={16} />
-              Sync
-            </Button>
-            <Button onClick={() => {}}>
-              <Plus size={16} />
-              New Employee
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Sync",
+            variant: "secondary-outline",
+            icon: <RefreshCcw size={16} />,
+            onClick: () => syncEmployees(),
+          },
+          {
+            type: "button",
+            label: "New Employee",
+            variant: "secondary-outline",
+            icon: <Plus size={16} />,
+            onClick: () => {
+              syncEmployees();
+            },
+          },
+        ]}
       />
 
       <Table<IEmployee>

@@ -148,22 +148,24 @@ const Dashboard = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <Button
-              variant="secondary-outline"
-              size="sm">
-              <Filter size={16} />
-              Filter
-            </Button>
-            <Button
-              variant="primary"
-              size="sm">
-              <RefreshCcw size={16} />
-              Refresh
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Filter",
+            icon: <Filter size={16} />,
+            variant: "secondary-outline",
+            size: "sm",
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Refresh",
+            icon: <RefreshCcw size={16} />,
+            variant: "primary",
+            size: "sm",
+            onClick: () => {},
+          },
+        ]}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">

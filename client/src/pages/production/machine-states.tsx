@@ -1,7 +1,7 @@
 import { Button, StatusBadge, Table } from "@/components";
 import DatePicker from "@/components/v1/date-picker";
 import PageHeader from "@/components/v1/page-header";
-import { Download, Loader } from "lucide-react";
+import { Calendar, Download, Loader } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { useState } from "react";
 import useGetMachines from "@/hooks/production/use-get-machines";
@@ -223,38 +223,40 @@ const MachineStates = () => {
       <PageHeader
         title="Machine States"
         description="Explore all machine states"
-        actions={
-          <>
-            <Dropdown
-              options={machineOptions}
-              onChange={setSelectedMachine}
-              selectedValue={selectedMachine}
-              isOpen={openDropdown === "machine"}
-              onOpenChange={(isOpen) =>
-                setOpenDropdown(isOpen ? "machine" : null)
-              }
-              label="Filter by machine"
-            />
-            <Dropdown
-              options={stateOptions}
-              onChange={setSelectedState}
-              selectedValue={selectedState}
-              isOpen={openDropdown === "state"}
-              onOpenChange={(isOpen) =>
-                setOpenDropdown(isOpen ? "state" : null)
-              }
-              label="Filter by state"
-            />
-            <DatePicker
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
-            <Button variant="primary">
-              <Download size={16} />
-              Export
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "dropdown",
+            options: machineOptions,
+            onChange: setSelectedMachine,
+            value: selectedMachine,
+            isOpen: openDropdown === "machine",
+            onOpenChange: (isOpen) =>
+              setOpenDropdown(isOpen ? "machine" : null),
+            label: "Filter by machine",
+          },
+          {
+            type: "dropdown",
+            options: stateOptions,
+            onChange: setSelectedState,
+            value: selectedState,
+            isOpen: openDropdown === "state",
+            onOpenChange: (isOpen) => setOpenDropdown(isOpen ? "state" : null),
+            label: "Filter by state",
+          },
+          {
+            type: "datepicker",
+            dateRange: dateRange,
+            setDateRange: setDateRange,
+            icon: <Calendar size={16} />,
+          },
+
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <Table<IMachineStatus>

@@ -220,14 +220,14 @@ const Reports = () => {
       <PageHeader
         title="Production Reports"
         description="Create and manage production reports"
-        actions={
-          <>
-            <Button onClick={() => setIsScheduleModalOpen(true)}>
-              <Plus size={16} />
-              New Report
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "New Report",
+            icon: <Plus size={16} />,
+            onClick: () => setIsScheduleModalOpen(true),
+          },
+        ]}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">

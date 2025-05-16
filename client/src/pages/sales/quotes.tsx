@@ -13,7 +13,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Button,
   Modal,
   PageHeader,
   PageSearch,
@@ -141,20 +140,20 @@ const Quotes = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
-            </Button>
-            <Button onClick={toggleModal}>
-              <Plus size={16} />
-              New Quote
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Add Quote",
+            icon: <Plus size={16} />,
+            onClick: toggleModal,
+          },
+        ]}
       />
 
       <PageSearch

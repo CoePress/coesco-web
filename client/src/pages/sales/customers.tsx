@@ -10,13 +10,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  StatusBadge,
-  PageHeader,
-  Table,
-  PageSearch,
-  Button,
-} from "@/components";
+import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomers } from "@/utils/sample-data";
 import { TableColumn } from "@/components/v1/table";
@@ -103,20 +97,20 @@ const Customers = () => {
       <PageHeader
         title="Customers"
         description={`${sampleCustomers.length} total customers`}
-        actions={
-          <>
-            <Button
-              onClick={() => {}}
-              variant="secondary-outline">
-              <Download size={16} />
-              Export
-            </Button>
-            <Button onClick={() => {}}>
-              <Plus size={16} />
-              New Customer
-            </Button>
-          </>
-        }
+        actions={[
+          {
+            type: "button",
+            label: "Export",
+            icon: <Download size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "New Customer",
+            icon: <Plus size={16} />,
+            onClick: () => {},
+          },
+        ]}
       />
 
       <PageSearch
