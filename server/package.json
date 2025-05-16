@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
-    "build": "tsc && tsc-alias",
+    "build": "tsc && tsc-alias && npm run copy-templates",
+    "copy-templates": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" dist",
     "start": "npm run build && node dist/server.js",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts"
   },
@@ -60,6 +61,7 @@
     "@types/pg": "^8.15.1",
     "@types/sequelize": "^4.28.20",
     "@types/ws": "^8.5.13",
+    "copyfiles": "^2.4.1",
     "nodemon": "^3.1.7",
     "redis-server": "^1.2.2",
     "ts-node": "^10.9.2",

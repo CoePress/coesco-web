@@ -12,10 +12,8 @@
 
 ## To Do Later
 
-- [] Sort by table columns
 - [] Sticky table header
 - [] Add spindle load
-- [] Steal sidebar from v1
 - [] App vs layout commands
 
 ## Urls

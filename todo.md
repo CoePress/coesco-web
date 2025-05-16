@@ -11,4 +11,14 @@
 
 - Azure key vault
 - Test environment
-- Branch protection & 1 mandatory review
+- Branch protection with 1 mandatory review
+- Webhooks for fatal server & adapter errors
+- Shared types package
+- Shared linter
+
+## Settings Values
+
+- Fanuc adapter ip
+- Fanuc adapter port
+- Default machine utilization per weekday
+- Override value per machine (can be added to machine table, config value if null)
