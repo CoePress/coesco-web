@@ -21,6 +21,9 @@ type TableProps<T> = {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  sort?: string;
+  order?: "asc" | "desc";
+  onSortChange?: (sort: string, order: "asc" | "desc") => void;
 };
 
 const Table = <T extends Record<string, any>>({
@@ -37,6 +40,9 @@ const Table = <T extends Record<string, any>>({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
+  sort,
+  order = "asc",
+  onSortChange,
 }: TableProps<T>) => {
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -54,6 +60,13 @@ const Table = <T extends Record<string, any>>({
     } else {
       onSelectionChange([...selectedItems, id]);
     }
+  };
+
+  const handleSort = (columnKey: string) => {
+    if (!onSortChange) return;
+
+    const newOrder = sort === columnKey && order === "asc" ? "desc" : "asc";
+    onSortChange(columnKey, newOrder);
   };
 
   return (
@@ -79,8 +92,16 @@ const Table = <T extends Record<string, any>>({
                 <th
                   key={column.key}
                   scope="col"
-                  className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-nowrap`}>
-                  {column.header}
+                  className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
+                    onSortChange ? "cursor-pointer hover:bg-surface" : ""
+                  }`}
+                  onClick={() => onSortChange && handleSort(column.key)}>
+                  <div className="flex items-center gap-1">
+                    {column.header}
+                    {sort === column.key && (
+                      <span>{order === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>

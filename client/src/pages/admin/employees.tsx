@@ -19,6 +19,8 @@ import { format } from "date-fns";
 const Employees = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+  const [sort, setSort] = useState("lastName");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<IEmployee | null>(
     null
@@ -35,7 +37,7 @@ const Employees = () => {
 
   const columns: TableColumn<IEmployee>[] = [
     {
-      key: "name",
+      key: "lastName",
       header: "Name",
       render: (_, row) => (
         <p>
@@ -98,6 +100,8 @@ const Employees = () => {
   const { employees, loading, error, pagination, refresh } = useGetEmployees({
     page,
     limit,
+    sort,
+    order,
   });
 
   if (loading || syncLoading) {
@@ -146,6 +150,12 @@ const Employees = () => {
         currentPage={pagination.page}
         totalPages={pagination.totalPages}
         onPageChange={setPage}
+        sort={sort}
+        order={order}
+        onSortChange={(newSort, newOrder) => {
+          setSort(newSort);
+          setOrder(newOrder);
+        }}
       />
 
       <Modal
