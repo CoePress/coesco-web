@@ -104,7 +104,7 @@ const ProductShowcase = () => {
   const [activeImage, setActiveImage] = useState(0);
 
   return (
-    <div className="bg-[#121212] text-white min-h-screen">
+    <div className="bg-[#121212] text-white min-h-[100dvh]">
       <Navbar />
 
       {/* Hero Section */}

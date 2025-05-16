@@ -18,6 +18,7 @@ const Header = ({ user, toggleSidebar, isSidebarOpen }: HeaderProps) => {
 
   const firstName = user.firstName;
   const lastInitial = user.lastName.charAt(0);
+  const initials = `${firstName.charAt(0)}${lastInitial}`;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,11 +65,11 @@ const Header = ({ user, toggleSidebar, isSidebarOpen }: HeaderProps) => {
                 </span>
                 <span className="text-xs text-text-muted">{user.jobTitle}</span>
               </div>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="User avatar"
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-border"
-              />
+              <div className="w-8 h-8 rounded-full object-cover ring-2 ring-border flex items-center justify-center">
+                <span className="text-sm font-medium text-text-muted leading-none tracking-tighter">
+                  {initials}
+                </span>
+              </div>
             </button>
 
             {isUserMenuOpen && (

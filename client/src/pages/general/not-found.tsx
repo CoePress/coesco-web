@@ -2,7 +2,7 @@ import { Button } from "@/components";
 
 const NotFound = () => {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center min-h-screen bg-background">
+    <div className="flex flex-1 flex-col items-center justify-center min-h-[100dvh] bg-background">
       <h1 className="text-4xl font-bold text-text-muted mb-2">404</h1>
       <p className="text-lg text-text-muted mb-6">Page Not Found</p>
       <div className="flex gap-3">

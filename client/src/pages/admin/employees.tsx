@@ -50,8 +50,8 @@ const Employees = () => {
       header: "Email",
     },
     {
-      key: "department",
-      header: "Department",
+      key: "jobTitle",
+      header: "Job Title",
     },
     {
       key: "role",

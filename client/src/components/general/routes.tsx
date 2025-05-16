@@ -13,7 +13,7 @@ export const PublicRoute = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-[100dvh]">
         <Loader />
       </div>
     );
@@ -44,7 +44,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-[100dvh]">
         <Loader />
       </div>
     );
@@ -89,7 +89,7 @@ export const ProtectedRouteWithoutLayout = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-[100dvh]">
         <Loader />
       </div>
     );

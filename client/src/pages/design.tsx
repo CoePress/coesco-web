@@ -5,7 +5,7 @@ import Select from "@/components/v1/select";
 
 const Design = () => {
   return (
-    <div className="flex gap-8 items-start justify-center h-screen p-8">
+    <div className="flex gap-8 items-start justify-center h-[100dvh] p-8">
       <div className="flex flex-col gap-2 items-center">
         <Body
           as="h3"
