@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, Home, Sun, Moon } from "lucide-react";
 
 import modules from "@/config/modules";
 import Header from "./header";
@@ -11,14 +11,10 @@ import Button from "../v1/button";
 
 type SidebarProps = {
   isOpen: boolean;
-  theme: string;
-  toggleTheme: () => void;
   setIsOpen: (isOpen: boolean) => void;
 };
 
-const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
-  const navigate = useNavigate();
-
+const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
 
   const trimmer = (path: string) => {
@@ -79,7 +75,7 @@ const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
                       <Link
                         key={child.path}
                         to={trimmer(fullPath)}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+                        className={`flex items-center gap-3 px-4 py-2 rounded ${
                           isOpen ? "opacity-100" : "opacity-0"
                         } ${
                           isActive(fullPath)
@@ -98,27 +94,6 @@ const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
             })()}
           </div>
         </nav>
-
-        <div
-          className={`flex items-center justify-center h-16 border-t border-border overflow-hidden ${
-            isOpen ? "opacity-100" : "opacity-0"
-          }`}>
-          <button
-            className={`flex items-center justify-center h-16 w-full text-text-muted hover:text-text cursor-pointer ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
-            onClick={toggleTheme}>
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
-        </div>
-
-        <button
-          className={`flex items-center justify-center h-16 border-t border-border text-text-muted hover:text-text cursor-pointer w-full ${
-            isOpen ? "opacity-100" : "opacity-0"
-          }`}
-          onClick={() => navigate("/")}>
-          Main Menu
-        </button>
       </div>
     </div>
   );
@@ -233,7 +208,7 @@ const Layout = ({ user, children }: LayoutProps) => {
 
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
-      <div className="bg-foreground hidden md:block">
+      <div className="bg-foreground hidden md:flex flex-col">
         <div className="flex items-center justify-center h-16 border-b border-border px-2">
           <img
             src="/images/logo-text.png"
@@ -241,26 +216,41 @@ const Layout = ({ user, children }: LayoutProps) => {
             className="w-full object-contain max-w-12"
           />
         </div>
-        <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-          {Object.values(modules).map((module) => (
+        <div className="flex flex-col justify-between flex-1">
+          <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
             <Link
-              key={module.path}
-              to={module.path}
-              className={`flex w-full justify-center items-center py-2 h-[36px] rounded-lg ${
-                location.pathname.startsWith(module.path)
-                  ? "bg-background text-primary"
-                  : "text-text-muted hover:bg-surface"
-              }`}>
-              <module.icon size={18} />
+              key="main-menu"
+              to="/"
+              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
+              <Home size={18} />
             </Link>
-          ))}
+
+            {Object.values(modules).map((module) => (
+              <Link
+                key={module.path}
+                to={module.path}
+                className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${
+                  location.pathname.startsWith(module.path)
+                    ? "bg-background text-primary"
+                    : "text-text-muted hover:bg-surface"
+                }`}>
+                <module.icon size={18} />
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
+            <button
+              onClick={toggleTheme}
+              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
         </div>
       </div>
 
       <Sidebar
         isOpen={isSidebarOpen}
-        theme={theme}
-        toggleTheme={toggleTheme}
         setIsOpen={setIsSidebarOpen}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
