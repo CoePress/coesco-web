@@ -1,7 +1,7 @@
 import { Button } from "@/components";
 import useLogout from "@/hooks/auth/use-logout";
 import { IEmployee } from "@/utils/types";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import { MenuIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
