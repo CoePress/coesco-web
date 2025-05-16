@@ -87,7 +87,9 @@ const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
                             : "text-text-muted hover:bg-surface"
                         }`}>
                         <child.icon size={18} />
-                        <span className="font-medium">{child.label}</span>
+                        <span className="font-medium text-sm">
+                          {child.label}
+                        </span>
                       </Link>
                     );
                   })}
@@ -166,7 +168,6 @@ const Layout = ({ user, children }: LayoutProps) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Command bar toggle with Alt+/ (alternative to Ctrl+K)
       if (e.altKey && e.key === "/") {
         e.preventDefault();
         e.stopPropagation();
@@ -245,7 +246,7 @@ const Layout = ({ user, children }: LayoutProps) => {
             <Link
               key={module.path}
               to={module.path}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+              className={`flex w-full justify-center items-center py-2 h-[36px] rounded-lg ${
                 location.pathname.startsWith(module.path)
                   ? "bg-background text-primary"
                   : "text-text-muted hover:bg-surface"
@@ -279,25 +280,6 @@ const Layout = ({ user, children }: LayoutProps) => {
                 defaultModule={defaultModule}
                 isOpen={isCommandBarOpen}
               />
-              {/* TODO: Move to command bar */}
-              <div className="mt-2 text-sm text-center opacity-70 select-none text-text-muted">
-                <div className="bg-foreground rounded p-2 flex items-center gap-2 w-max mx-auto">
-                  <kbd className="bg-surface px-2 py-1 rounded text-xs">
-                    Esc
-                  </kbd>{" "}
-                  to close
-                  <span>|</span>
-                  <kbd className="bg-surface px-2 py-1 rounded text-xs">
-                    ↑↓
-                  </kbd>{" "}
-                  to navigate
-                  <span>|</span>
-                  <kbd className="bg-surface px-2 py-1 rounded text-xs">
-                    Enter
-                  </kbd>{" "}
-                  to select
-                </div>
-              </div>
             </div>
           </div>
         )}

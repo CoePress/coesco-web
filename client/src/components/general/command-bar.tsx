@@ -463,6 +463,19 @@ const CommandBar: React.FC<CommandBarProps> = ({
 
   return (
     <div className="relative w-full max-w-2xl">
+      <div className="mt-2 text-sm text-center opacity-70 select-none text-text-muted">
+        <div className="bg-foreground rounded p-2 flex items-center gap-2 w-max mx-auto">
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">Esc</kbd> to
+          close
+          <span>|</span>
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">↑↓</kbd> to
+          navigate
+          <span>|</span>
+          <kbd className="bg-surface px-2 py-1 rounded text-xs">Enter</kbd> to
+          select
+        </div>
+      </div>
+
       <div className="relative flex items-center">
         <input
           ref={inputRef}
