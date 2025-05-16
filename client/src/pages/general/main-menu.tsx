@@ -74,7 +74,7 @@ const MainMenu = () => {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-col gap-2 w-full md:hidden">
           {Object.entries(modules).map(([key, module]) => (
             <div key={key}>
               {module.status === "active" ? (
