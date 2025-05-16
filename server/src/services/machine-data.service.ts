@@ -1,14 +1,39 @@
-import { buildQuery, createDateRange, hasThisChanged } from "@/utils";
+import { buildQuery, createDateRange } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
-import { cacheService, getSocketService, machineService } from ".";
-import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
+import { cacheService, machineService, socketInstance } from ".";
+import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
 import { MachineConnectionType } from "@/types/schema.types";
+import { config } from "@/config/config";
+
+interface CachedMachineState {
+  state: MachineState;
+  execution: string | null;
+  controller: string | null;
+  program: string | null;
+  tool: string | null;
+  metrics: {
+    spindleSpeed: number;
+    feedRate: number;
+    axisPositions: {
+      X: number;
+      Y: number;
+      Z: number;
+    };
+  };
+  alarm: string | null;
+  timestamp: string;
+}
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
+  private readonly POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  private machines: any[] = [];
+  private lastFetchTime: number = 0;
+  private readonly MACHINES_CACHE_KEY = "machines:list";
+  private readonly MACHINES_CACHE_TTL = 5 * 60; // 5 minutes in seconds
   private readonly offlineState = {
     state: MachineState.OFFLINE,
     execution: null,
@@ -32,6 +57,7 @@ export class MachineDataService {
 
   async initialize() {
     await this.initializeMachineStates();
+    await this.fetchAndCacheMachines(); // Initial fetch
   }
 
   private async initializeMachineStates() {
@@ -82,6 +108,30 @@ export class MachineDataService {
     }
   }
 
+  private async fetchAndCacheMachines() {
+    console.log(`Fetching and caching machines...`);
+    try {
+      const machines = await machineService.getMachines({});
+      if (machines?.data) {
+        this.machines = machines.data;
+        this.lastFetchTime = Date.now();
+        await cacheService.set(
+          this.MACHINES_CACHE_KEY,
+          machines.data,
+          this.MACHINES_CACHE_TTL
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching machines:", error);
+    }
+  }
+
+  async refreshMachines() {
+    await this.fetchAndCacheMachines();
+    return this.machines;
+  }
+
+  // Machine Statuses
   async getMachineStatuses(params: IQueryParams) {
     const { whereClause, orderClause, page, limit, offset } = buildQuery(
       params,
@@ -378,113 +428,110 @@ export class MachineDataService {
     };
   }
 
-  async createMachineStatus(machineStatus: IMachineStatus) {
-    this.validateMachineStatus(machineStatus);
-
-    await MachineStatus.update(
-      { endTime: new Date() },
-      { where: { machineId: machineStatus.machineId } }
-    );
-
-    await MachineStatus.create(machineStatus);
+  async createMachineStatus(data: any) {
+    await this.validateMachineStatus(data);
   }
 
+  async updateMachineStatus(id: string, data: any) {
+    await this.validateMachineStatus(data);
+  }
+
+  async deleteMachineStatus(id: string) {}
+
+  // Polling methods
   async pollMachines() {
-    const machines = await machineService.getMachines({});
     const current = [];
 
-    for (const machine of machines.data) {
-      if (machine.connectionType === MachineConnectionType.MTCONNECT) {
-        try {
-          const data = await this.pollMazakData(machine.id);
-          current.push({
-            machineId: machine.id,
-            machineName: machine.name,
-            machineType: machine.type,
+    // Check if we need to refresh machines list
+    const cachedMachines = await cacheService.get(this.MACHINES_CACHE_KEY);
+    if (
+      !cachedMachines ||
+      Date.now() - this.lastFetchTime >= this.POLL_INTERVAL_MS
+    ) {
+      await this.fetchAndCacheMachines();
+    }
+
+    for (const machine of this.machines) {
+      try {
+        if (!machine.connectionHost || !machine.connectionPort) {
+          throw new BadRequestError(
+            "Machine is missing connection information"
+          );
+        }
+
+        const cachedState = await cacheService.get<CachedMachineState>(
+          `machine:${machine.id}:current_state`
+        );
+
+        let data;
+        let state;
+        switch (machine.connectionType) {
+          case MachineConnectionType.MTCONNECT:
+            const xmlData = await this.pollMTConnect(machine);
+            data = await this.processMTConnectData(xmlData);
+            state = await this.determineMTConnectState(data, cachedState);
+            break;
+          case MachineConnectionType.CUSTOM:
+            const fanucData = await this.pollFanuc(machine);
+            data = await this.processFanucData(fanucData, machine.id);
+            state = await this.determineFanucState(data, cachedState);
+            break;
+          default:
+            throw new BadRequestError("Invalid machine connection type");
+        }
+
+        const hasMoved = await this.hasMoved(data, cachedState);
+        const stateChanged = cachedState?.state !== state;
+        const metricsChanged = hasMoved;
+
+        if (stateChanged || metricsChanged) {
+          await cacheService.set(`machine:${machine.id}:current_state`, {
             ...data,
-          });
-        } catch (error) {
-          // logger.error(`Error polling machine ${machine.id}:`, error);
-          current.push({
-            machineId: machine.id,
-            machineName: machine.name,
-            machineType: machine.type,
-            ...this.offlineState,
+            state,
           });
         }
+
+        current.push({
+          machineId: machine.id,
+          machineName: machine.name,
+          machineType: machine.type,
+          ...data,
+          state,
+          hasMoved,
+        });
+      } catch (error) {
+        current.push({
+          machineId: machine.id,
+          machineName: machine.name,
+          machineType: machine.type,
+          ...this.offlineState,
+        });
       }
     }
-
-    const socketService = getSocketService();
-    socketService.broadcastMachineStates(current);
-    return current;
+    socketInstance().broadcastMachineStates(current);
   }
 
-  startPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  async pollMTConnect(machine: any) {
+    const mtconnectUrl = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
+    const response = await this.fetchData(mtconnectUrl);
+    if (!response.ok) throw new BadRequestError("Failed to fetch data");
+
+    const xmlText = await response.text();
+
+    return xmlText;
   }
 
-  stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
-    }
+  async pollFanuc(machine: any) {
+    const fanucAdapterUrl = `http://${config.fanucAdapter.host}:${config.fanucAdapter.port}/api/machines/${machine.slug}`;
+    const response = await this.fetchData(fanucAdapterUrl);
+    if (!response.ok) throw new BadRequestError("Failed to fetch data");
+
+    const { data } = await response.json();
+
+    return data;
   }
 
-  async pollMazakData(machineId: string) {
-    const machine = await machineService.getMachine(machineId);
-
-    if (!machine) {
-      throw new NotFoundError("Machine not found");
-    }
-
-    if (!machine.connectionHost || !machine.connectionPort) {
-      throw new BadRequestError("Machine is missing connection information");
-    }
-
-    const url = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
-    const data = await this.fetchMachineData(url);
-    const newState = await this.processMazakData(data);
-
-    newState.machineId = machineId;
-
-    const cachedState = await cacheService.get(
-      `machine:${machineId}:current_state`
-    );
-
-    // Always determine state based on the data we have
-    const state = await this.determineMachineState(newState, cachedState);
-    newState.state = state;
-
-    const hasChanged = await hasThisChanged(newState, cachedState);
-
-    if (hasChanged) {
-      await cacheService.set(`machine:${machineId}:current_state`, newState);
-    }
-
-    return newState;
-  }
-
-  async fetchMachineData(url: string) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
-
-    try {
-      const response = await fetch(url, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      return response.text();
-    } catch (error) {
-      clearTimeout(timeout);
-      throw error;
-    }
-  }
-
-  async processMazakData(xml: string): Promise<any> {
+  async processMTConnectData(xml: string) {
     const extractValue = (xml: string, dataItemId: string): string | null => {
       const regex = new RegExp(
         `<[^>]*dataItemId="${dataItemId}"[^>]*>([^<]*)</[^>]*>`
@@ -501,39 +548,21 @@ export class MachineDataService {
         .trim();
     };
 
-    // Get program info
     const program = extractValue(xml, "pgm");
     const programComment = cleanProgramComment(extractValue(xml, "pcmt") || "");
-    const tool = extractValue(xml, "tid");
-
-    // Get execution state
-    const execution = extractValue(xml, "exec");
-    const controller = extractValue(xml, "mode");
-
-    // Get feed rate
-    const feedRate = extractValue(xml, "pf");
-
-    // Get spindle speeds
-    const spindleSpeeds = [
-      extractValue(xml, "cs"), // C axis
-      extractValue(xml, "cs2"), // C2 axis
-      extractValue(xml, "cs3"), // C3 axis
-      extractValue(xml, "cs4"), // C4 axis
-    ].filter((speed) => speed !== null);
-
-    const spindleSpeed =
-      spindleSpeeds.length > 0
-        ? Math.max(...spindleSpeeds.map((s) => parseFloat(s || "0")))
-        : 0;
-
-    // Get axis positions
-    const xPos = extractValue(xml, "xp");
-    const yPos = extractValue(xml, "yp");
-    const zPos = extractValue(xml, "zp");
-
     const programFull = `${program} ${
       programComment ? `- ${programComment}` : ""
     }`;
+    const tool = extractValue(xml, "tid");
+    const execution = extractValue(xml, "exec");
+    const controller = extractValue(xml, "mode");
+    const spindleSpeed = parseFloat(extractValue(xml, "cs") || "0");
+    const feedRate = parseFloat(extractValue(xml, "pf") || "0");
+    const axisPositions = {
+      X: parseFloat(extractValue(xml, "xp") || "0"),
+      Y: parseFloat(extractValue(xml, "yp") || "0"),
+      Z: parseFloat(extractValue(xml, "zp") || "0"),
+    };
 
     return {
       execution,
@@ -542,43 +571,77 @@ export class MachineDataService {
       tool,
       metrics: {
         spindleSpeed,
-        feedRate: parseFloat(feedRate || "0"),
-        axisPositions: {
-          X: parseFloat(xPos || "0"),
-          Y: parseFloat(yPos || "0"),
-          Z: parseFloat(zPos || "0"),
-        },
+        feedRate,
+        axisPositions,
       },
+      alarm: extractValue(xml, "alarm"),
+      timestamp: new Date().toISOString(),
     };
   }
 
   async processFanucData(data: any, machineId: string) {
-    return data;
+    return {
+      execution: data.execution,
+      controller: data.controller,
+      program: data.program,
+      tool: data.tool,
+      metrics: {
+        spindleSpeed: data.spindleSpeed,
+        feedRate: data.feedRate,
+        axisPositions: {
+          X: data.axisX,
+          Y: data.axisY,
+          Z: data.axisZ,
+        },
+      },
+      alarm: data.alarm,
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  private async determineMachineState(current: any, previous: any) {
+  private async fetchData(url: string) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      return response;
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
+    }
+  }
+
+  private async determineMTConnectState(current: any, previous: any) {
     if (!current) return MachineState.OFFLINE;
     if (current.execution === "ACTIVE") return MachineState.ACTIVE;
     if (current.execution === "STOPPED") return MachineState.IDLE;
 
-    if (
-      previous?.state === MachineState.SETUP &&
-      !this.hasMovement(current, previous)
-    ) {
+    const hasMoved = await this.hasMoved(current, previous);
+
+    if (previous?.state === MachineState.SETUP && !hasMoved) {
       return MachineState.IDLE;
     }
 
-    if (
-      previous?.state !== MachineState.ACTIVE &&
-      this.hasMovement(current, previous)
-    ) {
+    if (previous?.state !== MachineState.ACTIVE && hasMoved) {
       return MachineState.SETUP;
     }
 
     return MachineState.IDLE;
   }
 
-  private hasMovement(current: any, previous: any): boolean {
+  private async determineFanucState(current: any, previous: any) {
+    if (!current) return MachineState.OFFLINE;
+    if (current.execution === "ACTIVE") return MachineState.ACTIVE;
+    if (current.execution === "STOPPED") return MachineState.IDLE;
+
+    return MachineState.IDLE;
+  }
+
+  private async hasMoved(current: any, previous: any): Promise<boolean> {
     if (!previous || !current?.metrics || !previous?.metrics) return false;
 
     const EPSILON = 0.0001;
@@ -591,24 +654,12 @@ export class MachineDataService {
       !isNaN(previousSpindleSpeed) &&
       Math.abs(currentSpindleSpeed - previousSpindleSpeed) > EPSILON
     ) {
-      console.log(
-        "Spindle speed changed",
-        current.machineId,
-        currentSpindleSpeed,
-        previousSpindleSpeed
-      );
       return true;
     }
 
     if (
       Math.abs(current.metrics.feedRate - previous.metrics.feedRate) > EPSILON
     ) {
-      console.log(
-        "Feed rate changed",
-        current.machineId,
-        current.metrics.feedRate,
-        previous.metrics.feedRate
-      );
       return true;
     }
 
@@ -620,30 +671,32 @@ export class MachineDataService {
             previous.metrics.axisPositions[axis]
         ) > EPSILON
       ) {
-        console.log(
-          "Axis position changed",
-          current.machineId,
-          axis,
-          current.metrics.axisPositions[axis],
-          previous.metrics.axisPositions[axis]
-        );
         return true;
       }
     }
 
     if (current.tool !== previous.tool) {
-      console.log(
-        "Tool changed",
-        current.machineId,
-        current.tool,
-        previous.tool
-      );
       return true;
     }
 
     return false;
   }
 
+  startPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  }
+
+  stopPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  }
+
+  // Helper methods
   private calculateStatusTotals(
     statuses: IMachineStatus[],
     startDate: Date,
@@ -790,19 +843,34 @@ export class MachineDataService {
     return formatters[scale as keyof typeof formatters]?.(date) || "";
   }
 
-  private validateMachineStatus(machineStatus: IMachineStatus) {
-    if (!machineStatus.machineId)
-      throw new BadRequestError("Machine ID is required");
-
-    if (!machineStatus.startTime)
-      throw new BadRequestError("Start time is required");
-
-    if (!machineStatus.state) throw new BadRequestError("State is required");
-
-    if (
-      machineStatus.endTime &&
-      machineStatus.endTime < machineStatus.startTime
-    )
+  private async validateMachineStatus(data: any) {
+    if (!data.machineId) throw new BadRequestError("Machine ID is required");
+    if (!data.startTime) throw new BadRequestError("Start time is required");
+    if (!data.state) throw new BadRequestError("State is required");
+    if (data.endTime && data.endTime < data.startTime)
       throw new BadRequestError("End time cannot be before start time");
   }
 }
+
+// {
+//   success: true,
+//   message: null,
+//   data: {
+//     machineId: "c36ce3f1-059b-47a6-86fe-9ba3d43cd43b",
+//     execution: "****",
+//     controller: "EDIT",
+//     program: "C10566-48-UPPER",
+//     tool: null,
+//     spindleSpeed: 0,
+//     feedRate: 0,
+//     axisX: 0,
+//     axisY: 0,
+//     axisZ: 0,
+//     axisA: 0,
+//     axisB: 0,
+//     axisC: 0,
+//     alarm: "",
+//     timestamp: "2025-05-16T18:22:58.6886247Z",
+//   },
+//   error: null,
+// };
