@@ -1,16 +1,16 @@
 import { Button } from "@/components";
 import useLogout from "@/hooks/auth/use-logout";
 import { IEmployee } from "@/utils/types";
-import { LogOut, Settings, User } from "lucide-react";
-import { MenuIcon } from "lucide-react";
+import { LogOut, Settings, User, ChevronsRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type HeaderProps = {
   user: IEmployee;
   toggleSidebar: () => void;
+  isSidebarOpen: boolean;
 };
 
-const Header = ({ user, toggleSidebar }: HeaderProps) => {
+const Header = ({ user, toggleSidebar, isSidebarOpen }: HeaderProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +42,12 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
           <Button
             variant="ghost"
             onClick={toggleSidebar}>
-            <MenuIcon size={16} />
+            <ChevronsRight
+              size={20}
+              className={`transition-transform duration-200 ${
+                isSidebarOpen ? "rotate-180" : ""
+              }`}
+            />
           </Button>
         </div>
 

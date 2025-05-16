@@ -14,12 +14,8 @@
 
 - [] Sort by table columns
 - [] Sticky table header
-- [] Update machine card time to be duration of current state
 - [] Add spindle load
-- [] Setup Test env
 - [] Steal sidebar from v1
-- [] Handle 429 status codes
-- [] Branch protection
 - [] App vs layout commands
 
 ## Urls

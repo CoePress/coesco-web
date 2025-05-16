@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
   return (
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-60" : "w-0"
+        isOpen ? "w-60 border-l" : "w-0"
       } md:relative absolute z-50`}>
       <div
         className={`flex flex-col h-full transition-opacity duration-300 ${
@@ -232,6 +232,30 @@ const Layout = ({ user, children }: LayoutProps) => {
 
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
+      <div className="bg-foreground hidden md:block">
+        <div className="flex items-center justify-center h-16 border-b border-border px-2">
+          <img
+            src="/images/logo-text.png"
+            alt="logo"
+            className="w-full object-contain max-w-12"
+          />
+        </div>
+        <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
+          {Object.values(modules).map((module) => (
+            <Link
+              key={module.path}
+              to={module.path}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+                location.pathname.startsWith(module.path)
+                  ? "bg-background text-primary"
+                  : "text-text-muted hover:bg-surface"
+              }`}>
+              <module.icon size={18} />
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <Sidebar
         isOpen={isSidebarOpen}
         theme={theme}
@@ -242,6 +266,7 @@ const Layout = ({ user, children }: LayoutProps) => {
         <Header
           user={user}
           toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
         />
 
         {isCommandBarOpen && (
