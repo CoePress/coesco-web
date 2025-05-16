@@ -1,12 +1,13 @@
 import { buildQuery, createDateRange } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
-import { cacheService, machineService, socketInstance } from ".";
+import { cacheService, getSocketService, machineService } from ".";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus, MachineState } from "@/types/schema.types";
 import { MachineConnectionType } from "@/types/schema.types";
 import { config } from "@/config/config";
+import { logger } from "@/utils/logger";
 
 interface CachedMachineState {
   state: MachineState;
@@ -65,13 +66,13 @@ export class MachineDataService {
       const machines = await machineService.getMachines({});
 
       if (!machines?.data) {
-        console.error("No machines found or invalid response");
+        logger.error("No machines found or invalid response");
         return;
       }
 
       for (const machine of machines.data) {
         if (!machine?.id) {
-          console.error("Invalid machine data:", machine);
+          logger.error("Invalid machine data:", machine);
           continue;
         }
 
@@ -104,12 +105,12 @@ export class MachineDataService {
         }
       }
     } catch (error) {
-      console.error("Error initializing machine states:", error);
+      logger.error("Error initializing machine states:", error);
     }
   }
 
   private async fetchAndCacheMachines() {
-    console.log(`Fetching and caching machines...`);
+    logger.info(`Fetching and caching machines...`);
     try {
       const machines = await machineService.getMachines({});
       if (machines?.data) {
@@ -122,7 +123,7 @@ export class MachineDataService {
         );
       }
     } catch (error) {
-      console.error("Error fetching machines:", error);
+      logger.error("Error fetching machines:", error);
     }
   }
 
@@ -508,7 +509,9 @@ export class MachineDataService {
         });
       }
     }
-    socketInstance().broadcastMachineStates(current);
+    const socketService = getSocketService();
+    socketService.broadcastMachineStates(current);
+    return current;
   }
 
   async pollMTConnect(machine: any) {
