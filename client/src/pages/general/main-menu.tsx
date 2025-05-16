@@ -78,7 +78,9 @@ const MainMenu = () => {
           {Object.entries(modules).map(([key, module]) => (
             <div key={key}>
               {module.status === "active" ? (
-                <Link to={module.path} className="w-full">
+                <Link
+                  to={module.path}
+                  className="w-full">
                   <Card className="hover:bg-surface transition-all duration-200 w-full">
                     <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none">
                       <div className="text-primary">
@@ -113,16 +115,16 @@ const MainMenu = () => {
         </Button>
         <Button
           variant="secondary-outline"
-          className="w-32">
-          <Settings size={16} />
-          Settings
-        </Button>
-        <Button
-          variant="secondary-outline"
           onClick={toggleTheme}
           className="w-32">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           {theme === "dark" ? "Light" : "Dark"}
+        </Button>
+        <Button
+          variant="secondary-outline"
+          className="w-32">
+          <Settings size={16} />
+          Settings
         </Button>
         <Button
           variant="secondary-outline"
@@ -142,14 +144,14 @@ const MainMenu = () => {
         </Button>
         <Button
           variant="secondary-outline"
-          className="flex-1 mx-1">
-          <Settings size={16} />
-        </Button>
-        <Button
-          variant="secondary-outline"
           onClick={toggleTheme}
           className="flex-1 mx-1">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </Button>
+        <Button
+          variant="secondary-outline"
+          className="flex-1 mx-1">
+          <Settings size={16} />
         </Button>
         <Button
           variant="secondary-outline"

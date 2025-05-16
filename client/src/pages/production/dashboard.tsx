@@ -25,12 +25,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  Card,
-  MachineMap,
-  Modal,
-  PageHeader,
-} from "@/components";
+import { Card, MachineMap, Modal, PageHeader } from "@/components";
 import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
@@ -200,7 +195,7 @@ type MachineTimelineProps = {
 };
 
 const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
-  const { timeline, loading, error } = useGetTimeline({
+  const { loading, error } = useGetTimeline({
     startDate: startDate.toISOString().slice(0, 10),
     endDate: endDate.toISOString().slice(0, 10),
   });
@@ -244,7 +239,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
             </div>
           </div>
 
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             {timeline &&
               timeline.machines.map((machine: IOverviewMachine) => (
                 <div
@@ -273,7 +268,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                         }
                       />
                     ))}
-                    {/* {machine.timeline.map((event, index) => {
+                    {machine.timeline.map((event, index) => {
                       // Convert event timestamps to EST
                       const startDate = getESTDate(new Date(event.startTime));
                       const endDate = getESTDate(event.endTime || new Date());
@@ -313,11 +308,11 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                           </div>
                         </div>
                       );
-                    })} */}
+                    })}
                   </div>
                 </div>
               ))}
-          </div>
+          </div> */}
         </div>
       </div>
 
