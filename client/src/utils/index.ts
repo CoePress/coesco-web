@@ -74,6 +74,7 @@ export const getStatusColor = (status: string) => {
   const s = status.toUpperCase();
   const colors = {
     ACTIVE: "#34d399",
+    SETUP: "#0284c7",
     IDLE: "#ffab00",
     ALARM: "#f44336",
     OFFLINE: "#a0a0a0",

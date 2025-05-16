@@ -449,6 +449,8 @@ export class MachineDataService {
     const data = await this.fetchMachineData(url);
     const newState = await this.processMazakData(data);
 
+    newState.machineId = machineId;
+
     const cachedState = await cacheService.get(
       `machine:${machineId}:current_state`
     );
@@ -556,12 +558,20 @@ export class MachineDataService {
 
   private async determineMachineState(current: any, previous: any) {
     if (!current) return MachineState.OFFLINE;
-
     if (current.execution === "ACTIVE") return MachineState.ACTIVE;
-
     if (current.execution === "STOPPED") return MachineState.IDLE;
 
-    if (this.hasMovement(current, previous)) {
+    if (
+      previous?.state === MachineState.SETUP &&
+      !this.hasMovement(current, previous)
+    ) {
+      return MachineState.IDLE;
+    }
+
+    if (
+      previous?.state !== MachineState.ACTIVE &&
+      this.hasMovement(current, previous)
+    ) {
       return MachineState.SETUP;
     }
 
@@ -569,27 +579,65 @@ export class MachineDataService {
   }
 
   private hasMovement(current: any, previous: any): boolean {
-    if (!previous) return false;
+    if (!previous || !current?.metrics || !previous?.metrics) return false;
 
-    if (current.metrics.spindleSpeed !== previous.metrics.spindleSpeed) {
+    const EPSILON = 0.0001;
+
+    const currentSpindleSpeed = Number(current.metrics.spindleSpeed);
+    const previousSpindleSpeed = Number(previous.metrics.spindleSpeed);
+
+    if (
+      !isNaN(currentSpindleSpeed) &&
+      !isNaN(previousSpindleSpeed) &&
+      Math.abs(currentSpindleSpeed - previousSpindleSpeed) > EPSILON
+    ) {
+      console.log(
+        "Spindle speed changed",
+        current.machineId,
+        currentSpindleSpeed,
+        previousSpindleSpeed
+      );
       return true;
     }
 
-    if (current.metrics.feedRate !== previous.metrics.feedRate) {
+    if (
+      Math.abs(current.metrics.feedRate - previous.metrics.feedRate) > EPSILON
+    ) {
+      console.log(
+        "Feed rate changed",
+        current.machineId,
+        current.metrics.feedRate,
+        previous.metrics.feedRate
+      );
       return true;
     }
 
     const axes = ["X", "Y", "Z"];
     for (const axis of axes) {
       if (
-        current.metrics.axisPositions[axis] !==
-        previous.metrics.axisPositions[axis]
+        Math.abs(
+          current.metrics.axisPositions[axis] -
+            previous.metrics.axisPositions[axis]
+        ) > EPSILON
       ) {
+        console.log(
+          "Axis position changed",
+          current.machineId,
+          axis,
+          current.metrics.axisPositions[axis],
+          previous.metrics.axisPositions[axis]
+        );
         return true;
       }
     }
 
     if (current.tool !== previous.tool) {
+      console.log(
+        "Tool changed",
+        current.machineId,
+        current.tool,
+        previous.tool
+      );
       return true;
     }
 
