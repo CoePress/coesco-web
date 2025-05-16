@@ -59,7 +59,7 @@ const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
             {sidebarLabel}
           </h1>
           <Button
-            variant="secondary-outline"
+            variant="ghost"
             onClick={() => setIsOpen(false)}
             className="absolute right-4 md:hidden">
             <X size={16} />

@@ -40,7 +40,7 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
       <div className="flex items-center justify-between px-2 h-full">
         <div className="flex items-center gap-4">
           <Button
-            variant="secondary-outline"
+            variant="ghost"
             onClick={toggleSidebar}>
             <MenuIcon size={16} />
           </Button>
@@ -57,16 +57,13 @@ const Header = ({ user, toggleSidebar }: HeaderProps) => {
                 <span className="text-sm font-medium text-text-muted">
                   {firstName} {lastInitial}.
                 </span>
-                <span className="text-xs text-text-muted">
-                  {user.jobTitle}
-                </span>
+                <span className="text-xs text-text-muted">{user.jobTitle}</span>
               </div>
               <img
                 src="https://via.placeholder.com/150"
                 alt="User avatar"
                 className="w-8 h-8 rounded-full object-cover ring-2 ring-border"
               />
-              <ChevronDown size={16} />
             </button>
 
             {isUserMenuOpen && (

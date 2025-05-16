@@ -24,15 +24,22 @@ const MainMenu = () => {
     setIsLogoutModalOpen(false);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-background">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl leading-none text-primary text-center mb-2">
-          Good morning, {user?.firstName}
+      <div className="flex flex-col items-center gap-8">
+        <h1 className="text-2xl leading-none text-primary text-center">
+          {getGreeting()}, {user?.firstName}
         </h1>
 
         <div
-          className="grid gap-2 justify-center"
+          className="hidden md:grid gap-2 justify-center"
           style={{
             gridTemplateColumns: `repeat(${Math.min(
               Object.values(modules).filter((m) => m.status === "active")
@@ -67,32 +74,87 @@ const MainMenu = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 w-max mx-auto">
-          <Button
-            variant="secondary-outline"
-            onClick={() => navigate("/chat")}>
-            <MessageCircle size={16} />
-            ChatPLK
-          </Button>
-          <Button variant="secondary-outline">
-            <Settings size={16} />
-            Settings
-          </Button>
+        <div className="flex flex-col gap-2 w-full">
+          {Object.entries(modules).map(([key, module]) => (
+            <div key={key}>
+              {module.status === "active" ? (
+                <Link to={module.path} className="w-full">
+                  <Card className="hover:bg-surface transition-all duration-200 w-full">
+                    <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none">
+                      <div className="text-primary">
+                        <module.icon size={20} />
+                      </div>
+                      <span className="text-primary">{module.label}</span>
+                    </div>
+                  </Card>
+                </Link>
+              ) : (
+                <Card>
+                  <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none">
+                    <div className="text-text-muted/50">
+                      <module.icon size={20} />
+                    </div>
+                    <span className="text-text-muted/50">{module.label}</span>
+                  </div>
+                </Card>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="absolute bottom-2 left-2">
+      <div className="absolute bottom-2 right-2 flex-col gap-2 hidden md:flex">
         <Button
           variant="secondary-outline"
-          onClick={toggleTheme}>
+          onClick={() => navigate("/chat")}
+          className="w-32">
+          <MessageCircle size={16} />
+          ChatPLK
+        </Button>
+        <Button
+          variant="secondary-outline"
+          className="w-32">
+          <Settings size={16} />
+          Settings
+        </Button>
+        <Button
+          variant="secondary-outline"
+          onClick={toggleTheme}
+          className="w-32">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === "dark" ? "Light" : "Dark"}
+        </Button>
+        <Button
+          variant="secondary-outline"
+          onClick={handleLogout}
+          className="w-32">
+          <LogOut size={16} />
+          Logout
         </Button>
       </div>
 
-      <div className="absolute bottom-2 right-2">
+      <div className="fixed bottom-0 left-0 right-0 flex justify-between p-2 bg-background md:hidden">
         <Button
           variant="secondary-outline"
-          onClick={handleLogout}>
+          onClick={() => navigate("/chat")}
+          className="flex-1 mx-1">
+          <MessageCircle size={16} />
+        </Button>
+        <Button
+          variant="secondary-outline"
+          className="flex-1 mx-1">
+          <Settings size={16} />
+        </Button>
+        <Button
+          variant="secondary-outline"
+          onClick={toggleTheme}
+          className="flex-1 mx-1">
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </Button>
+        <Button
+          variant="secondary-outline"
+          onClick={handleLogout}
+          className="flex-1 mx-1">
           <LogOut size={16} />
         </Button>
       </div>
