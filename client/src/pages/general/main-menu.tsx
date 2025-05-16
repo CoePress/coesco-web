@@ -1,19 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
-import {
-  Moon,
-  MessageCircle,
-  Settings,
-  Sun,
-  LogOut,
-  Badge,
-  Code,
-} from "lucide-react";
+import { Moon, MessageCircle, Settings, Sun, LogOut, Code } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";
 import { useState } from "react";
+import { __dev__ } from "@/config/env";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
@@ -50,8 +43,12 @@ const MainMenu = () => {
           className="hidden md:grid gap-2 justify-center"
           style={{
             gridTemplateColumns: `repeat(${Math.min(
-              Object.values(modules).filter((m) => m.status !== "inactive")
-                .length,
+              Object.values(modules).filter((m) => {
+                if (__dev__) {
+                  return m.status !== "inactive";
+                }
+                return m.status === "active";
+              }).length,
               4
             )}, auto)`,
           }}>
