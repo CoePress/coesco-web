@@ -5,7 +5,8 @@ export { default as Settings } from "./admin/settings";
 
 // Production
 export { default as ProductionDashboard } from "./production/dashboard";
-export { default as MachineStates } from "./production/machine-states";
+export { default as MachineHistory } from "./production/machine-history";
+export { default as Machines } from "./production/machines";
 export { default as Reports } from "./production/reports";
 // Sales
 export { default as SalesDashboard } from "./sales/dashboard";

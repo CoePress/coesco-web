@@ -15,12 +15,14 @@ import {
   Warehouse,
   Shield,
   Map,
+  Clock,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import {
   Employees,
-  MachineStates,
+  MachineHistory,
+  Machines,
   ProductionDashboard,
   ProductRules,
   Reports,
@@ -171,16 +173,22 @@ const productionModule: Module = {
       component: ProductionDashboard,
     },
     {
+      path: "/machines",
+      label: "Machines",
+      icon: Box,
+      component: Machines,
+    },
+    {
+      path: "/machine-history",
+      label: "Machine History",
+      icon: Clock,
+      component: MachineHistory,
+    },
+    {
       path: "/reports",
       label: "Reports",
       icon: PieChart,
       component: Reports,
-    },
-    {
-      path: "/machine-data",
-      label: "Machine Data",
-      icon: Box,
-      component: MachineStates,
     },
   ],
   popups: [],

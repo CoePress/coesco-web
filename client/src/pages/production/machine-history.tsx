@@ -69,7 +69,7 @@ import useGetStatuses from "@/hooks/production/use-get-statuses";
 //   );
 // };
 
-const MachineStates = () => {
+const MachineHistory = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
     if (!param) return fallback;
     const [year, month, day] = param.split("-").map(Number);
@@ -220,8 +220,8 @@ const MachineStates = () => {
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title="Machine States"
-        description="Explore all machine states"
+        title="Machine History"
+        description="Explore all machine history"
         actions={[
           {
             type: "dropdown",
@@ -269,4 +269,4 @@ const MachineStates = () => {
   );
 };
 
-export default MachineStates;
+export default MachineHistory;
