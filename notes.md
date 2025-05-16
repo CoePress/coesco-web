@@ -20,6 +20,7 @@
 - [] Setup Test env
 - [] Steal sidebar from v1
 - [] Handle 429 status codes
+- [] Branch protection
 
 ## Urls
 

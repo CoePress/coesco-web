@@ -720,8 +720,48 @@ const Dashboard = () => {
           </div>
 
           <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] lg:hidden">
-            <div className="p-2 border-b">
+            <div className="p-2 border-b flex-shrink-0">
               <h3 className="text-sm text-text-muted">Alarms</h3>
+            </div>
+
+            <div className="overflow-y-auto flex-grow flex flex-col">
+              <div className="p-2 space-y-2 flex-1 flex flex-col">
+                {loading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader />
+                  </div>
+                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
+                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-surface rounded border border-border flex justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle
+                          size={16}
+                          className="text-error"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-text-muted">
+                            {alarm.message}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {alarm.machineId}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-text-muted leading-none">
+                        {formatDistance(new Date(alarm.timestamp), new Date(), {
+                          addSuffix: true,
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
+                    No alarms
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
