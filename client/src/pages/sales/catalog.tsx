@@ -235,18 +235,14 @@ const Catalog = () => {
           {
             type: "button",
             label: "Import",
+            variant: "secondary-outline",
             icon: <Import size={16} />,
             onClick: () => {},
           },
           {
             type: "button",
             label: "Create New",
-            icon: <Plus size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Create New",
+            variant: "primary",
             icon: <Plus size={16} />,
             onClick: () => {},
           },

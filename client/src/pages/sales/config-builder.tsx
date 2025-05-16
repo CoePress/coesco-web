@@ -481,12 +481,14 @@ const ConfigBuilder = () => {
           {
             type: "button",
             label: "Import",
+            variant: "secondary-outline",
             icon: <Import size={16} />,
             onClick: () => {},
           },
           {
             type: "button",
             label: "Save",
+            variant: "primary",
             icon: <Save size={16} />,
             onClick: () => setIsSaveModalOpen(true),
             disabled: validationResults.some((r) => r.type === "error"),

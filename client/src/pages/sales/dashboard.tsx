@@ -154,7 +154,6 @@ const Dashboard = () => {
             label: "Filter",
             icon: <Filter size={16} />,
             variant: "secondary-outline",
-            size: "sm",
             onClick: () => {},
           },
           {
@@ -162,7 +161,6 @@ const Dashboard = () => {
             label: "Refresh",
             icon: <RefreshCcw size={16} />,
             variant: "primary",
-            size: "sm",
             onClick: () => {},
           },
         ]}

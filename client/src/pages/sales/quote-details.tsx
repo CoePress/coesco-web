@@ -54,12 +54,14 @@ const QuoteDetails = () => {
           {
             type: "button",
             label: "Export",
+            variant: "secondary-outline",
             icon: <Download size={16} />,
             onClick: () => {},
           },
           {
             type: "button",
             label: "Revise",
+            variant: "primary",
             icon: <Edit size={16} />,
             onClick: () => {},
           },

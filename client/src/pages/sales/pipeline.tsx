@@ -1,15 +1,13 @@
 import {
-  Filter,
   Download,
   MoreHorizontal,
-  ChevronDown,
   Plus,
   Layout,
   List as ListIcon,
 } from "lucide-react";
 import { useState } from "react";
 
-import { PageHeader, PageSearch, StatusBadge } from "@/components";
+import { PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleDeals } from "@/utils/sample-data";
 import Table from "@/components/v1/table";
@@ -199,48 +197,32 @@ const Pipeline = () => {
           {
             type: "button",
             label: "View",
+            variant: "secondary-outline",
             icon: <Layout size={16} />,
             onClick: () => setViewMode("kanban"),
           },
           {
             type: "button",
             label: "List",
+            variant: "secondary-outline",
             icon: <ListIcon size={16} />,
             onClick: () => setViewMode("list"),
           },
           {
             type: "button",
             label: "Export",
+            variant: "secondary-outline",
             icon: <Download size={16} />,
             onClick: () => {},
           },
           {
             type: "button",
             label: "Add Deal",
+            variant: "primary",
             icon: <Plus size={16} />,
             onClick: () => {},
           },
         ]}
-      />
-
-      <PageSearch
-        placeholder="Search deals..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-        label="Deals"
-        labelTrigger={false}
-      />
-
-      <PageSearch
-        placeholder="Search deals..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-        label="Deals"
-        labelTrigger={false}
       />
 
       {viewMode === "kanban" && (

@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { X } from "lucide-react";
 
 import modules from "@/config/modules";
 import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
 import { IEmployee } from "@/utils/types";
+import Button from "../v1/button";
 
 type SidebarProps = {
   isOpen: boolean;
   theme: string;
   toggleTheme: () => void;
+  setIsOpen: (isOpen: boolean) => void;
 };
 
-const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
+const Sidebar = ({ isOpen, theme, toggleTheme, setIsOpen }: SidebarProps) => {
   const navigate = useNavigate();
 
   let sidebarLabel = "Dashboard";
@@ -43,18 +46,24 @@ const Sidebar = ({ isOpen, theme, toggleTheme }: SidebarProps) => {
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden ${
         isOpen ? "w-60" : "w-0"
-      }`}>
+      } md:relative absolute z-50`}>
       <div
         className={`flex flex-col h-full transition-opacity duration-300 ${
           isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
         }`}>
-        <div className="flex items-center justify-center h-16 border-b border-border">
+        <div className="flex items-center justify-center h-16 border-b border-border relative">
           <h1
             className={`text-xl font-semibold text-primary ${
               isOpen ? "opacity-100" : "opacity-0"
             }`}>
             {sidebarLabel}
           </h1>
+          <Button
+            variant="secondary-outline"
+            onClick={() => setIsOpen(false)}
+            className="absolute right-4 md:hidden">
+            <X size={16} />
+          </Button>
         </div>
         <nav className="flex-1 overflow-y-auto p-2">
           <div className="flex flex-col gap-2">
@@ -227,6 +236,7 @@ const Layout = ({ user, children }: LayoutProps) => {
         isOpen={isSidebarOpen}
         theme={theme}
         toggleTheme={toggleTheme}
+        setIsOpen={setIsSidebarOpen}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header

@@ -102,12 +102,14 @@ const Customers = () => {
             type: "button",
             label: "Export",
             icon: <Download size={16} />,
+            variant: "secondary-outline",
             onClick: () => {},
           },
           {
             type: "button",
             label: "New Customer",
             icon: <Plus size={16} />,
+            variant: "primary",
             onClick: () => {},
           },
         ]}

@@ -43,12 +43,14 @@ const CustomerDetails = () => {
           {
             type: "button",
             label: "Export",
+            variant: "secondary-outline",
             icon: <Download size={16} />,
             onClick: () => {},
           },
           {
             type: "button",
             label: "Edit",
+            variant: "primary",
             icon: <Edit size={16} />,
             onClick: () => {},
           },
