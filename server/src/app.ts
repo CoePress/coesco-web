@@ -5,7 +5,7 @@ import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { createServer } from "http";
 import routes from "./routes";
-import { config } from "./config/config";
+import { __dev__, __prod__, config } from "./config/config";
 import { errorHandler } from "./middleware/error.middleware";
 import {
   cspMiddleware,
@@ -48,8 +48,8 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(compression());
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: __prod__ ? 15 * 60 * 1000 : 60 * 1000,
+  max: __prod__ ? 100 : 1000,
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -57,6 +57,7 @@ const limiter = rateLimit({
     trustProxy: false,
     xForwardedForHeader: true,
   },
+  skip: (req, res) => __dev__,
 });
 app.use("/api", limiter);
 

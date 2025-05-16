@@ -6,7 +6,6 @@ import {
   RefreshCcw,
   Clock,
   Map,
-  Loader,
   Box,
   Calendar,
 } from "lucide-react";
@@ -25,7 +24,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Card, MachineMap, Modal, PageHeader } from "@/components";
+import { Card, Loader, MachineMap, Modal, PageHeader } from "@/components";
 import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
@@ -366,7 +365,9 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
         )}
       </div>
       <h3 className="text-xl font-semibold text-text-muted">{value}</h3>
-      <p className="text-xs text-text-muted mt-1">{description}</p>
+      <p className="text-xs text-text-muted mt-1 hidden md:block">
+        {description}
+      </p>
     </div>
   );
 };
@@ -550,7 +551,7 @@ const Dashboard = () => {
       )}
 
       <div className="p-2 gap-2 flex flex-col flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {kpis.map((metric) => (
             <KPICard
               key={metric.title}
@@ -811,11 +812,11 @@ const Dashboard = () => {
               <h3 className="text-sm text-text-muted">Alarms</h3>
             </div>
 
-            <div className="overflow-y-auto flex-grow">
-              <div className="p-2 space-y-2">
+            <div className="overflow-y-auto flex-grow flex flex-col">
+              <div className="p-2 space-y-2 flex-1 flex flex-col">
                 {loading ? (
-                  <div className="text-center text-text-muted text-sm py-2">
-                    Loading...
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader />
                   </div>
                 ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
                   overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
@@ -844,7 +845,7 @@ const Dashboard = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center text-text-muted text-sm py-2">
+                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
                     No alarms
                   </div>
                 )}

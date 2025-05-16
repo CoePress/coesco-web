@@ -18,7 +18,8 @@
 - [] Update machine card time to be duration of current state
 - [] Add spindle load
 - [] Setup Test env
-- [] Steal sidebar from v1 
+- [] Steal sidebar from v1
+- [] Handle 429 status codes
 
 ## Urls
 
