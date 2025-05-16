@@ -108,7 +108,7 @@ export const config = {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   },
   fanucAdapter: {
-    ip: env.data.FANUC_ADAPTER_IP,
+    host: env.data.FANUC_ADAPTER_IP,
     port: env.data.FANUC_ADAPTER_PORT,
   },
 };

@@ -4,7 +4,7 @@ import { config } from "./config/config";
 import { sequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
-import { initializeSocketService, machineDataService } from "./services";
+import { machineDataService, socketInstance } from "./services";
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
@@ -14,7 +14,7 @@ httpServer.listen(config.port, async () => {
     `Server running in ${config.nodeEnv} mode on port ${config.port}`
   );
 
-  initializeSocketService();
+  socketInstance();
   logger.info("Socket.IO server initialized");
 });
 
