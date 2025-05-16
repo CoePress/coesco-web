@@ -47,7 +47,7 @@ const App = () => {
   };
 
   const moduleRoutes = Object.values(modules)
-    .filter((module: Module) => module.status === "active")
+    .filter((module: Module) => module.status !== "inactive")
     .map((module: Module) => [
       <Route
         key={module.path}

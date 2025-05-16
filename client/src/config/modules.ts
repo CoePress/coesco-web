@@ -47,7 +47,7 @@ export type Module = {
   path: string;
   label: string;
   icon: LucideIcon;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "development";
   pages: Page[];
   popups: Popup[];
 };
@@ -70,7 +70,7 @@ const salesModule: Module = {
   path: "/sales",
   label: "Sales",
   icon: DollarSign,
-  status: "active",
+  status: "development",
   pages: [
     {
       path: "/",
@@ -147,7 +147,7 @@ const warehouseModule: Module = {
   path: "/warehouse",
   label: "Warehouse",
   icon: Warehouse,
-  status: "active",
+  status: "development",
   pages: [
     {
       path: "/",
@@ -223,19 +223,22 @@ const adminModule: Module = {
   popups: [],
 };
 
-const devModules = {
+const allModules = [
   salesModule,
   warehouseModule,
-};
-
-const unorderedModules = {
-  adminModule,
   productionModule,
+  adminModule,
+];
 
-  ...(__dev__ ? devModules : {}),
-};
+const devModules = allModules.filter(
+  (module) => module.status === "development"
+);
 
-const modules = Object.values(unorderedModules).sort(
+const activeModules = allModules.filter((module) => module.status === "active");
+
+const unorderedModules = [...(__dev__ ? devModules : []), ...activeModules];
+
+const modules: Module[] = unorderedModules.sort(
   (a, b) => a.sequence - b.sequence
 );
 

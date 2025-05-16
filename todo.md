@@ -7,6 +7,8 @@
 
 ## Server
 
+- Passing "options.maxAge" into cookies is deprecated
+
 ## Infrastructure
 
 - Azure key vault

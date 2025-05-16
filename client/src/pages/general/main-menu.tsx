@@ -1,7 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
-import { Moon, MessageCircle, Settings, Sun, LogOut } from "lucide-react";
+import {
+  Moon,
+  MessageCircle,
+  Settings,
+  Sun,
+  LogOut,
+  Badge,
+  Code,
+} from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";
@@ -42,16 +50,24 @@ const MainMenu = () => {
           className="hidden md:grid gap-2 justify-center"
           style={{
             gridTemplateColumns: `repeat(${Math.min(
-              Object.values(modules).filter((m) => m.status === "active")
+              Object.values(modules).filter((m) => m.status !== "inactive")
                 .length,
               4
             )}, auto)`,
           }}>
-          {Object.entries(modules).map(([key, module]) => (
-            <div key={key}>
-              {module.status === "active" ? (
+          {modules.map((module) => (
+            <div key={module.path}>
+              {module.status !== "inactive" ? (
                 <Link to={module.path}>
-                  <Card className="hover:bg-surface transition-all duration-200">
+                  <Card className="hover:bg-surface transition-all duration-200 relative shadow">
+                    <div className="absolute top-2 right-2">
+                      {module.status === "development" && (
+                        <Code
+                          size={16}
+                          className="text-primary"
+                        />
+                      )}
+                    </div>
                     <div className="text-center flex flex-col items-center justify-center gap-2 w-24 aspect-square select-none">
                       <div className="text-primary">
                         <module.icon size={20} />
@@ -62,7 +78,7 @@ const MainMenu = () => {
                 </Link>
               ) : (
                 <Card>
-                  <div className="text-center flex flex-col items-center justify-center gap-2 w-24 aspect-square select-none">
+                  <div className="text-center flex flex-col items-center justify-center gap-2 w-24 aspect-square select-none opacity-50 shadow">
                     <div className="text-text-muted/50">
                       <module.icon size={20} />
                     </div>
@@ -77,11 +93,19 @@ const MainMenu = () => {
         <div className="flex flex-col gap-2 w-full md:hidden">
           {Object.entries(modules).map(([key, module]) => (
             <div key={key}>
-              {module.status === "active" ? (
+              {module.status !== "inactive" ? (
                 <Link
                   to={module.path}
                   className="w-full">
-                  <Card className="hover:bg-surface transition-all duration-200 w-full">
+                  <Card className="hover:bg-surface transition-all duration-200 w-full shadow relative">
+                    <div className="absolute top-2 right-2">
+                      {module.status === "development" && (
+                        <Code
+                          size={16}
+                          className="text-primary"
+                        />
+                      )}
+                    </div>
                     <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none">
                       <div className="text-primary">
                         <module.icon size={20} />
@@ -92,7 +116,7 @@ const MainMenu = () => {
                 </Link>
               ) : (
                 <Card>
-                  <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none">
+                  <div className="text-center flex flex-col items-center justify-center gap-2 w-full select-none opacity-50 shadow">
                     <div className="text-text-muted/50">
                       <module.icon size={20} />
                     </div>
