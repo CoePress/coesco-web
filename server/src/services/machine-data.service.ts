@@ -1,16 +1,15 @@
-import { buildQuery, createDateRange } from "@/utils";
-import { IQueryParams } from "@/types/api.types";
+import { BadRequestError } from "@/middleware/error.middleware";
 import MachineStatus from "@/models/machine-status";
-import { cacheService, getSocketService, machineService } from ".";
-import {
-  BadRequestError,
-  InternalServerError,
-} from "@/middleware/error.middleware";
-import { Op } from "sequelize";
 import { IMachineStatus } from "@/types/schema.types";
-import { MachineState, MachineConnectionType } from "@/types/enum.types";
-import { config } from "@/config/config";
+import { buildQuery, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
+import { IQueryParams } from "@/types/api.types";
+import { MachineState, MachineConnectionType } from "@/types/enum.types";
+import { cacheService, getSocketService, machineService } from ".";
+import { Agent as HttpAgent } from "http";
+import { Agent as HttpsAgent } from "https";
+import fetch from "node-fetch";
+import { Op } from "sequelize";
 
 interface CachedMachineState {
   state: MachineState;
@@ -33,7 +32,7 @@ interface CachedMachineState {
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
-  private readonly POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly POLL_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
   private machines: any[] = [];
   private lastFetchTime: number = 0;
   private readonly MACHINES_CACHE_KEY = "machines:list";
@@ -45,14 +44,16 @@ export class MachineDataService {
     program: null,
     tool: null,
     metrics: {
-      spindleSpeed: null,
-      feedRate: null,
+      spindleSpeed: 0,
+      feedRate: 0,
       axisPositions: {
-        X: null,
-        Y: null,
-        Z: null,
+        X: 0,
+        Y: 0,
+        Z: 0,
       },
     },
+    alarm: null,
+    timestamp: new Date().toISOString(),
   };
 
   constructor() {
@@ -470,7 +471,7 @@ export class MachineDataService {
         let state;
         switch (machine.connectionType) {
           case MachineConnectionType.MTCONNECT:
-            const xmlData = await this.pollMTConnect(machine);
+            const xmlData = await this.pollMachine(machine);
             data = await this.processMTConnectData(xmlData);
             if (!data) {
               throw new BadRequestError("Failed to process MTConnect data");
@@ -478,7 +479,7 @@ export class MachineDataService {
             state = await this.determineMTConnectState(data, cachedState);
             break;
           case MachineConnectionType.CUSTOM:
-            const fanucData = await this.pollFanuc(machine);
+            const fanucData = await this.pollMachine(machine);
             data = await this.processFanucData(fanucData, machine.id);
             if (!data) {
               throw new BadRequestError("Failed to process Fanuc data");
@@ -497,6 +498,12 @@ export class MachineDataService {
         const stateChanged = cachedState?.state !== state;
         const programChanged = cachedState?.program !== data.program;
         const alarmChanged = cachedState?.alarm !== data.alarm;
+
+        if (alarmChanged) {
+          logger.info(
+            `Machine ${machine.id} alarm changed: ${cachedState?.alarm} -> ${data.alarm}`
+          );
+        }
 
         const changed =
           stateChanged || positionChanged || programChanged || alarmChanged;
@@ -540,22 +547,23 @@ export class MachineDataService {
     return current;
   }
 
-  async pollMTConnect(machine: any) {
-    const mtconnectUrl = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
-    const response = await this.fetchData(mtconnectUrl);
+  async pollMachine(machine: any) {
+    const isMTConnect =
+      machine.connectionType === MachineConnectionType.MTCONNECT;
+
+    const url = isMTConnect
+      ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
+      : `https://localhost:7043/api/machines/${machine.slug}`;
+
+    const response = await this.fetchData(url);
     if (!response) return null;
 
-    const xmlText = await response.text();
-    return xmlText;
-  }
-
-  async pollFanuc(machine: any) {
-    const fanucAdapterUrl = `http://${config.fanucAdapter.host}:${config.fanucAdapter.port}/api/machines/${machine.slug}`;
-    const response = await this.fetchData(fanucAdapterUrl);
-    if (!response) return null;
-
-    const { data } = await response.json();
-    return data;
+    if (isMTConnect) {
+      return await response.text();
+    } else {
+      const { data } = await response.json();
+      return data;
+    }
   }
 
   async processMTConnectData(xml: string | null) {
@@ -609,23 +617,25 @@ export class MachineDataService {
   }
 
   async processFanucData(data: any, machineId: string) {
+    console.log(`Processing Fanuc data for machine ${machineId}`);
+    console.log(data);
     if (!data) return null;
 
     return {
-      execution: data.execution || null,
-      controller: data.controller || null,
-      program: data.program || null,
-      tool: data.tool || null,
+      execution: data.execution,
+      controller: data.controller,
+      program: "LIVE PROGRAM",
+      tool: data.tool,
       metrics: {
-        spindleSpeed: data.spindleSpeed || 0,
-        feedRate: data.feedRate || 0,
+        spindleSpeed: data.spindleSpeed,
+        feedRate: data.feedRate,
         axisPositions: {
-          X: data.axisX || 0,
-          Y: data.axisY || 0,
-          Z: data.axisZ || 0,
+          X: data.axisX,
+          Y: data.axisY,
+          Z: data.axisZ,
         },
       },
-      alarm: data.alarm || null,
+      alarm: data.alarm,
       timestamp: new Date().toISOString(),
     };
   }
@@ -635,8 +645,14 @@ export class MachineDataService {
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      const isHttps = url.startsWith("https://");
+      const agent = isHttps
+        ? new HttpsAgent({ rejectUnauthorized: false })
+        : new HttpAgent();
+
       const response = await fetch(url, {
-        signal: controller.signal,
+        agent,
+        signal: controller.signal as any,
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
           Pragma: "no-cache",
@@ -900,26 +916,3 @@ export class MachineDataService {
       throw new BadRequestError("End time cannot be before start time");
   }
 }
-
-// {
-//   success: true,
-//   message: null,
-//   data: {
-//     machineId: "c36ce3f1-059b-47a6-86fe-9ba3d43cd43b",
-//     execution: "****",
-//     controller: "EDIT",
-//     program: "C10566-48-UPPER",
-//     tool: null,
-//     spindleSpeed: 0,
-//     feedRate: 0,
-//     axisX: 0,
-//     axisY: 0,
-//     axisZ: 0,
-//     axisA: 0,
-//     axisB: 0,
-//     axisC: 0,
-//     alarm: "",
-//     timestamp: "2025-05-16T18:22:58.6886247Z",
-//   },
-//   error: null,
-// };
