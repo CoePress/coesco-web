@@ -1,11 +1,10 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
+import { IMachine, ICreateMachineDto } from "@/types/schema.types";
 import {
-  IMachine,
-  ICreateMachineDto,
   MachineConnectionType,
   MachineControllerType,
   MachineType,
-} from "@/types/schema.types";
+} from "@/types/enum.types";
 
 type MachineAttributes = Omit<IMachine, "createdAt" | "updatedAt">;
 

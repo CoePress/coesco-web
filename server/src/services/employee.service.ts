@@ -5,7 +5,7 @@ import { config } from "@/config/config";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { IApiResponse, IQueryParams } from "@/types/api.types";
-import { EmployeeRole, IEmployee, UserType } from "@/types/schema.types";
+import { IEmployee } from "@/types/schema.types";
 import { IEmployeeService } from "@/types/service.types";
 import { logger } from "@/utils/logger";
 import { buildQuery, validateUuid } from "@/utils";
@@ -14,6 +14,7 @@ import {
   NotFoundError,
   InternalServerError,
 } from "@/middleware/error.middleware";
+import { EmployeeRole, UserType } from "@/types/enum.types";
 
 const blacklistedEmails = [
   "ads@cpec.com",

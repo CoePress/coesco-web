@@ -4,8 +4,8 @@ import MachineStatus from "@/models/machine-status";
 import { cacheService, getSocketService, machineService } from ".";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Op } from "sequelize";
-import { IMachineStatus, MachineState } from "@/types/schema.types";
-import { MachineConnectionType } from "@/types/schema.types";
+import { IMachineStatus } from "@/types/schema.types";
+import { MachineState, MachineConnectionType } from "@/types/enum.types";
 import { config } from "@/config/config";
 import { logger } from "@/utils/logger";
 

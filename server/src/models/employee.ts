@@ -1,5 +1,6 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { EmployeeRole, IEmployeeAttributes } from "@/types/schema.types";
+import { IEmployeeAttributes } from "@/types/schema.types";
+import { EmployeeRole } from "@/types/enum.types";
 
 class Employee
   extends Model<IEmployeeAttributes>

@@ -1,9 +1,5 @@
 import { ICustomer, IEmployee } from "@/types/schema.types";
-
-export enum UserType {
-  INTERNAL = "INTERNAL",
-  EXTERNAL = "EXTERNAL",
-}
+import { UserType } from "@/types/enum.types";
 
 export interface IAuth {
   id: string;

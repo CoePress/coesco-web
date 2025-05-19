@@ -1,5 +1,6 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { IAuthAttributes, UserType } from "@/types/auth.types";
+import { IAuthAttributes } from "@/types/auth.types";
+import { UserType } from "@/types/enum.types";
 
 class Auth extends Model<IAuthAttributes> implements IAuthAttributes {
   declare id: string;

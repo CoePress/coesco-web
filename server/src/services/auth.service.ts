@@ -1,10 +1,5 @@
-import {
-  IAuthResponse,
-  IAuthTokens,
-  UserType,
-  IAuthService,
-} from "@/types/auth.types";
-import { EmployeeRole, IEmployee } from "@/types/schema.types";
+import { IAuthResponse, IAuthTokens, IAuthService } from "@/types/auth.types";
+import { IEmployee } from "@/types/schema.types";
 import { sign, verify } from "jsonwebtoken";
 import { config } from "@/config/config";
 import { UnauthorizedError } from "@/middleware/error.middleware";
@@ -14,7 +9,7 @@ import { ConfidentialClientApplication } from "@azure/msal-node";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
-import * as msal from "@azure/msal-node";
+import { EmployeeRole, UserType } from "@/types/enum.types";
 
 type AuthWithEmployee = Auth & {
   employee: Employee;

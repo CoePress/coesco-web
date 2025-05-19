@@ -4,11 +4,7 @@ import nodemailer from "nodemailer";
 import path from "path";
 import { Op } from "sequelize";
 
-import {
-  FanucControllerMode,
-  FanucExecutionMode,
-  IDateRange,
-} from "@/types/schema.types";
+import { IDateRange } from "@/types/schema.types";
 import { NextFunction, Request, Response } from "express";
 import { toZonedTime } from "date-fns-tz";
 import {
@@ -24,6 +20,7 @@ import {
   IQueryBuilderResult,
   IQueryParams,
 } from "@/types/api.types";
+import { FanucControllerMode, FanucExecutionMode } from "@/types/enum.types";
 
 export const asyncHandler =
   (fn: any) => (req: Request, res: Response, next: NextFunction) => {

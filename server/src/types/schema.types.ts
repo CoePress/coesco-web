@@ -1,19 +1,16 @@
+import {
+  CustomerStatus,
+  EmployeeRole,
+  MachineConnectionType,
+  MachineControllerType,
+  MachineState,
+  MachineType,
+} from "./enum.types";
+
 export interface IBaseEntity {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export enum UserType {
-  INTERNAL = "INTERNAL",
-  EXTERNAL = "EXTERNAL",
-}
-
-export enum EmployeeRole {
-  INACTIVE = "INACTIVE",
-  ADMIN = "ADMIN",
-  MANAGER = "MANAGER",
-  EMPLOYEE = "EMPLOYEE",
 }
 
 export interface IDepartment extends IBaseEntity {
@@ -36,19 +33,13 @@ export interface IEmployee extends IBaseEntity {
 export interface IEmployeeAttributes
   extends Omit<IEmployee, "createdAt" | "updatedAt"> {}
 
-export interface ICreateEmployeeDto
-  extends Omit<IEmployee, "id" | "createdAt" | "updatedAt"> {}
-
-export interface IEmployeeIncludes extends IEmployee {
-  departments: IDepartment[];
-  primaryDepartment: IDepartment;
-  reportsTo?: IEmployee;
-}
-
-export enum CustomerStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  PENDING = "PENDING",
+export interface IMicrosoftUser {
+  id: string;
+  mail: string;
+  givenName: string;
+  surname: string;
+  jobTitle: string;
+  department: string;
 }
 
 export interface ICustomer extends IBaseEntity {
@@ -60,13 +51,6 @@ export interface ICustomer extends IBaseEntity {
   status: CustomerStatus;
   notes?: string;
   tags?: string[];
-}
-
-export interface ICustomerIncludes extends ICustomer {
-  primaryContact?: IContact;
-  billingAddress?: IAddress;
-  shippingAddress?: IAddress;
-  contacts?: IContact[];
 }
 
 export interface IContact extends IBaseEntity {
@@ -106,123 +90,6 @@ export interface IDealer extends IBaseEntity {
   notes?: string;
 }
 
-export enum ProductClassStatus {
-  DRAFT = "DRAFT",
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-}
-
-export interface IProductClass extends IBaseEntity {
-  name: string;
-  description?: string;
-  image?: string;
-  parentId?: string | null;
-  status: ProductClassStatus;
-}
-
-export interface IOptionCategory extends IBaseEntity {
-  name: string;
-  description?: string;
-  isRequired: boolean;
-  allowMultiple: boolean;
-  displayOrder: number;
-  productClassIds: string[];
-}
-
-export interface IQuantityBounds {
-  min: number;
-  max: number;
-}
-
-export interface IOption extends IBaseEntity {
-  name: string;
-  description?: string;
-  price: number;
-  isStandard: boolean;
-  allowQuantity: boolean;
-  quantity?: IQuantityBounds;
-  displayOrder: number;
-  categoryId: string;
-}
-
-// Quote
-export enum QuoteStatus {
-  DRAFT = "DRAFT",
-  SENT = "SENT",
-  ACCEPTED = "ACCEPTED",
-  REJECTED = "REJECTED",
-  CANCELLED = "CANCELLED",
-  EXPIRED = "EXPIRED",
-}
-
-export interface IQuoteHeader {
-  id: string;
-  quoteNumber: string;
-  quoteYear: string;
-  customerId: string;
-  dealerId: string;
-  status: QuoteStatus;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IQuoteHeaderIncludes extends IQuoteHeader {
-  customer?: ICustomer | ICustomerIncludes;
-  dealer?: IDealer;
-}
-
-export interface IQuoteDetail extends IBaseEntity {
-  quoteHeaderId: string;
-  revision: string;
-  status: string;
-}
-
-export interface IQuoteDetailIncludes extends IQuoteDetail {
-  quoteHeader?: IQuoteHeader;
-}
-
-export enum ItemType {
-  PRODUCT = "PRODUCT",
-  MATERIAL = "MATERIAL",
-  SERVICE = "SERVICE",
-  DISCOUNT = "DISCOUNT",
-}
-
-export interface IQuoteItem {
-  id: string;
-  quoteDetailsId: string;
-  itemType: ItemType;
-  itemId: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-}
-
-export interface IQuoteItemIncludes extends IQuoteItem {
-  item: string;
-}
-
-export enum MachineType {
-  LATHE = "LATHE",
-  MILL = "MILL",
-}
-
-export enum MachineControllerType {
-  FANUC = "FANUC",
-  SIEMENS = "SIEMENS",
-  HAAS = "HAAS",
-  MAZAK = "MAZAK",
-  OKUMA = "OKUMA",
-  OTHER = "OTHER",
-}
-
-export enum MachineConnectionType {
-  MTCONNECT = "MTCONNECT",
-  CUSTOM = "CUSTOM",
-}
-
 export interface IMachine extends IBaseEntity {
   slug: string;
   name: string;
@@ -237,14 +104,6 @@ export interface IMachine extends IBaseEntity {
 
 export interface ICreateMachineDto
   extends Omit<IMachine, "id" | "createdAt" | "updatedAt"> {}
-
-export enum MachineState {
-  ACTIVE = "ACTIVE",
-  SETUP = "SETUP",
-  IDLE = "IDLE",
-  ALARM = "ALARM",
-  OFFLINE = "OFFLINE",
-}
 
 export interface IMachineStatus extends IBaseEntity {
   machineId: string;
@@ -317,40 +176,6 @@ export interface IDateRange {
   previousEndDate: Date;
 }
 
-export enum FanucControllerMode {
-  MDI = "MDI",
-  MEM = "MEM",
-  UNDEFINED = "****",
-  EDIT = "EDIT",
-  HND = "HND",
-  JOG = "JOG",
-  T_JOG = "T-JOG",
-  T_HND = "T-HND",
-  INC = "INC",
-  REF = "REF",
-  RMT = "RMT",
-  UNAVAILABLE = "UNAVAILABLE",
-}
-
-export enum FanucExecutionMode {
-  UNDEFINED = "****",
-  STOP = "STOP",
-  HOLD = "HOLD",
-  STRT = "STRT",
-  MSTR = "MSTR",
-  UNAVAILABLE = "UNAVAILABLE",
-}
-
-export interface IMicrosoftUser {
-  id: string;
-  mail: string;
-  givenName: string;
-  surname: string;
-  jobTitle: string;
-  department: string;
-}
-
-// schema.types.ts
 export interface IEmailTemplate {
   slug: string;
   name: string;
@@ -444,5 +269,3 @@ export interface IInvoiceData {
   // Optional payment URL
   payOnlineUrl?: string;
 }
-
-// service.types.ts

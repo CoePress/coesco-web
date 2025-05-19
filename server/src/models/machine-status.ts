@@ -1,5 +1,6 @@
 import { DataTypes, Model, Sequelize, UUIDV4 } from "sequelize";
-import { IMachineStatus, MachineState } from "@/types/schema.types";
+import { IMachineStatus } from "@/types/schema.types";
+import { MachineState } from "@/types/enum.types";
 
 type MachineStatusAttributes = Omit<IMachineStatus, "createdAt" | "updatedAt">;
 
