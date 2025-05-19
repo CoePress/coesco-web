@@ -32,7 +32,7 @@ interface CachedMachineState {
 
 export class MachineDataService {
   private pollInterval: NodeJS.Timeout | null = null;
-  private readonly POLL_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
+  private readonly FETCH_INTERVAL = 1 * 60 * 1000; // 1 minute
   private machines: any[] = [];
   private lastFetchTime: number = 0;
   private readonly MACHINES_CACHE_KEY = "machines:list";
@@ -55,14 +55,35 @@ export class MachineDataService {
     alarm: null,
     timestamp: new Date().toISOString(),
   };
+  private activeRequests: Set<AbortController> = new Set();
 
   constructor() {
-    this.startPolling();
+    this.start();
   }
 
   async initialize() {
     await this.initializeMachineStates();
-    await this.fetchAndCacheMachines(); // Initial fetch
+    await this.fetchAndCacheMachines();
+  }
+
+  start() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  }
+
+  async stop() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
+    // Abort all active requests
+    for (const controller of this.activeRequests) {
+      controller.abort();
+    }
+    this.activeRequests.clear();
   }
 
   private async initializeMachineStates() {
@@ -450,7 +471,7 @@ export class MachineDataService {
     const cachedMachines = await cacheService.get(this.MACHINES_CACHE_KEY);
     if (
       !cachedMachines ||
-      Date.now() - this.lastFetchTime >= this.POLL_INTERVAL_MS
+      Date.now() - this.lastFetchTime >= this.FETCH_INTERVAL
     ) {
       await this.fetchAndCacheMachines();
     }
@@ -469,18 +490,23 @@ export class MachineDataService {
 
         let data;
         let state;
+
+        const machineData = await this.pollMachine(machine);
+
+        if (!machineData) {
+          throw new BadRequestError("Failed to poll machine data");
+        }
+
         switch (machine.connectionType) {
           case MachineConnectionType.MTCONNECT:
-            const xmlData = await this.pollMachine(machine);
-            data = await this.processMTConnectData(xmlData);
+            data = await this.processMTConnectData(machineData);
             if (!data) {
               throw new BadRequestError("Failed to process MTConnect data");
             }
             state = await this.determineMTConnectState(data, cachedState);
             break;
           case MachineConnectionType.CUSTOM:
-            const fanucData = await this.pollMachine(machine);
-            data = await this.processFanucData(fanucData, machine.id);
+            data = await this.processFanucData(machineData);
             if (!data) {
               throw new BadRequestError("Failed to process Fanuc data");
             }
@@ -498,6 +524,20 @@ export class MachineDataService {
         const stateChanged = cachedState?.state !== state;
         const programChanged = cachedState?.program !== data.program;
         const alarmChanged = cachedState?.alarm !== data.alarm;
+        const changed =
+          stateChanged || positionChanged || programChanged || alarmChanged;
+
+        if (stateChanged) {
+          logger.info(
+            `Machine ${machine.id} state changed: ${cachedState?.state} -> ${state}`
+          );
+        }
+
+        if (programChanged) {
+          logger.info(
+            `Machine ${machine.id} program changed: ${cachedState?.program} -> ${data.program}`
+          );
+        }
 
         if (alarmChanged) {
           logger.info(
@@ -505,25 +545,12 @@ export class MachineDataService {
           );
         }
 
-        const changed =
-          stateChanged || positionChanged || programChanged || alarmChanged;
-
         if (changed) {
           await cacheService.set(`machine:${machine.id}:current_state`, {
             ...data,
             state,
           });
         }
-
-        if (stateChanged || programChanged || alarmChanged) {
-          logger.info(
-            `Machine ${machine.id} has changed: ${
-              stateChanged ? "state" : ""
-            } ${programChanged ? "program" : ""} ${alarmChanged ? "alarm" : ""}`
-          );
-        }
-
-        logger.info(`Machine ${machine.id} state: ${state}`);
 
         current.push({
           machineId: machine.id,
@@ -616,15 +643,13 @@ export class MachineDataService {
     };
   }
 
-  async processFanucData(data: any, machineId: string) {
-    console.log(`Processing Fanuc data for machine ${machineId}`);
-    console.log(data);
+  async processFanucData(data: any) {
     if (!data) return null;
 
     return {
       execution: data.execution,
       controller: data.controller,
-      program: "LIVE PROGRAM",
+      program: data.program,
       tool: data.tool,
       metrics: {
         spindleSpeed: data.spindleSpeed,
@@ -642,6 +667,7 @@ export class MachineDataService {
 
   private async fetchData(url: string, timeoutMs: number = 500) {
     const controller = new AbortController();
+    this.activeRequests.add(controller);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -675,6 +701,7 @@ export class MachineDataService {
       return null;
     } finally {
       clearTimeout(timeout);
+      this.activeRequests.delete(controller);
     }
   }
 
@@ -745,20 +772,6 @@ export class MachineDataService {
     }
 
     return false;
-  }
-
-  startPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
-  }
-
-  stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
-    }
   }
 
   // Helper methods

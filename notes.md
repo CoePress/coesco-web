@@ -16,12 +16,6 @@
 - [] Add spindle load
 - [] App vs layout commands
 
-## Urls
-
-- cpec.com (website)
-- portal.cpec.com (internal)
-- api.cpec.com (api)
-
 ## Questions for team
 
 - What are the core modules? (sales, production, etc..)

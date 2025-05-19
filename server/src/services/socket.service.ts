@@ -4,7 +4,6 @@ import { machineDataService } from ".";
 
 export class SocketService {
   public io: Server;
-  private readonly PING_INTERVAL = 5000;
 
   constructor(io: Server) {
     this.io = io;
@@ -39,10 +38,7 @@ export class SocketService {
 
       socket.on("data", async (data) => {
         logger.info(`Fanuc data received: ${JSON.stringify(data)}`);
-        const processedData = await machineDataService.processFanucData(
-          data,
-          data.machineId
-        );
+        const processedData = await machineDataService.processFanucData(data);
         if (processedData) {
           this.broadcastDashboardMetrics(processedData);
           this.broadcastMachineStates(processedData);
@@ -136,5 +132,13 @@ export class SocketService {
 
       fanucNamespace.emit("stop", data);
     });
+  }
+
+  async stop() {
+    try {
+      await this.io.close();
+    } catch (err) {
+      logger.error(`Socket.IO close error: ${err}`);
+    }
   }
 }

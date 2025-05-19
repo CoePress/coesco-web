@@ -4,7 +4,13 @@ import { config } from "./config/config";
 import { sequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
-import { initializeSocketService, machineDataService } from "./services";
+import {
+  initializeSocketService,
+  machineDataService,
+  cronService,
+  cacheService,
+  getSocketService,
+} from "./services";
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
@@ -18,10 +24,15 @@ httpServer.listen(config.port, async () => {
   logger.info("Socket.IO server initialized");
 });
 
-const gracefulShutdown = () => {
+const gracefulShutdown = async () => {
   logger.info("Shutting down gracefully...");
 
-  machineDataService.stopPolling();
+  await Promise.all([
+    machineDataService.stop(),
+    cronService.stop(),
+    cacheService.stop(),
+    getSocketService().stop(),
+  ]);
 
   httpServer.close(async () => {
     logger.info("HTTP server closed");
@@ -36,7 +47,7 @@ const gracefulShutdown = () => {
   setTimeout(() => {
     logger.error("Forcing shutdown after timeout");
     process.exit(1);
-  }, 10000);
+  }, 5000);
 };
 
 process.on("SIGTERM", gracefulShutdown);

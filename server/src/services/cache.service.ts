@@ -66,4 +66,12 @@ export class CacheService {
       logger.error(`Redis clear cache error: ${err}`);
     }
   }
+
+  async stop() {
+    try {
+      await this.client.quit();
+    } catch (err) {
+      logger.error(`Redis quit error: ${err}`);
+    }
+  }
 }
