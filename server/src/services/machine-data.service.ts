@@ -258,23 +258,23 @@ export class MachineDataService {
     const now = new Date();
 
     const dateRange = createDateRange(startDate, endDate);
-    console.log(`Current Range: ${dateRange.startDate} - ${dateRange.endDate}`);
-    console.log(
-      `Previous Range: ${dateRange.previousStartDate} - ${dateRange.previousEndDate}`
-    );
+    // console.log(`Current Range: ${dateRange.startDate} - ${dateRange.endDate}`);
+    // console.log(
+    //   `Previous Range: ${dateRange.previousStartDate} - ${dateRange.previousEndDate}`
+    // );
 
     const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
-    console.log(
-      `Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
-    );
+    // console.log(
+    //   `Machine duration per machine per day: ${machineDurationPerMachinePerDay}`
+    // );
 
     const machineDurationPerMachinePerDateRange =
       machineDurationPerMachinePerDay * dateRange.totalDays;
-    console.log(
-      `Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
-    );
+    // console.log(
+    //   `Machine duration per machine per date range: ${machineDurationPerMachinePerDateRange}`
+    // );
 
-    console.log(`Fetching machines and states...`);
+    // console.log(`Fetching machines and states...`);
     const [machines, states, previousStates] = await Promise.all([
       machineService.getMachines({}),
       this.getMachineStatusesByDateRange({
@@ -288,18 +288,18 @@ export class MachineDataService {
     ]);
 
     const machineCount = machines.data.length;
-    console.log(`Machine count: ${machineCount}`);
-    console.log(`Current states count: ${states.data.length}`);
-    console.log(`Previous states count: ${previousStates.data.length}`);
+    // console.log(`Machine count: ${machineCount}`);
+    // console.log(`Current states count: ${states.data.length}`);
+    // console.log(`Previous states count: ${previousStates.data.length}`);
 
     if (machineCount === 0) {
-      console.log(`ERROR: No machines found`);
+      // console.log(`ERROR: No machines found`);
       throw new BadRequestError("No machines found");
     }
 
     const totalMachineDuration =
       machineDurationPerMachinePerDateRange * machineCount;
-    console.log(`Total machine duration: ${totalMachineDuration}`);
+    //  console.log(`Total machine duration: ${totalMachineDuration}`);
 
     const hoursPerDay = 7.5;
     const msPerHour = 60 * 60 * 1000;
@@ -315,16 +315,16 @@ export class MachineDataService {
 
     const utilization = (activeTime / totalAvailableTime) * 100;
 
-    console.log(`Metrics:`);
-    console.log(`  Total available time: ${totalAvailableTime}ms`);
-    console.log(`  Total active time: ${activeTime}ms`);
-    console.log(`  Utilization: ${utilization.toFixed(2)}%`);
+    // console.log(`Metrics:`);
+    // console.log(`  Total available time: ${totalAvailableTime}ms`);
+    // console.log(`  Total active time: ${activeTime}ms`);
+    // console.log(`  Utilization: ${utilization.toFixed(2)}%`);
 
     const stateTotal = Object.values(totalsByState).reduce(
       (acc, total) => acc + total,
       0
     );
-    console.log(`Total state duration: ${stateTotal}`);
+    // console.log(`Total state duration: ${stateTotal}`);
 
     const percentsByState = Object.entries(totalsByState).map(
       ([state, total]) => ({
@@ -333,14 +333,14 @@ export class MachineDataService {
         percentage: stateTotal === 0 ? 0 : (total / stateTotal) * 100,
       })
     );
-    console.log(`State percentages:`, JSON.stringify(percentsByState, null, 2));
+    // console.log(`State percentages:`, JSON.stringify(percentsByState, null, 2));
 
-    console.log(`Calculating time divisions...`);
+    // console.log(`Calculating time divisions...`);
     const { scale, divisionCount } = this.getOverviewScale(
       dateRange.startDate,
       dateRange.endDate
     );
-    console.log(`Scale: ${scale}, Division count: ${divisionCount}`);
+    // console.log(`Scale: ${scale}, Division count: ${divisionCount}`);
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => {
       const start = this.calculateDivisionStart(dateRange.startDate, scale, i);
@@ -356,12 +356,12 @@ export class MachineDataService {
         label: this.formatDivisionLabel(start, scale),
       };
     });
-    console.log(`Created ${divisions.length} divisions`);
+    // console.log(`Created ${divisions.length} divisions`);
 
-    console.log(`Calculating division utilizations...`);
+    // console.log(`Calculating division utilizations...`);
     const activePercentagesWithinEachDivisionTime = divisions.map(
       (division) => {
-        console.log(`Processing division: ${division.label}`);
+        // console.log(`Processing division: ${division.label}`);
         const { activeTime: divisionActiveTime } = this.calculateStatusTotals(
           states.data,
           division.start,
@@ -377,11 +377,11 @@ export class MachineDataService {
             ? 0
             : (divisionActiveTime / divisionTotalTime) * 100;
 
-        console.log(`Division ${division.label} metrics:`);
-        console.log(`  Duration: ${divisionDuration}`);
-        console.log(`  Total time: ${divisionTotalTime}`);
-        console.log(`  Active time: ${divisionActiveTime}`);
-        console.log(`  Utilization: ${divisionUtilization.toFixed(2)}%`);
+        // console.log(`Division ${division.label} metrics:`);
+        // console.log(`  Duration: ${divisionDuration}`);
+        // console.log(`  Total time: ${divisionTotalTime}`);
+        // console.log(`  Active time: ${divisionActiveTime}`);
+        // console.log(`  Utilization: ${divisionUtilization.toFixed(2)}%`);
 
         return {
           label: division.label,
@@ -412,12 +412,12 @@ export class MachineDataService {
         ? 0
         : ((alarmCount - previousAlarmCount) / previousAlarmCount) * 100;
 
-    console.log(`Alarm metrics:`);
-    console.log(`  Current alarms: ${alarmCount}`);
-    console.log(`  Previous alarms: ${previousAlarmCount}`);
-    console.log(`  Alarm change: ${alarmChange.toFixed(2)}%`);
+    // console.log(`Alarm metrics:`);
+    // console.log(`  Current alarms: ${alarmCount}`);
+    // console.log(`  Previous alarms: ${previousAlarmCount}`);
+    // console.log(`  Alarm change: ${alarmChange.toFixed(2)}%`);
 
-    console.log(`Returning final overview`);
+    // console.log(`Returning final overview`);
     return {
       success: true,
       data: {
@@ -560,7 +560,10 @@ export class MachineDataService {
           state,
         });
       } catch (error) {
-        logger.error(`Machine ${machine.id} ${error}`);
+        await cacheService.set(`machine:${machine.id}:current_state`, {
+          ...this.offlineState,
+        });
+
         current.push({
           machineId: machine.id,
           machineName: machine.name,
@@ -687,17 +690,11 @@ export class MachineDataService {
       });
 
       if (!response.ok) {
-        logger.warn(`HTTP error! status: ${response.status} for ${url}`);
         return null;
       }
 
       return response;
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        logger.debug(`Request timeout after ${timeoutMs}ms for ${url}`);
-        return null;
-      }
-      logger.warn(`Error fetching ${url}: ${error.message}`);
       return null;
     } finally {
       clearTimeout(timeout);
@@ -726,10 +723,7 @@ export class MachineDataService {
 
   private async determineFanucState(current: any, previous: any) {
     if (!current || !current.execution) return MachineState.OFFLINE;
-    if (current.execution === "ACTIVE") return MachineState.ACTIVE;
-    if (current.execution === "STOPPED") return MachineState.IDLE;
-
-    return MachineState.IDLE;
+    return current.execution.toUpperCase();
   }
 
   private async hasMoved(current: any, previous: any): Promise<boolean> {

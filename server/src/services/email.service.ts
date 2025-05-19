@@ -8,9 +8,25 @@ import puppeteer from "puppeteer";
 import { config } from "@/config/config";
 import juice from "juice";
 import { IQueryParams } from "@/types/api.types";
+import { machineDataService } from ".";
 
 const sampleInvoice = {};
 const sampleProduction = {};
+
+export function getLastMonday(): Date {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek + 6;
+
+  const lastMonday = new Date(today);
+  lastMonday.setDate(today.getDate() - daysToSubtract);
+
+  // Reset time to start of day
+  lastMonday.setHours(0, 0, 0, 0);
+
+  return lastMonday;
+}
 
 export class EmailService implements IEmailService {
   private templatesPath = path.join(__dirname, "..", "templates");
@@ -171,18 +187,44 @@ export class EmailService implements IEmailService {
     }
   }
 
-  async sendProductionReportEmail(
-    to: string,
-    productionReport: any
-  ): Promise<boolean> {
+  async sendProductionReport(to: string): Promise<boolean> {
+    const startDate = getLastMonday();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const report = await machineDataService.getMachineOverview(
+      startDate.toISOString(),
+      endDate.toISOString()
+    );
+
+    const data = {
+      startDate,
+      endDate,
+      utilization: 85,
+      averageRuntime: 120,
+      totalProduction: 1000,
+      totalDowntime: 100,
+      totalAlarms: 10,
+      totalSetupChanges: 5,
+      totalPartsProduced: 1000,
+    };
+
+    const subject = `Production Report - ${startDate.toISOString()} to ${endDate.toISOString()}`;
+
+    const pdfBuffer = await this.generatePDF("production-report", data);
+
     return this.sendEmail({
       template: "production-report",
-      data: {
-        productionReport,
-      },
       to,
-      subject: "Production Report",
-      attachments: [],
+      data,
+      subject,
+      attachments: [
+        {
+          filename: "production-report.pdf",
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
     });
   }
 

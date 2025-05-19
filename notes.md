@@ -7,8 +7,6 @@
 - [] Config service
 - [] Generate overview (with tests)
 - [] Generate timeline (with tests)
-- [] Record program history
-- [] Record alarm history
 
 ## To Do Later
 
