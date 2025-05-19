@@ -455,8 +455,6 @@ export class MachineDataService {
     }
 
     for (const machine of this.machines) {
-      let data;
-      let state;
       try {
         if (!machine.connectionHost || !machine.connectionPort) {
           throw new BadRequestError(
@@ -468,6 +466,8 @@ export class MachineDataService {
           `machine:${machine.id}:current_state`
         );
 
+        let data;
+        let state;
         switch (machine.connectionType) {
           case MachineConnectionType.MTCONNECT:
             const xmlData = await this.pollMTConnect(machine);
@@ -487,6 +487,10 @@ export class MachineDataService {
             break;
           default:
             throw new BadRequestError("Invalid machine connection type");
+        }
+
+        if (!data || !state) {
+          throw new BadRequestError("Invalid machine data or state");
         }
 
         const positionChanged = await this.hasMoved(data, cachedState);
@@ -605,21 +609,23 @@ export class MachineDataService {
   }
 
   async processFanucData(data: any, machineId: string) {
+    if (!data) return null;
+
     return {
-      execution: data.execution,
-      controller: data.controller,
-      program: data.program,
-      tool: data.tool,
+      execution: data.execution || null,
+      controller: data.controller || null,
+      program: data.program || null,
+      tool: data.tool || null,
       metrics: {
-        spindleSpeed: data.spindleSpeed,
-        feedRate: data.feedRate,
+        spindleSpeed: data.spindleSpeed || 0,
+        feedRate: data.feedRate || 0,
         axisPositions: {
-          X: data.axisX,
-          Y: data.axisY,
-          Z: data.axisZ,
+          X: data.axisX || 0,
+          Y: data.axisY || 0,
+          Z: data.axisZ || 0,
         },
       },
-      alarm: data.alarm,
+      alarm: data.alarm || null,
       timestamp: new Date().toISOString(),
     };
   }
@@ -657,7 +663,7 @@ export class MachineDataService {
   }
 
   private async determineMTConnectState(current: any, previous: any) {
-    if (!current) return MachineState.OFFLINE;
+    if (!current || !current.execution) return MachineState.OFFLINE;
     if (current.execution === "ALARM") return MachineState.ALARM;
     if (current.execution === "ACTIVE") return MachineState.ACTIVE;
     if (current.execution === "STOPPED") return MachineState.IDLE;
@@ -676,7 +682,7 @@ export class MachineDataService {
   }
 
   private async determineFanucState(current: any, previous: any) {
-    if (!current) return MachineState.OFFLINE;
+    if (!current || !current.execution) return MachineState.OFFLINE;
     if (current.execution === "ACTIVE") return MachineState.ACTIVE;
     if (current.execution === "STOPPED") return MachineState.IDLE;
 
@@ -684,7 +690,8 @@ export class MachineDataService {
   }
 
   private async hasMoved(current: any, previous: any): Promise<boolean> {
-    if (!previous || !current?.metrics || !previous?.metrics) return false;
+    if (!current || !previous || !current?.metrics || !previous?.metrics)
+      return false;
 
     const EPSILON = 0.0001;
 
