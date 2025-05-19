@@ -1,7 +1,8 @@
 import { createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import { employeeService } from ".";
+import { emailService, employeeService } from ".";
 import { CronJob } from "cron";
+import { ISendEmailOptions } from "@/types/schema.types";
 
 export class CronService {
   private jobs: CronJob[] = [];
@@ -31,7 +32,7 @@ export class CronService {
     this.jobs.push(
       new CronJob(
         "0 8 * * 0",
-        this.wrapJob("production-report", this.productionReport),
+        this.wrapJob("send-production-report", this.sendProductionReport),
         null,
         true,
         "America/New_York"
@@ -79,10 +80,7 @@ export class CronService {
     };
   }
 
-  // ===== HARDCODED JOB HANDLERS =====
-
-  private async productionReport(): Promise<void> {
-    // build date range for last week
+  private async sendProductionReport(): Promise<void> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 7);
     const endDate = new Date();
@@ -92,7 +90,22 @@ export class CronService {
       endDate.toISOString()
     );
 
+    const productionReport = {};
+
     const recipients = ["jar@cpec.com"];
+
+    const options: ISendEmailOptions = {
+      template: "production-report",
+      data: {
+        productionReport,
+      },
+      to: recipients,
+      from: "noreply@cpec.com",
+      subject: "Production Report",
+      attachments: [],
+    };
+
+    await emailService.sendEmail(options);
 
     logger.info("Generating production report...");
   }

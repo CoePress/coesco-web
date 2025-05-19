@@ -2,57 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Invoice - <%= companyName %></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>Invoice - Coe Press Equipment</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet" />
     <style>
-      /* CSS Variables for theming */
-      :root {
-        --primary: #e8a80c;
-        --secondary: #c4930d;
-        --background: #f8f8f8;
-        --foreground: #ffffff;
-        --surface: #f0f0f0;
-        --text: #202020;
-        --text-muted: #707070;
-        --border: #d4d4d4;
-        --error: #d93026;
-        --success: #05843e;
-        --warning: #ffa500;
-        --info: #0284c7;
-        --shadow: rgba(0, 0, 0, 0.08);
-      }
-
-      /* Dark mode support for clients that support prefers-color-scheme */
-      /* @media (prefers-color-scheme: dark) {
-        :root {
-          --primary: #e8a80c;
-          --secondary: #ffc547;
-          --background: #121212;
-          --foreground: #1c1c1c;
-          --surface: #262626;
-          --text: #efefef;
-          --text-muted: #a0a0a0;
-          --border: #404040;
-          --error: #f44336;
-          --success: #34d399;
-          --warning: #ffab00;
-          --info: #38bdf8;
-          --shadow: rgba(0, 0, 0, 0.25);
-        }
-      } */
-
-      /* Reset and base styles */
       .coe-invoice * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
-        font-family: "Roboto Mono", monospace;
+        font-family: Arial, sans-serif;
       }
 
       .coe-invoice {
-        background-color: var(--background);
-        color: var(--text);
+        background-color: #f8f8f8;
+        color: #202020;
         line-height: 1.6;
         font-size: 16px;
         padding: 20px;
@@ -61,14 +28,14 @@
       .coe-invoice__container {
         max-width: 850px;
         margin: 0 auto;
-        background-color: var(--foreground);
-        border: 1px solid var(--border);
+        background-color: #ffffff;
+        border: 1px solid #d4d4d4;
         padding: 40px;
       }
 
       /* Header styles */
       .coe-invoice__header {
-        border-bottom: 3px solid var(--primary);
+        border-bottom: 3px solid #e8a80c;
         padding-bottom: 20px;
         margin-bottom: 30px;
       }
@@ -82,7 +49,7 @@
         display: table-cell;
         font-size: 26px;
         font-weight: 700;
-        color: var(--primary);
+        color: #e8a80c;
       }
 
       .coe-invoice__header-info {
@@ -113,7 +80,7 @@
         font-size: 14px;
         font-weight: 600;
         text-transform: uppercase;
-        color: var(--text-muted);
+        color: #707070;
         margin-bottom: 10px;
       }
 
@@ -129,20 +96,20 @@
       }
 
       .coe-invoice__table th {
-        background-color: var(--surface);
+        background-color: #f0f0f0;
         padding: 12px 16px;
         text-align: left;
         font-weight: 600;
-        border-bottom: 2px solid var(--primary);
+        border-bottom: 2px solid #e8a80c;
       }
 
       .coe-invoice__table td {
         padding: 12px 16px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid #d4d4d4;
       }
 
       .coe-invoice__table tr:nth-child(even) {
-        background-color: var(--background);
+        background-color: #f8f8f8;
       }
 
       /* Totals section */
@@ -172,13 +139,13 @@
       .coe-invoice__grand-total {
         font-weight: 700;
         font-size: 18px;
-        border-top: 2px solid var(--primary);
+        border-top: 2px solid #e8a80c;
         padding-top: 12px;
       }
 
       /* Payment section */
       .coe-invoice__payment {
-        background-color: var(--surface);
+        background-color: #f0f0f0;
         padding: 20px;
         margin-bottom: 30px;
       }
@@ -203,14 +170,14 @@
       .coe-invoice__footer {
         margin-top: 40px;
         padding-top: 20px;
-        border-top: 1px solid var(--border);
-        color: var(--text-muted);
+        border-top: 1px solid #d4d4d4;
+        color: #707070;
         font-size: 14px;
       }
 
       .coe-invoice__button {
         display: inline-block;
-        background-color: var(--primary);
+        background-color: #e8a80c;
         color: white;
         padding: 14px 28px;
         text-decoration: none;
@@ -304,10 +271,10 @@
       <div class="coe-invoice__container">
         <div class="coe-invoice__header">
           <div class="coe-invoice__header-content">
-            <div class="coe-invoice__logo"><%= companyName %></div>
+            <div class="coe-invoice__logo">Coe Press Equipment</div>
             <div class="coe-invoice__header-info">
-              <div>Invoice #: <strong><%= invoiceNumber %></strong></div>
-              <div>Date: <strong><%= invoiceDate %></strong></div>
+              <div>Invoice #: <strong>INV-2025-1842</strong></div>
+              <div>Date: <strong>May 9, 2025</strong></div>
             </div>
           </div>
         </div>
@@ -316,32 +283,26 @@
           <div class="coe-invoice__address">
             <div class="coe-invoice__address-label">From</div>
             <div>
-              <strong><%= companyName %></strong><br />
-              <%= companyStreet %><br />
-              <%= companyCity %>, <%= companyState %> <%= companyZip %><br />
-              <%= companyCountry %><br /><br />
-              Tax ID: <%= companyTaxId %><br />
-              Phone: <%= companyPhone %><br />
-              Email: <%= companyEmail %>
+              <strong>Coe Press Equipment Corporation</strong><br />
+              2100 Manufacturing Drive<br />
+              Troy, MI 48083<br />
+              United States<br /><br />
+              Tax ID: 38-2947581<br />
+              Phone: (248) 555-1000<br />
+              Email: accounting@coepress.com
             </div>
           </div>
 
           <div class="coe-invoice__address">
             <div class="coe-invoice__address-label">Bill To</div>
             <div>
-              <strong><%= clientName %></strong><br />
-              <%= clientStreet %><br />
-              <% if (clientBuilding) { %>
-              <%= clientBuilding %><br />
-              <% } %>
-              <%= clientCity %>, <%= clientState %> <%= clientZip %><br />
-              <%= clientCountry %><br /><br />
-              <% if (clientAccountNumber) { %>
-              Account #: <%= clientAccountNumber %><br />
-              <% } %>
-              <% if (clientPurchaseOrder) { %>
-              Purchase Order #: <%= clientPurchaseOrder %>
-              <% } %>
+              <strong>Automotive Stamping Solutions</strong><br />
+              4200 Industrial Parkway<br />
+              Building C<br />
+              Troy, MI 48084<br />
+              United States<br /><br />
+              Account #: AS-10042<br />
+              Purchase Order #: PO-23987
             </div>
           </div>
         </div>
@@ -360,16 +321,38 @@
                 </tr>
               </thead>
               <tbody>
-                <% items.forEach(function(item) { %>
                 <tr>
-                  <td><%= item.id %></td>
-                  <td><%= item.description %></td>
-                  <td><%= item.material %></td>
-                  <td style="text-align: center"><%= item.quantity %></td>
-                  <td style="text-align: right"><%= formatCurrency(item.unitPrice) %></td>
-                  <td style="text-align: right"><%= formatCurrency(item.amount) %></td>
+                  <td>CP-5842-B</td>
+                  <td>Servo Feed Roll Set</td>
+                  <td>Hardened Steel</td>
+                  <td style="text-align: center">2</td>
+                  <td style="text-align: right">$2,375.00</td>
+                  <td style="text-align: right">$4,750.00</td>
                 </tr>
-                <% }); %>
+                <tr>
+                  <td>CP-6721-C</td>
+                  <td>Hydraulic Press Components</td>
+                  <td>Alloy Steel</td>
+                  <td style="text-align: center">4</td>
+                  <td style="text-align: right">$1,845.75</td>
+                  <td style="text-align: right">$7,383.00</td>
+                </tr>
+                <tr>
+                  <td>CP-9905-A</td>
+                  <td>Coil Reel Assembly</td>
+                  <td>Tool Steel</td>
+                  <td style="text-align: center">1</td>
+                  <td style="text-align: right">$5,125.00</td>
+                  <td style="text-align: right">$5,125.00</td>
+                </tr>
+                <tr>
+                  <td>SHP-EXP-01</td>
+                  <td>Shipping & Handling - Express Freight</td>
+                  <td>-</td>
+                  <td style="text-align: center">1</td>
+                  <td style="text-align: right">$750.00</td>
+                  <td style="text-align: right">$750.00</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -378,42 +361,36 @@
         <div class="coe-invoice__totals">
           <div class="coe-invoice__total-row">
             <div class="coe-invoice__total-label">Subtotal</div>
-            <div class="coe-invoice__total-value"><%= formatCurrency(subtotal) %></div>
+            <div class="coe-invoice__total-value">$18,008.00</div>
           </div>
           <div class="coe-invoice__total-row">
-            <div class="coe-invoice__total-label">Tax (<%= taxRate %>%)</div>
-            <div class="coe-invoice__total-value"><%= formatCurrency(taxAmount) %></div>
+            <div class="coe-invoice__total-label">Tax (6%)</div>
+            <div class="coe-invoice__total-value">$1,035.48</div>
           </div>
           <div class="coe-invoice__total-row coe-invoice__grand-total">
             <div class="coe-invoice__total-label">Total Due</div>
-            <div class="coe-invoice__total-value"><%= formatCurrency(totalDue) %></div>
+            <div class="coe-invoice__total-value">$19,043.48</div>
           </div>
         </div>
 
         <div class="coe-invoice__payment">
           <div class="coe-invoice__payment-methods">
-            <% if (wireTransfer) { %>
             <div class="coe-invoice__payment-method">
               <strong>Wire Transfer</strong><br />
-              Bank: <%= wireTransfer.bank %><br />
-              Account Name: <%= wireTransfer.accountName %><br />
-              Account #: <%= wireTransfer.accountNumber %><br />
-              Routing #: <%= wireTransfer.routingNumber %><br />
-              <% if (wireTransfer.swift) { %>
-              SWIFT: <%= wireTransfer.swift %>
-              <% } %>
+              Bank: First National Bank<br />
+              Account Name: Coe Press Equipment Corp<br />
+              Account #: 8346207913<br />
+              Routing #: 072403952<br />
+              SWIFT: FNBMUS44
             </div>
-            <% } %>
-            
-            <% if (checkPayment) { %>
             <div class="coe-invoice__payment-method">
               <strong>Check</strong><br />
               Make checks payable to:<br />
-              <%= checkPayment.payableTo %><br /><br />
+              Coe Press Equipment Corporation<br /><br />
               Mail to:<br />
-              <%= checkPayment.mailingAddress %>
+              P.O. Box 7582<br />
+              Troy, MI 48007-7582
             </div>
-            <% } %>
           </div>
         </div>
 
@@ -423,22 +400,20 @@
             this invoice, please contact:
           </div>
           <div style="margin-top: 10px">
-            <%= contactDepartment %><br />
-            <%= contactEmail %> | <%= contactPhone %>
+            Accounts Receivable Department<br />
+            accounting@coepress.com | (248) 555-1234
           </div>
           <div style="margin-top: 15px">
-            <%= companyName %> | <%= companyStreet %>, <%= companyCity %>, <%= companyState %> <%= companyZip %> |
-            <%= companyPhone %> | <%= companyWebsite %>
+            Coe Press Equipment | 2100 Manufacturing Drive, Troy, MI 48083 |
+            (248) 555-1000 | www.coepress.com
           </div>
         </div>
 
-        <% if (payOnlineUrl) { %>
-        
-          href="<%= payOnlineUrl %>"
+        <a
+          href="#"
           class="coe-invoice__button"
           >Pay Invoice Online</a
         >
-        <% } %>
       </div>
     </div>
   </body>

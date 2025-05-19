@@ -9,8 +9,11 @@ import { config } from "@/config/config";
 import juice from "juice";
 import { IQueryParams } from "@/types/api.types";
 
+const sampleInvoice = {};
+const sampleProduction = {};
+
 export class EmailService implements IEmailService {
-  private templatesPath = path.join(__dirname, "..", "templates", "emails");
+  private templatesPath = path.join(__dirname, "..", "templates");
   private transporter: nodemailer.Transporter;
 
   constructor() {
@@ -21,13 +24,6 @@ export class EmailService implements IEmailService {
     });
   }
 
-  private formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  }
-
   async renderTemplate(
     slug: string,
     data: any,
@@ -35,13 +31,8 @@ export class EmailService implements IEmailService {
   ): Promise<string> {
     const template = await this.getTemplate(slug);
 
-    const templateData = {
-      ...data,
-      formatCurrency: this.formatCurrency,
-    };
-
     try {
-      let html = ejs.render(template.html, templateData);
+      let html = ejs.render(template.html, data);
 
       if (inlineStyles) {
         html = juice(html);
@@ -180,6 +171,21 @@ export class EmailService implements IEmailService {
     }
   }
 
+  async sendProductionReportEmail(
+    to: string,
+    productionReport: any
+  ): Promise<boolean> {
+    return this.sendEmail({
+      template: "production-report",
+      data: {
+        productionReport,
+      },
+      to,
+      subject: "Production Report",
+      attachments: [],
+    });
+  }
+
   // Templates
   async getTemplates(): Promise<IEmailTemplate[]> {
     const templateFiles = fs
@@ -291,19 +297,7 @@ export class EmailService implements IEmailService {
     return [];
   }
 
-  async getSentEmailsByTemplate(template: string): Promise<any[]> {
-    return [];
-  }
-
   async createSentEmail(email: any): Promise<any> {
     return null;
-  }
-
-  async updateSentEmail(id: string, email: any): Promise<any> {
-    return null;
-  }
-
-  async deleteSentEmail(id: string): Promise<boolean> {
-    return false;
   }
 }
