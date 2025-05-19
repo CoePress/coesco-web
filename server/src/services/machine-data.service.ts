@@ -2,7 +2,10 @@ import { buildQuery, createDateRange } from "@/utils";
 import { IQueryParams } from "@/types/api.types";
 import MachineStatus from "@/models/machine-status";
 import { cacheService, getSocketService, machineService } from ".";
-import { BadRequestError } from "@/middleware/error.middleware";
+import {
+  BadRequestError,
+  InternalServerError,
+} from "@/middleware/error.middleware";
 import { Op } from "sequelize";
 import { IMachineStatus } from "@/types/schema.types";
 import { MachineState, MachineConnectionType } from "@/types/enum.types";
@@ -443,7 +446,6 @@ export class MachineDataService {
   async pollMachines() {
     const current = [];
 
-    // Check if we need to refresh machines list
     const cachedMachines = await cacheService.get(this.MACHINES_CACHE_KEY);
     if (
       !cachedMachines ||
@@ -453,6 +455,8 @@ export class MachineDataService {
     }
 
     for (const machine of this.machines) {
+      let data;
+      let state;
       try {
         if (!machine.connectionHost || !machine.connectionPort) {
           throw new BadRequestError(
@@ -464,33 +468,51 @@ export class MachineDataService {
           `machine:${machine.id}:current_state`
         );
 
-        let data;
-        let state;
         switch (machine.connectionType) {
           case MachineConnectionType.MTCONNECT:
             const xmlData = await this.pollMTConnect(machine);
             data = await this.processMTConnectData(xmlData);
+            if (!data) {
+              throw new BadRequestError("Failed to process MTConnect data");
+            }
             state = await this.determineMTConnectState(data, cachedState);
             break;
           case MachineConnectionType.CUSTOM:
             const fanucData = await this.pollFanuc(machine);
             data = await this.processFanucData(fanucData, machine.id);
+            if (!data) {
+              throw new BadRequestError("Failed to process Fanuc data");
+            }
             state = await this.determineFanucState(data, cachedState);
             break;
           default:
             throw new BadRequestError("Invalid machine connection type");
         }
 
-        const hasMoved = await this.hasMoved(data, cachedState);
+        const positionChanged = await this.hasMoved(data, cachedState);
         const stateChanged = cachedState?.state !== state;
-        const metricsChanged = hasMoved;
+        const programChanged = cachedState?.program !== data.program;
+        const alarmChanged = cachedState?.alarm !== data.alarm;
 
-        if (stateChanged || metricsChanged) {
+        const changed =
+          stateChanged || positionChanged || programChanged || alarmChanged;
+
+        if (changed) {
           await cacheService.set(`machine:${machine.id}:current_state`, {
             ...data,
             state,
           });
         }
+
+        if (stateChanged || programChanged || alarmChanged) {
+          logger.info(
+            `Machine ${machine.id} has changed: ${
+              stateChanged ? "state" : ""
+            } ${programChanged ? "program" : ""} ${alarmChanged ? "alarm" : ""}`
+          );
+        }
+
+        logger.info(`Machine ${machine.id} state: ${state}`);
 
         current.push({
           machineId: machine.id,
@@ -498,9 +520,9 @@ export class MachineDataService {
           machineType: machine.type,
           ...data,
           state,
-          hasMoved,
         });
       } catch (error) {
+        logger.error(`Machine ${machine.id} ${error}`);
         current.push({
           machineId: machine.id,
           machineName: machine.name,
@@ -517,24 +539,24 @@ export class MachineDataService {
   async pollMTConnect(machine: any) {
     const mtconnectUrl = `http://${machine.connectionHost}:${machine.connectionPort}/current`;
     const response = await this.fetchData(mtconnectUrl);
-    if (!response.ok) throw new BadRequestError("Failed to fetch data");
+    if (!response) return null;
 
     const xmlText = await response.text();
-
     return xmlText;
   }
 
   async pollFanuc(machine: any) {
     const fanucAdapterUrl = `http://${config.fanucAdapter.host}:${config.fanucAdapter.port}/api/machines/${machine.slug}`;
     const response = await this.fetchData(fanucAdapterUrl);
-    if (!response.ok) throw new BadRequestError("Failed to fetch data");
+    if (!response) return null;
 
     const { data } = await response.json();
-
     return data;
   }
 
-  async processMTConnectData(xml: string) {
+  async processMTConnectData(xml: string | null) {
+    if (!xml) return null;
+
     const extractValue = (xml: string, dataItemId: string): string | null => {
       const regex = new RegExp(
         `<[^>]*dataItemId="${dataItemId}"[^>]*>([^<]*)</[^>]*>`
@@ -602,24 +624,41 @@ export class MachineDataService {
     };
   }
 
-  private async fetchData(url: string) {
+  private async fetchData(url: string, timeoutMs: number = 500) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(url, {
         signal: controller.signal,
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
       });
-      clearTimeout(timeout);
+
+      if (!response.ok) {
+        logger.warn(`HTTP error! status: ${response.status} for ${url}`);
+        return null;
+      }
+
       return response;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        logger.debug(`Request timeout after ${timeoutMs}ms for ${url}`);
+        return null;
+      }
+      logger.warn(`Error fetching ${url}: ${error.message}`);
+      return null;
+    } finally {
       clearTimeout(timeout);
-      throw error;
     }
   }
 
   private async determineMTConnectState(current: any, previous: any) {
     if (!current) return MachineState.OFFLINE;
+    if (current.execution === "ALARM") return MachineState.ALARM;
     if (current.execution === "ACTIVE") return MachineState.ACTIVE;
     if (current.execution === "STOPPED") return MachineState.IDLE;
 
