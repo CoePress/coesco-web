@@ -3,15 +3,24 @@ import { logger } from "@/utils/logger";
 import { machineDataService } from ".";
 
 export class SocketService {
-  public io: Server;
+  private io: Server | null = null;
 
-  constructor(io: Server) {
+  public setIo(io: Server) {
     this.io = io;
+  }
+
+  public initialize(): void {
+    if (!this.io) {
+      throw new Error("Socket.IO instance not set");
+    }
     this.setupClientNamespace();
     this.setupFanucNamespace();
   }
 
   private setupClientNamespace(): void {
+    if (!this.io) {
+      throw new Error("Socket.IO instance not set");
+    }
     const clientNS = this.io.of("/client");
 
     clientNS.on("connection", (socket: Socket) => {
@@ -31,6 +40,10 @@ export class SocketService {
   }
 
   private setupFanucNamespace(): void {
+    if (!this.io) {
+      throw new Error("Socket.IO instance not set");
+    }
+
     const fanucNS = this.io.of("/fanuc");
 
     fanucNS.on("connection", (socket: Socket) => {
@@ -52,6 +65,7 @@ export class SocketService {
   }
 
   public broadcastDashboardMetrics(data: any): void {
+    if (!this.io) return;
     this.io
       .of("/client")
       .to("dashboard_metrics")
@@ -59,11 +73,15 @@ export class SocketService {
   }
 
   public broadcastMachineStates(data: any): void {
+    if (!this.io) return;
     this.io.of("/client").to("machine_states").emit("machine_states", data);
   }
 
   public sendStartToFanuc(data: any): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (!this.io) {
+        return reject(new Error("Socket.IO instance not set"));
+      }
       const fanucNamespace = this.io.of("/fanuc");
       const connectedSockets = fanucNamespace.sockets.size;
 
@@ -100,6 +118,9 @@ export class SocketService {
 
   public sendStopToFanuc(data: any): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (!this.io) {
+        return reject(new Error("Socket.IO instance not set"));
+      }
       const fanucNamespace = this.io.of("/fanuc");
       const connectedSockets = fanucNamespace.sockets.size;
 
@@ -135,6 +156,7 @@ export class SocketService {
   }
 
   async stop() {
+    if (!this.io) return;
     try {
       await this.io.close();
     } catch (err) {

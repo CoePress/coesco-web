@@ -176,6 +176,20 @@ export interface IDateRange {
   previousEndDate: Date;
 }
 
+export interface ISentEmail extends IBaseEntity {
+  template: string;
+  data: any;
+  to: string | string[];
+  from?: string;
+  subject?: string;
+  status: EmailStatus;
+}
+
+export enum EmailStatus {
+  SENT = "sent",
+  FAILED = "failed",
+}
+
 export interface IEmailTemplate {
   slug: string;
   name: string;

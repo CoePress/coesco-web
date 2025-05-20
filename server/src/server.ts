@@ -1,37 +1,41 @@
-import { httpServer } from "./app";
+import { httpServer, io } from "./app";
 
 import { config } from "./config/config";
 import { sequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
 import {
-  initializeSocketService,
   machineDataService,
   cronService,
   cacheService,
-  getSocketService,
+  socketService,
 } from "./services";
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
   await sequelize.sync();
   logger.info("Database connected & synced");
+
+  socketService.setIo(io);
+  socketService.initialize();
+  logger.info("Socket.IO server initialized");
+
+  await machineDataService.initialize();
+
   logger.info(
     `Server running in ${config.nodeEnv} mode on port ${config.port}`
   );
-
-  initializeSocketService();
-  logger.info("Socket.IO server initialized");
 });
 
 const gracefulShutdown = async () => {
   logger.info("Shutting down gracefully...");
 
+  await machineDataService.stop();
+
   await Promise.all([
-    machineDataService.stop(),
     cronService.stop(),
     cacheService.stop(),
-    getSocketService().stop(),
+    socketService.stop(),
   ]);
 
   httpServer.close(async () => {

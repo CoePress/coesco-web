@@ -9,7 +9,7 @@ import {
   MachineConnectionType,
   TimeScale,
 } from "@/types/enum.types";
-import { cacheService, getSocketService, machineService } from ".";
+import { cacheService, machineService, socketService } from ".";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import fetch from "node-fetch";
@@ -83,7 +83,8 @@ export class MachineDataService {
       this.pollInterval = null;
     }
 
-    // Abort all active requests
+    await this.closeAllMachineStatuses();
+
     for (const controller of this.activeRequests) {
       controller.abort();
     }
@@ -124,7 +125,7 @@ export class MachineDataService {
                 Z: 0,
               },
             },
-            state: MachineState.IDLE,
+            state: MachineState.OFFLINE,
           };
 
           await cacheService.set(
@@ -460,6 +461,41 @@ export class MachineDataService {
 
   async createMachineStatus(data: any) {
     await this.validateMachineStatus(data);
+
+    const transaction = await MachineStatus.sequelize!.transaction();
+
+    try {
+      await MachineStatus.update(
+        {
+          endTime: new Date(),
+          duration: Math.floor(
+            (new Date().getTime() - new Date(data.startTime).getTime()) / 1000
+          ),
+        },
+        {
+          where: {
+            machineId: data.machineId,
+            endTime: null,
+          },
+          transaction,
+        }
+      );
+
+      const machineStatus = await MachineStatus.create(
+        {
+          ...data,
+          startTime: new Date(),
+          endTime: null,
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+      return machineStatus;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async updateMachineStatus(id: string, data: any) {
@@ -481,6 +517,7 @@ export class MachineDataService {
     }
 
     for (const machine of this.machines) {
+      let cachedState: CachedMachineState | null = null;
       try {
         if (!machine.connectionHost || !machine.connectionPort) {
           throw new BadRequestError(
@@ -488,7 +525,7 @@ export class MachineDataService {
           );
         }
 
-        const cachedState = await cacheService.get<CachedMachineState>(
+        cachedState = await cacheService.get<CachedMachineState>(
           `machine:${machine.id}:current_state`
         );
 
@@ -524,37 +561,65 @@ export class MachineDataService {
           throw new BadRequestError("Invalid machine data or state");
         }
 
-        const positionChanged = await this.hasMoved(data, cachedState);
-        const stateChanged = cachedState?.state !== state;
-        const programChanged = cachedState?.program !== data.program;
-        const alarmChanged = cachedState?.alarm !== data.alarm;
-        const changed =
-          stateChanged || positionChanged || programChanged || alarmChanged;
+        logger.info(
+          `Machine ${machine.id} current state: ${state}, cached state: ${cachedState?.state}`
+        );
 
-        if (stateChanged) {
+        // Get current open state
+        const openStatus = await MachineStatus.findOne({
+          where: {
+            machineId: machine.id,
+            endTime: null,
+          },
+        });
+
+        // If no open state exists or state has changed, create new state
+        if (!openStatus || openStatus.state !== state) {
           logger.info(
-            `Machine ${machine.id} state changed: ${cachedState?.state} -> ${state}`
+            `Creating new state record for machine ${machine.id} with state ${state}`
           );
+          try {
+            // Close existing open state if it exists
+            if (openStatus) {
+              openStatus.endTime = new Date();
+              openStatus.duration = Math.floor(
+                (new Date().getTime() -
+                  new Date(openStatus.startTime).getTime()) /
+                  1000
+              );
+              await openStatus.save();
+            }
+
+            // Create new state
+            await MachineStatus.create({
+              machineId: machine.id,
+              state,
+              execution: data.execution,
+              controller: data.controller,
+              program: data.program,
+              tool: data.tool,
+              metrics: data.metrics,
+              alarmCode: data.alarm,
+              startTime: new Date(),
+              endTime: null,
+              duration: 0,
+            } as any);
+            logger.info(
+              `Successfully created new state record for machine ${machine.id}`
+            );
+          } catch (error) {
+            logger.error(
+              `Failed to create new state record for machine ${machine.id}:`,
+              error
+            );
+          }
         }
 
-        if (programChanged) {
-          logger.info(
-            `Machine ${machine.id} program changed: ${cachedState?.program} -> ${data.program}`
-          );
-        }
-
-        if (alarmChanged) {
-          logger.info(
-            `Machine ${machine.id} alarm changed: ${cachedState?.alarm} -> ${data.alarm}`
-          );
-        }
-
-        if (changed) {
-          await cacheService.set(`machine:${machine.id}:current_state`, {
-            ...data,
-            state,
-          });
-        }
+        // Update cache with current state
+        await cacheService.set(`machine:${machine.id}:current_state`, {
+          ...data,
+          state,
+        });
 
         current.push({
           machineId: machine.id,
@@ -564,6 +629,56 @@ export class MachineDataService {
           state,
         });
       } catch (error) {
+        logger.error(`Error polling machine ${machine.id}:`, error);
+
+        // Get current open state
+        const openStatus = await MachineStatus.findOne({
+          where: {
+            machineId: machine.id,
+            endTime: null,
+          },
+        });
+
+        // If no open state exists or current state is not OFFLINE, create offline state
+        if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
+          try {
+            logger.info(`Creating offline state for machine ${machine.id}`);
+            // Close existing open state if it exists
+            if (openStatus) {
+              openStatus.endTime = new Date();
+              openStatus.duration = Math.floor(
+                (new Date().getTime() -
+                  new Date(openStatus.startTime).getTime()) /
+                  1000
+              );
+              await openStatus.save();
+            }
+
+            // Create new offline state
+            await MachineStatus.create({
+              machineId: machine.id,
+              state: MachineState.OFFLINE,
+              execution: "OFFLINE",
+              controller: "OFFLINE",
+              program: "",
+              tool: "",
+              metrics: this.offlineState.metrics,
+              startTime: new Date(),
+              endTime: null,
+              duration: 0,
+            } as any);
+            logger.info(
+              `Successfully created offline state for machine ${machine.id}`
+            );
+          } catch (error) {
+            logger.error(
+              `Failed to create offline state for machine ${machine.id}:`,
+              error
+            );
+          }
+        }
+
+        // Update cache with offline state
         await cacheService.set(`machine:${machine.id}:current_state`, {
           ...this.offlineState,
         });
@@ -576,7 +691,6 @@ export class MachineDataService {
         });
       }
     }
-    const socketService = getSocketService();
     socketService.broadcastMachineStates(current);
     return current;
   }
@@ -713,29 +827,46 @@ export class MachineDataService {
   }
 
   private async determineMTConnectState(current: any, previous: any) {
+    logger.info(
+      `Determining MTConnect state for machine. Current execution: ${current?.execution}, Previous state: ${previous?.state}`
+    );
+
     if (!current || !current.execution) {
+      logger.info("No current data or execution, returning OFFLINE");
       return MachineState.OFFLINE;
     }
+
     if (current.execution === "ALARM") {
+      logger.info("Execution is ALARM, returning ALARM state");
       return MachineState.ALARM;
     }
+
     if (current.execution === "ACTIVE") {
+      logger.info("Execution is ACTIVE, returning ACTIVE state");
       return MachineState.ACTIVE;
     }
+
     if (current.execution === "STOPPED") {
+      logger.info("Execution is STOPPED, returning IDLE state");
       return MachineState.IDLE;
     }
 
     const hasMoved = await this.hasMoved(current, previous);
+    logger.info(`Machine has moved: ${hasMoved}`);
 
     if (previous?.state === MachineState.SETUP && !hasMoved) {
+      logger.info("Previous state was SETUP and no movement, returning IDLE");
       return MachineState.IDLE;
     }
 
     if (previous?.state !== MachineState.ACTIVE && hasMoved) {
+      logger.info(
+        "Previous state was not ACTIVE and machine moved, returning SETUP"
+      );
       return MachineState.SETUP;
     }
 
+    logger.info("No specific state change detected, returning IDLE");
     return MachineState.IDLE;
   }
 
@@ -980,5 +1111,36 @@ export class MachineDataService {
     await machineStatus.save();
 
     return machineStatus;
+  }
+
+  async closeAllMachineStatuses() {
+    const transaction = await MachineStatus.sequelize!.transaction();
+
+    try {
+      const now = new Date();
+      const openStatuses = await MachineStatus.findAll({
+        where: {
+          endTime: null,
+        },
+        transaction,
+      });
+
+      for (const status of openStatuses) {
+        status.endTime = now;
+        status.duration = Math.floor(
+          (now.getTime() - new Date(status.startTime).getTime()) / 1000
+        );
+        await status.save({ transaction });
+
+        // Clear cache for this machine
+        await cacheService.delete(`machine:${status.machineId}:current_state`);
+      }
+
+      await transaction.commit();
+      return openStatuses;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }

@@ -70,7 +70,6 @@ app.use("/api", routes);
 
 app.use(errorHandler);
 
-export { httpServer, io };
+export { io };
+export { httpServer };
 export default app;
-
-// this is a server side test 2

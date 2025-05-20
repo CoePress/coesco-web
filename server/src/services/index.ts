@@ -17,16 +17,4 @@ export const employeeService = new EmployeeService();
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
 export const quoteService = new QuoteService();
-
-let socketService: SocketService;
-export const initializeSocketService = () => {
-  socketService = new SocketService(io);
-  return socketService;
-};
-
-export const getSocketService = () => {
-  if (!socketService) {
-    return initializeSocketService();
-  }
-  return socketService;
-};
+export const socketService = new SocketService();
