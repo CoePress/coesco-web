@@ -1,13 +1,13 @@
-import {
-  ICreateMachineDto,
-  MachineControllerType,
-  MachineConnectionType,
-  MachineType,
-} from "@/types/schema.types";
 import { employeeService, machineService } from "@/services";
 import { initializeModels } from "@/models";
 import { sequelize } from "@/config/database";
 import { logger } from "@/utils/logger";
+import { ICreateMachineDto } from "@/types/schema.types";
+import {
+  MachineConnectionType,
+  MachineControllerType,
+  MachineType,
+} from "@/types/enum.types";
 
 const seedMachines: ICreateMachineDto[] = [
   {

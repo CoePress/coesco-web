@@ -6,7 +6,7 @@ export const database = {
   PORT: config.database.port || 5433,
   USER: config.database.user || "postgres",
   PASSWORD: config.database.password || "password",
-  DB: config.database.name || "machining_dev",
+  DB: config.database.name || "coesco_dev",
   pool: {
     max: 5,
     min: 0,

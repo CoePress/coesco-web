@@ -600,10 +600,10 @@ export class MachineDataService {
               duration: 0,
             } as any);
           } catch (error) {
-            logger.error(
-              `Failed to create offline state for machine ${machine.id}:`,
-              error
-            );
+            // logger.error(
+            //   `Failed to create offline state for machine ${machine.id}:`,
+            //   error
+            // );
           }
         }
 
