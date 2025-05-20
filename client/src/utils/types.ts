@@ -368,7 +368,7 @@ export interface IUtilization {
 
 export interface IStateDistribution {
   state: string;
-  duration: number;
+  total: number;
   percentage: number;
 }
 
