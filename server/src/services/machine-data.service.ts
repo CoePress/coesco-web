@@ -519,11 +519,6 @@ export class MachineDataService {
           throw new BadRequestError("Invalid machine data or state");
         }
 
-        logger.info(
-          `Machine ${machine.id} current state: ${state}, cached state: ${cachedState?.state}`
-        );
-
-        // Get current open state
         const openStatus = await MachineStatus.findOne({
           where: {
             machineId: machine.id,
@@ -531,13 +526,8 @@ export class MachineDataService {
           },
         });
 
-        // If no open state exists or state has changed, create new state
         if (!openStatus || openStatus.state !== state) {
-          logger.info(
-            `Creating new state record for machine ${machine.id} with state ${state}`
-          );
           try {
-            // Close existing open state if it exists
             if (openStatus) {
               openStatus.endTime = new Date();
               openStatus.duration =
@@ -545,7 +535,6 @@ export class MachineDataService {
               await openStatus.save();
             }
 
-            // Create new state
             await MachineStatus.create({
               machineId: machine.id,
               state,
@@ -559,9 +548,6 @@ export class MachineDataService {
               endTime: null,
               duration: 0,
             } as any);
-            logger.info(
-              `Successfully created new state record for machine ${machine.id}`
-            );
           } catch (error) {
             logger.error(
               `Failed to create new state record for machine ${machine.id}:`,
@@ -570,7 +556,6 @@ export class MachineDataService {
           }
         }
 
-        // Update cache with current state
         await cacheService.set(`machine:${machine.id}:current_state`, {
           ...data,
           state,
@@ -586,7 +571,6 @@ export class MachineDataService {
       } catch (error) {
         logger.error(`Error polling machine ${machine.id}:`, error);
 
-        // Get current open state
         const openStatus = await MachineStatus.findOne({
           where: {
             machineId: machine.id,
@@ -594,11 +578,8 @@ export class MachineDataService {
           },
         });
 
-        // If no open state exists or current state is not OFFLINE, create offline state
         if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
           try {
-            logger.info(`Creating offline state for machine ${machine.id}`);
-            // Close existing open state if it exists
             if (openStatus) {
               openStatus.endTime = new Date();
               openStatus.duration =
@@ -606,7 +587,6 @@ export class MachineDataService {
               await openStatus.save();
             }
 
-            // Create new offline state
             await MachineStatus.create({
               machineId: machine.id,
               state: MachineState.OFFLINE,
@@ -619,9 +599,6 @@ export class MachineDataService {
               endTime: null,
               duration: 0,
             } as any);
-            logger.info(
-              `Successfully created offline state for machine ${machine.id}`
-            );
           } catch (error) {
             logger.error(
               `Failed to create offline state for machine ${machine.id}:`,
@@ -630,7 +607,6 @@ export class MachineDataService {
           }
         }
 
-        // Update cache with offline state
         await cacheService.set(`machine:${machine.id}:current_state`, {
           ...this.offlineState,
         });
@@ -779,46 +755,32 @@ export class MachineDataService {
   }
 
   private async determineMTConnectState(current: any, previous: any) {
-    logger.info(
-      `Determining MTConnect state for machine. Current execution: ${current?.execution}, Previous state: ${previous?.state}`
-    );
-
     if (!current || !current.execution) {
-      logger.info("No current data or execution, returning OFFLINE");
       return MachineState.OFFLINE;
     }
 
     if (current.execution === "ALARM") {
-      logger.info("Execution is ALARM, returning ALARM state");
       return MachineState.ALARM;
     }
 
     if (current.execution === "ACTIVE") {
-      logger.info("Execution is ACTIVE, returning ACTIVE state");
       return MachineState.ACTIVE;
     }
 
     if (current.execution === "STOPPED") {
-      logger.info("Execution is STOPPED, returning IDLE state");
       return MachineState.IDLE;
     }
 
     const hasMoved = await this.hasMoved(current, previous);
-    logger.info(`Machine has moved: ${hasMoved}`);
 
     if (previous?.state === MachineState.SETUP && !hasMoved) {
-      logger.info("Previous state was SETUP and no movement, returning IDLE");
       return MachineState.IDLE;
     }
 
     if (previous?.state !== MachineState.ACTIVE && hasMoved) {
-      logger.info(
-        "Previous state was not ACTIVE and machine moved, returning SETUP"
-      );
       return MachineState.SETUP;
     }
 
-    logger.info("No specific state change detected, returning IDLE");
     return MachineState.IDLE;
   }
 
@@ -1082,7 +1044,6 @@ export class MachineDataService {
         status.duration = now.getTime() - new Date(status.startTime).getTime();
         await status.save({ transaction });
 
-        // Clear cache for this machine
         await cacheService.delete(`machine:${status.machineId}:current_state`);
       }
 
