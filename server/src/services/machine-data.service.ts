@@ -4,7 +4,11 @@ import { IMachineStatus } from "@/types/schema.types";
 import { buildQuery, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { IQueryParams } from "@/types/api.types";
-import { MachineState, MachineConnectionType } from "@/types/enum.types";
+import {
+  MachineState,
+  MachineConnectionType,
+  TimeScale,
+} from "@/types/enum.types";
 import { cacheService, getSocketService, machineService } from ".";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
@@ -586,7 +590,9 @@ export class MachineDataService {
       : `https://localhost:7043/api/machines/${machine.slug}`;
 
     const response = await this.fetchData(url);
-    if (!response) return null;
+    if (!response) {
+      return null;
+    }
 
     if (isMTConnect) {
       return await response.text();
@@ -597,7 +603,9 @@ export class MachineDataService {
   }
 
   async processMTConnectData(xml: string | null) {
-    if (!xml) return null;
+    if (!xml) {
+      return null;
+    }
 
     const extractValue = (xml: string, dataItemId: string): string | null => {
       const regex = new RegExp(
@@ -647,7 +655,9 @@ export class MachineDataService {
   }
 
   async processFanucData(data: any) {
-    if (!data) return null;
+    if (!data) {
+      return null;
+    }
 
     return {
       execution: data.execution,
@@ -703,10 +713,18 @@ export class MachineDataService {
   }
 
   private async determineMTConnectState(current: any, previous: any) {
-    if (!current || !current.execution) return MachineState.OFFLINE;
-    if (current.execution === "ALARM") return MachineState.ALARM;
-    if (current.execution === "ACTIVE") return MachineState.ACTIVE;
-    if (current.execution === "STOPPED") return MachineState.IDLE;
+    if (!current || !current.execution) {
+      return MachineState.OFFLINE;
+    }
+    if (current.execution === "ALARM") {
+      return MachineState.ALARM;
+    }
+    if (current.execution === "ACTIVE") {
+      return MachineState.ACTIVE;
+    }
+    if (current.execution === "STOPPED") {
+      return MachineState.IDLE;
+    }
 
     const hasMoved = await this.hasMoved(current, previous);
 
@@ -722,7 +740,10 @@ export class MachineDataService {
   }
 
   private async determineFanucState(current: any, previous: any) {
-    if (!current || !current.execution) return MachineState.OFFLINE;
+    if (!current || !current.execution) {
+      return MachineState.OFFLINE;
+    }
+
     return current.execution.toUpperCase();
   }
 
@@ -768,7 +789,6 @@ export class MachineDataService {
     return false;
   }
 
-  // Helper methods
   private calculateStatusTotals(
     statuses: IMachineStatus[],
     startDate: Date,
@@ -778,7 +798,6 @@ export class MachineDataService {
     const totalsByState: Record<string, number> = {};
     let activeTime = 0;
 
-    // Group states by machine
     const statusesByMachine = statuses.reduce((acc, status) => {
       if (!acc[status.machineId]) {
         acc[status.machineId] = [];
@@ -787,15 +806,12 @@ export class MachineDataService {
       return acc;
     }, {} as Record<string, IMachineStatus[]>);
 
-    // Calculate for each machine
     Object.values(statusesByMachine).forEach((machineStatuses) => {
-      // Filter states within the date range
       const relevantStatuses = machineStatuses.filter((status) => {
         const statusEnd = status.endTime || now;
         return status.startTime <= endDate && statusEnd >= startDate;
       });
 
-      // Calculate totals for each state
       relevantStatuses.forEach((status) => {
         if (!totalsByState[status.state]) {
           totalsByState[status.state] = 0;
@@ -804,7 +820,6 @@ export class MachineDataService {
         const statusStart = status.startTime;
         const statusEnd = status.endTime || now;
 
-        // Calculate overlap with the date range
         const overlapStart = Math.max(
           statusStart.getTime(),
           startDate.getTime()
@@ -814,8 +829,7 @@ export class MachineDataService {
 
         totalsByState[status.state] += overlapDuration;
 
-        // Track active time separately
-        if (status.state === "ACTIVE") {
+        if (status.state === MachineState.ACTIVE) {
           activeTime += overlapDuration;
         }
       });
@@ -828,15 +842,28 @@ export class MachineDataService {
     const diffMs = endDate.getTime() - startDate.getTime();
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-    if (diffDays <= 3)
-      return { scale: "hourly", divisionCount: Math.ceil(diffDays * 24) };
-    if (diffDays <= 20)
-      return { scale: "daily", divisionCount: Math.ceil(diffDays) };
-    if (diffDays <= 84)
-      return { scale: "weekly", divisionCount: Math.ceil(diffDays / 7) };
-    if (diffDays <= 548)
-      return { scale: "monthly", divisionCount: Math.ceil(diffDays / 30.4375) };
-    return { scale: "quarterly", divisionCount: Math.ceil(diffDays / 91.3125) };
+    if (diffDays <= 3) {
+      return { scale: TimeScale.HOUR, divisionCount: Math.ceil(diffDays * 24) };
+    } else if (diffDays <= 20) {
+      return { scale: TimeScale.DAY, divisionCount: Math.ceil(diffDays) };
+    } else if (diffDays <= 84) {
+      return { scale: TimeScale.WEEK, divisionCount: Math.ceil(diffDays / 7) };
+    } else if (diffDays <= 548) {
+      return {
+        scale: TimeScale.MONTH,
+        divisionCount: Math.ceil(diffDays / 30.4375),
+      };
+    } else if (diffDays <= 548) {
+      return {
+        scale: TimeScale.QUARTER,
+        divisionCount: Math.ceil(diffDays / 91.3125),
+      };
+    } else {
+      return {
+        scale: TimeScale.YEAR,
+        divisionCount: Math.ceil(diffDays / 365.25),
+      };
+    }
   }
 
   private calculateDivisionStart(
@@ -846,20 +873,23 @@ export class MachineDataService {
   ): Date {
     const start = new Date(startDate);
     switch (scale) {
-      case "hourly":
+      case TimeScale.HOUR:
         start.setHours(start.getHours() + index);
         break;
-      case "daily":
+      case TimeScale.DAY:
         start.setDate(start.getDate() + index);
         break;
-      case "weekly":
+      case TimeScale.WEEK:
         start.setDate(start.getDate() + index * 7);
         break;
-      case "monthly":
+      case TimeScale.MONTH:
         start.setMonth(start.getMonth() + index);
         break;
-      case "quarterly":
+      case TimeScale.QUARTER:
         start.setMonth(start.getMonth() + index * 3);
+        break;
+      case TimeScale.YEAR:
+        start.setFullYear(start.getFullYear() + index);
         break;
     }
     return start;
@@ -873,20 +903,23 @@ export class MachineDataService {
   ): Date {
     const end = new Date(startDate);
     switch (scale) {
-      case "hourly":
+      case TimeScale.HOUR:
         end.setHours(end.getHours() + index + 1);
         break;
-      case "daily":
+      case TimeScale.DAY:
         end.setDate(end.getDate() + index + 1);
         break;
-      case "weekly":
+      case TimeScale.WEEK:
         end.setDate(end.getDate() + (index + 1) * 7);
         break;
-      case "monthly":
+      case TimeScale.MONTH:
         end.setMonth(end.getMonth() + index + 1);
         break;
-      case "quarterly":
+      case TimeScale.QUARTER:
         end.setMonth(end.getMonth() + (index + 1) * 3);
+        break;
+      case TimeScale.YEAR:
+        end.setFullYear(end.getFullYear() + index + 1);
         break;
     }
     return end > limit ? limit : end;
@@ -894,32 +927,58 @@ export class MachineDataService {
 
   private formatDivisionLabel(date: Date, scale: string): string {
     const formatters = {
-      hourly: (d: Date) => {
+      [TimeScale.HOUR]: (d: Date) => {
         const hours = (d.getUTCHours() - 4 + 24) % 12 || 12;
         const ampm = (d.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
         return `${hours}:00 ${ampm}`;
       },
-      daily: (d: Date) =>
+      [TimeScale.DAY]: (d: Date) =>
         d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      weekly: (d: Date) =>
+      [TimeScale.WEEK]: (d: Date) =>
         `Week of ${d.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
         })}`,
-      monthly: (d: Date) =>
+      [TimeScale.MONTH]: (d: Date) =>
         d.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      quarterly: (d: Date) =>
+      [TimeScale.QUARTER]: (d: Date) =>
         `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`,
+      [TimeScale.YEAR]: (d: Date) => d.getFullYear().toString(),
     };
 
     return formatters[scale as keyof typeof formatters]?.(date) || "";
   }
 
   private async validateMachineStatus(data: any) {
-    if (!data.machineId) throw new BadRequestError("Machine ID is required");
-    if (!data.startTime) throw new BadRequestError("Start time is required");
-    if (!data.state) throw new BadRequestError("State is required");
-    if (data.endTime && data.endTime < data.startTime)
+    if (!data.machineId) {
+      throw new BadRequestError("Machine ID is required");
+    }
+    if (!data.startTime) {
+      throw new BadRequestError("Start time is required");
+    }
+    if (!data.state) {
+      throw new BadRequestError("State is required");
+    }
+    if (data.endTime && data.endTime < data.startTime) {
       throw new BadRequestError("End time cannot be before start time");
+    }
+  }
+
+  async closeMachineStatus(machineId: string) {
+    const machineStatus = await MachineStatus.findOne({
+      where: {
+        machineId,
+        endTime: null,
+      },
+    });
+
+    if (!machineStatus) {
+      throw new BadRequestError("Machine status not found");
+    }
+
+    machineStatus.endTime = new Date();
+    await machineStatus.save();
+
+    return machineStatus;
   }
 }

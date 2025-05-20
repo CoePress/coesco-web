@@ -433,7 +433,7 @@ const Dashboard = () => {
     },
   ];
 
-  const utilizationOverTime = overview?.utilizationOverTime || [];
+  const utilizationOverTime = overview?.utilization || [];
 
   const stateDistribution = [
     { state: "ACTIVE", total: 3600000, percentage: 45 },
@@ -636,87 +636,92 @@ const Dashboard = () => {
             <div className="p-2 border-b">
               <h3 className="text-sm text-text-muted">State Distribution</h3>
             </div>
-            <div className="flex-1 flex items-center justify-center text-sm">
-              <ResponsiveContainer
-                width="100%"
-                height="100%">
-                <PieChart>
-                  <Pie
-                    key={stateDistribution
-                      .map((e) => e.state + e.total)
-                      .join("-")}
-                    data={stateDistribution}
-                    dataKey="total"
-                    nameKey="state"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="80%"
-                    stroke="var(--border)"
-                    strokeWidth={1}
-                    isAnimationActive={true}
-                    animationDuration={1000}>
-                    {stateDistribution.map((entry, idx) => (
-                      <Cell
-                        key={`cell-${idx}`}
-                        fill={
-                          entry.state === "OFFLINE"
-                            ? "var(--surface)"
-                            : getStatusColor(entry.state)
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload || !payload.length) return null;
-                      const entry = payload[0];
+            <div className="flex-1 flex flex-row lg:flex-col justify-center">
+              <div className="flex-1 flex items-center justify-center text-sm">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%">
+                  <PieChart>
+                    <Pie
+                      key={stateDistribution
+                        .map((e) => e.state + e.total)
+                        .join("-")}
+                      data={stateDistribution}
+                      dataKey="total"
+                      nameKey="state"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius="80%"
+                      stroke="var(--border)"
+                      strokeWidth={1}
+                      isAnimationActive={true}
+                      animationDuration={1000}>
+                      {stateDistribution.map((entry, idx) => (
+                        <Cell
+                          key={`cell-${idx}`}
+                          fill={
+                            entry.state === "OFFLINE"
+                              ? "var(--surface)"
+                              : getStatusColor(entry.state)
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const entry = payload[0];
 
-                      const total = entry.payload.total;
-                      const percentage = entry.payload.percentage;
+                        const total = entry.payload.total;
+                        const percentage = entry.payload.percentage;
 
-                      return (
-                        <div
-                          style={{
-                            background: "var(--foreground)",
-                            color: "var(--text-muted)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 4,
-                            padding: 8,
-                          }}>
+                        return (
                           <div
                             style={{
-                              fontWeight: 500,
-                              color: getStatusColor(entry.payload.state),
+                              background: "var(--foreground)",
+                              color: "var(--text-muted)",
+                              border: "1px solid var(--border)",
+                              borderRadius: 4,
+                              padding: 8,
                             }}>
-                            {entry.payload.state}
+                            <div
+                              style={{
+                                fontWeight: 500,
+                                color: getStatusColor(entry.payload.state),
+                              }}>
+                              {entry.payload.state}
+                            </div>
+                            <div className="mt-1">
+                              <p>
+                                {formatDuration(total)} ({percentage.toFixed(2)}
+                                %)
+                              </p>
+                            </div>
                           </div>
-                          <div className="mt-1">
-                            <p>
-                              {formatDuration(total)} ({percentage.toFixed(2)}%)
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                        );
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex w-1/3 lg:w-full flex-col gap-2 text-text-muted flex-wrap justify-center p-2 lg:flex-row">
+                {stateDistribution.map((entry) => (
+                  <div
+                    key={entry.state}
+                    className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded"
+                      style={{
+                        backgroundColor: getStatusColor(entry.state),
+                      }}
+                    />
+                    <span className="text-xs font-medium">
+                      {entry.state} ({entry.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            {/* <div className="hidden md:flex items-center gap-2 text-text-muted flex-wrap justify-center pb-2">
-              {stateDistribution.map((entry) => (
-                <div
-                  key={entry.label}
-                  className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded"
-                    style={{
-                      backgroundColor: getStatusColor(entry.label),
-                    }}
-                  />
-                  <span className="text-xs font-medium">{entry.label}</span>
-                </div>
-              ))}
-            </div> */}
           </div>
 
           <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] lg:hidden">

@@ -120,7 +120,7 @@ export interface IMachineStatus extends IBaseEntity {
   alarmCode?: string;
   alarmMessage?: string;
   startTime: Date;
-  endTime?: Date;
+  endTime?: Date | null;
   duration?: number;
 }
 

@@ -387,11 +387,9 @@ export interface IOverviewAlarm {
 export interface IMachineOverview {
   startDate: Date;
   endDate: Date;
-  utilization: number;
-  averageRuntime: number;
-  alarmCount: number;
-  utilizationOverTime: IUtilization[];
-  stateDistribution: IStateDistribution[];
+  kpis: any[];
+  utilization: any[];
+  states: IStateDistribution[];
   machines: IOverviewMachine[];
   alarms: IOverviewAlarm[];
 }

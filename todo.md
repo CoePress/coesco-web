@@ -4,6 +4,11 @@
 
 - Handle rate limit (429) - currently flagging system unavailable
 - Eliminate use of useEffect where possible
+- Make charts components
+- Add home button to mobile sidebar
+- Add date picker to mobile page header
+- Make mobile date picker a modal
+- Complete timeline modal
 
 ## Server
 

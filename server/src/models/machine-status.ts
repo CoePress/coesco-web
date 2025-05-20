@@ -19,7 +19,7 @@ class MachineStatus
   declare alarmCode: string;
   declare alarmMessage: string;
   declare startTime: Date;
-  declare endTime: Date;
+  declare endTime: Date | null;
   declare duration: number;
 
   public static initialize(sequelize: Sequelize): void {
