@@ -344,16 +344,24 @@ export class MachineDataService {
       const divisionDuration =
         division.end.getTime() - division.start.getTime();
       const divisionTotalTime = divisionDuration * machineCount;
-      const divisionUtilization =
-        divisionTotalTime === 0
-          ? 0
-          : (divisionActiveTime / divisionTotalTime) * 100;
+
+      // Check if the division is in the future
+      const isFuture = division.start > now;
+
+      const divisionUtilization = isFuture
+        ? null
+        : divisionTotalTime === 0
+        ? 0
+        : (divisionActiveTime / divisionTotalTime) * 100;
 
       return {
         label: division.label,
         start: division.start,
         end: division.end,
-        utilization: Number(divisionUtilization.toFixed(2)),
+        utilization:
+          divisionUtilization === null
+            ? null
+            : Number(divisionUtilization.toFixed(2)),
         stateTotals: this.calculateStatusTotals(
           states.data,
           division.start,
