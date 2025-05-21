@@ -33,20 +33,9 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<Database>();
         dbContext.Database.EnsureCreated();
-        var syncService = services.GetRequiredService<SyncService>();
 
         string directoryPath = "C:\\Users\\jar\\Desktop\\sample";
         string csvFilePath = Path.Combine(directoryPath, "customers.csv"); // Replace with your CSV file name
-
-        if (File.Exists(csvFilePath))
-        {
-            var tableName = await syncService.CreateTableFromCsvStructure(csvFilePath);
-            Console.WriteLine($"Successfully created table: {tableName}");
-        }
-        else
-        {
-            Console.WriteLine($"CSV file not found at: {csvFilePath}");
-        }
     }
     catch (Exception ex)
     {

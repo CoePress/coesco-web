@@ -4,7 +4,7 @@ import { Calendar, Download, Loader } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { useState } from "react";
 import useGetMachines from "@/hooks/production/use-get-machines";
-import { formatDuration } from "@/utils";
+import { formatDuration, getVariantFromStatus } from "@/utils";
 import { TableColumn } from "@/components/v1/table";
 import { IMachineStatus } from "@/utils/types";
 import useGetStatuses from "@/hooks/production/use-get-statuses";
@@ -86,14 +86,21 @@ const MachineHistory = () => {
   };
 
   const [dateRange, setDateRange] = useState(getInitialDateRange);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
+  const [sort, setSort] = useState("startTime");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
 
   const {
     states,
     loading: statesLoading,
     error: statesError,
+    pagination,
   } = useGetStatuses({
-    dateFrom: dateRange.start.toISOString().slice(0, 10),
-    dateTo: dateRange.end.toISOString().slice(0, 10),
+    page,
+    limit,
+    sort,
+    order,
   });
 
   const {
@@ -101,6 +108,9 @@ const MachineHistory = () => {
     loading: machinesLoading,
     error: machinesError,
   } = useGetMachines();
+
+  const loading = statesLoading || machinesLoading;
+  const error = statesError || machinesError;
 
   const stateOptions = [
     { label: "All States", value: "" },
@@ -148,14 +158,14 @@ const MachineHistory = () => {
         return (
           <StatusBadge
             label={value.toUpperCase()}
-            variant={value === "running" ? "success" : "default"}
+            variant={getVariantFromStatus(value) as any}
           />
         );
       },
     },
     {
-      key: "controller",
-      header: "Controller",
+      key: "execution",
+      header: "Execution",
       render: (value: string) => {
         return (
           <StatusBadge
@@ -166,8 +176,8 @@ const MachineHistory = () => {
       },
     },
     {
-      key: "execution",
-      header: "Execution",
+      key: "controller",
+      header: "Controller",
       render: (value: string) => {
         return (
           <StatusBadge
@@ -211,11 +221,8 @@ const MachineHistory = () => {
     null
   );
 
-  if (statesLoading) return <Loader />;
-  if (statesError) return <div>Error</div>;
-
-  if (machinesLoading) return <Loader />;
-  if (machinesError) return <div>Error</div>;
+  if (loading) return <Loader />;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="w-full flex flex-1 flex-col">
@@ -264,6 +271,15 @@ const MachineHistory = () => {
         total={filteredStates.length}
         idField="id"
         pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        onPageChange={setPage}
+        sort={sort}
+        order={order}
+        onSortChange={(newSort, newOrder) => {
+          setSort(newSort);
+          setOrder(newOrder);
+        }}
       />
     </div>
   );

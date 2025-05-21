@@ -569,8 +569,6 @@ export class MachineDataService {
           state,
         });
       } catch (error) {
-        logger.error(`Error polling machine ${machine.id}:`, error);
-
         const openStatus = await MachineStatus.findOne({
           where: {
             machineId: machine.id,
@@ -600,10 +598,10 @@ export class MachineDataService {
               duration: 0,
             } as any);
           } catch (error) {
-            // logger.error(
-            //   `Failed to create offline state for machine ${machine.id}:`,
-            //   error
-            // );
+            logger.error(
+              `Failed to create offline state for machine ${machine.id}:`,
+              error
+            );
           }
         }
 

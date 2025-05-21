@@ -82,6 +82,17 @@ export const getStatusColor = (status: string) => {
   return colors[s as keyof typeof colors] || "#a0a0a0";
 };
 
+export const getVariantFromStatus = (status: string) => {
+  const colors = {
+    ACTIVE: "success",
+    SETUP: "info",
+    IDLE: "warning",
+    ALARM: "error",
+    OFFLINE: "default",
+  };
+  return colors[status as keyof typeof colors] || "default";
+};
+
 export const getStateColor = (state: string) => {
   const colors = {
     ACTIVE: "#22c55e", // Green
