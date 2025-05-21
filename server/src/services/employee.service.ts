@@ -186,14 +186,19 @@ export class EmployeeService implements IEmployeeService {
 
       while (url) {
         const token = await this.generateMicrosoftToken();
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 30000,
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          signal: AbortSignal.timeout(30000),
         });
 
-        allUsers.push(...response.data.value);
+        const data = await response.json();
 
-        url = response.data["@odata.nextLink"] || null;
+        allUsers.push(...data.value);
+
+        url = data["@odata.nextLink"] || null;
       }
 
       return allUsers;
