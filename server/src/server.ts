@@ -1,7 +1,7 @@
 import { httpServer, io } from "./app";
 
 import { config } from "./config/config";
-import { sequelize } from "./config/database";
+import { sequelize, quoteSequelize } from "./config/database";
 import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
 import {
@@ -13,8 +13,12 @@ import {
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
+
   await sequelize.sync();
   logger.info("Database connected & synced");
+
+  await quoteSequelize.sync();
+  logger.info("Quote database connected & synced");
 
   socketService.setIo(io);
   socketService.initialize();

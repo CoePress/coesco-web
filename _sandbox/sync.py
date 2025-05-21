@@ -1,105 +1,143 @@
 import os
-import csv
 import psycopg2
 import glob
+import json
 from pathlib import Path
+import pandas as pd
+import logging
+from datetime import datetime
 
-db_host = input("Database host: ") or "localhost"
-db_name = input("Database name: ") or "quote_copy"
-db_user = input("Database user: ") or "postgres"
-db_pass = input("Database password: ") or "password"
-db_port = input("Database port (5432): ") or "5432"
-csv_dir = input("Directory with CSV files: ") or "C:\\Users\\jar\\Desktop\\quote"
+# Setup logging
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / f"sync_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
-conn = psycopg2.connect(
-    host=db_host,
-    database=db_name,
-    user=db_user,
-    password=db_pass,
-    port=db_port
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()
+    ]
 )
-cursor = conn.cursor()
 
-
-
-
-csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
-print(f"Found {len(csv_files)} CSV files")
-
-for csv_file in csv_files:
-    table_name = Path(csv_file).stem.lower()
-    print(f"Importing: {csv_file} -> {table_name}")
+def try_read_csv(file_path):
+    encodings = ['utf-8', 'latin1', 'cp1252', 'iso-8859-1']
+    last_error = None
     
-    cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = %s ORDER BY ordinal_position", (table_name,))
-    columns = [col[0] for col in cursor.fetchall()]
+    for encoding in encodings:
+        try:
+            logging.info(f"Attempting to read {file_path} with {encoding} encoding")
+            df = pd.read_csv(file_path, encoding=encoding, on_bad_lines='warn')
+            logging.info(f"Successfully read file with {encoding} encoding")
+            return df
+        except UnicodeDecodeError as e:
+            last_error = e
+            logging.warning(f"Failed to read with {encoding} encoding: {str(e)}")
+            continue
+        except Exception as e:
+            last_error = e
+            logging.error(f"Unexpected error reading file: {str(e)}")
+            raise
     
-    if not columns:
-        print(f"Table {table_name} not found or has no columns. Skipping.")
-        continue
-    
-    with open(csv_file, 'r', newline='') as f:
-        reader = csv.reader(f)
-        header = next(reader, None)
+    raise last_error or Exception("Failed to read CSV file with any encoding")
+
+# Database connection
+try:
+    db_host = input("Database host: ") or "localhost"
+    db_name = input("Database name: ") or "quote_copy"
+    db_user = input("Database user: ") or "postgres"
+    db_pass = input("Database password: ") or "password"
+    db_port = input("Database port (5432): ") or "5432"
+    csv_dir = input("Directory with CSV files: ") or "C:\\Users\\jar\\Desktop\\quote"
+
+    logging.info(f"Connecting to database {db_name} on {db_host}")
+    conn = psycopg2.connect(
+        host=db_host,
+        database=db_name,
+        user=db_user,
+        password=db_pass,
+        port=db_port
+    )
+    cursor = conn.cursor()
+    logging.info("Database connection successful")
+
+    csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
+    logging.info(f"Found {len(csv_files)} CSV files")
+
+    for csv_file in csv_files:
+        table_name = Path(csv_file).stem.lower()
+        logging.info(f"Processing: {csv_file} -> {table_name}")
         
-        if header:
-            header = [h.lower().replace('-', '_') for h in header]
-            cols_to_use = [h for h in header if h in columns]
+        try:
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_name = %s ORDER BY ordinal_position", 
+                (table_name,)
+            )
+            columns = [col[0] for col in cursor.fetchall()]
+            
+            if not columns:
+                logging.warning(f"Table {table_name} not found or has no columns. Skipping.")
+                continue
+            
+            # Read CSV with pandas
+            df = try_read_csv(csv_file)
+            
+            # Convert column names to lowercase and replace hyphens with underscores
+            df.columns = [col.lower().replace('-', '_') for col in df.columns]
+            
+            # Filter columns to only those that exist in the database
+            cols_to_use = [col for col in df.columns if col in columns]
             
             if not cols_to_use:
-                print(f"No matching columns in {csv_file}. Skipping.")
-                continue
-        else:
-            cols_to_use = columns[:len(next(reader))]
-            f.seek(0)
-        
-        col_str = ", ".join(cols_to_use)
-        placeholders = ", ".join(["%s"] * len(cols_to_use))
-        insert_query = f"INSERT INTO {table_name} ({col_str}) VALUES ({placeholders})"
-        
-        rows = []
-        for row in reader:
-            if not row:
+                logging.warning(f"No matching columns in {csv_file}. Skipping.")
                 continue
             
-            if header:
-                row_data = []
-                for col in cols_to_use:
-                    idx = header.index(col)
-                    val = row[idx] if idx < len(row) else None
-                    
-                    if val and col in ['ismaxthick', 'isstd']:
-                        if val.lower() in ['std', 'max', 'yes', 'true']:
-                            val = True
-                        elif val.lower() in ['opt', 'min', 'no', 'false']:
-                            val = False
-                    
-                    row_data.append(None if val == "?" else (val if val else None))
-            else:
-                row_data = []
-                for i, val in enumerate(row[:len(cols_to_use)]):
-                    col = cols_to_use[i]
-                    
-                    if val and col in ['ismaxthick', 'isstd']:
-                        if val.lower() in ['std', 'max', 'yes', 'true']:
-                            val = True
-                        elif val.lower() in ['opt', 'min', 'no', 'false']:
-                            val = False
-                    
-                    row_data.append(None if val == "?" else (val if val else None))
+            # Select only the columns we need
+            df = df[cols_to_use]
             
-            rows.append(row_data)
+            # Handle array values (columns containing @%)
+            for col in df.columns:
+                if df[col].dtype == 'object':  # Only process string columns
+                    df[col] = df[col].apply(
+                        lambda x: f'[{",".join([f"\"{v.strip()}\"" for v in str(x).split("@%") if v.strip() != "?"])}]' 
+                        if pd.notna(x) and '@%' in str(x) else x
+                    )
             
-            if len(rows) >= 1000:
-                cursor.executemany(insert_query, rows)
+            # Replace '?' with None
+            df = df.replace('?', None)
+            
+            # Convert DataFrame to list of tuples for insertion
+            rows = df.values.tolist()
+            
+            # Prepare insert query
+            col_str = ", ".join(cols_to_use)
+            placeholders = ", ".join(["%s"] * len(cols_to_use))
+            insert_query = f"INSERT INTO {table_name} ({col_str}) VALUES ({placeholders})"
+            
+            # Insert in batches of 1000
+            batch_size = 1000
+            total_rows = 0
+            for i in range(0, len(rows), batch_size):
+                batch = rows[i:i + batch_size]
+                cursor.executemany(insert_query, batch)
                 conn.commit()
-                print(f"  Inserted {len(rows)} rows")
-                rows = []
-        
-        if rows:
-            cursor.executemany(insert_query, rows)
-            conn.commit()
-            print(f"  Inserted {len(rows)} rows")
+                total_rows += len(batch)
+                logging.info(f"  Inserted {len(batch)} rows (Total: {total_rows})")
+            
+            logging.info(f"Successfully imported {total_rows} rows into {table_name}")
+            
+        except Exception as e:
+            logging.error(f"Error processing {csv_file}: {str(e)}")
+            conn.rollback()
+            continue
 
-cursor.close()
-conn.close()
-print("Import complete!")
+except Exception as e:
+    logging.error(f"Fatal error: {str(e)}")
+    raise
+finally:
+    if 'cursor' in locals():
+        cursor.close()
+    if 'conn' in locals():
+        conn.close()
+    logging.info("Import process completed")

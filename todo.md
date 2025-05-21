@@ -9,6 +9,8 @@
 - Add date picker to mobile page header
 - Make mobile date picker a modal
 - Complete timeline modal
+- Make table header sticky
+- Setup app & layout commands
 
 ## Server
 
