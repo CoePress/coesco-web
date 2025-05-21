@@ -415,9 +415,25 @@ export class MachineDataService {
   }
 
   async getMachineTimeline(startDate: string, endDate: string) {
+    const machines = await machineService.getMachines({});
+
+    const m = machines.data.map((machine) => {
+      return {
+        id: machine.id,
+        name: machine.name,
+        type: machine.type,
+      };
+    });
+
+    if (machines.data.length === 0) {
+      throw new BadRequestError("No machines found");
+    }
+
     return {
       success: true,
-      data: [],
+      data: {
+        machines: m,
+      },
     };
   }
 

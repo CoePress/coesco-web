@@ -194,7 +194,7 @@ type MachineTimelineProps = {
 };
 
 const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
-  const { loading, error } = useGetTimeline({
+  const { timeline, loading, error } = useGetTimeline({
     startDate: startDate.toISOString().slice(0, 10),
     endDate: endDate.toISOString().slice(0, 10),
   });
@@ -238,7 +238,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
             </div>
           </div>
 
-          {/* <div className="space-y-1">
+          <div className="space-y-1">
             {timeline &&
               timeline.machines.map((machine: IOverviewMachine) => (
                 <div
@@ -267,7 +267,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                         }
                       />
                     ))}
-                    {machine.timeline.map((event, index) => {
+                    {/* {machine.timeline.map((event, index) => {
                       // Convert event timestamps to EST
                       const startDate = getESTDate(new Date(event.startTime));
                       const endDate = getESTDate(event.endTime || new Date());
@@ -307,11 +307,11 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
                           </div>
                         </div>
                       );
-                    })}
+                    })} */}
                   </div>
                 </div>
               ))}
-          </div> */}
+          </div>
         </div>
       </div>
 

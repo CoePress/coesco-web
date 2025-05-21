@@ -14,6 +14,7 @@
 
 - Passing "options.maxAge" into cookies is deprecated
 - Ability to toggle polling on server & adapter
+- Assume gaps in machine statuses are offline
 
 ## Infrastructure
 

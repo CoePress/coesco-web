@@ -1,4 +1,5 @@
 import { Button } from "@/components";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 export type TableColumn<T> = {
   key: string;
@@ -93,9 +94,15 @@ const Table = <T extends Record<string, any>>({
                   key={column.key}
                   scope="col"
                   className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
-                    onSortChange ? "cursor-pointer hover:bg-surface" : ""
+                    onSortChange && column.header.toLowerCase() !== "actions"
+                      ? "cursor-pointer hover:bg-surface"
+                      : ""
                   }`}
-                  onClick={() => onSortChange && handleSort(column.key)}>
+                  onClick={() =>
+                    onSortChange &&
+                    column.header.toLowerCase() !== "actions" &&
+                    handleSort(column.key)
+                  }>
                   <div className="flex items-center gap-1">
                     {column.header}
                     {sort === column.key && (
@@ -158,18 +165,21 @@ const Table = <T extends Record<string, any>>({
             </span>{" "}
             of <span className="font-medium">{total}</span> results
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2 items-center">
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage - 1)}
               disabled={currentPage === 1}>
-              Previous
+              <ArrowLeftIcon size={16} />
             </Button>
+            <span className="text-text-muted text-sm">
+              {currentPage} of {totalPages}
+            </span>
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage + 1)}
               disabled={currentPage === totalPages}>
-              Next
+              <ArrowRightIcon size={16} />
             </Button>
           </div>
         </div>
