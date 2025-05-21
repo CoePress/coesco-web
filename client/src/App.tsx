@@ -5,9 +5,8 @@ import Home from "./pages/website/home";
 import Example from "./pages/website/example";
 import Design from "./pages/design";
 import { SocketProvider } from "@/contexts/socket.context";
-import { PublicRoute, ProtectedRoute } from "./components";
+import { PublicRoute, ProtectedRoute, MicrosoftCallback } from "./components";
 import { ProtectedRouteWithoutLayout } from "./components/general/routes";
-import { MicrosoftCallback } from "./components/microsoft-callback";
 
 interface RouteItem {
   path: string;

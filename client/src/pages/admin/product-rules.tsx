@@ -6,7 +6,7 @@ import { useState } from "react";
 import { RuleAction, ComparisonOperator } from "@/utils/types";
 
 import { sampleOptionRules, sampleOptions } from "@/utils/sample-data";
-import { TableColumn } from "@/components/v1/table";
+import { TableColumn } from "@/components/shared/table";
 
 interface RuleFormData {
   name: string;

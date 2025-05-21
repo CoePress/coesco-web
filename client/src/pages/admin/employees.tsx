@@ -9,7 +9,7 @@ import {
   Loader,
   Modal,
 } from "@/components";
-import { TableColumn } from "@/components/v1/table";
+import { TableColumn } from "@/components/shared/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
 import useUpdateEmployee from "@/hooks/admin/use-update-employee";

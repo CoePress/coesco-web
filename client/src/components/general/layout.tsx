@@ -7,7 +7,7 @@ import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
 import { IEmployee } from "@/utils/types";
-import Button from "../v1/button";
+import Button from "../shared/button";
 
 type SidebarProps = {
   isOpen: boolean;

@@ -10,7 +10,7 @@ import { useState } from "react";
 import { PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleDeals } from "@/utils/sample-data";
-import Table from "@/components/v1/table";
+import Table from "@/components/shared/table";
 
 const Pipeline = () => {
   const [viewMode, setViewMode] = useState("kanban");

@@ -4,7 +4,7 @@ import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Loader } from "@/components";
 
-export const MicrosoftCallback = () => {
+const MicrosoftCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -43,3 +43,5 @@ export const MicrosoftCallback = () => {
     </div>
   );
 };
+
+export default MicrosoftCallback;

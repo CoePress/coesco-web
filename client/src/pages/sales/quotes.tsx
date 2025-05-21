@@ -21,7 +21,7 @@ import {
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleQuotes } from "@/utils/sample-data";
-import { TableColumn } from "@/components/v1/table";
+import { TableColumn } from "@/components/shared/table";
 
 type Quote = {
   id: string;

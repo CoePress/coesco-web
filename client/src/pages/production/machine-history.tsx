@@ -1,11 +1,11 @@
 import { StatusBadge, Table } from "@/components";
-import PageHeader from "@/components/v1/page-header";
+import PageHeader from "@/components/shared/page-header";
 import { Calendar, Download, Loader } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { useState } from "react";
 import useGetMachines from "@/hooks/production/use-get-machines";
 import { formatDuration, getVariantFromStatus } from "@/utils";
-import { TableColumn } from "@/components/v1/table";
+import { TableColumn } from "@/components/shared/table";
 import { IMachineStatus } from "@/utils/types";
 import useGetStatuses from "@/hooks/production/use-get-statuses";
 

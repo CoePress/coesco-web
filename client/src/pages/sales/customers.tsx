@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomers } from "@/utils/sample-data";
-import { TableColumn } from "@/components/v1/table";
+import { TableColumn } from "@/components/shared/table";
 
 type Customer = {
   id: number;

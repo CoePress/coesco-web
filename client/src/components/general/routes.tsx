@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 
 import Layout from "./layout";
-import Loader from "./loader";
+import Loader from "../shared/loader";
 import { useAuth } from "@/contexts/auth.context";
 import { EmployeeRole } from "@/utils/types";
 interface ProtectedRouteProps {

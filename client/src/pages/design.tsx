@@ -1,7 +1,7 @@
-import Button from "@/components/v1/button";
-import Body from "@/components/v1/text";
-import Input from "@/components/v1/input";
-import Select from "@/components/v1/select";
+import Button from "@/components/shared/button";
+import Body from "@/components/shared/text";
+import Input from "@/components/shared/input";
+import Select from "@/components/shared/select";
 
 const Design = () => {
   return (
