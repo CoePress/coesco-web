@@ -15,7 +15,7 @@ import quoteRoutes from "./quote.routes";
 
 const router = Router();
 
-router.use("/archive", protect, archiveRoutes);
+router.use("/archive", archiveRoutes);
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);
 router.use("/email", protect, emailRoutes);

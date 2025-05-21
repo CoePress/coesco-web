@@ -100,7 +100,7 @@ try:
             for col in df.columns:
                 if df[col].dtype == 'object':  # Only process string columns
                     df[col] = df[col].apply(
-                        lambda x: f'[{",".join([f"\"{v.strip()}\"" for v in str(x).split("@%") if v.strip() != "?"])}]' 
+                        lambda x: json.dumps([v.strip() for v in str(x).split("@%") if v.strip() != "?"])
                         if pd.notna(x) and '@%' in str(x) else x
                     )
             
