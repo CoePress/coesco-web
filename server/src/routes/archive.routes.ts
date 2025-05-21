@@ -1,7 +1,6 @@
 import { quoteSequelize } from "@/config/database";
 import { IQueryParams } from "@/types/api.types";
 import { Router, RequestHandler } from "express";
-import { buildQuery } from "@/utils";
 
 const getValidEntities = async () => {
   const result = (await quoteSequelize.query(
@@ -9,14 +8,6 @@ const getValidEntities = async () => {
   )) as [{ table_name: string }[], any];
 
   return result.map((row) => row[0]);
-};
-
-const doesEntityExist = async (entity: string) => {
-  const result = await quoteSequelize.query(
-    `SELECT EXISTS (SELECT 1 FROM "${entity}" LIMIT 1)`
-  );
-
-  return (result[0][0] as { exists: boolean }).exists;
 };
 
 const getEntityColumns = async (entity: string) => {
@@ -38,7 +29,6 @@ router.get("/", async (req, res) => {
 
 router.get("/:entity", (async (req, res) => {
   const { entity } = req.params;
-
   const { page, limit, sort, order, search, filter, dateFrom, dateTo } =
     req.query;
 
@@ -53,21 +43,21 @@ router.get("/:entity", (async (req, res) => {
     dateTo: dateTo as string,
   };
 
+  const entityName = entity.toLowerCase();
+
   try {
     const validEntities = await getValidEntities();
-    const validEntity = validEntities.find(
-      (e) => e.toLowerCase() === entity.toLowerCase()
-    );
+    const validEntity = validEntities.find((e) => e === entityName);
     if (!validEntity) {
       return res.status(404).json({
-        error: `Entity ${entity} does not exist`,
+        error: `Entity ${entityName} (${entity}) does not exist`,
       });
     }
 
-    const columns = await getEntityColumns(entity);
+    const columns = await getEntityColumns(entityName);
 
-    let query = `SELECT * FROM "${entity}"`;
-    let countQuery = `SELECT COUNT(*) FROM "${entity}"`;
+    let query = `SELECT * FROM "${entityName}"`;
+    let countQuery = `SELECT COUNT(*) FROM "${entityName}"`;
     const queryParams: any[] = [];
     let whereConditions: string[] = [];
 

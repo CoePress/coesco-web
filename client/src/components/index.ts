@@ -18,3 +18,5 @@ export { default as Table } from "./shared/table";
 export { default as Tabs } from "./shared/tabs";
 export { default as Toast } from "./shared/toast";
 export { default as Tooltip } from "./shared/tooltip";
+
+export { default as Reports } from "./page/reports";

@@ -22,9 +22,13 @@ httpServer.listen(config.port, async () => {
 
   socketService.setIo(io);
   socketService.initialize();
-  logger.info("Socket.IO server initialized");
+  logger.info("Socket service initialized");
+
+  await cronService.initialize();
+  logger.info("Cron service initialized");
 
   await machineDataService.initialize();
+  logger.info("Machine data service initialized");
 
   logger.info(
     `Server running in ${config.nodeEnv} mode on port ${config.port}`

@@ -8,14 +8,7 @@ export class CronService {
   private jobs: CronJob[] = [];
   private runningJobs: Set<string> = new Set();
 
-  constructor() {
-    this.start();
-  }
-
-  start(): void {
-    logger.info("Starting cron jobs..");
-
-    // Sync employees every day at midnight est
+  async initialize(): Promise<void> {
     this.jobs.push(
       new CronJob(
         "0 0 * * *",
@@ -28,7 +21,6 @@ export class CronService {
       )
     );
 
-    // Email production report every Monday at 8am est
     this.jobs.push(
       new CronJob(
         "0 8 * * 0",
@@ -38,8 +30,6 @@ export class CronService {
         "America/New_York"
       )
     );
-
-    logger.info(`Started ${this.jobs.length} cron jobs`);
   }
 
   async stop(): Promise<void> {
