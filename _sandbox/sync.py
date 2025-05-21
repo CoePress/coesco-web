@@ -9,7 +9,7 @@ db_name = input("Database name: ") or "quote_copy"
 db_user = input("Database user: ") or "postgres"
 db_pass = input("Database password: ") or "password"
 db_port = input("Database port (5432): ") or "5432"
-csv_dir = input("Directory with CSV files: ") or "C:\\Users\\jar\\Desktop\\temp"
+csv_dir = input("Directory with CSV files: ") or "C:\\Users\\jar\\Desktop\\quote"
 
 conn = psycopg2.connect(
     host=db_host,
@@ -73,7 +73,7 @@ for csv_file in csv_files:
                         elif val.lower() in ['opt', 'min', 'no', 'false']:
                             val = False
                     
-                    row_data.append(val if val else None)
+                    row_data.append(None if val == "?" else (val if val else None))
             else:
                 row_data = []
                 for i, val in enumerate(row[:len(cols_to_use)]):
@@ -85,7 +85,7 @@ for csv_file in csv_files:
                         elif val.lower() in ['opt', 'min', 'no', 'false']:
                             val = False
                     
-                    row_data.append(val if val else None)
+                    row_data.append(None if val == "?" else (val if val else None))
             
             rows.append(row_data)
             

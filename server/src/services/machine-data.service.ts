@@ -777,7 +777,7 @@ export class MachineDataService {
       return MachineState.ALARM;
     }
 
-    if (current.execution === "ACTIVE") {
+    if (current.execution === "ACTIVE" || current.execution === "FEED_HOLD") {
       return MachineState.ACTIVE;
     }
 
