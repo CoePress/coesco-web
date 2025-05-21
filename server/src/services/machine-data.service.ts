@@ -12,8 +12,8 @@ import {
 import { cacheService, machineService, socketService } from ".";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
-import fetch from "node-fetch";
 import { Op } from "sequelize";
+import fetch from "node-fetch";
 
 interface CachedMachineState {
   state: MachineState;
@@ -653,7 +653,7 @@ export class MachineDataService {
     if (isMTConnect) {
       return await response.text();
     } else {
-      const { data } = await response.json();
+      const { data } = (await response.json()) as { data: any };
       return data;
     }
   }
