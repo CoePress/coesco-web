@@ -67,7 +67,6 @@ export class MachineDataService {
 
   async initialize() {
     await this.initializeMachineStates();
-    await this.fetchAndCacheMachines();
   }
 
   start() {
@@ -139,27 +138,9 @@ export class MachineDataService {
     }
   }
 
-  private async fetchAndCacheMachines() {
-    logger.info(`Fetching and caching machines...`);
-    try {
-      const machines = await machineService.getMachines({});
-      if (machines?.data) {
-        this.machines = machines.data;
-        this.lastFetchTime = Date.now();
-        await cacheService.set(
-          this.MACHINES_CACHE_KEY,
-          machines.data,
-          this.MACHINES_CACHE_TTL
-        );
-      }
-    } catch (error) {
-      logger.error("Error fetching machines:", error);
-    }
-  }
-
   async refreshMachines() {
-    await this.fetchAndCacheMachines();
-    return this.machines;
+    const machines = await machineService.getMachines({});
+    return machines.data;
   }
 
   // Machine Statuses
@@ -481,16 +462,9 @@ export class MachineDataService {
   // Polling methods
   async pollMachines() {
     const current = [];
+    const machines = await machineService.getMachines({});
 
-    const cachedMachines = await cacheService.get(this.MACHINES_CACHE_KEY);
-    if (
-      !cachedMachines ||
-      Date.now() - this.lastFetchTime >= this.FETCH_INTERVAL
-    ) {
-      await this.fetchAndCacheMachines();
-    }
-
-    for (const machine of this.machines) {
+    for (const machine of machines.data) {
       let cachedState: CachedMachineState | null = null;
       try {
         if (!machine.connectionHost || !machine.connectionPort) {
