@@ -348,7 +348,17 @@ type KPICardProps = {
 };
 
 const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
-  const color = change && change > 0 ? "success" : "error";
+  let color;
+
+  const hasChange = change !== undefined && change !== null;
+
+  if (hasChange && change > 0) {
+    color = "text-success bg-success/10";
+  } else if (hasChange && change < 0) {
+    color = "text-error bg-error/10";
+  } else {
+    color = "text-text-muted bg-surface";
+  }
 
   return (
     <div className="bg-foreground rounded border p-2">
@@ -357,10 +367,9 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
           {icon}
           <p className="text-sm text-text-muted ">{title}</p>
         </div>
-        {change && (
-          <span
-            className={`text-xs text-${color} bg-${color}/10 px-2 py-1 rounded`}>
-            {change}
+        {hasChange && (
+          <span className={`text-xs ${color} px-2 py-1 rounded`}>
+            {change}%
           </span>
         )}
       </div>
@@ -412,24 +421,24 @@ const Dashboard = () => {
     },
     {
       title: "Utilization",
-      value: 0,
+      value: overview?.kpis?.utilization?.value || 0,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      change: 0,
+      change: overview?.kpis?.utilization?.change || 0,
     },
     {
       title: "Average Runtime",
-      value: 0,
+      value: formatDuration(overview?.kpis?.averageRuntime?.value || 0),
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      change: 0,
+      change: overview?.kpis?.averageRuntime?.change || 0,
     },
     {
       title: "Alarms",
-      value: 0,
+      value: overview?.kpis?.alarms?.value || 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: 0,
+      change: overview?.kpis?.alarms?.change || 0,
     },
   ];
 
@@ -503,6 +512,14 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
 
+  const stateData = [
+    { name: "Running", value: 45, color: "#22c55e" },
+    { name: "Idle", value: 25, color: "#fbbf24" },
+    { name: "Maintenance", value: 15, color: "#f97316" },
+    { name: "Offline", value: 10, color: "#ef4444" },
+    { name: "Setup", value: 5, color: "#8b5cf6" },
+  ];
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
@@ -555,19 +572,16 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
-          <div className="md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border flex flex-col min-h-[250px]">
+        <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0">
             <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">Utilization Over Time</h3>
             </div>
-
-            <div className="p-2 flex-1 text-sm">
+            <div className="flex-1 p-2 min-h-0">
               <ResponsiveContainer
                 width="100%"
                 height="100%">
-                <LineChart
-                  data={utilizationOverTime}
-                  margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
+                <LineChart data={utilizationOverTime}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -627,75 +641,79 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] flex-grow-0">
-            <div className="p-2 border-b">
+          <div className="bg-foreground rounded border flex flex-col min-h-0">
+            <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">State Distribution</h3>
             </div>
-            <div className="flex-1 flex flex-row lg:flex-col justify-center">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    key={stateDistribution
-                      .map((e) => e.state + e.total)
-                      .join("-")}
-                    data={stateDistribution}
-                    dataKey="total"
-                    nameKey="state"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="80%"
-                    stroke="var(--border)"
-                    strokeWidth={1}
-                    isAnimationActive={true}
-                    animationDuration={1000}>
-                    {stateDistribution.map((entry, idx) => (
-                      <Cell
-                        key={`cell-${idx}`}
-                        fill={
-                          entry.state === "OFFLINE"
-                            ? "var(--surface)"
-                            : getStatusColor(entry.state)
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload || !payload.length) return null;
-                      const entry = payload[0];
+            <div className="flex flex-row lg:flex-col flex-1">
+              <div className="flex-1 p-2 min-h-44 md:min-h-0">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%">
+                  <PieChart data={stateData}>
+                    <Pie
+                      key={stateDistribution
+                        .map((e) => e.state + e.total)
+                        .join("-")}
+                      data={stateDistribution}
+                      dataKey="total"
+                      nameKey="state"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius="80%"
+                      stroke="var(--border)"
+                      strokeWidth={1}
+                      isAnimationActive={true}
+                      animationDuration={1000}>
+                      {stateDistribution.map((entry, idx) => (
+                        <Cell
+                          key={`cell-${idx}`}
+                          fill={
+                            entry.state === "OFFLINE"
+                              ? "var(--surface)"
+                              : getStatusColor(entry.state)
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const entry = payload[0];
 
-                      const total = entry.payload.total;
-                      const percentage = entry.payload.percentage;
+                        const total = entry.payload.total;
+                        const percentage = entry.payload.percentage;
 
-                      return (
-                        <div
-                          style={{
-                            background: "var(--foreground)",
-                            color: "var(--text-muted)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 4,
-                            padding: 8,
-                          }}>
+                        return (
                           <div
                             style={{
-                              fontWeight: 500,
-                              color: getStatusColor(entry.payload.state),
+                              background: "var(--foreground)",
+                              color: "var(--text-muted)",
+                              border: "1px solid var(--border)",
+                              borderRadius: 4,
+                              padding: 8,
                             }}>
-                            {entry.payload.state}
+                            <div
+                              style={{
+                                fontWeight: 500,
+                                color: getStatusColor(entry.payload.state),
+                              }}>
+                              {entry.payload.state}
+                            </div>
+                            <div className="mt-1">
+                              <p>
+                                {formatDuration(total)} ({percentage.toFixed(2)}
+                                %)
+                              </p>
+                            </div>
                           </div>
-                          <div className="mt-1">
-                            <p>
-                              {formatDuration(total)} ({percentage.toFixed(2)}
-                              %)
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* <div className="flex w-1/3 lg:w-full flex-col gap-2 text-text-muted flex-wrap justify-center p-2 lg:flex-row">
+                        );
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="hidden xl:flex flex-row gap-2 text-text-muted flex-wrap justify-center p-2">
                 {stateDistribution.map((entry) => (
                   <div
                     key={entry.state}
@@ -706,62 +724,124 @@ const Dashboard = () => {
                         backgroundColor: getStatusColor(entry.state),
                       }}
                     />
-                    <span className="text-xs font-medium">
+                    <span className="text-xs font-medium text-nowrap">
                       {entry.state} ({entry.percentage.toFixed(1)}%)
                     </span>
                   </div>
                 ))}
-              </div> */}
-            </div>
-          </div>
-
-          <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] lg:hidden">
-            <div className="p-2 border-b flex-shrink-0">
-              <h3 className="text-sm text-text-muted">Alarms</h3>
-            </div>
-
-            <div className="overflow-y-auto flex-grow flex flex-col">
-              <div className="p-2 space-y-2 flex-1 flex flex-col">
-                {loading ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <Loader />
-                  </div>
-                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
-                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
-                    <div
-                      key={idx}
-                      className="p-2 bg-surface rounded border border-border flex justify-between">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle
-                          size={16}
-                          className="text-error"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-text-muted">
-                            {alarm.message}
-                          </p>
-                          <p className="text-xs text-text-muted">
-                            {alarm.machineId}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-xs text-text-muted leading-none">
-                        {formatDistance(new Date(alarm.timestamp), new Date(), {
-                          addSuffix: true,
-                        })}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
-                    No alarms
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        </div>
+          <div
+            className={`bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 lg:h-64 ${
+              !isToday ? "opacity-50" : ""
+            }`}>
+            <div className="p-2 border-b flex items-center justify-between">
+              <h3 className="text-sm text-text-muted">
+                Machines ({machines.length})
+              </h3>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
+              {machines &&
+                machines.map((machine: ExpandedMachine) => (
+                  <div
+                    key={machine.id}
+                    onClick={() => {
+                      setSelectedMachine(machine);
+                    }}
+                    className="flex flex-col justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-2 h-2 rounded-full border border-border"
+                          style={{
+                            backgroundColor: getStatusColor(machine.status),
+                          }}
+                        />
+                        <p className="text-sm font-medium text-text-muted truncate">
+                          {machine.name}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 min-w-0 flex-1">
+                        <Box
+                          size={12}
+                          className="text-text-muted flex-shrink-0"
+                        />
+                        <span className="truncate text-xs">
+                          {machine.program || "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-text-muted text-xs">Spindle</span>
+                      <span className="text-xs text-text-muted">
+                        {machine.spindleSpeed || 0} RPM
+                      </span>
+                    </div>
+                    <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all bg-text-muted/50"
+                        style={{
+                          width: `${(machine.spindleSpeed || 0) / 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <div className="bg-foreground rounded border flex flex-col">
+            <div className="p-2 border-b flex items-center justify-between">
+              <h3 className="text-sm text-text-muted">Alarms</h3>
+            </div>
+
+            <div className="p-2 space-y-2 flex-1 flex flex-col">
+              {loading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader />
+                </div>
+              ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
+                overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-2 bg-surface rounded border border-border flex justify-between">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle
+                        size={16}
+                        className="text-error"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-text-muted">
+                          {alarm.message}
+                        </p>
+                        <p className="text-xs text-text-muted">
+                          {alarm.machineId}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-text-muted leading-none">
+                      {formatDistance(new Date(alarm.timestamp), new Date(), {
+                        addSuffix: true,
+                      })}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
+                  No alarms
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           <div
             className={`md:col-span-2 lg:col-span-3 w-full h-full bg-foreground flex flex-col rounded border ${
@@ -806,22 +886,6 @@ const Dashboard = () => {
                           {machine.program || "-"}
                         </span>
                       </div>
-
-                      {/* <div className="flex items-center gap-1 justify-end flex-shrink-0 ml-2">
-                        <Clock
-                          size={12}
-                          className="text-text-muted"
-                        />
-                        <span className="text-xs whitespace-nowrap">
-                          {machine.startTime
-                            ? formatDistance(
-                                new Date(machine.startTime),
-                                new Date(),
-                                { addSuffix: true }
-                              )
-                            : "-"}
-                        </span>
-                      </div> */}
                     </div>
 
                     <div className="flex justify-between">
@@ -888,8 +952,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div> */}
 
       {selectedMachine && (
         <Modal
