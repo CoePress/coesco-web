@@ -422,7 +422,7 @@ const Dashboard = () => {
     {
       title: "Utilization",
       // @ts-ignore
-      value: overview?.kpis?.utilization?.value || 0,
+      value: `${overview?.kpis?.utilization?.value.toFixed(2) || 0}%`,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
       // @ts-ignore
