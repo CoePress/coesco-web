@@ -421,24 +421,30 @@ const Dashboard = () => {
     },
     {
       title: "Utilization",
+      // @ts-ignore
       value: overview?.kpis?.utilization?.value || 0,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
+      // @ts-ignore
       change: overview?.kpis?.utilization?.change || 0,
     },
     {
       title: "Average Runtime",
+      // @ts-ignore
       value: formatDuration(overview?.kpis?.averageRuntime?.value || 0),
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
+      // @ts-ignore
       change: overview?.kpis?.averageRuntime?.change || 0,
     },
     {
       title: "Alarms",
-      value: overview?.kpis?.alarms?.value || 0,
+      // @ts-ignore
+      value: overview?.kpis?.alarmCount?.value || 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: overview?.kpis?.alarms?.change || 0,
+      // @ts-ignore
+      change: overview?.kpis?.alarmCount?.change || 0,
     },
   ];
 
