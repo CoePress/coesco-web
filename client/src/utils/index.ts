@@ -3,6 +3,7 @@ import { ProductClass } from "./types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import env from "@/config/env";
+import { useTheme } from "@/contexts/theme.context";
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
@@ -71,6 +72,8 @@ export const isProductClassDescendant = (
 };
 
 export const getStatusColor = (status: string) => {
+  const { theme } = useTheme();
+
   switch (status.toUpperCase()) {
     case "ACTIVE":
       return "#34d399";
@@ -81,11 +84,11 @@ export const getStatusColor = (status: string) => {
     case "ALARM":
       return "#f44336";
     case "OFFLINE":
-      return "var(--surface)";
+      return theme === "dark" ? "#262626" : "#f0f0f0";
     case "UNRECORDED":
-      return "var(--border)";
+      return theme === "dark" ? "#404040" : "#d4d4d4";
     default:
-      return "var(--surface)";
+      return theme === "dark" ? "#262626" : "#f0f0f0";
   }
 };
 
