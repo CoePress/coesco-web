@@ -157,8 +157,6 @@ export class MachineDataService {
       offset,
     });
 
-    console.log(`Machine statuses: ${machineStatuses.length}`);
-
     const total = await MachineStatus.count({ where: whereClause });
     const totalPages = limit ? Math.ceil(total / limit) : 1;
 

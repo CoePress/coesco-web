@@ -12,10 +12,14 @@ import employeeRoutes from "./employee.routes";
 import machineDataRoutes from "./machine-data.routes";
 import machineRoutes from "./machine.routes";
 import quoteRoutes from "./quote.routes";
+import { __dev__ } from "@/config/config";
 
 const router = Router();
 
-router.use("/archive", archiveRoutes);
+if (__dev__) {
+  router.use("/archive", archiveRoutes);
+}
+
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);
 router.use("/email", protect, emailRoutes);
