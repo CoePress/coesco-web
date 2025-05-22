@@ -264,6 +264,8 @@ export class MachineDataService {
     }
 
     const durationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
+
+    // TODO: subtract future time from total available time
     const totalAvailableTime =
       durationPerMachinePerDay * dateRange.totalDays * machineCount;
 
@@ -282,9 +284,8 @@ export class MachineDataService {
     const activeTime = totalsByState["ACTIVE"];
 
     const unrecordedTime = totalAvailableTime - totalStateDuration;
-    totalsByState["UNRECORDED"] = unrecordedTime;
+    totalsByState[MachineState.UNRECORDED] = unrecordedTime;
 
-    // Create default states and override with actual values when they exist
     const stateDistribution = [
       {
         state: "ACTIVE",
@@ -325,14 +326,6 @@ export class MachineDataService {
       (state) => state.state === MachineState.ALARM
     ).length;
 
-    console.log(`utilization: ${utilization}`);
-    console.log(`Duration: ${dateRange.duration}`);
-    console.log(`Total duration: ${dateRange.duration * machineCount}`);
-    console.log(`State total: ${JSON.stringify(totalsByState)}`);
-    console.log(`Average runtime: ${averageRuntime}`);
-    console.log(totalsByState["ACTIVE"]);
-    console.log(totalAvailableTime);
-
     const { scale, divisionCount } = this.getOverviewScale(
       dateRange.startDate,
       dateRange.endDate
@@ -354,14 +347,14 @@ export class MachineDataService {
     });
 
     const utilizationOverTime = divisions.map((division) => {
-      const totalsByState = this.calculateStatusTotals(
+      const divisionTotals = this.calculateStatusTotals(
         states.data,
         division.start,
         division.end,
         now
       );
 
-      const divisionActiveTime = totalsByState["ACTIVE"] || 0;
+      const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
 
       const divisionDuration =
         division.end.getTime() - division.start.getTime();
@@ -369,27 +362,14 @@ export class MachineDataService {
 
       const isFuture = division.start > now;
 
-      let divisionUtilization;
-      if (isFuture) {
-        divisionUtilization = null;
-      } else {
-        divisionUtilization = (divisionActiveTime / divisionTotalTime) * 100;
-      }
-
       return {
         label: division.label,
         start: division.start,
         end: division.end,
-        utilization:
-          divisionUtilization === null
-            ? null
-            : Number(divisionUtilization.toFixed(2)),
-        stateTotals: this.calculateStatusTotals(
-          states.data,
-          division.start,
-          division.end,
-          now
-        ).totalsByState,
+        utilization: isFuture
+          ? null
+          : Number(((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)),
+        stateTotals: divisionTotals,
       };
     });
 
@@ -400,7 +380,7 @@ export class MachineDataService {
       now
     );
 
-    const previousAlarmCount = previousTotalsByState["ALARM"] || 0;
+    const previousAlarmCount = previousTotalsByState[MachineState.ALARM] || 0;
     const alarmChange =
       previousAlarmCount === 0
         ? 0
@@ -867,41 +847,42 @@ export class MachineDataService {
     startDate: Date,
     endDate: Date,
     now: Date
-  ): Record<string, number> {
-    const totalsByState: Record<string, number> = {};
+  ): Record<MachineState, number> {
+    const totalsByState: Record<MachineState, number> = {
+      [MachineState.ACTIVE]: 0,
+      [MachineState.SETUP]: 0,
+      [MachineState.IDLE]: 0,
+      [MachineState.ALARM]: 0,
+      [MachineState.OFFLINE]: 0,
+      [MachineState.UNRECORDED]: 0,
+    };
 
-    const statusesByMachine = statuses.reduce((acc, status) => {
-      if (!acc[status.machineId]) {
-        acc[status.machineId] = [];
-      }
-      acc[status.machineId].push(status);
-      return acc;
-    }, {} as Record<string, IMachineStatus[]>);
+    const statusesByMachine = statuses.reduce<Record<string, IMachineStatus[]>>(
+      (acc, status) => {
+        (acc[status.machineId] ??= []).push(status);
+        return acc;
+      },
+      {}
+    );
 
-    Object.values(statusesByMachine).forEach((machineStatuses) => {
-      const relevantStatuses = machineStatuses.filter((status) => {
-        const statusEnd = status.endTime || now;
-        return status.startTime <= endDate && statusEnd >= startDate;
-      });
-
-      relevantStatuses.forEach((status) => {
-        if (!totalsByState[status.state]) {
-          totalsByState[status.state] = 0;
-        }
-
+    for (const machineStatuses of Object.values(statusesByMachine)) {
+      for (const status of machineStatuses) {
         const statusStart = status.startTime;
-        const statusEnd = status.endTime || now;
+        const statusEnd = status.endTime ?? now;
+
+        if (statusStart > endDate || statusEnd < startDate) continue;
 
         const overlapStart = Math.max(
           statusStart.getTime(),
           startDate.getTime()
         );
         const overlapEnd = Math.min(statusEnd.getTime(), endDate.getTime());
-        const overlapDuration = overlapEnd - overlapStart;
 
-        totalsByState[status.state] += overlapDuration;
-      });
-    });
+        if (overlapEnd <= overlapStart) continue;
+        totalsByState[status.state as MachineState] +=
+          overlapEnd - overlapStart;
+      }
+    }
 
     return totalsByState;
   }

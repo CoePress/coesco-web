@@ -41,6 +41,7 @@ export enum MachineState {
   IDLE = "IDLE",
   ALARM = "ALARM",
   OFFLINE = "OFFLINE",
+  UNRECORDED = "UNRECORDED",
 }
 
 export enum FanucControllerMode {
