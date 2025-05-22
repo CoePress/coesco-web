@@ -554,7 +554,7 @@ export class MachineDataService {
 
     const url = isMTConnect
       ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `https://localhost:7043/api/machines/${machine.slug}`;
+      : `http://localhost:5000/api/machines/${machine.slug}`;
 
     const response = await this.fetchData(url);
     if (!response) {
@@ -564,8 +564,7 @@ export class MachineDataService {
     if (isMTConnect) {
       return await response.text();
     } else {
-      const { data } = (await response.json()) as { data: any };
-      return data;
+      return await response.json();
     }
   }
 
@@ -714,7 +713,15 @@ export class MachineDataService {
       return MachineState.OFFLINE;
     }
 
-    return current.execution.toUpperCase();
+    if (current.execution === "STRT") {
+      return MachineState.ACTIVE;
+    }
+
+    if (current.execution === "OFFLINE") {
+      return MachineState.OFFLINE;
+    }
+
+    return MachineState.IDLE;
   }
 
   private async hasMoved(current: any, previous: any): Promise<boolean> {
