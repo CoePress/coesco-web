@@ -240,22 +240,29 @@ export class MachineDataService {
     };
   }
 
-  async getMachineOverview(startDate: string, endDate: string) {
+  async getMachineOverview(start: string, end: string) {
     const now = new Date();
 
-    const dateRange = createDateRange(startDate, endDate);
+    const {
+      startDate,
+      endDate,
+      totalDays,
+      duration,
+      previousStartDate,
+      previousEndDate,
+    } = createDateRange(start, end);
 
     const machineDurationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
 
     const [machines, states, previousStates] = await Promise.all([
       machineService.getMachines({}),
       this.getMachineStatusesByDateRange({
-        startDate: dateRange.startDate.toISOString(),
-        endDate: dateRange.endDate.toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       }),
       this.getMachineStatusesByDateRange({
-        startDate: dateRange.previousStartDate.toISOString(),
-        endDate: dateRange.previousEndDate.toISOString(),
+        startDate: previousStartDate.toISOString(),
+        endDate: previousEndDate.toISOString(),
       }),
     ]);
 
@@ -265,24 +272,45 @@ export class MachineDataService {
       throw new BadRequestError("No machines found");
     }
 
-    const hoursPerDay = 7.5;
-    const msPerHour = 60 * 60 * 1000;
+    const durationPerMachinePerDay = 1000 * 60 * 60 * 7.5;
     const totalAvailableTime =
-      hoursPerDay * msPerHour * dateRange.totalDays * machineCount;
+      durationPerMachinePerDay * totalDays * machineCount;
 
-    const { totalsByState, activeTime } = this.calculateStatusTotals(
+    const totalsByState = this.calculateStatusTotals(
       states.data,
-      dateRange.startDate,
-      dateRange.endDate,
+      startDate,
+      endDate,
       now
     );
 
+    const totalStateDuration = Object.values(totalsByState).reduce(
+      (acc, total) => acc + total,
+      0
+    );
+
+    const activeTime = totalsByState["ACTIVE"];
+    const unrecordedTime = totalAvailableTime - totalStateDuration;
+
+    totalsByState["UNRECORDED"] = unrecordedTime;
+
     const utilization = (activeTime / totalAvailableTime) * 100;
+
+    console.log(`utilization: ${utilization}`);
 
     const stateTotal = Object.values(totalsByState).reduce(
       (acc, total) => acc + total,
       0
     );
+
+    console.log(`Total duration: ${duration}`);
+    console.log(`Total duration for all machines: ${duration * machineCount}`);
+    console.log(`State total: ${JSON.stringify(totalsByState)}`);
+
+    const averageRuntime = activeTime / machineCount;
+    console.log(`Average runtime: ${averageRuntime}`);
+
+    console.log(totalsByState["ACTIVE"]);
+    console.log(totalAvailableTime);
 
     const percentsByState = Object.entries(totalsByState).map(
       ([state, total]) => ({
@@ -292,19 +320,11 @@ export class MachineDataService {
       })
     );
 
-    const { scale, divisionCount } = this.getOverviewScale(
-      dateRange.startDate,
-      dateRange.endDate
-    );
+    const { scale, divisionCount } = this.getOverviewScale(startDate, endDate);
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => {
-      const start = this.calculateDivisionStart(dateRange.startDate, scale, i);
-      const end = this.calculateDivisionEnd(
-        dateRange.startDate,
-        scale,
-        i,
-        dateRange.endDate
-      );
+      const start = this.calculateDivisionStart(startDate, scale, i);
+      const end = this.calculateDivisionEnd(startDate, scale, i, endDate);
       return {
         start,
         end,
@@ -324,7 +344,6 @@ export class MachineDataService {
         division.end.getTime() - division.start.getTime();
       const divisionTotalTime = divisionDuration * machineCount;
 
-      // Check if the division is in the future
       const isFuture = division.start > now;
 
       const divisionUtilization = isFuture
@@ -350,10 +369,10 @@ export class MachineDataService {
       };
     });
 
-    const { totalsByState: previousTotalsByState } = this.calculateStatusTotals(
+    const previousTotalsByState = this.calculateStatusTotals(
       previousStates.data,
-      dateRange.previousStartDate,
-      dateRange.previousEndDate,
+      previousStartDate,
+      previousEndDate,
       now
     );
 
@@ -373,7 +392,7 @@ export class MachineDataService {
             change: 0,
           },
           averageRuntime: {
-            value: 0, // TODO: Implement average runtime calculation
+            value: Number(averageRuntime.toFixed(2)),
             change: 0,
           },
           alarmCount: {
@@ -825,9 +844,8 @@ export class MachineDataService {
     startDate: Date,
     endDate: Date,
     now: Date
-  ): { totalsByState: Record<string, number>; activeTime: number } {
+  ): Record<string, number> {
     const totalsByState: Record<string, number> = {};
-    let activeTime = 0;
 
     const statusesByMachine = statuses.reduce((acc, status) => {
       if (!acc[status.machineId]) {
@@ -859,14 +877,10 @@ export class MachineDataService {
         const overlapDuration = overlapEnd - overlapStart;
 
         totalsByState[status.state] += overlapDuration;
-
-        if (status.state === MachineState.ACTIVE) {
-          activeTime += overlapDuration;
-        }
       });
     });
 
-    return { totalsByState, activeTime };
+    return totalsByState;
   }
 
   private getOverviewScale(startDate: Date, endDate: Date) {

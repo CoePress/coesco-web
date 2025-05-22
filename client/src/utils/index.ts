@@ -71,15 +71,22 @@ export const isProductClassDescendant = (
 };
 
 export const getStatusColor = (status: string) => {
-  const s = status.toUpperCase();
-  const colors = {
-    ACTIVE: "#34d399",
-    SETUP: "#0284c7",
-    IDLE: "#ffab00",
-    ALARM: "#f44336",
-    OFFLINE: "#a0a0a0",
-  };
-  return colors[s as keyof typeof colors] || "#a0a0a0";
+  switch (status.toUpperCase()) {
+    case "ACTIVE":
+      return "#34d399";
+    case "SETUP":
+      return "#0284c7";
+    case "IDLE":
+      return "#ffab00";
+    case "ALARM":
+      return "#f44336";
+    case "OFFLINE":
+      return "var(--surface)";
+    case "UNRECORDED":
+      return "var(--border)";
+    default:
+      return "var(--surface)";
+  }
 };
 
 export const getVariantFromStatus = (status: string) => {
