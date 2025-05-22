@@ -279,19 +279,45 @@ export class MachineDataService {
       0
     );
 
-    const stateDistribution = Object.entries(totalsByState).map(
-      ([state, total]) => ({
-        state,
-        total,
-        percentage:
-          totalStateDuration === 0 ? 0 : (total / totalStateDuration) * 100,
-      })
-    );
-
     const activeTime = totalsByState["ACTIVE"];
 
     const unrecordedTime = totalAvailableTime - totalStateDuration;
     totalsByState["UNRECORDED"] = unrecordedTime;
+
+    // Create default states and override with actual values when they exist
+    const stateDistribution = [
+      {
+        state: "ACTIVE",
+        total: totalsByState["ACTIVE"] || 0,
+        percentage: ((totalsByState["ACTIVE"] || 0) / totalAvailableTime) * 100,
+      },
+      {
+        state: "SETUP",
+        total: totalsByState["SETUP"] || 0,
+        percentage: ((totalsByState["SETUP"] || 0) / totalAvailableTime) * 100,
+      },
+      {
+        state: "IDLE",
+        total: totalsByState["IDLE"] || 0,
+        percentage: ((totalsByState["IDLE"] || 0) / totalAvailableTime) * 100,
+      },
+      {
+        state: "ALARM",
+        total: totalsByState["ALARM"] || 0,
+        percentage: ((totalsByState["ALARM"] || 0) / totalAvailableTime) * 100,
+      },
+      {
+        state: "OFFLINE",
+        total: totalsByState["OFFLINE"] || 0,
+        percentage:
+          ((totalsByState["OFFLINE"] || 0) / totalAvailableTime) * 100,
+      },
+      {
+        state: "UNRECORDED",
+        total: unrecordedTime,
+        percentage: (unrecordedTime / totalAvailableTime) * 100,
+      },
+    ];
 
     const utilization = (activeTime / totalAvailableTime) * 100;
     const averageRuntime = activeTime / machineCount;

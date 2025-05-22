@@ -658,9 +658,6 @@ const Dashboard = () => {
                   height="100%">
                   <PieChart data={stateData}>
                     <Pie
-                      key={stateDistribution
-                        .map((e) => e.state + e.total)
-                        .join("-")}
                       data={stateDistribution}
                       dataKey="total"
                       nameKey="state"
@@ -671,9 +668,9 @@ const Dashboard = () => {
                       strokeWidth={1}
                       isAnimationActive={true}
                       animationDuration={1000}>
-                      {stateDistribution.map((entry, idx) => (
+                      {stateDistribution.map((entry, _) => (
                         <Cell
-                          key={`cell-${idx}`}
+                          key={`cell-${entry.state}`}
                           fill={
                             entry.state === "OFFLINE"
                               ? "var(--surface)"
