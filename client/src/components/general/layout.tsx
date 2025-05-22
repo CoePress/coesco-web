@@ -8,6 +8,7 @@ import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
 import { IEmployee } from "@/utils/types";
 import Button from "../shared/button";
+import { useAppContext } from "@/contexts/app.context";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -105,7 +106,6 @@ type LayoutProps = {
 };
 
 const Layout = ({ user, children }: LayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,9 +113,7 @@ const Layout = ({ user, children }: LayoutProps) => {
 
   const { theme, toggleTheme } = useTheme();
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const { sidebarExpanded, toggleSidebar } = useAppContext();
 
   const handleCommandNavigation = (path: string) => {
     navigate(path);
@@ -250,14 +248,14 @@ const Layout = ({ user, children }: LayoutProps) => {
       </div>
 
       <Sidebar
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
+        isOpen={sidebarExpanded}
+        setIsOpen={toggleSidebar}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           user={user}
           toggleSidebar={toggleSidebar}
-          isSidebarOpen={isSidebarOpen}
+          isSidebarOpen={sidebarExpanded}
         />
 
         {isCommandBarOpen && (
