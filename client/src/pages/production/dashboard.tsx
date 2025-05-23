@@ -123,7 +123,9 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             <span className="text-muted-foreground">Position:</span>
             <span className="font-medium text-right">
               X:
-              {Number(realTimeData?.metrics?.axisPositions?.X || 0).toFixed(3)}{" "}
+              {Number(realTimeData?.metrics?.axisPositions?.X || 0).toFixed(
+                3
+              )}{" "}
               Y:
               {Number(realTimeData?.metrics?.axisPositions?.Y || 0).toFixed(
                 3
@@ -637,6 +639,7 @@ const Dashboard = () => {
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
                     animationDuration={1000}
+                    isAnimationActive={false}
                   />
                   <Line
                     type="monotone"
@@ -646,6 +649,7 @@ const Dashboard = () => {
                     name="Previous"
                     strokeWidth={2}
                     animationDuration={1000}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -671,7 +675,7 @@ const Dashboard = () => {
                       outerRadius="80%"
                       stroke="var(--border)"
                       strokeWidth={1}
-                      isAnimationActive={true}
+                      isAnimationActive={false}
                       animationDuration={1000}>
                       {stateDistribution.map((entry, _) => (
                         <Cell
