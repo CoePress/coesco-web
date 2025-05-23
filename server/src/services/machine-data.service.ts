@@ -569,7 +569,6 @@ export class MachineDataService {
 
     const response = await this.fetchData(url);
     if (!response) {
-      console.log(`Failed to fetch data for machine ${machine.name}`);
       return null;
     }
 
