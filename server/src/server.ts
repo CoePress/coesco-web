@@ -1,4 +1,4 @@
-import { httpServer, io } from "./app";
+import { httpServer } from "./app";
 
 import { __dev__, config } from "./config/config";
 import { sequelize, quoteSequelize } from "./config/database";
@@ -9,28 +9,21 @@ import {
   cronService,
   cacheService,
   socketService,
+  initializeServices,
 } from "./services";
 
 httpServer.listen(config.port, async () => {
   await initializeModels(sequelize);
 
   await sequelize.sync();
-  logger.info("Database connected & synced");
+  logger.info("Database connected");
 
   if (__dev__) {
     await quoteSequelize.sync();
-    logger.info("Quote database connected & synced");
+    logger.info("Quote database connected");
   }
 
-  socketService.setIo(io);
-  socketService.initialize();
-  logger.info("Socket service initialized");
-
-  await cronService.initialize();
-  logger.info("Cron service initialized");
-
-  await machineDataService.initialize();
-  logger.info("Machine data service initialized");
+  await initializeServices();
 
   logger.info(
     `Server running in ${config.nodeEnv} mode on port ${config.port}`

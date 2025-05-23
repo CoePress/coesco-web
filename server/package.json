@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "build": "tsc && tsc-alias && npm run copy",
     "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" dist",
-    "start": "npm run build && node dist/server.js",
-    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts"
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "start": "npm run build && node dist/server.js"
   },
   "keywords": [],
   "author": "",

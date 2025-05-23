@@ -8,6 +8,7 @@ import { MachineService } from "./machine.service";
 import { MachineDataService } from "./machine-data.service";
 import { QuoteService } from "./quote.service";
 import { SocketService } from "./socket.service";
+import { logger } from "@/utils/logger";
 
 export const authService = new AuthService();
 export const cacheService = new CacheService();
@@ -18,3 +19,15 @@ export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
 export const quoteService = new QuoteService();
 export const socketService = new SocketService();
+
+export const initializeServices = async () => {
+  socketService.setIo(io);
+  socketService.initialize();
+  logger.info("Socket service initialized");
+
+  await cronService.initialize();
+  logger.info("Cron service initialized");
+
+  await machineDataService.initialize();
+  logger.info("Machine data service initialized");
+};
