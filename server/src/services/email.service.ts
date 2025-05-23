@@ -9,6 +9,8 @@ import { config } from "@/config/config";
 import juice from "juice";
 import { IQueryParams } from "@/types/api.types";
 import { machineDataService } from ".";
+import handlebars from "handlebars";
+import HTMLtoDOCX from "html-to-docx";
 
 const sampleInvoice = {};
 const sampleProduction = {};
@@ -228,6 +230,56 @@ export class EmailService implements IEmailService {
     });
   }
 
+  async sendQuoteEmail(
+    to: string,
+    quoteData: any,
+    options: Partial<ISendEmailOptions> = {}
+  ): Promise<boolean> {
+    try {
+      const quoteNumber = quoteData.quoteNumber || "unknown";
+
+      // Read the template directly
+      const templatePath = path.join(this.templatesPath, "quote-template.hbs");
+      const templateContent = fs.readFileSync(templatePath, "utf-8");
+      const compiled = handlebars.compile(templateContent);
+      const html = compiled(quoteData);
+
+      // Convert to DOCX with proper styling
+      const docxBuffer = await HTMLtoDOCX(html, null, {
+        table: { row: { cantSplit: true } },
+        footer: true,
+        pageNumber: true,
+        margins: {
+          top: 1440,
+          right: 1440,
+          bottom: 1440,
+          left: 1440,
+          header: 720,
+          gutter: 0,
+        },
+      });
+
+      return this.sendEmail({
+        template: "quote-template",
+        data: quoteData,
+        to,
+        subject: `Quote ${quoteNumber} from ${quoteData.companyName}`,
+        ...options,
+        attachments: [
+          {
+            filename: `Quote-${quoteNumber}.docx`,
+            content: Buffer.from(docxBuffer as ArrayBuffer),
+            contentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Failed to send quote email:", error);
+      return false;
+    }
+  }
+
   // Templates
   async getTemplates(): Promise<IEmailTemplate[]> {
     const templateFiles = fs
@@ -250,7 +302,7 @@ export class EmailService implements IEmailService {
   }
 
   async getTemplate(slug: string): Promise<IEmailTemplate> {
-    const templatePath = path.join(this.templatesPath, `${slug}.ejs`);
+    const templatePath = path.join(this.templatesPath, `${slug}.hbs`);
 
     if (!fs.existsSync(templatePath)) {
       throw new Error(`Template '${slug}' not found`);
@@ -341,5 +393,35 @@ export class EmailService implements IEmailService {
 
   async createSentEmail(email: any): Promise<any> {
     return null;
+  }
+
+  async renderHandlebarsTemplate(slug: string, data: any): Promise<string> {
+    const template = await this.getTemplate(slug);
+    const templateContent = template.html;
+    const compiled = handlebars.compile(templateContent);
+    return compiled(data);
+  }
+
+  private async convertToDocx(html: string): Promise<Buffer> {
+    try {
+      const buffer = await HTMLtoDOCX(html, null, {
+        table: { row: { cantSplit: true } },
+        footer: true,
+        pageNumber: true,
+        margins: {
+          top: 1440,
+          right: 1440,
+          bottom: 1440,
+          left: 1440,
+          header: 720,
+          gutter: 0,
+        },
+      });
+
+      return Buffer.from(buffer as ArrayBuffer);
+    } catch (error) {
+      console.error("Failed to convert HTML to DOCX:", error);
+      throw error;
+    }
   }
 }

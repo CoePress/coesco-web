@@ -4,12 +4,12 @@ import { sign, verify } from "jsonwebtoken";
 import { config } from "@/config/config";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { compare } from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import Auth from "@/models/auth";
 import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
 import { EmployeeRole, UserType } from "@/types/enum.types";
+import { randomUUID } from "crypto";
 
 type AuthWithEmployee = Auth & {
   employee: Employee;
@@ -78,7 +78,7 @@ export class AuthService implements IAuthService {
   }
 
   async loginWithMicrosoft(): Promise<string> {
-    const sessionId = uuidv4();
+    const sessionId = randomUUID();
     return (
       `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/authorize?` +
       `client_id=${config.azure.clientId}&` +
@@ -183,7 +183,7 @@ export class AuthService implements IAuthService {
 
     if (!testEmployee) {
       testEmployee = await Employee.create({
-        id: uuidv4(),
+        id: randomUUID(),
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -198,7 +198,7 @@ export class AuthService implements IAuthService {
 
     if (!auth) {
       auth = await Auth.create({
-        id: uuidv4(),
+        id: randomUUID(),
         email: "test@example.com",
         userId: testEmployee.id,
         userType: UserType.INTERNAL,

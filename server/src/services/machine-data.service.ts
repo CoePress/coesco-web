@@ -13,7 +13,7 @@ import { cacheService, machineService, socketService } from ".";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { Op } from "sequelize";
-import fetch from "node-fetch";
+import axios from "axios";
 
 interface CachedMachineState {
   state: MachineState;
@@ -655,21 +655,28 @@ export class MachineDataService {
         ? new HttpsAgent({ rejectUnauthorized: false })
         : new HttpAgent();
 
-      const response = await fetch(url, {
-        agent,
+      const response = await axios.get(url, {
+        httpAgent: agent,
+        httpsAgent: isHttps ? agent : undefined,
         signal: controller.signal as any,
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },
+        timeout: timeoutMs,
+        responseType: "text",
       });
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         return null;
       }
 
-      return response;
+      return {
+        ok: true,
+        text: () => Promise.resolve(response.data),
+        json: () => Promise.resolve(response.data),
+      };
     } catch (error: any) {
       return null;
     } finally {

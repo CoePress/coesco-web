@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { randomUUID } from "crypto";
 
 import { config } from "@/config/config";
 import Auth from "@/models/auth";
@@ -141,7 +141,7 @@ export class EmployeeService implements IEmployeeService {
         const isAdmin = user.department === "MIS";
 
         const [employee] = await Employee.upsert({
-          id: existingEmployee?.id || uuidv4(),
+          id: existingEmployee?.id || randomUUID(),
           firstName: user.givenName || "Unknown",
           lastName: user.surname || "User",
           email: user.mail,
@@ -159,7 +159,7 @@ export class EmployeeService implements IEmployeeService {
         logger.info(`Existing auth found: ${existingAuth ? "Yes" : "No"}`);
 
         await Auth.upsert({
-          id: existingAuth?.id || uuidv4(),
+          id: existingAuth?.id || randomUUID(),
           email: user.mail,
           microsoftId: user.id,
           userId: employee.id,
