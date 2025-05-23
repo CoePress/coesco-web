@@ -14,6 +14,7 @@ import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { Op } from "sequelize";
 import axios from "axios";
+import { config } from "@/config/config";
 
 interface CachedMachineState {
   state: MachineState;
@@ -61,31 +62,6 @@ export class MachineDataService {
   }
 
   async initialize() {
-    await this.initializeMachineStates();
-  }
-
-  start() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
-  }
-
-  async stop() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
-    }
-
-    await this.closeAllMachineStatuses();
-
-    for (const controller of this.activeRequests) {
-      controller.abort();
-    }
-    this.activeRequests.clear();
-  }
-
-  private async initializeMachineStates() {
     try {
       const machines = await machineService.getMachines({});
 
@@ -131,6 +107,27 @@ export class MachineDataService {
     } catch (error) {
       logger.error("Error initializing machine states:", error);
     }
+  }
+
+  start() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+  }
+
+  async stop() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
+    await this.closeAllMachineStatuses();
+
+    for (const controller of this.activeRequests) {
+      controller.abort();
+    }
+    this.activeRequests.clear();
   }
 
   async refreshMachines() {
@@ -262,6 +259,12 @@ export class MachineDataService {
     const timeframeFleetTarget = dailyFleetTarget * dateRange.totalDays;
     const totalFleetDuration = dateRange.duration * machineCount;
 
+    const futureDuration = Math.max(
+      0,
+      dateRange.endDate.getTime() - now.getTime()
+    );
+    const futureFleetDuration = futureDuration * machineCount;
+
     const totalsByState = this.calculateStatusTotals(
       states.data,
       dateRange.startDate,
@@ -275,7 +278,8 @@ export class MachineDataService {
     );
 
     const activeTime = totalsByState["ACTIVE"];
-    const unrecordedTime = totalFleetDuration - totalStateDuration;
+    const unrecordedTime =
+      totalFleetDuration - futureFleetDuration - totalStateDuration;
     totalsByState[MachineState.UNRECORDED] = unrecordedTime;
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => ({
@@ -401,7 +405,13 @@ export class MachineDataService {
     const current = [];
     const machines = await machineService.getMachines({});
 
+    const machinesToSkip = ["kuraki", "niigata-spn63"];
+
     for (const machine of machines.data) {
+      if (machinesToSkip.includes(machine.slug)) {
+        continue;
+      }
+
       let cachedState: CachedMachineState | null = null;
       try {
         if (!machine.connectionHost || !machine.connectionPort) {
@@ -544,6 +554,7 @@ export class MachineDataService {
         });
       }
     }
+
     socketService.broadcastMachineStates(current);
     return current;
   }
@@ -554,17 +565,20 @@ export class MachineDataService {
 
     const url = isMTConnect
       ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `http://localhost:5000/api/machines/${machine.slug}`;
+      : `http://${config.fanucAdapter.url}:${config.fanucAdapter.port}/api/machines/${machine.slug}`;
 
     const response = await this.fetchData(url);
     if (!response) {
+      console.log(`Failed to fetch data for machine ${machine.name}`);
       return null;
     }
 
     if (isMTConnect) {
-      return await response.text();
+      const text = await response.text();
+      return text;
     } else {
-      return await response.json();
+      const json = await response.json();
+      return json;
     }
   }
 
@@ -625,21 +639,23 @@ export class MachineDataService {
       return null;
     }
 
+    const parsedData = typeof data === "string" ? JSON.parse(data) : data;
+
     return {
-      execution: data.execution,
-      controller: data.controller,
-      program: data.program,
-      tool: data.tool,
+      execution: parsedData.execution,
+      controller: parsedData.controller,
+      program: parsedData.program,
+      tool: parsedData.tool,
       metrics: {
-        spindleSpeed: data.spindleSpeed,
-        feedRate: data.feedRate,
+        spindleSpeed: parsedData.spindleSpeed,
+        feedRate: parsedData.feedRate,
         axisPositions: {
-          X: data.axisX,
-          Y: data.axisY,
-          Z: data.axisZ,
+          X: parsedData.axisX,
+          Y: parsedData.axisY,
+          Z: parsedData.axisZ,
         },
       },
-      alarm: data.alarm,
+      alarm: parsedData.alarm,
       timestamp: new Date().toISOString(),
     };
   }
@@ -675,7 +691,7 @@ export class MachineDataService {
       return {
         ok: true,
         text: () => Promise.resolve(response.data),
-        json: () => Promise.resolve(response.data),
+        json: () => Promise.resolve(JSON.parse(response.data)),
       };
     } catch (error: any) {
       return null;
@@ -716,7 +732,7 @@ export class MachineDataService {
   }
 
   private async determineFanucState(current: any, previous: any) {
-    if (!current || !current.execution) {
+    if (!current || !current.execution || current.execution === "OFFLINE") {
       return MachineState.OFFLINE;
     }
 
@@ -724,8 +740,12 @@ export class MachineDataService {
       return MachineState.ACTIVE;
     }
 
-    if (current.execution === "OFFLINE") {
-      return MachineState.OFFLINE;
+    if (current.execution === "****") {
+      return MachineState.IDLE;
+    }
+
+    if (current.execution === "ALARM") {
+      return MachineState.ALARM;
     }
 
     return MachineState.IDLE;

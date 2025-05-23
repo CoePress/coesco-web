@@ -122,9 +122,14 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             </span>
             <span className="text-muted-foreground">Position:</span>
             <span className="font-medium text-right">
-              X:{realTimeData?.metrics?.axisPositions?.X?.toFixed(3) || "-"} Y:
-              {realTimeData?.metrics?.axisPositions?.Y?.toFixed(3) || "-"} Z:
-              {realTimeData?.metrics?.axisPositions?.Z?.toFixed(3) || "-"}
+              X:
+              {Number(realTimeData?.metrics?.axisPositions?.X || 0).toFixed(3)}{" "}
+              Y:
+              {Number(realTimeData?.metrics?.axisPositions?.Y || 0).toFixed(
+                3
+              )}{" "}
+              Z:
+              {Number(realTimeData?.metrics?.axisPositions?.Z || 0).toFixed(3)}
             </span>
           </div>
         </Card>
