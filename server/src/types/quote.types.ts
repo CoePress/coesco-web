@@ -54,28 +54,3 @@ export interface IOption extends IBaseEntity {
   displayOrder: number;
   categoryId: string;
 }
-
-// Quote
-export interface IQuoteHeader extends IBaseEntity {
-  quoteNumber: string;
-  quoteYear: string;
-  customerId: string;
-  dealerId: string;
-  status: QuoteStatus;
-  createdBy: string;
-}
-
-export interface IQuoteDetail extends IBaseEntity {
-  quoteHeaderId: string;
-  revision: string;
-  status: string;
-}
-
-export interface IQuoteItem extends IBaseEntity {
-  quoteDetailsId: string;
-  itemType: ItemType;
-  itemId: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-}
