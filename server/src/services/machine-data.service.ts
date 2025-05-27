@@ -318,9 +318,12 @@ export class MachineDataService {
       now
     );
 
+    const totalAvailableTime =
+      (dateRange.duration * machineCount) - futureFleetDuration;
+
     const stateDistribution = this.calculateStateDistribution(
       totalsByState,
-      dateRange.duration * machineCount,
+      totalAvailableTime,
       unrecordedTime
     );
 
