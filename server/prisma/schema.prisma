@@ -8,9 +8,15 @@ datasource db {
 }
 
 model Employee {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phoneNumber String?
+  hireDate    DateTime?
+  jobTitle    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   rsmQuotes         Quote[]         @relation("QuoteRsm")
   createdQuotes     Quote[]         @relation("QuoteCreator")
@@ -185,12 +191,10 @@ model Configuration {
   id            String   @id @default(uuid())
   name          String
   isTemplate    Boolean
-  quoteDetailId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   selectedOptions ConfigurationOption[]
-  quoteDetail     QuoteRevision?        @relation(fields: [quoteDetailId], references: [id])
 
   @@map("configurations")
 }
@@ -225,6 +229,7 @@ model Quote {
   dealerAddressId String?
   contactId       String?
   dealerContactId String?
+  notes           String?
   createdById     String
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -268,7 +273,6 @@ model QuoteRevision {
   creator        Employee        @relation("RevisionCreator", fields: [createdById], references: [id])
   approver       Employee?       @relation("RevisionApprover", fields: [approvedById], references: [id])
   items          QuoteItem[]
-  configurations Configuration[]
 
   @@map("quote_revisions")
 }
@@ -290,16 +294,22 @@ model QuoteItem {
   @@map("quote_items")
 }
 
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
 model ChangeLog {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   employeeId String? // null for system
-  actionType String
+  actionType ActionType
   entityType String
   entityId   String
   fieldName  String
   oldValue   String
   newValue   String
-  timestamp  DateTime @default(now())
+  timestamp  DateTime   @default(now())
 
   employee Employee? @relation(fields: [employeeId], references: [id])
 
