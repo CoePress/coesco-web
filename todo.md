@@ -33,3 +33,7 @@
 - Fanuc adapter port
 - Default machine utilization per weekday
 - Override value per machine (can be added to machine table, config value if null)
+
+## AI
+
+- Generate a readme per program file to allow for a searchable database

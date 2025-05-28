@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// All quotes where Alice is the RSM
+// const myPipeline = await prisma.employee.findUnique({
+//   where: { id: aliceId },
+//   include: { rsmQuotes: true },
+// });
+
+// All revisions Bob approved
+// const approvals = await prisma.employee.findUnique({
+//   where: { id: bobId },
+//   include: { approvedRevisions: true },
+// });
+
 model Employee {
   id          String    @id @default(uuid())
   firstName   String
@@ -120,25 +132,9 @@ model ProductClass {
 
   parent           ProductClass?    @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children         ProductClass[]   @relation("ProductClassHierarchy")
-  machines         Machine[]
   optionCategories OptionCategory[]
 
   @@map("product_classes")
-}
-
-model Machine {
-  id             String   @id @default(uuid())
-  name           String
-  model          String
-  basePrice      Decimal
-  productClassId String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  productClass ProductClass @relation(fields: [productClassId], references: [id])
-  quoteItems   QuoteItem[]
-
-  @@map("machines")
 }
 
 model OptionCategory {
@@ -162,6 +158,7 @@ model Option {
   name       String
   code       String
   price      Decimal
+  isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -188,13 +185,14 @@ model OptionRule {
 }
 
 model Configuration {
-  id            String   @id @default(uuid())
-  name          String
-  isTemplate    Boolean
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  isTemplate Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   selectedOptions ConfigurationOption[]
+  quoteItems      QuoteItem[]
 
   @@map("configurations")
 }
@@ -222,6 +220,8 @@ model Quote {
   year            String
   number          String
   status          QuoteStatus
+  priority        String
+  confidence      Int         @default(0)
   rsmId           String
   customerId      String
   dealerId        String
@@ -269,10 +269,10 @@ model QuoteRevision {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
-  quote          Quote           @relation(fields: [quoteId], references: [id])
-  creator        Employee        @relation("RevisionCreator", fields: [createdById], references: [id])
-  approver       Employee?       @relation("RevisionApprover", fields: [approvedById], references: [id])
-  items          QuoteItem[]
+  quote    Quote       @relation(fields: [quoteId], references: [id])
+  creator  Employee    @relation("RevisionCreator", fields: [createdById], references: [id])
+  approver Employee?   @relation("RevisionApprover", fields: [approvedById], references: [id])
+  items    QuoteItem[]
 
   @@map("quote_revisions")
 }
@@ -280,7 +280,6 @@ model QuoteRevision {
 model QuoteItem {
   id              String   @id @default(uuid())
   quoteRevisionId String
-  machineId       String?
   configurationId String?
   quantity        Int
   unitPrice       Decimal
@@ -288,8 +287,8 @@ model QuoteItem {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  revision QuoteRevision @relation(fields: [quoteRevisionId], references: [id])
-  machine  Machine?      @relation(fields: [machineId], references: [id])
+  revision      QuoteRevision  @relation(fields: [quoteRevisionId], references: [id])
+  configuration Configuration? @relation(fields: [configurationId], references: [id])
 
   @@map("quote_items")
 }
