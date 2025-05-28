@@ -7,7 +7,13 @@
     "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" dist",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
-    "start": "npm run build && node dist/server.js"
+    "start": "npm run build && node dist/server.js",
+    "prisma:format": "prisma format --schema=./prisma/schema.prisma",
+    "prisma:reset": "prisma migrate reset --schema=./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:nuke": "rd /s /q prisma\\migrations 2>nul & prisma db push --force-reset --schema=./prisma/schema.prisma & npm run prisma:generate",
+    "prisma:fresh": "prisma migrate reset --force --schema=./prisma/schema.prisma & rd /s /q prisma\\migrations 2>nul & prisma migrate dev --name init --schema=./prisma/schema.prisma & npm run prisma:generate"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +21,7 @@
   "description": "",
   "dependencies": {
     "@azure/msal-node": "^2.16.2",
+    "@prisma/client": "^6.8.2",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
@@ -57,6 +64,7 @@
     "@types/sequelize": "^4.28.20",
     "copyfiles": "^2.4.1",
     "nodemon": "^3.1.7",
+    "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",

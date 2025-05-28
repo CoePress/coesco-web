@@ -8,6 +8,8 @@ export { default as ProductionDashboard } from "./production/dashboard";
 export { default as MachineHistory } from "./production/machine-history";
 export { default as Machines } from "./production/machines";
 export { default as Reports } from "./production/reports";
+export { default as Gantt } from "./production/gantt";
+
 // Sales
 export { default as SalesDashboard } from "./sales/dashboard";
 export { default as SalesPipeline } from "./sales/pipeline";

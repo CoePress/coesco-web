@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rsmQuotes         Quote[]         @relation("QuoteRsm")
+  createdQuotes     Quote[]         @relation("QuoteCreator")
+  createdRevisions  QuoteRevision[] @relation("RevisionCreator")
+  approvedRevisions QuoteRevision[] @relation("RevisionApprover")
+  changesMade       ChangeLog[]
+
+  @@map("employees")
+}
+
+model Customer {
+  id               String   @id @default(uuid())
+  defaultAddressId String?  @unique
+  defaultContactId String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  defaultAddress CustomerAddress?  @relation("CustomerDefaultAddress", fields: [defaultAddressId], references: [id])
+  defaultContact CustomerContact?  @relation("CustomerDefaultContact", fields: [defaultContactId], references: [id])
+  addresses      CustomerAddress[] @relation("CustomerAddresses")
+  contacts       CustomerContact[] @relation("CustomerContacts")
+  quotes         Quote[]
+
+  @@map("customers")
+}
+
+model Dealer {
+  id               String   @id @default(uuid())
+  defaultAddressId String?  @unique
+  defaultContactId String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  defaultAddress DealerAddress?  @relation("DealerDefaultAddress", fields: [defaultAddressId], references: [id])
+  defaultContact DealerContact?  @relation("DealerDefaultContact", fields: [defaultContactId], references: [id])
+  addresses      DealerAddress[] @relation("DealerAddresses")
+  contacts       DealerContact[] @relation("DealerContacts")
+  quotes         Quote[]
+
+  @@map("dealers")
+}
+
+model CustomerAddress {
+  id         String   @id @default(uuid())
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer           Customer  @relation("CustomerAddresses", fields: [customerId], references: [id])
+  defaultForCustomer Customer? @relation("CustomerDefaultAddress")
+  quotes             Quote[]   @relation("CustomerQuoteAddress")
+
+  @@map("customer_addresses")
+}
+
+model DealerAddress {
+  id        String   @id @default(uuid())
+  dealerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dealer           Dealer  @relation("DealerAddresses", fields: [dealerId], references: [id])
+  defaultForDealer Dealer? @relation("DealerDefaultAddress")
+  quotes           Quote[] @relation("DealerQuoteAddress")
+
+  @@map("dealer_addresses")
+}
+
+model CustomerContact {
+  id         String   @id @default(uuid())
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer           Customer  @relation("CustomerContacts", fields: [customerId], references: [id])
+  defaultForCustomer Customer? @relation("CustomerDefaultContact")
+  quotes             Quote[]   @relation("CustomerQuoteContact")
+
+  @@map("customer_contacts")
+}
+
+model DealerContact {
+  id        String   @id @default(uuid())
+  dealerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dealer           Dealer  @relation("DealerContacts", fields: [dealerId], references: [id])
+  defaultForDealer Dealer? @relation("DealerDefaultContact")
+  quotes           Quote[] @relation("DealerQuoteContact")
+
+  @@map("dealer_contacts")
+}
+
+model ProductClass {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent           ProductClass?    @relation("ProductClassHierarchy", fields: [parentId], references: [id])
+  children         ProductClass[]   @relation("ProductClassHierarchy")
+  machines         Machine[]
+  optionCategories OptionCategory[]
+
+  @@map("product_classes")
+}
+
+model Machine {
+  id             String   @id @default(uuid())
+  name           String
+  model          String
+  basePrice      Decimal
+  productClassId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  productClass ProductClass @relation(fields: [productClassId], references: [id])
+  quoteItems   QuoteItem[]
+
+  @@map("machines")
+}
+
+model OptionCategory {
+  id             String   @id @default(uuid())
+  name           String
+  productClassId String
+  isRequired     Boolean
+  allowMultiple  Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  productClass ProductClass @relation(fields: [productClassId], references: [id])
+  options      Option[]
+
+  @@map("option_categories")
+}
+
+model Option {
+  id         String   @id @default(uuid())
+  categoryId String
+  name       String
+  code       String
+  price      Decimal
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category       OptionCategory        @relation(fields: [categoryId], references: [id])
+  triggerRules   OptionRule[]          @relation("TriggerOption")
+  targetRules    OptionRule[]          @relation("TargetOption")
+  configurations ConfigurationOption[]
+
+  @@map("options")
+}
+
+model OptionRule {
+  id              String   @id @default(uuid())
+  ruleType        String
+  triggerOptionId String
+  targetOptionId  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  triggerOption Option @relation("TriggerOption", fields: [triggerOptionId], references: [id])
+  targetOption  Option @relation("TargetOption", fields: [targetOptionId], references: [id])
+
+  @@map("option_rules")
+}
+
+model Configuration {
+  id            String   @id @default(uuid())
+  name          String
+  isTemplate    Boolean
+  quoteDetailId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  selectedOptions ConfigurationOption[]
+  quoteDetail     QuoteRevision?        @relation(fields: [quoteDetailId], references: [id])
+
+  @@map("configurations")
+}
+
+model ConfigurationOption {
+  configurationId String
+  optionId        String
+
+  configuration Configuration @relation(fields: [configurationId], references: [id])
+  option        Option        @relation(fields: [optionId], references: [id])
+
+  @@id([configurationId, optionId])
+  @@map("configuration_options")
+}
+
+enum QuoteStatus {
+  OPEN
+  WON
+  LOST
+  CANCELLED
+}
+
+model Quote {
+  id              String      @id @default(uuid())
+  year            String
+  number          String
+  status          QuoteStatus
+  rsmId           String
+  customerId      String
+  dealerId        String
+  addressId       String?
+  dealerAddressId String?
+  contactId       String?
+  dealerContactId String?
+  createdById     String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  rsm           Employee         @relation("QuoteRsm", fields: [rsmId], references: [id])
+  customer      Customer         @relation(fields: [customerId], references: [id])
+  dealer        Dealer           @relation(fields: [dealerId], references: [id])
+  address       CustomerAddress? @relation("CustomerQuoteAddress", fields: [addressId], references: [id])
+  dealerAddress DealerAddress?   @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
+  contact       CustomerContact? @relation("CustomerQuoteContact", fields: [contactId], references: [id])
+  dealerContact DealerContact?   @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
+  creator       Employee         @relation("QuoteCreator", fields: [createdById], references: [id])
+  revisions     QuoteRevision[]
+
+  @@map("quotes")
+}
+
+enum QuoteRevisionStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+model QuoteRevision {
+  id           String              @id @default(uuid())
+  quoteId      String
+  revision     String
+  status       QuoteRevisionStatus
+  subtotal     Decimal
+  taxAmount    Decimal?
+  totalAmount  Decimal
+  createdById  String
+  approvedById String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  quote          Quote           @relation(fields: [quoteId], references: [id])
+  creator        Employee        @relation("RevisionCreator", fields: [createdById], references: [id])
+  approver       Employee?       @relation("RevisionApprover", fields: [approvedById], references: [id])
+  items          QuoteItem[]
+  configurations Configuration[]
+
+  @@map("quote_revisions")
+}
+
+model QuoteItem {
+  id              String   @id @default(uuid())
+  quoteRevisionId String
+  machineId       String?
+  configurationId String?
+  quantity        Int
+  unitPrice       Decimal
+  totalPrice      Decimal
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  revision QuoteRevision @relation(fields: [quoteRevisionId], references: [id])
+  machine  Machine?      @relation(fields: [machineId], references: [id])
+
+  @@map("quote_items")
+}
+
+model ChangeLog {
+  id         String   @id @default(uuid())
+  employeeId String? // null for system
+  actionType String
+  entityType String
+  entityId   String
+  fieldName  String
+  oldValue   String
+  newValue   String
+  timestamp  DateTime @default(now())
+
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@map("change_logs")
+}

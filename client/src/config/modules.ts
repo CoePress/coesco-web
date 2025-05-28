@@ -16,11 +16,13 @@ import {
   Shield,
   Map,
   Clock,
+  GanttChart,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import {
   Employees,
+  Gantt,
   MachineHistory,
   Machines,
   ProductionDashboard,
@@ -189,6 +191,12 @@ const productionModule: Module = {
       label: "Reports",
       icon: PieChart,
       component: Reports,
+    },
+    {
+      path: "/gantt",
+      label: "Gantt",
+      icon: GanttChart,
+      component: Gantt,
     },
   ],
   popups: [],
