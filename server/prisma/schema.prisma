@@ -41,6 +41,12 @@ model Employee {
 
 model Customer {
   id               String   @id @default(uuid())
+  name             String
+  code             String
+  website          String?
+  phoneNumber      String?
+  email            String?
+  notes            String?
   defaultAddressId String?  @unique
   defaultContactId String?  @unique
   createdAt        DateTime @default(now())
@@ -57,6 +63,12 @@ model Customer {
 
 model Dealer {
   id               String   @id @default(uuid())
+  name             String
+  code             String
+  website          String?
+  phoneNumber      String?
+  email            String?
+  notes            String?
   defaultAddressId String?  @unique
   defaultContactId String?  @unique
   createdAt        DateTime @default(now())
@@ -74,6 +86,12 @@ model Dealer {
 model CustomerAddress {
   id         String   @id @default(uuid())
   customerId String
+  address1   String
+  address2   String?
+  city       String
+  state      String
+  zip        String
+  country    String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -87,6 +105,12 @@ model CustomerAddress {
 model DealerAddress {
   id        String   @id @default(uuid())
   dealerId  String
+  address1  String
+  address2  String?
+  city      String
+  state     String
+  zip       String
+  country   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -98,10 +122,15 @@ model DealerAddress {
 }
 
 model CustomerContact {
-  id         String   @id @default(uuid())
-  customerId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  customerId  String
+  firstName   String
+  lastName    String
+  email       String?
+  phoneNumber String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   customer           Customer  @relation("CustomerContacts", fields: [customerId], references: [id])
   defaultForCustomer Customer? @relation("CustomerDefaultContact")
@@ -111,10 +140,15 @@ model CustomerContact {
 }
 
 model DealerContact {
-  id        String   @id @default(uuid())
-  dealerId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  dealerId    String
+  firstName   String
+  lastName    String
+  email       String?
+  phoneNumber String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   dealer           Dealer  @relation("DealerContacts", fields: [dealerId], references: [id])
   defaultForDealer Dealer? @relation("DealerDefaultContact")
@@ -216,33 +250,33 @@ enum QuoteStatus {
 }
 
 model Quote {
-  id              String      @id @default(uuid())
-  year            String
-  number          String
-  status          QuoteStatus
-  priority        String
-  confidence      Int         @default(0)
-  rsmId           String
-  customerId      String
-  dealerId        String
-  addressId       String?
-  dealerAddressId String?
-  contactId       String?
-  dealerContactId String?
-  notes           String?
-  createdById     String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                String      @id @default(uuid())
+  year              String
+  number            String
+  status            QuoteStatus
+  priority          String
+  confidence        Int         @default(0)
+  rsmId             String
+  customerId        String
+  customerAddressId String?
+  customerContactId String?
+  dealerId          String
+  dealerAddressId   String?
+  dealerContactId   String?
+  notes             String?
+  createdById       String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  rsm           Employee         @relation("QuoteRsm", fields: [rsmId], references: [id])
-  customer      Customer         @relation(fields: [customerId], references: [id])
-  dealer        Dealer           @relation(fields: [dealerId], references: [id])
-  address       CustomerAddress? @relation("CustomerQuoteAddress", fields: [addressId], references: [id])
-  dealerAddress DealerAddress?   @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
-  contact       CustomerContact? @relation("CustomerQuoteContact", fields: [contactId], references: [id])
-  dealerContact DealerContact?   @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
-  creator       Employee         @relation("QuoteCreator", fields: [createdById], references: [id])
-  revisions     QuoteRevision[]
+  rsm             Employee         @relation("QuoteRsm", fields: [rsmId], references: [id])
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  customerAddress CustomerAddress? @relation("CustomerQuoteAddress", fields: [customerAddressId], references: [id])
+  customerContact CustomerContact? @relation("CustomerQuoteContact", fields: [customerContactId], references: [id])
+  dealer          Dealer           @relation(fields: [dealerId], references: [id])
+  dealerAddress   DealerAddress?   @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
+  dealerContact   DealerContact?   @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
+  creator         Employee         @relation("QuoteCreator", fields: [createdById], references: [id])
+  revisions       QuoteRevision[]
 
   @@map("quotes")
 }

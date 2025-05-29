@@ -1,0 +1,102 @@
+import { __dev__ } from "@/config/config";
+import { IQueryBuilderResult, IQueryParams } from "@/types/auth.types";
+import { PrismaClient } from "@prisma/client";
+
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+export const prisma =
+  global.prisma ||
+  new PrismaClient({
+    log: __dev__ ? ["error"] : [],
+  });
+
+if (__dev__) {
+  global.prisma = prisma;
+}
+
+export const buildQuery = (
+  params: IQueryParams<any>,
+  searchFields?: string[]
+): IQueryBuilderResult => {
+  const result: IQueryBuilderResult = {
+    where: {},
+    page: params.page || 1,
+  };
+
+  // Pagination
+  if (params.limit !== undefined) {
+    result.take = params.limit;
+    result.skip = ((result.page || 1) - 1) * result.take;
+  }
+
+  // Search functionality
+  if (params.search && searchFields && searchFields.length > 0) {
+    result.where.OR = searchFields.map((field) => ({
+      [field]: { contains: params.search, mode: "insensitive" },
+    }));
+  }
+
+  // Filter handling
+  if (params.filter) {
+    let filterObj = {};
+
+    if (typeof params.filter === "string") {
+      try {
+        filterObj = JSON.parse(params.filter);
+      } catch (error) {
+        console.error("Invalid filter format:", error);
+      }
+    } else if (typeof params.filter === "object") {
+      filterObj = params.filter;
+    }
+
+    // Merge with existing where clause
+    result.where = { ...result.where, ...filterObj };
+  }
+
+  // Date range filtering
+  if (params.dateFrom || params.dateTo) {
+    result.where.createdAt = result.where.createdAt || {};
+
+    if (params.dateFrom) {
+      const dateFrom =
+        params.dateFrom instanceof Date
+          ? params.dateFrom
+          : new Date(params.dateFrom);
+      result.where.createdAt.gte = dateFrom;
+    }
+
+    if (params.dateTo) {
+      const dateTo =
+        params.dateTo instanceof Date ? params.dateTo : new Date(params.dateTo);
+      result.where.createdAt.lte = dateTo;
+    }
+  }
+
+  // Sorting
+  const defaultSort = "createdAt";
+  const defaultOrder = "desc";
+  const sort = params.sort || defaultSort;
+  const order = params.order || defaultOrder;
+  result.orderBy = { [sort]: order };
+
+  // Field selection
+  if (params.fields && params.fields.length > 0) {
+    result.select = params.fields.reduce((acc, field) => {
+      acc[field] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+
+  // Include relations
+  if (params.include && params.include.length > 0) {
+    result.include = params.include.reduce((acc, include) => {
+      acc[include] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+
+  return result;
+};
