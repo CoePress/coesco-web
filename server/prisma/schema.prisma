@@ -86,7 +86,8 @@ model Dealer {
 model Address {
   id         String   @id @default(uuid())
   entityType String
-  entityId   String
+  customerId String?
+  dealerId   String?
   address1   String
   address2   String?
   city       String?
@@ -96,14 +97,15 @@ model Address {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  customer        Customer? @relation("CustomerAddresses", fields: [entityId], references: [id], map: "address_customer_fkey")
-  customerDefault Customer? @relation("CustomerDefaultAddress", map: "address_customer_default_fkey")
-  dealer          Dealer?   @relation("DealerAddresses", fields: [entityId], references: [id], map: "address_dealer_fkey")
-  dealerDefault   Dealer?   @relation("DealerDefaultAddress", map: "address_dealer_default_fkey")
+  customer        Customer? @relation("CustomerAddresses", fields: [customerId], references: [id])
+  customerDefault Customer? @relation("CustomerDefaultAddress")
+  dealer          Dealer?   @relation("DealerAddresses", fields: [dealerId], references: [id])
+  dealerDefault   Dealer?   @relation("DealerDefaultAddress")
   customerQuotes  Quote[]   @relation("CustomerQuoteAddress")
   dealerQuotes    Quote[]   @relation("DealerQuoteAddress")
 
-  @@index([entityType, entityId])
+  @@index([entityType, customerId])
+  @@index([entityType, dealerId])
   @@map("addresses")
 }
 

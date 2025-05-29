@@ -13,23 +13,34 @@ export class AddressService extends BaseService<Address> {
     if (!address.entityType) {
       throw new BadRequestError("Entity type is required");
     }
-    if (!address.entityId) {
-      throw new BadRequestError("Entity ID is required");
+
+    if (!address.customerId && !address.dealerId) {
+      throw new BadRequestError("Either customerId or dealerId is required");
     }
 
     if (address.entityType === "CUSTOMER") {
+      if (!address.customerId) {
+        throw new BadRequestError("Customer ID is required");
+      }
+
       const customer = await prisma.customer.findUnique({
-        where: { id: address.entityId },
+        where: { id: address.customerId },
       });
+
       if (!customer) {
         throw new BadRequestError("Customer not found");
       }
     }
 
     if (address.entityType === "DEALER") {
+      if (!address.dealerId) {
+        throw new BadRequestError("Dealer ID is required");
+      }
+
       const dealer = await prisma.dealer.findUnique({
-        where: { id: address.entityId },
+        where: { id: address.dealerId },
       });
+
       if (!dealer) {
         throw new BadRequestError("Dealer not found");
       }
