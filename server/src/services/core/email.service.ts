@@ -8,7 +8,7 @@ import puppeteer from "puppeteer";
 import { config } from "@/config/config";
 import juice from "juice";
 import { IQueryParams } from "@/types/api.types";
-import { machineDataService } from ".";
+import { machineDataService } from "@/services";
 import handlebars from "handlebars";
 import HTMLtoDOCX from "html-to-docx";
 

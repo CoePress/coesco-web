@@ -1,6 +1,6 @@
 import { createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import { emailService, employeeService } from ".";
+import { emailService, employeeService } from "@/services";
 import { CronJob } from "cron";
 import { ISendEmailOptions } from "@/types/schema.types";
 

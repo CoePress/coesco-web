@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { logger } from "@/utils/logger";
-import { machineDataService } from ".";
+import { machineDataService } from "@/services";
 
 export class SocketService {
   private io: Server | null = null;
