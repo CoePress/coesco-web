@@ -12,8 +12,10 @@ import employeeRoutes from "./employee.routes";
 import machineDataRoutes from "./machine-data.routes";
 import machineRoutes from "./machine.routes";
 import quoteRoutes from "./quote.routes";
-import customerRoutes from "./customer.routes";
 import { __dev__ } from "@/config/config";
+
+import customerRoutes from "./customer.routes";
+import dealerRoutes from "./dealer.routes";
 
 const router = Router();
 
@@ -28,7 +30,9 @@ router.use("/employees", protect, employeeRoutes);
 router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
 router.use("/quotes", protect, quoteRoutes);
+
 router.use("/customers", protect, customerRoutes);
+router.use("/dealers", protect, dealerRoutes);
 
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

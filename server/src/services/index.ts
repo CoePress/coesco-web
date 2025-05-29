@@ -10,11 +10,9 @@ import { QuoteService } from "./repository/quote.service";
 import { SocketService } from "./core/socket.service";
 import { logger } from "@/utils/logger";
 import { CustomerService } from "./repository/customer.service";
-import { CustomerAddressService } from "./repository/customer-address.service";
-import { CustomerContactService } from "./repository/customer-contact.service";
 import { DealerService } from "./repository/dealer.service";
-import { DealerAddressService } from "./repository/dealer-address.service";
-import { DealerContactService } from "./repository/dealer-contact.service";
+import { AddressService } from "./repository/address.service";
+import { ContactService } from "./repository/contact.service";
 import { QuoteRevisionService } from "./repository/quote-revision.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
 import { ProductClassService } from "./repository/product-class.service";
@@ -60,11 +58,9 @@ export const employeeService = new EmployeeService();
 
 // Sales
 export const customerService = new CustomerService();
-export const customerAddressService = new CustomerAddressService();
-export const customerContactService = new CustomerContactService();
 export const dealerService = new DealerService();
-export const dealerAddressService = new DealerAddressService();
-export const dealerContactService = new DealerContactService();
+export const addressService = new AddressService();
+export const contactService = new ContactService();
 export const quoteService = new QuoteService();
 export const quoteRevisionService = new QuoteRevisionService();
 export const quoteItemService = new QuoteItemService();

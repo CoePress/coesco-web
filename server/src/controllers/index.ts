@@ -5,6 +5,7 @@ import { EmployeeController } from "./employee.controller";
 import { MachineController } from "./machine.controller";
 import { MachineDataController } from "./machine-data.controller";
 import { CustomerController } from "./customer.controller";
+import { DealerController } from "./dealer.controller";
 
 export const authController = new AuthController();
 export const configController = new ConfigController();
@@ -12,4 +13,6 @@ export const emailController = new EmailController();
 export const employeeController = new EmployeeController();
 export const machineController = new MachineController();
 export const machineDataController = new MachineDataController();
+
 export const customerController = new CustomerController();
+export const dealerController = new DealerController();

@@ -52,10 +52,10 @@ model Customer {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  defaultAddress CustomerAddress?  @relation("CustomerDefaultAddress", fields: [defaultAddressId], references: [id])
-  defaultContact CustomerContact?  @relation("CustomerDefaultContact", fields: [defaultContactId], references: [id])
-  addresses      CustomerAddress[] @relation("CustomerAddresses")
-  contacts       CustomerContact[] @relation("CustomerContacts")
+  defaultAddress Address?  @relation("CustomerDefaultAddress", fields: [defaultAddressId], references: [id])
+  defaultContact Contact?  @relation("CustomerDefaultContact", fields: [defaultContactId], references: [id])
+  addresses      Address[] @relation("CustomerAddresses")
+  contacts       Contact[] @relation("CustomerContacts")
   quotes         Quote[]
 
   @@map("customers")
@@ -74,18 +74,19 @@ model Dealer {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  defaultAddress DealerAddress?  @relation("DealerDefaultAddress", fields: [defaultAddressId], references: [id])
-  defaultContact DealerContact?  @relation("DealerDefaultContact", fields: [defaultContactId], references: [id])
-  addresses      DealerAddress[] @relation("DealerAddresses")
-  contacts       DealerContact[] @relation("DealerContacts")
+  defaultAddress Address?  @relation("DealerDefaultAddress", fields: [defaultAddressId], references: [id])
+  defaultContact Contact?  @relation("DealerDefaultContact", fields: [defaultContactId], references: [id])
+  addresses      Address[] @relation("DealerAddresses")
+  contacts       Contact[] @relation("DealerContacts")
   quotes         Quote[]
 
   @@map("dealers")
 }
 
-model CustomerAddress {
+model Address {
   id         String   @id @default(uuid())
-  customerId String
+  entityType String
+  entityId   String
   address1   String
   address2   String?
   city       String
@@ -95,35 +96,21 @@ model CustomerAddress {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  customer           Customer  @relation("CustomerAddresses", fields: [customerId], references: [id])
-  defaultForCustomer Customer? @relation("CustomerDefaultAddress")
-  quotes             Quote[]   @relation("CustomerQuoteAddress")
+  customer        Customer? @relation("CustomerAddresses", fields: [entityId], references: [id], map: "address_customer_fkey")
+  customerDefault Customer? @relation("CustomerDefaultAddress", map: "address_customer_default_fkey")
+  dealer          Dealer?   @relation("DealerAddresses", fields: [entityId], references: [id], map: "address_dealer_fkey")
+  dealerDefault   Dealer?   @relation("DealerDefaultAddress", map: "address_dealer_default_fkey")
+  customerQuotes  Quote[]   @relation("CustomerQuoteAddress")
+  dealerQuotes    Quote[]   @relation("DealerQuoteAddress")
 
-  @@map("customer_addresses")
+  @@index([entityType, entityId])
+  @@map("addresses")
 }
 
-model DealerAddress {
-  id        String   @id @default(uuid())
-  dealerId  String
-  address1  String
-  address2  String?
-  city      String
-  state     String
-  zip       String
-  country   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  dealer           Dealer  @relation("DealerAddresses", fields: [dealerId], references: [id])
-  defaultForDealer Dealer? @relation("DealerDefaultAddress")
-  quotes           Quote[] @relation("DealerQuoteAddress")
-
-  @@map("dealer_addresses")
-}
-
-model CustomerContact {
+model Contact {
   id          String   @id @default(uuid())
-  customerId  String
+  entityType  String // "CUSTOMER" or "DEALER"
+  entityId    String // ID of the customer or dealer
   firstName   String
   lastName    String
   email       String?
@@ -132,29 +119,15 @@ model CustomerContact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  customer           Customer  @relation("CustomerContacts", fields: [customerId], references: [id])
-  defaultForCustomer Customer? @relation("CustomerDefaultContact")
-  quotes             Quote[]   @relation("CustomerQuoteContact")
+  customer        Customer? @relation("CustomerContacts", fields: [entityId], references: [id], map: "contact_customer_fkey")
+  customerDefault Customer? @relation("CustomerDefaultContact", map: "contact_customer_default_fkey")
+  dealer          Dealer?   @relation("DealerContacts", fields: [entityId], references: [id], map: "contact_dealer_fkey")
+  dealerDefault   Dealer?   @relation("DealerDefaultContact", map: "contact_dealer_default_fkey")
+  customerQuotes  Quote[]   @relation("CustomerQuoteContact")
+  dealerQuotes    Quote[]   @relation("DealerQuoteContact")
 
-  @@map("customer_contacts")
-}
-
-model DealerContact {
-  id          String   @id @default(uuid())
-  dealerId    String
-  firstName   String
-  lastName    String
-  email       String?
-  phoneNumber String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  dealer           Dealer  @relation("DealerContacts", fields: [dealerId], references: [id])
-  defaultForDealer Dealer? @relation("DealerDefaultContact")
-  quotes           Quote[] @relation("DealerQuoteContact")
-
-  @@map("dealer_contacts")
+  @@index([entityType, entityId])
+  @@map("contacts")
 }
 
 model ProductClass {
@@ -292,14 +265,14 @@ model Quote {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
-  rsm             Employee         @relation("QuoteRsm", fields: [rsmId], references: [id])
-  customer        Customer         @relation(fields: [customerId], references: [id])
-  customerAddress CustomerAddress? @relation("CustomerQuoteAddress", fields: [customerAddressId], references: [id])
-  customerContact CustomerContact? @relation("CustomerQuoteContact", fields: [customerContactId], references: [id])
-  dealer          Dealer           @relation(fields: [dealerId], references: [id])
-  dealerAddress   DealerAddress?   @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
-  dealerContact   DealerContact?   @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
-  creator         Employee         @relation("QuoteCreator", fields: [createdById], references: [id])
+  rsm             Employee        @relation("QuoteRsm", fields: [rsmId], references: [id])
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  customerAddress Address?        @relation("CustomerQuoteAddress", fields: [customerAddressId], references: [id])
+  customerContact Contact?        @relation("CustomerQuoteContact", fields: [customerContactId], references: [id])
+  dealer          Dealer          @relation(fields: [dealerId], references: [id])
+  dealerAddress   Address?        @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
+  dealerContact   Contact?        @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
+  creator         Employee        @relation("QuoteCreator", fields: [createdById], references: [id])
   revisions       QuoteRevision[]
 
   @@map("quotes")
