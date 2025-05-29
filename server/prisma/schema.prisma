@@ -158,43 +158,63 @@ model DealerContact {
 }
 
 model ProductClass {
-  id        String   @id @default(uuid())
-  name      String
-  parentId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  parentId    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  parent           ProductClass?    @relation("ProductClassHierarchy", fields: [parentId], references: [id])
-  children         ProductClass[]   @relation("ProductClassHierarchy")
-  optionCategories OptionCategory[]
+  parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
+  children                     ProductClass[]               @relation("ProductClassHierarchy")
+  configurations               Configuration[]
+  productClassOptionCategories ProductClassOptionCategory[]
 
   @@map("product_classes")
 }
 
-model OptionCategory {
-  id             String   @id @default(uuid())
-  name           String
-  productClassId String
-  isRequired     Boolean
-  allowMultiple  Boolean
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model ProductClassOptionCategory {
+  productClassId   String
+  optionCategoryId String
 
-  productClass ProductClass @relation(fields: [productClassId], references: [id])
-  options      Option[]
+  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
+  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([productClassId, optionCategoryId])
+  @@map("product_class_option_categories")
+}
+
+model OptionCategory {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  isRequired    Boolean
+  allowMultiple Boolean
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  options Option[]
+
+  productClassOptionCategories ProductClassOptionCategory[]
 
   @@map("option_categories")
 }
 
 model Option {
-  id         String   @id @default(uuid())
-  categoryId String
-  name       String
-  code       String
-  price      Decimal
-  isDefault  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(uuid())
+  categoryId   String
+  name         String
+  code         String
+  description  String?
+  price        Decimal
+  displayOrder Int      @default(0)
+  isDefault    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   category       OptionCategory        @relation(fields: [categoryId], references: [id])
   triggerRules   OptionRule[]          @relation("TriggerOption")
@@ -219,12 +239,16 @@ model OptionRule {
 }
 
 model Configuration {
-  id         String   @id @default(uuid())
-  name       String
-  isTemplate Boolean
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(uuid())
+  productClassId String
+  name           String
+  description    String?
+  isTemplate     Boolean
+  isActive       Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+  productClass    ProductClass          @relation(fields: [productClassId], references: [id])
   selectedOptions ConfigurationOption[]
   quoteItems      QuoteItem[]
 
@@ -298,6 +322,8 @@ model QuoteRevision {
   subtotal     Decimal
   taxAmount    Decimal?
   totalAmount  Decimal
+  currency     String
+  notes        String?
   createdById  String
   approvedById String?
   createdAt    DateTime            @default(now())
@@ -318,6 +344,7 @@ model QuoteItem {
   quantity        Int
   unitPrice       Decimal
   totalPrice      Decimal
+  lineNumber      Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -335,7 +362,7 @@ enum ActionType {
 
 model ChangeLog {
   id         String     @id @default(uuid())
-  employeeId String? // null for system
+  employeeId String?
   actionType ActionType
   entityType String
   entityId   String
