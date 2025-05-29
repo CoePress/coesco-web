@@ -10,6 +10,14 @@ export class QuoteService extends BaseService<Quote> {
   protected entityName = "Quote";
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
+    if (!quote.year) {
+      quote.year = new Date().getFullYear().toString();
+    }
+
+    if (!quote.number) {
+      quote.number = "0000000000";
+    }
+
     if (!quote.customerId) {
       throw new BadRequestError("Customer ID is required");
     }

@@ -11,13 +11,13 @@ import emailRoutes from "./old/email.routes";
 import employeeRoutes from "./old/employee.routes";
 import machineDataRoutes from "./old/machine-data.routes";
 import machineRoutes from "./old/machine.routes";
-import quoteRoutes from "./quote.routes";
 import { __dev__ } from "@/config/config";
 
 import customerRoutes from "./customer.routes";
 import dealerRoutes from "./dealer.routes";
 import addressRoutes from "./address.routes";
 import contactRoutes from "./contact.router";
+import quoteRoutes from "./quote.routes";
 
 const router = Router();
 
@@ -31,12 +31,12 @@ router.use("/email", protect, emailRoutes);
 router.use("/employees", protect, employeeRoutes);
 router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
-router.use("/quotes", protect, quoteRoutes);
 
 router.use("/customers", protect, customerRoutes);
 router.use("/dealers", protect, dealerRoutes);
 router.use("/addresses", protect, addressRoutes);
 router.use("/contacts", protect, contactRoutes);
+router.use("/quotes", protect, quoteRoutes);
 
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

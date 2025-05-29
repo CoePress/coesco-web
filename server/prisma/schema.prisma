@@ -250,7 +250,7 @@ enum QuoteStatus {
 
 model Quote {
   id                String      @id @default(uuid())
-  year              String
+  year              String 
   number            String
   status            QuoteStatus
   priority          String

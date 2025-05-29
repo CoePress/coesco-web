@@ -8,6 +8,7 @@ import { CustomerController } from "./customer.controller";
 import { DealerController } from "./dealer.controller";
 import { AddressController } from "./address.controller";
 import { ContactController } from "./contact.controller";
+import { QuoteController } from "./quote.controller";
 
 export const authController = new AuthController();
 export const configController = new ConfigController();
@@ -20,3 +21,4 @@ export const customerController = new CustomerController();
 export const dealerController = new DealerController();
 export const addressController = new AddressController();
 export const contactController = new ContactController();
+export const quoteController = new QuoteController();
