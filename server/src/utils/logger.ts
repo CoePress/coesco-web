@@ -85,12 +85,10 @@ class Logger {
         errorMessage ? ` - ${errorMessage}` : ""
       }`;
 
-      if (statusCode >= 500 || statusCode === 401 || statusCode === 404) {
+      if (statusCode >= 400) {
         this.error(message);
-      } else if (statusCode >= 400 || statusCode === 304) {
-        this.warn(message);
       } else if (statusCode >= 300) {
-        this.info(message);
+        this.warn(message);
       } else {
         this.success(message);
       }

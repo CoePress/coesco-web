@@ -42,7 +42,7 @@ model Employee {
 model Customer {
   id               String   @id @default(uuid())
   name             String
-  code             String
+  code             String   @unique
   website          String?
   phoneNumber      String?
   email            String?
@@ -64,7 +64,7 @@ model Customer {
 model Dealer {
   id               String   @id @default(uuid())
   name             String
-  code             String
+  code             String   @unique
   website          String?
   phoneNumber      String?
   email            String?

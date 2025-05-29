@@ -47,10 +47,10 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  logger.error(
-    `${err.name}: ${err.message}`,
-    __prod__ ? undefined : { stack: err.stack }
-  );
+  // logger.error(
+  //   `${err.name}: ${err.message}`,
+  //   __prod__ ? undefined : { stack: err.stack }
+  // );
 
   let statusCode = 500;
   let errorMessage: string | Array<{ field: string; message: string }> =
