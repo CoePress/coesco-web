@@ -23,6 +23,9 @@ import { OptionService } from "./repository/option.service";
 import { ConfigurationService } from "./repository/configuration.service";
 import { OptionRulesService } from "./repository/option-rules.services";
 import { ConfigurationOptionService } from "./repository/configuration-option.service";
+import { CompatibilityService } from "./logic/compatibility.service";
+import { AnalyticsService } from "./logic/analytics.service";
+import { MachineMonitorService } from "./logic/machine-monitor.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
@@ -47,6 +50,9 @@ export const emailService = new EmailService();
 export const socketService = new SocketService();
 
 // Logic Services
+export const analyticsService = new AnalyticsService();
+export const compatibilityService = new CompatibilityService();
+export const machineMonitorService = new MachineMonitorService();
 
 // Repository Services
 // Organization
@@ -63,10 +69,14 @@ export const quoteService = new QuoteService();
 export const quoteRevisionService = new QuoteRevisionService();
 export const quoteItemService = new QuoteItemService();
 
-// Product
+// Products
 export const productClassService = new ProductClassService();
 export const optionCategoryService = new OptionCategoryService();
 export const optionService = new OptionService();
 export const optionRulesService = new OptionRulesService();
 export const configurationService = new ConfigurationService();
 export const configurationOptionService = new ConfigurationOptionService();
+
+// Production
+// Machines
+// Machine Statuses
