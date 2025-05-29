@@ -85,7 +85,6 @@ model Dealer {
 
 model Address {
   id         String   @id @default(uuid())
-  entityType String
   customerId String?
   dealerId   String?
   address1   String
@@ -104,15 +103,15 @@ model Address {
   customerQuotes  Quote[]   @relation("CustomerQuoteAddress")
   dealerQuotes    Quote[]   @relation("DealerQuoteAddress")
 
-  @@index([entityType, customerId])
-  @@index([entityType, dealerId])
+  @@index([customerId])
+  @@index([dealerId])
   @@map("addresses")
 }
 
 model Contact {
   id          String   @id @default(uuid())
-  entityType  String // "CUSTOMER" or "DEALER"
-  entityId    String
+  customerId  String?
+  dealerId    String?
   firstName   String
   lastName    String
   email       String?
@@ -121,14 +120,15 @@ model Contact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  customer        Customer? @relation("CustomerContacts", fields: [entityId], references: [id], map: "contact_customer_fkey")
+  customer        Customer? @relation("CustomerContacts", fields: [customerId], references: [id], map: "contact_customer_fkey")
   customerDefault Customer? @relation("CustomerDefaultContact", map: "contact_customer_default_fkey")
-  dealer          Dealer?   @relation("DealerContacts", fields: [entityId], references: [id], map: "contact_dealer_fkey")
+  dealer          Dealer?   @relation("DealerContacts", fields: [dealerId], references: [id], map: "contact_dealer_fkey")
   dealerDefault   Dealer?   @relation("DealerDefaultContact", map: "contact_dealer_default_fkey")
   customerQuotes  Quote[]   @relation("CustomerQuoteContact")
   dealerQuotes    Quote[]   @relation("DealerQuoteContact")
 
-  @@index([entityType, entityId])
+  @@index([customerId])
+  @@index([dealerId])
   @@map("contacts")
 }
 

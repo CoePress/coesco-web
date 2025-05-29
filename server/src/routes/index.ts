@@ -8,7 +8,7 @@ import archiveRoutes from "./old/archive.routes";
 import authRoutes from "./old/auth.routes";
 import configRoutes from "./old/config.routes";
 import emailRoutes from "./old/email.routes";
-import employeeRoutes from "./employee.routes";
+import employeeRoutes from "./old/employee.routes";
 import machineDataRoutes from "./old/machine-data.routes";
 import machineRoutes from "./old/machine.routes";
 import quoteRoutes from "./quote.routes";
@@ -17,6 +17,7 @@ import { __dev__ } from "@/config/config";
 import customerRoutes from "./customer.routes";
 import dealerRoutes from "./dealer.routes";
 import addressRoutes from "./address.routes";
+import contactRoutes from "./contact.router";
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use("/quotes", protect, quoteRoutes);
 router.use("/customers", protect, customerRoutes);
 router.use("/dealers", protect, dealerRoutes);
 router.use("/addresses", protect, addressRoutes);
+router.use("/contacts", protect, contactRoutes);
 
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

@@ -47,13 +47,31 @@ export const buildQuery = (
         filterObj = JSON.parse(params.filter);
       } catch (error) {
         console.error("Invalid filter format:", error);
+        return result;
       }
     } else if (typeof params.filter === "object") {
       filterObj = params.filter;
     }
 
+    // Process nested filters
+    const processFilter = (filter: any): any => {
+      const processed: any = {};
+      for (const [key, value] of Object.entries(filter)) {
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          !Array.isArray(value)
+        ) {
+          processed[key] = value;
+        } else {
+          processed[key] = value;
+        }
+      }
+      return processed;
+    };
+
     // Merge with existing where clause
-    result.where = { ...result.where, ...filterObj };
+    result.where = { ...result.where, ...processFilter(filterObj) };
   }
 
   // Date range filtering

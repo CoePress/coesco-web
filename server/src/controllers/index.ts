@@ -7,6 +7,7 @@ import { MachineDataController } from "./old/machine-data.controller";
 import { CustomerController } from "./customer.controller";
 import { DealerController } from "./dealer.controller";
 import { AddressController } from "./address.controller";
+import { ContactController } from "./contact.controller";
 
 export const authController = new AuthController();
 export const configController = new ConfigController();
@@ -18,3 +19,4 @@ export const machineDataController = new MachineDataController();
 export const customerController = new CustomerController();
 export const dealerController = new DealerController();
 export const addressController = new AddressController();
+export const contactController = new ContactController();

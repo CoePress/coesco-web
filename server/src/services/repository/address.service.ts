@@ -10,19 +10,17 @@ export class AddressService extends BaseService<Address> {
   protected entityName = "Address";
 
   protected async validate(address: AddressAttributes): Promise<void> {
-    if (!address.entityType) {
-      throw new BadRequestError("Entity type is required");
-    }
-
     if (!address.customerId && !address.dealerId) {
       throw new BadRequestError("Either customerId or dealerId is required");
     }
 
-    if (address.entityType === "CUSTOMER") {
-      if (!address.customerId) {
-        throw new BadRequestError("Customer ID is required");
-      }
+    if (address.customerId && address.dealerId) {
+      throw new BadRequestError(
+        "Only one of customerId or dealerId is allowed"
+      );
+    }
 
+    if (address.customerId) {
       const customer = await prisma.customer.findUnique({
         where: { id: address.customerId },
       });
@@ -32,11 +30,7 @@ export class AddressService extends BaseService<Address> {
       }
     }
 
-    if (address.entityType === "DEALER") {
-      if (!address.dealerId) {
-        throw new BadRequestError("Dealer ID is required");
-      }
-
+    if (address.dealerId) {
       const dealer = await prisma.dealer.findUnique({
         where: { id: address.dealerId },
       });
