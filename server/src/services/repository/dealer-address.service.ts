@@ -1,5 +1,5 @@
 import { DealerAddress } from "@prisma/client";
-import { BaseService } from "./index";
+import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
 
