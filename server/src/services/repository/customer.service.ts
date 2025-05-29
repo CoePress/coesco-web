@@ -18,11 +18,11 @@ export class CustomerService extends BaseService<Customer> {
       throw new BadRequestError("Customer code is required");
     }
 
-    const existingCode = await this.model.findUnique({
+    const customerWithSameCode = await this.model.findUnique({
       where: { code: customer.code },
     });
 
-    if (existingCode) {
+    if (customerWithSameCode) {
       throw new BadRequestError("Customer code already exists");
     }
   }

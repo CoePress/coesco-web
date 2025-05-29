@@ -89,10 +89,10 @@ model Address {
   entityId   String
   address1   String
   address2   String?
-  city       String
-  state      String
-  zip        String
-  country    String
+  city       String?
+  state      String?
+  zip        String?
+  country    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -110,7 +110,7 @@ model Address {
 model Contact {
   id          String   @id @default(uuid())
   entityType  String // "CUSTOMER" or "DEALER"
-  entityId    String // ID of the customer or dealer
+  entityId    String
   firstName   String
   lastName    String
   email       String?

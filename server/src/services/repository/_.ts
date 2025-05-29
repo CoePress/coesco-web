@@ -78,23 +78,35 @@ export abstract class BaseService<TEntity> {
     data: Partial<Omit<TEntity, "id" | "createdAt" | "updatedAt">>,
     tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<TEntity>> {
-    const entity = await (tx
+    const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
+    const entity = await model.findUnique({ where: { id } });
+
+    if (!entity) {
+      throw new NotFoundError(`${this.entityName} not found`);
+    }
+
+    const updatedEntity = await (tx
       ? (tx as any)[this.entityName.toLowerCase()].update({
           where: { id },
           data,
         })
       : this.model.update({ where: { id }, data }));
-    return { success: true, data: entity };
+    return { success: true, data: updatedEntity };
   }
 
   async delete(
     id: string,
     tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<TEntity>> {
-    const entity = await (tx
-      ? (tx as any)[this.entityName.toLowerCase()].delete({ where: { id } })
-      : this.model.delete({ where: { id } }));
-    return { success: true, data: entity };
+    const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
+    const entity = await model.findUnique({ where: { id } });
+
+    if (!entity) {
+      throw new NotFoundError(`${this.entityName} not found`);
+    }
+
+    const deletedEntity = await model.delete({ where: { id } });
+    return { success: true, data: deletedEntity };
   }
 
   async bulkCreate() {}
