@@ -10,8 +10,26 @@ export class QuoteItemService extends BaseService<QuoteItem> {
   protected entityName = "QuoteItem";
 
   protected async validate(quoteItem: QuoteItemAttributes): Promise<void> {
-    if (!quoteItem.quoteRevisionId) {
-      throw new BadRequestError("Quote revision ID is required");
+    if (!quoteItem.quoteId) {
+      throw new BadRequestError("Quote ID is required");
+    }
+
+    const quote = await prisma.quote.findUnique({
+      where: { id: quoteItem.quoteId },
+    });
+
+    if (!quote) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    if (!quoteItem.configurationId && !quoteItem.itemId) {
+      throw new BadRequestError("Either configurationId or itemId is required");
+    }
+
+    if (quoteItem.configurationId && quoteItem.itemId) {
+      throw new BadRequestError(
+        "Only one of configurationId or itemId is allowed"
+      );
     }
   }
 }

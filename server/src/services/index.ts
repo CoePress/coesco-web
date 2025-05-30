@@ -6,15 +6,16 @@ import { EmailService } from "./core/email.service";
 import { EmployeeService } from "./repository/employee.service";
 import { MachineService } from "./machine.service";
 import { MachineDataService } from "./machine-data.service";
-import { QuoteService } from "./repository/quote.service";
 import { SocketService } from "./core/socket.service";
 import { logger } from "@/utils/logger";
-import { CustomerService } from "./repository/customer.service";
-import { DealerService } from "./repository/dealer.service";
+
+import { CompanyService } from "./repository/company.service";
 import { AddressService } from "./repository/address.service";
 import { ContactService } from "./repository/contact.service";
-import { QuoteRevisionService } from "./repository/quote-revision.service";
+import { JourneyService } from "./repository/journey.service";
+import { QuoteService } from "./repository/quote.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
+
 import { ProductClassService } from "./repository/product-class.service";
 import { OptionCategoryService } from "./repository/option-category.service";
 import { OptionService } from "./repository/option.service";
@@ -57,12 +58,11 @@ export const machineMonitorService = new MachineMonitorService();
 export const employeeService = new EmployeeService();
 
 // Sales
-export const customerService = new CustomerService();
-export const dealerService = new DealerService();
+export const companyService = new CompanyService();
 export const addressService = new AddressService();
 export const contactService = new ContactService();
+export const journeyService = new JourneyService();
 export const quoteService = new QuoteService();
-export const quoteRevisionService = new QuoteRevisionService();
 export const quoteItemService = new QuoteItemService();
 
 // Products

@@ -7,21 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// All quotes where Alice is the RSM
-// const myPipeline = await prisma.employee.findUnique({
-//   where: { id: aliceId },
-//   include: { rsmQuotes: true },
-// });
-
-// All revisions Bob approved
-// const approvals = await prisma.employee.findUnique({
-//   where: { id: bobId },
-//   include: { approvedRevisions: true },
-// });
-
 model Employee {
   id          String    @id @default(uuid())
-  number      String?
+  number      String    @unique
   firstName   String
   lastName    String
   email       String?
@@ -31,106 +19,175 @@ model Employee {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  rsmQuotes         Quote[]         @relation("QuoteRsm")
-  createdQuotes     Quote[]         @relation("QuoteCreator")
-  createdRevisions  QuoteRevision[] @relation("RevisionCreator")
-  approvedRevisions QuoteRevision[] @relation("RevisionApprover")
-  changesMade       ChangeLog[]
+  journeys Journey[] @relation("RsmJourneys")
+  createdJourneys Journey[] @relation("JourneyCreatedBy")
+  createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
 
+  // rsmQuotes         Quote[]         @relation("QuoteRsm")
+  // createdQuotes     Quote[]         @relation("QuoteCreator")
+  // createdRevisions  QuoteRevision[] @relation("RevisionCreator")
+  // approvedRevisions QuoteRevision[] @relation("RevisionApprover")
+  // changesMade       ChangeLog[]
+
+  @@index([number])
   @@map("employees")
 }
 
-model Customer {
-  id               String   @id @default(uuid())
-  name             String
-  code             String   @unique
-  website          String?
-  phoneNumber      String?
-  email            String?
-  notes            String?
-  defaultAddressId String?  @unique
-  defaultContactId String?  @unique
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  defaultAddress Address?  @relation("CustomerDefaultAddress", fields: [defaultAddressId], references: [id])
-  defaultContact Contact?  @relation("CustomerDefaultContact", fields: [defaultContactId], references: [id])
-  addresses      Address[] @relation("CustomerAddresses")
-  contacts       Contact[] @relation("CustomerContacts")
-  quotes         Quote[]
-
-  @@map("customers")
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  STAGING
 }
 
-model Dealer {
-  id               String   @id @default(uuid())
-  name             String
-  code             String   @unique
-  website          String?
-  phoneNumber      String?
-  email            String?
-  notes            String?
-  defaultAddressId String?  @unique
-  defaultContactId String?  @unique
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+model Company {
+  id          String        @id @default(uuid())
+  name        String
+  website     String?
+  phoneNumber String?
+  email       String?
+  notes       String?
+  status      CompanyStatus
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  defaultAddress Address?  @relation("DealerDefaultAddress", fields: [defaultAddressId], references: [id])
-  defaultContact Contact?  @relation("DealerDefaultContact", fields: [defaultContactId], references: [id])
-  addresses      Address[] @relation("DealerAddresses")
-  contacts       Contact[] @relation("DealerContacts")
-  quotes         Quote[]
+  addresses        Address[] @relation("CompanyAddresses")
+  contacts         Contact[] @relation("CompanyContacts")
+  customerJourneys Journey[] @relation("CustomerJourneys")
+  dealerJourneys   Journey[] @relation("DealerJourneys")
 
-  @@map("dealers")
+  @@map("companies")
 }
 
 model Address {
-  id         String   @id @default(uuid())
-  customerId String?
-  dealerId   String?
-  address1   String
-  address2   String?
-  city       String?
-  state      String?
-  zip        String?
-  country    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(uuid())
+  companyId    String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zip          String
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  customer        Customer? @relation("CustomerAddresses", fields: [customerId], references: [id])
-  customerDefault Customer? @relation("CustomerDefaultAddress")
-  dealer          Dealer?   @relation("DealerAddresses", fields: [dealerId], references: [id])
-  dealerDefault   Dealer?   @relation("DealerDefaultAddress")
-  customerQuotes  Quote[]   @relation("CustomerQuoteAddress")
-  dealerQuotes    Quote[]   @relation("DealerQuoteAddress")
+  company Company @relation("CompanyAddresses", fields: [companyId], references: [id])
 
-  @@index([customerId])
-  @@index([dealerId])
   @@map("addresses")
 }
 
 model Contact {
-  id          String   @id @default(uuid())
-  customerId  String?
-  dealerId    String?
-  firstName   String
-  lastName    String
-  email       String?
-  phoneNumber String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  companyId String
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  customer        Customer? @relation("CustomerContacts", fields: [customerId], references: [id], map: "contact_customer_fkey")
-  customerDefault Customer? @relation("CustomerDefaultContact", map: "contact_customer_default_fkey")
-  dealer          Dealer?   @relation("DealerContacts", fields: [dealerId], references: [id], map: "contact_dealer_fkey")
-  dealerDefault   Dealer?   @relation("DealerDefaultContact", map: "contact_dealer_default_fkey")
-  customerQuotes  Quote[]   @relation("CustomerQuoteContact")
-  dealerQuotes    Quote[]   @relation("DealerQuoteContact")
+  company Company @relation("CompanyContacts", fields: [companyId], references: [id])
 
-  @@index([customerId])
-  @@index([dealerId])
   @@map("contacts")
+}
+
+model Journey {
+  id         String   @id @default(uuid())
+  rsmId      String?
+  customerId String?
+  dealerId   String?
+  createdById String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  rsm          Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
+  customer     Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
+  dealer       Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
+  createdBy    Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
+  interactions JourneyInteraction[] @relation("JourneyInteractions")
+  notes        JourneyNote[]        @relation("JourneyNotes")
+  quotes       Quote[]              @relation("JourneyQuotes")
+
+  @@map("journeys")
+}
+
+enum JourneyInteractionType {
+  EMAIL
+  PHONE
+  IN_PERSON
+  VIDEO_CALL
+  TEXT_MESSAGE
+  SOCIAL_MEDIA
+  OTHER
+}
+
+model JourneyInteraction {
+  id              String                 @id @default(uuid())
+  journeyId       String
+  interactionType JourneyInteractionType
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  journey Journey @relation("JourneyInteractions", fields: [journeyId], references: [id])
+
+  @@map("journey_interactions")
+}
+
+model JourneyNote {
+  id        String   @id @default(uuid())
+  journeyId String
+  note      String
+  createdById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journey Journey @relation("JourneyNotes", fields: [journeyId], references: [id])
+  createdBy Employee? @relation("JourneyNoteCreatedBy", fields: [createdById], references: [id])
+
+  @@map("journey_notes")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+model Quote {
+  id        String      @id @default(uuid())
+  journeyId String
+  year      Int
+  number    String
+  revision  String
+  status    QuoteStatus
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  journey Journey     @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  items   QuoteItem[] @relation("QuoteItems")
+
+  @@index([year, number, revision])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id              String   @id @default(uuid())
+  quoteId         String
+  configurationId String?
+  itemId          String?
+  quantity        Int
+  unitPrice       Decimal
+  totalPrice      Decimal
+  lineNumber      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  quote         Quote          @relation("QuoteItems", fields: [quoteId], references: [id])
+  configuration Configuration? @relation(fields: [configurationId], references: [id])
+  item          Item?          @relation(fields: [itemId], references: [id])
+
+  @@map("quote_items")
 }
 
 model ProductClass {
@@ -214,6 +271,18 @@ model OptionRule {
   @@map("option_rules")
 }
 
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quoteItems QuoteItem[]
+
+  @@map("items")
+}
+
 model Configuration {
   id             String   @id @default(uuid())
   productClassId String
@@ -240,114 +309,4 @@ model ConfigurationOption {
 
   @@id([configurationId, optionId])
   @@map("configuration_options")
-}
-
-enum QuoteStatus {
-  OPEN
-  WON
-  LOST
-  CANCELLED
-}
-
-model Quote {
-  id                String      @id @default(uuid())
-  year              String 
-  number            String
-  status            QuoteStatus
-  priority          String
-  confidence        Int         @default(0)
-  rsmId             String
-  customerId        String
-  customerAddressId String?
-  customerContactId String?
-  dealerId          String
-  dealerAddressId   String?
-  dealerContactId   String?
-  notes             String?
-  createdById       String
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  rsm             Employee        @relation("QuoteRsm", fields: [rsmId], references: [id])
-  customer        Customer        @relation(fields: [customerId], references: [id])
-  customerAddress Address?        @relation("CustomerQuoteAddress", fields: [customerAddressId], references: [id])
-  customerContact Contact?        @relation("CustomerQuoteContact", fields: [customerContactId], references: [id])
-  dealer          Dealer          @relation(fields: [dealerId], references: [id])
-  dealerAddress   Address?        @relation("DealerQuoteAddress", fields: [dealerAddressId], references: [id])
-  dealerContact   Contact?        @relation("DealerQuoteContact", fields: [dealerContactId], references: [id])
-  creator         Employee        @relation("QuoteCreator", fields: [createdById], references: [id])
-  revisions       QuoteRevision[]
-
-  @@map("quotes")
-}
-
-enum QuoteRevisionStatus {
-  DRAFT
-  SENT
-  ACCEPTED
-  DECLINED
-  EXPIRED
-  CANCELLED
-}
-
-model QuoteRevision {
-  id           String              @id @default(uuid())
-  quoteId      String
-  revision     String
-  status       QuoteRevisionStatus
-  subtotal     Decimal
-  taxAmount    Decimal?
-  totalAmount  Decimal
-  currency     String
-  notes        String?
-  createdById  String
-  approvedById String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-
-  quote    Quote       @relation(fields: [quoteId], references: [id])
-  creator  Employee    @relation("RevisionCreator", fields: [createdById], references: [id])
-  approver Employee?   @relation("RevisionApprover", fields: [approvedById], references: [id])
-  items    QuoteItem[]
-
-  @@map("quote_revisions")
-}
-
-model QuoteItem {
-  id              String   @id @default(uuid())
-  quoteRevisionId String
-  configurationId String?
-  quantity        Int
-  unitPrice       Decimal
-  totalPrice      Decimal
-  lineNumber      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  revision      QuoteRevision  @relation(fields: [quoteRevisionId], references: [id])
-  configuration Configuration? @relation(fields: [configurationId], references: [id])
-
-  @@map("quote_items")
-}
-
-enum ActionType {
-  CREATE
-  UPDATE
-  DELETE
-}
-
-model ChangeLog {
-  id         String     @id @default(uuid())
-  employeeId String?
-  actionType ActionType
-  entityType String
-  entityId   String
-  fieldName  String
-  oldValue   String
-  newValue   String
-  timestamp  DateTime   @default(now())
-
-  employee Employee? @relation(fields: [employeeId], references: [id])
-
-  @@map("change_logs")
 }

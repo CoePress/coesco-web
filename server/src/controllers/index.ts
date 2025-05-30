@@ -3,7 +3,7 @@ import { ConfigController } from "./old/config.controller";
 import { EmailController } from "./old/email.controller";
 import { MachineController } from "./old/machine.controller";
 import { MachineDataController } from "./old/machine-data.controller";
-import { CustomerController } from "./customer.controller";
+import { CustomerController } from "./company.controller";
 import { DealerController } from "./dealer.controller";
 import { AddressController } from "./address.controller";
 import { ContactController } from "./contact.controller";

@@ -15,5 +15,9 @@ export class EmployeeService extends BaseService<Employee> {
     if (!employee.firstName) {
       throw new BadRequestError("First name is required");
     }
+
+    if (!employee.number) {
+      throw new BadRequestError("Number is required");
+    }
   }
 }

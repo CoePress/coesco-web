@@ -10,24 +10,24 @@ export class QuoteService extends BaseService<Quote> {
   protected entityName = "Quote";
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
+    if (!quote.journeyId) {
+      throw new BadRequestError("Journey ID is required");
+    }
+
+    const journey = await prisma.journey.findUnique({
+      where: { id: quote.journeyId },
+    });
+
+    if (!journey) {
+      throw new BadRequestError("Journey not found");
+    }
+
     if (!quote.year) {
-      quote.year = new Date().getFullYear().toString();
+      quote.year = new Date().getFullYear();
     }
 
     if (!quote.number) {
       quote.number = "0000000000";
-    }
-
-    if (!quote.customerId) {
-      throw new BadRequestError("Customer ID is required");
-    }
-
-    if (!quote.dealerId) {
-      throw new BadRequestError("Dealer ID is required");
-    }
-
-    if (!quote.status) {
-      quote.status = "OPEN";
     }
   }
 }

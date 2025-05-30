@@ -10,37 +10,19 @@ export class AddressService extends BaseService<Address> {
   protected entityName = "Address";
 
   protected async validate(address: AddressAttributes): Promise<void> {
-    if (!address.customerId && !address.dealerId) {
-      throw new BadRequestError("Either customerId or dealerId is required");
+    if (!address.companyId) {
+      throw new BadRequestError("CompanyId is required");
     }
 
-    if (address.customerId && address.dealerId) {
-      throw new BadRequestError(
-        "Only one of customerId or dealerId is allowed"
-      );
+    const company = await prisma.company.findUnique({
+      where: { id: address.companyId },
+    });
+
+    if (!company) {
+      throw new BadRequestError("Company not found");
     }
 
-    if (address.customerId) {
-      const customer = await prisma.customer.findUnique({
-        where: { id: address.customerId },
-      });
-
-      if (!customer) {
-        throw new BadRequestError("Customer not found");
-      }
-    }
-
-    if (address.dealerId) {
-      const dealer = await prisma.dealer.findUnique({
-        where: { id: address.dealerId },
-      });
-
-      if (!dealer) {
-        throw new BadRequestError("Dealer not found");
-      }
-    }
-
-    if (!address.address1) {
+    if (!address.addressLine1) {
       throw new BadRequestError("Address line 1 is required");
     }
 
