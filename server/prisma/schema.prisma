@@ -37,6 +37,7 @@ enum CompanyStatus {
   ACTIVE
   INACTIVE
   STAGING
+  PROCESSED
 }
 
 model Company {

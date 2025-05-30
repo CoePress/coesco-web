@@ -16,3 +16,55 @@
 ## Questions
 
 - Should a quote be able to NOT have customer/dealer ids? (drafts)
+
+```typescript
+function isJourneyReadyForQuoteProcessing(journey: Journey): boolean {
+  return (
+    journey.customerId !== null && // Journey MUST have a customer
+    journey.customer?.status === 'ACTIVE' // AND that customer must be ACTIVE (not STAGING)
+  ) &&
+  // other required Journey data checks
+}
+
+// When creating a blank quote
+const stagingCompany = await prisma.company.create({
+  data: {
+    name: `Draft Customer - ${new Date().toISOString()}`, // or some identifier
+    status: 'STAGING',
+    // minimal required fields
+  }
+});
+
+const journey = await prisma.journey.create({
+  data: {
+    customerId: stagingCompany.id, // Always has a customer
+    createdById: salesPersonId,
+  }
+});
+
+// On processing
+await prisma.company.update({
+  where: { id: stagingCompany.id },
+  data: {
+    status: 'PROCESSED',
+    // Maybe add processedAt timestamp, replacedByCompanyId
+  }
+});
+
+// Delete STAGING companies older than X days where no quotes are SENT/ACCEPTED
+await prisma.company.deleteMany({
+  where: {
+    status: 'STAGING',
+    createdAt: { lt: thirtyDaysAgo },
+    customerJourneys: {
+      every: {
+        quotes: {
+          every: {
+            status: 'DRAFT' // Only delete if all quotes still draft
+          }
+        }
+      }
+    }
+  }
+});
+```
