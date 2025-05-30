@@ -21,6 +21,7 @@ datasource db {
 
 model Employee {
   id          String    @id @default(uuid())
+  number      String?
   firstName   String
   lastName    String
   email       String?
