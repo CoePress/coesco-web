@@ -4,7 +4,6 @@ import fs from "fs";
 import puppeteer from "puppeteer";
 
 import { protect } from "@/middleware/auth.middleware";
-import archiveRoutes from "./old/archive.routes";
 import authRoutes from "./old/auth.routes";
 import configRoutes from "./old/config.routes";
 import emailRoutes from "./old/email.routes";
@@ -20,10 +19,6 @@ import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 
 const router = Router();
-
-if (__dev__) {
-  router.use("/archive", archiveRoutes);
-}
 
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);

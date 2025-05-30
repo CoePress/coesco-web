@@ -1,160 +1,16 @@
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
-
-// // All quotes where Alice is the RSM
-// // const myPipeline = await prisma.employee.findUnique({
-// //   where: { id: aliceId },
-// //   include: { rsmQuotes: true },
-// // });
-
-// // All revisions Bob approved
-// // const approvals = await prisma.employee.findUnique({
-// //   where: { id: bobId },
-// //   include: { approvedRevisions: true },
-// // });
 
 
-// model Customer {
-//   id               String   @id @default(uuid())
-//   name             String
-//   code             String   @unique
-//   website          String?
-//   phoneNumber      String?
-//   email            String?
-//   notes            String?
-//   defaultAddressId String?  @unique
-//   defaultContactId String?  @unique
-//   createdAt        DateTime @default(now())
-//   updatedAt        DateTime @updatedAt
+// All quotes where Alice is the RSM
+// const myPipeline = await prisma.employee.findUnique({
+//   where: { id: aliceId },
+//   include: { rsmQuotes: true },
+// });
 
-//   defaultAddress Address?  @relation("CustomerDefaultAddress", fields: [defaultAddressId], references: [id])
-//   defaultContact Contact?  @relation("CustomerDefaultContact", fields: [defaultContactId], references: [id])
-//   addresses      Address[] @relation("CustomerAddresses")
-//   contacts       Contact[] @relation("CustomerContacts")
-//   quotes         Quote[]
-
-//   @@map("customers")
-// }
-
-// model Dealer {
-//   id               String   @id @default(uuid())
-//   name             String
-//   code             String   @unique
-//   website          String?
-//   phoneNumber      String?
-//   email            String?
-//   notes            String?
-//   defaultAddressId String?  @unique
-//   defaultContactId String?  @unique
-//   createdAt        DateTime @default(now())
-//   updatedAt        DateTime @updatedAt
-
-//   defaultAddress Address?  @relation("DealerDefaultAddress", fields: [defaultAddressId], references: [id])
-//   defaultContact Contact?  @relation("DealerDefaultContact", fields: [defaultContactId], references: [id])
-//   addresses      Address[] @relation("DealerAddresses")
-//   contacts       Contact[] @relation("DealerContacts")
-//   quotes         Quote[]
-
-//   @@map("dealers")
-// }
-
-// model Address {
-//   id         String   @id @default(uuid())
-//   customerId String?
-//   dealerId   String?
-//   address1   String
-//   address2   String?
-//   city       String?
-//   state      String?
-//   zip        String?
-//   country    String?
-//   createdAt  DateTime @default(now())
-//   updatedAt  DateTime @updatedAt
-
-//   customer        Customer? @relation("CustomerAddresses", fields: [customerId], references: [id])
-//   customerDefault Customer? @relation("CustomerDefaultAddress")
-//   dealer          Dealer?   @relation("DealerAddresses", fields: [dealerId], references: [id])
-//   dealerDefault   Dealer?   @relation("DealerDefaultAddress")
-//   customerQuotes  Quote[]   @relation("CustomerQuoteAddress")
-//   dealerQuotes    Quote[]   @relation("DealerQuoteAddress")
-
-//   @@index([customerId])
-//   @@index([dealerId])
-//   @@map("addresses")
-// }
-
-// model Contact {
-//   id          String   @id @default(uuid())
-//   customerId  String?
-//   dealerId    String?
-//   firstName   String
-//   lastName    String
-//   email       String?
-//   phoneNumber String?
-//   notes       String?
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-
-//   customer        Customer? @relation("CustomerContacts", fields: [customerId], references: [id], map: "contact_customer_fkey")
-//   customerDefault Customer? @relation("CustomerDefaultContact", map: "contact_customer_default_fkey")
-//   dealer          Dealer?   @relation("DealerContacts", fields: [dealerId], references: [id], map: "contact_dealer_fkey")
-//   dealerDefault   Dealer?   @relation("DealerDefaultContact", map: "contact_dealer_default_fkey")
-//   customerQuotes  Quote[]   @relation("CustomerQuoteContact")
-//   dealerQuotes    Quote[]   @relation("DealerQuoteContact")
-
-//   @@index([customerId])
-//   @@index([dealerId])
-//   @@map("contacts")
-// }
-
-// model TempAddress {
-//   id String @id @default(uuid())
-//   address1 String
-//   address2 String?
-//   city String?
-//   state String?
-//   zip String?
-//   country String?
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   @@map("temp_addresses")
-// }
-
-// model TempContact {
-//   id String @id @default(uuid())
-//   firstName String
-//   lastName String
-//   email String?
-//   phoneNumber String?
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   @@map("temp_contacts")
-// }
-
-
-
-
-
-// model Journey {
-//   id String @id @default(uuid())
-//   name String
-//   description String?
-  
-//   customerAddressId String?
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   @@map("journeys")
-// }
+// All revisions Bob approved
+// const approvals = await prisma.employee.findUnique({
+//   where: { id: bobId },
+//   include: { approvedRevisions: true },
+// });
 
 // enum QuoteStatus {
 //   OPEN
@@ -242,26 +98,4 @@
 //   configuration Configuration? @relation(fields: [configurationId], references: [id])
 
 //   @@map("quote_items")
-// }
-
-// enum ActionType {
-//   CREATE
-//   UPDATE
-//   DELETE
-// }
-
-// model ChangeLog {
-//   id         String     @id @default(uuid())
-//   employeeId String?
-//   actionType ActionType
-//   entityType String
-//   entityId   String
-//   fieldName  String
-//   oldValue   String
-//   newValue   String
-//   timestamp  DateTime   @default(now())
-
-//   employee Employee? @relation(fields: [employeeId], references: [id])
-
-//   @@map("change_logs")
 // }

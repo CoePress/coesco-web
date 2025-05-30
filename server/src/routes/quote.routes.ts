@@ -6,7 +6,7 @@ const router = Router();
 router.get("/", quoteController.getAll);
 router.get("/:id", quoteController.getById);
 router.post("/", quoteController.create);
-router.post("/create-quote", quoteController.createQuote);
+// router.post("/create-quote", quoteController.createQuote);
 router.patch("/:id", quoteController.update);
 router.delete("/:id", quoteController.delete);
 

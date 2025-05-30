@@ -44,6 +44,7 @@ model Employee {
   journeys            Journey[]     @relation("RsmJourneys")
   createdJourneys     Journey[]     @relation("JourneyCreatedBy")
   createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
+  changeLogs          ChangeLog[]
 
   @@index([number])
   @@map("employees")
@@ -67,8 +68,8 @@ model Company {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  addresses        Address[] @relation("CompanyAddresses")
-  contacts         Contact[] @relation("CompanyContacts")
+  addresses        Address[]
+  contacts         Contact[]
   customerJourneys Journey[] @relation("CustomerJourneys")
   dealerJourneys   Journey[] @relation("DealerJourneys")
 
@@ -84,10 +85,11 @@ model Address {
   state        String?
   zip          String?
   country      String?
+  isPrimary    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  company Company @relation("CompanyAddresses", fields: [companyId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
 
   @@map("addresses")
 }
@@ -100,10 +102,11 @@ model Contact {
   email     String?
   phone     String?
   title     String?
+  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company @relation("CompanyContacts", fields: [companyId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
 
   @@map("contacts")
 }
@@ -326,4 +329,35 @@ model ConfigurationOption {
 
   @@id([configurationId, optionId])
   @@map("configuration_options")
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("api_keys")
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model ChangeLog {
+  id         String     @id @default(uuid())
+  employeeId String?
+  actionType ActionType
+  entityType String
+  entityId   String
+  fieldName  String
+  oldValue   String
+  newValue   String
+  timestamp  DateTime   @default(now())
+
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@map("change_logs")
 }
