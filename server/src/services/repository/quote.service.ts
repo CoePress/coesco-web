@@ -21,5 +21,13 @@ export class QuoteService extends BaseService<Quote> {
     if (!quote.customerId) {
       throw new BadRequestError("Customer ID is required");
     }
+
+    if (!quote.dealerId) {
+      throw new BadRequestError("Dealer ID is required");
+    }
+
+    if (!quote.status) {
+      quote.status = "OPEN";
+    }
   }
 }

@@ -8,11 +8,11 @@ import archiveRoutes from "./old/archive.routes";
 import authRoutes from "./old/auth.routes";
 import configRoutes from "./old/config.routes";
 import emailRoutes from "./old/email.routes";
-import employeeRoutes from "./old/employee.routes";
 import machineDataRoutes from "./old/machine-data.routes";
 import machineRoutes from "./old/machine.routes";
 import { __dev__ } from "@/config/config";
 
+import employeeRoutes from "./employee.routes";
 import customerRoutes from "./customer.routes";
 import dealerRoutes from "./dealer.routes";
 import addressRoutes from "./address.routes";
@@ -28,10 +28,10 @@ if (__dev__) {
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);
 router.use("/email", protect, emailRoutes);
-router.use("/employees", protect, employeeRoutes);
 router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
 
+router.use("/employees", protect, employeeRoutes);
 router.use("/customers", protect, customerRoutes);
 router.use("/dealers", protect, dealerRoutes);
 router.use("/addresses", protect, addressRoutes);

@@ -3,7 +3,7 @@ import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { CronService } from "./core/cron.service";
 import { EmailService } from "./core/email.service";
-import { EmployeeService } from "./employee.service";
+import { EmployeeService } from "./repository/employee.service";
 import { MachineService } from "./machine.service";
 import { MachineDataService } from "./machine-data.service";
 import { QuoteService } from "./repository/quote.service";
