@@ -67,4 +67,39 @@ await prisma.company.deleteMany({
     }
   }
 });
+
+// User clicks "New Quote"
+// Show modal/form: "Create quote for existing customer or create draft?"
+
+// Option 1: Existing Customer
+const journey = await prisma.journey.create({
+  data: {
+    customerId: selectedExistingCustomer.id, // Real customer
+    createdById: userId
+  }
+});
+
+// Option 2: Draft Quote
+const stagingCompany = await prisma.company.create({
+  data: {
+    name: "Draft Customer", // User can edit this
+    status: 'STAGING'
+  }
+});
+
+const journey = await prisma.journey.create({
+  data: {
+    customerId: stagingCompany.id, // Staging customer
+    createdById: userId
+  }
+});
+
+// Either way:
+const quote = await prisma.quote.create({
+  data: {
+    journeyId: journey.id,
+    status: 'DRAFT', // Always starts as DRAFT
+    // ... other fields
+  }
+});
 ```

@@ -13,10 +13,10 @@ import machineRoutes from "./old/machine.routes";
 import { __dev__ } from "@/config/config";
 
 import employeeRoutes from "./employee.routes";
-import customerRoutes from "./customer.routes";
-import dealerRoutes from "./dealer.routes";
+import companyRoutes from "./company.routes";
 import addressRoutes from "./address.routes";
 import contactRoutes from "./contact.router";
+import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 
 const router = Router();
@@ -32,10 +32,10 @@ router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
 
 router.use("/employees", protect, employeeRoutes);
-router.use("/customers", protect, customerRoutes);
-router.use("/dealers", protect, dealerRoutes);
+router.use("/companies", protect, companyRoutes);
 router.use("/addresses", protect, addressRoutes);
 router.use("/contacts", protect, contactRoutes);
+router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
 
 router.get("/health", (req, res) => {
