@@ -111,9 +111,27 @@ export const buildQuery = (
   // Include relations
   if (params.include && params.include.length > 0) {
     result.include = params.include.reduce((acc, include) => {
-      acc[include] = true;
+      if (typeof include === "string") {
+        // Handle nested includes (e.g., "customer.contacts")
+        const parts = include.split(".");
+        if (parts.length === 1) {
+          acc[include] = true;
+        } else {
+          // Build nested structure
+          let current = acc;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = { include: {} };
+            } else if (current[parts[i]] === true) {
+              current[parts[i]] = { include: {} };
+            }
+            current = current[parts[i]].include;
+          }
+          current[parts[parts.length - 1]] = true;
+        }
+      }
       return acc;
-    }, {} as Record<string, boolean>);
+    }, {} as Record<string, any>);
   }
 
   return result;

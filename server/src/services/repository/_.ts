@@ -13,7 +13,7 @@ export abstract class BaseService<TEntity> {
   ): Promise<IServiceResult<TEntity[]>> {
     const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
 
-    const { where, orderBy, page, take, skip, select, include } = buildQuery(
+    const { where, orderBy, page, take, skip, select, include,  } = buildQuery(
       params || {},
       params?.searchFields?.map((field) => field.toString()) || []
     );

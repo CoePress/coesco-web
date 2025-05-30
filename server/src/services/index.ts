@@ -23,7 +23,7 @@ import { OptionRulesService } from "./repository/option-rules.services";
 import { ConfigurationOptionService } from "./repository/configuration-option.service";
 import { CompatibilityService } from "./logic/compatibility.service";
 import { AnalyticsService } from "./logic/analytics.service";
-import { MachineMonitorService } from "./repository/machine-monitor.service";
+import { MachineMonitorService } from "./logic/machine-monitor.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
