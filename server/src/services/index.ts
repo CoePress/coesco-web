@@ -25,6 +25,7 @@ import { ConfigurationOptionService } from "./repository/configuration-option.se
 import { CompatibilityService } from "./logic/compatibility.service";
 import { AnalyticsService } from "./logic/analytics.service";
 import { MachineMonitorService } from "./logic/machine-monitor.service";
+import { QuotingService } from "./logic/quoting.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
@@ -76,3 +77,4 @@ export const configurationOptionService = new ConfigurationOptionService();
 // Production
 // Machines
 // Machine Statuses
+export const quotingService = new QuotingService();

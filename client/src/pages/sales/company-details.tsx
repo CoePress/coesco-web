@@ -22,7 +22,7 @@ import { PageHeader, StatusBadge, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomer } from "@/utils/sample-data";
 
-const CustomerDetails = () => {
+const CompanyDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ const CustomerDetails = () => {
         title={pageTitle}
         description={pageDescription}
         backButton
-        onBack={() => navigate("/sales/customers")}
+        onBack={() => navigate("/sales/companies")}
         actions={[
           {
             type: "button",
@@ -69,11 +69,11 @@ const CustomerDetails = () => {
         ]}
       />
 
-      <div className="mx-auto p-4">
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
+      <div className="mx-auto p-2">
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
                   <img
                     src={sampleCustomer.logo}
@@ -157,8 +157,8 @@ const CustomerDetails = () => {
               </div>
             </div>
 
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="flex justify-between items-start mb-2">
                 <h2 className="font-semibold text-neutral-400">
                   Primary Contact
                 </h2>
@@ -242,8 +242,8 @@ const CustomerDetails = () => {
               </div>
             </div>
 
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="flex justify-between items-start mb-2">
                 <h2 className="font-semibold text-neutral-400">
                   Activity Summary
                 </h2>
@@ -253,7 +253,7 @@ const CustomerDetails = () => {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="border rounded-lg p-3">
                   <div className="text-xs text-neutral-400 uppercase">
                     Total Quotes
@@ -569,4 +569,4 @@ const CustomerDetails = () => {
   );
 };
 
-export default CustomerDetails;
+export default CompanyDetails;

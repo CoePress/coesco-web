@@ -13,15 +13,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
+  Button,
   Modal,
   PageHeader,
   PageSearch,
   StatusBadge,
   Table,
 } from "@/components";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency } from "@/utils";
 import { sampleQuotes } from "@/utils/sample-data";
 import { TableColumn } from "@/components/shared/table";
+import useGetQuotes from "@/hooks/sales/use-get-quotes";
 
 type Quote = {
   id: string;
@@ -37,47 +39,17 @@ type Quote = {
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
+  const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+
+  const { quotes, loading, error, refresh, pagination } = useGetQuotes();
 
   const columns: TableColumn<Quote>[] = [
     {
       key: "id",
       header: "Quote ID",
       className: "text-primary",
-    },
-    {
-      key: "name",
-      header: "Name",
-    },
-    {
-      key: "customer",
-      header: "Customer",
-      render: (_, row) => (
-        <>
-          <div>{row.customer}</div>
-          <div>{row.contact}</div>
-        </>
-      ),
-    },
-    {
-      key: "amount",
-      header: "Amount",
-      render: (value, row) => (
-        <>
-          <div>{formatCurrency(value as number)}</div>
-          <div>{row.items} items</div>
-        </>
-      ),
-    },
-    {
-      key: "date",
-      header: "Date",
-      render: (value) => <div>{formatDate(value as string)}</div>,
-    },
-    {
-      key: "expiry",
-      header: "Expiry",
-      render: (value) => <div>{formatDate(value as string)}</div>,
     },
     {
       key: "status",
@@ -95,10 +67,6 @@ const Quotes = () => {
           }
         />
       ),
-    },
-    {
-      key: "assignedTo",
-      header: "Assigned To",
     },
     {
       key: "actions",
@@ -170,23 +138,40 @@ const Quotes = () => {
 
       <Table
         columns={columns}
-        data={sampleQuotes}
+        data={quotes || []}
+        total={quotes?.length || 0}
+        idField="id"
+        pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        onPageChange={setPage}
+        sort={sort}
+        order={order}
+        onSortChange={(newSort, newOrder) => {
+          setSort(newSort as "createdAt" | "updatedAt");
+          setOrder(newOrder as "asc" | "desc");
+        }}
         onRowClick={(row) => {
           navigate(`/sales/quotes/${row.id}`);
         }}
-        total={sampleQuotes.length}
-        selectable
-        selectedItems={selectedRows}
-        onSelectionChange={setSelectedRows}
-        idField="id"
-        pagination
       />
 
       <Modal
         isOpen={isModalOpen}
         onClose={toggleModal}
-        title="New Quote">
-        <div>Modal</div>
+        title="Create New Quote"
+        size="xs">
+        <Button onClick={() => {}}>Existing Customer</Button>
+
+        <div className="text-center">
+          <span className="text-sm text-text-muted">or</span>
+        </div>
+
+        <Button
+          onClick={() => {}}
+          variant="secondary-outline">
+          New Customer
+        </Button>
       </Modal>
     </div>
   );

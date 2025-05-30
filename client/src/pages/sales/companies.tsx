@@ -14,6 +14,7 @@ import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomers } from "@/utils/sample-data";
 import { TableColumn } from "@/components/shared/table";
+import useGetCompanies from "@/hooks/sales/use-get-companies";
 
 type Customer = {
   id: number;
@@ -27,59 +28,16 @@ type Customer = {
   totalValue: number;
 };
 
-const Customers = () => {
+const Companies = () => {
   const navigate = useNavigate();
   const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
+
+  const { companies, loading, error, refresh, pagination } = useGetCompanies();
 
   const columns: TableColumn<Customer>[] = [
     {
       key: "name",
       header: "Name",
-    },
-    {
-      key: "contact",
-      header: "Contact",
-      render: (_, row) => (
-        <>
-          <div>{row.contact}</div>
-          <div>{row.email}</div>
-        </>
-      ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (value) => (
-        <StatusBadge
-          label={value as string}
-          icon={value === "active" ? CheckCircle : XCircle}
-          variant={
-            value === "active"
-              ? "success"
-              : value === "inactive"
-              ? "error"
-              : "default"
-          }
-        />
-      ),
-    },
-    {
-      key: "type",
-      header: "Type",
-    },
-    {
-      key: "location",
-      header: "Location",
-    },
-    {
-      key: "lastQuote",
-      header: "Last Quote",
-      render: (value) => formatDate(value as string),
-    },
-    {
-      key: "totalValue",
-      header: "Value",
-      render: (value) => formatCurrency(value as number),
     },
     {
       key: "actions",
@@ -95,8 +53,8 @@ const Customers = () => {
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title="Customers"
-        description={`${sampleCustomers.length} total customers`}
+        title="Companies"
+        description={`${sampleCustomers.length} total companies`}
         actions={[
           {
             type: "button",
@@ -107,7 +65,7 @@ const Customers = () => {
           },
           {
             type: "button",
-            label: "New Customer",
+            label: "New Company",
             icon: <Plus size={16} />,
             variant: "primary",
             onClick: () => {},
@@ -116,7 +74,7 @@ const Customers = () => {
       />
 
       <PageSearch
-        placeholder="Search customers..."
+        placeholder="Search companies..."
         filters={[
           { label: "Filters", icon: Filter, onClick: () => {} },
           { label: "Status", icon: ChevronDown, onClick: () => {} },
@@ -127,17 +85,14 @@ const Customers = () => {
 
       <Table<Customer>
         columns={columns}
-        data={sampleCustomers}
-        total={sampleCustomers.length}
-        selectable
-        selectedItems={selectedRows}
-        onSelectionChange={setSelectedRows}
-        onRowClick={(row) => navigate(`/sales/customers/${row.id}`)}
+        data={companies || []}
+        total={companies?.length || 0}
         idField="id"
         pagination
+        onRowClick={(row) => navigate(`/sales/companies/${row.id}`)}
       />
     </div>
   );
 };
 
-export default Customers;
+export default Companies;

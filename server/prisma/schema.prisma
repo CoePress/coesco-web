@@ -19,8 +19,8 @@ model Employee {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  journeys Journey[] @relation("RsmJourneys")
-  createdJourneys Journey[] @relation("JourneyCreatedBy")
+  journeys            Journey[]     @relation("RsmJourneys")
+  createdJourneys     Journey[]     @relation("JourneyCreatedBy")
   createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
 
   // rsmQuotes         Quote[]         @relation("QuoteRsm")
@@ -47,7 +47,7 @@ model Company {
   phoneNumber String?
   email       String?
   notes       String?
-  status      CompanyStatus
+  status      CompanyStatus @default(ACTIVE)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -93,13 +93,13 @@ model Contact {
 }
 
 model Journey {
-  id         String   @id @default(uuid())
-  rsmId      String?
-  customerId String?
-  dealerId   String?
+  id          String   @id @default(uuid())
+  rsmId       String?
+  customerId  String?
+  dealerId    String?
   createdById String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   rsm          Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
   customer     Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
@@ -135,14 +135,14 @@ model JourneyInteraction {
 }
 
 model JourneyNote {
-  id        String   @id @default(uuid())
-  journeyId String
-  note      String
+  id          String   @id @default(uuid())
+  journeyId   String
+  note        String
   createdById String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  journey Journey @relation("JourneyNotes", fields: [journeyId], references: [id])
+  journey   Journey   @relation("JourneyNotes", fields: [journeyId], references: [id])
   createdBy Employee? @relation("JourneyNoteCreatedBy", fields: [createdById], references: [id])
 
   @@map("journey_notes")

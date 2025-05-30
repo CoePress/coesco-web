@@ -5,7 +5,7 @@ import { asyncHandler } from "@/utils";
 
 const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user: {
     id: string;
     email: string;
