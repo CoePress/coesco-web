@@ -102,4 +102,16 @@ const quote = await prisma.quote.create({
     // ... other fields
   }
 });
+
+// All quotes where Alice is the RSM
+const myPipeline = await prisma.employee.findUnique({
+  where: { id: aliceId },
+  include: { rsmQuotes: true },
+});
+
+// All revisions Bob approved
+const approvals = await prisma.employee.findUnique({
+  where: { id: bobId },
+  include: { approvedRevisions: true },
+});
 ```

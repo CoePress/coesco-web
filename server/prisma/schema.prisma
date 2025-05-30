@@ -45,6 +45,8 @@ model Employee {
   createdJourneys     Journey[]     @relation("JourneyCreatedBy")
   createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
   changeLogs          ChangeLog[]
+  createdQuotes       Quote[]       @relation("QuoteCreatedBy")
+  approvedQuotes      Quote[]       @relation("QuoteApprovedBy")
 
   @@index([number])
   @@map("employees")
@@ -116,6 +118,8 @@ model Journey {
   rsmId       String?
   customerId  String?
   dealerId    String?
+  priority    String
+  confidence  Int
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -172,20 +176,31 @@ enum QuoteStatus {
   SENT
   ACCEPTED
   REJECTED
+  CANCELLED
+  EXPIRED
 }
 
 model Quote {
-  id        String      @id @default(uuid())
-  journeyId String
-  year      Int
-  number    String
-  revision  String
-  status    QuoteStatus
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id           String      @id @default(uuid())
+  journeyId    String
+  year         Int
+  number       String
+  revision     String
+  subtotal     Decimal
+  taxAmount    Decimal?
+  totalAmount  Decimal
+  currency     String
+  status       QuoteStatus
+  notes        String?
+  createdById  String
+  approvedById String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  journey Journey     @relation("JourneyQuotes", fields: [journeyId], references: [id])
-  items   QuoteItem[] @relation("QuoteItems")
+  journey    Journey     @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
+  items      QuoteItem[] @relation("QuoteItems")
 
   @@index([year, number, revision])
   @@map("quotes")
