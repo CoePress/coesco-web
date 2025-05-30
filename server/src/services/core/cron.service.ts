@@ -13,7 +13,7 @@ export class CronService {
       new CronJob(
         "0 0 * * *",
         this.wrapJob("sync-employees", async () => {
-          await employeeService.syncEmployees();
+          await employeeService.sync();
         }),
         null,
         true,

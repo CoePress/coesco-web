@@ -9,6 +9,8 @@ export class EmployeeService extends BaseService<Employee> {
   protected model = prisma.employee;
   protected entityName = "Employee";
 
+  async sync() {}
+
   protected async validate(employee: EmployeeAttributes): Promise<void> {
     if (!employee.firstName) {
       throw new BadRequestError("First name is required");
