@@ -7,27 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String?
+  microsoftId String?
+  userType    UserType @default(USER)
+  employeeId  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@map("users")
+}
+
 model Employee {
   id          String    @id @default(uuid())
   number      String    @unique
   firstName   String
   lastName    String
-  email       String?
+  initials    String?
+  email       String?   @unique
   phoneNumber String?
   hireDate    DateTime?
   jobTitle    String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  user                User?
   journeys            Journey[]     @relation("RsmJourneys")
   createdJourneys     Journey[]     @relation("JourneyCreatedBy")
   createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
-
-  // rsmQuotes         Quote[]         @relation("QuoteRsm")
-  // createdQuotes     Quote[]         @relation("QuoteCreator")
-  // createdRevisions  QuoteRevision[] @relation("RevisionCreator")
-  // approvedRevisions QuoteRevision[] @relation("RevisionApprover")
-  // changesMade       ChangeLog[]
 
   @@index([number])
   @@map("employees")
@@ -64,10 +80,10 @@ model Address {
   companyId    String
   addressLine1 String
   addressLine2 String?
-  city         String
-  state        String
-  zip          String
-  country      String
+  city         String?
+  state        String?
+  zip          String?
+  country      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -80,10 +96,10 @@ model Contact {
   id        String   @id @default(uuid())
   companyId String
   firstName String
-  lastName  String
-  email     String
-  phone     String
-  title     String
+  lastName  String?
+  email     String?
+  phone     String?
+  title     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

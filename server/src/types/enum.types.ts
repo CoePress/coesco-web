@@ -1,6 +1,6 @@
 export enum UserType {
-  INTERNAL = "INTERNAL",
-  EXTERNAL = "EXTERNAL",
+  USER = "USER",
+  ADMIN = "ADMIN",
 }
 
 export enum EmployeeRole {

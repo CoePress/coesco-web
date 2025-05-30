@@ -1,19 +1,13 @@
 import { IAuthResponse, IAuthTokens, IAuthService } from "@/types/auth.types";
-import { IEmployee } from "@/types/schema.types";
 import { sign, verify } from "jsonwebtoken";
 import { config } from "@/config/config";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { compare } from "bcrypt";
 import { ConfidentialClientApplication } from "@azure/msal-node";
-import Auth from "@/models/auth";
-import Employee from "@/models/employee";
 import { SignOptions } from "jsonwebtoken";
-import { EmployeeRole, UserType } from "@/types/enum.types";
+import { UserType, Employee } from "@prisma/client";
 import { randomUUID } from "crypto";
-
-type AuthWithEmployee = Auth & {
-  employee: Employee;
-};
+import { prisma } from "@/utils/prisma";
 
 export class AuthService implements IAuthService {
   private msalClient: ConfidentialClientApplication;
@@ -27,15 +21,14 @@ export class AuthService implements IAuthService {
       },
     });
   }
+
   private generateTokens(userId: string): IAuthTokens {
-    const token = sign(
-      { userId, userType: UserType.INTERNAL },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn } as SignOptions
-    );
+    const token = sign({ userId, userType: UserType.USER }, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
+    } as SignOptions);
 
     const refreshToken = sign(
-      { userId, userType: UserType.INTERNAL },
+      { userId, userType: UserType.USER },
       config.jwt.secret,
       { expiresIn: config.jwt.refreshExpiresIn } as SignOptions
     );
@@ -48,32 +41,27 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError("Email and password are required");
     }
 
-    const auth = (await Auth.findOne({
+    const user = await prisma.user.findUnique({
       where: { email },
-      include: [{ model: Employee, as: "employee" }],
-    })) as AuthWithEmployee;
+      include: { employee: true },
+    });
 
-    if (!auth || !auth.isActive) {
+    if (!user || !user.employee) {
       throw new UnauthorizedError("Invalid credentials");
     }
 
-    const isValidPassword = await compare(password, auth.password);
+    const isValidPassword = await compare(password, user.password || "");
     if (!isValidPassword) {
       throw new UnauthorizedError("Invalid credentials");
     }
 
-    await Employee.update(
-      { lastLogin: new Date() },
-      { where: { id: auth.employee.id } }
-    );
-
-    const { token, refreshToken } = this.generateTokens(auth.userId);
+    const { token, refreshToken } = this.generateTokens(user.id);
 
     return {
       token,
       refreshToken,
-      userType: UserType.INTERNAL,
-      user: auth.employee as unknown as IEmployee,
+      userType: user.userType,
+      user: user.employee,
     };
   }
 
@@ -108,27 +96,22 @@ export class AuthService implements IAuthService {
 
     const userInfo = await this.getMicrosoftUserInfo(tokenResponse.accessToken);
 
-    const auth = (await Auth.findOne({
-      where: { microsoftId: userInfo.id },
-      include: [{ model: Employee, as: "employee" }],
-    })) as AuthWithEmployee;
+    const user = await prisma.user.findUnique({
+      where: { email: userInfo.mail },
+      include: { employee: true },
+    });
 
-    if (!auth) {
+    if (!user || !user.employee) {
       throw new UnauthorizedError("No account found for this Microsoft user");
     }
 
-    await Employee.update(
-      { lastLogin: new Date() },
-      { where: { id: auth.employee.id } }
-    );
-
-    const { token, refreshToken } = this.generateTokens(auth.userId);
+    const { token, refreshToken } = this.generateTokens(user.id);
 
     return {
       token,
       refreshToken,
-      userType: UserType.INTERNAL,
-      user: auth.employee as unknown as IEmployee,
+      userType: user.userType,
+      user: user.employee,
     };
   }
 
@@ -142,15 +125,14 @@ export class AuthService implements IAuthService {
       userType: UserType;
     };
 
-    const auth = (await Auth.findOne({
+    const user = await prisma.user.findUnique({
       where: {
-        userId: decoded.userId,
-        isActive: true,
+        id: decoded.userId,
       },
-      include: [{ model: Employee, as: "employee" }],
-    })) as AuthWithEmployee;
+      include: { employee: true },
+    });
 
-    if (!auth) {
+    if (!user || !user.employee) {
       throw new UnauthorizedError("User not found");
     }
 
@@ -158,7 +140,7 @@ export class AuthService implements IAuthService {
       token: accessToken,
       refreshToken: "",
       userType: decoded.userType,
-      user: auth.employee as unknown as IEmployee,
+      user: user.employee,
     };
   }
 
@@ -177,48 +159,43 @@ export class AuthService implements IAuthService {
   }
 
   async testLogin(): Promise<IAuthResponse> {
-    let testEmployee = await Employee.findOne({
+    let testEmployee = await prisma.employee.findUnique({
       where: { email: "test@example.com" },
     });
 
     if (!testEmployee) {
-      testEmployee = await Employee.create({
-        id: randomUUID(),
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        jobTitle: "Test Job",
-        role: EmployeeRole.EMPLOYEE,
+      testEmployee = await prisma.employee.create({
+        data: {
+          firstName: "Test",
+          lastName: "User",
+          email: "test@example.com",
+          jobTitle: "Test Job",
+          number: "TEST",
+        },
       });
     }
 
-    let auth = await Auth.findOne({
+    let user = await prisma.user.findUnique({
       where: { email: "test@example.com" },
     });
 
-    if (!auth) {
-      auth = await Auth.create({
-        id: randomUUID(),
-        email: "test@example.com",
-        userId: testEmployee.id,
-        userType: UserType.INTERNAL,
-        isActive: true,
-        isVerified: true,
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: "test@example.com",
+          employeeId: testEmployee.id,
+          userType: UserType.USER,
+        },
       });
     }
 
-    await Employee.update(
-      { lastLogin: new Date() },
-      { where: { id: testEmployee.id } }
-    );
-
-    const { token, refreshToken } = this.generateTokens(testEmployee.id);
+    const { token, refreshToken } = this.generateTokens(user.id);
 
     return {
       token,
       refreshToken,
-      userType: UserType.INTERNAL,
-      user: testEmployee as unknown as IEmployee,
+      userType: user.userType,
+      user: testEmployee,
     };
   }
 }

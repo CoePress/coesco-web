@@ -1,5 +1,4 @@
-import { ICustomer, IEmployee } from "@/types/schema.types";
-import { UserType } from "@/types/enum.types";
+import { Employee, UserType } from "@prisma/client";
 
 export interface IAuth {
   id: string;
@@ -26,7 +25,7 @@ export interface IAuthResponse {
   token: string;
   refreshToken: string;
   userType: UserType;
-  user: IEmployee | ICustomer;
+  user: Employee;
 }
 
 export interface IAuthTokens {
@@ -38,7 +37,7 @@ export interface IAuthService {
   login(email: string, password: string): Promise<IAuthResponse>;
   loginWithMicrosoft(): Promise<string>;
   callback(code: string, sessionId: string): Promise<IAuthResponse>;
-  session(sessionId: string, authSession: string): Promise<IAuthResponse>;
+  session(accessToken: string): Promise<IAuthResponse>;
 }
 
 export interface IQueryParams<T> {
