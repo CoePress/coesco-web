@@ -6,64 +6,65 @@ import {
   companyService,
   contactService,
 } from "..";
+import { BadRequestError } from "@/middleware/error.middleware";
+
+// TODO: make this transactional
 
 export class SalesService {
   async createSandboxQuote(employee: any) {
-    const company = await prisma.company.create({
-      data: {
-        name: "Sandbox Company",
-        website: "sandbox.com",
-        email: "sandbox@sandbox.com",
-        phone: "+1234567890",
-        fax: "+1234567890",
-        industry: "OTHER",
-        yearFounded: 2020,
-        revenue: 1000000,
-        employeeCount: "10",
-        customerSince: new Date(),
-        paymentTerms: "NET 30",
-        creditLimit: 100000,
-        taxId: "1234567890",
-        logoUrl:
-          "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
-        status: "STAGING",
-      },
-    });
-
-    // sandbox journey
-    const journey = await prisma.journey.create({
-      data: {
-        customer: {
-          connect: {
-            id: company.id,
-          },
-        },
-        createdBy: {
-          connect: {
-            id: employee.id,
-          },
-        },
-        priority: "LOW",
-        confidence: 1,
-      },
-    });
-
     const quoteNumber = await quoteService.generateQuoteNumber(true);
 
-    // sandbox quote
-    const quote = await prisma.quote.create({
-      data: {
-        journeyId: journey.id,
-        status: "DRAFT",
-        year: quoteNumber.year,
-        number: quoteNumber.number,
-        revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
-      },
+    const company = await companyService.create({
+      name: `Sandbox Company (${quoteNumber.number})`,
+      website: "sandbox.com",
+      email: "sandbox@sandbox.com",
+      phone: "+1234567890",
+      fax: "+1234567890",
+      industry: "OTHER",
+      yearFounded: 2020,
+      revenue: 1000000,
+      employeeCount: "10",
+      customerSince: new Date(),
+      paymentTerms: "NET 30",
+      creditLimit: 100000,
+      taxId: "1234567890",
+      logoUrl:
+        "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
+      status: "STAGING",
     });
+
+    if (!company.success || !company.data) {
+      throw new BadRequestError("Company not created");
+    }
+
+    // sandbox journey
+    const journey = await journeyService.create({
+      customer: { connect: { id: company.data.id } },
+      createdBy: { connect: { id: employee.id } },
+      priority: "LOW",
+      confidence: 1,
+    });
+
+    if (!journey.success || !journey.data) {
+      throw new BadRequestError("Journey not created");
+    }
+
+    // sandbox quote
+    const quote = await quoteService.create({
+      journeyId: journey.data.id,
+      status: "DRAFT",
+      year: quoteNumber.year,
+      number: quoteNumber.number,
+      revision: "A",
+      subtotal: 0,
+      totalAmount: 0,
+      currency: "USD",
+      createdById: employee.id,
+    });
+
+    if (!quote.success || !quote.data) {
+      throw new BadRequestError("Quote not created");
+    }
 
     return {
       company,
@@ -181,5 +182,21 @@ export class SalesService {
         dealerQuotes,
       },
     };
+  }
+
+  async transferQuoteToCustomer(quoteId: string, newCustomerId: string) {
+    // if new customer doesn't have a journey, create one
+
+    const customer = await companyService.getById(newCustomerId);
+
+    if (!customer.success || !customer.data) {
+      throw new Error("Customer not found");
+    }
+
+    const journey = await journeyService.getAll({
+      filter: {
+        customerId: newCustomerId,
+      },
+    });
   }
 }

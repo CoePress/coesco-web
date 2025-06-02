@@ -9,8 +9,10 @@ export class JourneyService extends BaseService<Journey> {
   protected model = prisma.journey;
   protected entityName = "Journey";
 
-  protected async validate(journey: JourneyAttributes): Promise<void> {
-    if (!journey.customerId) {
+  protected async validate(journey: JourneyAttributes | any): Promise<void> {
+    const customerId = journey.customerId || journey.customer?.connect?.id;
+
+    if (!customerId) {
       throw new BadRequestError("Customer ID is required");
     }
   }

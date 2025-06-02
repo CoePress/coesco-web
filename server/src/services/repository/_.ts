@@ -13,7 +13,7 @@ export abstract class BaseService<TEntity> {
   ): Promise<IServiceResult<TEntity[]>> {
     const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
 
-    const { where, orderBy, page, take, skip, select, include,  } = buildQuery(
+    const { where, orderBy, page, take, skip, select, include } = buildQuery(
       params || {},
       params?.searchFields?.map((field) => field.toString()) || []
     );
@@ -63,13 +63,21 @@ export abstract class BaseService<TEntity> {
   }
 
   async create(
-    data: Omit<TEntity, "id" | "createdAt" | "updatedAt">,
+    data:
+      | Omit<TEntity, "id" | "createdAt" | "updatedAt">
+      | Prisma.Args<any, "create">["data"],
     tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<TEntity>> {
-    await this.validate(data, tx);
-    const entity = await (tx
-      ? (tx as any)[this.entityName.toLowerCase()].create({ data })
-      : this.model.create({ data }));
+    const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
+
+    if (!("connect" in data) && !("create" in data)) {
+      await this.validate(
+        data as Omit<TEntity, "id" | "createdAt" | "updatedAt">,
+        tx
+      );
+    }
+
+    const entity = await model.create({ data });
     return { success: true, data: entity };
   }
 
