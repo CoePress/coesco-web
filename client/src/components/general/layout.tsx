@@ -6,7 +6,6 @@ import modules from "@/config/modules";
 import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
-import { IEmployee } from "@/utils/types";
 import Button from "../shared/button";
 import { useAppContext } from "@/contexts/app.context";
 
@@ -102,10 +101,10 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
 type LayoutProps = {
   children: React.ReactNode;
-  user: IEmployee;
+  employee: any;
 };
 
-const Layout = ({ user, children }: LayoutProps) => {
+const Layout = ({ employee, children }: LayoutProps) => {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -253,7 +252,7 @@ const Layout = ({ user, children }: LayoutProps) => {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
-          user={user}
+          employee={employee}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={sidebarExpanded}
         />

@@ -1,7 +1,7 @@
 import { prisma } from "@/utils/prisma";
 
 export class SalesService {
-  async createSandboxQuote(user: any) {
+  async createSandboxQuote(user: any, employee: any) {
     // sandbox company
     const company = await prisma.company.create({
       data: {
@@ -20,7 +20,7 @@ export class SalesService {
         },
         createdBy: {
           connect: {
-            id: user.id,
+            id: employee.id,
           },
         },
         priority: "LOW",
@@ -39,7 +39,7 @@ export class SalesService {
         subtotal: 0,
         totalAmount: 0,
         currency: "USD",
-        createdById: user.id,
+        createdById: employee.id,
       },
     });
 

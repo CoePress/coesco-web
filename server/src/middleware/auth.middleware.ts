@@ -2,14 +2,22 @@ import { Request, Response, NextFunction } from "express";
 import { UnauthorizedError } from "./error.middleware";
 import { decode } from "jsonwebtoken";
 import { asyncHandler } from "@/utils";
+import { prisma } from "@/utils/prisma";
 
 const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
 
 export interface AuthenticatedRequest extends Request {
   user: {
     id: string;
+    role: string;
+  };
+  employee: {
+    id: string;
+    firstName: string;
+    lastName: string;
     email: string;
-    userType: string;
+    jobTitle: string;
+    number: string;
   };
 }
 
@@ -19,8 +27,7 @@ export const protect = asyncHandler(
     if (apiKey && API_KEYS.has(apiKey as string)) {
       req.user = {
         id: "system",
-        email: "system@cpec.com",
-        userType: "SYSTEM",
+        role: "SYSTEM",
       };
       return next();
     }
@@ -37,17 +44,27 @@ export const protect = asyncHandler(
       throw new UnauthorizedError(`Unauthorized`);
     }
 
-    const user = {
-      id: decoded.userId,
-      email: "test@test.com",
-      userType: decoded.userType,
-    };
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { employee: true },
+    });
 
-    if (!user) {
+    if (!user || !user.employee) {
       throw new UnauthorizedError("Unauthorized");
     }
 
-    req.user = user;
+    req.user = {
+      id: user.id,
+      role: user.userType,
+    };
+    req.employee = {
+      id: user.employee.id,
+      firstName: user.employee.firstName,
+      lastName: user.employee.lastName,
+      email: user.employee.email || "",
+      jobTitle: user.employee.jobTitle,
+      number: user.employee.number,
+    };
     next();
   }
 );

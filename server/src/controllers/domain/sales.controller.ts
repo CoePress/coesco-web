@@ -10,7 +10,10 @@ export class SalesController {
     next: NextFunction
   ) {
     try {
-      const result = await salesService.createSandboxQuote(req.user);
+      const result = await salesService.createSandboxQuote(
+        req.user,
+        req.employee
+      );
       res.status(200).json(result);
     } catch (error) {
       next(error);

@@ -1,23 +1,22 @@
 import { Button } from "@/components";
 import useLogout from "@/hooks/auth/use-logout";
-import { IEmployee } from "@/utils/types";
 import { LogOut, Settings, User, ChevronsRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type HeaderProps = {
-  user: IEmployee;
+  employee: any;
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
 };
 
-const Header = ({ user, toggleSidebar, isSidebarOpen }: HeaderProps) => {
+const Header = ({ employee, toggleSidebar, isSidebarOpen }: HeaderProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { logout } = useLogout();
 
-  const firstName = user.firstName;
-  const lastInitial = user.lastName.charAt(0);
+  const firstName = employee.firstName;
+  const lastInitial = employee.lastName.charAt(0);
   const initials = `${firstName.charAt(0)}${lastInitial}`;
 
   useEffect(() => {
@@ -63,7 +62,9 @@ const Header = ({ user, toggleSidebar, isSidebarOpen }: HeaderProps) => {
                 <span className="text-sm font-medium text-text-muted">
                   {firstName} {lastInitial}.
                 </span>
-                <span className="text-xs text-text-muted">{user.jobTitle}</span>
+                <span className="text-xs text-text-muted">
+                  {employee.jobTitle}
+                </span>
               </div>
               <div className="w-8 h-8 rounded-full object-cover ring-2 ring-border flex items-center justify-center">
                 <span className="text-sm font-medium text-text-muted leading-none tracking-tighter">

@@ -36,7 +36,7 @@ export class AuthService implements IAuthService {
     return { token, refreshToken };
   }
 
-  async login(email: string, password: string): Promise<IAuthResponse> {
+  async login(email: string, password: string): Promise<any> {
     if (!email || !password) {
       throw new UnauthorizedError("Email and password are required");
     }
@@ -60,8 +60,18 @@ export class AuthService implements IAuthService {
     return {
       token,
       refreshToken,
-      userType: user.userType,
-      user: user.employee,
+      user: {
+        id: user.id,
+        role: user.userType,
+      },
+      employee: {
+        id: user.employee.id,
+        number: user.employee.number,
+        firstName: user.employee.firstName,
+        lastName: user.employee.lastName,
+        email: user.employee.email,
+        jobTitle: user.employee.jobTitle,
+      },
     };
   }
 
@@ -79,7 +89,7 @@ export class AuthService implements IAuthService {
     );
   }
 
-  async callback(code: string, sessionId: string): Promise<IAuthResponse> {
+  async callback(code: string, sessionId: string): Promise<any> {
     if (!code || !sessionId) {
       throw new UnauthorizedError("Code and session ID are required");
     }
@@ -110,8 +120,18 @@ export class AuthService implements IAuthService {
     return {
       token,
       refreshToken,
-      userType: user.userType,
-      user: user.employee,
+      user: {
+        id: user.id,
+        role: user.userType,
+      },
+      employee: {
+        id: user.employee.id,
+        number: user.employee.number,
+        firstName: user.employee.firstName,
+        lastName: user.employee.lastName,
+        email: user.employee.email,
+        jobTitle: user.employee.jobTitle,
+      },
     };
   }
 
@@ -139,8 +159,8 @@ export class AuthService implements IAuthService {
     return {
       token: accessToken,
       refreshToken: "",
-      userType: decoded.userType,
-      user: user.employee,
+      user,
+      employee: user.employee,
     };
   }
 
@@ -158,32 +178,36 @@ export class AuthService implements IAuthService {
     return response.json();
   }
 
-  async testLogin(): Promise<IAuthResponse> {
-    let testEmployee = await prisma.employee.findUnique({
-      where: { email: "test@example.com" },
+  async testLogin(): Promise<any> {
+    let employee = await prisma.employee.findUnique({
+      where: { email: "sample@example.com" },
     });
 
-    if (!testEmployee) {
-      testEmployee = await prisma.employee.create({
+    if (!employee) {
+      employee = await prisma.employee.create({
         data: {
-          firstName: "Test",
-          lastName: "User",
-          email: "test@example.com",
-          jobTitle: "Test Job",
-          number: "TEST",
+          firstName: "Sample",
+          lastName: "Employee",
+          email: "sample@example.com",
+          jobTitle: "Sales Manager",
+          number: randomUUID().slice(0, 6),
         },
       });
     }
 
     let user = await prisma.user.findUnique({
-      where: { email: "test@example.com" },
+      where: { email: "sample@example.com" },
     });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
-          email: "test@example.com",
-          employeeId: testEmployee.id,
+          email: "sample@example.com",
+          employee: {
+            connect: {
+              id: employee.id,
+            },
+          },
           userType: UserType.USER,
         },
       });
@@ -194,8 +218,18 @@ export class AuthService implements IAuthService {
     return {
       token,
       refreshToken,
-      userType: user.userType,
-      user: testEmployee,
+      user: {
+        id: user.id,
+        role: user.userType,
+      },
+      employee: {
+        id: employee.id,
+        number: employee.number,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        email: employee.email,
+        jobTitle: employee.jobTitle,
+      },
     };
   }
 }

@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const PublicRoute = () => {
-  const { user, isLoading } = useAuth();
+  const { user, employee, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -40,7 +40,7 @@ export const PublicRoute = () => {
 };
 
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+  const { user, employee, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -78,14 +78,14 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }
 
   return (
-    <Layout user={user}>
+    <Layout employee={employee}>
       <Outlet />
     </Layout>
   );
 };
 
 export const ProtectedRouteWithoutLayout = () => {
-  const { user, isLoading } = useAuth();
+  const { user, employee, isLoading } = useAuth();
 
   if (isLoading) {
     return (

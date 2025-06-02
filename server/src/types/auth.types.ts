@@ -1,4 +1,4 @@
-import { Employee, UserType } from "@prisma/client";
+import { Employee, User, UserType } from "@prisma/client";
 
 export interface IAuth {
   id: string;
@@ -13,19 +13,14 @@ export interface IAuth {
   updatedAt: Date;
 }
 
-export interface IAuthIncludes extends IAuth {
-  employee?: IEmployee;
-  customer?: ICustomer;
-}
-
 export interface IAuthAttributes
   extends Omit<IAuth, "createdAt" | "updatedAt"> {}
 
 export interface IAuthResponse {
   token: string;
   refreshToken: string;
-  userType: UserType;
-  user: Employee;
+  user: User;
+  employee: Employee;
 }
 
 export interface IAuthTokens {
