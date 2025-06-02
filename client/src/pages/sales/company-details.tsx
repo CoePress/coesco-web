@@ -12,13 +12,14 @@ import {
   ChevronDown,
   Download,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { PageHeader, StatusBadge, Tabs } from "@/components";
+import { PageHeader, StatusBadge, Table, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { sampleCustomer } from "@/utils/sample-data";
 import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
+import { TableColumn } from "@/components/shared/table";
+import useGetQuotes from "@/hooks/sales/use-get-quotes";
 
 const sampleCompanyMetrics = {
   businessType: "Manufacturer & Supplier",
@@ -68,6 +69,65 @@ const sampleCompanyMetrics = {
   ],
 };
 
+const QuotesTab = () => {
+  const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+
+  const companyId = useParams().id;
+
+  // Memoize the filter object to prevent infinite re-renders
+  const filter = useMemo(
+    () => ({
+      journey: {
+        customerId: companyId || "",
+      },
+    }),
+    [companyId]
+  );
+
+  const columns: TableColumn<any>[] = [
+    {
+      key: "id",
+      header: "Quote Number",
+      className: "text-primary",
+    },
+    {
+      key: "quoteDate",
+      header: "Quote Date",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (value) => <StatusBadge label={value} />,
+    },
+    {
+      key: "total",
+      header: "Total",
+    },
+  ];
+
+  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
+    filter,
+  });
+
+  return (
+    <Table
+      columns={columns}
+      data={quotes || []}
+      total={pagination?.total || 0}
+      currentPage={page}
+      totalPages={pagination?.totalPages || 1}
+      onPageChange={setPage}
+      onSortChange={(sort, order) => {
+        setSort(sort as "createdAt" | "updatedAt");
+        setOrder(order);
+      }}
+      sort={sort}
+      order={order}
+    />
+  );
+};
 const CompanyDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -85,7 +145,7 @@ const CompanyDetails = () => {
     : "";
 
   return (
-    <div className="w-full flex-1">
+    <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
@@ -122,7 +182,7 @@ const CompanyDetails = () => {
         ]}
       />
       {activeTab === "overview" && (
-        <div className="mx-auto p-2">
+        <div className="p-2 flex flex-1 flex-col">
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
@@ -522,9 +582,7 @@ const CompanyDetails = () => {
         </div>
       )}
 
-      {activeTab === "quotes" && (
-        <div className="text-center py-8 text-neutral-400"></div>
-      )}
+      {activeTab === "quotes" && <QuotesTab />}
 
       {activeTab === "orders" && (
         <div className="text-center py-8 text-neutral-400">
