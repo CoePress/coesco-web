@@ -81,6 +81,7 @@ model Company {
   paymentTerms  String?
   creditLimit   Int?
   taxId         String?
+  logoUrl       String?
   notes         String?
   status        CompanyStatus @default(ACTIVE)
   createdAt     DateTime      @default(now())

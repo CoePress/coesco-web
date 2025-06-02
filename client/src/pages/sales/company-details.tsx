@@ -129,9 +129,9 @@ const CompanyDetails = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src={companyOverview?.company.logo}
+                      src={companyOverview?.company.logoUrl}
                       alt={companyOverview?.company.name}
-                      className="h-12 w-12 rounded-lg"
+                      className="h-12 w-12 rounded"
                     />
                     <div>
                       <h2 className="font-semibold text-neutral-400">
@@ -230,7 +230,9 @@ const CompanyDetails = () => {
                           Annual Revenue
                         </div>
                         <div className="text-sm text-neutral-400">
-                          {companyOverview?.company.revenue || "-"}
+                          {formatCurrency(
+                            companyOverview?.company.revenue || 0
+                          )}
                         </div>
                       </div>
                       <div>
@@ -266,6 +268,16 @@ const CompanyDetails = () => {
                           {companyOverview?.company.paymentTerms || "-"}
                         </div>
                       </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">
+                          Credit Limit
+                        </div>
+                        <div className="text-sm text-neutral-400">
+                          {formatCurrency(
+                            companyOverview?.company.creditLimit || 0
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -273,81 +285,114 @@ const CompanyDetails = () => {
 
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-3 mb-3">
-                    <img
-                      src={sampleCustomer.primaryContact.profileImage}
-                      alt={sampleCustomer.primaryContact.name}
-                      className="h-10 w-10 rounded-full"
-                    />
-                    <div>
-                      <div className="font-medium text-neutral-400">
-                        {sampleCustomer.primaryContact.name}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-neutral-400">
+                      Addresses
+                    </div>
+                    <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                      View All
+                    </button>
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin
+                          size={16}
+                          className="text-neutral-400"
+                        />
+                        <div>
+                          <div className="text-sm text-neutral-400">
+                            123 Business Street, Suite 100
+                          </div>
+                          <div className="text-xs text-neutral-400">
+                            New York, NY 10001
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-neutral-400">
-                        {sampleCustomer.primaryContact.role}
+                      <Star
+                        size={16}
+                        className="text-primary fill-primary"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin
+                          size={16}
+                          className="text-neutral-400"
+                        />
+                        <div>
+                          <div className="text-sm text-neutral-400">
+                            456 Finance Avenue, Floor 3
+                          </div>
+                          <div className="text-xs text-neutral-400">
+                            New York, NY 10002
+                          </div>
+                        </div>
                       </div>
+                      <Star
+                        size={16}
+                        className="text-neutral-300"
+                      />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Mail
-                        size={16}
-                        className="text-neutral-400 flex-shrink-0"
-                      />
-                      <a
-                        href={`mailto:${sampleCustomer.primaryContact.email}`}
-                        className="text-sm text-primary hover:underline">
-                        {sampleCustomer.primaryContact.email}
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone
-                        size={16}
-                        className="text-neutral-400 flex-shrink-0"
-                      />
-                      <a
-                        href={`tel:${sampleCustomer.primaryContact.phone}`}
-                        className="text-sm text-neutral-400">
-                        {sampleCustomer.primaryContact.phone}
-                      </a>
-                    </div>
-                  </div>
+
                   <div className="mt-4 pt-3 border-t">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium text-neutral-400">
-                        Additional Contacts
+                        Contacts
                       </div>
-                      <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1">
-                        View All <ChevronDown size={14} />
+                      <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                        View All
                       </button>
                     </div>
                     <div className="mt-2 space-y-2">
-                      {sampleCustomer.additionalContacts
-                        .slice(0, 2)
-                        .map((contact, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2">
-                            <img
-                              src={contact.profileImage}
-                              alt={contact.name}
-                              className="h-6 w-6 rounded-full"
-                            />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src="https://i.pravatar.cc/150?img=1"
+                            alt="John Smith"
+                            className="h-6 w-6 rounded-full"
+                          />
+                          <div>
                             <div className="text-sm text-neutral-400">
-                              {contact.name}
+                              John Smith
+                            </div>
+                            <div className="text-xs text-neutral-400">CEO</div>
+                          </div>
+                        </div>
+                        <Star
+                          size={16}
+                          className="text-primary fill-primary"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src="https://i.pravatar.cc/150?img=3"
+                            alt="Mike Wilson"
+                            className="h-6 w-6 rounded-full"
+                          />
+                          <div>
+                            <div className="text-sm text-neutral-400">
+                              Mike Wilson
                             </div>
                             <div className="text-xs text-neutral-400">
-                              ({contact.role})
+                              Finance Director
                             </div>
                           </div>
-                        ))}
+                        </div>
+                        <Star
+                          size={16}
+                          className="text-neutral-300"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            {/* <div className="grid grid-cols-2 gap-2">
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
                 <div className="flex justify-between items-start mb-2">
                   <h2 className="font-semibold text-neutral-400">
@@ -472,7 +517,7 @@ const CompanyDetails = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       )}
