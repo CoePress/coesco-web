@@ -34,7 +34,7 @@ export class SalesService {
         journeyId: journey.id,
         status: "DRAFT",
         year: new Date().getFullYear(),
-        number: "1",
+        number: "0",
         revision: "A",
         subtotal: 0,
         totalAmount: 0,
@@ -51,4 +51,23 @@ export class SalesService {
   }
 
   async createCustomerQuote(user: any, customerId: string) {}
+
+  async createRevision(user: any, quoteId: string) {}
+
+  async getQuoteOverview(quoteId: string) {
+    // get quote
+    // get items
+    // get previous revisions
+    // get customer details
+    // CUSTOMER
+    // companyName
+    // contactName
+    // contactEmail
+    // contactPhone
+    // contactAddress
+    // contactCity
+    // contactState
+    // contactZip
+    // contactCountry
+  }
 }

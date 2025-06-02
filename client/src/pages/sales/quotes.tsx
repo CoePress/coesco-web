@@ -5,7 +5,6 @@ import {
   MoreHorizontal,
   ChevronDown,
   ExternalLink,
-  DollarSign,
   CheckCircle,
   XCircle,
 } from "lucide-react";
@@ -52,6 +51,27 @@ const Quotes = () => {
       className: "text-primary",
     },
     {
+      key: "year",
+      header: "Year",
+      className: "text-primary",
+    },
+    {
+      key: "number",
+      header: "Number",
+      className: "text-primary",
+    },
+    {
+      key: "revision",
+      header: "Revision",
+      className: "text-primary",
+    },
+    {
+      key: "totalAmount",
+      header: "Total Amount",
+      className: "text-primary",
+      render: (value) => formatCurrency(value as number),
+    },
+    {
       key: "status",
       header: "Status",
       render: (value) => (
@@ -78,9 +98,6 @@ const Quotes = () => {
           </button>
           <button onClick={(e) => e.stopPropagation()}>
             <ExternalLink size={16} />
-          </button>
-          <button onClick={(e) => e.stopPropagation()}>
-            <DollarSign size={16} />
           </button>
         </div>
       ),
@@ -170,7 +187,7 @@ const Quotes = () => {
         <Button
           onClick={() => {}}
           variant="secondary-outline">
-          New Customer
+          Sandbox Quote
         </Button>
       </Modal>
     </div>
