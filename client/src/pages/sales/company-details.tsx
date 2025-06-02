@@ -8,54 +8,6 @@ import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
 
-const sampleCompanyMetrics = {
-  businessType: "Manufacturer & Supplier",
-  relationshipType: "Strategic Partner",
-  onTimeDelivery: 98.5,
-  qualityRating: 4.8,
-  avgOrderValue: 125000,
-  orderFrequency: 2.3,
-  totalValue: 2500000,
-  activeProjects: 3,
-  recentActivity: [
-    {
-      user: "John Smith",
-      description: "Updated manufacturing specifications for Project Alpha",
-      date: "2024-03-15T10:30:00Z",
-      profileImage: "https://i.pravatar.cc/150?img=1",
-      type: "manufacturing",
-    },
-    {
-      user: "Sarah Johnson",
-      description: "Submitted new supplier qualification documents",
-      date: "2024-03-14T15:45:00Z",
-      profileImage: "https://i.pravatar.cc/150?img=2",
-      type: "supplier",
-    },
-    {
-      user: "Mike Wilson",
-      description: "Approved joint development agreement",
-      date: "2024-03-13T09:15:00Z",
-      profileImage: "https://i.pravatar.cc/150?img=3",
-      type: "partnership",
-    },
-    {
-      user: "Lisa Brown",
-      description: "Completed quality audit for supplier certification",
-      date: "2024-03-12T14:20:00Z",
-      profileImage: "https://i.pravatar.cc/150?img=4",
-      type: "quality",
-    },
-    {
-      user: "David Chen",
-      description: "Updated shared manufacturing capacity",
-      date: "2024-03-11T11:30:00Z",
-      profileImage: "https://i.pravatar.cc/150?img=5",
-      type: "manufacturing",
-    },
-  ],
-};
-
 const QuotesTab = () => {
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");

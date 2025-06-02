@@ -9,7 +9,7 @@ import {
   ArrowUpRight,
   ChevronDown,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 
 import {
   Button,
@@ -121,6 +121,14 @@ const QuoteDetails = () => {
   const total = useMemo(() => {
     return subtotal - discount + tax;
   }, [subtotal, discount, tax]);
+
+  const customer = useMemo(() => {
+    return quoteOverview?.customer || null;
+  }, [quoteOverview]);
+
+  const dealer = useMemo(() => {
+    return quoteOverview?.dealer || null;
+  }, [quoteOverview]);
 
   const pageTitle = `${quoteOverview?.quote?.id}`;
   const pageDescription = `${quoteOverview?.quote?.id} • `;
@@ -243,150 +251,160 @@ const QuoteDetails = () => {
             </div> */}
 
             {/* Overview */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="font-semibold text-text-muted">Overview</h2>
-                <StatusBadge
-                  label={sampleQuote.status}
-                  icon={
-                    sampleQuote.status === "accepted" ? CheckCircle : XCircle
-                  }
-                  variant={
-                    sampleQuote.status === "accepted" ? "success" : "error"
-                  }
-                />
-              </div>
-              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
-                <div>
-                  <div className="text-sm text-text-muted">Date Created</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {formatDate(sampleQuote.date)}
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex justify-between items-start col-span-2">
+                  <div className="text-sm font-medium text-neutral-400">
+                    Quote Details
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Created By</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    John Doe
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Date Approved</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {formatDate(sampleQuote.expiry)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Approved By</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    John Doe
-                  </div>
+                  <StatusBadge
+                    label={sampleQuote.status}
+                    icon={
+                      sampleQuote.status === "accepted" ? CheckCircle : XCircle
+                    }
+                    variant={
+                      sampleQuote.status === "accepted" ? "success" : "error"
+                    }
+                  />
                 </div>
 
-                <div className="col-span-2">
-                  <div className="text-sm text-text-muted">Notes</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.notes}
+                <div>
+                  <div className="text-xs text-neutral-400">Number</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.year}-{quoteOverview?.quote?.number}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Revision</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.revision || "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Created On</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.createdAt
+                      ? formatDate(quoteOverview?.quote?.createdAt)
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Expires On</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.expiryDate
+                      ? formatDate(quoteOverview?.quote?.expiryDate)
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Quote Status</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.status || "-"}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Customer */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="font-semibold text-text-muted">Customer</h2>
-                <a
-                  href={`/sales/customers/${sampleQuote.customer.id}`}
-                  className="text-sm text-primary hover:underline">
-                  View Customer
-                </a>
-              </div>
-              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <div className="text-sm text-text-muted">Company</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.name}
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="text-sm font-medium text-neutral-400 mb-3">
+                      Customer Details
+                    </div>
+
+                    <Link
+                      to={`/sales/companies/${customer?.id}`}
+                      className="text-sm text-neutral-400 hover:text-neutral-500">
+                      View
+                    </Link>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Contact</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.contact}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Email</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.email}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Phone</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.phone}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Fax</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.phone}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Address</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.address}
-                  </div>
+                  {customer ? (
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-neutral-400">Name</div>
+                        <div className="text-sm text-neutral-400">
+                          {customer?.name || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Contact</div>
+                        <div className="text-sm text-neutral-400">
+                          {customer?.contact || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Email</div>
+                        <div className="text-sm text-neutral-400">
+                          {customer?.email || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Phone</div>
+                        <div className="text-sm text-neutral-400">
+                          {customer?.phone || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-neutral-400 text-center">
+                      No customer associated with this quote
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Dealer */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-4">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="font-semibold text-text-muted">Dealer</h2>
-                <a
-                  href={`/sales/customers/${sampleQuote.customer.id}`}
-                  className="text-sm text-primary hover:underline">
-                  View Dealer
-                </a>
-              </div>
-              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <div className="text-sm text-text-muted">Company</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.name}
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="text-sm font-medium text-neutral-400">
+                      Dealer Details
+                    </div>
+
+                    {dealer && (
+                      <Link
+                        to={`/sales/companies/${dealer?.id}`}
+                        className="text-sm text-neutral-400 hover:text-neutral-500">
+                        View
+                      </Link>
+                    )}
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Contact</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.contact}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Email</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.email}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Phone</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.phone}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Fax</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.phone}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Address</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.customer.address}
-                  </div>
+                  {dealer ? (
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-neutral-400">Name</div>
+                        <div className="text-sm text-neutral-400">
+                          {dealer?.name || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Contact</div>
+                        <div className="text-sm text-neutral-400">
+                          {dealer?.contact || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Email</div>
+                        <div className="text-sm text-neutral-400">
+                          {dealer?.email || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">Phone</div>
+                        <div className="text-sm text-neutral-400">
+                          {dealer?.phone || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-neutral-400 text-center">
+                      No dealer associated with this quote
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -394,7 +412,9 @@ const QuoteDetails = () => {
 
           <div className="bg-foreground rounded-lg shadow-sm border overflow-hidden">
             <div className="p-2 bg-foreground border-b flex justify-between items-center">
-              <h2 className="font-semibold text-text-muted">Quote Items</h2>
+              <h2 className="font-semibold text-text-muted text-sm">
+                Quote Items
+              </h2>
               <Button
                 onClick={toggleModal}
                 variant="secondary-outline">
@@ -601,7 +621,7 @@ const QuoteDetails = () => {
                 {
                   key: "quantity",
                   header: "Quantity",
-                  render: (_, row) => (
+                  render: (_) => (
                     <input
                       type="number"
                       min="1"
@@ -640,7 +660,7 @@ const QuoteDetails = () => {
                 {
                   key: "quantity",
                   header: "Quantity",
-                  render: (_, row) => (
+                  render: (_) => (
                     <input
                       type="number"
                       min="1"
