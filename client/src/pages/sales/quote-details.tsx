@@ -130,8 +130,17 @@ const QuoteDetails = () => {
     return quoteOverview?.dealer || null;
   }, [quoteOverview]);
 
+  const itemCount = useMemo(() => {
+    return quoteItems.reduce(
+      (acc: number, item: any) => acc + item.quantity,
+      0
+    );
+  }, [quoteItems]);
+
   const pageTitle = `${customer?.name} • ${quoteOverview?.quote?.year}-${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
-  const pageDescription = `${quoteOverview?.quote?.status}`;
+  const pageDescription = `${
+    quoteOverview?.quote?.status
+  } • ${itemCount} items • ${formatCurrency(total)}`;
 
   return (
     <div className="w-full flex-1">
@@ -293,17 +302,35 @@ const QuoteDetails = () => {
                   </div>
                 </div>
                 <div>
+                  <div className="text-xs text-neutral-400">Created By</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.createdById
+                      ? quoteOverview?.quote?.createdBy?.name
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Approved On</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.approvedAt
+                      ? formatDate(quoteOverview?.quote?.approvedAt)
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Approved By</div>
+                  <div className="text-sm text-neutral-400">
+                    {quoteOverview?.quote?.approvedById
+                      ? quoteOverview?.quote?.approvedBy?.name
+                      : "-"}
+                  </div>
+                </div>
+                <div>
                   <div className="text-xs text-neutral-400">Expires On</div>
                   <div className="text-sm text-neutral-400">
                     {quoteOverview?.quote?.expiryDate
                       ? formatDate(quoteOverview?.quote?.expiryDate)
                       : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-neutral-400">Quote Status</div>
-                  <div className="text-sm text-neutral-400">
-                    {quoteOverview?.quote?.status || "-"}
                   </div>
                 </div>
               </div>
@@ -566,7 +593,7 @@ const QuoteDetails = () => {
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-sm font-bold text-text-muted">
+                    className="p-2 text-right text-xs font-bold text-text-muted">
                     {formatCurrency(total)}
                   </td>
                   <td></td>

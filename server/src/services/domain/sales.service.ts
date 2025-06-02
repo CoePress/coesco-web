@@ -48,13 +48,15 @@ export class SalesService {
       },
     });
 
+    const quoteNumber = await quoteService.generateQuoteNumber(true);
+
     // sandbox quote
     const quote = await prisma.quote.create({
       data: {
         journeyId: journey.id,
         status: "DRAFT",
-        year: new Date().getFullYear(),
-        number: "0",
+        year: quoteNumber.year,
+        number: quoteNumber.number,
         revision: "A",
         subtotal: 0,
         totalAmount: 0,
