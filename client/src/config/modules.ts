@@ -17,6 +17,7 @@ import {
   Map,
   Clock,
   GanttChart,
+  MapIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
@@ -33,6 +34,7 @@ import {
   SalesCompanyDetails,
   SalesConfigBuilder,
   SalesDashboard,
+  SalesJourneys,
   SalesPipeline,
   SalesQuoteDetails,
   SalesQuotes,
@@ -101,6 +103,20 @@ const salesModule: Module = {
       ],
     },
     {
+      path: "/journeys",
+      label: "Journeys",
+      icon: MapIcon,
+      component: SalesJourneys,
+      children: [
+        {
+          path: "/:id",
+          label: "Journey Details",
+          icon: FileText,
+          component: SalesQuoteDetails,
+        },
+      ],
+    },
+    {
       path: "/companies",
       label: "Companies",
       icon: UsersIcon,
@@ -127,13 +143,6 @@ const salesModule: Module = {
           component: SalesConfigBuilder,
         },
       ],
-    },
-    {
-      path: "/reports",
-      label: "Reports",
-      icon: PieChart,
-      component: SalesReports,
-      children: [],
     },
   ],
   popups: [

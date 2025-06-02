@@ -523,12 +523,22 @@ const QuoteDetails = () => {
             />
           )}
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button
-              variant="secondary-outline"
-              onClick={toggleModal}>
-              Cancel
-            </Button>
+          <div className="flex justify-between gap-2 pt-4 border-t">
+            {activeTab === "configurations" && (
+              <Button
+                variant="secondary-outline"
+                onClick={() => navigate("/sales/catalog/builder")}>
+                <Plus size={16} />
+                New Config
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button
+                variant="secondary-outline"
+                onClick={toggleModal}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>

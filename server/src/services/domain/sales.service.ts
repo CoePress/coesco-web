@@ -1,4 +1,10 @@
 import { prisma } from "@/utils/prisma";
+import {
+  quoteService,
+  quoteItemService,
+  journeyService,
+  companyService,
+} from "..";
 
 export class SalesService {
   async createSandboxQuote(user: any, employee: any) {
@@ -55,19 +61,40 @@ export class SalesService {
   async createRevision(user: any, quoteId: string) {}
 
   async getQuoteOverview(quoteId: string) {
-    // get quote
-    // get items
+    const quote = await quoteService.getById(quoteId);
+
+    if (!quote.success || !quote.data) {
+      throw new Error("Quote not found");
+    }
+
+    const journey = await journeyService.getById(quote.data.journeyId);
+
+    if (!journey.success || !journey.data) {
+      throw new Error("Journey not found");
+    }
+
+    if (journey.data.customerId) {
+      const customer = await companyService.getById(journey.data.customerId);
+
+      if (!customer.success || !customer.data) {
+        throw new Error("Customer not found");
+      }
+    }
+
+    if (journey.data.dealerId) {
+      const dealer = await companyService.getById(journey.data.dealerId);
+
+      if (!dealer.success || !dealer.data) {
+        throw new Error("Dealer not found");
+      }
+    }
+
+    const items = await quoteItemService.getAll({
+      filter: {
+        quoteId,
+      },
+    });
+
     // get previous revisions
-    // get customer details
-    // CUSTOMER
-    // companyName
-    // contactName
-    // contactEmail
-    // contactPhone
-    // contactAddress
-    // contactCity
-    // contactState
-    // contactZip
-    // contactCountry
   }
 }
