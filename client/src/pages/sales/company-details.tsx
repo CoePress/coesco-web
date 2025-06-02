@@ -11,9 +11,11 @@ import {
   Star,
   ChevronDown,
   Download,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { PageHeader, StatusBadge, Table, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
@@ -88,22 +90,33 @@ const QuotesTab = () => {
 
   const columns: TableColumn<any>[] = [
     {
-      key: "id",
+      key: "quoteNumber",
       header: "Quote Number",
       className: "text-primary",
+      render: (_, row) => (
+        <Link to={`/sales/quotes/${row.id}`}>
+          {row.year}-{row.number}
+        </Link>
+      ),
     },
     {
-      key: "quoteDate",
-      header: "Quote Date",
+      key: "revision",
+      header: "Revision",
     },
     {
       key: "status",
       header: "Status",
-      render: (value) => <StatusBadge label={value} />,
+      render: (value) => <StatusBadge label={value as string} />,
     },
     {
-      key: "total",
+      key: "totalAmount",
       header: "Total",
+      render: (value) => formatCurrency(value as number),
+    },
+    {
+      key: "createdById",
+      header: "Created By",
+      render: (value) => value,
     },
   ];
 
@@ -125,6 +138,7 @@ const QuotesTab = () => {
       }}
       sort={sort}
       order={order}
+      pagination={true}
     />
   );
 };

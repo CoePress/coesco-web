@@ -1,15 +1,6 @@
-import {
-  Plus,
-  Filter,
-  Download,
-  MoreHorizontal,
-  ChevronDown,
-  ExternalLink,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { Plus, Filter, Download, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   Button,
@@ -20,21 +11,8 @@ import {
   Table,
 } from "@/components";
 import { formatCurrency } from "@/utils";
-import { sampleQuotes } from "@/utils/sample-data";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
-
-type Quote = {
-  id: string;
-  name: string;
-  customer: string;
-  contact: string;
-  amount: number;
-  date: string;
-  expiry: string;
-  status: string;
-  items: number;
-};
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,63 +22,35 @@ const Quotes = () => {
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes();
 
-  const columns: TableColumn<Quote>[] = [
+  const columns: TableColumn<any>[] = [
     {
-      key: "id",
-      header: "Quote ID",
+      key: "quoteNumber",
+      header: "Quote Number",
       className: "text-primary",
-    },
-    {
-      key: "year",
-      header: "Year",
-      className: "text-primary",
-    },
-    {
-      key: "number",
-      header: "Number",
-      className: "text-primary",
+      render: (_, row) => (
+        <Link to={`/sales/quotes/${row.id}`}>
+          {row.year}-{row.number}
+        </Link>
+      ),
     },
     {
       key: "revision",
       header: "Revision",
-      className: "text-primary",
-    },
-    {
-      key: "totalAmount",
-      header: "Total Amount",
-      className: "text-primary",
-      render: (value) => formatCurrency(value as number),
     },
     {
       key: "status",
       header: "Status",
-      render: (value) => (
-        <StatusBadge
-          label={value as string}
-          icon={value === "active" ? CheckCircle : XCircle}
-          variant={
-            value === "accepted"
-              ? "success"
-              : value === "rejected"
-              ? "error"
-              : "default"
-          }
-        />
-      ),
+      render: (value) => <StatusBadge label={value as string} />,
     },
     {
-      key: "actions",
-      header: "",
-      render: () => (
-        <div className="flex gap-2">
-          <button onClick={(e) => e.stopPropagation()}>
-            <MoreHorizontal size={16} />
-          </button>
-          <button onClick={(e) => e.stopPropagation()}>
-            <ExternalLink size={16} />
-          </button>
-        </div>
-      ),
+      key: "totalAmount",
+      header: "Total",
+      render: (value) => formatCurrency(value as number),
+    },
+    {
+      key: "createdById",
+      header: "Created By",
+      render: (value) => value,
     },
   ];
 
@@ -110,15 +60,15 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const totalQuoteValue = sampleQuotes.reduce(
-    (sum, quote) => sum + quote.amount,
+  const totalQuoteValue = quotes?.reduce(
+    (sum, quote) => sum + quote.totalAmount,
     0
   );
 
   const pageTitle = "Quotes";
-  const pageDescription = `${
-    sampleQuotes.length
-  } total quotes · ${formatCurrency(totalQuoteValue)} total value`;
+  const pageDescription = `${quotes?.length} total quotes · ${formatCurrency(
+    totalQuoteValue
+  )} total value`;
 
   return (
     <div className="w-full flex flex-1 flex-col">
