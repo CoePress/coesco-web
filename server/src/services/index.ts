@@ -22,10 +22,10 @@ import { OptionService } from "./repository/option.service";
 import { ConfigurationService } from "./repository/configuration.service";
 import { OptionRulesService } from "./repository/option-rules.services";
 import { ConfigurationOptionService } from "./repository/configuration-option.service";
-import { CompatibilityService } from "./logic/compatibility.service";
-import { AnalyticsService } from "./logic/analytics.service";
-import { MachineMonitorService } from "./logic/machine-monitor.service";
-import { QuotingService } from "./logic/quoting.service";
+import { CompatibilityService } from "./domain/compatibility.service";
+import { AnalyticsService } from "./domain/analytics.service";
+import { MachineMonitorService } from "./domain/machine-monitor.service";
+import { SalesService } from "./domain/sales.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
@@ -77,4 +77,4 @@ export const configurationOptionService = new ConfigurationOptionService();
 // Production
 // Machines
 // Machine Statuses
-export const quotingService = new QuotingService();
+export const salesService = new SalesService();

@@ -1,4 +1,4 @@
-import { Router, Request, Response, RequestHandler } from "express";
+import { Router, RequestHandler } from "express";
 import path from "path";
 import fs from "fs";
 import puppeteer from "puppeteer";
@@ -18,14 +18,21 @@ import contactRoutes from "./contact.router";
 import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 
+import salesRoutes from "./sales.routes";
+
 const router = Router();
 
+// Core
 router.use("/auth", authRoutes);
 router.use("/config", protect, configRoutes);
 router.use("/email", protect, emailRoutes);
 router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
 
+// Domain
+router.use("/sales", protect, salesRoutes);
+
+// Repository
 router.use("/employees", protect, employeeRoutes);
 router.use("/companies", protect, companyRoutes);
 router.use("/addresses", protect, addressRoutes);
@@ -33,6 +40,7 @@ router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
 
+// System
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });

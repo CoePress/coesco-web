@@ -89,7 +89,7 @@ const seed = async () => {
     await initializeModels(sequelize);
     await sequelize.sync();
 
-    await employeeService.syncEmployees();
+    await employeeService.sync();
 
     for (const machine of seedMachines) {
       try {
