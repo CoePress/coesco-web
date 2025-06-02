@@ -1,13 +1,13 @@
 import {
   Edit,
   CheckCircle,
-  XCircle,
   Download,
   DollarSign,
   Plus,
   MoreHorizontal,
   ArrowUpRight,
   ChevronDown,
+  PenBox,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -130,8 +130,8 @@ const QuoteDetails = () => {
     return quoteOverview?.dealer || null;
   }, [quoteOverview]);
 
-  const pageTitle = `${quoteOverview?.quote?.id}`;
-  const pageDescription = `${quoteOverview?.quote?.id} • `;
+  const pageTitle = `${customer?.name} • ${quoteOverview?.quote?.year}-${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
+  const pageDescription = `${quoteOverview?.quote?.status}`;
 
   return (
     <div className="w-full flex-1">
@@ -258,12 +258,16 @@ const QuoteDetails = () => {
                     Quote Details
                   </div>
                   <StatusBadge
-                    label={sampleQuote.status}
+                    label={quoteOverview?.quote?.status}
                     icon={
-                      sampleQuote.status === "accepted" ? CheckCircle : XCircle
+                      quoteOverview?.quote?.status === "accepted"
+                        ? CheckCircle
+                        : PenBox
                     }
                     variant={
-                      sampleQuote.status === "accepted" ? "success" : "error"
+                      quoteOverview?.quote?.status === "accepted"
+                        ? "success"
+                        : "default"
                     }
                   />
                 </div>
@@ -427,42 +431,42 @@ const QuoteDetails = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
                     Item
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
                     Description
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     Quantity
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     Unit Price
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     Discount
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     Tax
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     Total
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase">
+                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -471,7 +475,7 @@ const QuoteDetails = () => {
               <tbody className="bg-foreground divide-y divide-border">
                 {quoteItems.map((item: any) => (
                   <tr key={item.id}>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="p-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-text-muted">
                         {item.name}
                       </div>
@@ -481,32 +485,32 @@ const QuoteDetails = () => {
                         {item.description}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text-muted">
                         {item.quantity}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text-muted">
                         {formatCurrency(item.unitPrice)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text-muted">
                         {formatCurrency(item.discount)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text-muted">
                         {formatCurrency(item.tax)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm font-medium text-text-muted">
                         {formatCurrency(item.total)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="p-2 whitespace-nowrap text-right">
                       <button className="text-text-muted hover:text-text">
                         <MoreHorizontal size={16} />
                       </button>
@@ -518,12 +522,12 @@ const QuoteDetails = () => {
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-xs uppercase text-text-muted">
                     Subtotal
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-xs text-text-muted">
                     {formatCurrency(subtotal)}
                   </td>
                   <td></td>
@@ -531,29 +535,25 @@ const QuoteDetails = () => {
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
-                    Discount (
-                    {discount.type === "percentage"
-                      ? `${discount.value}%`
-                      : "Fixed"}
-                    )
+                    className="p-2 text-right text-xs uppercase text-text-muted">
+                    Discount
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
-                    -{formatCurrency(discount)}
+                    className="p-2 text-right text-xs text-text-muted">
+                    {discount > 0 ? "-" : ""} {formatCurrency(discount)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-xs uppercase text-text-muted">
                     Tax
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-xs text-text-muted">
                     {formatCurrency(tax)}
                   </td>
                   <td></td>
@@ -561,7 +561,7 @@ const QuoteDetails = () => {
                 <tr className="border-t border-border">
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-sm font-bold text-text-muted">
+                    className="p-2 text-right text-xs uppercase font-bold text-text-muted">
                     Total
                   </td>
                   <td

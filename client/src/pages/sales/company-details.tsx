@@ -131,10 +131,8 @@ const CompanyDetails = () => {
         tabs={[
           { label: "Overview", value: "overview" },
           { label: "Quotes", value: "quotes" },
-          { label: "Orders", value: "orders" },
-          { label: "Sales", value: "sales" },
+          { label: "Orders", value: "orders", disabled: true },
           { label: "Activity", value: "activity" },
-          { label: "Notes", value: "notes" },
         ]}
       />
       {activeTab === "overview" && (
