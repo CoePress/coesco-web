@@ -67,16 +67,24 @@ enum Industry {
 }
 
 model Company {
-  id          String        @id @default(uuid())
-  name        String
-  website     String?
-  phoneNumber String?
-  email       String?
-  industry    Industry?
-  notes       String?
-  status      CompanyStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  name          String
+  website       String?
+  email         String?
+  phone         String?
+  fax           String?
+  industry      Industry?
+  yearFounded   Int?
+  revenue       Int?
+  employeeCount String?
+  customerSince DateTime?
+  paymentTerms  String?
+  creditLimit   Int?
+  taxId         String?
+  notes         String?
+  status        CompanyStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   addresses        Address[]
   contacts         Contact[]
@@ -121,9 +129,8 @@ model Contact {
   @@map("contacts")
 }
 
-
 model Journey {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String?
   rsmId       String?
   customerId  String?
@@ -133,8 +140,8 @@ model Journey {
   leadSource  String?
   startDate   DateTime?
   createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   rsm          Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
   customer     Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])

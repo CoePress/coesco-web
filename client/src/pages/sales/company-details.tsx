@@ -126,7 +126,7 @@ const CompanyDetails = () => {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <img
                       src={companyOverview?.company.logo}
@@ -138,76 +138,133 @@ const CompanyDetails = () => {
                         {companyOverview?.company.name}
                       </h2>
                       <p className="text-sm text-neutral-400">
-                        {sampleCustomer.industry}
+                        {companyOverview?.company.industry || "-"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex">
-                    <button className="text-primary hover:text-primary/80">
-                      <Star size={18} />
-                    </button>
-                  </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-2">
-                    <Building
-                      size={16}
-                      className="text-neutral-400 mt-1 flex-shrink-0"
-                    />
-                    <div>
-                      <div className="text-sm text-neutral-400">
-                        {sampleCustomer.type} Customer
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ExternalLink
-                      size={16}
-                      className="text-neutral-400 mt-0.5 flex-shrink-0"
-                    />
-                    <div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-xs text-neutral-400">Website</div>
+                    {companyOverview?.company.website ? (
                       <a
-                        href={`https://${sampleCustomer.website}`}
+                        href={`https://${companyOverview.company.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline">
-                        {sampleCustomer.website}
+                        {companyOverview.company.website}
                       </a>
+                    ) : (
+                      <div className="text-sm text-neutral-400">-</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-neutral-400">Email</div>
+                    {companyOverview?.company.email ? (
+                      <a
+                        href={`mailto:${companyOverview.company.email}`}
+                        className="text-sm text-primary hover:underline">
+                        {companyOverview.company.email}
+                      </a>
+                    ) : (
+                      <div className="text-sm text-neutral-400">-</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-neutral-400">Phone</div>
+                    <a
+                      href={`tel:${companyOverview?.company.phone}`}
+                      className="text-sm text-neutral-400">
+                      {companyOverview?.company.phone || "-"}
+                    </a>
+                  </div>
+                  <div>
+                    <div className="text-xs text-neutral-400">Fax</div>
+                    <div className="text-sm text-neutral-400">
+                      {companyOverview?.company.fax || "-"}
                     </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin
-                      size={16}
-                      className="text-neutral-400 mt-1 flex-shrink-0"
-                    />
-                    <div>
-                      <div className="text-sm text-neutral-400 font-medium">
-                        Primary Address
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <div className="text-neutral-400">Shipping Address</div>
+                    <div className="text-neutral-400">
+                      123 Business Street, Suite 100
+                      <br />
+                      New York, NY 10001
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-neutral-400">Billing Address</div>
+                    <div className="text-neutral-400">
+                      456 Finance Avenue, Floor 3<br />
+                      New York, NY 10002
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <div className="text-sm font-medium text-neutral-400 mb-3">
+                      Business Details
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-neutral-400">Industry</div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.industry || "-"}
+                        </div>
                       </div>
-                      <div className="text-sm text-neutral-400">
-                        {
-                          sampleCustomer.addresses.find(
-                            (addr) => addr.isPrimary
-                          )?.street
-                        }
-                        ,{" "}
-                        {
-                          sampleCustomer.addresses.find(
-                            (addr) => addr.isPrimary
-                          )?.city
-                        }
-                        ,
-                        <br />
-                        {
-                          sampleCustomer.addresses.find(
-                            (addr) => addr.isPrimary
-                          )?.state
-                        }{" "}
-                        {
-                          sampleCustomer.addresses.find(
-                            (addr) => addr.isPrimary
-                          )?.zip
-                        }
+                      <div>
+                        <div className="text-xs text-neutral-400">Founded</div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.yearFounded || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">
+                          Annual Revenue
+                        </div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.revenue || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">
+                          Employee Count
+                        </div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.employeeCount || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-neutral-400 mb-3">
+                      Relationship Details
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-neutral-400">
+                          Customer Since
+                        </div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.customerSince
+                            ? formatDate(companyOverview?.company.customerSince)
+                            : "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-400">
+                          Payment Terms
+                        </div>
+                        <div className="text-sm text-neutral-400">
+                          {companyOverview?.company.paymentTerms || "-"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -215,16 +272,6 @@ const CompanyDetails = () => {
               </div>
 
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="font-semibold text-neutral-400">
-                    Primary Contact
-                  </h2>
-                  <div>
-                    <button className="text-neutral-400 hover:text-neutral-600">
-                      <MoreHorizontal size={18} />
-                    </button>
-                  </div>
-                </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-3 mb-3">
                     <img
@@ -294,99 +341,6 @@ const CompanyDetails = () => {
                             </div>
                           </div>
                         ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-neutral-400">
-                    Additional Information
-                  </h3>
-                  <div>
-                    <button className="text-neutral-400 hover:text-neutral-600 cursor-pointer">
-                      <MoreHorizontal size={18} />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <div className="text-sm font-medium text-neutral-400 mb-3">
-                        Business Details
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Business Type
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            Manufacturing & Distribution
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Founded
-                          </div>
-                          <div className="text-sm text-neutral-400">1995</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Annual Revenue
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            $25M - $50M
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Employee Count
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            150-200
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-neutral-400 mb-3">
-                        Relationship Details
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Customer Since
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            January 2018
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Contract Type
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            Strategic Partnership
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Payment Terms
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            Net 30, Credit Limit: $500K
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-neutral-400">
-                            Primary Products
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            CNC Parts, Assembly Services
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

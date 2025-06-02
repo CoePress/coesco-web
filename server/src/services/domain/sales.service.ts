@@ -13,6 +13,18 @@ export class SalesService {
     const company = await prisma.company.create({
       data: {
         name: "Sandbox Company",
+        website: "sandbox.com",
+        email: "sandbox@sandbox.com",
+        phone: "+1234567890",
+        fax: "+1234567890",
+        industry: "OTHER",
+        yearFounded: 2020,
+        revenue: 1000000,
+        employeeCount: "10",
+        customerSince: new Date(),
+        paymentTerms: "NET 30",
+        creditLimit: 100000,
+        taxId: "1234567890",
         status: "STAGING",
       },
     });
