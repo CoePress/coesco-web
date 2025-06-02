@@ -4,9 +4,6 @@ import {
   Mail,
   MapPin,
   Building,
-  CheckCircle,
-  XCircle,
-  Plus,
   FileText,
   DollarSign,
   ExternalLink,
@@ -22,6 +19,54 @@ import { PageHeader, StatusBadge, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomer } from "@/utils/sample-data";
 import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
+
+const sampleCompanyMetrics = {
+  businessType: "Manufacturer & Supplier",
+  relationshipType: "Strategic Partner",
+  onTimeDelivery: 98.5,
+  qualityRating: 4.8,
+  avgOrderValue: 125000,
+  orderFrequency: 2.3,
+  totalValue: 2500000,
+  activeProjects: 3,
+  recentActivity: [
+    {
+      user: "John Smith",
+      description: "Updated manufacturing specifications for Project Alpha",
+      date: "2024-03-15T10:30:00Z",
+      profileImage: "https://i.pravatar.cc/150?img=1",
+      type: "manufacturing",
+    },
+    {
+      user: "Sarah Johnson",
+      description: "Submitted new supplier qualification documents",
+      date: "2024-03-14T15:45:00Z",
+      profileImage: "https://i.pravatar.cc/150?img=2",
+      type: "supplier",
+    },
+    {
+      user: "Mike Wilson",
+      description: "Approved joint development agreement",
+      date: "2024-03-13T09:15:00Z",
+      profileImage: "https://i.pravatar.cc/150?img=3",
+      type: "partnership",
+    },
+    {
+      user: "Lisa Brown",
+      description: "Completed quality audit for supplier certification",
+      date: "2024-03-12T14:20:00Z",
+      profileImage: "https://i.pravatar.cc/150?img=4",
+      type: "quality",
+    },
+    {
+      user: "David Chen",
+      description: "Updated shared manufacturing capacity",
+      date: "2024-03-11T11:30:00Z",
+      profileImage: "https://i.pravatar.cc/150?img=5",
+      type: "manufacturing",
+    },
+  ],
+};
 
 const CompanyDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -256,6 +301,101 @@ const CompanyDetails = () => {
 
               <div className="bg-foreground rounded-lg shadow-sm border p-2">
                 <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-neutral-400">
+                    Additional Information
+                  </h3>
+                  <div>
+                    <button className="text-neutral-400 hover:text-neutral-600 cursor-pointer">
+                      <MoreHorizontal size={18} />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <div className="text-sm font-medium text-neutral-400 mb-3">
+                        Business Details
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Business Type
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            Manufacturing & Distribution
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Founded
+                          </div>
+                          <div className="text-sm text-neutral-400">1995</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Annual Revenue
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            $25M - $50M
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Employee Count
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            150-200
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-neutral-400 mb-3">
+                        Relationship Details
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Customer Since
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            January 2018
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Contract Type
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            Strategic Partnership
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Payment Terms
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            Net 30, Credit Limit: $500K
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-neutral-400">
+                            Primary Products
+                          </div>
+                          <div className="text-sm text-neutral-400">
+                            CNC Parts, Assembly Services
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+                <div className="flex justify-between items-start mb-2">
                   <h2 className="font-semibold text-neutral-400">
                     Activity Summary
                   </h2>
@@ -334,235 +474,47 @@ const CompanyDetails = () => {
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-foreground rounded-lg shadow-sm border">
-              <div className="p-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-neutral-400">
-                        Recent Quotes
-                      </h3>
-                      <button className="text-sm text-primary hover:text-primary/80">
-                        View All
-                      </button>
-                    </div>
-                    <div className="border rounded-lg overflow-hidden">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-foreground">
-                          <tr>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              ID
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Date
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Status
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Amount
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-foreground divide-y divide-neutral-400">
-                          {sampleCustomer.quotes.map((quote, idx) => (
-                            <tr
-                              key={idx}
-                              className="hover:bg-neutral-600 cursor-pointer">
-                              <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-primary">
-                                {quote.id}
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-neutral-400">
-                                {formatDate(quote.date)}
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <StatusBadge
-                                  label={quote.status}
-                                  icon={
-                                    quote.status === "Accepted"
-                                      ? CheckCircle
-                                      : XCircle
-                                  }
-                                  variant={
-                                    quote.status === "Accepted"
-                                      ? "success"
-                                      : quote.status === "Pending"
-                                      ? "warning"
-                                      : "default"
-                                  }
-                                />
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-neutral-400">
-                                {formatCurrency(quote.amount)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-neutral-400">
-                        Recent Orders
-                      </h3>
-                      <button className="text-sm text-primary hover:text-primary/80">
-                        View All
-                      </button>
-                    </div>
-                    <div className="border rounded-lg overflow-hidden">
-                      <table className="min-w-full divide-y divide-neutral-400">
-                        <thead className="bg-foreground">
-                          <tr>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              ID
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Date
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Status
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-neutral-400 uppercase">
-                              Amount
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-foreground divide-y divide-neutral-400">
-                          {sampleCustomer.orders.map((order, idx) => (
-                            <tr
-                              key={idx}
-                              className="hover:bg-neutral-600 cursor-pointer">
-                              <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-primary">
-                                {order.id}
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-neutral-400">
-                                {formatDate(order.date)}
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <StatusBadge
-                                  label={order.status}
-                                  icon={
-                                    order.status === "Completed"
-                                      ? CheckCircle
-                                      : XCircle
-                                  }
-                                  variant={
-                                    order.status === "Completed"
-                                      ? "success"
-                                      : order.status === "In Progress"
-                                      ? "info"
-                                      : "default"
-                                  }
-                                />
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-neutral-400">
-                                {formatCurrency(order.amount)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-neutral-400">
-                        Recent Activities
-                      </h3>
-                      <button className="text-sm text-primary hover:text-primary/80">
-                        View All
-                      </button>
-                    </div>
-                    <div className="border rounded-lg p-3">
-                      <div className="space-y-3">
-                        {sampleCustomer.activities.map((activity, idx) => (
-                          <div
-                            key={idx}
-                            className="flex gap-3">
-                            <div className="flex-shrink-0">
-                              <img
-                                src={activity.profileImage}
-                                alt=""
-                                className="h-8 w-8 rounded-full"
-                              />
-                            </div>
-                            <div>
-                              <div className="text-sm">
-                                <span className="font-medium text-neutral-400">
-                                  {activity.user}
-                                </span>
-                                <span className="text-neutral-400">
-                                  {" "}
-                                  {activity.description}
-                                </span>
-                              </div>
-                              <div className="text-xs text-neutral-400 mt-1">
-                                {formatDate(activity.date)}
-                              </div>
-                            </div>
+              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-medium text-neutral-400">
+                    Recent Activity
+                  </h3>
+                  <button className="text-sm text-primary hover:text-primary/80">
+                    View All
+                  </button>
+                </div>
+                <div className="border rounded-lg p-3">
+                  <div className="space-y-3">
+                    {sampleCompanyMetrics.recentActivity.map(
+                      (activity, idx) => (
+                        <div
+                          key={idx}
+                          className="flex gap-3">
+                          <div className="flex-shrink-0">
+                            <img
+                              src={activity.profileImage}
+                              alt=""
+                              className="h-8 w-8 rounded-full"
+                            />
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-neutral-400">Notes</h3>
-                      <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1">
-                        <Plus size={14} />
-                        Add Note
-                      </button>
-                    </div>
-                    <div className="border rounded-lg p-3">
-                      <div className="space-y-4">
-                        {sampleCustomer.notes.map((note, idx) => (
-                          <div
-                            key={idx}
-                            className="border-b pb-3 last:border-b-0 last:pb-0">
-                            <div className="flex justify-between">
-                              <div className="flex items-center gap-2">
-                                <img
-                                  src={note.profileImage}
-                                  alt=""
-                                  className="h-6 w-6 rounded-full"
-                                />
-                                <span className="text-sm font-medium text-neutral-400">
-                                  {note.author}
-                                </span>
-                              </div>
-                              <span className="text-xs text-neutral-400">
-                                {formatDate(note.date)}
+                          <div>
+                            <div className="text-sm">
+                              <span className="font-medium text-neutral-400">
+                                {activity.user}
+                              </span>
+                              <span className="text-neutral-400">
+                                {" "}
+                                {activity.description}
                               </span>
                             </div>
-                            <p className="text-sm text-neutral-400 mt-2">
-                              {note.content}
-                            </p>
+                            <div className="text-xs text-neutral-400 mt-1">
+                              {formatDate(activity.date)}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               </div>

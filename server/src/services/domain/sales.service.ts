@@ -61,6 +61,8 @@ export class SalesService {
 
   async createRevision(user: any, quoteId: string) {}
 
+  async approveQuote(quoteId: string) {}
+
   async getQuoteOverview(quoteId: string) {
     const quote = await quoteService.getById(quoteId);
 

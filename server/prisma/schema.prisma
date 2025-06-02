@@ -59,13 +59,20 @@ enum CompanyStatus {
   PROCESSED
 }
 
+enum Industry {
+  AUTOMOTIVE
+  CONSTRUCTION
+  MANUFACTURING
+  OTHER
+}
+
 model Company {
   id          String        @id @default(uuid())
   name        String
   website     String?
   phoneNumber String?
   email       String?
-  industry    String?
+  industry    Industry?
   notes       String?
   status      CompanyStatus @default(ACTIVE)
   createdAt   DateTime      @default(now())

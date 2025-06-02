@@ -1,4 +1,4 @@
-import { Company } from "@prisma/client";
+import { Company, Industry } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
@@ -12,6 +12,12 @@ export class CompanyService extends BaseService<Company> {
   protected async validate(company: CompanyAttributes): Promise<void> {
     if (!company.name) {
       throw new BadRequestError("Company name is required");
+    }
+
+    if (company.industry) {
+      if (!Object.values(Industry).includes(company.industry)) {
+        throw new BadRequestError("Invalid industry");
+      }
     }
   }
 }
