@@ -135,7 +135,7 @@ const Quotes = () => {
           },
           {
             type: "button",
-            label: "Add Quote",
+            label: "New Quote",
             icon: <Plus size={16} />,
             variant: "primary",
             onClick: toggleModal,

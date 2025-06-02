@@ -38,7 +38,6 @@ import {
   SalesPipeline,
   SalesQuoteDetails,
   SalesQuotes,
-  SalesReports,
   Settings,
   WarehouseMap,
 } from "@/pages";

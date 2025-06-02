@@ -19,7 +19,6 @@ export { default as SalesCompanies } from "./sales/companies";
 export { default as SalesCompanyDetails } from "./sales/company-details";
 export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
-export { default as SalesReports } from "./sales/reports";
 export { default as SalesJourneys } from "./sales/journeys";
 
 // General

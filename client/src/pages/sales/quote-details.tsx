@@ -140,7 +140,7 @@ const QuoteDetails = () => {
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-foreground rounded-lg shadow-sm border p-4 col-span-2">
+            {/* <div className="bg-foreground rounded-lg shadow-sm border p-4 col-span-2">
               <h2 className="font-semibold text-text-muted mb-4">
                 Quote Summary
               </h2>
@@ -210,8 +210,58 @@ const QuoteDetails = () => {
                   {sampleQuote.notes}
                 </div>
               </div>
+            </div> */}
+
+            {/* Overview */}
+            <div className="bg-foreground rounded-lg shadow-sm border p-4">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="font-semibold text-text-muted">Overview</h2>
+                <StatusBadge
+                  label={sampleQuote.status}
+                  icon={
+                    sampleQuote.status === "accepted" ? CheckCircle : XCircle
+                  }
+                  variant={
+                    sampleQuote.status === "accepted" ? "success" : "error"
+                  }
+                />
+              </div>
+              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <div className="text-sm text-text-muted">Date Created</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {formatDate(sampleQuote.date)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Created By</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    John Doe
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Date Approved</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {formatDate(sampleQuote.expiry)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Approved By</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    John Doe
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <div className="text-sm text-text-muted">Notes</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.notes}
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Customer */}
             <div className="bg-foreground rounded-lg shadow-sm border p-4">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="font-semibold text-text-muted">Customer</h2>
@@ -221,8 +271,8 @@ const QuoteDetails = () => {
                   View Customer
                 </a>
               </div>
-              <div className="space-y-3">
-                <div>
+              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="col-span-2">
                   <div className="text-sm text-text-muted">Company</div>
                   <div className="text-sm font-medium text-text-muted">
                     {sampleQuote.customer.name}
@@ -242,6 +292,62 @@ const QuoteDetails = () => {
                 </div>
                 <div>
                   <div className="text-sm text-text-muted">Phone</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.phone}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Fax</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.phone}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Address</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.address}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dealer */}
+            <div className="bg-foreground rounded-lg shadow-sm border p-4">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="font-semibold text-text-muted">Dealer</h2>
+                <a
+                  href={`/sales/customers/${sampleQuote.customer.id}`}
+                  className="text-sm text-primary hover:underline">
+                  View Dealer
+                </a>
+              </div>
+              <div className="space-y-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="col-span-2">
+                  <div className="text-sm text-text-muted">Company</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.name}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Contact</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.contact}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Email</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.email}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Phone</div>
+                  <div className="text-sm font-medium text-text-muted">
+                    {sampleQuote.customer.phone}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-muted">Fax</div>
                   <div className="text-sm font-medium text-text-muted">
                     {sampleQuote.customer.phone}
                   </div>

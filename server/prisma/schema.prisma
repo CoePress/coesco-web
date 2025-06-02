@@ -65,6 +65,7 @@ model Company {
   website     String?
   phoneNumber String?
   email       String?
+  industry    String?
   notes       String?
   status      CompanyStatus @default(ACTIVE)
   createdAt   DateTime      @default(now())
@@ -113,13 +114,17 @@ model Contact {
   @@map("contacts")
 }
 
+
 model Journey {
   id          String   @id @default(uuid())
+  name        String?
   rsmId       String?
   customerId  String?
   dealerId    String?
   priority    String
   confidence  Int
+  leadSource  String?
+  startDate   DateTime?
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

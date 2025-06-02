@@ -97,4 +97,34 @@ export class SalesService {
 
     // get previous revisions
   }
+
+  async getCompanyOverview(companyId: string) {
+    const company = await companyService.getById(companyId);
+
+    if (!company.success || !company.data) {
+      throw new Error("Company not found");
+    }
+
+    const customerQuotes = await prisma.quote.findMany({
+      where: {
+        journey: {
+          customerId: companyId,
+        },
+      },
+    });
+
+    const dealerQuotes = await prisma.quote.findMany({
+      where: {
+        journey: {
+          dealerId: companyId,
+        },
+      },
+    });
+
+    return {
+      company: company.data,
+      customerQuotes,
+      dealerQuotes,
+    };
+  }
 }
