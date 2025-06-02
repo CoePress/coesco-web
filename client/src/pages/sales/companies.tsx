@@ -4,15 +4,12 @@ import {
   Download,
   MoreHorizontal,
   ChevronDown,
-  CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { sampleCustomers } from "@/utils/sample-data";
 import { TableColumn } from "@/components/shared/table";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 
@@ -50,11 +47,16 @@ const Companies = () => {
     },
   ];
 
+  const pageTitle = "Companies";
+  const pageDescription = companies
+    ? `${companies?.length} total companies`
+    : "";
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title="Companies"
-        description={`${sampleCustomers.length} total companies`}
+        title={pageTitle}
+        description={pageDescription}
         actions={[
           {
             type: "button",

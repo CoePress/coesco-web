@@ -16,21 +16,28 @@ import {
   Download,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { PageHeader, StatusBadge, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleCustomer } from "@/utils/sample-data";
+import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
 
 const CompanyDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const navigate = useNavigate();
 
-  const pageTitle = `${sampleCustomer.name}`;
-  const pageDescription = `Customer since ${formatDate(
-    sampleCustomer.createdAt
-  )}`;
+  const companyId = useParams().id;
+
+  const { companyOverview, loading, error } = useGetCompanyOverview({
+    companyId: companyId || "",
+  });
+
+  const pageTitle = companyOverview?.company?.name;
+  const pageDescription = companyOverview?.company?.createdAt
+    ? `Customer since ${formatDate(companyOverview.company.createdAt)}`
+    : "";
 
   return (
     <div className="w-full flex-1">
@@ -77,13 +84,13 @@ const CompanyDetails = () => {
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-3">
                     <img
-                      src={sampleCustomer.logo}
-                      alt={sampleCustomer.name}
+                      src={companyOverview?.company.logo}
+                      alt={companyOverview?.company.name}
                       className="h-12 w-12 rounded-lg"
                     />
                     <div>
                       <h2 className="font-semibold text-neutral-400">
-                        {sampleCustomer.name}
+                        {companyOverview?.company.name}
                       </h2>
                       <p className="text-sm text-neutral-400">
                         {sampleCustomer.industry}

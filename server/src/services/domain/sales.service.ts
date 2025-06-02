@@ -4,6 +4,7 @@ import {
   quoteItemService,
   journeyService,
   companyService,
+  contactService,
 } from "..";
 
 export class SalesService {
@@ -105,6 +106,27 @@ export class SalesService {
       throw new Error("Company not found");
     }
 
+    const primaryContact = await contactService.getAll({
+      filter: {
+        companyId,
+        isPrimary: true,
+      },
+    });
+
+    const contacts = await contactService.getAll({
+      filter: {
+        companyId,
+      },
+    });
+
+    if (!contacts.success || !contacts.data) {
+      throw new Error("Contacts not found");
+    }
+
+    const additionalContacts = contacts.data.filter(
+      (contact) => !contact.isPrimary
+    );
+
     const customerQuotes = await prisma.quote.findMany({
       where: {
         journey: {
@@ -122,9 +144,14 @@ export class SalesService {
     });
 
     return {
-      company: company.data,
-      customerQuotes,
-      dealerQuotes,
+      success: true,
+      data: {
+        company: company.data,
+        primaryContact: primaryContact.data,
+        additionalContacts,
+        customerQuotes,
+        dealerQuotes,
+      },
     };
   }
 }
