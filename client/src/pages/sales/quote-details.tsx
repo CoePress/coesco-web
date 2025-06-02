@@ -9,7 +9,7 @@ import {
   ArrowUpRight,
   ChevronDown,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   Button,
@@ -22,7 +22,8 @@ import {
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleQuote } from "@/utils/sample-data";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 
 const sampleConfigurations = [
   {
@@ -92,8 +93,37 @@ const QuoteDetails = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const pageTitle = `${sampleQuote.name}`;
-  const pageDescription = `${sampleQuote.id} • ${formatDate(sampleQuote.date)}`;
+  const quoteId = useParams().id;
+
+  const { quoteOverview, loading, error } = useGetQuoteOverview({
+    quoteId: quoteId || "",
+  });
+
+  const quoteItems = useMemo(() => {
+    return quoteOverview?.quoteItems || [];
+  }, [quoteOverview]);
+
+  const subtotal = useMemo(() => {
+    return quoteItems.reduce((acc: number, item: any) => acc + item.price, 0);
+  }, [quoteItems]);
+
+  const discount = useMemo(() => {
+    return quoteItems.reduce(
+      (acc: number, item: any) => acc + item.discount,
+      0
+    );
+  }, [quoteItems]);
+
+  const tax = useMemo(() => {
+    return quoteItems.reduce((acc: number, item: any) => acc + item.tax, 0);
+  }, [quoteItems]);
+
+  const total = useMemo(() => {
+    return subtotal - discount + tax;
+  }, [subtotal, discount, tax]);
+
+  const pageTitle = `${quoteOverview?.quote?.id}`;
+  const pageDescription = `${quoteOverview?.quote?.id} • `;
 
   return (
     <div className="w-full flex-1">
@@ -120,7 +150,7 @@ const QuoteDetails = () => {
         ]}
       />
 
-      <div className="bg-foreground border-b px-4 py-2">
+      <div className="bg-foreground border-b p-2">
         <div className="flex gap-2">
           <Button
             onClick={() => {}}
@@ -363,7 +393,7 @@ const QuoteDetails = () => {
           </div>
 
           <div className="bg-foreground rounded-lg shadow-sm border overflow-hidden">
-            <div className="px-4 py-3 bg-foreground border-b flex justify-between items-center">
+            <div className="p-2 bg-foreground border-b flex justify-between items-center">
               <h2 className="font-semibold text-text-muted">Quote Items</h2>
               <Button
                 onClick={toggleModal}
@@ -417,8 +447,9 @@ const QuoteDetails = () => {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="bg-foreground divide-y divide-border">
-                {sampleQuote.items.map((item) => (
+                {quoteItems.map((item: any) => (
                   <tr key={item.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm font-medium text-text-muted">
@@ -467,56 +498,56 @@ const QuoteDetails = () => {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-sm font-medium text-text-muted">
                     Subtotal
                   </td>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
-                    {formatCurrency(sampleQuote.amount)}
+                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    {formatCurrency(subtotal)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-sm font-medium text-text-muted">
                     Discount (
-                    {sampleQuote.discount.type === "percentage"
-                      ? `${sampleQuote.discount.value}%`
+                    {discount.type === "percentage"
+                      ? `${discount.value}%`
                       : "Fixed"}
                     )
                   </td>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
-                    -{formatCurrency(sampleQuote.discount.amount)}
+                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    -{formatCurrency(discount)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
+                    className="p-2 text-right text-sm font-medium text-text-muted">
                     Tax
                   </td>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-right text-sm font-medium text-text-muted">
-                    {formatCurrency(sampleQuote.tax)}
+                    className="p-2 text-right text-sm font-medium text-text-muted">
+                    {formatCurrency(tax)}
                   </td>
                   <td></td>
                 </tr>
                 <tr className="border-t border-border">
                   <td
                     colSpan={5}
-                    className="px-4 py-3 text-right text-sm font-bold text-text-muted">
+                    className="p-2 text-right text-sm font-bold text-text-muted">
                     Total
                   </td>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-right text-sm font-bold text-text-muted">
-                    {formatCurrency(sampleQuote.totalAmount)}
+                    className="p-2 text-right text-sm font-bold text-text-muted">
+                    {formatCurrency(total)}
                   </td>
                   <td></td>
                 </tr>

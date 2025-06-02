@@ -8,8 +8,7 @@ import {
 } from "..";
 
 export class SalesService {
-  async createSandboxQuote(user: any, employee: any) {
-    // sandbox company
+  async createSandboxQuote(employee: any) {
     const company = await prisma.company.create({
       data: {
         name: "Sandbox Company",
@@ -90,29 +89,40 @@ export class SalesService {
       throw new Error("Journey not found");
     }
 
+    let customer: any;
     if (journey.data.customerId) {
-      const customer = await companyService.getById(journey.data.customerId);
+      customer = await companyService.getById(journey.data.customerId);
 
       if (!customer.success || !customer.data) {
         throw new Error("Customer not found");
       }
     }
 
+    let dealer: any;
     if (journey.data.dealerId) {
-      const dealer = await companyService.getById(journey.data.dealerId);
+      dealer = await companyService.getById(journey.data.dealerId);
 
       if (!dealer.success || !dealer.data) {
         throw new Error("Dealer not found");
       }
     }
 
-    const items = await quoteItemService.getAll({
+    const quoteItems = await quoteItemService.getAll({
       filter: {
         quoteId,
       },
     });
 
-    // get previous revisions
+    return {
+      success: true,
+      data: {
+        quote: quote.data,
+        journey: journey.data,
+        quoteItems: quoteItems.data,
+        customer: customer?.data,
+        dealer: dealer?.data,
+      },
+    };
   }
 
   async getCompanyOverview(companyId: string) {

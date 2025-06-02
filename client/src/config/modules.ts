@@ -34,7 +34,6 @@ import {
   SalesCompanyDetails,
   SalesConfigBuilder,
   SalesDashboard,
-  SalesJourneys,
   SalesPipeline,
   SalesQuoteDetails,
   SalesQuotes,
@@ -96,20 +95,6 @@ const salesModule: Module = {
         {
           path: "/:id",
           label: "Quote Details",
-          icon: FileText,
-          component: SalesQuoteDetails,
-        },
-      ],
-    },
-    {
-      path: "/journeys",
-      label: "Journeys",
-      icon: MapIcon,
-      component: SalesJourneys,
-      children: [
-        {
-          path: "/:id",
-          label: "Journey Details",
           icon: FileText,
           component: SalesQuoteDetails,
         },

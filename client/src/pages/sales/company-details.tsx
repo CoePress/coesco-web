@@ -1,19 +1,4 @@
-import {
-  Edit,
-  Phone,
-  Mail,
-  MapPin,
-  Building,
-  FileText,
-  DollarSign,
-  ExternalLink,
-  MoreHorizontal,
-  Star,
-  ChevronDown,
-  Download,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { Edit, MapPin, Star, Download } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -78,7 +63,8 @@ const QuotesTab = () => {
 
   const companyId = useParams().id;
 
-  // Memoize the filter object to prevent infinite re-renders
+  const navigate = useNavigate();
+
   const filter = useMemo(
     () => ({
       journey: {
@@ -128,17 +114,21 @@ const QuotesTab = () => {
     <Table
       columns={columns}
       data={quotes || []}
-      total={pagination?.total || 0}
-      currentPage={page}
-      totalPages={pagination?.totalPages || 1}
+      total={quotes?.length || 0}
+      idField="id"
+      pagination
+      currentPage={pagination.page}
+      totalPages={pagination.totalPages}
       onPageChange={setPage}
-      onSortChange={(sort, order) => {
-        setSort(sort as "createdAt" | "updatedAt");
-        setOrder(order);
-      }}
       sort={sort}
       order={order}
-      pagination={true}
+      onSortChange={(newSort, newOrder) => {
+        setSort(newSort as "createdAt" | "updatedAt");
+        setOrder(newOrder as "asc" | "desc");
+      }}
+      onRowClick={(row) => {
+        navigate(`/sales/quotes/${row.id}`);
+      }}
     />
   );
 };

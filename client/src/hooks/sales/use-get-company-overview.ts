@@ -20,8 +20,6 @@ const useGetCompanyOverview = ({ companyId }: { companyId: string }) => {
           `/sales/company/${companyId}`
         );
 
-        console.log("Company Overview Data:", data);
-
         if (data.success) {
           setCompanyOverview(data.data);
         } else {
