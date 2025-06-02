@@ -215,13 +215,6 @@ const Layout = ({ employee, children }: LayoutProps) => {
         </div>
         <div className="flex flex-col justify-between flex-1">
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-            <Link
-              key="main-menu"
-              to="/"
-              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-              <Home size={18} />
-            </Link>
-
             {Object.values(modules).map((module) => (
               <Link
                 key={module.path}
@@ -242,6 +235,13 @@ const Layout = ({ employee, children }: LayoutProps) => {
               className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+
+            <Link
+              key="main-menu"
+              to="/"
+              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
+              <Home size={18} />
+            </Link>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Router, RequestHandler } from "express";
+import { Router } from "express";
 import { quoteController } from "@/controllers";
 
 const router = Router();

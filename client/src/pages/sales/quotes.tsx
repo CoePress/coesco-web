@@ -13,6 +13,7 @@ import {
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
+import { useCreateSandboxQuote } from "@/hooks/sales/use-create-sandbox-quote";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +22,11 @@ const Quotes = () => {
   const [page, setPage] = useState(1);
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes();
+  const {
+    createSandboxQuote,
+    loading: sandboxLoading,
+    error: sandboxError,
+  } = useCreateSandboxQuote();
 
   const columns: TableColumn<any>[] = [
     {
@@ -135,9 +141,16 @@ const Quotes = () => {
         </div>
 
         <Button
-          onClick={() => {}}
+          onClick={async () => {
+            const result = await createSandboxQuote();
+            if (result) {
+              toggleModal();
+              refresh();
+            }
+          }}
+          disabled={sandboxLoading}
           variant="secondary-outline">
-          Sandbox Quote
+          {sandboxLoading ? "Creating..." : "Sandbox Quote"}
         </Button>
       </Modal>
     </div>
