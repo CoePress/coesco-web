@@ -6,7 +6,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
@@ -23,6 +23,10 @@ const Journeys = () => {
     {
       key: "name",
       header: "Name",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/journeys/${row.id}`}>{row.name}</Link>
+      ),
     },
     {
       key: "actions",
@@ -77,7 +81,6 @@ const Journeys = () => {
         total={journeys?.length || 0}
         idField="id"
         pagination
-        onRowClick={(row) => navigate(`/sales/journeys/${row.id}`)}
       />
     </div>
   );

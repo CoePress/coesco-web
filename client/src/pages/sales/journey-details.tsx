@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PageHeader, Tabs, Table, StatusBadge, Button } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { Download, Edit, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Sample/mock data
 const sampleJourney = {
@@ -425,6 +426,7 @@ function JourneyHistoryTab() {
 
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
+  const navigate = useNavigate();
 
   return (
     <div className="w-full flex flex-1 flex-col h-full">
@@ -434,7 +436,7 @@ const JourneyDetailsPage = () => {
           sampleJourney.type
         } • ${formatCurrency(sampleJourney.value)}`}
         backButton
-        onBack={() => {}}
+        onBack={() => navigate("/sales/journeys")}
         actions={[
           {
             type: "button",

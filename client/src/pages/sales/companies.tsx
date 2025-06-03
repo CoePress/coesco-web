@@ -6,7 +6,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
@@ -35,6 +35,10 @@ const Companies = () => {
     {
       key: "name",
       header: "Name",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/companies/${row.id}`}>{row.name}</Link>
+      ),
     },
     {
       key: "actions",
