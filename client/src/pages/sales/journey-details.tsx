@@ -275,7 +275,7 @@ function JourneyDetailsTab() {
         {/* SECOND ROW: Project Models and Journey Steps */}
         <div className="grid grid-cols-2 gap-2">
           {/* Project Models Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+          {/* <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
             <div>
               <h2 className="font-semibold text-neutral-400 mb-1">
                 Project Models
@@ -286,7 +286,7 @@ function JourneyDetailsTab() {
                 ))}
               </ul>
             </div>
-          </div>
+          </div> */}
 
           {/* Journey Steps Card */}
           <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
@@ -307,10 +307,6 @@ function JourneyDetailsTab() {
               ))}
             </ul>
           </div>
-        </div>
-
-        {/* THIRD ROW: Project Notes */}
-        <div className="grid grid-cols-1 gap-2">
           <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <h2 className="font-semibold text-neutral-400 mb-1">
@@ -325,20 +321,6 @@ function JourneyDetailsTab() {
             </div>
             <div className="text-sm text-neutral-400 whitespace-pre-line mb-2">
               {sampleJourney.projectNotes}
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <div>
-                <div className="text-xs text-neutral-400">Created By</div>
-                <div className="text-sm text-neutral-400">
-                  {sampleJourney.createdBy}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-neutral-400">Created At</div>
-                <div className="text-sm text-neutral-400">
-                  {formatDate(sampleJourney.createdAt)}
-                </div>
-              </div>
             </div>
           </div>
         </div>
