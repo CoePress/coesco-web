@@ -9,13 +9,12 @@ export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
 
-  async generateQuoteNumber(
+  public async generateQuoteNumber(
     isDraft: boolean = true
   ): Promise<{ year: number; number: string }> {
     const currentYear = new Date().getFullYear();
 
     if (isDraft) {
-      // Get next draft sequence for current year
       const lastDraft = await this.model.findFirst({
         where: {
           year: currentYear,
@@ -35,7 +34,6 @@ export class QuoteService extends BaseService<Quote> {
           .padStart(4, "0")}`,
       };
     } else {
-      // Get next final quote sequence (no DRAFT)
       const lastFinal = await this.model.findFirst({
         where: {
           year: currentYear,
@@ -56,6 +54,10 @@ export class QuoteService extends BaseService<Quote> {
       };
     }
   }
+
+  public async approveQuote(quoteId: string) {}
+
+  public async createRevision(quoteId: string) {}
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
     if (!quote.journeyId) {

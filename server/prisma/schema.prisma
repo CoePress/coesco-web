@@ -441,7 +441,7 @@ enum MachineConnectionType {
 
 model Machine {
   id              String                @id @default(uuid())
-  slug            String
+  slug            String                @unique
   name            String
   type            MachineType
   controllerType  MachineControllerType

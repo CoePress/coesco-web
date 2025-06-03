@@ -2,14 +2,13 @@ import { employeeService, machineService } from "@/services";
 import { initializeModels } from "@/models";
 import { sequelize } from "@/config/database";
 import { logger } from "@/utils/logger";
-import { ICreateMachineDto } from "@/types/schema.types";
 import {
   MachineConnectionType,
   MachineControllerType,
   MachineType,
 } from "@/types/enum.types";
 
-const machines: ICreateMachineDto[] = [
+const machines = [
   {
     slug: "mazak-200",
     name: "Mazak 200",

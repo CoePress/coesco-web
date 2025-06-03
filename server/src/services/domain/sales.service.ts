@@ -128,12 +128,6 @@ export class SalesService {
     };
   }
 
-  async createCustomerQuote(user: any, customerId: string) {}
-
-  async createRevision(user: any, quoteId: string) {}
-
-  async approveQuote(quoteId: string) {}
-
   async getQuoteOverview(quoteId: string) {
     const quote = await quoteService.getById(quoteId);
 
