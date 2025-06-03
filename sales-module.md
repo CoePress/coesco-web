@@ -16,7 +16,6 @@
 ## Questions
 
 - Should a quote be able to NOT have customer/dealer ids? (drafts)
-- Should each customer have a single journey that can be referenced in multiple quotes?
 
 ```typescript
 function isJourneyReadyForQuoteProcessing(journey: Journey): boolean {

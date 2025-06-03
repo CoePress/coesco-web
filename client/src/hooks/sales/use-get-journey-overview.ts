@@ -17,7 +17,7 @@ const useGetJourneyOverview = ({ journeyId }: { journeyId: string }) => {
 
       try {
         const { data } = await instance.get<IApiResponse<any>>(
-          `/sales/journey/${journeyId}`
+          `/journeys/${journeyId}/overview`
         );
 
         if (data.success) {

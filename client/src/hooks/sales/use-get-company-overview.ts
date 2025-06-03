@@ -17,7 +17,7 @@ const useGetCompanyOverview = ({ companyId }: { companyId: string }) => {
 
       try {
         const { data } = await instance.get<IApiResponse<any>>(
-          `/sales/company/${companyId}`
+          `/companies/${companyId}/overview`
         );
 
         if (data.success) {

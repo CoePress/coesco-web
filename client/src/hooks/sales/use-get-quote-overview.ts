@@ -17,7 +17,7 @@ const useGetQuoteOverview = ({ quoteId }: { quoteId: string }) => {
 
       try {
         const { data } = await instance.get<IApiResponse<any>>(
-          `/sales/quote/${quoteId}`
+          `/quotes/${quoteId}/overview`
         );
 
         if (data.success) {

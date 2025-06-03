@@ -13,7 +13,7 @@ export const useCreateSandboxQuote = () => {
     setSuccess(false);
 
     try {
-      const response = await instance.post("/sales/sandbox");
+      const response = await instance.post("/quotes/sandbox");
       setSuccess(true);
       return response.data;
     } catch (error) {
