@@ -132,15 +132,8 @@ const Quotes = () => {
       label: journey.name,
     })) || [];
 
-  const totalQuoteValue = quotes?.reduce(
-    (sum, quote) => sum + quote.totalAmount,
-    0
-  );
-
   const pageTitle = "Quotes";
-  const pageDescription = `${quotes?.length} total quotes · ${formatCurrency(
-    totalQuoteValue
-  )} total value`;
+  const pageDescription = `${quotes?.length} total quotes`;
 
   return (
     <div className="w-full flex flex-1 flex-col">

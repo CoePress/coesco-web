@@ -9,7 +9,7 @@ import {
   MachineType,
 } from "@/types/enum.types";
 
-const seedMachines: ICreateMachineDto[] = [
+const machines: ICreateMachineDto[] = [
   {
     slug: "mazak-200",
     name: "Mazak 200",
@@ -84,14 +84,14 @@ const seedMachines: ICreateMachineDto[] = [
   },
 ];
 
-const seed = async () => {
+const seedInitial = async () => {
   try {
     await initializeModels(sequelize);
     await sequelize.sync();
 
     await employeeService.sync();
 
-    for (const machine of seedMachines) {
+    for (const machine of machines) {
       try {
         const m = await machineService.createMachine(machine);
         logger.info(`Machine ${m.slug} created`);
@@ -107,7 +107,7 @@ const seed = async () => {
   }
 };
 
-seed().catch((error) => {
-  logger.error("Fatal error during seeding:", error);
+seedInitial().catch((error) => {
+  logger.error("Fatal error during initial seeding:", error);
   process.exit(1);
 });

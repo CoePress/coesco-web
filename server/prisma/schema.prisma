@@ -12,6 +12,71 @@ enum UserType {
   ADMIN
 }
 
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SANDBOX
+  ARCHIVE
+}
+
+enum Industry {
+  AUTOMOTIVE
+  CONSTRUCTION
+  MANUFACTURING
+  OTHER
+}
+
+enum JourneyStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum JourneyType {
+  STAMPING
+  CTL
+  ROLL_FORMING
+  UPGRADE
+  PARTS
+  SERVICE
+  RETROFIT
+}
+
+enum JourneySource {
+  WEBSITE
+  SOCIAL_MEDIA
+  REFERRAL
+  EVENT
+  OTHER
+}
+
+enum JourneyPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JourneyInteractionType {
+  EMAIL
+  PHONE
+  IN_PERSON
+  VIDEO_CALL
+  TEXT_MESSAGE
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   id          String   @id @default(uuid())
   email       String   @unique
@@ -40,30 +105,15 @@ model Employee {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user                User?
-  journeys            Journey[]     @relation("RsmJourneys")
-  createdJourneys     Journey[]     @relation("JourneyCreatedBy")
-  createdJourneyNotes JourneyNote[] @relation("JourneyNoteCreatedBy")
-  changeLogs          ChangeLog[]
-  createdQuotes       Quote[]       @relation("QuoteCreatedBy")
-  approvedQuotes      Quote[]       @relation("QuoteApprovedBy")
+  user            User?
+  journeys        Journey[]   @relation("RsmJourneys")
+  createdJourneys Journey[]   @relation("JourneyCreatedBy")
+  changeLogs      ChangeLog[]
+  createdQuotes   Quote[]     @relation("QuoteCreatedBy")
+  approvedQuotes  Quote[]     @relation("QuoteApprovedBy")
 
   @@index([number])
   @@map("employees")
-}
-
-enum CompanyStatus {
-  ACTIVE
-  INACTIVE
-  STAGING
-  PROCESSED
-}
-
-enum Industry {
-  AUTOMOTIVE
-  CONSTRUCTION
-  MANUFACTURING
-  OTHER
 }
 
 model Company {
@@ -131,38 +181,30 @@ model Contact {
 }
 
 model Journey {
-  id          String    @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String?
   rsmId       String?
   customerId  String?
   dealerId    String?
-  priority    String
-  confidence  Int
-  leadSource  String?
   startDate   DateTime?
+  status      JourneyStatus?
+  type        JourneyType?
+  source      JourneySource?
+  priority    JourneyPriority?
+  confidence  Int?
+  notes       String?
   createdById String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   rsm          Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
   customer     Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
   dealer       Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
   createdBy    Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
   interactions JourneyInteraction[] @relation("JourneyInteractions")
-  notes        JourneyNote[]        @relation("JourneyNotes")
   quotes       Quote[]              @relation("JourneyQuotes")
 
   @@map("journeys")
-}
-
-enum JourneyInteractionType {
-  EMAIL
-  PHONE
-  IN_PERSON
-  VIDEO_CALL
-  TEXT_MESSAGE
-  SOCIAL_MEDIA
-  OTHER
 }
 
 model JourneyInteraction {
@@ -177,29 +219,6 @@ model JourneyInteraction {
   @@map("journey_interactions")
 }
 
-model JourneyNote {
-  id          String   @id @default(uuid())
-  journeyId   String
-  note        String
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  journey   Journey   @relation("JourneyNotes", fields: [journeyId], references: [id])
-  createdBy Employee? @relation("JourneyNoteCreatedBy", fields: [createdById], references: [id])
-
-  @@map("journey_notes")
-}
-
-enum QuoteStatus {
-  DRAFT
-  SENT
-  ACCEPTED
-  REJECTED
-  CANCELLED
-  EXPIRED
-}
-
 model Quote {
   id           String      @id @default(uuid())
   journeyId    String
@@ -211,7 +230,6 @@ model Quote {
   totalAmount  Decimal
   currency     String
   status       QuoteStatus
-  notes        String?
   createdById  String
   approvedById String?
   createdAt    DateTime    @default(now())
@@ -222,8 +240,7 @@ model Quote {
   approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
   items      QuoteItem[] @relation("QuoteItems")
 
-  @@unique([year, number, revision])
-  @@index([year, number, revision])
+  @@unique([number, revision])
   @@map("quotes")
 }
 
@@ -248,9 +265,11 @@ model QuoteItem {
 
 model ProductClass {
   id          String   @id @default(uuid())
+  code        String   @unique
   name        String
   description String?
   parentId    String?
+  depth       Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -331,6 +350,9 @@ model Item {
   id          String   @id @default(uuid())
   name        String
   description String?
+  unitPrice   Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -396,4 +418,73 @@ model ChangeLog {
   employee Employee? @relation(fields: [employeeId], references: [id])
 
   @@map("change_logs")
+}
+
+enum MachineType {
+  LATHE
+  MILL
+  GRINDER
+  OTHER
+}
+
+enum MachineControllerType {
+  MAZAK
+  FANUC
+  OTHER
+}
+
+enum MachineConnectionType {
+  MTCONNECT
+  FOCAS
+  OTHER
+}
+
+model Machine {
+  id              String                @id @default(uuid())
+  slug            String
+  name            String
+  type            MachineType
+  controllerType  MachineControllerType
+  controllerModel String
+  connectionType  MachineConnectionType
+  connectionHost  String
+  connectionPort  Int
+  connectionUrl   String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  statuses MachineStatus[]
+
+  @@map("machines")
+}
+
+enum MachineState {
+  ACTIVE
+  SETUP
+  IDLE
+  ALARM
+  OFFLINE
+  UNKNOWN
+}
+
+model MachineStatus {
+  id           String       @id @default(uuid())
+  machineId    String
+  state        MachineState
+  execution    String
+  controller   String
+  program      String
+  tool         String
+  metrics      Json
+  alarmCode    String
+  alarmMessage String
+  startTime    DateTime
+  endTime      DateTime?
+  duration     Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  machine Machine @relation(fields: [machineId], references: [id])
+
+  @@map("machine_statuses")
 }

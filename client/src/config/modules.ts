@@ -17,7 +17,6 @@ import {
   Map,
   Clock,
   GanttChart,
-  MapIcon,
   Calendar,
 } from "lucide-react";
 import { ComponentType } from "react";
@@ -154,7 +153,7 @@ const salesModule: Module = {
   ],
 };
 
-const warehouseModule: Module = {
+export const warehouseModule: Module = {
   sequence: 2,
   path: "/warehouse",
   label: "Warehouse",
@@ -241,12 +240,7 @@ const adminModule: Module = {
   popups: [],
 };
 
-const allModules = [
-  salesModule,
-  warehouseModule,
-  productionModule,
-  adminModule,
-];
+const allModules = [salesModule, productionModule, adminModule];
 
 const devModules = allModules.filter(
   (module) => module.status === "development"

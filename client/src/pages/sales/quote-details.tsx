@@ -284,7 +284,7 @@ const QuoteDetails = () => {
                 <div>
                   <div className="text-xs text-neutral-400">Number</div>
                   <div className="text-sm text-neutral-400">
-                    {quoteOverview?.quote?.year}-{quoteOverview?.quote?.number}
+                    {quoteOverview?.quote?.number}
                   </div>
                 </div>
                 <div>
@@ -305,7 +305,7 @@ const QuoteDetails = () => {
                   <div className="text-xs text-neutral-400">Created By</div>
                   <div className="text-sm text-neutral-400">
                     {quoteOverview?.quote?.createdById
-                      ? quoteOverview?.quote?.createdBy?.name
+                      ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
                       : "-"}
                   </div>
                 </div>

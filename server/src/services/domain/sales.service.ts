@@ -5,8 +5,10 @@ import {
   journeyService,
   companyService,
   contactService,
+  employeeService,
 } from "..";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { CompanyStatus } from "@prisma/client";
 
 // TODO: make this transactional
 
@@ -57,7 +59,7 @@ export class SalesService {
       taxId: "1234567890",
       logoUrl:
         "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
-      status: "STAGING",
+      status: CompanyStatus.SANDBOX,
     });
 
     if (!company.success || !company.data) {
@@ -139,6 +141,27 @@ export class SalesService {
       throw new Error("Quote not found");
     }
 
+    let creator: any;
+    if (quote.data.createdById !== "system") {
+      creator = await employeeService.getById(quote.data.createdById);
+
+      if (!creator.success || !creator.data) {
+        throw new Error("Creator not found");
+      }
+    } else {
+      creator = {
+        success: true,
+        data: {
+          id: "system",
+          firstName: "System",
+          lastName: "System",
+          email: "system@system.com",
+          phone: "+1234567890",
+          imageUrl: "https://via.placeholder.com/150",
+        },
+      };
+    }
+
     const journey = await journeyService.getById(quote.data.journeyId);
 
     if (!journey.success || !journey.data) {
@@ -172,7 +195,10 @@ export class SalesService {
     return {
       success: true,
       data: {
-        quote: quote.data,
+        quote: {
+          ...quote.data,
+          createdBy: creator?.data,
+        },
         journey: journey.data,
         quoteItems: quoteItems.data,
         customer: customer?.data,
