@@ -31,7 +31,7 @@ const PageSearch = ({
           <input
             type="text"
             placeholder={placeholder}
-            className="block w-full pl-10 pr-3 py-1.5 border rounded-md text-sm text-text-muted"
+            className="block w-full pl-10 pr-3 py-1.5 border rounded text-sm text-text-muted"
           />
         </div>
 

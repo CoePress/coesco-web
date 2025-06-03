@@ -168,7 +168,7 @@ const Employees = () => {
             <label className="text-sm text-text-muted mb-2 block">
               Employee
             </label>
-            <div className="block w-full rounded-md border border-border px-3 py-2 text-sm text-text-muted bg-surface">
+            <div className="block w-full rounded border border-border px-3 py-2 text-sm text-text-muted bg-surface">
               {selectedEmployee?.firstName} {selectedEmployee?.lastName}
             </div>
           </div>
@@ -178,7 +178,7 @@ const Employees = () => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
               <option value={EmployeeRole.ADMIN}>Admin</option>
               <option value={EmployeeRole.MANAGER}>Manager</option>
               <option value={EmployeeRole.EMPLOYEE}>Employee</option>

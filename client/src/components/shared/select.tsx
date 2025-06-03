@@ -51,7 +51,7 @@ const Select = ({
         id={id}
         name={name}
         className={`
-          w-full text-sm px-3 py-1.5 rounded-md border
+          w-full text-sm px-3 py-1.5 rounded border
           bg-foreground text-text
           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
           disabled:bg-surface disabled:text-text-muted

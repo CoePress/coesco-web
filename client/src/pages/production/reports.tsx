@@ -478,7 +478,7 @@ const Reports = () => {
             <label className="text-sm text-text-muted mb-2 block">
               Report Template
             </label>
-            <select className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            <select className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
               {templates?.map((template) => (
                 <option
                   key={template.slug}
@@ -500,7 +500,7 @@ const Reports = () => {
                   e.target.value as "daily" | "weekly" | "monthly"
                 )
               }
-              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -515,7 +515,7 @@ const Reports = () => {
               <select
                 value={selectedDay}
                 onChange={(e) => setSelectedDay(Number(e.target.value))}
-                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
                 {weekDays.map((day) => (
                   <option
                     key={day.value}
@@ -535,7 +535,7 @@ const Reports = () => {
               <select
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(Number(e.target.value))}
-                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
                   <option
                     key={date}
@@ -554,12 +554,12 @@ const Reports = () => {
                 type="time"
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
-                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
               />
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+                className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
                 {timezones.map((tz) => (
                   <option
                     key={tz}
@@ -580,7 +580,7 @@ const Reports = () => {
                 <input
                   type="text"
                   placeholder="Add email address"
-                  className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
+                  className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.currentTarget.value) {
                       setSelectedRecipients([

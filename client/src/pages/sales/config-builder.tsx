@@ -61,7 +61,7 @@ const SaveConfigModal = ({
       onClose={onClose}
       title="Save Configuration"
       size="xs">
-      <div className="mt-4 border rounded-md p-3 bg-neutral-50">
+      <div className="mt-4 border rounded p-3 bg-neutral-50">
         <h4 className="text-sm font-medium text-neutral-700 mb-2">
           Configuration Summary
         </h4>

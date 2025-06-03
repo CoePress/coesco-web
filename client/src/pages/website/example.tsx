@@ -229,7 +229,7 @@ const ProductShowcase = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             {/* Metric Cards */}
-            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded-xl border border-[#333] shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded border border-[#333] shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-[#E6a513] opacity-5 rounded-full -mr-10 -mt-10"></div>
               <h4 className="text-5xl font-bold text-[#E6a513] mb-2">37%</h4>
               <p className="text-xl text-white mb-2">Reduced Downtime</p>
@@ -238,7 +238,7 @@ const ProductShowcase = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded-xl border border-[#333] shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded border border-[#333] shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-[#E6a513] opacity-5 rounded-full -mr-10 -mt-10"></div>
               <h4 className="text-5xl font-bold text-[#E6a513] mb-2">2x</h4>
               <p className="text-xl text-white mb-2">Productivity</p>
@@ -247,7 +247,7 @@ const ProductShowcase = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded-xl border border-[#333] shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#1d1d1d] to-[#242424] p-8 rounded border border-[#333] shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-[#E6a513] opacity-5 rounded-full -mr-10 -mt-10"></div>
               <h4 className="text-5xl font-bold text-[#E6a513] mb-2">40%</h4>
               <p className="text-xl text-white mb-2">Energy Savings</p>
@@ -258,7 +258,7 @@ const ProductShowcase = () => {
           </div>
 
           {/* Testimonial with Industry Background */}
-          <div className="bg-[#1A1A1A] p-8 lg:p-12 rounded-xl border border-[#333] shadow-lg relative overflow-hidden">
+          <div className="bg-[#1A1A1A] p-8 lg:p-12 rounded border border-[#333] shadow-lg relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('/factory-floor-dark.jpg')] bg-cover bg-center opacity-10"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#1A1A1A] via-[#1A1A1A] to-transparent"></div>
 
@@ -343,7 +343,7 @@ const ProductShowcase = () => {
           <div className="flex flex-col lg:flex-row items-center gap-12">
             {/* Left column - ROI Calculator Preview */}
             <div className="lg:w-1/2">
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] p-6 rounded-xl border border-[#333] shadow-xl">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] p-6 rounded border border-[#333] shadow-xl">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                   <svg
                     viewBox="0 0 24 24"

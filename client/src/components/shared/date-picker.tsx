@@ -150,14 +150,14 @@ const DatePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
               type="date"
               value={format(customStartDate, "yyyy-MM-dd")}
               onChange={(e) => setCustomStartDate(new Date(e.target.value))}
-              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted"
+              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted"
             />
             <p className="text-sm text-text-muted">to</p>
             <input
               type="date"
               value={format(customEndDate, "yyyy-MM-dd")}
               onChange={(e) => setCustomEndDate(new Date(e.target.value))}
-              className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted"
+              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted"
             />
           </div>
 

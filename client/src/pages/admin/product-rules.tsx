@@ -132,7 +132,7 @@ const ProductRules = () => {
                       type: e.target.value as "OPTION" | "INPUT",
                     })
                   }
-                  className="w-full border rounded-md p-2">
+                  className="w-full border rounded p-2">
                   <option value="OPTION">Option Based</option>
                   <option value="INPUT">Input Based</option>
                 </select>
@@ -147,7 +147,7 @@ const ProductRules = () => {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="Enter rule name"
-                  className="w-full border rounded-md p-2"
+                  className="w-full border rounded p-2"
                 />
               </div>
 
@@ -160,7 +160,7 @@ const ProductRules = () => {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   placeholder="Enter rule description"
-                  className="w-full border rounded-md p-2"
+                  className="w-full border rounded p-2"
                 />
               </div>
 
@@ -178,7 +178,7 @@ const ProductRules = () => {
                     );
                     setFormData({ ...formData, targetOptionIds: options });
                   }}
-                  className="w-full border rounded-md p-2 min-h-[100px]">
+                  className="w-full border rounded p-2 min-h-[100px]">
                   {sampleOptions.map((option) => (
                     <option
                       key={option.id}
@@ -199,7 +199,7 @@ const ProductRules = () => {
                       action: e.target.value as RuleAction,
                     })
                   }
-                  className="w-full border rounded-md p-2">
+                  className="w-full border rounded p-2">
                   <option value={RuleAction.DISABLE}>Disable</option>
                   <option value={RuleAction.REQUIRE}>Require</option>
                 </select>
@@ -229,7 +229,7 @@ const ProductRules = () => {
                         })
                       }
                       placeholder="Enter field ID"
-                      className="w-full border rounded-md p-2"
+                      className="w-full border rounded p-2"
                     />
                   </div>
 
@@ -253,7 +253,7 @@ const ProductRules = () => {
                           },
                         })
                       }
-                      className="w-full border rounded-md p-2">
+                      className="w-full border rounded p-2">
                       <option value={ComparisonOperator.EQUAL}>
                         Equal (==)
                       </option>
@@ -294,7 +294,7 @@ const ProductRules = () => {
                         })
                       }
                       placeholder="Enter comparison value"
-                      className="w-full border rounded-md p-2"
+                      className="w-full border rounded p-2"
                     />
                   </div>
                 </div>

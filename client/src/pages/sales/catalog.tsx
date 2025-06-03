@@ -105,7 +105,7 @@ const QuoteModal = ({
         Select Quote
       </label>
       <select
-        className="w-full p-2 border rounded-md bg-foreground"
+        className="w-full p-2 border rounded bg-foreground"
         value={selectedQuote}
         onChange={(e) => setSelectedQuote(e.target.value)}>
         <option value="">Select existing quote...</option>

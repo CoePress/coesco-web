@@ -563,11 +563,11 @@ const CompanyDetails = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <button className="flex-1 bg-primary text-white px-3 py-2 text-sm rounded-md flex items-center justify-center gap-2 hover:bg-primary/80">
+                  <button className="flex-1 bg-primary text-white px-3 py-2 text-sm rounded flex items-center justify-center gap-2 hover:bg-primary/80">
                     <FileText size={16} />
                     New Quote
                   </button>
-                  <button className="flex-1 bg-primary text-white px-3 py-2 text-sm rounded-md flex items-center justify-center gap-2 hover:bg-primary/80">
+                  <button className="flex-1 bg-primary text-white px-3 py-2 text-sm rounded flex items-center justify-center gap-2 hover:bg-primary/80">
                     <DollarSign size={16} />
                     New Order
                   </button>
