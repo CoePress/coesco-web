@@ -2,6 +2,7 @@ import { Quote } from "@prisma/client";
 import { quoteService, salesService } from "@/services";
 import { BaseController } from "./_";
 import { NextFunction, Request, Response } from "express";
+import { AuthenticatedRequest } from "@/middleware/auth.middleware";
 
 export class QuoteController extends BaseController<Quote> {
   protected service = quoteService;
@@ -9,6 +10,7 @@ export class QuoteController extends BaseController<Quote> {
 
   public async getItems(req: Request, res: Response, next: NextFunction) {
     try {
+      const { id } = req.params;
       const result = {};
       res.status(200).json(result);
     } catch (error) {
@@ -26,8 +28,23 @@ export class QuoteController extends BaseController<Quote> {
     }
   }
 
+  public async createSandboxQuote(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { employee } = req;
+      const result = await salesService.createSandboxQuote(employee);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public async addItem(req: Request, res: Response, next: NextFunction) {
     try {
+      const { id } = req.params;
       const result = {};
       res.status(200).json(result);
     } catch (error) {
@@ -37,6 +54,7 @@ export class QuoteController extends BaseController<Quote> {
 
   public async removeItem(req: Request, res: Response, next: NextFunction) {
     try {
+      const { id, itemId } = req.params;
       const result = {};
       res.status(200).json(result);
     } catch (error) {

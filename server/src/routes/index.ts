@@ -5,12 +5,9 @@ import puppeteer from "puppeteer";
 
 import { __dev__ } from "@/config/config";
 import { protect } from "@/middleware/auth.middleware";
-import authRoutes from "./old/auth.routes";
-import configRoutes from "./old/config.routes";
-import emailRoutes from "./old/email.routes";
-import machineDataRoutes from "./old/machine-data.routes";
-import machineRoutes from "./old/machine.routes";
-
+import authRoutes from "./auth.routes";
+import emailRoutes from "./email.routes";
+import machineRoutes from "./machine.routes";
 import employeeRoutes from "./employee.routes";
 import companyRoutes from "./company.routes";
 import addressRoutes from "./address.routes";
@@ -19,28 +16,17 @@ import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 import itemRoutes from "./item.routes";
 
-import salesRoutes from "./sales.routes";
-
 const router = Router();
 
-// Core
 router.use("/auth", authRoutes);
-router.use("/config", protect, configRoutes);
 router.use("/email", protect, emailRoutes);
-router.use("/machines/data", protect, machineDataRoutes);
 router.use("/machines", protect, machineRoutes);
-
-// Domain
-router.use("/sales", protect, salesRoutes);
-
-// Repository
 router.use("/employees", protect, employeeRoutes);
 router.use("/companies", protect, companyRoutes);
 router.use("/addresses", protect, addressRoutes);
 router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
-
 router.use("/items", protect, itemRoutes);
 
 // System

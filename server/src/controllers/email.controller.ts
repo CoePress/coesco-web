@@ -119,9 +119,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Send an email using a template
-   */
   sendEmail = async (
     req: Request,
     res: Response,
@@ -140,9 +137,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Send an email with PDF attachment
-   */
   sendEmailWithPDF = async (
     req: Request,
     res: Response,
@@ -163,9 +157,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Send an invoice email
-   */
   sendInvoiceEmail = async (
     req: Request,
     res: Response,
@@ -199,9 +190,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Generate invoice PDF
-   */
   generateInvoicePDF = async (
     req: Request,
     res: Response,
@@ -243,9 +231,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * Store a sample invoice template (for development use)
-   */
   setupInvoiceTemplate = async (
     req: Request,
     res: Response,
