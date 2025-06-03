@@ -29,6 +29,19 @@ export class SalesController {
     }
   }
 
+  async getJourneyOverview(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const result = await salesService.getJourneyOverview(req.params.id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getCompanyOverview(
     req: AuthenticatedRequest,
     res: Response,

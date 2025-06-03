@@ -225,7 +225,7 @@ const CompanyDetails = () => {
         <div className="p-2 flex flex-1 flex-col">
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <img
@@ -306,7 +306,7 @@ const CompanyDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <div className="text-sm font-medium text-neutral-400 mb-3">
@@ -383,7 +383,7 @@ const CompanyDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-neutral-400">
@@ -493,7 +493,7 @@ const CompanyDetails = () => {
             </div>
 
             {/* <div className="grid grid-cols-2 gap-2">
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex justify-between items-start mb-2">
                   <h2 className="font-semibold text-neutral-400">
                     Activity Summary
@@ -505,7 +505,7 @@ const CompanyDetails = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="border rounded-lg p-3">
+                  <div className="border rounded p-3">
                     <div className="text-xs text-neutral-400 uppercase">
                       Total Quotes
                     </div>
@@ -522,7 +522,7 @@ const CompanyDetails = () => {
                       lifetime
                     </div>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border rounded p-3">
                     <div className="text-xs text-neutral-400 uppercase">
                       Total Orders
                     </div>
@@ -539,7 +539,7 @@ const CompanyDetails = () => {
                       lifetime
                     </div>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border rounded p-3">
                     <div className="text-xs text-neutral-400 uppercase">
                       Last Activity
                     </div>
@@ -550,7 +550,7 @@ const CompanyDetails = () => {
                       {formatDate(sampleCustomer.activities[0].date)}
                     </div>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border rounded p-3">
                     <div className="text-xs text-neutral-400 uppercase">
                       Last Order
                     </div>
@@ -574,7 +574,7 @@ const CompanyDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-foreground rounded-lg shadow-sm border p-2">
+              <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-medium text-neutral-400">
                     Recent Activity
@@ -583,7 +583,7 @@ const CompanyDetails = () => {
                     View All
                   </button>
                 </div>
-                <div className="border rounded-lg p-3">
+                <div className="border rounded p-3">
                   <div className="space-y-3">
                     {sampleCompanyMetrics.recentActivity.map(
                       (activity, idx) => (

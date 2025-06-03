@@ -643,7 +643,7 @@ const ConfigBuilder = () => {
               {validationResults.map((result, index) => (
                 <div
                   key={index}
-                  className={`p-2 rounded-lg flex items-center gap-2 text-sm ${
+                  className={`p-2 rounded flex items-center gap-2 text-sm ${
                     result.type === "error"
                       ? "bg-yellow-100 text-yellow-800"
                       : result.type === "warning"
@@ -682,7 +682,7 @@ const ConfigBuilder = () => {
                 return (
                   <div
                     key={category.id}
-                    className="p-3 bg-foreground border rounded-lg">
+                    className="p-3 bg-foreground border rounded">
                     <h3 className="font-medium text-neutral-400 mb-2">
                       {category.name}
                     </h3>
@@ -709,7 +709,7 @@ const ConfigBuilder = () => {
                 );
               })}
 
-              <div className="flex justify-between p-3 bg-foreground border rounded-lg font-semibold">
+              <div className="flex justify-between p-3 bg-foreground border rounded font-semibold">
                 <div className="text-neutral-400">Total</div>
                 <div className="text-neutral-400">
                   {formatCurrency(totalPrice)}

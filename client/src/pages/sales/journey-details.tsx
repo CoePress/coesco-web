@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   PageHeader,
   Tabs,
@@ -9,7 +9,8 @@ import {
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { Download, Edit, Plus, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import useGetJourneyOverview from "@/hooks/sales/use-get-journey-overview";
 
 // Sample/mock data
 const sampleJourney = {
@@ -113,7 +114,7 @@ const sampleHistory = {
   ],
 };
 
-function JourneyDetailsTab() {
+function JourneyDetailsTab({ journey }: { journey: any }) {
   const navigate = useNavigate();
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -131,20 +132,24 @@ function JourneyDetailsTab() {
     setModalState({ isOpen: false, type: "" });
   };
 
+  if (!journey) {
+    return null;
+  }
+
+  const customer = journey.customer;
+
   return (
     <div className="p-2 flex flex-1 flex-col">
       <div className="flex flex-col gap-2 flex-1">
         <div className="grid grid-cols-3 gap-2">
           {/* Customer Information Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted">Customer</h2>
               <Button
                 variant="secondary-outline"
                 size="sm"
-                onClick={() =>
-                  navigate(`/sales/companies/${sampleCustomer.id}`)
-                }>
+                onClick={() => navigate(`/sales/companies/${customer?.id}`)}>
                 <User size={16} />
               </Button>
             </div>
@@ -152,38 +157,38 @@ function JourneyDetailsTab() {
               <div>
                 <div className="text-xs text-text-muted">Company</div>
                 <div className="text-sm text-text-muted">
-                  {sampleCustomer.name}
+                  {customer?.name || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-text-muted">Industry</div>
                 <div className="text-sm text-text-muted">
-                  {sampleCustomer.industry}
+                  {customer?.industry || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-text-muted">Contact</div>
                 <div className="text-sm text-text-muted">
-                  {sampleCustomer.contact}
+                  {customer?.contact || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-text-muted">Email</div>
                 <div className="text-sm text-text-muted">
-                  {sampleCustomer.email}
+                  {customer?.email || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-text-muted">Phone</div>
                 <div className="text-sm text-text-muted">
-                  {sampleCustomer.phone}
+                  {customer?.phone || "-"}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Journey Details Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted">Journey Details</h2>
               <Button
@@ -254,7 +259,7 @@ function JourneyDetailsTab() {
           </div>
 
           {/* Journey Tracking Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted">
                 Journey Tracking
@@ -305,7 +310,7 @@ function JourneyDetailsTab() {
 
         <div className="grid grid-cols-3 gap-2 flex-1">
           {/* Project Notes Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col h-full">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center">
               <h2 className="font-semibold text-text-muted mb-1">Notes</h2>
             </div>
@@ -317,7 +322,7 @@ function JourneyDetailsTab() {
           </div>
 
           {/* Interactions Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col h-full">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted">Interactions</h2>
               <Button
@@ -349,7 +354,7 @@ function JourneyDetailsTab() {
           </div>
 
           {/* Quotes Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col h-full">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted">Quotes</h2>
               <Button
@@ -429,7 +434,7 @@ function JourneyDetailsTab() {
 function JourneyHistoryTab() {
   return (
     <div className="flex flex-1 flex-col p-2 gap-2">
-      <div className="bg-foreground rounded-lg shadow-sm border p-2 flex-1">
+      <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
         <div className="text-xs font-bold text-text-muted mb-1">
           Note History
         </div>
@@ -445,7 +450,7 @@ function JourneyHistoryTab() {
           idField="created"
         />
       </div>
-      <div className="bg-foreground rounded-lg shadow-sm border p-2 flex-1">
+      <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
         <div className="text-xs font-bold text-text-muted mb-1">
           Log Records
         </div>
@@ -468,13 +473,34 @@ const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
   const navigate = useNavigate();
 
+  const journeyId = useParams().id;
+
+  const { journeyOverview, loading, error } = useGetJourneyOverview({
+    journeyId: journeyId || "",
+  });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  // Add this to debug the API response
+  console.log("API Response:", journeyOverview);
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title={sampleJourney.name}
-        description={`Started ${formatDate(sampleJourney.startDate)} • ${
-          sampleJourney.type
-        } • ${formatCurrency(sampleJourney.value)}`}
+        title={journeyOverview?.journey?.name || sampleJourney.name}
+        description={`Started ${formatDate(
+          journeyOverview?.journey?.startDate || sampleJourney.startDate
+        )} • ${
+          journeyOverview?.journey?.type || sampleJourney.type
+        } • ${formatCurrency(
+          journeyOverview?.journey?.value || sampleJourney.value
+        )}`}
         backButton
         onBack={() => navigate("/sales/journeys")}
         actions={[
@@ -504,7 +530,14 @@ const JourneyDetailsPage = () => {
         ]}
       />
       <>
-        {activeTab === "details" && <JourneyDetailsTab />}
+        {activeTab === "details" && (
+          <JourneyDetailsTab
+            journey={{
+              ...journeyOverview?.journey,
+              customer: journeyOverview?.customer,
+            }}
+          />
+        )}
         {activeTab === "history" && <JourneyHistoryTab />}
       </>
     </div>

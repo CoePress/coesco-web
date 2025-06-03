@@ -134,7 +134,7 @@ const ProductShowcase = () => {
 
             {/* Featured Image */}
             <div className="flex-1 order-1 md:order-2">
-              <div className="relative aspect-video overflow-hidden rounded-lg shadow-2xl border border-[#333] bg-[#191919]">
+              <div className="relative aspect-video overflow-hidden rounded shadow-2xl border border-[#333] bg-[#191919]">
                 <img
                   src={product.images[activeImage]}
                   alt={`${product.name} main view`}
@@ -180,7 +180,7 @@ const ProductShowcase = () => {
               return (
                 <div
                   key={index}
-                  className="bg-[#1d1d1d] p-6 rounded-lg border border-[#333] hover:border-[#E6a513] transition-all hover:shadow-lg hover:shadow-[#E6a513]/10">
+                  className="bg-[#1d1d1d] p-6 rounded border border-[#333] hover:border-[#E6a513] transition-all hover:shadow-lg hover:shadow-[#E6a513]/10">
                   <div className="mb-4">
                     <IconComponent />
                   </div>
@@ -201,7 +201,7 @@ const ProductShowcase = () => {
           <h3 className="text-3xl font-bold text-white mb-8 text-center">
             Technical Specifications
           </h3>
-          <div className="overflow-hidden rounded-lg shadow-lg border border-[#292929]">
+          <div className="overflow-hidden rounded shadow-lg border border-[#292929]">
             <table className="min-w-full bg-[#232323] text-left">
               <tbody>
                 {product.specs.map((spec, i) => (
@@ -298,7 +298,7 @@ const ProductShowcase = () => {
                 </div>
               </div>
 
-              <div className="lg:w-1/3 bg-[#111] p-6 rounded-lg border border-[#333]">
+              <div className="lg:w-1/3 bg-[#111] p-6 rounded border border-[#333]">
                 <h4 className="text-xl font-bold text-white mb-4 flex items-center">
                   <svg
                     viewBox="0 0 24 24"
@@ -356,7 +356,7 @@ const ProductShowcase = () => {
                   ROI Calculator
                 </h3>
 
-                <div className="p-4 bg-[#151515] rounded-lg mb-6">
+                <div className="p-4 bg-[#151515] rounded mb-6">
                   <div className="flex justify-between mb-3">
                     <span className="text-[#999]">Current Daily Output:</span>
                     <span className="text-white font-medium">1,200 units</span>
@@ -413,7 +413,7 @@ const ProductShowcase = () => {
 
               <div className="space-y-6 mb-8">
                 <div className="flex gap-4">
-                  <div className="mt-1 bg-[#E6a513] rounded-lg p-2 h-fit">
+                  <div className="mt-1 bg-[#E6a513] rounded p-2 h-fit">
                     <svg
                       viewBox="0 0 24 24"
                       className="w-6 h-6 text-[#0c0c0c]">
@@ -435,7 +435,7 @@ const ProductShowcase = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="mt-1 bg-[#E6a513] rounded-lg p-2 h-fit">
+                  <div className="mt-1 bg-[#E6a513] rounded p-2 h-fit">
                     <svg
                       viewBox="0 0 24 24"
                       className="w-6 h-6 text-[#0c0c0c]">
@@ -457,7 +457,7 @@ const ProductShowcase = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="mt-1 bg-[#E6a513] rounded-lg p-2 h-fit">
+                  <div className="mt-1 bg-[#E6a513] rounded p-2 h-fit">
                     <svg
                       viewBox="0 0 24 24"
                       className="w-6 h-6 text-[#0c0c0c]">

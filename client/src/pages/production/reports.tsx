@@ -264,7 +264,7 @@ const Reports = () => {
                             setSelectedReport(null);
                           }}>
                           <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-surface">
+                            <div className="p-2 rounded bg-surface">
                               <FileText size={20} />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -437,7 +437,7 @@ const Reports = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="aspect-[8.5/11] bg-surface rounded-lg border border-dashed flex items-center justify-center">
+                    <div className="aspect-[8.5/11] bg-surface rounded border border-dashed flex items-center justify-center">
                       <div className="text-center">
                         <FileText
                           size={48}

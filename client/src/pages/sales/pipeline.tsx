@@ -51,7 +51,7 @@ const Pipeline = () => {
     <div
       key={deal.id}
       draggable={true}
-      className="bg-foreground rounded-lg shadow-sm border p-3 mb-3 cursor-move hover:shadow select-none">
+      className="bg-foreground rounded shadow-sm border p-3 mb-3 cursor-move hover:shadow select-none">
       <div className="text-sm font-medium text-neutral-400 mb-1 truncate">
         {deal.name}
       </div>
@@ -249,7 +249,7 @@ const Pipeline = () => {
                     </div>
                   </div>
                   <div
-                    className={`p-3 rounded-lg ${stage.color} h-max overflow-y-auto`}>
+                    className={`p-3 rounded ${stage.color} h-max overflow-y-auto`}>
                     {getDealsByStage(stage.id).map((deal) =>
                       renderKanbanCard(deal)
                     )}
@@ -270,7 +270,7 @@ const Pipeline = () => {
           columns={tableColumns as any}
           data={sampleDeals}
           total={sampleDeals.length}
-          className="bg-foreground rounded-lg shadow-sm border"
+          className="bg-foreground rounded shadow-sm border"
         />
       )}
     </div>

@@ -484,7 +484,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={getPlaceholderText()}
-          className="w-full px-4 py-3 text-text text-base bg-foreground border border-border rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-primary focus:border-primary transition-all duration-200"
+          className="w-full px-4 py-3 text-text text-base bg-foreground border border-border rounded shadow-sm focus:outline-none focus:ring focus:ring-primary focus:border-primary transition-all duration-200"
           autoFocus={externalIsOpen}
           onFocus={() => {
             if (!isOpen) {
@@ -500,7 +500,7 @@ const CommandBar: React.FC<CommandBarProps> = ({
       {isOpen && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-10 w-full mt-1 overflow-y-auto bg-foreground border border-border rounded-lg shadow-lg max-h-64">
+          className="absolute z-10 w-full mt-1 overflow-y-auto bg-foreground border border-border rounded shadow-lg max-h-64">
           {suggestions.map((suggestion, index) => {
             const isHeader =
               suggestion.text === "Pages" || suggestion.text === "Popups";

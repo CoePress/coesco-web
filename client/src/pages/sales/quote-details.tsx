@@ -187,7 +187,7 @@ const QuoteDetails = () => {
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
-            {/* <div className="bg-foreground rounded-lg shadow-sm border p-4 col-span-2">
+            {/* <div className="bg-foreground rounded shadow-sm border p-4 col-span-2">
               <h2 className="font-semibold text-text-muted mb-4">
                 Quote Summary
               </h2>
@@ -260,7 +260,7 @@ const QuoteDetails = () => {
             </div> */}
 
             {/* Overview */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+            <div className="bg-foreground rounded shadow-sm border p-2">
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex justify-between items-start col-span-2">
                   <div className="text-sm font-medium text-neutral-400">
@@ -337,7 +337,7 @@ const QuoteDetails = () => {
             </div>
 
             {/* Customer */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+            <div className="bg-foreground rounded shadow-sm border p-2">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
                   <div className="flex justify-between items-start mb-2">
@@ -388,7 +388,7 @@ const QuoteDetails = () => {
             </div>
 
             {/* Dealer */}
-            <div className="bg-foreground rounded-lg shadow-sm border p-2">
+            <div className="bg-foreground rounded shadow-sm border p-2">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
                   <div className="flex justify-between items-start mb-2">
@@ -441,7 +441,7 @@ const QuoteDetails = () => {
             </div>
           </div>
 
-          <div className="bg-foreground rounded-lg shadow-sm border overflow-hidden">
+          <div className="bg-foreground rounded shadow-sm border overflow-hidden">
             <div className="p-2 bg-foreground border-b flex justify-between items-center">
               <h2 className="font-semibold text-text-muted text-sm">
                 Quote Items

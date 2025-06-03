@@ -181,6 +181,31 @@ export class SalesService {
     };
   }
 
+  async getJourneyOverview(journeyId: string) {
+    const journey = await journeyService.getById(journeyId);
+
+    if (!journey.success || !journey.data) {
+      throw new Error("Journey not found");
+    }
+
+    let customer: any;
+    if (journey.data.customerId) {
+      customer = await companyService.getById(journey.data.customerId);
+
+      if (!customer.success || !customer.data) {
+        throw new Error("Customer not found");
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        journey: journey.data,
+        customer: customer?.data,
+      },
+    };
+  }
+
   async getCompanyOverview(companyId: string) {
     const company = await companyService.getById(companyId);
 

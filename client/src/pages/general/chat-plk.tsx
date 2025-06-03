@@ -121,7 +121,7 @@ const ChatPLK = () => {
                   <div
                     key={msg.id}
                     className="flex justify-start">
-                    <div className="rounded-lg border shadow-sm px-4 py-3 max-w-[80%] bg-surface text-text-muted mr-12">
+                    <div className="rounded border shadow-sm px-4 py-3 max-w-[80%] bg-surface text-text-muted mr-12">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800 text-primary">
                           <MessageSquare size={16} />
@@ -154,7 +154,7 @@ const ChatPLK = () => {
                       msg.role === "user" ? "justify-end" : "justify-start"
                     }`}>
                     <div
-                      className={`rounded-lg border shadow-sm px-4 py-3 max-w-[80%] ${
+                      className={`rounded border shadow-sm px-4 py-3 max-w-[80%] ${
                         msg.role === "user"
                           ? "bg-primary text-foreground ml-12"
                           : "bg-surface text-text-muted mr-12"
@@ -182,7 +182,7 @@ const ChatPLK = () => {
               )}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="rounded-lg border shadow-sm px-4 py-3 max-w-[80%] bg-surface text-text-muted mr-12 animate-pulse">
+                  <div className="rounded border shadow-sm px-4 py-3 max-w-[80%] bg-surface text-text-muted mr-12 animate-pulse">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800 text-primary">
                         <MessageSquare size={16} />
@@ -201,7 +201,7 @@ const ChatPLK = () => {
           <div className="bg-foreground border-t p-4 ">
             <div className="relative max-w-screen-md mx-auto flex justify-center items-center">
               <textarea
-                className="w-full border rounded-lg p-3 pr-12 text-sm resize-none text-text"
+                className="w-full border rounded p-3 pr-12 text-sm resize-none text-text"
                 rows={2}
                 placeholder="Type your message here..."
                 value={input}

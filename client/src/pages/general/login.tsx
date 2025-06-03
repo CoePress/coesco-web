@@ -79,7 +79,7 @@ const LoginPage = () => {
         <BackgroundImage />
         <div className="relative z-10 w-full max-w-sm">
           <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/95">
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-2 rounded-lg text-center">
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-2 rounded text-center">
               <p className="font-semibold mb-2">System Unavailable</p>
               <p className="text-sm mb-4">
                 Our services are currently down. Please try again later.
@@ -112,7 +112,7 @@ const LoginPage = () => {
             </div> */}
 
             {errorMessage && (
-              <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded-lg flex items-start">
+              <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
                 <svg
                   width="18"
                   height="18"

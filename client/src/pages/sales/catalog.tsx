@@ -262,7 +262,7 @@ const Catalog = () => {
       <div className="p-2">
         <div className="flex gap-2">
           <div className="w-64 flex-shrink-0">
-            <div className="bg-foreground rounded-lg border p-4">
+            <div className="bg-foreground rounded border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold text-text-muted">Filters</h2>
                 <Button
@@ -372,7 +372,7 @@ const Catalog = () => {
                 return (
                   <div
                     key={config.id}
-                    className="bg-foreground rounded-lg border hover:shadow-md transition-shadow">
+                    className="bg-foreground rounded border hover:shadow-md transition-shadow">
                     <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
                       {config.image ? (
                         <img
@@ -449,7 +449,7 @@ const Catalog = () => {
               })}
 
               {getVisibleConfigurations().length === 0 && (
-                <div className="col-span-full text-center p-8 bg-foreground rounded-lg border">
+                <div className="col-span-full text-center p-8 bg-foreground rounded border">
                   <p className="text-text-muted">
                     No configurations match your current filters
                   </p>
