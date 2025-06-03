@@ -2,14 +2,30 @@ import { Edit, MapPin, Star, Download, Plus } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { Button, PageHeader, StatusBadge, Table, Tabs } from "@/components";
+import { PageHeader, StatusBadge, Table, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
+import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
 const JourneysTab = () => {
-  const include = ["journey"];
+  const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+
+  const companyId = useParams().id;
+
+  const filter = useMemo(
+    () => ({
+      customerId: companyId || "",
+    }),
+    [companyId]
+  );
+
+  const { journeys, loading, error, refresh, pagination } = useGetJourneys({
+    filter,
+  });
 
   const columns: TableColumn<any>[] = [
     {
@@ -40,7 +56,25 @@ const JourneysTab = () => {
       render: (value) => value,
     },
   ];
-  return <div>Journeys</div>;
+
+  return (
+    <Table
+      columns={columns}
+      data={journeys || []}
+      total={journeys?.length || 0}
+      idField="id"
+      pagination
+      currentPage={pagination.page}
+      totalPages={pagination.totalPages}
+      onPageChange={setPage}
+      sort={sort}
+      order={order}
+      onSortChange={(newSort, newOrder) => {
+        setSort(newSort as "createdAt" | "updatedAt");
+        setOrder(newOrder as "asc" | "desc");
+      }}
+    />
+  );
 };
 
 const QuotesTab = () => {
@@ -49,8 +83,6 @@ const QuotesTab = () => {
   const [page, setPage] = useState(1);
 
   const companyId = useParams().id;
-
-  const navigate = useNavigate();
 
   const filter = useMemo(
     () => ({
@@ -62,6 +94,11 @@ const QuotesTab = () => {
   );
 
   const include = useMemo(() => ["journey"], []);
+
+  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
+    filter,
+    include,
+  });
 
   const columns: TableColumn<any>[] = [
     {
@@ -91,9 +128,7 @@ const QuotesTab = () => {
       header: "Journey",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/journeys/${row.journey.id}`}>
-          {row.journey.name}
-        </Link>
+        <Link to={`/sales/journeys/${row.journey.id}`}>{row.journey.name}</Link>
       ),
     },
     {
@@ -102,11 +137,6 @@ const QuotesTab = () => {
       render: (value) => value,
     },
   ];
-
-  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
-    filter,
-    include,
-  });
 
   return (
     <Table
@@ -591,6 +621,8 @@ const CompanyDetails = () => {
           </div>
         </div>
       )}
+
+      {activeTab === "journeys" && <JourneysTab />}
 
       {activeTab === "quotes" && <QuotesTab />}
 

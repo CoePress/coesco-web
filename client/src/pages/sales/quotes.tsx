@@ -9,19 +9,26 @@ import {
   PageSearch,
   StatusBadge,
   Table,
+  Tabs,
+  Select,
 } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
 import { useCreateSandboxQuote } from "@/hooks/sales/use-create-sandbox-quote";
+import useGetCompanies from "@/hooks/sales/use-get-companies";
+import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"actual" | "sandbox">("actual");
+  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
+  const [selectedJourney, setSelectedJourney] = useState<string>("");
 
-  const include = useMemo(() => ["journey"], []);
+  const include = useMemo(() => ["journey", "journey.customer"], []);
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes({
     include,
@@ -31,6 +38,8 @@ const Quotes = () => {
     loading: sandboxLoading,
     error: sandboxError,
   } = useCreateSandboxQuote();
+  const { companies } = useGetCompanies();
+  const { journeys } = useGetJourneys();
 
   const columns: TableColumn<any>[] = [
     {
@@ -66,17 +75,58 @@ const Quotes = () => {
       ),
     },
     {
+      key: "journey.customer.name",
+      header: "Customer",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/companies/${row.journey.customer.id}`}>
+          {row.journey.customer.name || "-"}
+        </Link>
+      ),
+    },
+    {
       key: "createdById",
       header: "Created By",
       render: (value) => value,
     },
   ];
 
-  const navigate = useNavigate();
-
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
+    if (!isModalOpen) {
+      setActiveTab("actual");
+      setSelectedCustomer("");
+      setSelectedJourney("");
+    }
   };
+
+  const handleCreateQuote = async () => {
+    if (activeTab === "sandbox") {
+      const result = await createSandboxQuote();
+      if (result) {
+        toggleModal();
+        refresh();
+      }
+    } else {
+      // TODO: Implement actual quote creation
+      console.log("Create actual quote with:", {
+        selectedCustomer,
+        selectedJourney,
+      });
+    }
+  };
+
+  const customerOptions =
+    companies?.map((company) => ({
+      value: company.id,
+      label: company.name,
+    })) || [];
+
+  const journeyOptions =
+    journeys?.map((journey) => ({
+      value: journey.id,
+      label: journey.name,
+    })) || [];
 
   const totalQuoteValue = quotes?.reduce(
     (sum, quote) => sum + quote.totalAmount,
@@ -143,24 +193,48 @@ const Quotes = () => {
         onClose={toggleModal}
         title="Create New Quote"
         size="xs">
-        <Button onClick={() => {}}>Existing Customer</Button>
+        <div className="space-y-4">
+          <Tabs
+            activeTab={activeTab}
+            setActiveTab={(tab) => setActiveTab(tab as "actual" | "sandbox")}
+            tabs={[
+              { label: "Actual", value: "actual" },
+              { label: "Sandbox", value: "sandbox" },
+            ]}
+          />
 
-        <div className="text-center">
-          <span className="text-sm text-text-muted">or</span>
+          <div className="space-y-4 pt-4">
+            <Select
+              label="Customer"
+              options={customerOptions}
+              value={selectedCustomer}
+              onChange={(e) => setSelectedCustomer(e.target.value)}
+              required={activeTab === "actual"}
+              placeholder="Select a customer"
+            />
+
+            <Select
+              label="Journey"
+              options={journeyOptions}
+              value={selectedJourney}
+              onChange={(e) => setSelectedJourney(e.target.value)}
+              required={activeTab === "actual"}
+              placeholder="Select a journey"
+            />
+
+            <Button
+              onClick={handleCreateQuote}
+              disabled={
+                (activeTab === "actual" &&
+                  (!selectedCustomer || !selectedJourney)) ||
+                sandboxLoading
+              }
+              variant="primary"
+              className="w-full">
+              {sandboxLoading ? "Creating..." : "Create Quote"}
+            </Button>
+          </div>
         </div>
-
-        <Button
-          onClick={async () => {
-            const result = await createSandboxQuote();
-            if (result) {
-              toggleModal();
-              refresh();
-            }
-          }}
-          disabled={sandboxLoading}
-          variant="secondary-outline">
-          {sandboxLoading ? "Creating..." : "Sandbox Quote"}
-        </Button>
       </Modal>
     </div>
   );
