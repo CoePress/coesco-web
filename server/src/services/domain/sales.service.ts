@@ -16,8 +16,31 @@ export class SalesService {
 
     const userInitials = `${employee.firstName[0]}${employee.lastName[0]}`;
 
+    // Find the latest sandbox company number for this user
+    const latestCompany = await prisma.company.findFirst({
+      where: {
+        name: {
+          startsWith: `Sandbox Company (${userInitials}-`,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Extract the number from the latest company name or start with 1
+    let companyNumber = 1;
+    if (latestCompany) {
+      const match = latestCompany.name.match(/\(${userInitials}-(\d+)\)/);
+      if (match) {
+        companyNumber = parseInt(match[1]) + 1;
+      }
+    }
+
     const company = await companyService.create({
-      name: `Sandbox Company (${userInitials})`,
+      name: `Sandbox Company (${userInitials}-${companyNumber
+        .toString()
+        .padStart(4, "0")})`,
       website: "sandbox.com",
       email: "sandbox@sandbox.com",
       phone: "+1234567890",
@@ -39,11 +62,34 @@ export class SalesService {
       throw new BadRequestError("Company not created");
     }
 
+    // Find the latest sandbox journey number for this user
+    const latestJourney = await prisma.journey.findFirst({
+      where: {
+        name: {
+          startsWith: `Sandbox Journey (${userInitials}-`,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Extract the number from the latest journey name or start with 1
+    let journeyNumber = 1;
+    if (latestJourney?.name) {
+      const match = latestJourney.name.match(/\(${userInitials}-(\d+)\)/);
+      if (match) {
+        journeyNumber = parseInt(match[1]) + 1;
+      }
+    }
+
     // sandbox journey
     const journey = await journeyService.create({
       customer: { connect: { id: company.data.id } },
       createdBy: { connect: { id: employee.id } },
-      name: `Sandbox Journey (${userInitials})`,
+      name: `Sandbox Journey (${userInitials}-${journeyNumber
+        .toString()
+        .padStart(4, "0")})`,
       priority: "LOW",
       confidence: 1,
     });

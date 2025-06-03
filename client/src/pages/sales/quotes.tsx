@@ -19,6 +19,10 @@ import { useCreateSandboxQuote } from "@/hooks/sales/use-create-sandbox-quote";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
+// TODO: Modal - Display journeys based on selected customer, and allow to create new journey
+// TODO: Modal - Actual records are limited to actual tab
+// TODO: Modal - Sandbox records are limited to sandbox tab
+
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
