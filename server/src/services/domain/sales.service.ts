@@ -31,7 +31,9 @@ export class SalesService {
     // Extract the number from the latest company name or start with 1
     let companyNumber = 1;
     if (latestCompany) {
-      const match = latestCompany.name.match(/\(${userInitials}-(\d+)\)/);
+      const match = latestCompany.name.match(
+        new RegExp(`\\(${userInitials}-(\\d+)\\)`)
+      );
       if (match) {
         companyNumber = parseInt(match[1]) + 1;
       }
@@ -77,7 +79,9 @@ export class SalesService {
     // Extract the number from the latest journey name or start with 1
     let journeyNumber = 1;
     if (latestJourney?.name) {
-      const match = latestJourney.name.match(/\(${userInitials}-(\d+)\)/);
+      const match = latestJourney.name.match(
+        new RegExp(`\\(${userInitials}-(\\d+)\\)`)
+      );
       if (match) {
         journeyNumber = parseInt(match[1]) + 1;
       }

@@ -30,7 +30,7 @@ export class QuoteService extends BaseService<Quote> {
 
       return {
         year: currentYear,
-        number: `${currentYear}-DRAFT-${nextSequence
+        number: `${currentYear.toString().slice(-2)}-DRAFT-${nextSequence
           .toString()
           .padStart(4, "0")}`,
       };
@@ -50,7 +50,9 @@ export class QuoteService extends BaseService<Quote> {
 
       return {
         year: currentYear,
-        number: `${currentYear}-${nextSequence.toString().padStart(4, "0")}`,
+        number: `${currentYear.toString().slice(-2)}-${nextSequence
+          .toString()
+          .padStart(4, "0")}`,
       };
     }
   }

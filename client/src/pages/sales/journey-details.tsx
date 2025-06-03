@@ -308,12 +308,6 @@ function JourneyDetailsTab() {
           <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center">
               <h2 className="font-semibold text-text-muted mb-1">Notes</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => handleOpenModal("project-notes")}>
-                <Edit size={16} />
-              </Button>
             </div>
             <textarea
               className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text-muted resize-none focus:outline-none focus:ring-1 focus:ring-primary"
