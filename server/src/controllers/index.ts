@@ -10,6 +10,7 @@ import { QuoteController } from "./repository/quote.controller";
 import { EmployeeController } from "./repository/employee.controller";
 import { JourneyController } from "./repository/journey.controller";
 import { SalesController } from "./domain/sales.controller";
+import { ItemController } from "./repository/item.controller";
 
 // Core
 export const authController = new AuthController();
@@ -28,3 +29,5 @@ export const addressController = new AddressController();
 export const contactController = new ContactController();
 export const journeyController = new JourneyController();
 export const quoteController = new QuoteController();
+
+export const itemController = new ItemController();

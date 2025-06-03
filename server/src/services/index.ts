@@ -26,6 +26,7 @@ import { CompatibilityService } from "./domain/compatibility.service";
 import { AnalyticsService } from "./domain/analytics.service";
 import { MachineMonitorService } from "./domain/machine-monitor.service";
 import { SalesService } from "./domain/sales.service";
+import { ItemService } from "./repository/item.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
@@ -78,3 +79,5 @@ export const configurationOptionService = new ConfigurationOptionService();
 // Machines
 // Machine Statuses
 export const salesService = new SalesService();
+
+export const itemService = new ItemService();

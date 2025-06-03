@@ -16,19 +16,6 @@ export class SalesController {
     }
   }
 
-  async getQuoteOverview(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const result = await salesService.getQuoteOverview(req.params.id);
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async getJourneyOverview(
     req: AuthenticatedRequest,
     res: Response,

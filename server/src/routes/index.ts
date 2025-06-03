@@ -3,13 +3,13 @@ import path from "path";
 import fs from "fs";
 import puppeteer from "puppeteer";
 
+import { __dev__ } from "@/config/config";
 import { protect } from "@/middleware/auth.middleware";
 import authRoutes from "./old/auth.routes";
 import configRoutes from "./old/config.routes";
 import emailRoutes from "./old/email.routes";
 import machineDataRoutes from "./old/machine-data.routes";
 import machineRoutes from "./old/machine.routes";
-import { __dev__ } from "@/config/config";
 
 import employeeRoutes from "./employee.routes";
 import companyRoutes from "./company.routes";
@@ -17,6 +17,7 @@ import addressRoutes from "./address.routes";
 import contactRoutes from "./contact.router";
 import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
+import itemRoutes from "./item.routes";
 
 import salesRoutes from "./sales.routes";
 
@@ -39,6 +40,8 @@ router.use("/addresses", protect, addressRoutes);
 router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
+
+router.use("/items", protect, itemRoutes);
 
 // System
 router.get("/health", (req, res) => {

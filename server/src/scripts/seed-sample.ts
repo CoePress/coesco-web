@@ -14,7 +14,6 @@ const sampleProductClasses = [
     code: "foo",
     name: "Foo",
     description: "Foo product line",
-    parentCode: null,
     depth: 0,
   },
   {
@@ -96,9 +95,14 @@ const seedSample = async () => {
     return;
   }
 
-  for (const productClass of sampleProductClasses) {
+  // Sort product classes by depth to ensure parents are created first
+  const sortedProductClasses = [...sampleProductClasses].sort(
+    (a, b) => a.depth - b.depth
+  );
+
+  for (const productClass of sortedProductClasses) {
     logger.info(`Seeding product class ${productClass.code}`);
-    const exists = await prisma.productClass.findUnique({
+    const exists = await prisma.productClass.findFirst({
       where: {
         code: productClass.code,
       },
@@ -109,21 +113,32 @@ const seedSample = async () => {
       continue;
     }
 
-    const parent = await prisma.productClass.findUnique({
-      where: {
-        code: productClass.parentCode ?? undefined,
-      },
-    });
-
-    if (parent) {
-      await prisma.productClass.create({
-        data: {
-          ...productClass,
-          parentId: parent.id,
+    if (productClass.parentCode) {
+      const parent = await prisma.productClass.findFirst({
+        where: {
+          code: productClass.parentCode,
         },
       });
+
+      if (parent) {
+        await prisma.productClass.create({
+          data: {
+            code: productClass.code,
+            name: productClass.name,
+            description: productClass.description,
+            depth: productClass.depth,
+            parentId: parent.id,
+          },
+        });
+      } else {
+        logger.error(
+          `Parent product class ${productClass.parentCode} not found`
+        );
+      }
     } else {
-      logger.error(`Parent product class ${productClass.parentCode} not found`);
+      await prisma.productClass.create({
+        data: productClass,
+      });
     }
   }
 
@@ -146,9 +161,6 @@ const seedSample = async () => {
         createdById: "system",
       },
     });
-  }
-
-  for (const configuration of sampleConfigurations) {
   }
 };
 

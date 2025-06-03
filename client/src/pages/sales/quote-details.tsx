@@ -21,9 +21,9 @@ import {
   Tabs,
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { sampleQuote } from "@/utils/sample-data";
 import { useMemo, useState } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
+import useGetItems from "@/hooks/sales/use-get-items";
 
 const sampleConfigurations = [
   {
@@ -98,6 +98,10 @@ const QuoteDetails = () => {
   const { quoteOverview, loading, error } = useGetQuoteOverview({
     quoteId: quoteId || "",
   });
+
+  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
+
+  console.log(items);
 
   const quoteItems = useMemo(() => {
     return quoteOverview?.quoteItems || [];
@@ -187,78 +191,6 @@ const QuoteDetails = () => {
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
-            {/* <div className="bg-foreground rounded shadow-sm border p-4 col-span-2">
-              <h2 className="font-semibold text-text-muted mb-4">
-                Quote Summary
-              </h2>
-              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-                <div>
-                  <div className="text-sm text-text-muted">Quote ID</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.id}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Date Created</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {formatDate(sampleQuote.date)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Expiry Date</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {formatDate(sampleQuote.expiry)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Status</div>
-                  <StatusBadge
-                    label={sampleQuote.status}
-                    icon={
-                      sampleQuote.status === "accepted" ? CheckCircle : XCircle
-                    }
-                    variant={
-                      sampleQuote.status === "accepted"
-                        ? "success"
-                        : sampleQuote.status === "rejected"
-                        ? "error"
-                        : "default"
-                    }
-                  />
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Valid For</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.validFor}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Assigned To</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.assignedTo}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Payment Terms</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.terms}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-sm text-text-muted">Description</div>
-                  <div className="text-sm font-medium text-text-muted">
-                    {sampleQuote.description}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t">
-                <div className="text-sm text-text-muted">Notes</div>
-                <div className="text-sm text-text-muted mt-1">
-                  {sampleQuote.notes}
-                </div>
-              </div>
-            </div> */}
-
             {/* Overview */}
             <div className="bg-foreground rounded shadow-sm border p-2">
               <div className="grid grid-cols-2 gap-2">
@@ -659,8 +591,8 @@ const QuoteDetails = () => {
                   className: "text-right",
                 },
               ]}
-              data={sampleQuote.items}
-              total={sampleQuote.items.length}
+              data={items || []}
+              total={items?.length || 0}
               onRowClick={(row) => {
                 console.log("Selected item:", row);
                 toggleModal();
