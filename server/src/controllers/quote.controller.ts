@@ -34,8 +34,7 @@ export class QuoteController extends BaseController<Quote> {
     next: NextFunction
   ) {
     try {
-      const { employee } = req;
-      const result = await salesService.createSandboxQuote(employee);
+      const result = await salesService.createSandboxQuote();
       res.status(200).json(result);
     } catch (error) {
       next(error);

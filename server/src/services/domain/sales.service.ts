@@ -9,16 +9,17 @@ import {
 } from "..";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { CompanyStatus } from "@prisma/client";
+import { getEmployeeContext } from "@/utils/context";
 
 // TODO: make this transactional
 
 export class SalesService {
-  async createSandboxQuote(employee: any) {
+  async createSandboxQuote() {
+    const employee = getEmployeeContext();
     const quoteNumber = await quoteService.generateQuoteNumber(true);
 
     const userInitials = `${employee.firstName[0]}${employee.lastName[0]}`;
 
-    // Find the latest sandbox company number for this user
     const latestCompany = await prisma.company.findFirst({
       where: {
         name: {
@@ -30,7 +31,6 @@ export class SalesService {
       },
     });
 
-    // Extract the number from the latest company name or start with 1
     let companyNumber = 1;
     if (latestCompany) {
       const match = latestCompany.name.match(

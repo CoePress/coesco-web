@@ -43,5 +43,4 @@
 - Add quote items to quote
 - Add quote to customer
 - Add activity to journey
-- Employee context
 - Linter

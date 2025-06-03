@@ -3,6 +3,7 @@ import { UnauthorizedError } from "./error.middleware";
 import { decode } from "jsonwebtoken";
 import { asyncHandler } from "@/utils";
 import { prisma } from "@/utils/prisma";
+import { contextStorage } from "@/utils/context";
 
 const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
 
@@ -53,11 +54,7 @@ export const protect = asyncHandler(
       throw new UnauthorizedError("Unauthorized");
     }
 
-    req.user = {
-      id: user.id,
-      role: user.userType,
-    };
-    req.employee = {
+    const employee = {
       id: user.employee.id,
       firstName: user.employee.firstName,
       lastName: user.employee.lastName,
@@ -65,6 +62,13 @@ export const protect = asyncHandler(
       jobTitle: user.employee.jobTitle,
       number: user.employee.number,
     };
-    next();
+
+    req.user = {
+      id: user.id,
+      role: user.userType,
+    };
+    req.employee = employee;
+
+    contextStorage.run(employee, () => next());
   }
 );
