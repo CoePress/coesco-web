@@ -9,25 +9,26 @@ export interface IApiResponse<T> {
   totalPages?: number;
 }
 
-export interface IQueryParams {
+export interface IQueryParams<T> {
   page?: number;
   limit?: number;
   sort?: string;
   order?: "asc" | "desc";
+  filter?: Partial<T>;
   search?: string;
-  filter?: string | Record<string, any>;
-  dateFrom?: string | Date;
-  dateTo?: string | Date;
+  searchFields?: Array<keyof T>;
   fields?: string[];
   include?: string[];
 }
 
 export interface IQueryBuilderResult {
-  whereClause: any;
-  orderClause: Record<string, "asc" | "desc">;
+  where: any;
+  orderBy: any;
+  take?: number;
+  skip?: number;
+  select?: any;
+  include?: any;
   page: number;
-  offset?: number;
-  limit?: number;
 }
 
 export interface IApiKey {
@@ -38,4 +39,47 @@ export interface IApiKey {
   createdAt: Date;
   expiresAt?: Date;
   scopes: string[];
+}
+
+export interface IServiceResult<T> {
+  success: boolean;
+  data?: T;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+  };
+  error?: string;
+  errors?: string[];
+}
+
+import { Employee, User, UserType } from "@prisma/client";
+
+export interface IAuth {
+  id: string;
+  email: string;
+  password?: string;
+  microsoftId?: string;
+  userId: string;
+  userType: UserType;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IAuthAttributes
+  extends Omit<IAuth, "createdAt" | "updatedAt"> {}
+
+export interface IAuthResponse {
+  token: string;
+  refreshToken: string;
+  user: User;
+  employee: Employee;
+}
+
+export interface IAuthTokens {
+  token: string;
+  refreshToken: string;
 }

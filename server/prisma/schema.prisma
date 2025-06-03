@@ -7,76 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserType {
-  USER
-  ADMIN
-}
-
-enum CompanyStatus {
-  ACTIVE
-  INACTIVE
-  SANDBOX
-  ARCHIVE
-}
-
-enum Industry {
-  AUTOMOTIVE
-  CONSTRUCTION
-  MANUFACTURING
-  OTHER
-}
-
-enum JourneyStatus {
-  ACTIVE
-  INACTIVE
-  COMPLETED
-  CANCELLED
-}
-
-enum JourneyType {
-  STAMPING
-  CTL
-  ROLL_FORMING
-  UPGRADE
-  PARTS
-  SERVICE
-  RETROFIT
-}
-
-enum JourneySource {
-  WEBSITE
-  SOCIAL_MEDIA
-  REFERRAL
-  EVENT
-  OTHER
-}
-
-enum JourneyPriority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum JourneyInteractionType {
-  EMAIL
-  PHONE
-  IN_PERSON
-  VIDEO_CALL
-  TEXT_MESSAGE
-  SOCIAL_MEDIA
-  OTHER
-}
-
-enum QuoteStatus {
-  DRAFT
-  SENT
-  ACCEPTED
-  REJECTED
-  CANCELLED
-  EXPIRED
-}
-
 model User {
   id          String   @id @default(uuid())
   email       String   @unique
@@ -420,24 +350,8 @@ model ChangeLog {
   @@map("change_logs")
 }
 
-enum MachineType {
-  LATHE
-  MILL
-  GRINDER
-  OTHER
-}
 
-enum MachineControllerType {
-  MAZAK
-  FANUC
-  OTHER
-}
 
-enum MachineConnectionType {
-  MTCONNECT
-  FOCAS
-  OTHER
-}
 
 model Machine {
   id              String                @id @default(uuid())
@@ -458,14 +372,6 @@ model Machine {
   @@map("machines")
 }
 
-enum MachineState {
-  ACTIVE
-  SETUP
-  IDLE
-  ALARM
-  OFFLINE
-  UNKNOWN
-}
 
 model MachineStatus {
   id           String       @id @default(uuid())
@@ -487,4 +393,112 @@ model MachineStatus {
   machine Machine @relation(fields: [machineId], references: [id])
 
   @@map("machine_statuses")
+}
+
+enum MachineType {
+  LATHE
+  MILL
+  GRINDER
+  OTHER
+}
+
+enum MachineControllerType {
+  MAZAK
+  FANUC
+  OTHER
+}
+
+enum MachineConnectionType {
+  MTCONNECT
+  FOCAS
+  OTHER
+}
+
+enum MachineState {
+  ACTIVE
+  SETUP
+  IDLE
+  ALARM
+  OFFLINE
+  UNKNOWN
+}
+
+enum UserType {
+  USER
+  ADMIN
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SANDBOX
+  ARCHIVE
+}
+
+enum Industry {
+  AUTOMOTIVE
+  CONSTRUCTION
+  MANUFACTURING
+  OTHER
+}
+
+enum JourneyStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum JourneyType {
+  STAMPING
+  CTL
+  ROLL_FORMING
+  UPGRADE
+  PARTS
+  SERVICE
+  RETROFIT
+}
+
+enum JourneySource {
+  WEBSITE
+  SOCIAL_MEDIA
+  REFERRAL
+  EVENT
+  OTHER
+}
+
+enum JourneyPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JourneyInteractionType {
+  EMAIL
+  PHONE
+  IN_PERSON
+  VIDEO_CALL
+  TEXT_MESSAGE
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum TimeScale {
+  MINUTE
+  HOUR
+  DAY
+  WEEK
+  MONTH
+  QUARTER
+  YEAR
 }

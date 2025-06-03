@@ -5,8 +5,7 @@ import { CacheService } from "./core/cache.service";
 import { CronService } from "./core/cron.service";
 import { EmailService } from "./core/email.service";
 import { EmployeeService } from "./repository/employee.service";
-import { MachineService } from "./machine.service";
-import { MachineDataService } from "./machine-data.service";
+import { MachineDataService } from "./domain/machine-monitor.service";
 import { SocketService } from "./core/socket.service";
 import { CompanyService } from "./repository/company.service";
 import { AddressService } from "./repository/address.service";
@@ -22,9 +21,12 @@ import { OptionRulesService } from "./repository/option-rules.services";
 import { ConfigurationOptionService } from "./repository/configuration-option.service";
 import { SalesService } from "./domain/sales.service";
 import { ItemService } from "./repository/item.service";
+import { MachineService } from "./repository/machine.service";
+import { MachineStatusService } from "./repository/machine-status.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
+export const machineStatusService = new MachineStatusService();
 
 export const initializeServices = async () => {
   socketService.setIo(io);

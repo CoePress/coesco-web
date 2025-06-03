@@ -1,5 +1,5 @@
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
-import { IQueryParams, IServiceResult } from "@/types/auth.types";
+import { IQueryParams, IServiceResult } from "@/types/api.types";
 import { buildQuery } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
 

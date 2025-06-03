@@ -1,8 +1,6 @@
 import { httpServer } from "./app";
 
 import { __dev__, config } from "./config/config";
-import { sequelize } from "./config/database";
-import { initializeModels } from "./models";
 import { logger } from "./utils/logger";
 import {
   machineDataService,
@@ -13,11 +11,6 @@ import {
 } from "./services";
 
 httpServer.listen(config.port, async () => {
-  await initializeModels(sequelize);
-
-  await sequelize.sync();
-  logger.info("Database connected");
-
   await initializeServices();
 
   logger.info(

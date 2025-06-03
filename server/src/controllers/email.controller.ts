@@ -1,6 +1,6 @@
 import { emailService } from "@/services";
 import { Request, Response, NextFunction } from "express";
-import { ISendEmailOptions, IInvoiceData } from "@/types/schema.types";
+import { ISendEmailOptions } from "@/types/schema.types";
 import path from "path";
 import fs from "fs";
 

@@ -1,5 +1,4 @@
 import { IEmailTemplate, ISendEmailOptions } from "@/types/schema.types";
-import { IEmailService } from "@/types/service.types";
 import path from "path";
 import fs from "fs";
 import ejs from "ejs";
@@ -12,9 +11,6 @@ import { machineDataService } from "@/services";
 import handlebars from "handlebars";
 import HTMLtoDOCX from "html-to-docx";
 
-const sampleInvoice = {};
-const sampleProduction = {};
-
 export function getLastMonday(): Date {
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -24,13 +20,12 @@ export function getLastMonday(): Date {
   const lastMonday = new Date(today);
   lastMonday.setDate(today.getDate() - daysToSubtract);
 
-  // Reset time to start of day
   lastMonday.setHours(0, 0, 0, 0);
 
   return lastMonday;
 }
 
-export class EmailService implements IEmailService {
+export class EmailService {
   private templatesPath = path.join(__dirname, "..", "templates");
   private transporter: nodemailer.Transporter;
 
@@ -387,7 +382,7 @@ export class EmailService implements IEmailService {
   }
 
   // Sent email records
-  async getSentEmails(params: IQueryParams): Promise<any[]> {
+  async getSentEmails(params: IQueryParams<any>): Promise<any[]> {
     return [];
   }
 

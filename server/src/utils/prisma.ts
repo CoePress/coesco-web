@@ -1,5 +1,5 @@
 import { __dev__ } from "@/config/config";
-import { IQueryBuilderResult, IQueryParams } from "@/types/auth.types";
+import { IQueryBuilderResult, IQueryParams } from "@/types/api.types";
 import { PrismaClient } from "@prisma/client";
 
 declare global {
@@ -16,12 +16,13 @@ if (__dev__) {
   global.prisma = prisma;
 }
 
-export const buildQuery = (
-  params: IQueryParams<any>,
+export const buildQuery = <T>(
+  params: IQueryParams<T>,
   searchFields?: string[]
 ): IQueryBuilderResult => {
   const result: IQueryBuilderResult = {
     where: {},
+    orderBy: {},
     page: params.page || 1,
   };
 
@@ -72,25 +73,6 @@ export const buildQuery = (
 
     // Merge with existing where clause
     result.where = { ...result.where, ...processFilter(filterObj) };
-  }
-
-  // Date range filtering
-  if (params.dateFrom || params.dateTo) {
-    result.where.createdAt = result.where.createdAt || {};
-
-    if (params.dateFrom) {
-      const dateFrom =
-        params.dateFrom instanceof Date
-          ? params.dateFrom
-          : new Date(params.dateFrom);
-      result.where.createdAt.gte = dateFrom;
-    }
-
-    if (params.dateTo) {
-      const dateTo =
-        params.dateTo instanceof Date ? params.dateTo : new Date(params.dateTo);
-      result.where.createdAt.lte = dateTo;
-    }
   }
 
   // Sorting

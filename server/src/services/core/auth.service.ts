@@ -1,15 +1,15 @@
-import { IAuthResponse, IAuthTokens, IAuthService } from "@/types/auth.types";
 import { sign, verify } from "jsonwebtoken";
 import { config } from "@/config/config";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { compare } from "bcrypt";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { SignOptions } from "jsonwebtoken";
-import { UserType, Employee } from "@prisma/client";
+import { UserType } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { prisma } from "@/utils/prisma";
+import { IAuthResponse, IAuthTokens } from "@/types/api.types";
 
-export class AuthService implements IAuthService {
+export class AuthService {
   private msalClient: ConfidentialClientApplication;
 
   constructor() {

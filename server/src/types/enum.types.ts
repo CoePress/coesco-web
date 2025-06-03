@@ -16,34 +16,6 @@ export enum CustomerStatus {
   PENDING = "PENDING",
 }
 
-export enum MachineType {
-  LATHE = "LATHE",
-  MILL = "MILL",
-}
-
-export enum MachineControllerType {
-  FANUC = "FANUC",
-  SIEMENS = "SIEMENS",
-  HAAS = "HAAS",
-  MAZAK = "MAZAK",
-  OKUMA = "OKUMA",
-  OTHER = "OTHER",
-}
-
-export enum MachineConnectionType {
-  MTCONNECT = "MTCONNECT",
-  CUSTOM = "CUSTOM",
-}
-
-export enum MachineState {
-  ACTIVE = "ACTIVE",
-  SETUP = "SETUP",
-  IDLE = "IDLE",
-  ALARM = "ALARM",
-  OFFLINE = "OFFLINE",
-  UNRECORDED = "UNRECORDED",
-}
-
 export enum FanucControllerMode {
   MDI = "MDI",
   MEM = "MEM",

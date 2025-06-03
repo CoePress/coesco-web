@@ -1,20 +1,19 @@
 import { BadRequestError } from "@/middleware/error.middleware";
-import MachineStatus from "@/models/machine-status";
-import { IMachineStatus } from "@/types/schema.types";
-import { buildQuery, createDateRange } from "@/utils";
+import { createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import { IQueryParams } from "@/types/api.types";
 import {
-  MachineState,
-  MachineConnectionType,
-  TimeScale,
-} from "@/types/enum.types";
-import { cacheService, machineService, socketService } from ".";
+  cacheService,
+  machineService,
+  machineStatusService,
+  socketService,
+} from "..";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
-import { Op } from "sequelize";
 import axios from "axios";
 import { config } from "@/config/config";
+import { MachineConnectionType, MachineState } from "@prisma/client";
+import { prisma } from "@/utils/prisma";
+import { TimeScale } from "@/types/enum.types";
 
 interface CachedMachineState {
   state: MachineState;
@@ -63,7 +62,7 @@ export class MachineDataService {
 
   async initialize() {
     try {
-      const machines = await machineService.getMachines({});
+      const machines = await machineService.getAll();
 
       if (!machines?.data) {
         logger.error("No machines found or invalid response");
@@ -131,105 +130,8 @@ export class MachineDataService {
   }
 
   async refreshMachines() {
-    const machines = await machineService.getMachines({});
+    const machines = await machineService.getAll();
     return machines.data;
-  }
-
-  // Machine Statuses
-  async getMachineStatuses(params: IQueryParams) {
-    const { whereClause, orderClause, page, limit, offset } = buildQuery(
-      params,
-      ["status"]
-    );
-
-    const machineStatuses = await MachineStatus.findAll({
-      where: whereClause,
-      order: Object.entries(orderClause).map(([key, value]) => [key, value]),
-      limit,
-      offset,
-    });
-
-    const total = await MachineStatus.count({ where: whereClause });
-    const totalPages = limit ? Math.ceil(total / limit) : 1;
-
-    return {
-      success: true,
-      data: machineStatuses.map(
-        (machineStatus) => machineStatus.toJSON() as IMachineStatus
-      ),
-      total,
-      totalPages,
-      page,
-      limit,
-    };
-  }
-
-  async getMachineStatusesByDateRange(
-    params: IQueryParams & { startDate: string; endDate: string }
-  ) {
-    const { whereClause, orderClause, page, limit, offset } = buildQuery(
-      params,
-      ["status"]
-    );
-
-    const machineStatuses = await MachineStatus.findAll({
-      where: {
-        ...whereClause,
-        [Op.or]: [
-          {
-            startTime: {
-              [Op.between]: [params.startDate, params.endDate],
-            },
-          },
-          {
-            endTime: {
-              [Op.between]: [params.startDate, params.endDate],
-            },
-          },
-          {
-            startTime: {
-              [Op.lte]: params.startDate,
-            },
-            endTime: {
-              [Op.gte]: params.endDate,
-            },
-          },
-        ],
-      },
-      order: Object.entries(orderClause).map(([key, value]) => [key, value]),
-      limit,
-      offset,
-    });
-
-    const processedStatuses = machineStatuses.map((status) => {
-      const statusStart = new Date(status.startTime);
-      const statusEnd = status.endTime ? new Date(status.endTime) : new Date();
-      const rangeStart = new Date(params.startDate);
-      const rangeEnd = new Date(params.endDate);
-
-      const overlapStart = new Date(
-        Math.max(statusStart.getTime(), rangeStart.getTime())
-      );
-      const overlapEnd = new Date(
-        Math.min(statusEnd.getTime(), rangeEnd.getTime())
-      );
-
-      return {
-        ...status.toJSON(),
-        startTime: overlapStart,
-        endTime: overlapEnd,
-        duration: overlapEnd.getTime() - overlapStart.getTime(),
-      };
-    });
-
-    return {
-      success: true,
-      data: processedStatuses.map((status) => ({
-        ...status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })),
-    };
   }
 
   async getMachineOverview(startDate: string, endDate: string) {
@@ -242,16 +144,20 @@ export class MachineDataService {
     );
 
     const [machines, states, previousStates] = await Promise.all([
-      machineService.getMachines({}),
-      this.getMachineStatusesByDateRange({
+      machineService.getAll(),
+      machineStatusService.getByDateRange({
         startDate: dateRange.startDate.toISOString(),
         endDate: dateRange.endDate.toISOString(),
       }),
-      this.getMachineStatusesByDateRange({
+      machineStatusService.getByDateRange({
         startDate: dateRange.previousStartDate.toISOString(),
         endDate: dateRange.previousEndDate.toISOString(),
       }),
     ]);
+
+    if (!machines.data || !states.data || !previousStates.data) {
+      throw new BadRequestError("No machines found");
+    }
 
     const machineCount = machines.data.length;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
@@ -280,7 +186,7 @@ export class MachineDataService {
     const activeTime = totalsByState["ACTIVE"];
     const unrecordedTime =
       totalFleetDuration - futureFleetDuration - totalStateDuration;
-    totalsByState[MachineState.UNRECORDED] = unrecordedTime;
+    totalsByState[MachineState.UNKNOWN] = unrecordedTime;
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => ({
       start: this.calculateDivisionStart(dateRange.startDate, scale, i),
@@ -319,7 +225,7 @@ export class MachineDataService {
     );
 
     const totalAvailableTime =
-      (dateRange.duration * machineCount) - futureFleetDuration;
+      dateRange.duration * machineCount - futureFleetDuration;
 
     const stateDistribution = this.calculateStateDistribution(
       totalsByState,
@@ -340,7 +246,11 @@ export class MachineDataService {
   }
 
   async getMachineTimeline(startDate: string, endDate: string) {
-    const machines = await machineService.getMachines({});
+    const machines = await machineService.getAll();
+
+    if (!machines.data) {
+      throw new BadRequestError("No machines found");
+    }
 
     const m = machines.data.map((machine) => {
       return {
@@ -363,50 +273,44 @@ export class MachineDataService {
   }
 
   async createMachineStatus(data: any) {
-    await this.validateMachineStatus(data);
-
-    const transaction = await MachineStatus.sequelize!.transaction();
-
-    try {
-      await MachineStatus.update(
-        {
-          endTime: new Date(),
-          duration: new Date().getTime() - new Date(data.startTime).getTime(),
+    return await prisma.$transaction(async (tx) => {
+      const openStatus = await tx.machineStatus.findFirst({
+        where: {
+          machineId: data.machineId,
+          endTime: null,
         },
-        {
-          where: {
-            machineId: data.machineId,
-            endTime: null,
-          },
-          transaction,
-        }
-      );
+      });
 
-      const machineStatus = await MachineStatus.create(
-        {
+      if (openStatus) {
+        await tx.machineStatus.update({
+          where: { id: openStatus.id },
+          data: {
+            endTime: new Date(),
+            duration:
+              new Date().getTime() - new Date(openStatus.startTime).getTime(),
+          },
+        });
+      }
+
+      return await tx.machineStatus.create({
+        data: {
           ...data,
           startTime: new Date(),
           endTime: null,
+          duration: 0,
         },
-        { transaction }
-      );
-
-      await transaction.commit();
-      return machineStatus;
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
-  }
-
-  async updateMachineStatus(id: string, data: any) {
-    await this.validateMachineStatus(data);
+      });
+    });
   }
 
   // Polling methods
   async pollMachines() {
     const current = [];
-    const machines = await machineService.getMachines({});
+    const machines = await machineService.getAll();
+
+    if (!machines.data) {
+      throw new BadRequestError("No machines found");
+    }
 
     const machinesToSkip = ["kuraki", "niigata-spn63"];
 
@@ -444,7 +348,7 @@ export class MachineDataService {
             }
             state = await this.determineMTConnectState(data, cachedState);
             break;
-          case MachineConnectionType.CUSTOM:
+          case MachineConnectionType.FOCAS:
             data = await this.processFanucData(machineData);
             if (!data) {
               throw new BadRequestError("Failed to process Fanuc data");
@@ -459,23 +363,23 @@ export class MachineDataService {
           throw new BadRequestError("Invalid machine data or state");
         }
 
-        const openStatus = await MachineStatus.findOne({
-          where: {
-            machineId: machine.id,
-            endTime: null,
-          },
+        const openStatus = await machineStatusService.findBy({
+          machineId: machine.id,
+          endTime: null,
         });
 
-        if (!openStatus || openStatus.state !== state) {
+        if (!openStatus.data || openStatus.data.state !== state) {
           try {
-            if (openStatus) {
-              openStatus.endTime = new Date();
-              openStatus.duration =
-                new Date().getTime() - new Date(openStatus.startTime).getTime();
-              await openStatus.save();
+            if (openStatus.data) {
+              await machineStatusService.update(openStatus.data.id, {
+                endTime: new Date(),
+                duration:
+                  new Date().getTime() -
+                  new Date(openStatus.data.startTime).getTime(),
+              });
             }
 
-            await MachineStatus.create({
+            await machineStatusService.create({
               machineId: machine.id,
               state,
               execution: data.execution,
@@ -484,10 +388,11 @@ export class MachineDataService {
               tool: data.tool,
               metrics: data.metrics,
               alarmCode: data.alarm,
+              alarmMessage: "",
               startTime: new Date(),
               endTime: null,
               duration: 0,
-            } as any);
+            });
           } catch (error) {
             logger.error(
               `Failed to create new state record for machine ${machine.id}:`,
@@ -509,23 +414,26 @@ export class MachineDataService {
           state,
         });
       } catch (error) {
-        const openStatus = await MachineStatus.findOne({
-          where: {
-            machineId: machine.id,
-            endTime: null,
-          },
+        const openStatus = await machineStatusService.findBy({
+          machineId: machine.id,
+          endTime: null,
         });
 
-        if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
+        if (
+          !openStatus.data ||
+          openStatus.data.state !== MachineState.OFFLINE
+        ) {
           try {
-            if (openStatus) {
-              openStatus.endTime = new Date();
-              openStatus.duration =
-                new Date().getTime() - new Date(openStatus.startTime).getTime();
-              await openStatus.save();
+            if (openStatus.data) {
+              await machineStatusService.update(openStatus.data.id, {
+                endTime: new Date(),
+                duration:
+                  new Date().getTime() -
+                  new Date(openStatus.data.startTime).getTime(),
+              });
             }
 
-            await MachineStatus.create({
+            await machineStatusService.create({
               machineId: machine.id,
               state: MachineState.OFFLINE,
               execution: "OFFLINE",
@@ -533,10 +441,12 @@ export class MachineDataService {
               program: "",
               tool: "",
               metrics: this.offlineState.metrics,
+              alarmCode: "",
+              alarmMessage: "",
               startTime: new Date(),
               endTime: null,
               duration: 0,
-            } as any);
+            });
           } catch (error) {
             logger.error(
               `Failed to create offline state for machine ${machine.id}:`,
@@ -796,7 +706,7 @@ export class MachineDataService {
   }
 
   private calculateStatusTotals(
-    statuses: IMachineStatus[],
+    statuses: any[],
     startDate: Date,
     endDate: Date,
     now: Date
@@ -807,10 +717,10 @@ export class MachineDataService {
       [MachineState.IDLE]: 0,
       [MachineState.ALARM]: 0,
       [MachineState.OFFLINE]: 0,
-      [MachineState.UNRECORDED]: 0,
+      [MachineState.UNKNOWN]: 0,
     };
 
-    const statusesByMachine = statuses.reduce<Record<string, IMachineStatus[]>>(
+    const statusesByMachine = statuses.reduce<Record<string, any[]>>(
       (acc, status) => {
         (acc[status.machineId] ??= []).push(status);
         return acc;
@@ -820,8 +730,8 @@ export class MachineDataService {
 
     for (const machineStatuses of Object.values(statusesByMachine)) {
       for (const status of machineStatuses) {
-        const statusStart = status.startTime;
-        const statusEnd = status.endTime ?? now;
+        const statusStart = new Date(status.startTime);
+        const statusEnd = status.endTime ? new Date(status.endTime) : now;
 
         if (statusStart > endDate || statusEnd < startDate) continue;
 
@@ -951,65 +861,46 @@ export class MachineDataService {
     return formatters[scale as keyof typeof formatters]?.(date) || "";
   }
 
-  private async validateMachineStatus(data: any) {
-    if (!data.machineId) {
-      throw new BadRequestError("Machine ID is required");
-    }
-    if (!data.startTime) {
-      throw new BadRequestError("Start time is required");
-    }
-    if (!data.state) {
-      throw new BadRequestError("State is required");
-    }
-    if (data.endTime && data.endTime < data.startTime) {
-      throw new BadRequestError("End time cannot be before start time");
-    }
-  }
-
   async closeMachineStatus(machineId: string) {
-    const machineStatus = await MachineStatus.findOne({
-      where: {
-        machineId,
-        endTime: null,
-      },
+    const machineStatus = await machineStatusService.findBy({
+      machineId,
+      endTime: null,
     });
 
-    if (!machineStatus) {
+    if (!machineStatus.data) {
       throw new BadRequestError("Machine status not found");
     }
 
-    machineStatus.endTime = new Date();
-    await machineStatus.save();
-
-    return machineStatus;
+    return await machineStatusService.update(machineStatus.data.id, {
+      endTime: new Date(),
+      duration:
+        new Date().getTime() - new Date(machineStatus.data.startTime).getTime(),
+    });
   }
 
   async closeAllMachineStatuses() {
-    const transaction = await MachineStatus.sequelize!.transaction();
-
-    try {
+    return await prisma.$transaction(async (tx) => {
       const now = new Date();
-      const openStatuses = await MachineStatus.findAll({
+      const openStatuses = await tx.machineStatus.findMany({
         where: {
           endTime: null,
         },
-        transaction,
       });
 
       for (const status of openStatuses) {
-        status.endTime = now;
-        status.duration = now.getTime() - new Date(status.startTime).getTime();
-        await status.save({ transaction });
+        await tx.machineStatus.update({
+          where: { id: status.id },
+          data: {
+            endTime: now,
+            duration: now.getTime() - new Date(status.startTime).getTime(),
+          },
+        });
 
         await cacheService.delete(`machine:${status.machineId}:current_state`);
       }
 
-      await transaction.commit();
       return openStatuses;
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    });
   }
 
   private calculateStateDistribution(
@@ -1056,7 +947,7 @@ export class MachineDataService {
     activeTime: number,
     totalAvailableTime: number,
     machineCount: number,
-    states: IMachineStatus[],
+    states: any[],
     previousTotalsByState: Record<MachineState, number>
   ) {
     const utilization = (activeTime / totalAvailableTime) * 100;
@@ -1088,7 +979,7 @@ export class MachineDataService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: IMachineStatus[],
+    states: any[],
     machineCount: number,
     now: Date
   ) {

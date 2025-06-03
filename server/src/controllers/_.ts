@@ -1,5 +1,5 @@
+import { IQueryParams } from "@/types/api.types";
 import { NextFunction, Request, Response } from "express";
-import { IQueryParams } from "@/types/auth.types";
 
 export abstract class BaseController<TEntity> {
   protected abstract service: any;
@@ -15,17 +15,7 @@ export abstract class BaseController<TEntity> {
 
   public async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const {
-        page,
-        limit,
-        sort,
-        order,
-        search,
-        filter,
-        dateFrom,
-        dateTo,
-        include,
-      } = req.query;
+      const { page, limit, sort, order, search, filter, include } = req.query;
 
       const params: IQueryParams<TEntity> = {
         page: page ? parseInt(page as string) : 1,
@@ -34,8 +24,6 @@ export abstract class BaseController<TEntity> {
         order: order as "asc" | "desc",
         search: search as string,
         filter: filter as Partial<TEntity>,
-        dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
-        dateTo: dateTo ? new Date(dateTo as string) : undefined,
         include: include ? JSON.parse(include as string) : undefined,
       };
 
