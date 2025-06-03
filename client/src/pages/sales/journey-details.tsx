@@ -75,12 +75,11 @@ const sampleInteractions = [
   },
 ];
 
-const sampleStats = {
-  totalQuotes: 5,
-  totalOrders: 2,
-  lastOrder: "2025-04-15",
-  lastActivity: "2025-05-28",
-};
+const journeySteps = [
+  "quote feed line to match previous job",
+  "10/31: Spoke with Josh this is still a possibility this year business has started to pick up for them, touch base again in December, Josh will stay in touch",
+  "12/12: This has been moved until 2024 we'll stay in touch",
+];
 
 const sampleHistory = {
   notes: [
@@ -115,10 +114,51 @@ function JourneyDetailsTab() {
   return (
     <div className="p-2 flex flex-1 flex-col">
       <div className="flex flex-col gap-2">
-        {/* TOP ROW: 2 cards, fill full row, NO CUSTOMER INFO */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* TOP ROW: 3 cards - Customer, Journey Details, Journey Tracking */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Customer Information Card */}
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+            <div>
+              <h2 className="font-semibold text-neutral-400 mb-1">
+                Customer Information
+              </h2>
+              <div className="grid grid-cols-1 gap-x-2 gap-y-2">
+                <div>
+                  <div className="text-xs text-neutral-400">Company</div>
+                  <div className="text-sm text-neutral-400">
+                    {sampleCustomer.name}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Industry</div>
+                  <div className="text-sm text-neutral-400">
+                    {sampleCustomer.industry}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Contact</div>
+                  <div className="text-sm text-neutral-400">
+                    {sampleCustomer.contact}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Email</div>
+                  <div className="text-sm text-neutral-400">
+                    {sampleCustomer.email}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-400">Phone</div>
+                  <div className="text-sm text-neutral-400">
+                    {sampleCustomer.phone}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Journey Details Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-4 flex flex-col gap-4">
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
             <div>
               <h2 className="font-semibold text-neutral-400 mb-1">
                 Journey Details
@@ -184,40 +224,10 @@ function JourneyDetailsTab() {
                 </div>
               </div>
             </div>
-            <div>
-              <div className="text-xs text-neutral-400 mb-1 mt-2">
-                Project Models
-              </div>
-              <ul className="list-disc pl-5 text-sm text-neutral-400 mb-2">
-                {sampleJourney.projectModels.map((model, i) => (
-                  <li key={i}>{model}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="text-xs text-neutral-400 mb-1">Project Notes</div>
-              <div className="text-sm text-neutral-400 whitespace-pre-line mb-2">
-                {sampleJourney.projectNotes}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <div className="text-xs text-neutral-400">Created By</div>
-                <div className="text-sm text-neutral-400">
-                  {sampleJourney.createdBy}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-neutral-400">Created At</div>
-                <div className="text-sm text-neutral-400">
-                  {formatDate(sampleJourney.createdAt)}
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Journey Tracking Card */}
-          <div className="bg-foreground rounded-lg shadow-sm border p-4 flex flex-col gap-4">
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
             <div>
               <h2 className="font-semibold text-neutral-400 mb-1">
                 Journey Tracking
@@ -259,27 +269,82 @@ function JourneyDetailsTab() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* SECOND ROW: Project Models and Journey Steps */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Project Models Card */}
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
             <div>
-              <div className="text-xs text-neutral-400 mb-1 mt-2">
-                Journey Steps
-              </div>
+              <h2 className="font-semibold text-neutral-400 mb-1">
+                Project Models
+              </h2>
               <ul className="list-disc pl-5 text-sm text-neutral-400 mb-2">
-                <li>quote feed line to match previous job</li>
-                <li>
-                  10/31: Spoke with Josh this is still a possibility this year
-                  business has started to pick up for them, touch base again in
-                  December, Josh will stay in touch
-                </li>
-                <li>
-                  12/12: This has been moved until 2024 we'll stay in touch
-                </li>
+                {sampleJourney.projectModels.map((model, i) => (
+                  <li key={i}>{model}</li>
+                ))}
               </ul>
+            </div>
+          </div>
+
+          {/* Journey Steps Card */}
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold text-neutral-400 mb-1">
+                Journey Steps
+              </h2>
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => {}}>
+                <Plus size={16} />
+              </Button>
+            </div>
+            <ul className="list-disc pl-5 text-sm text-neutral-400 mb-2">
+              {journeySteps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* THIRD ROW: Project Notes */}
+        <div className="grid grid-cols-1 gap-2">
+          <div className="bg-foreground rounded-lg shadow-sm border p-2 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold text-neutral-400 mb-1">
+                Project Notes
+              </h2>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {}}>
+                <Plus size={16} />
+              </Button>
+            </div>
+            <div className="text-sm text-neutral-400 whitespace-pre-line mb-2">
+              {sampleJourney.projectNotes}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <div className="text-xs text-neutral-400">Created By</div>
+                <div className="text-sm text-neutral-400">
+                  {sampleJourney.createdBy}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-neutral-400">Created At</div>
+                <div className="text-sm text-neutral-400">
+                  {formatDate(sampleJourney.createdAt)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* BOTTOM ROW: Quotes and Interactions */}
-        <div className="grid grid-cols-3 gap-2 mt-2">
+        <div className="grid grid-cols-3 gap-2">
           {/* Quotes Card (spans 2 columns) */}
           <div className="bg-foreground rounded-lg shadow-sm border p-2 col-span-2">
             <div className="text-lg font-bold mb-2">Quotes</div>
@@ -340,8 +405,8 @@ function JourneyDetailsTab() {
 
 function JourneyHistoryTab() {
   return (
-    <div className="grid grid-cols-2 gap-2 p-2">
-      <div className="bg-foreground rounded-lg shadow-sm border p-2">
+    <div className="flex flex-1 flex-col p-2 gap-2">
+      <div className="bg-foreground rounded-lg shadow-sm border p-2 flex-1">
         <div className="text-xs font-bold text-neutral-400 mb-1">
           Note History
         </div>
@@ -357,7 +422,7 @@ function JourneyHistoryTab() {
           idField="created"
         />
       </div>
-      <div className="bg-foreground rounded-lg shadow-sm border p-2">
+      <div className="bg-foreground rounded-lg shadow-sm border p-2 flex-1">
         <div className="text-xs font-bold text-neutral-400 mb-1">
           Log Records
         </div>
