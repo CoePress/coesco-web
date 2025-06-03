@@ -5,33 +5,16 @@ import {
   MoreHorizontal,
   ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
-import { formatCurrency, formatDate } from "@/utils";
+import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/shared/table";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 
-type Customer = {
-  id: number;
-  name: string;
-  contact: string;
-  email: string;
-  status: string;
-  type: string;
-  location: string;
-  lastQuote: string;
-  totalValue: number;
-};
-
 const Companies = () => {
-  const navigate = useNavigate();
-  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
-
   const { companies, loading, error, refresh, pagination } = useGetCompanies();
 
-  const columns: TableColumn<Customer>[] = [
+  const columns: TableColumn<any>[] = [
     {
       key: "name",
       header: "Name",
@@ -39,6 +22,35 @@ const Companies = () => {
       render: (_, row) => (
         <Link to={`/sales/companies/${row.id}`}>{row.name}</Link>
       ),
+    },
+    {
+      key: "phone",
+      header: "Phone",
+      className: "hover:underline",
+      render: (_, row) =>
+        row.phone ? <Link to={`tel:${row.phone}`}>{row.phone}</Link> : "-",
+    },
+    {
+      key: "email",
+      header: "Email",
+      className: "hover:underline",
+      render: (_, row) =>
+        row.email ? <Link to={`mailto:${row.email}`}>{row.email}</Link> : "-",
+    },
+    {
+      key: "website",
+      header: "Website",
+      className: "hover:underline",
+      render: (_, row) =>
+        row.website ? (
+          <Link
+            to={row.website}
+            target="_blank">
+            {row.website}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
     {
       key: "actions",
@@ -85,17 +97,14 @@ const Companies = () => {
           { label: "Filters", icon: Filter, onClick: () => {} },
           { label: "Status", icon: ChevronDown, onClick: () => {} },
         ]}
-        label={`${selectedRows.length} selected`}
-        labelTrigger={selectedRows.length > 0}
       />
 
-      <Table<Customer>
+      <Table<any>
         columns={columns}
         data={companies || []}
         total={companies?.length || 0}
         idField="id"
         pagination
-        onRowClick={(row) => navigate(`/sales/companies/${row.id}`)}
       />
     </div>
   );
