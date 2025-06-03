@@ -1,12 +1,47 @@
-import { Edit, MapPin, Star, Download } from "lucide-react";
+import { Edit, MapPin, Star, Download, Plus } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { PageHeader, StatusBadge, Table, Tabs } from "@/components";
+import { Button, PageHeader, StatusBadge, Table, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import useGetCompanyOverview from "@/hooks/sales/use-get-company-overview";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
+
+const JourneysTab = () => {
+  const include = ["journey"];
+
+  const columns: TableColumn<any>[] = [
+    {
+      key: "name",
+      header: "Name",
+      className: "text-primary",
+      render: (_, row) => (
+        <Link to={`/sales/journeys/${row.id}`}>{row.name}</Link>
+      ),
+    },
+    {
+      key: "priority",
+      header: "Priority",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (value) => <StatusBadge label={value as string} />,
+    },
+    {
+      key: "totalAmount",
+      header: "Total",
+      render: (value) => formatCurrency(value as number),
+    },
+    {
+      key: "createdById",
+      header: "Created By",
+      render: (value) => value,
+    },
+  ];
+  return <div>Journeys</div>;
+};
 
 const QuotesTab = () => {
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
@@ -26,15 +61,15 @@ const QuotesTab = () => {
     [companyId]
   );
 
+  const include = useMemo(() => ["journey"], []);
+
   const columns: TableColumn<any>[] = [
     {
       key: "quoteNumber",
       header: "Quote Number",
-      className: "text-primary",
+      className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>
-          {row.year}-{row.number}
-        </Link>
+        <Link to={`/sales/quotes/${row.id}`}>{row.number}</Link>
       ),
     },
     {
@@ -52,6 +87,16 @@ const QuotesTab = () => {
       render: (value) => formatCurrency(value as number),
     },
     {
+      key: "journey.name",
+      header: "Journey",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/journeys/${row.journey.id}`}>
+          {row.journey.name}
+        </Link>
+      ),
+    },
+    {
       key: "createdById",
       header: "Created By",
       render: (value) => value,
@@ -60,6 +105,7 @@ const QuotesTab = () => {
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes({
     filter,
+    include,
   });
 
   return (
@@ -78,12 +124,10 @@ const QuotesTab = () => {
         setSort(newSort as "createdAt" | "updatedAt");
         setOrder(newOrder as "asc" | "desc");
       }}
-      onRowClick={(row) => {
-        navigate(`/sales/quotes/${row.id}`);
-      }}
     />
   );
 };
+
 const CompanyDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -117,9 +161,21 @@ const CompanyDetails = () => {
           },
           {
             type: "button",
-            label: "Edit",
+            label:
+              activeTab === "overview"
+                ? "Edit"
+                : activeTab === "journeys"
+                ? "New Journey"
+                : activeTab === "quotes"
+                ? "New Quote"
+                : "New Activity",
             variant: "primary",
-            icon: <Edit size={16} />,
+            icon:
+              activeTab === "overview" ? (
+                <Edit size={16} />
+              ) : (
+                <Plus size={16} />
+              ),
             onClick: () => {},
           },
         ]}
@@ -130,8 +186,8 @@ const CompanyDetails = () => {
         setActiveTab={setActiveTab}
         tabs={[
           { label: "Overview", value: "overview" },
+          { label: "Journeys", value: "journeys" },
           { label: "Quotes", value: "quotes" },
-          { label: "Orders", value: "orders", disabled: true },
           { label: "Activity", value: "activity" },
         ]}
       />

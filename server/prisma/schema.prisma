@@ -222,6 +222,7 @@ model Quote {
   approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
   items      QuoteItem[] @relation("QuoteItems")
 
+  @@unique([year, number, revision])
   @@index([year, number, revision])
   @@map("quotes")
 }

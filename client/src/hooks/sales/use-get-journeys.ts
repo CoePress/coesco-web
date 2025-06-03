@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { IApiResponse, IQueryParams } from "@/utils/types";
 import { instance } from "@/utils";
 
-const useGetQuotes = ({
+const useGetJourneys = ({
   sort = "createdAt",
   order = "desc",
   page = 1,
@@ -15,7 +15,7 @@ const useGetQuotes = ({
   dateFrom,
   dateTo,
 }: IQueryParams = {}) => {
-  const [quotes, setQuotes] = useState<any[] | null>(null);
+  const [journeys, setJourneys] = useState<any[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
@@ -32,7 +32,7 @@ const useGetQuotes = ({
   });
 
   useEffect(() => {
-    const getQuotes = async () => {
+    const getJourneys = async () => {
       setLoading(true);
       setError(null);
 
@@ -53,12 +53,12 @@ const useGetQuotes = ({
         if (dateTo) params.dateTo = dateTo;
         if (include) params.include = JSON.stringify(include);
 
-        const { data } = await instance.get<IApiResponse<any[]>>(`/quotes`, {
+        const { data } = await instance.get<IApiResponse<any[]>>(`/journeys`, {
           params,
         });
 
         if (data.success) {
-          setQuotes(data.data || []);
+          setJourneys(data.data || []);
           setPagination({
             total: data.total || 0,
             totalPages: data.totalPages || 0,
@@ -66,7 +66,7 @@ const useGetQuotes = ({
             limit: data.limit || 25,
           });
         } else {
-          setError(data.error || "Failed to fetch quotes");
+          setError(data.error || "Failed to fetch journeys");
         }
       } catch (error) {
         if (error instanceof AxiosError) {
@@ -80,7 +80,7 @@ const useGetQuotes = ({
       }
     };
 
-    getQuotes();
+    getJourneys();
   }, [
     refreshToggle,
     sort,
@@ -97,7 +97,7 @@ const useGetQuotes = ({
   const refresh = () => setRefreshToggle((prev) => !prev);
 
   return {
-    quotes,
+    journeys,
     loading,
     error,
     refresh,
@@ -105,4 +105,4 @@ const useGetQuotes = ({
   };
 };
 
-export default useGetQuotes;
+export default useGetJourneys;

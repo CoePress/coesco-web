@@ -19,34 +19,38 @@ export class QuoteService extends BaseService<Quote> {
       const lastDraft = await this.model.findFirst({
         where: {
           year: currentYear,
-          number: { endsWith: "-D" },
+          number: { contains: "DRAFT" },
         },
         orderBy: { number: "desc" },
       });
 
       const nextSequence = lastDraft
-        ? parseInt(lastDraft.number.replace("-D", "")) + 1
+        ? parseInt(lastDraft.number.split("-").pop() || "0") + 1
         : 1;
 
       return {
         year: currentYear,
-        number: `${nextSequence.toString().padStart(4, "0")}-D`,
+        number: `${currentYear}-DRAFT-${nextSequence
+          .toString()
+          .padStart(4, "0")}`,
       };
     } else {
-      // Get next final quote sequence (no -D suffix)
+      // Get next final quote sequence (no DRAFT)
       const lastFinal = await this.model.findFirst({
         where: {
           year: currentYear,
-          number: { not: { endsWith: "-D" } },
+          number: { not: { contains: "DRAFT" } },
         },
         orderBy: { number: "desc" },
       });
 
-      const nextSequence = lastFinal ? parseInt(lastFinal.number) + 1 : 1;
+      const nextSequence = lastFinal
+        ? parseInt(lastFinal.number.split("-").pop() || "0") + 1
+        : 1;
 
       return {
         year: currentYear,
-        number: nextSequence.toString().padStart(4, "0"),
+        number: `${currentYear}-${nextSequence.toString().padStart(4, "0")}`,
       };
     }
   }

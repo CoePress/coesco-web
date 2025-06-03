@@ -1,5 +1,5 @@
 import { Plus, Filter, Download, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -21,7 +21,11 @@ const Quotes = () => {
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
 
-  const { quotes, loading, error, refresh, pagination } = useGetQuotes();
+  const include = useMemo(() => ["journey"], []);
+
+  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
+    include,
+  });
   const {
     createSandboxQuote,
     loading: sandboxLoading,
@@ -32,11 +36,9 @@ const Quotes = () => {
     {
       key: "quoteNumber",
       header: "Quote Number",
-      className: "text-primary",
+      className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>
-          {row.year}-{row.number}
-        </Link>
+        <Link to={`/sales/quotes/${row.id}`}>{row.number}</Link>
       ),
     },
     {
@@ -52,6 +54,16 @@ const Quotes = () => {
       key: "totalAmount",
       header: "Total",
       render: (value) => formatCurrency(value as number),
+    },
+    {
+      key: "journey.name",
+      header: "Journey",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/journeys/${row.journey.id}`}>
+          {row.journey.name || "-"}
+        </Link>
+      ),
     },
     {
       key: "createdById",
@@ -123,9 +135,6 @@ const Quotes = () => {
         onSortChange={(newSort, newOrder) => {
           setSort(newSort as "createdAt" | "updatedAt");
           setOrder(newOrder as "asc" | "desc");
-        }}
-        onRowClick={(row) => {
-          navigate(`/sales/quotes/${row.id}`);
         }}
       />
 

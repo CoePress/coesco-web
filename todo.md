@@ -37,3 +37,9 @@
 ## AI
 
 - Generate a readme per program file to allow for a searchable database
+
+## To Do
+
+- Add quote items to quote
+- Add quote to customer
+- Add activity to journey

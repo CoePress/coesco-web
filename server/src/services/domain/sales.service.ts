@@ -14,8 +14,10 @@ export class SalesService {
   async createSandboxQuote(employee: any) {
     const quoteNumber = await quoteService.generateQuoteNumber(true);
 
+    const userInitials = `${employee.firstName[0]}${employee.lastName[0]}`;
+
     const company = await companyService.create({
-      name: `Sandbox Company (${quoteNumber.number})`,
+      name: `Sandbox Company (${userInitials})`,
       website: "sandbox.com",
       email: "sandbox@sandbox.com",
       phone: "+1234567890",
@@ -41,6 +43,7 @@ export class SalesService {
     const journey = await journeyService.create({
       customer: { connect: { id: company.data.id } },
       createdBy: { connect: { id: employee.id } },
+      name: `Sandbox Journey (${userInitials})`,
       priority: "LOW",
       confidence: 1,
     });

@@ -11,6 +11,7 @@ const useGetCompanies = ({
   limit = 25,
   search,
   filter,
+  include,
   dateFrom,
   dateTo,
 }: IQueryParams = {}) => {
@@ -50,6 +51,7 @@ const useGetCompanies = ({
         if (filter) params.filter = filter;
         if (dateFrom) params.dateFrom = dateFrom;
         if (dateTo) params.dateTo = dateTo;
+        if (include) params.include = JSON.stringify(include);
 
         const { data } = await instance.get<IApiResponse<any[]>>(`/companies`, {
           params,
@@ -87,6 +89,7 @@ const useGetCompanies = ({
     limit,
     search,
     filter,
+    include,
     dateFrom,
     dateTo,
   ]);
