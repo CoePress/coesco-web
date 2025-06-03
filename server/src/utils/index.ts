@@ -2,7 +2,6 @@ import ejs from "ejs";
 import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
-import { Op } from "sequelize";
 
 import { IDateRange } from "@/types/schema.types";
 import { NextFunction, Request, Response } from "express";
@@ -15,11 +14,6 @@ import {
 } from "date-fns";
 import { config } from "@/config/config";
 import { logger } from "./logger";
-import {
-  IApiResponse,
-  IQueryBuilderResult,
-  IQueryParams,
-} from "@/types/api.types";
 import { FanucControllerMode, FanucExecutionMode } from "@/types/enum.types";
 
 export const asyncHandler =
