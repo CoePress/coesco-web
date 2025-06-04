@@ -44,6 +44,7 @@
 - Add quote to customer
 - Add activity to journey
 - Linter
+- Bring typed value to create mode on enter key press
 
 ## Questions
 

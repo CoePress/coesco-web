@@ -233,33 +233,6 @@ const Quotes = () => {
   const pageTitle = "Quotes";
   const pageDescription = `${quotes?.length} total quotes`;
 
-  const isCreateDisabled = () => {
-    console.log("isCreateDisabled:", { customerValue, journeyValue });
-    if (createLoading) return true;
-
-    // New customer: must have customer label and journey (either new with label or selected)
-    if (typeof customerValue === "object" && customerValue.create) {
-      const customerLabel = customerValue.label?.trim();
-      const journeyLabel =
-        typeof journeyValue === "object"
-          ? journeyValue.label?.trim()
-          : typeof journeyValue === "string"
-          ? journeyValue.trim()
-          : "";
-      return !customerLabel || !journeyLabel;
-    }
-
-    // Existing customer: must have journey (either selected or new with label)
-    if (typeof customerValue === "string" && customerValue) {
-      if (!journeyValue) return true;
-      if (typeof journeyValue === "string") return !journeyValue.trim();
-      if (typeof journeyValue === "object") return !journeyValue.label?.trim();
-    }
-
-    // No customer at all: allow draft quote
-    return false;
-  };
-
   const isJourneyHidden = () => {
     if (customerMode === "create") return false;
     if (customerValue && typeof customerValue === "string") return false;
@@ -367,7 +340,6 @@ const Quotes = () => {
                 if (!val) {
                   setJourneyValue("");
                   setJourneyMode("select");
-                  setCustomerValue("");
                   setCustomerMode("select");
                 } else if (typeof val === "object") {
                   setJourneyValue(val);
