@@ -17,6 +17,7 @@ type Props = {
   createPlaceholder?: string;
   className?: string;
   disabled?: boolean;
+  mode?: "select" | "create";
 };
 
 const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
@@ -29,29 +30,27 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       createPlaceholder = "Create new",
       className = "",
       disabled = false,
+      mode,
     },
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const [selectedOption, setSelectedOption] = useState<Option | null>(null);
-    const [isCreateNew, setIsCreateNew] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(
       null
     );
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-      if (value && typeof value === "object" && value.create) {
-        setIsCreateNew(true);
-      }
-    }, [value]);
-
-    useEffect(() => {
       if (value && typeof value === "string") {
         const option = options.find((opt) => opt.value === value);
         setSelectedOption(option || null);
         setInputValue(option?.label || "");
+      } else if (value && typeof value === "object" && value.create) {
+        // Handle create mode values properly
+        setSelectedOption(null);
+        setInputValue(value.label || "");
       } else {
         setSelectedOption(null);
         setInputValue("");
@@ -96,7 +95,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     };
 
     const handleInputFocus = () => {
-      if (!selectedOption && !isCreateNew) {
+      if (!selectedOption && mode !== "create") {
         setIsOpen(true);
         setHighlightedIndex(null);
       }
@@ -105,13 +104,15 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setInputValue(newValue);
-      if (!isCreateNew && !selectedOption) {
+      if (mode === "create") {
+        onChange({ create: true, label: newValue });
+      } else if (!selectedOption) {
         setIsOpen(true);
       }
     };
 
     const handleBlur = () => {
-      if (isCreateNew) {
+      if (mode === "create") {
         return;
       }
       if (selectedOption) {
@@ -123,9 +124,9 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
 
     const handleCreateNew = () => {
       const currentValue = inputValue;
-      setIsCreateNew(true);
       setIsOpen(false);
       setInputValue(currentValue);
+      onChange({ create: true, label: currentValue });
       setTimeout(() => {
         inputRef.current?.focus();
       }, 0);
@@ -133,8 +134,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
 
     const handleExitCreateNew = (e: React.MouseEvent) => {
       e.stopPropagation();
-      setIsCreateNew(false);
       setInputValue("");
+      onChange("");
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -177,19 +178,19 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
               onFocus={handleInputFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              placeholder={isCreateNew ? createPlaceholder : placeholder}
-              disabled={disabled || (!!selectedOption && !isCreateNew)}
+              placeholder={mode === "create" ? createPlaceholder : placeholder}
+              disabled={disabled || (!!selectedOption && mode !== "create")}
               className={`w-full px-3 py-2 bg-foreground border rounded-md ${
-                disabled || (!!selectedOption && !isCreateNew)
+                disabled || (!!selectedOption && mode !== "create")
                   ? "opacity-50"
                   : "hover:border-primary"
               } ${
                 isOpen ? "border-primary" : "border-border"
               } focus:outline-none focus:ring-1 leading-0 focus:ring-primary focus:border-primary text-text ${
-                isCreateNew ? "pl-20" : ""
+                mode === "create" ? "pl-20" : ""
               }`}
             />
-            {isCreateNew && (
+            {mode === "create" && (
               <div className="absolute left-2 flex items-center gap-1">
                 <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded flex items-center gap-1">
                   New
@@ -203,7 +204,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
               </div>
             )}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {selectedOption && !isCreateNew && (
+              {selectedOption && mode !== "create" && (
                 <button
                   onClick={handleClear}
                   className="p-1 hover:bg-surface rounded-full cursor-pointer">
@@ -213,7 +214,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
                   />
                 </button>
               )}
-              {!isCreateNew && !selectedOption && (
+              {mode !== "create" && !selectedOption && (
                 <ChevronDown
                   size={16}
                   className={`text-text-muted transition-transform ${
@@ -225,7 +226,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
           </div>
         </div>
 
-        {isOpen && !isCreateNew && (
+        {isOpen && mode !== "create" && (
           <div className="absolute z-10 w-full mt-1 bg-foreground border border-border rounded-md shadow-lg">
             <div className="max-h-60 overflow-auto">
               <div
