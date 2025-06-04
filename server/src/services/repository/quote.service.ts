@@ -167,16 +167,14 @@ export class QuoteService extends BaseService<Quote> {
   public async createRevision(quoteId: string) {}
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
-    if (!quote.journeyId) {
-      throw new BadRequestError("Journey ID is required");
-    }
+    if (quote.journeyId) {
+      const journey = await prisma.journey.findUnique({
+        where: { id: quote.journeyId },
+      });
 
-    const journey = await prisma.journey.findUnique({
-      where: { id: quote.journeyId },
-    });
-
-    if (!journey) {
-      throw new BadRequestError("Journey not found");
+      if (!journey) {
+        throw new BadRequestError("Journey not found");
+      }
     }
 
     if (!quote.year) {

@@ -8,15 +8,15 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  username    String   @unique
+  id          String    @id @default(uuid())
+  username    String    @unique
   password    String?
-  microsoftId String?  @unique
-  role        UserRole @default(USER)
-  isActive    Boolean  @default(false)
+  microsoftId String?   @unique
+  role        UserRole  @default(USER)
+  isActive    Boolean   @default(false)
   lastLogin   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   employee Employee?
 
@@ -41,15 +41,15 @@ model Employee {
   jobTitle    String
   initials    String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user            User       @relation(fields: [userId], references: [id])
-  journeys        Journey[]   @relation("RsmJourneys")
-  createdCompanies Company[]   @relation("CustomerCreatedBy")
-  createdJourneys Journey[]   @relation("JourneyCreatedBy")
-  createdQuotes   Quote[]     @relation("QuoteCreatedBy")
-  approvedQuotes  Quote[]     @relation("QuoteApprovedBy")
+  user             User      @relation(fields: [userId], references: [id])
+  journeys         Journey[] @relation("RsmJourneys")
+  createdCompanies Company[] @relation("CustomerCreatedBy")
+  createdJourneys  Journey[] @relation("JourneyCreatedBy")
+  createdQuotes    Quote[]   @relation("QuoteCreatedBy")
+  approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
 
   @@index([number])
   @@map("employees")
@@ -77,7 +77,7 @@ model Company {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  createdBy        Employee?       @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
   addresses        Address[]
   contacts         Contact[]
   customerJourneys Journey[] @relation("CustomerJourneys")
@@ -99,9 +99,9 @@ model Address {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id])
+  company          Company   @relation(fields: [companyId], references: [id])
   customerJourneys Journey[] @relation("JourneyCustomerAddress")
-  dealerJourneys Journey[] @relation("JourneyDealerAddress")
+  dealerJourneys   Journey[] @relation("JourneyDealerAddress")
 
   @@map("addresses")
 }
@@ -118,44 +118,44 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id])
+  company          Company   @relation(fields: [companyId], references: [id])
   customerJourneys Journey[] @relation("JourneyCustomerContact")
-  dealerJourneys Journey[] @relation("JourneyDealerContact")
+  dealerJourneys   Journey[] @relation("JourneyDealerContact")
 
   @@map("contacts")
 }
 
 model Journey {
-  id          String           @id @default(uuid())
-  name        String?
-  rsmId       String?
-  customerId  String?
+  id                String           @id @default(uuid())
+  name              String?
+  rsmId             String?
+  customerId        String?
   customerAddressId String?
   customerContactId String?
   dealerId          String?
   dealerAddressId   String?
   dealerContactId   String?
-  startDate   DateTime?
-  status      JourneyStatus?
-  type        JourneyType?
-  source      JourneySource?
-  priority    JourneyPriority?
-  confidence  Int?
-  notes       String?
-  createdById String
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  startDate         DateTime?
+  status            JourneyStatus?
+  type              JourneyType?
+  source            JourneySource?
+  priority          JourneyPriority?
+  confidence        Int?
+  notes             String?
+  createdById       String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  rsm          Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
-  customer     Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
-  customerAddress Address? @relation("JourneyCustomerAddress", fields: [customerAddressId], references: [id])
-  customerContact Contact? @relation("JourneyCustomerContact", fields: [customerContactId], references: [id])
-  dealer       Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
-  dealerAddress   Address? @relation("JourneyDealerAddress", fields: [dealerAddressId], references: [id])
-  dealerContact   Contact? @relation("JourneyDealerContact", fields: [dealerContactId], references: [id])
-  createdBy    Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
-  interactions JourneyInteraction[] @relation("JourneyInteractions")
-  quotes       Quote[]              @relation("JourneyQuotes")
+  rsm             Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
+  customer        Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
+  customerAddress Address?             @relation("JourneyCustomerAddress", fields: [customerAddressId], references: [id])
+  customerContact Contact?             @relation("JourneyCustomerContact", fields: [customerContactId], references: [id])
+  dealer          Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
+  dealerAddress   Address?             @relation("JourneyDealerAddress", fields: [dealerAddressId], references: [id])
+  dealerContact   Contact?             @relation("JourneyDealerContact", fields: [dealerContactId], references: [id])
+  createdBy       Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
+  interactions    JourneyInteraction[] @relation("JourneyInteractions")
+  quotes          Quote[]              @relation("JourneyQuotes")
 
   @@map("journeys")
 }
@@ -188,7 +188,7 @@ model Quote {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  journey    Journey?     @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
   createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
   approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
   items      QuoteItem[] @relation("QuoteItems")

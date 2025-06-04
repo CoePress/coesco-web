@@ -1,14 +1,12 @@
 import { __dev__ } from "@/config/config";
 import { employeeService, machineService } from "@/services";
-import { initializeModels } from "@/models";
-import { sequelize } from "@/config/database";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 import {
   MachineConnectionType,
   MachineControllerType,
   MachineType,
-} from "@/types/enum.types";
+} from "@prisma/client";
 
 // Production seed data
 const machines = [
@@ -44,7 +42,7 @@ const machines = [
     name: "Doosan 3100LS",
     type: MachineType.LATHE,
     controllerType: MachineControllerType.FANUC,
-    connectionType: MachineConnectionType.CUSTOM,
+    connectionType: MachineConnectionType.FOCAS,
     connectionHost: "192.231.64.127",
     connectionPort: 8193,
   },
@@ -53,7 +51,7 @@ const machines = [
     name: "Kuraki Boring Mill",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionType: MachineConnectionType.CUSTOM,
+    connectionType: MachineConnectionType.FOCAS,
     connectionHost: "x.x.x.x",
     connectionPort: 8193,
   },
@@ -62,7 +60,7 @@ const machines = [
     name: "OKK",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionType: MachineConnectionType.CUSTOM,
+    connectionType: MachineConnectionType.FOCAS,
     connectionHost: "192.231.64.203",
     connectionPort: 8193,
   },
@@ -71,7 +69,7 @@ const machines = [
     name: "Niigata HN80",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionType: MachineConnectionType.CUSTOM,
+    connectionType: MachineConnectionType.FOCAS,
     connectionHost: "192.231.64.202",
     connectionPort: 8193,
   },
@@ -80,7 +78,7 @@ const machines = [
     name: "Niigata SPN63",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionType: MachineConnectionType.CUSTOM,
+    connectionType: MachineConnectionType.FOCAS,
     connectionHost: "192.231.64.201",
     connectionPort: 8193,
   },
@@ -168,16 +166,18 @@ const sampleItems = [
 
 const seed = async () => {
   try {
-    await initializeModels(sequelize);
-    await sequelize.sync();
-
     await employeeService.sync();
 
     // Seed production data
     for (const machine of machines) {
       try {
-        const m = await machineService.createMachine(machine);
-        logger.info(`Machine ${m.slug} created`);
+        const m = await machineService.create(machine);
+
+        if (!m.success || !m.data) {
+          throw new Error("Failed to create machine");
+        }
+
+        logger.info(`Machine ${m.data.slug} created`);
       } catch (error) {
         logger.error(`Error creating machine ${machine.slug}: ${error}`);
       }
@@ -256,7 +256,6 @@ const seed = async () => {
   } catch (error) {
     logger.error("Error during seeding:", error);
   } finally {
-    await sequelize.close();
     process.exit(0);
   }
 };

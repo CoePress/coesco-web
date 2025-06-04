@@ -1,5 +1,5 @@
 import { Plus, Filter, Download, ChevronDown } from "lucide-react";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -9,7 +9,6 @@ import {
   PageSearch,
   StatusBadge,
   Table,
-  Select,
 } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/shared/table";
@@ -17,6 +16,7 @@ import useGetQuotes from "@/hooks/sales/use-get-quotes";
 import { useCreateQuote } from "@/hooks/sales/use-create-quote";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
+import AdvancedDropdown from "@/components/common/advanced-dropdown";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +30,12 @@ const Quotes = () => {
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newJourneyName, setNewJourneyName] = useState("");
   const customerInputRef = useRef<HTMLInputElement>(null);
+  const customerRef = useRef<HTMLDivElement>(null);
+  const journeyRef = useRef<HTMLDivElement>(null);
+
+  // Add state to track if we're in create mode
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [isCreatingJourney, setIsCreatingJourney] = useState(false);
 
   const include = useMemo(() => ["journey", "journey.customer"], []);
 
@@ -41,6 +47,7 @@ const Quotes = () => {
     loading: createLoading,
     error: createError,
   } = useCreateQuote();
+
   const { companies } = useGetCompanies();
   const { journeys } = useGetJourneys();
 
@@ -185,33 +192,42 @@ const Quotes = () => {
     );
   }, [journeys, selectedCustomer]);
 
-  const customerOptions =
-    companies?.map((company) => ({
-      value: company.id,
-      label: company.name,
-    })) || [];
+  const customerOptions = useMemo(
+    () =>
+      companies?.map((company) => ({
+        value: company.id,
+        label: company.name,
+      })) || [],
+    [companies]
+  );
+
+  const journeyOptions = useMemo(
+    () =>
+      journeys
+        ?.filter((journey) => journey.customerId === selectedCustomer)
+        ?.map((journey) => ({
+          value: journey.id,
+          label: journey.name || `Journey ${journey.id.slice(-8)}`,
+        })) || [],
+    [journeys, selectedCustomer]
+  );
 
   const pageTitle = "Quotes";
   const pageDescription = `${quotes?.length} total quotes`;
+
+  const [customerInputValue, setCustomerInputValue] = useState("");
+  const [journeyInputValue, setJourneyInputValue] = useState("");
 
   const isCreateDisabled = () => {
     if (createLoading) return true;
 
     // If creating new customer, MUST also create new journey
-    if (showNewCustomerInput) {
-      return (
-        !newCustomerName.trim() ||
-        !showNewJourneyInput ||
-        !newJourneyName.trim()
-      );
+    if (isCreatingCustomer) {
+      return !customerInputValue.trim() || !journeyInputValue.trim();
     }
 
-    // If showing new journey input but no name entered
-    if (showNewJourneyInput && !newJourneyName.trim()) return true;
-
     // If customer selected but no journey selected (or being created)
-    if (selectedCustomer && !selectedJourney && !showNewJourneyInput)
-      return true;
+    if (selectedCustomer && !selectedJourney && !isCreatingJourney) return true;
 
     return false;
   };
@@ -274,177 +290,72 @@ const Quotes = () => {
         <div className="space-y-6">
           {/* Customer Selection */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-text">Customer</label>
-              <div className="flex gap-2">
-                {selectedCustomer && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCustomer("");
-                      setSelectedJourney("");
-                      setShowNewCustomerInput(false);
-                      setNewCustomerName("");
-                      setShowNewJourneyInput(false);
-                      setNewJourneyName("");
-                    }}
-                    className="text-xs h-6 px-2">
-                    Clear
-                  </Button>
-                )}
-                {!selectedCustomer && !showNewCustomerInput && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCreateNewCustomer}
-                    className="text-xs h-6 px-2">
-                    Create New
-                  </Button>
-                )}
-                {showNewCustomerInput && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCreateNewCustomer}
-                    className="text-xs h-6 px-2">
-                    Cancel
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* New Customer Input */}
-            {showNewCustomerInput && (
-              <div className="space-y-2 p-3 bg-surface border rounded">
-                <input
-                  type="text"
-                  placeholder="Enter customer name"
-                  value={newCustomerName}
-                  onChange={(e) => setNewCustomerName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                  ref={customerInputRef}
-                />
-                {newCustomerName.trim() && !showNewJourneyInput && (
-                  <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                    You must also create a journey for this new customer.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!showNewCustomerInput && (
-              <Select
-                options={customerOptions}
-                value={selectedCustomer}
-                onChange={(e) => {
-                  const newCustomerId = e.target.value;
-                  setSelectedCustomer(newCustomerId);
-                  if (!newCustomerId) {
-                    setSelectedJourney("");
-                    setShowNewJourneyInput(false);
-                    setNewJourneyName("");
-                  }
-                }}
-                placeholder="Select a customer (optional)"
-              />
-            )}
+            <label className="text-sm font-medium text-text">Customer</label>
+            <AdvancedDropdown
+              ref={customerRef}
+              options={customerOptions}
+              value={selectedCustomer}
+              onChange={(value) => {
+                setSelectedCustomer(value);
+                setSelectedJourney("");
+                setNewJourneyName("");
+              }}
+              onIsCreateNewChange={(isCreateNew) => {
+                setIsCreatingCustomer(isCreateNew);
+                if (isCreateNew) {
+                  setIsCreatingJourney(true);
+                }
+              }}
+              onInputChange={setCustomerInputValue}
+              placeholder="Select a customer (optional)"
+              createPlaceholder="Enter customer name"
+            />
           </div>
 
           {/* Journey Selection */}
-          {(selectedCustomer || showNewCustomerInput) && (
+          {(selectedCustomer || isCreatingCustomer) && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-text">Journey</label>
-                <div className="flex gap-2">
-                  {selectedJourney && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedJourney("");
-                        setShowNewJourneyInput(false);
-                        setNewJourneyName("");
-                      }}
-                      disabled={!selectedCustomer}
-                      className="text-xs h-6 px-2">
-                      Clear
-                    </Button>
-                  )}
-                  {!selectedJourney &&
-                    !showNewJourneyInput &&
-                    selectedCustomer && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCreateNewJourney}
-                        className="text-xs h-6 px-2">
-                        Create New
-                      </Button>
-                    )}
-                  {showNewJourneyInput && !showNewCustomerInput && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCreateNewJourney}
-                      className="text-xs h-6 px-2">
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* New Journey Input */}
-              {showNewJourneyInput && (
-                <div className="space-y-2 p-3 bg-surface border rounded">
-                  <input
-                    type="text"
-                    placeholder="Enter journey name"
-                    value={newJourneyName}
-                    onChange={(e) => setNewJourneyName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    autoFocus
-                  />
-                </div>
-              )}
-
-              {!showNewJourneyInput && (
-                <Select
-                  options={filteredJourneyOptions}
-                  value={selectedJourney}
-                  onChange={(e) => setSelectedJourney(e.target.value)}
-                  disabled={!selectedCustomer && !showNewCustomerInput}
-                  placeholder={
-                    !selectedCustomer && !showNewCustomerInput
-                      ? "Select a customer first"
-                      : showNewCustomerInput
-                      ? "Create a new journey for the new customer"
-                      : "Select a journey"
-                  }
-                />
-              )}
+              <label className="text-sm font-medium text-text">Journey</label>
+              <AdvancedDropdown
+                ref={journeyRef}
+                options={journeyOptions}
+                value={selectedJourney}
+                onChange={setSelectedJourney}
+                onIsCreateNewChange={setIsCreatingJourney}
+                onInputChange={setJourneyInputValue}
+                disabled={!selectedCustomer && !isCreatingCustomer}
+                forceCreate={isCreatingCustomer}
+                placeholder={
+                  isCreatingCustomer
+                    ? "Enter journey name"
+                    : !selectedCustomer && !isCreatingCustomer
+                    ? "Select a customer first"
+                    : "Select a journey"
+                }
+                createPlaceholder="Enter journey name"
+              />
             </div>
           )}
 
           {/* Info Text */}
           <div className="text-xs text-text-muted bg-surface p-3 rounded">
             {!selectedCustomer &&
-              !showNewCustomerInput &&
+              !isCreatingCustomer &&
               !selectedJourney &&
-              !showNewJourneyInput &&
+              !isCreatingJourney &&
               "Create a standalone draft quote that can be attached to a customer later."}
-            {showNewCustomerInput &&
-              !showNewJourneyInput &&
+            {isCreatingCustomer &&
+              !isCreatingJourney &&
               "Creating a new customer requires creating a new journey as well."}
-            {showNewCustomerInput &&
-              showNewJourneyInput &&
+            {isCreatingCustomer &&
+              isCreatingJourney &&
               "Quote will be created with the new customer and new journey."}
             {selectedCustomer &&
               !selectedJourney &&
-              !showNewJourneyInput &&
+              !isCreatingJourney &&
               "You must select or create a journey to proceed with this customer."}
             {selectedCustomer &&
-              (selectedJourney || showNewJourneyInput) &&
+              (selectedJourney || isCreatingJourney) &&
               "Quote will be created as part of the selected journey."}
           </div>
 

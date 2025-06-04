@@ -15,6 +15,9 @@ type Props = {
   createPlaceholder?: string;
   className?: string;
   disabled?: boolean;
+  onIsCreateNewChange?: (isCreateNew: boolean) => void;
+  forceCreate?: boolean;
+  onInputChange?: (value: string) => void;
 };
 
 const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
@@ -27,17 +30,30 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       createPlaceholder = "Create new",
       className = "",
       disabled = false,
+      onIsCreateNewChange,
+      forceCreate = false,
+      onInputChange,
     },
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const [selectedOption, setSelectedOption] = useState<Option | null>(null);
-    const [isCreateNew, setIsCreateNew] = useState(false);
+    const [isCreateNew, setIsCreateNew] = useState(forceCreate);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(
       null
     );
     const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+      if (forceCreate) {
+        setIsCreateNew(true);
+        onIsCreateNewChange?.(true);
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    }, [forceCreate, onIsCreateNewChange]);
 
     useEffect(() => {
       if (isCreateNew) return;
@@ -99,6 +115,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setInputValue(newValue);
+      onInputChange?.(newValue);
       if (!isCreateNew && !selectedOption) {
         setIsOpen(true);
       }
@@ -118,6 +135,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleCreateNew = () => {
       const currentValue = inputValue;
       setIsCreateNew(true);
+      onIsCreateNewChange?.(true);
       setIsOpen(false);
       setInputValue(currentValue);
       setTimeout(() => {
@@ -128,6 +146,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleExitCreateNew = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsCreateNew(false);
+      onIsCreateNewChange?.(false);
       setInputValue("");
     };
 
