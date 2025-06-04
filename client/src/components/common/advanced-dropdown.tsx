@@ -40,6 +40,8 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+      if (isCreateNew) return;
+
       if (value) {
         const option = options.find((opt) => opt.value === value);
         setSelectedOption(option || null);
@@ -48,7 +50,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         setSelectedOption(null);
         setInputValue("");
       }
-    }, [value, options]);
+    }, [value, options, isCreateNew]);
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
