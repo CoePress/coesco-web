@@ -38,8 +38,8 @@ const Quotes = () => {
     error: createError,
   } = useCreateQuote();
 
-  const { companies } = useGetCompanies();
-  const { journeys } = useGetJourneys();
+  const { companies, refresh: refreshCompanies } = useGetCompanies();
+  const { journeys, refresh: refreshJourneys } = useGetJourneys();
 
   const columns: TableColumn<any>[] = [
     {
@@ -201,6 +201,8 @@ const Quotes = () => {
     if (result) {
       toggleModal();
       refresh();
+      refreshCompanies();
+      refreshJourneys();
     }
   };
 
