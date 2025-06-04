@@ -9,6 +9,24 @@ export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
 
+  public async createQuote(data: any) {
+    console.log("createQuote", data);
+
+    if (data.customerId && data.journeyId) {
+      console.log("create quote & attach to journey");
+    } else if (data.customerId && data.journeyName) {
+      console.log(
+        "create journey & attach to company -> then create quote & attach to journey"
+      );
+    } else if (data.customerName && data.journeyName) {
+      console.log(
+        "create customer -> then create journey & attach to customer -> then create quote & attach to journey"
+      );
+    } else {
+      console.log("create standalone quote");
+    }
+  }
+
   public async generateQuoteNumber(
     isDraft: boolean = true
   ): Promise<{ year: number; number: string }> {

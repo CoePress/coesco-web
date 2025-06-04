@@ -8,6 +8,14 @@ export class QuoteController extends BaseController<Quote> {
   protected service = quoteService;
   protected entityName = "Quote";
 
+  public async createQuote(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await quoteService.createQuote(req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
   public async getItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

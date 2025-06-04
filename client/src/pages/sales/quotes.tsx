@@ -124,12 +124,16 @@ const Quotes = () => {
       (selectedJourney || showNewJourneyInput)
     ) {
       // Create quote attached to journey (existing or new)
-      const result = await createQuote({
-        customerId: selectedCustomer,
-        journeyId: selectedJourney,
-        customerName: showNewCustomerInput ? newCustomerName : undefined,
-        journeyName: showNewJourneyInput ? newJourneyName : undefined,
-      });
+      const params: Record<string, string> = {};
+
+      if (selectedCustomer) params.customerId = selectedCustomer;
+      if (selectedJourney) params.journeyId = selectedJourney;
+      if (showNewCustomerInput && newCustomerName)
+        params.customerName = newCustomerName;
+      if (showNewJourneyInput && newJourneyName)
+        params.journeyName = newJourneyName;
+
+      const result = await createQuote(params);
       if (result) {
         toggleModal();
         refresh();
@@ -153,18 +157,6 @@ const Quotes = () => {
       setTimeout(() => customerInputRef.current?.focus(), 0);
     }
   };
-
-  // Focus journey input when customer name is entered
-  useEffect(() => {
-    if (showNewCustomerInput && newCustomerName.trim() && showNewJourneyInput) {
-      const journeyInput = document.querySelector(
-        'input[placeholder="Enter journey name"]'
-      ) as HTMLInputElement;
-      if (journeyInput) {
-        journeyInput.focus();
-      }
-    }
-  }, [newCustomerName, showNewCustomerInput, showNewJourneyInput]);
 
   const handleCreateNewJourney = () => {
     if (!selectedCustomer && !showNewCustomerInput) return;

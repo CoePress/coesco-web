@@ -8,7 +8,7 @@ router.get("/:id", quoteController.getById);
 router.get("/:id/items", quoteController.getItems);
 router.get("/:id/overview", quoteController.getOverview);
 
-router.post("/", quoteController.create);
+router.post("/", quoteController.createQuote);
 router.post("/:id/items", quoteController.addItem);
 
 router.patch("/:id", quoteController.update);
