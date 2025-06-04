@@ -44,3 +44,7 @@
 - Add quote to customer
 - Add activity to journey
 - Linter
+
+## Questions
+
+- Can two quotes from the same journey have different dealers, contacts or addresses?
