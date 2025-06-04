@@ -1,8 +1,3 @@
-export enum UserType {
-  USER = "USER",
-  ADMIN = "ADMIN",
-}
-
 export enum EmployeeRole {
   INACTIVE = "INACTIVE",
   ADMIN = "ADMIN",

@@ -52,7 +52,7 @@ const useGetStatuses = ({
         if (dateTo) params.dateTo = dateTo;
 
         const { data } = await instance.get<IApiResponse<IMachineStatus[]>>(
-          `/machines/data`,
+          `/machines/statuses`,
           {
             params,
           }
@@ -67,7 +67,7 @@ const useGetStatuses = ({
             limit: data.limit || 25,
           });
         } else {
-          setError(data.error || "Failed to fetch employees");
+          setError(data.error || "Failed to fetch machine statuses");
         }
       } catch (error) {
         if (error instanceof AxiosError) {

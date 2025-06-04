@@ -4,10 +4,10 @@ import { UnauthorizedError } from "@/middleware/error.middleware";
 import { compare } from "bcrypt";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { SignOptions } from "jsonwebtoken";
-import { UserType } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { prisma } from "@/utils/prisma";
 import { IAuthResponse, IAuthTokens } from "@/types/api.types";
+import { UserRole } from "@prisma/client";
 
 export class AuthService {
   private msalClient: ConfidentialClientApplication;
@@ -23,12 +23,12 @@ export class AuthService {
   }
 
   private generateTokens(userId: string): IAuthTokens {
-    const token = sign({ userId, userType: UserType.USER }, config.jwt.secret, {
+    const token = sign({ userId, role: UserRole.USER }, config.jwt.secret, {
       expiresIn: config.jwt.expiresIn,
     } as SignOptions);
 
     const refreshToken = sign(
-      { userId, userType: UserType.USER },
+      { userId, role: UserRole.USER },
       config.jwt.secret,
       { expiresIn: config.jwt.refreshExpiresIn } as SignOptions
     );
@@ -42,7 +42,7 @@ export class AuthService {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { username: email },
       include: { employee: true },
     });
 
@@ -62,7 +62,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: user.id,
-        role: user.userType,
+        role: user.role,
       },
       employee: {
         id: user.employee.id,
@@ -107,7 +107,7 @@ export class AuthService {
     const userInfo = await this.getMicrosoftUserInfo(tokenResponse.accessToken);
 
     const user = await prisma.user.findUnique({
-      where: { email: userInfo.mail },
+      where: { microsoftId: userInfo.id },
       include: { employee: true },
     });
 
@@ -122,7 +122,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: user.id,
-        role: user.userType,
+        role: user.role,
       },
       employee: {
         id: user.employee.id,
@@ -142,7 +142,7 @@ export class AuthService {
 
     const decoded = verify(accessToken, config.jwt.secret) as {
       userId: string;
-      userType: UserType;
+      role: UserRole;
     };
 
     const user = await prisma.user.findUnique({
@@ -191,24 +191,30 @@ export class AuthService {
           email: "sample@example.com",
           jobTitle: "Sales Manager",
           number: randomUUID().slice(0, 6),
+          user: {
+            create: {
+              username: "sample@example.com",
+              role: UserRole.USER,
+            },
+          },
         },
       });
     }
 
     let user = await prisma.user.findUnique({
-      where: { email: "sample@example.com" },
+      where: { username: "sample@example.com" },
     });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
-          email: "sample@example.com",
+          username: "sample@example.com",
           employee: {
             connect: {
               id: employee.id,
             },
           },
-          userType: UserType.USER,
+          role: UserRole.USER,
         },
       });
     }
@@ -220,7 +226,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: user.id,
-        role: user.userType,
+        role: user.role,
       },
       employee: {
         id: employee.id,

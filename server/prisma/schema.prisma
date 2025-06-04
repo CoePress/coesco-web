@@ -357,11 +357,11 @@ model Machine {
   name            String
   type            MachineType
   controllerType  MachineControllerType
-  controllerModel String
+  controllerModel String?
   connectionType  MachineConnectionType
-  connectionHost  String
-  connectionPort  Int
-  connectionUrl   String
+  connectionHost  String?
+  connectionPort  Int?
+  connectionUrl   String?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 

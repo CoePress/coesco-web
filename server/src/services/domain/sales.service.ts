@@ -156,7 +156,7 @@ export class SalesService {
       };
     }
 
-    const journey = await journeyService.getById(quote.data.journeyId);
+    const journey = await journeyService.getById(quote.data.journeyId || "");
 
     if (!journey.success || !journey.data) {
       throw new Error("Journey not found");

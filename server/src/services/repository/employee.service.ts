@@ -1,4 +1,4 @@
-import { Employee, User, UserType } from "@prisma/client";
+import { Employee, UserRole } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import {
@@ -6,7 +6,6 @@ import {
   InternalServerError,
 } from "@/middleware/error.middleware";
 import { logger } from "@/utils/logger";
-import { EmployeeRole } from "@/types/enum.types";
 import axios from "axios";
 import { config } from "@/config/config";
 
@@ -28,85 +27,89 @@ export class EmployeeService extends BaseService<Employee> {
   async sync() {
     try {
       logger.info("Starting Microsoft user sync...");
-      const msUsers = await this.getMicrosoftUsers();
-      logger.info(`Found ${msUsers.length} Microsoft users`);
+      const microsoftUsers = await this.getMicrosoftUsers();
+      logger.info(`Found ${microsoftUsers.length} Microsoft users`);
 
-      for (const user of msUsers) {
-        if (blacklistedEmails.includes(user.mail)) {
-          logger.info(`Skipping blacklisted email: ${user.mail}`);
+      for (const microsoftUser of microsoftUsers) {
+        if (blacklistedEmails.includes(microsoftUser.mail)) {
+          logger.info(`Skipping blacklisted email: ${microsoftUser.mail}`);
           continue;
         }
 
-        if (!user.mail || !user.id) {
+        if (!microsoftUser.mail || !microsoftUser.id) {
           logger.warn(
             `Skipping user with missing required fields: ${
-              user.mail || "no email"
+              microsoftUser.mail || "no email"
             }`
           );
           continue;
         }
 
-        if (!employeeEmailRegex.test(user.mail)) {
-          logger.info(`Skipping non-standard email format: ${user.mail}`);
+        if (!employeeEmailRegex.test(microsoftUser.mail)) {
+          logger.info(
+            `Skipping non-standard email format: ${microsoftUser.mail}`
+          );
           continue;
         }
 
-        logger.info(`Processing user: ${user.displayName} (${user.mail})`);
+        logger.info(
+          `Processing user: ${microsoftUser.displayName} (${microsoftUser.mail})`
+        );
 
         const existingEmployee = await this.model.findFirst({
-          where: { email: user.mail },
+          where: { email: microsoftUser.mail },
         });
         logger.info(
           `Existing employee found: ${existingEmployee ? "Yes" : "No"}`
         );
 
-        const isAdmin = user.department === "MIS";
+        const isAdmin = microsoftUser.department === "MIS";
 
-        const employee = await this.model.upsert({
-          where: { email: user.mail },
+        const user = await prisma.user.upsert({
+          where: { microsoftId: microsoftUser.id },
           create: {
-            firstName: user.givenName || "Unknown",
-            lastName: user.surname || "User",
-            email: user.mail,
-            jobTitle: user.jobTitle || "Employee",
-            number: user.mail.split("@")[0].toUpperCase(),
+            username: microsoftUser.mail,
+            role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+            microsoftId: microsoftUser.id,
           },
           update: {
-            firstName: user.givenName || "Unknown",
-            lastName: user.surname || "User",
-            email: user.mail,
-            jobTitle: user.jobTitle || "Employee",
+            username: microsoftUser.mail,
+            role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+          },
+        });
+        logger.info(`User record ${existingEmployee ? "updated" : "created"}`);
+
+        const employee = await this.model.upsert({
+          where: { email: microsoftUser.mail },
+          create: {
+            firstName: microsoftUser.givenName || "Unknown",
+            lastName: microsoftUser.surname || "User",
+            email: microsoftUser.mail,
+            jobTitle: microsoftUser.jobTitle || "Employee",
+            number: microsoftUser.mail.split("@")[0].toUpperCase(),
+            userId: user.id,
+          },
+          update: {
+            firstName: microsoftUser.givenName || "Unknown",
+            lastName: microsoftUser.surname || "User",
+            email: microsoftUser.mail,
+            jobTitle: microsoftUser.jobTitle || "Employee",
           },
         });
         logger.info(
           `Employee ${existingEmployee ? "updated" : "created"}: ${employee.id}`
         );
-
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.mail },
-        });
-        logger.info(`Existing user found: ${existingUser ? "Yes" : "No"}`);
-
-        await prisma.user.upsert({
-          where: { email: user.mail },
-          create: {
-            email: user.mail,
-            employeeId: employee.id,
-            userType: isAdmin ? UserType.ADMIN : UserType.USER,
-          },
-          update: {
-            email: user.mail,
-            employeeId: employee.id,
-            userType: isAdmin ? UserType.ADMIN : UserType.USER,
-          },
-        });
-        logger.info(`User record ${existingUser ? "updated" : "created"}`);
       }
 
       logger.info("Sync completed successfully");
       return true;
     } catch (error: any) {
-      logger.error("Sync failed with error:", error);
+      logger.error("Sync failed with error:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw new InternalServerError(`Sync failed: ${error.message}`);
     }
   }
@@ -154,10 +157,23 @@ export class EmployeeService extends BaseService<Employee> {
       });
 
       const response = await axios.post(tokenUrl, params);
-
       return response.data.access_token;
-    } catch (error) {
-      throw new Error("Failed to generate token");
+    } catch (error: any) {
+      logger.error("Token generation failed:", {
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+        config: {
+          tenantId: config.azure.tenantId,
+          clientId: config.azure.clientId,
+          // Don't log the secret
+          hasSecret: !!config.azure.clientSecret,
+        },
+      });
+      throw new Error(
+        `Failed to generate token: ${
+          error.response?.data?.error_description || error.message
+        }`
+      );
     }
   }
 

@@ -387,7 +387,7 @@ export class MachineDataService {
               program: data.program,
               tool: data.tool,
               metrics: data.metrics,
-              alarmCode: data.alarm,
+              alarmCode: data.alarm || "",
               alarmMessage: "",
               startTime: new Date(),
               endTime: null,
@@ -395,8 +395,30 @@ export class MachineDataService {
             });
           } catch (error) {
             logger.error(
-              `Failed to create new state record for machine ${machine.id}:`,
-              error
+              `Failed to create new state record for machine ${machine.id}: ${
+                error instanceof Error ? error.message : error
+              }\nData: ${JSON.stringify(
+                {
+                  state,
+                  execution: data.execution,
+                  controller: data.controller,
+                  program: data.program,
+                  tool: data.tool,
+                  metrics: data.metrics,
+                  alarmCode: data.alarm || "",
+                  alarmMessage: "",
+                  startTime: new Date(),
+                  endTime: null,
+                  duration: 0,
+                  machine: {
+                    connect: {
+                      id: machine.id,
+                    },
+                  },
+                },
+                null,
+                2
+              )}`
             );
           }
         }
@@ -449,8 +471,30 @@ export class MachineDataService {
             });
           } catch (error) {
             logger.error(
-              `Failed to create offline state for machine ${machine.id}:`,
-              error
+              `Failed to create offline state for machine ${machine.id}: ${
+                error instanceof Error ? error.message : error
+              }\nData: ${JSON.stringify(
+                {
+                  state: MachineState.OFFLINE,
+                  execution: "OFFLINE",
+                  controller: "OFFLINE",
+                  program: "",
+                  tool: "",
+                  metrics: this.offlineState.metrics,
+                  alarmCode: "",
+                  alarmMessage: "",
+                  startTime: new Date(),
+                  endTime: null,
+                  duration: 0,
+                  machine: {
+                    connect: {
+                      id: machine.id,
+                    },
+                  },
+                },
+                null,
+                2
+              )}`
             );
           }
         }

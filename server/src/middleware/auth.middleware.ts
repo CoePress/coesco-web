@@ -39,7 +39,7 @@ export const protect = asyncHandler(
       throw new UnauthorizedError("Unauthorized");
     }
 
-    const decoded = decode(accessToken) as { userId: string; userType: string };
+    const decoded = decode(accessToken) as { userId: string; role: string };
 
     if (!decoded?.userId) {
       throw new UnauthorizedError(`Unauthorized`);
@@ -65,7 +65,7 @@ export const protect = asyncHandler(
 
     req.user = {
       id: user.id,
-      role: user.userType,
+      role: user.role,
     };
     req.employee = employee;
 

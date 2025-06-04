@@ -26,7 +26,7 @@ const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
         if (endDate) params.endDate = endDate;
 
         const { data } = await instance.get<IApiResponse<IMachineOverview>>(
-          `/machines/data/overview`,
+          `/machines/overview`,
           {
             params,
           }

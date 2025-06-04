@@ -54,7 +54,7 @@ export interface IServiceResult<T> {
   errors?: string[];
 }
 
-import { Employee, User, UserType } from "@prisma/client";
+import { Employee, User, UserRole } from "@prisma/client";
 
 export interface IAuth {
   id: string;
@@ -62,7 +62,7 @@ export interface IAuth {
   password?: string;
   microsoftId?: string;
   userId: string;
-  userType: UserType;
+  role: UserRole;
   isActive: boolean;
   isVerified: boolean;
   createdAt: Date;
