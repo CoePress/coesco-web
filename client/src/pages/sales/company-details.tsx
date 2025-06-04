@@ -234,7 +234,7 @@ const CompanyDetails = () => {
                       className="h-12 w-12 rounded"
                     />
                     <div>
-                      <h2 className="font-semibold text-neutral-400">
+                      <h2 className="font-semibold text-primary">
                         {companyOverview?.company.name}
                       </h2>
                       <p className="text-sm text-neutral-400">
@@ -246,13 +246,13 @@ const CompanyDetails = () => {
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <div className="text-xs text-neutral-400">Website</div>
+                    <div className="text-xs text-text">Website</div>
                     {companyOverview?.company.website ? (
                       <a
                         href={`https://${companyOverview.company.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline">
+                        className="text-sm text-primary underline">
                         {companyOverview.company.website}
                       </a>
                     ) : (
@@ -260,11 +260,11 @@ const CompanyDetails = () => {
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-400">Email</div>
+                    <div className="text-xs text-text">Email</div>
                     {companyOverview?.company.email ? (
                       <a
                         href={`mailto:${companyOverview.company.email}`}
-                        className="text-sm text-primary hover:underline">
+                        className="text-sm text-primary underline">
                         {companyOverview.company.email}
                       </a>
                     ) : (
@@ -272,7 +272,7 @@ const CompanyDetails = () => {
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-400">Phone</div>
+                    <div className="text-xs text-text">Phone</div>
                     <a
                       href={`tel:${companyOverview?.company.phone}`}
                       className="text-sm text-neutral-400">
@@ -280,7 +280,7 @@ const CompanyDetails = () => {
                     </a>
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-400">Fax</div>
+                    <div className="text-xs text-text">Fax</div>
                     <div className="text-sm text-neutral-400">
                       {companyOverview?.company.fax || "-"}
                     </div>
@@ -289,7 +289,7 @@ const CompanyDetails = () => {
 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <div className="text-neutral-400">Shipping Address</div>
+                    <div className="text-text">Shipping Address</div>
                     <div className="text-neutral-400">
                       123 Business Street, Suite 100
                       <br />
@@ -297,7 +297,7 @@ const CompanyDetails = () => {
                     </div>
                   </div>
                   <div>
-                    <div className="text-neutral-400">Billing Address</div>
+                    <div className="text-text">Billing Address</div>
                     <div className="text-neutral-400">
                       456 Finance Avenue, Floor 3<br />
                       New York, NY 10002
@@ -314,21 +314,19 @@ const CompanyDetails = () => {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs text-neutral-400">Industry</div>
+                        <div className="text-xs text-text">Industry</div>
                         <div className="text-sm text-neutral-400">
                           {companyOverview?.company.industry || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-neutral-400">Founded</div>
+                        <div className="text-xs text-text">Founded</div>
                         <div className="text-sm text-neutral-400">
                           {companyOverview?.company.yearFounded || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-neutral-400">
-                          Annual Revenue
-                        </div>
+                        <div className="text-xs text-text">Annual Revenue</div>
                         <div className="text-sm text-neutral-400">
                           {formatCurrency(
                             companyOverview?.company.revenue || 0
@@ -336,9 +334,7 @@ const CompanyDetails = () => {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-neutral-400">
-                          Employee Count
-                        </div>
+                        <div className="text-xs text-text">Employee Count</div>
                         <div className="text-sm text-neutral-400">
                           {companyOverview?.company.employeeCount || "-"}
                         </div>
@@ -351,9 +347,7 @@ const CompanyDetails = () => {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs text-neutral-400">
-                          Customer Since
-                        </div>
+                        <div className="text-xs text-text">Customer Since</div>
                         <div className="text-sm text-neutral-400">
                           {companyOverview?.company.customerSince
                             ? formatDate(companyOverview?.company.customerSince)
@@ -361,17 +355,13 @@ const CompanyDetails = () => {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-neutral-400">
-                          Payment Terms
-                        </div>
+                        <div className="text-xs text-text">Payment Terms</div>
                         <div className="text-sm text-neutral-400">
                           {companyOverview?.company.paymentTerms || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-neutral-400">
-                          Credit Limit
-                        </div>
+                        <div className="text-xs text-text">Credit Limit</div>
                         <div className="text-sm text-neutral-400">
                           {formatCurrency(
                             companyOverview?.company.creditLimit || 0
@@ -404,7 +394,7 @@ const CompanyDetails = () => {
                           <div className="text-sm text-neutral-400">
                             123 Business Street, Suite 100
                           </div>
-                          <div className="text-xs text-neutral-400">
+                          <div className="text-xs text-text">
                             New York, NY 10001
                           </div>
                         </div>
@@ -424,7 +414,7 @@ const CompanyDetails = () => {
                           <div className="text-sm text-neutral-400">
                             456 Finance Avenue, Floor 3
                           </div>
-                          <div className="text-xs text-neutral-400">
+                          <div className="text-xs text-text">
                             New York, NY 10002
                           </div>
                         </div>
@@ -457,7 +447,7 @@ const CompanyDetails = () => {
                             <div className="text-sm text-neutral-400">
                               John Smith
                             </div>
-                            <div className="text-xs text-neutral-400">CEO</div>
+                            <div className="text-xs text-text">CEO</div>
                           </div>
                         </div>
                         <Star
@@ -476,7 +466,7 @@ const CompanyDetails = () => {
                             <div className="text-sm text-neutral-400">
                               Mike Wilson
                             </div>
-                            <div className="text-xs text-neutral-400">
+                            <div className="text-xs text-text">
                               Finance Director
                             </div>
                           </div>
@@ -506,7 +496,7 @@ const CompanyDetails = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="border rounded p-3">
-                    <div className="text-xs text-neutral-400 uppercase">
+                    <div className="text-xs text-text uppercase">
                       Total Quotes
                     </div>
                     <div className="text-xl font-semibold text-neutral-400 mt-1">
@@ -523,7 +513,7 @@ const CompanyDetails = () => {
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-neutral-400 uppercase">
+                    <div className="text-xs text-text uppercase">
                       Total Orders
                     </div>
                     <div className="text-xl font-semibold text-neutral-400 mt-1">
@@ -540,24 +530,24 @@ const CompanyDetails = () => {
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-neutral-400 uppercase">
+                    <div className="text-xs text-text uppercase">
                       Last Activity
                     </div>
                     <div className="text-sm font-medium text-neutral-400 mt-1">
                       {sampleCustomer.activities[0].description}
                     </div>
-                    <div className="text-xs text-neutral-400 mt-1">
+                    <div className="text-xs text-text mt-1">
                       {formatDate(sampleCustomer.activities[0].date)}
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-neutral-400 uppercase">
+                    <div className="text-xs text-text uppercase">
                       Last Order
                     </div>
                     <div className="text-sm font-medium text-neutral-400 mt-1">
                       {sampleCustomer.orders[0].id}
                     </div>
-                    <div className="text-xs text-neutral-400 mt-1">
+                    <div className="text-xs text-text mt-1">
                       {formatDate(sampleCustomer.orders[0].date)}
                     </div>
                   </div>
@@ -607,7 +597,7 @@ const CompanyDetails = () => {
                                 {activity.description}
                               </span>
                             </div>
-                            <div className="text-xs text-neutral-400 mt-1">
+                            <div className="text-xs text-text mt-1">
                               {formatDate(activity.date)}
                             </div>
                           </div>

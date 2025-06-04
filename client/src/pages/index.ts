@@ -30,3 +30,6 @@ export { default as NotFound } from "./general/not-found";
 
 // Warehouse
 export { default as WarehouseMap } from "./warehouse/map";
+
+// Sandbox
+export { default as Sandbox } from "./sandbox";

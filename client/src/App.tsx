@@ -1,12 +1,13 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import modules from "./config/modules";
-import { ChatPLK, Login, MainMenu, NotFound } from "./pages";
+import { ChatPLK, Login, MainMenu, NotFound, Sandbox } from "./pages";
 import Home from "./pages/website/home";
 import Example from "./pages/website/example";
 import Design from "./pages/design";
 import { SocketProvider } from "@/contexts/socket.context";
 import { PublicRoute, ProtectedRoute, MicrosoftCallback } from "./components";
 import { ProtectedRouteWithoutLayout } from "./components/general/routes";
+import { __dev__ } from "./config/env";
 
 interface RouteItem {
   path: string;
@@ -89,14 +90,6 @@ const App = () => {
           path="/"
           element={<MainMenu />}
         />
-        <Route
-          path="/website"
-          element={<Home />}
-        />
-        <Route
-          path="/website/example"
-          element={<Example />}
-        />
       </Route>
 
       <Route element={<ProtectedRoute />}>
@@ -104,11 +97,21 @@ const App = () => {
           path="/chat"
           element={<ChatPLK />}
         />
-        <Route
-          path="/design"
-          element={<Design />}
-        />
+
         {moduleRoutes}
+
+        {__dev__ && (
+          <>
+            <Route
+              path="/sandbox"
+              element={<Sandbox />}
+            />
+            <Route
+              path="/design"
+              element={<Design />}
+            />
+          </>
+        )}
       </Route>
 
       <Route
