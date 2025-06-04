@@ -29,7 +29,6 @@ const Quotes = () => {
   const [showNewJourneyInput, setShowNewJourneyInput] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newJourneyName, setNewJourneyName] = useState("");
-  const customerInputRef = useRef<HTMLInputElement>(null);
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
 
@@ -77,22 +76,30 @@ const Quotes = () => {
     {
       key: "journey.name",
       header: "Journey",
-      className: "text-primary hover:underline",
-      render: (_, row) => (
-        <Link to={`/sales/journeys/${row.journey.id}`}>
-          {row.journey.name || "-"}
-        </Link>
-      ),
+      render: (_, row) =>
+        row.journey ? (
+          <Link
+            to={`/sales/journeys/${row.journey.id}`}
+            className="text-primary hover:underline">
+            {row.journey.name || "-"}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
     {
       key: "journey.customer.name",
       header: "Customer",
-      className: "text-primary hover:underline",
-      render: (_, row) => (
-        <Link to={`/sales/companies/${row.journey.customer.id}`}>
-          {row.journey.customer.name || "-"}
-        </Link>
-      ),
+      render: (_, row) =>
+        row.journey?.customer ? (
+          <Link
+            to={`/sales/companies/${row.journey.customer.id}`}
+            className="text-primary hover:underline">
+            {row.journey.customer.name || "-"}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
     {
       key: "createdById",
@@ -114,83 +121,41 @@ const Quotes = () => {
   };
 
   const handleCreateQuote = async () => {
-    if (
-      !selectedCustomer &&
-      !selectedJourney &&
-      !showNewCustomerInput &&
-      !showNewJourneyInput
-    ) {
-      // Create standalone draft quote
-      const result = await createQuote();
-      if (result) {
-        toggleModal();
-        refresh();
-      }
-    } else if (
-      (selectedCustomer || showNewCustomerInput) &&
-      (selectedJourney || showNewJourneyInput)
-    ) {
-      // Create quote attached to journey (existing or new)
-      const params: Record<string, string> = {};
+    console.log("Creating quote with values:", {
+      selectedCustomer,
+      selectedJourney,
+      showNewCustomerInput,
+      showNewJourneyInput,
+      newCustomerName,
+      newJourneyName,
+      customerInputValue,
+      journeyInputValue,
+    });
 
-      if (selectedCustomer) params.customerId = selectedCustomer;
-      if (selectedJourney) params.journeyId = selectedJourney;
-      if (showNewCustomerInput && newCustomerName)
-        params.customerName = newCustomerName;
-      if (showNewJourneyInput && newJourneyName)
-        params.journeyName = newJourneyName;
+    const params: Record<string, string> = {};
 
-      const result = await createQuote(params);
-      if (result) {
-        toggleModal();
-        refresh();
-      }
+    // Handle customer
+    if (customerInputValue.trim()) {
+      params.customerName = customerInputValue.trim();
+    } else if (selectedCustomer) {
+      params.customerId = selectedCustomer;
+    }
+
+    // Handle journey
+    if (journeyInputValue.trim()) {
+      params.journeyName = journeyInputValue.trim();
+    } else if (selectedJourney) {
+      params.journeyId = selectedJourney;
+    }
+
+    console.log("Final params being sent:", params);
+
+    const result = await createQuote(params);
+    if (result) {
+      toggleModal();
+      refresh();
     }
   };
-
-  const handleCreateNewCustomer = () => {
-    if (showNewCustomerInput) {
-      // Cancel - hide input
-      setShowNewCustomerInput(false);
-      setNewCustomerName("");
-      setShowNewJourneyInput(false);
-      setNewJourneyName("");
-    } else {
-      // Show input
-      setShowNewCustomerInput(true);
-      setSelectedCustomer("");
-      setShowNewJourneyInput(true);
-      // Focus customer input after state updates
-      setTimeout(() => customerInputRef.current?.focus(), 0);
-    }
-  };
-
-  const handleCreateNewJourney = () => {
-    if (!selectedCustomer && !showNewCustomerInput) return;
-
-    if (showNewJourneyInput) {
-      // Cancel - hide input
-      setShowNewJourneyInput(false);
-      setNewJourneyName("");
-    } else {
-      // Show input
-      setShowNewJourneyInput(true);
-      setSelectedJourney("");
-    }
-  };
-
-  // Filter journeys by selected customer
-  const filteredJourneyOptions = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return (
-      journeys
-        ?.filter((journey) => journey.customerId === selectedCustomer)
-        ?.map((journey) => ({
-          value: journey.id,
-          label: journey.name || `Journey ${journey.id.slice(-8)}`,
-        })) || []
-    );
-  }, [journeys, selectedCustomer]);
 
   const customerOptions = useMemo(
     () =>
@@ -306,7 +271,10 @@ const Quotes = () => {
                   setIsCreatingJourney(true);
                 }
               }}
-              onInputChange={setCustomerInputValue}
+              onInputChange={(value) => {
+                setCustomerInputValue(value);
+                setNewCustomerName(value);
+              }}
               placeholder="Select a customer (optional)"
               createPlaceholder="Enter customer name"
             />
@@ -322,7 +290,10 @@ const Quotes = () => {
                 value={selectedJourney}
                 onChange={setSelectedJourney}
                 onIsCreateNewChange={setIsCreatingJourney}
-                onInputChange={setJourneyInputValue}
+                onInputChange={(value) => {
+                  setJourneyInputValue(value);
+                  setNewJourneyName(value);
+                }}
                 disabled={!selectedCustomer && !isCreatingCustomer}
                 forceCreate={isCreatingCustomer}
                 placeholder={

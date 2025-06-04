@@ -156,27 +156,30 @@ export class SalesService {
       };
     }
 
-    const journey = await journeyService.getById(quote.data.journeyId || "");
+    let journey = null;
+    let customer = null;
+    let dealer = null;
 
-    if (!journey.success || !journey.data) {
-      throw new Error("Journey not found");
-    }
+    if (quote.data.journeyId) {
+      const journeyResult = await journeyService.getById(quote.data.journeyId);
+      if (journeyResult.success && journeyResult.data) {
+        journey = journeyResult.data;
 
-    let customer: any;
-    if (journey.data.customerId) {
-      customer = await companyService.getById(journey.data.customerId);
+        if (journey.customerId) {
+          const customerResult = await companyService.getById(
+            journey.customerId
+          );
+          if (customerResult.success && customerResult.data) {
+            customer = customerResult.data;
+          }
+        }
 
-      if (!customer.success || !customer.data) {
-        throw new Error("Customer not found");
-      }
-    }
-
-    let dealer: any;
-    if (journey.data.dealerId) {
-      dealer = await companyService.getById(journey.data.dealerId);
-
-      if (!dealer.success || !dealer.data) {
-        throw new Error("Dealer not found");
+        if (journey.dealerId) {
+          const dealerResult = await companyService.getById(journey.dealerId);
+          if (dealerResult.success && dealerResult.data) {
+            dealer = dealerResult.data;
+          }
+        }
       }
     }
 
@@ -193,10 +196,10 @@ export class SalesService {
           ...quote.data,
           createdBy: creator?.data,
         },
-        journey: journey.data,
+        journey,
         quoteItems: quoteItems.data,
-        customer: customer?.data,
-        dealer: dealer?.data,
+        customer,
+        dealer,
       },
     };
   }

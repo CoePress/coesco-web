@@ -19,11 +19,18 @@ export const useCreateQuote = () => {
     setError(null);
     setSuccess(false);
 
+    console.log("Creating quote with params:", params);
+    console.log("Params type:", typeof params);
+    console.log("Params keys:", Object.keys(params || {}));
+    console.log("Params values:", Object.values(params || {}));
+
     try {
       const response = await instance.post("/quotes", params);
+      console.log("Quote creation response:", response.data);
       setSuccess(true);
       return response.data;
     } catch (error) {
+      console.error("Quote creation error:", error);
       const errorMessage =
         error instanceof AxiosError
           ? error.response?.data?.message ||

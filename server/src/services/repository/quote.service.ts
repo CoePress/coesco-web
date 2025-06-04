@@ -15,10 +15,22 @@ export class QuoteService extends BaseService<Quote> {
     const employee = getEmployeeContext();
     const quoteNumber = await this.generateQuoteNumber(true);
 
-    if (data.customerId && data.journeyId) {
+    console.log("Received data in createQuote:", data);
+
+    const { customerId, journeyId, customerName, journeyName } = data;
+
+    console.log("Extracted values:", {
+      customerId,
+      journeyId,
+      customerName,
+      journeyName,
+    });
+
+    if (customerId && journeyId) {
+      console.log("Creating quote with existing journey");
       // create quote & attach to journey
       const quote = await this.create({
-        journeyId: data.journeyId,
+        journeyId: journeyId,
         status: QuoteStatus.DRAFT,
         year: quoteNumber.year,
         number: quoteNumber.number,
@@ -37,12 +49,13 @@ export class QuoteService extends BaseService<Quote> {
         success: true,
         data: quote.data,
       };
-    } else if (data.customerId && data.journeyName) {
+    } else if (customerId && journeyName) {
+      console.log("Creating new journey for existing customer");
       // create journey & attach to company
       const journey = await journeyService.create({
-        customer: { connect: { id: data.customerId } },
+        customer: { connect: { id: customerId } },
         createdBy: { connect: { id: employee.id } },
-        name: data.journeyName,
+        name: journeyName,
       });
 
       if (!journey.success || !journey.data) {
@@ -72,10 +85,11 @@ export class QuoteService extends BaseService<Quote> {
           journey: journey.data,
         },
       };
-    } else if (data.customerName && data.journeyName) {
+    } else if (customerName && journeyName) {
+      console.log("Creating new customer and journey");
       // create customer -> then create journey & attach to customer -> then create quote & attach to journey
       const company = await companyService.create({
-        name: data.customerName,
+        name: customerName,
         status: CompanyStatus.SANDBOX,
       });
 
@@ -84,15 +98,41 @@ export class QuoteService extends BaseService<Quote> {
       }
 
       const journey = await journeyService.create({
-        customer: { connect: { id: data.customerId } },
+        customer: { connect: { id: company.data.id } },
         createdBy: { connect: { id: employee.id } },
-        name: data.journeyName,
+        name: journeyName,
       });
 
       if (!journey.success || !journey.data) {
         throw new BadRequestError("Failed to create journey");
       }
+
+      const quote = await this.create({
+        journeyId: journey.data.id,
+        status: QuoteStatus.DRAFT,
+        year: quoteNumber.year,
+        number: quoteNumber.number,
+        revision: "A",
+        subtotal: 0,
+        totalAmount: 0,
+        currency: "USD",
+        createdById: employee.id,
+      });
+
+      if (!quote.success || !quote.data) {
+        throw new BadRequestError("Failed to create quote");
+      }
+
+      return {
+        success: true,
+        data: {
+          quote: quote.data,
+          journey: journey.data,
+          company: company.data,
+        },
+      };
     } else {
+      console.log("Creating standalone quote");
       // create standalone quote
       const quote = await this.create({
         status: QuoteStatus.DRAFT,
