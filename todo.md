@@ -48,3 +48,8 @@
 ## Questions
 
 - Can two quotes from the same journey have different dealers, contacts or addresses?
+
+Quote visibility =
+IF journeyId IS NULL → only creator can see
+IF journey.customer.status = SANDBOX → only creator can see  
+ ELSE → everyone can see (real customer quotes)
