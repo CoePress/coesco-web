@@ -2,18 +2,25 @@ import { instance } from "@/utils";
 import { AxiosError } from "axios";
 import { useState } from "react";
 
-export const useCreateSandboxQuote = () => {
+interface CreateQuoteParams {
+  customerId?: string;
+  journeyId?: string;
+  customerName?: string;
+  journeyName?: string;
+}
+
+export const useCreateQuote = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
-  const createSandboxQuote = async () => {
+  const createQuote = async (params?: CreateQuoteParams) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const response = await instance.post("/quotes/sandbox");
+      const response = await instance.post("/quotes", params);
       setSuccess(true);
       return response.data;
     } catch (error) {
@@ -34,6 +41,6 @@ export const useCreateSandboxQuote = () => {
     loading,
     error,
     success,
-    createSandboxQuote,
+    createQuote,
   };
 };

@@ -1,6 +1,6 @@
-import { Plus, Filter, Download, ChevronDown, X } from "lucide-react";
+import { Plus, Filter, Download, ChevronDown } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import {
   Button,
@@ -14,7 +14,7 @@ import {
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/shared/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
-import { useCreateSandboxQuote } from "@/hooks/sales/use-create-sandbox-quote";
+import { useCreateQuote } from "@/hooks/sales/use-create-quote";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
@@ -37,10 +37,10 @@ const Quotes = () => {
     include,
   });
   const {
-    createSandboxQuote,
-    loading: sandboxLoading,
-    error: sandboxError,
-  } = useCreateSandboxQuote();
+    createQuote,
+    loading: createLoading,
+    error: createError,
+  } = useCreateQuote();
   const { companies } = useGetCompanies();
   const { journeys } = useGetJourneys();
 
@@ -107,25 +107,6 @@ const Quotes = () => {
   };
 
   const handleCreateQuote = async () => {
-    // Handle new customer creation
-    if (showNewCustomerInput && newCustomerName.trim()) {
-      // TODO: Create new sandbox customer with newCustomerName
-      console.log("Create new sandbox customer:", newCustomerName);
-      // Would set selectedCustomer to the new customer ID after creation
-    }
-
-    // Handle new journey creation
-    if (showNewJourneyInput && newJourneyName.trim() && selectedCustomer) {
-      // TODO: Create new sandbox journey with newJourneyName for selectedCustomer
-      console.log(
-        "Create new sandbox journey:",
-        newJourneyName,
-        "for customer:",
-        selectedCustomer
-      );
-      // Would set selectedJourney to the new journey ID after creation
-    }
-
     if (
       !selectedCustomer &&
       !selectedJourney &&
@@ -133,7 +114,7 @@ const Quotes = () => {
       !showNewJourneyInput
     ) {
       // Create standalone draft quote
-      const result = await createSandboxQuote();
+      const result = await createQuote();
       if (result) {
         toggleModal();
         refresh();
@@ -143,8 +124,16 @@ const Quotes = () => {
       (selectedJourney || showNewJourneyInput)
     ) {
       // Create quote attached to journey (existing or new)
-      console.log("Create quote with journey");
-      // TODO: Implement quote creation with journey
+      const result = await createQuote({
+        customerId: selectedCustomer,
+        journeyId: selectedJourney,
+        customerName: showNewCustomerInput ? newCustomerName : undefined,
+        journeyName: showNewJourneyInput ? newJourneyName : undefined,
+      });
+      if (result) {
+        toggleModal();
+        refresh();
+      }
     }
   };
 
@@ -214,7 +203,7 @@ const Quotes = () => {
   const pageDescription = `${quotes?.length} total quotes`;
 
   const isCreateDisabled = () => {
-    if (sandboxLoading) return true;
+    if (createLoading) return true;
 
     // If creating new customer, MUST also create new journey
     if (showNewCustomerInput) {
@@ -473,7 +462,7 @@ const Quotes = () => {
             disabled={isCreateDisabled()}
             variant="primary"
             className="w-full">
-            {sandboxLoading ? "Creating..." : "Create Quote"}
+            {createLoading ? "Creating..." : "Create Quote"}
           </Button>
         </div>
       </Modal>
