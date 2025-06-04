@@ -141,7 +141,7 @@ const QuoteDetails = () => {
     );
   }, [quoteItems]);
 
-  const pageTitle = `${customer?.name} • ${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
+  const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
   const pageDescription = `${
     quoteOverview?.quote?.status
   } • ${itemCount} items • ${formatCurrency(total)}`;

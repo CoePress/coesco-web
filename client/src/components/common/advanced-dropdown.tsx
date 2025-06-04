@@ -7,17 +7,16 @@ type Option = {
   disabled?: boolean;
 };
 
+type DropdownValue = string | { create: true; label: string };
+
 type Props = {
   options: Option[];
-  value?: string;
-  onChange: (value: string) => void;
+  value?: DropdownValue;
+  onChange: (value: DropdownValue) => void;
   placeholder?: string;
   createPlaceholder?: string;
   className?: string;
   disabled?: boolean;
-  onIsCreateNewChange?: (isCreateNew: boolean) => void;
-  forceCreate?: boolean;
-  onInputChange?: (value: string) => void;
 };
 
 const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
@@ -30,35 +29,26 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       createPlaceholder = "Create new",
       className = "",
       disabled = false,
-      onIsCreateNewChange,
-      forceCreate = false,
-      onInputChange,
     },
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const [selectedOption, setSelectedOption] = useState<Option | null>(null);
-    const [isCreateNew, setIsCreateNew] = useState(forceCreate);
+    const [isCreateNew, setIsCreateNew] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(
       null
     );
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-      if (forceCreate) {
+      if (value && typeof value === "object" && value.create) {
         setIsCreateNew(true);
-        onIsCreateNewChange?.(true);
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
       }
-    }, [forceCreate, onIsCreateNewChange]);
+    }, [value]);
 
     useEffect(() => {
-      if (isCreateNew) return;
-
-      if (value) {
+      if (value && typeof value === "string") {
         const option = options.find((opt) => opt.value === value);
         setSelectedOption(option || null);
         setInputValue(option?.label || "");
@@ -66,7 +56,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         setSelectedOption(null);
         setInputValue("");
       }
-    }, [value, options, isCreateNew]);
+    }, [value, options]);
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -115,7 +105,6 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setInputValue(newValue);
-      onInputChange?.(newValue);
       if (!isCreateNew && !selectedOption) {
         setIsOpen(true);
       }
@@ -135,7 +124,6 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleCreateNew = () => {
       const currentValue = inputValue;
       setIsCreateNew(true);
-      onIsCreateNewChange?.(true);
       setIsOpen(false);
       setInputValue(currentValue);
       setTimeout(() => {
@@ -146,19 +134,10 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
     const handleExitCreateNew = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsCreateNew(false);
-      onIsCreateNewChange?.(false);
       setInputValue("");
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (isCreateNew) {
-        if (e.key === "Backspace" && !inputValue) {
-          setIsCreateNew(false);
-          setInputValue("");
-        }
-        return;
-      }
-
       if (e.key === "Enter" && filteredOptions.length === 0 && inputValue) {
         handleCreateNew();
       }

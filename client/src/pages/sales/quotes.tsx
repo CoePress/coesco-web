@@ -18,6 +18,16 @@ import useGetCompanies from "@/hooks/sales/use-get-companies";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 import AdvancedDropdown from "@/components/common/advanced-dropdown";
 
+function isCreateValue(val: unknown): val is { create: true; label: string } {
+  return (
+    typeof val === "object" &&
+    val !== null &&
+    "create" in val &&
+    (val as any).create === true &&
+    "label" in val
+  );
+}
+
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
@@ -25,16 +35,10 @@ const Quotes = () => {
   const [page, setPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
   const [selectedJourney, setSelectedJourney] = useState<string>("");
-  const [showNewCustomerInput, setShowNewCustomerInput] = useState(false);
-  const [showNewJourneyInput, setShowNewJourneyInput] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newJourneyName, setNewJourneyName] = useState("");
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
-
-  // Add state to track if we're in create mode
-  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
-  const [isCreatingJourney, setIsCreatingJourney] = useState(false);
 
   const include = useMemo(() => ["journey", "journey.customer"], []);
 
@@ -108,48 +112,52 @@ const Quotes = () => {
     },
   ];
 
+  const [customerValue, setCustomerValue] = useState<
+    string | { create: true; label: string }
+  >("");
+  const [journeyValue, setJourneyValue] = useState<
+    string | { create: true; label: string }
+  >("");
+
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
     if (!isModalOpen) {
+      setCustomerValue("");
+      setJourneyValue("");
       setSelectedCustomer("");
       setSelectedJourney("");
-      setShowNewCustomerInput(false);
-      setShowNewJourneyInput(false);
       setNewCustomerName("");
       setNewJourneyName("");
     }
   };
 
   const handleCreateQuote = async () => {
-    console.log("Creating quote with values:", {
-      selectedCustomer,
-      selectedJourney,
-      showNewCustomerInput,
-      showNewJourneyInput,
-      newCustomerName,
-      newJourneyName,
-      customerInputValue,
-      journeyInputValue,
-    });
-
-    const params: Record<string, string> = {};
-
-    // Handle customer
-    if (customerInputValue.trim()) {
-      params.customerName = customerInputValue.trim();
-    } else if (selectedCustomer) {
-      params.customerId = selectedCustomer;
+    let params: Record<string, string> = {};
+    if (
+      customerValue &&
+      typeof customerValue === "object" &&
+      customerValue.create
+    ) {
+      params.customerName = customerValue.label.trim();
+      if (
+        journeyValue &&
+        typeof journeyValue === "object" &&
+        journeyValue.create
+      ) {
+        params.journeyName = journeyValue.label.trim();
+      }
+    } else if (typeof customerValue === "string" && customerValue) {
+      params.customerId = customerValue;
+      if (
+        journeyValue &&
+        typeof journeyValue === "object" &&
+        journeyValue.create
+      ) {
+        params.journeyName = journeyValue.label.trim();
+      } else if (typeof journeyValue === "string" && journeyValue) {
+        params.journeyId = journeyValue;
+      }
     }
-
-    // Handle journey
-    if (journeyInputValue.trim()) {
-      params.journeyName = journeyInputValue.trim();
-    } else if (selectedJourney) {
-      params.journeyId = selectedJourney;
-    }
-
-    console.log("Final params being sent:", params);
-
     const result = await createQuote(params);
     if (result) {
       toggleModal();
@@ -169,30 +177,48 @@ const Quotes = () => {
   const journeyOptions = useMemo(
     () =>
       journeys
-        ?.filter((journey) => journey.customerId === selectedCustomer)
+        ?.filter((journey) =>
+          typeof customerValue === "string" && customerValue
+            ? journey.customerId === customerValue
+            : false
+        )
         ?.map((journey) => ({
           value: journey.id,
           label: journey.name || `Journey ${journey.id.slice(-8)}`,
         })) || [],
-    [journeys, selectedCustomer]
+    [journeys, customerValue]
   );
 
   const pageTitle = "Quotes";
   const pageDescription = `${quotes?.length} total quotes`;
 
-  const [customerInputValue, setCustomerInputValue] = useState("");
-  const [journeyInputValue, setJourneyInputValue] = useState("");
-
   const isCreateDisabled = () => {
     if (createLoading) return true;
 
     // If creating new customer, MUST also create new journey
-    if (isCreatingCustomer) {
-      return !customerInputValue.trim() || !journeyInputValue.trim();
+    if (
+      customerValue &&
+      typeof customerValue === "object" &&
+      customerValue.create
+    ) {
+      return (
+        !customerValue.label.trim() ||
+        !(
+          journeyValue &&
+          typeof journeyValue === "object" &&
+          journeyValue.label.trim()
+        )
+      );
     }
 
     // If customer selected but no journey selected (or being created)
-    if (selectedCustomer && !selectedJourney && !isCreatingJourney) return true;
+    if (
+      typeof customerValue === "string" &&
+      customerValue &&
+      (!journeyValue ||
+        (typeof journeyValue === "object" && !journeyValue.label.trim()))
+    )
+      return true;
 
     return false;
   };
@@ -259,21 +285,17 @@ const Quotes = () => {
             <AdvancedDropdown
               ref={customerRef}
               options={customerOptions}
-              value={selectedCustomer}
-              onChange={(value) => {
-                setSelectedCustomer(value);
-                setSelectedJourney("");
-                setNewJourneyName("");
-              }}
-              onIsCreateNewChange={(isCreateNew) => {
-                setIsCreatingCustomer(isCreateNew);
-                if (isCreateNew) {
-                  setIsCreatingJourney(true);
+              value={customerValue}
+              onChange={(val) => {
+                setCustomerValue(val);
+                setJourneyValue("");
+                if (typeof val === "object" && val.create) {
+                  // New customer: force new journey
+                  setSelectedCustomer("");
+                  setJourneyValue({ create: true, label: "" });
+                } else if (typeof val === "string") {
+                  setSelectedCustomer(val);
                 }
-              }}
-              onInputChange={(value) => {
-                setCustomerInputValue(value);
-                setNewCustomerName(value);
               }}
               placeholder="Select a customer (optional)"
               createPlaceholder="Enter customer name"
@@ -281,52 +303,80 @@ const Quotes = () => {
           </div>
 
           {/* Journey Selection */}
-          {(selectedCustomer || isCreatingCustomer) && (
+          {(customerValue || isCreateValue(customerValue)) && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-text">Journey</label>
               <AdvancedDropdown
                 ref={journeyRef}
                 options={journeyOptions}
-                value={selectedJourney}
-                onChange={setSelectedJourney}
-                onIsCreateNewChange={setIsCreatingJourney}
-                onInputChange={(value) => {
-                  setJourneyInputValue(value);
-                  setNewJourneyName(value);
+                value={journeyValue}
+                onChange={(val) => {
+                  // If exiting create mode for journey, also clear customer if it was new
+                  if (
+                    typeof val === "string" ||
+                    (typeof val === "object" && !val.create)
+                  ) {
+                    if (
+                      typeof customerValue === "object" &&
+                      customerValue.create
+                    ) {
+                      setCustomerValue("");
+                    }
+                  }
+                  setJourneyValue(val);
                 }}
-                disabled={!selectedCustomer && !isCreatingCustomer}
-                forceCreate={isCreatingCustomer}
                 placeholder={
-                  isCreatingCustomer
+                  typeof customerValue === "object" && customerValue.create
                     ? "Enter journey name"
-                    : !selectedCustomer && !isCreatingCustomer
+                    : !customerValue
                     ? "Select a customer first"
                     : "Select a journey"
                 }
                 createPlaceholder="Enter journey name"
+                disabled={!customerValue}
               />
             </div>
           )}
 
           {/* Info Text */}
           <div className="text-xs text-text-muted bg-surface p-3 rounded">
-            {!selectedCustomer &&
-              !isCreatingCustomer &&
-              !selectedJourney &&
-              !isCreatingJourney &&
+            {(!customerValue || customerValue === "") &&
+              (!journeyValue || journeyValue === "") &&
               "Create a standalone draft quote that can be attached to a customer later."}
-            {isCreatingCustomer &&
-              !isCreatingJourney &&
+            {customerValue &&
+              typeof customerValue === "object" &&
+              (customerValue as { create: true; label: string }).create &&
+              (!journeyValue ||
+                (typeof journeyValue === "object" &&
+                  (journeyValue as { create: true; label: string }).create &&
+                  !(
+                    journeyValue as { create: true; label: string }
+                  ).label.trim())) &&
               "Creating a new customer requires creating a new journey as well."}
-            {isCreatingCustomer &&
-              isCreatingJourney &&
+            {customerValue &&
+              typeof customerValue === "object" &&
+              (customerValue as { create: true; label: string }).create &&
+              journeyValue &&
+              typeof journeyValue === "object" &&
+              (journeyValue as { create: true; label: string }).create &&
+              (journeyValue as { create: true; label: string }).label.trim() &&
               "Quote will be created with the new customer and new journey."}
-            {selectedCustomer &&
-              !selectedJourney &&
-              !isCreatingJourney &&
+            {typeof customerValue === "string" &&
+              customerValue &&
+              (!journeyValue ||
+                (typeof journeyValue === "object" &&
+                  !(
+                    journeyValue as { create: true; label: string }
+                  ).label.trim())) &&
               "You must select or create a journey to proceed with this customer."}
-            {selectedCustomer &&
-              (selectedJourney || isCreatingJourney) &&
+            {typeof customerValue === "string" &&
+              customerValue &&
+              ((typeof journeyValue === "string" && journeyValue) ||
+                (typeof journeyValue === "object" &&
+                  (journeyValue as { create: true; label: string }).create &&
+                  (
+                    journeyValue as { create: true; label: string }
+                  ).label.trim())) &&
               "Quote will be created as part of the selected journey."}
           </div>
 
