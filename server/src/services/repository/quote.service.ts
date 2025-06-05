@@ -1,4 +1,9 @@
-import { CompanyStatus, Quote, QuoteStatus } from "@prisma/client";
+import {
+  CompanyStatus,
+  JourneyStatus,
+  Quote,
+  QuoteStatus,
+} from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
@@ -50,6 +55,7 @@ export class QuoteService extends BaseService<Quote> {
         customer: { connect: { id: customerId } },
         createdBy: { connect: { id: employee.id } },
         name: journeyName,
+        status: JourneyStatus.ACTIVE,
       });
 
       if (!journey.success || !journey.data) {
@@ -94,6 +100,7 @@ export class QuoteService extends BaseService<Quote> {
         customer: { connect: { id: company.data.id } },
         createdBy: { connect: { id: employee.id } },
         name: journeyName,
+        status: JourneyStatus.ACTIVE,
       });
 
       if (!journey.success || !journey.data) {
@@ -194,7 +201,11 @@ export class QuoteService extends BaseService<Quote> {
     }
   }
 
-  public async addItemToQuote(quoteId: string, itemId: string) {
+  public async addItemToQuote(
+    quoteId: string,
+    itemId: string,
+    quantity: number = 1
+  ) {
     const quote = await this.model.findUnique({
       where: { id: quoteId },
     });
@@ -216,7 +227,6 @@ export class QuoteService extends BaseService<Quote> {
 
     const lineNumber = (currentItems.data?.length || 0) + 1;
     const unitPrice = item.data.unitPrice;
-    const quantity = 1; // Default quantity
     const totalPrice = unitPrice * quantity;
 
     const newQuoteItem = await quoteItemService.create({

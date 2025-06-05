@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface CreateQuoteItemParams {
   itemId: string;
+  quantity?: number;
 }
 
 export const useCreateQuoteItem = () => {

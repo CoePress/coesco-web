@@ -139,6 +139,7 @@ const QuoteDetails = () => {
 
     const result = await createQuoteItem(quoteId, {
       itemId: selectedItemForConfirmation.id,
+      quantity: selectedQuantity[selectedItemForConfirmation.id] || 1,
     });
     if (result) {
       await refreshQuote();
@@ -198,9 +199,9 @@ const QuoteDetails = () => {
   }, [quoteItems]);
 
   const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
-  const pageDescription = `${
+  const pageDescription = `${itemCount} items • ${formatCurrency(total || 0)} • ${
     quoteOverview?.quote?.status
-  } • ${itemCount} items • ${formatCurrency(total || 0)}`;
+  }`;
 
   const handleApproveClick = () => {
     setIsApprovalModalOpen(true);
@@ -467,6 +468,11 @@ const QuoteDetails = () => {
                   <th
                     scope="col"
                     className="p-2 text-left text-xs font-medium text-text-muted uppercase">
+                    Line
+                  </th>
+                  <th
+                    scope="col"
+                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
                     Item
                   </th>
                   <th
@@ -508,8 +514,13 @@ const QuoteDetails = () => {
               </thead>
 
               <tbody className="bg-foreground divide-y divide-border">
-                {quoteItems.map((item: any) => (
+                {quoteItems.sort((a: any, b: any) => a.lineNumber - b.lineNumber).map((item: any) => (
                   <tr key={item.id}>
+                    <td className="p-2 whitespace-nowrap text-left">
+                      <div className="text-sm text-text-muted">
+                        {item.lineNumber}
+                      </div>
+                    </td>
                     <td className="p-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-text">
                         {item.item.name}

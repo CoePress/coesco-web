@@ -52,8 +52,8 @@ export class QuoteController extends BaseController<Quote> {
   public async addItem(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { itemId } = req.body;
-      const result = await quoteService.addItemToQuote(id, itemId);
+      const { itemId, quantity } = req.body;
+      const result = await quoteService.addItemToQuote(id, itemId, quantity);
       res.status(200).json(result);
     } catch (error) {
       next(error);

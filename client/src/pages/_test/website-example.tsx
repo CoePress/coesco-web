@@ -1,4 +1,4 @@
-import { Footer, Navbar } from "./home";
+import { Footer, Navbar } from "./website-home";
 import { useState } from "react";
 
 const product = {

@@ -21,5 +21,3 @@ createRoot(document.getElementById("root")!).render(
     </AuthProvider>
   </StrictMode>
 );
-
-// this is a client side test 3

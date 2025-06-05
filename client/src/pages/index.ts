@@ -23,13 +23,12 @@ export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
 
 // General
-export { default as ChatPLK } from "./general/chat-plk";
 export { default as Login } from "./general/login";
 export { default as MainMenu } from "./general/main-menu";
 export { default as NotFound } from "./general/not-found";
 
-// Warehouse
-export { default as WarehouseMap } from "./warehouse/map";
-
-// Sandbox
-export { default as Sandbox } from "./sandbox";
+// Test
+export { default as ChatPLK } from "./_test/chat-plk";
+export { default as Design } from "./_test/design";
+export { default as Sandbox } from "./_test/sandbox";
+export { default as WarehouseMap } from "./_test/map";
