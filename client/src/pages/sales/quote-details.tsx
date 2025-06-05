@@ -12,6 +12,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 
 import {
   Button,
+  Card,
   Modal,
   PageHeader,
   PageSearch,
@@ -19,7 +20,7 @@ import {
   Tabs,
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import useGetItems from "@/hooks/sales/use-get-items";
 import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
@@ -86,202 +87,82 @@ const sampleConfigurations = [
   },
 ];
 
+const mockDealers = [
+  {
+    id: "dlr-1",
+    name: "Tech Solutions Inc",
+    contact: "Peter Parker",
+    email: "peter@techsolutions.com",
+    phone: "+1 (555) 123-4567",
+    location: "New York, NY",
+    status: "Active",
+  },
+  {
+    id: "dlr-2",
+    name: "Global Dynamics",
+    contact: "Nathan Stark",
+    email: "nathan@globaldynamics.com",
+    phone: "+1 (555) 234-5678",
+    location: "Los Angeles, CA",
+    status: "Active",
+  },
+  {
+    id: "dlr-3",
+    name: "Wayne Enterprises",
+    contact: "Bruce Wayne",
+    email: "bruce@wayneenterprises.com",
+    phone: "+1 (555) 345-6789",
+    location: "Gotham City",
+    status: "Active",
+  },
+  {
+    id: "dlr-4",
+    name: "Stark Industries",
+    contact: "Tony Stark",
+    email: "tony@starkindustries.com",
+    phone: "+1 (555) 456-7890",
+    location: "Malibu, CA",
+    status: "Active",
+  },
+];
+
 const QuoteDetails = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDealerModalOpen, setIsDealerModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSendConfirmationOpen, setIsSendConfirmationOpen] = useState(false);
   const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
     useState(false);
-  const [showAddItemConfirmation, setShowAddItemConfirmation] = useState(false);
-  const [selectedItemForConfirmation, setSelectedItemForConfirmation] =
-    useState<any>(null);
-  const [confirmedItems, setConfirmedItems] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [activeTab, setActiveTab] = useState("items");
-  const [selectedQuantity, setSelectedQuantity] = useState<
-    Record<string, number>
-  >({});
-
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-    setSelectedQuantity({});
-  };
 
   const { id: quoteId } = useParams();
 
-  const {
-    quoteOverview,
-    loading: quoteLoading,
-    error: quoteError,
-    refresh: refreshQuote,
-  } = useGetQuoteOverview({
+  const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
     quoteId: quoteId || "",
   });
 
-  const {
-    items,
-    loading: itemsLoading,
-    error: itemsError,
-    refresh: refreshItems,
-  } = useGetItems();
-
-  const {
-    loading: addItemLoading,
-    error: addItemError,
-    success: addItemSuccess,
-    createQuoteItem,
-  } = useCreateQuoteItem();
-
-  const {
-    loading: approveQuoteLoading,
-    error: approveQuoteError,
-    success: approveQuoteSuccess,
-    approveQuote,
-  } = useApproveQuote();
-
-  const {
-    loading: sendQuoteLoading,
-    error: sendQuoteError,
-    success: sendQuoteSuccess,
-    sendQuote,
-  } = useSendQuote();
-
-  const {
-    loading: createRevisionLoading,
-    error: createRevisionError,
-    success: createRevisionSuccess,
-    createQuoteRevision,
-  } = useCreateQuoteRevision();
-
-  const handleAddItem = async (itemId: string) => {
-    const item = items?.find((i: any) => i.id === itemId);
-    if (!item) return;
-
-    setSelectedItemForConfirmation(item);
-    setShowAddItemConfirmation(true);
-  };
-
-  const handleConfirmAddItem = async () => {
-    if (!quoteId || !selectedItemForConfirmation) return;
-
-    const result = await createQuoteItem(quoteId, {
-      itemId: selectedItemForConfirmation.id,
-      quantity: selectedQuantity[selectedItemForConfirmation.id] || 1,
-    });
-    if (result) {
-      await refreshQuote();
-      setShowAddItemConfirmation(false);
-      setSelectedItemForConfirmation(null);
-      toggleModal();
-    }
-  };
-
-  const handleCancelAddItem = () => {
-    setShowAddItemConfirmation(false);
-    setSelectedItemForConfirmation(null);
-  };
-
-  const handleApproveQuote = async () => {
-    if (!quoteId) return;
-    const result = await approveQuote(quoteId);
-    if (result) {
-      await refreshQuote();
-      setIsApprovalModalOpen(false);
-    }
-  };
-
-  const handleSendQuote = async () => {
-    if (!quoteId) return;
-    const result = await sendQuote(quoteId);
-    if (result) {
-      await refreshQuote();
-      setIsSendConfirmationOpen(false);
-    }
-  };
-
-  const handleCreateRevision = async () => {
-    if (!quoteId) return;
-    const result = await createQuoteRevision(quoteId);
-    if (result) {
-      await refreshQuote();
-      setIsRevisionConfirmationOpen(false);
-    }
-  };
-
-  const quoteItems = useMemo(() => {
-    return quoteOverview?.quoteItems || [];
-  }, [quoteOverview]);
-
-  const subtotal = useMemo(() => {
-    return quoteItems.reduce(
-      (acc: number, item: any) => acc + Number(item.totalPrice),
-      0
-    );
-  }, [quoteItems]);
-
-  const discount = useMemo(() => {
-    return quoteItems.reduce(
-      (acc: number, item: any) => acc + (Number(item.discount) || 0),
-      0
-    );
-  }, [quoteItems]);
-
-  const tax = useMemo(() => {
-    return quoteItems.reduce(
-      (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
-      0
-    );
-  }, [quoteItems]);
-
-  const total = useMemo(() => {
-    return subtotal - discount + tax;
-  }, [subtotal, discount, tax]);
-
-  const customer = useMemo(() => {
-    return quoteOverview?.customer || null;
-  }, [quoteOverview]);
-
-  const dealer = useMemo(() => {
-    return quoteOverview?.dealer || null;
-  }, [quoteOverview]);
-
-  const itemCount = useMemo(() => {
-    return quoteItems.reduce(
-      (acc: number, item: any) => acc + item.quantity,
-      0
-    );
-  }, [quoteItems]);
+  const quoteItems = quoteOverview?.quoteItems || [];
+  const customer = quoteOverview?.customer || null;
+  const dealer = quoteOverview?.dealer || null;
 
   const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
-  const pageDescription = `${itemCount} items • ${formatCurrency(
-    total || 0
+  const pageDescription = `${quoteItems.reduce(
+    (acc: number, item: any) => acc + item.quantity,
+    0
+  )} items • ${formatCurrency(
+    quoteItems.reduce(
+      (acc: number, item: any) => acc + Number(item.totalPrice),
+      0
+    ) -
+      quoteItems.reduce(
+        (acc: number, item: any) => acc + (Number(item.discount) || 0),
+        0
+      ) +
+      quoteItems.reduce(
+        (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
+        0
+      )
   )} • ${quoteOverview?.quote?.status}`;
-
-  const handleApproveClick = () => {
-    setIsApprovalModalOpen(true);
-    // Initialize all items as unconfirmed
-    const initialConfirmedState = quoteItems.reduce(
-      (acc: Record<string, boolean>, item: { id: string }) => {
-        acc[item.id] = false;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
-    setConfirmedItems(initialConfirmedState);
-  };
-
-  const toggleItemConfirmation = (itemId: string) => {
-    setConfirmedItems((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId],
-    }));
-  };
-
-  const allItemsConfirmed = useMemo(() => {
-    return Object.values(confirmedItems).every((confirmed) => confirmed);
-  }, [confirmedItems]);
 
   const renderQuoteActions = () => {
     switch (quoteOverview?.quote?.status) {
@@ -292,8 +173,7 @@ const QuoteDetails = () => {
             label: "Approve Quote",
             variant: "primary",
             icon: <CheckCircle size={16} />,
-            onClick: handleApproveClick,
-            disabled: quoteItems.length === 0 || approveQuoteLoading,
+            onClick: () => setIsApprovalModalOpen(true),
           },
         ];
       case "APPROVED":
@@ -311,7 +191,6 @@ const QuoteDetails = () => {
             variant: "primary",
             icon: <Send size={16} />,
             onClick: () => setIsSendConfirmationOpen(true),
-            disabled: sendQuoteLoading,
           },
         ];
       case "SENT":
@@ -329,7 +208,6 @@ const QuoteDetails = () => {
             variant: "primary",
             icon: <Edit size={16} />,
             onClick: () => setIsRevisionConfirmationOpen(true),
-            disabled: createRevisionLoading,
           },
         ];
     }
@@ -349,7 +227,7 @@ const QuoteDetails = () => {
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
             {/* Overview */}
-            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+            <Card>
               <div className="flex justify-between items-start mb-2">
                 <div className="text-sm font-medium text-text-muted">
                   Quote Details
@@ -417,10 +295,10 @@ const QuoteDetails = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Customer */}
-            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+            <Card>
               <div className="flex justify-between items-start mb-2">
                 <div className="text-sm font-medium text-text-muted">
                   Customer Details
@@ -478,10 +356,10 @@ const QuoteDetails = () => {
                   </Button>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Dealer */}
-            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+            <Card>
               <div className="flex justify-between items-start">
                 <div className="text-sm font-medium text-text-muted">
                   Dealer Details
@@ -532,22 +410,22 @@ const QuoteDetails = () => {
                     variant="secondary-outline"
                     className="w-max mx-auto"
                     disabled={quoteOverview?.quote?.status !== "DRAFT"}
-                    onClick={() => navigate("/sales/companies/new")}>
+                    onClick={() => setIsDealerModalOpen(true)}>
                     <Plus size={16} />
                     Add Dealer
                   </Button>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border overflow-hidden">
+          <Card>
             <div className="p-2 bg-foreground border-b flex justify-between items-center">
               <h2 className="font-semibold text-text-muted text-sm">
                 Quote Items
               </h2>
               <Button
-                onClick={toggleModal}
+                onClick={() => setIsModalOpen(true)}
                 disabled={quoteOverview?.quote?.status !== "DRAFT"}
                 variant="secondary-outline">
                 <Plus size={16} />
@@ -666,7 +544,13 @@ const QuoteDetails = () => {
                   <td
                     colSpan={2}
                     className="p-2 text-right text-sm text-text-muted">
-                    {formatCurrency(subtotal || 0)}
+                    {formatCurrency(
+                      quoteItems.reduce(
+                        (acc: number, item: any) =>
+                          acc + Number(item.totalPrice),
+                        0
+                      )
+                    )}
                   </td>
                   <td></td>
                 </tr>
@@ -679,7 +563,20 @@ const QuoteDetails = () => {
                   <td
                     colSpan={2}
                     className="p-2 text-right text-sm text-text-muted">
-                    {discount > 0 ? "-" : ""} {formatCurrency(discount || 0)}
+                    {quoteItems.reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.discount) || 0),
+                      0
+                    ) > 0
+                      ? "-"
+                      : ""}{" "}
+                    {formatCurrency(
+                      quoteItems.reduce(
+                        (acc: number, item: any) =>
+                          acc + (Number(item.discount) || 0),
+                        0
+                      )
+                    )}
                   </td>
                   <td></td>
                 </tr>
@@ -692,7 +589,13 @@ const QuoteDetails = () => {
                   <td
                     colSpan={2}
                     className="p-2 text-right text-sm text-text-muted">
-                    {formatCurrency(tax || 0)}
+                    {formatCurrency(
+                      quoteItems.reduce(
+                        (acc: number, item: any) =>
+                          acc + (Number(item.taxAmount) || 0),
+                        0
+                      )
+                    )}
                   </td>
                   <td></td>
                 </tr>
@@ -705,318 +608,655 @@ const QuoteDetails = () => {
                   <td
                     colSpan={2}
                     className="p-2 text-right text-sm font-bold text-text-muted">
-                    {formatCurrency(total || 0)}
+                    {formatCurrency(
+                      quoteItems.reduce(
+                        (acc: number, item: any) =>
+                          acc + Number(item.totalPrice),
+                        0
+                      ) -
+                        quoteItems.reduce(
+                          (acc: number, item: any) =>
+                            acc + (Number(item.discount) || 0),
+                          0
+                        ) +
+                        quoteItems.reduce(
+                          (acc: number, item: any) =>
+                            acc + (Number(item.taxAmount) || 0),
+                          0
+                        )
+                    )}
                   </td>
                   <td></td>
                 </tr>
               </tfoot>
             </table>
-          </div>
+          </Card>
         </div>
       </div>
 
-      <Modal
+      <AddItemModal
         isOpen={isModalOpen}
-        onClose={toggleModal}
-        title={
-          showAddItemConfirmation
-            ? "Confirm Item Addition"
-            : "Add Item to Quote"
-        }
-        size={showAddItemConfirmation ? "sm" : "lg"}>
-        <div className="flex flex-col gap-4">
-          {showAddItemConfirmation ? (
-            <>
-              <div className="text-sm text-text-muted">
-                Are you sure you want to add this item to the quote?
-              </div>
+        onClose={() => setIsModalOpen(false)}
+        quoteId={quoteId || ""}
+        onSuccess={refreshQuote}
+      />
 
-              <div className="space-y-2">
-                <div>
-                  <div className="font-medium text-text">
-                    {selectedItemForConfirmation?.name}
-                  </div>
-                  <div className="text-sm text-text-muted">
-                    Quantity:{" "}
-                    {selectedQuantity[selectedItemForConfirmation?.id] || 1} ×{" "}
-                    {formatCurrency(
-                      selectedItemForConfirmation?.unitPrice || 0
-                    )}
-                    ={" "}
-                    {formatCurrency(
-                      (selectedQuantity[selectedItemForConfirmation?.id] || 1) *
-                        (selectedItemForConfirmation?.unitPrice || 0)
-                    )}
-                  </div>
-                </div>
-              </div>
+      <SelectDealerModal
+        isOpen={isDealerModalOpen}
+        onClose={() => setIsDealerModalOpen(false)}
+        quoteId={quoteId || ""}
+        onSuccess={refreshQuote}
+      />
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="secondary-outline"
-                  onClick={handleCancelAddItem}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleConfirmAddItem}>
-                  Confirm
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Tabs
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                tabs={[
-                  { label: "Items", value: "items" },
-                  { label: "Configurations", value: "configurations" },
-                ]}
-              />
-
-              <PageSearch
-                placeholder={`Search ${activeTab}...`}
-                filters={[
-                  { label: "Category", icon: ChevronDown, onClick: () => {} },
-                  {
-                    label: "Price Range",
-                    icon: ChevronDown,
-                    onClick: () => {},
-                  },
-                ]}
-              />
-
-              {activeTab === "items" ? (
-                <Table
-                  columns={[
-                    {
-                      key: "name",
-                      header: "Item",
-                    },
-                    {
-                      key: "description",
-                      header: "Description",
-                    },
-                    {
-                      key: "unitPrice",
-                      header: "Unit Price",
-                      render: (value) => formatCurrency(value as number),
-                      className: "text-right",
-                    },
-                    {
-                      key: "quantity",
-                      header: "Quantity",
-                      render: (_, row) => (
-                        <input
-                          type="number"
-                          min="1"
-                          defaultValue={selectedQuantity[row.id] || 1}
-                          onChange={(e) =>
-                            setSelectedQuantity({
-                              ...selectedQuantity,
-                              [row.id]: parseInt(e.target.value) || 1,
-                            })
-                          }
-                          className="w-20 px-2 py-1 border rounded text-right"
-                        />
-                      ),
-                      className: "text-right",
-                    },
-                    {
-                      key: "actions",
-                      header: "",
-                      render: (_, row) => (
-                        <div className="flex justify-end">
-                          <Button
-                            variant="secondary-outline"
-                            onClick={() => handleAddItem(row.id)}
-                            disabled={addItemLoading}>
-                            {addItemLoading ? "Adding..." : "Add"}
-                          </Button>
-                        </div>
-                      ),
-                      className: "text-right",
-                    },
-                  ]}
-                  data={items || []}
-                  total={items?.length || 0}
-                />
-              ) : (
-                <Table
-                  columns={[
-                    {
-                      key: "name",
-                      header: "Configuration",
-                      className: "text-primary",
-                    },
-                    {
-                      key: "description",
-                      header: "Description",
-                    },
-                    {
-                      key: "pricing.totalPrice",
-                      header: "Total Price",
-                      render: (_, row) =>
-                        formatCurrency(row.pricing.totalPrice),
-                      className: "text-right",
-                    },
-                    {
-                      key: "quantity",
-                      header: "Quantity",
-                      render: (_) => (
-                        <input
-                          type="number"
-                          min="1"
-                          defaultValue="1"
-                          className="w-20 px-2 py-1 border rounded text-right"
-                        />
-                      ),
-                      className: "text-right",
-                    },
-                  ]}
-                  data={sampleConfigurations}
-                  total={sampleConfigurations.length}
-                  onRowClick={(row) => {
-                    console.log("Selected configuration:", row);
-                    toggleModal();
-                  }}
-                />
-              )}
-
-              <div className="flex justify-between gap-2 pt-4 border-t">
-                {activeTab === "configurations" && (
-                  <Button
-                    variant="secondary-outline"
-                    onClick={() => navigate("/sales/catalog/builder")}>
-                    <Plus size={16} />
-                    New Config
-                  </Button>
-                )}
-                <div className="flex gap-2 ml-auto">
-                  <Button
-                    variant="secondary-outline"
-                    onClick={toggleModal}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </Modal>
-
-      <Modal
+      <ApproveQuoteModal
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
-        title="Confirm Quote Approval"
-        size="sm">
-        <div className="flex flex-col gap-4">
-          <div className="text-sm text-text-muted">
-            Please review and confirm each item before approving the quote.
-          </div>
+        quoteId={quoteId || ""}
+        quoteItems={quoteItems}
+        onSuccess={refreshQuote}
+      />
 
-          <div className="space-y-2">
-            {quoteItems.map((item: any) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-foreground rounded border">
-                <div className="flex-1">
-                  <div className="font-medium text-text">{item.item.name}</div>
-                  <div className="text-sm text-text-muted">
-                    Quantity: {item.quantity} × {formatCurrency(item.unitPrice)}{" "}
-                    = {formatCurrency(item.totalPrice)}
-                  </div>
-                </div>
-                <Button
-                  variant={
-                    confirmedItems[item.id] ? "primary" : "secondary-outline"
-                  }
-                  onClick={() => toggleItemConfirmation(item.id)}
-                  className="ml-4">
-                  <Check size={16} />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button
-              variant="secondary-outline"
-              onClick={() => setIsApprovalModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              disabled={!allItemsConfirmed}
-              onClick={() => {
-                handleApproveQuote();
-              }}>
-              Submit
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
+      <SendQuoteModal
         isOpen={isSendConfirmationOpen}
         onClose={() => setIsSendConfirmationOpen(false)}
-        title="Confirm Send Quote"
-        size="xs">
-        <div className="flex flex-col gap-4">
-          <div className="text-sm text-text-muted">
-            Are you sure you want to send this quote? This action cannot be
-            undone.
-          </div>
+        quoteId={quoteId || ""}
+        onSuccess={refreshQuote}
+      />
 
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button
-              variant="secondary-outline"
-              onClick={() => setIsSendConfirmationOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSendQuote}
-              disabled={sendQuoteLoading}>
-              {sendQuoteLoading ? "Sending..." : "Send Quote"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
+      <CreateRevisionModal
         isOpen={isRevisionConfirmationOpen}
         onClose={() => setIsRevisionConfirmationOpen(false)}
-        title="Confirm Create Revision"
-        size="xs">
-        <div className="flex flex-col gap-4">
-          <div className="text-sm text-text-muted">
-            Are you sure you want to create a new revision of this quote? This
-            will create a copy of the current quote.
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button
-              variant="secondary-outline"
-              onClick={() => setIsRevisionConfirmationOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreateRevision}
-              disabled={createRevisionLoading}>
-              {createRevisionLoading ? "Creating..." : "Create Revision"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        quoteId={quoteId || ""}
+        onSuccess={refreshQuote}
+      />
     </div>
   );
 };
 
+const AddItemModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  onSuccess: () => void;
+}) => {
+  const navigate = useNavigate();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState<
+    Record<string, number>
+  >({});
+  const [activeTab, setActiveTab] = useState("items");
+
+  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
+
+  const {
+    loading: addItemLoading,
+    error: addItemError,
+    success: addItemSuccess,
+    createQuoteItem,
+  } = useCreateQuoteItem();
+
+  const handleAddItem = async (itemId: string) => {
+    const item = items?.find((i: any) => i.id === itemId);
+    if (!item) return;
+
+    setSelectedItem(item);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmAddItem = async () => {
+    if (!quoteId || !selectedItem) return;
+
+    const result = await createQuoteItem(quoteId, {
+      itemId: selectedItem.id,
+      quantity: selectedQuantity[selectedItem.id] || 1,
+    });
+    if (result) {
+      onSuccess();
+      setShowConfirmation(false);
+      setSelectedItem(null);
+      onClose();
+    }
+  };
+
+  const handleCancelAddItem = () => {
+    setShowConfirmation(false);
+    setSelectedItem(null);
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={showConfirmation ? "Confirm Item Addition" : "Add Item to Quote"}
+      size={showConfirmation ? "sm" : "lg"}>
+      <div className="flex flex-col gap-4">
+        {showConfirmation ? (
+          <>
+            <div className="text-sm text-text-muted">
+              Are you sure you want to add this item to the quote?
+            </div>
+
+            {addItemError && (
+              <div className="text-sm text-red-500">{addItemError}</div>
+            )}
+
+            <div className="space-y-2">
+              <div>
+                <div className="font-medium text-text">
+                  {selectedItem?.name}
+                </div>
+                <div className="text-sm text-text-muted">
+                  Quantity: {selectedQuantity[selectedItem?.id] || 1} ×{" "}
+                  {formatCurrency(selectedItem?.unitPrice || 0)} ={" "}
+                  {formatCurrency(
+                    (selectedQuantity[selectedItem?.id] || 1) *
+                      (selectedItem?.unitPrice || 0)
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button
+                variant="secondary-outline"
+                onClick={handleCancelAddItem}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmAddItem}
+                disabled={addItemLoading}>
+                {addItemLoading ? "Adding..." : "Confirm"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <Tabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              tabs={[
+                { label: "Items", value: "items" },
+                { label: "Configurations", value: "configurations" },
+              ]}
+            />
+
+            <PageSearch
+              placeholder={`Search ${activeTab}...`}
+              filters={[
+                { label: "Category", icon: ChevronDown, onClick: () => {} },
+                { label: "Price Range", icon: ChevronDown, onClick: () => {} },
+              ]}
+            />
+
+            {activeTab === "items" ? (
+              <>
+                {itemsLoading ? (
+                  <div className="text-sm text-text-muted">
+                    Loading items...
+                  </div>
+                ) : itemsError ? (
+                  <div className="text-sm text-red-500">{itemsError}</div>
+                ) : (
+                  <Table
+                    columns={[
+                      {
+                        key: "name",
+                        header: "Item",
+                      },
+                      {
+                        key: "description",
+                        header: "Description",
+                      },
+                      {
+                        key: "unitPrice",
+                        header: "Unit Price",
+                        render: (value) => formatCurrency(value as number),
+                        className: "text-right",
+                      },
+                      {
+                        key: "quantity",
+                        header: "Quantity",
+                        render: (_, row) => (
+                          <input
+                            type="number"
+                            min="1"
+                            defaultValue={selectedQuantity[row.id] || 1}
+                            onChange={(e) =>
+                              setSelectedQuantity({
+                                ...selectedQuantity,
+                                [row.id]: parseInt(e.target.value) || 1,
+                              })
+                            }
+                            className="w-20 px-2 py-1 border rounded text-right"
+                          />
+                        ),
+                        className: "text-right",
+                      },
+                      {
+                        key: "actions",
+                        header: "",
+                        render: (_, row) => (
+                          <div className="flex justify-end">
+                            <Button
+                              variant="secondary-outline"
+                              onClick={() => handleAddItem(row.id)}
+                              disabled={addItemLoading}>
+                              {addItemLoading ? "Adding..." : "Add"}
+                            </Button>
+                          </div>
+                        ),
+                        className: "text-right",
+                      },
+                    ]}
+                    data={items || []}
+                    total={items?.length || 0}
+                  />
+                )}
+              </>
+            ) : (
+              <Table
+                columns={[
+                  {
+                    key: "name",
+                    header: "Configuration",
+                    className: "text-primary",
+                  },
+                  {
+                    key: "description",
+                    header: "Description",
+                  },
+                  {
+                    key: "pricing.totalPrice",
+                    header: "Total Price",
+                    render: (_, row) => formatCurrency(row.pricing.totalPrice),
+                    className: "text-right",
+                  },
+                  {
+                    key: "quantity",
+                    header: "Quantity",
+                    render: (_) => (
+                      <input
+                        type="number"
+                        min="1"
+                        defaultValue="1"
+                        className="w-20 px-2 py-1 border rounded text-right"
+                      />
+                    ),
+                    className: "text-right",
+                  },
+                ]}
+                data={sampleConfigurations}
+                total={sampleConfigurations.length}
+                onRowClick={(row) => {
+                  console.log("Selected configuration:", row);
+                  onClose();
+                }}
+              />
+            )}
+
+            <div className="flex justify-between gap-2 pt-2 border-t">
+              {activeTab === "configurations" && (
+                <Button
+                  variant="secondary-outline"
+                  onClick={() => navigate("/sales/catalog/builder")}>
+                  <Plus size={16} />
+                  New Config
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  variant="secondary-outline"
+                  onClick={onClose}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+const SelectDealerModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  onSuccess: () => void;
+}) => {
+  const navigate = useNavigate();
+
+  const handleSelectDealer = async (dealer: any) => {
+    // TODO: Implement dealer selection logic
+    console.log("Selected dealer:", dealer);
+    onClose();
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Select Dealer"
+      size="lg">
+      <div className="flex flex-col gap-4">
+        <PageSearch
+          placeholder="Search dealers..."
+          filters={[
+            { label: "Location", icon: ChevronDown, onClick: () => {} },
+            { label: "Status", icon: ChevronDown, onClick: () => {} },
+          ]}
+        />
+
+        <Table
+          columns={[
+            {
+              key: "name",
+              header: "Dealer",
+              className: "text-primary",
+            },
+            {
+              key: "contact",
+              header: "Contact",
+            },
+            {
+              key: "email",
+              header: "Email",
+            },
+            {
+              key: "phone",
+              header: "Phone",
+            },
+            {
+              key: "location",
+              header: "Location",
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (_, row) => (
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => handleSelectDealer(row)}>
+                    Select
+                  </Button>
+                </div>
+              ),
+              className: "text-right",
+            },
+          ]}
+          data={mockDealers}
+          total={mockDealers.length}
+        />
+
+        <div className="flex justify-between gap-2 pt-2 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={() => navigate("/sales/companies/new")}>
+            <Plus size={16} />
+            New Dealer
+          </Button>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="secondary-outline"
+              onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const ApproveQuoteModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  quoteItems,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  quoteItems: any[];
+  onSuccess: () => void;
+}) => {
+  const [confirmedItems, setConfirmedItems] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  // Reset confirmed items when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmedItems(
+        quoteItems.reduce((acc, item) => {
+          acc[item.id] = false;
+          return acc;
+        }, {} as Record<string, boolean>)
+      );
+    }
+  }, [isOpen, quoteItems]);
+
+  const {
+    loading: approveQuoteLoading,
+    error: approveQuoteError,
+    approveQuote,
+  } = useApproveQuote();
+
+  const allItemsConfirmed = useMemo(() => {
+    return (
+      quoteItems.length > 0 &&
+      quoteItems.every((item) => confirmedItems[item.id])
+    );
+  }, [confirmedItems, quoteItems]);
+
+  const toggleItemConfirmation = (itemId: string) => {
+    setConfirmedItems((prev) => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
+  };
+
+  const handleApprove = async () => {
+    if (!quoteId || !allItemsConfirmed) return;
+    const result = await approveQuote(quoteId);
+    if (result) {
+      onSuccess();
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirm Quote Approval"
+      size="sm">
+      <div className="flex flex-col gap-4">
+        <div className="text-sm text-text-muted">
+          Please review and confirm each item before approving the quote. All
+          items must be confirmed.
+        </div>
+
+        {approveQuoteError && (
+          <div className="text-sm text-red-500">{approveQuoteError}</div>
+        )}
+
+        <div className="space-y-2">
+          {quoteItems.map((item: any) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between p-3 bg-foreground rounded border">
+              <div className="flex-1">
+                <div className="font-medium text-text">{item.item.name}</div>
+                <div className="text-sm text-text-muted">
+                  Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
+                  {formatCurrency(item.totalPrice)}
+                </div>
+              </div>
+              <Button
+                variant={
+                  confirmedItems[item.id] ? "primary" : "secondary-outline"
+                }
+                onClick={() => toggleItemConfirmation(item.id)}
+                className="ml-4">
+                <Check size={16} />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!allItemsConfirmed || approveQuoteLoading}
+            onClick={handleApprove}>
+            {approveQuoteLoading ? "Approving..." : "Submit"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const SendQuoteModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  onSuccess: () => void;
+}) => {
+  const {
+    loading: sendQuoteLoading,
+    error: sendQuoteError,
+    success: sendQuoteSuccess,
+    sendQuote,
+  } = useSendQuote();
+
+  const handleSend = async () => {
+    if (!quoteId) return;
+    const result = await sendQuote(quoteId);
+    if (result) {
+      onSuccess();
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirm Send Quote"
+      size="xs">
+      <div className="flex flex-col gap-4">
+        <div className="text-sm text-text-muted">
+          Are you sure you want to send this quote? This action cannot be
+          undone.
+        </div>
+
+        {sendQuoteError && (
+          <div className="text-sm text-red-500">{sendQuoteError}</div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSend}
+            disabled={sendQuoteLoading}>
+            {sendQuoteLoading ? "Sending..." : "Send Quote"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const CreateRevisionModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  onSuccess: () => void;
+}) => {
+  const {
+    loading: createRevisionLoading,
+    error: createRevisionError,
+    success: createRevisionSuccess,
+    createQuoteRevision,
+  } = useCreateQuoteRevision();
+
+  const handleCreateRevision = async () => {
+    if (!quoteId) return;
+    const result = await createQuoteRevision(quoteId);
+    if (result) {
+      onSuccess();
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirm Create Revision"
+      size="xs">
+      <div className="flex flex-col gap-4">
+        <div className="text-sm text-text-muted">
+          Are you sure you want to create a new revision of this quote? This
+          will create a copy of the current quote.
+        </div>
+
+        {createRevisionError && (
+          <div className="text-sm text-red-500">{createRevisionError}</div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCreateRevision}
+            disabled={createRevisionLoading}>
+            {createRevisionLoading ? "Creating..." : "Create Revision"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 export default QuoteDetails;
-
-const AddItemModal = () => {};
-
-const ApproveModal = () => {};
