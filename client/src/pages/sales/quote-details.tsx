@@ -173,6 +173,7 @@ const QuoteDetails = () => {
             label: "Approve Quote",
             variant: "primary",
             icon: <CheckCircle size={16} />,
+            disabled: quoteItems.length === 0,
             onClick: () => setIsApprovalModalOpen(true),
           },
         ];
