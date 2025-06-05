@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { X, Home, Sun, Moon, Code } from "lucide-react";
+import { X, Home, Sun, Moon, Code, ChevronsRight } from "lucide-react";
 
 import modules from "@/config/modules";
 import Header from "./header";
@@ -47,7 +47,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         className={`flex flex-col h-full transition-opacity duration-300 ${
           isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
         }`}>
-        <div className="flex items-center justify-center h-16 border-b border-border relative">
+        <div className="flex items-center justify-center h-[51px] border-b border-border relative">
           <h1
             className={`text-xl font-semibold text-primary ${
               isOpen ? "opacity-100" : "opacity-0"
@@ -206,7 +206,7 @@ const Layout = ({ employee, children }: LayoutProps) => {
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
       <div className="bg-foreground hidden md:flex flex-col">
-        <div className="flex items-center justify-center h-16 border-b border-border px-2">
+        <div className="flex items-center justify-center h-[51px] border-b border-border px-2">
           <img
             src="/images/logo-text.png"
             alt="logo"
@@ -215,6 +215,16 @@ const Layout = ({ employee, children }: LayoutProps) => {
         </div>
         <div className="flex flex-col justify-between flex-1">
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
+            <button
+              onClick={toggleSidebar}
+              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
+              <ChevronsRight
+                size={20}
+                className={`transition-transform duration-200 ${
+                  sidebarExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </button>
             {Object.values(modules).map((module) => (
               <Link
                 key={module.path}
@@ -258,11 +268,11 @@ const Layout = ({ employee, children }: LayoutProps) => {
         setIsOpen={toggleSidebar}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
+        {/* <Header
           employee={employee}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={sidebarExpanded}
-        />
+        /> */}
 
         {isCommandBarOpen && (
           <div className="fixed inset-0 flex items-start justify-center pt-32 z-50 bg-background/50 backdrop-blur-sm">

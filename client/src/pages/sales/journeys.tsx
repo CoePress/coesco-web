@@ -1,15 +1,8 @@
-import {
-  Plus,
-  Filter,
-  Download,
-  MoreHorizontal,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
-import { formatCurrency, formatDate } from "@/utils";
 import { TableColumn } from "@/components/shared/table";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
@@ -48,13 +41,6 @@ const Journeys = () => {
         title={pageTitle}
         description={pageDescription}
         actions={[
-          {
-            type: "button",
-            label: "Export",
-            icon: <Download size={16} />,
-            variant: "secondary-outline",
-            onClick: () => {},
-          },
           {
             type: "button",
             label: "New Journey",
