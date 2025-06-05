@@ -187,6 +187,7 @@ export class SalesService {
       filter: {
         quoteId,
       },
+      include: ["item"],
     });
 
     return {

@@ -19,6 +19,7 @@ import { formatCurrency, formatDate } from "@/utils";
 import { useMemo, useState } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import useGetItems from "@/hooks/sales/use-get-items";
+import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
 
 const sampleConfigurations = [
   {
@@ -83,9 +84,13 @@ const QuoteDetails = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
+  const [selectedQuantity, setSelectedQuantity] = useState<
+    Record<string, number>
+  >({});
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
+    setSelectedQuantity({});
   };
 
   const { id: quoteId } = useParams();
@@ -106,23 +111,46 @@ const QuoteDetails = () => {
     refresh: refreshItems,
   } = useGetItems();
 
+  const {
+    loading: addItemLoading,
+    error: addItemError,
+    success: addItemSuccess,
+    createQuoteItem,
+  } = useCreateQuoteItem();
+
+  const handleAddItem = async (itemId: string) => {
+    if (!quoteId) return;
+
+    const result = await createQuoteItem(quoteId, { itemId });
+    if (result) {
+      await refreshQuote();
+      toggleModal();
+    }
+  };
+
   const quoteItems = useMemo(() => {
     return quoteOverview?.quoteItems || [];
   }, [quoteOverview]);
 
   const subtotal = useMemo(() => {
-    return quoteItems.reduce((acc: number, item: any) => acc + item.price, 0);
+    return quoteItems.reduce(
+      (acc: number, item: any) => acc + Number(item.totalPrice),
+      0
+    );
   }, [quoteItems]);
 
   const discount = useMemo(() => {
     return quoteItems.reduce(
-      (acc: number, item: any) => acc + item.discount,
+      (acc: number, item: any) => acc + (Number(item.discount) || 0),
       0
     );
   }, [quoteItems]);
 
   const tax = useMemo(() => {
-    return quoteItems.reduce((acc: number, item: any) => acc + item.tax, 0);
+    return quoteItems.reduce(
+      (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
+      0
+    );
   }, [quoteItems]);
 
   const total = useMemo(() => {
@@ -147,7 +175,7 @@ const QuoteDetails = () => {
   const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
   const pageDescription = `${
     quoteOverview?.quote?.status
-  } • ${itemCount} items • ${formatCurrency(total)}`;
+  } • ${itemCount} items • ${formatCurrency(total || 0)}`;
 
   return (
     <div className="w-full flex-1">
@@ -432,13 +460,13 @@ const QuoteDetails = () => {
                 {quoteItems.map((item: any) => (
                   <tr key={item.id}>
                     <td className="p-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-text-muted">
-                        {item.name}
+                      <div className="text-sm font-medium text-text">
+                        {item.item.name}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm text-text">
-                        {item.description}
+                        {item.item.description}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
@@ -446,28 +474,28 @@ const QuoteDetails = () => {
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text">
-                        {formatCurrency(item.unitPrice)}
+                        {formatCurrency(item.unitPrice || 0)}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text">
-                        {formatCurrency(item.discount)}
+                        {formatCurrency(item.discount || 0)}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
                       <div className="text-sm text-text">
-                        {formatCurrency(item.tax)}
+                        {formatCurrency(item.tax || 0)}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm font-medium text-text-muted">
-                        {formatCurrency(item.total)}
+                      <div className="text-sm font-medium text-text">
+                        {formatCurrency(item.totalPrice || 0)}
                       </div>
                     </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <button className="text-text-muted hover:text-text">
+                    <td className="flex items-center justify-end p-2">
+                      <Button variant="secondary-outline">
                         <MoreHorizontal size={16} />
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -476,52 +504,52 @@ const QuoteDetails = () => {
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-xs uppercase text-text-muted">
+                    className="p-2 text-right text-sm uppercase text-text-muted">
                     Subtotal
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-xs text-text-muted">
-                    {formatCurrency(subtotal)}
+                    className="p-2 text-right text-sm text-text-muted">
+                    {formatCurrency(subtotal || 0)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-xs uppercase text-text-muted">
+                    className="p-2 text-right text-sm uppercase text-text-muted">
                     Discount
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-xs text-text-muted">
-                    {discount > 0 ? "-" : ""} {formatCurrency(discount)}
+                    className="p-2 text-right text-sm text-text-muted">
+                    {discount > 0 ? "-" : ""} {formatCurrency(discount || 0)}
                   </td>
                   <td></td>
                 </tr>
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-xs uppercase text-text-muted">
+                    className="p-2 text-right text-sm uppercase text-text-muted">
                     Tax
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-xs text-text-muted">
-                    {formatCurrency(tax)}
+                    className="p-2 text-right text-sm text-text-muted">
+                    {formatCurrency(tax || 0)}
                   </td>
                   <td></td>
                 </tr>
                 <tr className="border-t border-border">
                   <td
                     colSpan={5}
-                    className="p-2 text-right text-xs uppercase font-bold text-text-muted">
+                    className="p-2 text-right text-sm uppercase font-bold text-text-muted">
                     Total
                   </td>
                   <td
                     colSpan={2}
-                    className="p-2 text-right text-xs font-bold text-text-muted">
-                    {formatCurrency(total)}
+                    className="p-2 text-right text-sm font-bold text-text-muted">
+                    {formatCurrency(total || 0)}
                   </td>
                   <td></td>
                 </tr>
@@ -560,7 +588,6 @@ const QuoteDetails = () => {
                 {
                   key: "name",
                   header: "Item",
-                  className: "text-primary",
                 },
                 {
                   key: "description",
@@ -575,11 +602,17 @@ const QuoteDetails = () => {
                 {
                   key: "quantity",
                   header: "Quantity",
-                  render: (_) => (
+                  render: (_, row) => (
                     <input
                       type="number"
                       min="1"
-                      defaultValue="1"
+                      defaultValue={selectedQuantity[row.id] || 1}
+                      onChange={(e) =>
+                        setSelectedQuantity({
+                          ...selectedQuantity,
+                          [row.id]: parseInt(e.target.value) || 1,
+                        })
+                      }
                       className="w-20 px-2 py-1 border rounded text-right"
                     />
                   ),
@@ -590,7 +623,12 @@ const QuoteDetails = () => {
                   header: "",
                   render: (_, row) => (
                     <div className="flex justify-end">
-                      <Button variant="secondary-outline">Add</Button>
+                      <Button
+                        variant="secondary-outline"
+                        onClick={() => handleAddItem(row.id)}
+                        disabled={addItemLoading}>
+                        {addItemLoading ? "Adding..." : "Add"}
+                      </Button>
                     </div>
                   ),
                   className: "text-right",

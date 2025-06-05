@@ -202,9 +202,9 @@ model QuoteItem {
   quoteId         String
   configurationId String?
   itemId          String?
-  quantity        Int
-  unitPrice       Decimal
-  totalPrice      Decimal
+  quantity        Int      @default(1)
+  unitPrice       Decimal  @default(0)
+  totalPrice      Decimal  @default(0)
   lineNumber      Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

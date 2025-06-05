@@ -3,7 +3,12 @@ import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { getEmployeeContext } from "@/utils/context";
-import { companyService, journeyService } from "..";
+import {
+  companyService,
+  itemService,
+  journeyService,
+  quoteItemService,
+} from "..";
 
 type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 
@@ -15,19 +20,9 @@ export class QuoteService extends BaseService<Quote> {
     const employee = getEmployeeContext();
     const quoteNumber = await this.generateQuoteNumber(true);
 
-    console.log("Received data in createQuote:", data);
-
     const { customerId, journeyId, customerName, journeyName } = data;
 
-    console.log("Extracted values:", {
-      customerId,
-      journeyId,
-      customerName,
-      journeyName,
-    });
-
     if (customerId && journeyId) {
-      console.log("Creating quote with existing journey");
       // create quote & attach to journey
       const quote = await this.create({
         journeyId: journeyId,
@@ -50,7 +45,6 @@ export class QuoteService extends BaseService<Quote> {
         data: quote.data,
       };
     } else if (customerId && journeyName) {
-      console.log("Creating new journey for existing customer");
       // create journey & attach to company
       const journey = await journeyService.create({
         customer: { connect: { id: customerId } },
@@ -86,7 +80,6 @@ export class QuoteService extends BaseService<Quote> {
         },
       };
     } else if (customerName && journeyName) {
-      console.log("Creating new customer and journey");
       // create customer -> then create journey & attach to customer -> then create quote & attach to journey
       const company = await companyService.create({
         name: customerName,
@@ -132,7 +125,6 @@ export class QuoteService extends BaseService<Quote> {
         },
       };
     } else {
-      console.log("Creating standalone quote");
       // create standalone quote
       const quote = await this.create({
         status: QuoteStatus.DRAFT,
@@ -200,6 +192,46 @@ export class QuoteService extends BaseService<Quote> {
           .padStart(4, "0")}`,
       };
     }
+  }
+
+  public async addItemToQuote(quoteId: string, itemId: string) {
+    const quote = await this.model.findUnique({
+      where: { id: quoteId },
+    });
+
+    if (!quote) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    const item = await itemService.getById(itemId);
+
+    if (!item.success || !item.data) {
+      throw new BadRequestError("Item not found");
+    }
+
+    // Get current quote items to determine next line number
+    const currentItems = await quoteItemService.getAll({
+      filter: { quoteId },
+    });
+
+    const lineNumber = (currentItems.data?.length || 0) + 1;
+    const unitPrice = item.data.unitPrice;
+    const quantity = 1; // Default quantity
+    const totalPrice = unitPrice * quantity;
+
+    const newQuoteItem = await quoteItemService.create({
+      quoteId: quoteId,
+      itemId: itemId,
+      lineNumber,
+      unitPrice,
+      quantity,
+      totalPrice,
+    });
+
+    return {
+      success: true,
+      data: newQuoteItem.data,
+    };
   }
 
   public async approveQuote(quoteId: string) {}
