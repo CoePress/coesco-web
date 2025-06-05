@@ -1,4 +1,4 @@
-import { Plus, Filter, Download, ChevronDown } from "lucide-react";
+import { Plus, Filter, ChevronDown } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -257,13 +257,6 @@ const Quotes = () => {
         title={pageTitle}
         description={pageDescription}
         actions={[
-          {
-            type: "button",
-            label: "Export",
-            icon: <Download size={16} />,
-            variant: "secondary-outline",
-            onClick: () => {},
-          },
           {
             type: "button",
             label: "New Quote",

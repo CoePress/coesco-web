@@ -1,10 +1,4 @@
-import {
-  Plus,
-  Filter,
-  Download,
-  MoreHorizontal,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
@@ -74,13 +68,6 @@ const Companies = () => {
         title={pageTitle}
         description={pageDescription}
         actions={[
-          {
-            type: "button",
-            label: "Export",
-            icon: <Download size={16} />,
-            variant: "secondary-outline",
-            onClick: () => {},
-          },
           {
             type: "button",
             label: "New Company",

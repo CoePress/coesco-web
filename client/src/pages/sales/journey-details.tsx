@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { Download, Edit, Plus, User } from "lucide-react";
+import { Edit, Plus, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import useGetJourneyOverview from "@/hooks/sales/use-get-journey-overview";
 
@@ -490,13 +490,6 @@ const JourneyDetailsPage = () => {
         backButton
         onBack={() => navigate("/sales/journeys")}
         actions={[
-          {
-            type: "button",
-            label: "Export",
-            variant: "secondary-outline",
-            icon: <Download size={16} />,
-            onClick: () => {},
-          },
           {
             type: "button",
             label: activeTab === "details" ? "New Journey" : "Add Note",

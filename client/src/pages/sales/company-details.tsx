@@ -225,13 +225,6 @@ const CompanyDetails = () => {
         actions={[
           {
             type: "button",
-            label: "Export",
-            variant: "secondary-outline",
-            icon: <Download size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
             label:
               activeTab === "overview"
                 ? "Edit"
