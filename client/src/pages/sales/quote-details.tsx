@@ -4,6 +4,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   CheckCircle,
+  Check,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -83,6 +84,13 @@ const sampleConfigurations = [
 const QuoteDetails = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [showAddItemConfirmation, setShowAddItemConfirmation] = useState(false);
+  const [selectedItemForConfirmation, setSelectedItemForConfirmation] =
+    useState<any>(null);
+  const [confirmedItems, setConfirmedItems] = useState<Record<string, boolean>>(
+    {}
+  );
   const [activeTab, setActiveTab] = useState("items");
   const [selectedQuantity, setSelectedQuantity] = useState<
     Record<string, number>
@@ -119,13 +127,30 @@ const QuoteDetails = () => {
   } = useCreateQuoteItem();
 
   const handleAddItem = async (itemId: string) => {
-    if (!quoteId) return;
+    const item = items?.find((i: any) => i.id === itemId);
+    if (!item) return;
 
-    const result = await createQuoteItem(quoteId, { itemId });
+    setSelectedItemForConfirmation(item);
+    setShowAddItemConfirmation(true);
+  };
+
+  const handleConfirmAddItem = async () => {
+    if (!quoteId || !selectedItemForConfirmation) return;
+
+    const result = await createQuoteItem(quoteId, {
+      itemId: selectedItemForConfirmation.id,
+    });
     if (result) {
       await refreshQuote();
+      setShowAddItemConfirmation(false);
+      setSelectedItemForConfirmation(null);
       toggleModal();
     }
+  };
+
+  const handleCancelAddItem = () => {
+    setShowAddItemConfirmation(false);
+    setSelectedItemForConfirmation(null);
   };
 
   const quoteItems = useMemo(() => {
@@ -177,6 +202,30 @@ const QuoteDetails = () => {
     quoteOverview?.quote?.status
   } • ${itemCount} items • ${formatCurrency(total || 0)}`;
 
+  const handleApproveClick = () => {
+    setIsApprovalModalOpen(true);
+    // Initialize all items as unconfirmed
+    const initialConfirmedState = quoteItems.reduce(
+      (acc: Record<string, boolean>, item: { id: string }) => {
+        acc[item.id] = false;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
+    setConfirmedItems(initialConfirmedState);
+  };
+
+  const toggleItemConfirmation = (itemId: string) => {
+    setConfirmedItems((prev) => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
+  };
+
+  const allItemsConfirmed = useMemo(() => {
+    return Object.values(confirmedItems).every((confirmed) => confirmed);
+  }, [confirmedItems]);
+
   return (
     <div className="w-full flex-1">
       <PageHeader
@@ -188,7 +237,9 @@ const QuoteDetails = () => {
           {
             type: "button",
             label:
-              quoteOverview?.quote?.status === "DRAFT" ? "Approve" : "Revise",
+              quoteOverview?.quote?.status === "DRAFT"
+                ? "Approve Quote"
+                : "Create Revision",
             variant: "primary",
             icon:
               quoteOverview?.quote?.status === "DRAFT" ? (
@@ -199,7 +250,7 @@ const QuoteDetails = () => {
             disabled:
               quoteOverview?.quote?.status === "DRAFT" &&
               quoteItems.length === 0,
-            onClick: () => {},
+            onClick: handleApproveClick,
           },
         ]}
       />
@@ -562,138 +613,243 @@ const QuoteDetails = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={toggleModal}
-        title="Add Item to Quote"
-        size="lg">
+        title={
+          showAddItemConfirmation
+            ? "Confirm Item Addition"
+            : "Add Item to Quote"
+        }
+        size={showAddItemConfirmation ? "sm" : "lg"}>
         <div className="flex flex-col gap-4">
-          <Tabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            tabs={[
-              { label: "Items", value: "items" },
-              { label: "Configurations", value: "configurations" },
-            ]}
-          />
+          {showAddItemConfirmation ? (
+            <>
+              <div className="text-sm text-text-muted">
+                Are you sure you want to add this item to the quote?
+              </div>
 
-          <PageSearch
-            placeholder={`Search ${activeTab}...`}
-            filters={[
-              { label: "Category", icon: ChevronDown, onClick: () => {} },
-              { label: "Price Range", icon: ChevronDown, onClick: () => {} },
-            ]}
-          />
+              <div className="space-y-2">
+                <div>
+                  <div className="font-medium text-text">
+                    {selectedItemForConfirmation?.name}
+                  </div>
+                  <div className="text-sm text-text-muted">
+                    Quantity:{" "}
+                    {selectedQuantity[selectedItemForConfirmation?.id] || 1} ×{" "}
+                    {formatCurrency(
+                      selectedItemForConfirmation?.unitPrice || 0
+                    )}
+                    ={" "}
+                    {formatCurrency(
+                      (selectedQuantity[selectedItemForConfirmation?.id] || 1) *
+                        (selectedItemForConfirmation?.unitPrice || 0)
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {activeTab === "items" ? (
-            <Table
-              columns={[
-                {
-                  key: "name",
-                  header: "Item",
-                },
-                {
-                  key: "description",
-                  header: "Description",
-                },
-                {
-                  key: "unitPrice",
-                  header: "Unit Price",
-                  render: (value) => formatCurrency(value as number),
-                  className: "text-right",
-                },
-                {
-                  key: "quantity",
-                  header: "Quantity",
-                  render: (_, row) => (
-                    <input
-                      type="number"
-                      min="1"
-                      defaultValue={selectedQuantity[row.id] || 1}
-                      onChange={(e) =>
-                        setSelectedQuantity({
-                          ...selectedQuantity,
-                          [row.id]: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      className="w-20 px-2 py-1 border rounded text-right"
-                    />
-                  ),
-                  className: "text-right",
-                },
-                {
-                  key: "actions",
-                  header: "",
-                  render: (_, row) => (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="secondary-outline"
-                        onClick={() => handleAddItem(row.id)}
-                        disabled={addItemLoading}>
-                        {addItemLoading ? "Adding..." : "Add"}
-                      </Button>
-                    </div>
-                  ),
-                  className: "text-right",
-                },
-              ]}
-              data={items || []}
-              total={items?.length || 0}
-            />
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="secondary-outline"
+                  onClick={handleCancelAddItem}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleConfirmAddItem}>
+                  Confirm
+                </Button>
+              </div>
+            </>
           ) : (
-            <Table
-              columns={[
-                {
-                  key: "name",
-                  header: "Configuration",
-                  className: "text-primary",
-                },
-                {
-                  key: "description",
-                  header: "Description",
-                },
-                {
-                  key: "pricing.totalPrice",
-                  header: "Total Price",
-                  render: (_, row) => formatCurrency(row.pricing.totalPrice),
-                  className: "text-right",
-                },
-                {
-                  key: "quantity",
-                  header: "Quantity",
-                  render: (_) => (
-                    <input
-                      type="number"
-                      min="1"
-                      defaultValue="1"
-                      className="w-20 px-2 py-1 border rounded text-right"
-                    />
-                  ),
-                  className: "text-right",
-                },
-              ]}
-              data={sampleConfigurations}
-              total={sampleConfigurations.length}
-              onRowClick={(row) => {
-                console.log("Selected configuration:", row);
-                toggleModal();
-              }}
-            />
-          )}
+            <>
+              <Tabs
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                tabs={[
+                  { label: "Items", value: "items" },
+                  { label: "Configurations", value: "configurations" },
+                ]}
+              />
 
-          <div className="flex justify-between gap-2 pt-4 border-t">
-            {activeTab === "configurations" && (
-              <Button
-                variant="secondary-outline"
-                onClick={() => navigate("/sales/catalog/builder")}>
-                <Plus size={16} />
-                New Config
-              </Button>
-            )}
-            <div className="flex gap-2 ml-auto">
-              <Button
-                variant="secondary-outline"
-                onClick={toggleModal}>
-                Cancel
-              </Button>
-            </div>
+              <PageSearch
+                placeholder={`Search ${activeTab}...`}
+                filters={[
+                  { label: "Category", icon: ChevronDown, onClick: () => {} },
+                  {
+                    label: "Price Range",
+                    icon: ChevronDown,
+                    onClick: () => {},
+                  },
+                ]}
+              />
+
+              {activeTab === "items" ? (
+                <Table
+                  columns={[
+                    {
+                      key: "name",
+                      header: "Item",
+                    },
+                    {
+                      key: "description",
+                      header: "Description",
+                    },
+                    {
+                      key: "unitPrice",
+                      header: "Unit Price",
+                      render: (value) => formatCurrency(value as number),
+                      className: "text-right",
+                    },
+                    {
+                      key: "quantity",
+                      header: "Quantity",
+                      render: (_, row) => (
+                        <input
+                          type="number"
+                          min="1"
+                          defaultValue={selectedQuantity[row.id] || 1}
+                          onChange={(e) =>
+                            setSelectedQuantity({
+                              ...selectedQuantity,
+                              [row.id]: parseInt(e.target.value) || 1,
+                            })
+                          }
+                          className="w-20 px-2 py-1 border rounded text-right"
+                        />
+                      ),
+                      className: "text-right",
+                    },
+                    {
+                      key: "actions",
+                      header: "",
+                      render: (_, row) => (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="secondary-outline"
+                            onClick={() => handleAddItem(row.id)}
+                            disabled={addItemLoading}>
+                            {addItemLoading ? "Adding..." : "Add"}
+                          </Button>
+                        </div>
+                      ),
+                      className: "text-right",
+                    },
+                  ]}
+                  data={items || []}
+                  total={items?.length || 0}
+                />
+              ) : (
+                <Table
+                  columns={[
+                    {
+                      key: "name",
+                      header: "Configuration",
+                      className: "text-primary",
+                    },
+                    {
+                      key: "description",
+                      header: "Description",
+                    },
+                    {
+                      key: "pricing.totalPrice",
+                      header: "Total Price",
+                      render: (_, row) =>
+                        formatCurrency(row.pricing.totalPrice),
+                      className: "text-right",
+                    },
+                    {
+                      key: "quantity",
+                      header: "Quantity",
+                      render: (_) => (
+                        <input
+                          type="number"
+                          min="1"
+                          defaultValue="1"
+                          className="w-20 px-2 py-1 border rounded text-right"
+                        />
+                      ),
+                      className: "text-right",
+                    },
+                  ]}
+                  data={sampleConfigurations}
+                  total={sampleConfigurations.length}
+                  onRowClick={(row) => {
+                    console.log("Selected configuration:", row);
+                    toggleModal();
+                  }}
+                />
+              )}
+
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                {activeTab === "configurations" && (
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => navigate("/sales/catalog/builder")}>
+                    <Plus size={16} />
+                    New Config
+                  </Button>
+                )}
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={toggleModal}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isApprovalModalOpen}
+        onClose={() => setIsApprovalModalOpen(false)}
+        title="Confirm Quote Approval"
+        size="sm">
+        <div className="flex flex-col gap-4">
+          <div className="text-sm text-text-muted">
+            Please review and confirm each item before approving the quote.
+          </div>
+
+          <div className="space-y-2">
+            {quoteItems.map((item: any) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 bg-foreground rounded border">
+                <div className="flex-1">
+                  <div className="font-medium text-text">{item.item.name}</div>
+                  <div className="text-sm text-text-muted">
+                    Quantity: {item.quantity} × {formatCurrency(item.unitPrice)}{" "}
+                    = {formatCurrency(item.totalPrice)}
+                  </div>
+                </div>
+                <Button
+                  variant={
+                    confirmedItems[item.id] ? "primary" : "secondary-outline"
+                  }
+                  onClick={() => toggleItemConfirmation(item.id)}
+                  className="ml-4">
+                  <Check size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsApprovalModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!allItemsConfirmed}
+              onClick={() => {
+                // TODO: Handle actual approval submission
+                setIsApprovalModalOpen(false);
+              }}>
+              Submit
+            </Button>
           </div>
         </div>
       </Modal>

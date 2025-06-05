@@ -24,15 +24,6 @@
 - Test environment
 - Branch protection with 1 mandatory review
 - Webhooks for fatal server & adapter errors
-- Shared types package
-- Shared linter
-
-## Settings Values
-
-- Fanuc adapter ip
-- Fanuc adapter port
-- Default machine utilization per weekday
-- Override value per machine (can be added to machine table, config value if null)
 
 ## AI
 
@@ -40,8 +31,6 @@
 
 ## To Do
 
-- Add quote items to quote
-- Add quote to customer
 - Add activity to journey
 - Linter
 - Bring typed value to create mode on enter key press
@@ -52,5 +41,5 @@
 
 Quote visibility =
 IF journeyId IS NULL → only creator can see
-IF journey.customer.status = SANDBOX → only creator can see  
+IF journey.customer.status = DRAFT → only creator can see  
  ELSE → everyone can see (real customer quotes)
