@@ -185,6 +185,7 @@ model Quote {
   status       QuoteStatus
   createdById  String
   approvedById String?
+  approvedAt   DateTime?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -478,6 +479,7 @@ enum JourneyInteractionType {
 
 enum QuoteStatus {
   DRAFT
+  APPROVED
   SENT
   ACCEPTED
   REJECTED

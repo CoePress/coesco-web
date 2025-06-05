@@ -35,11 +35,12 @@
 - Linter
 - Bring typed value to create mode on enter key press
 
-## Questions
-
-- Can two quotes from the same journey have different dealers, contacts or addresses?
-
 Quote visibility =
 IF journeyId IS NULL → only creator can see
 IF journey.customer.status = DRAFT → only creator can see  
  ELSE → everyone can see (real customer quotes)
+
+## Questions
+
+- Is the rsm determined based on customer location, salesman or both?
+- Can two quotes from the same journey have different dealers, contacts or addresses?

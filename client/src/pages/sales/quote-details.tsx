@@ -5,6 +5,7 @@ import {
   ChevronDown,
   CheckCircle,
   Check,
+  Send,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -21,6 +22,7 @@ import { useMemo, useState } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import useGetItems from "@/hooks/sales/use-get-items";
 import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
+import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 
 const sampleConfigurations = [
   {
@@ -126,6 +128,13 @@ const QuoteDetails = () => {
     createQuoteItem,
   } = useCreateQuoteItem();
 
+  const {
+    loading: approveQuoteLoading,
+    error: approveQuoteError,
+    success: approveQuoteSuccess,
+    approveQuote,
+  } = useApproveQuote();
+
   const handleAddItem = async (itemId: string) => {
     const item = items?.find((i: any) => i.id === itemId);
     if (!item) return;
@@ -152,6 +161,15 @@ const QuoteDetails = () => {
   const handleCancelAddItem = () => {
     setShowAddItemConfirmation(false);
     setSelectedItemForConfirmation(null);
+  };
+
+  const handleApproveQuote = async () => {
+    if (!quoteId) return;
+    const result = await approveQuote(quoteId);
+    if (result) {
+      await refreshQuote();
+      setIsApprovalModalOpen(false);
+    }
   };
 
   const quoteItems = useMemo(() => {
@@ -199,9 +217,9 @@ const QuoteDetails = () => {
   }, [quoteItems]);
 
   const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
-  const pageDescription = `${itemCount} items • ${formatCurrency(total || 0)} • ${
-    quoteOverview?.quote?.status
-  }`;
+  const pageDescription = `${itemCount} items • ${formatCurrency(
+    total || 0
+  )} • ${quoteOverview?.quote?.status}`;
 
   const handleApproveClick = () => {
     setIsApprovalModalOpen(true);
@@ -240,18 +258,24 @@ const QuoteDetails = () => {
             label:
               quoteOverview?.quote?.status === "DRAFT"
                 ? "Approve Quote"
-                : "Create Revision",
+                : "Send Quote",
             variant: "primary",
             icon:
               quoteOverview?.quote?.status === "DRAFT" ? (
                 <CheckCircle size={16} />
               ) : (
-                <Edit size={16} />
+                <Send size={16} />
               ),
             disabled:
               quoteOverview?.quote?.status === "DRAFT" &&
               quoteItems.length === 0,
-            onClick: handleApproveClick,
+            onClick: () => {
+              if (quoteOverview?.quote?.status === "DRAFT") {
+                handleApproveClick();
+              } else {
+                // TODO: Handle send quote
+              }
+            },
           },
         ]}
       />
@@ -308,7 +332,7 @@ const QuoteDetails = () => {
                   <div className="text-sm text-text-muted">Approved By</div>
                   <div className="text-sm text-text">
                     {quoteOverview?.quote?.approvedById
-                      ? quoteOverview?.quote?.approvedBy?.name
+                      ? `${quoteOverview?.quote?.approvedBy?.firstName} ${quoteOverview?.quote?.approvedBy?.lastName}`
                       : "-"}
                   </div>
                 </div>
@@ -382,6 +406,7 @@ const QuoteDetails = () => {
                   <Button
                     variant="secondary-outline"
                     className="w-max mx-auto"
+                    disabled={quoteOverview?.quote?.status !== "DRAFT"}
                     onClick={() => navigate("/sales/companies/new")}>
                     <Plus size={16} />
                     Add Customer
@@ -441,6 +466,7 @@ const QuoteDetails = () => {
                   <Button
                     variant="secondary-outline"
                     className="w-max mx-auto"
+                    disabled={quoteOverview?.quote?.status !== "DRAFT"}
                     onClick={() => navigate("/sales/companies/new")}>
                     <Plus size={16} />
                     Add Dealer
@@ -457,6 +483,7 @@ const QuoteDetails = () => {
               </h2>
               <Button
                 onClick={toggleModal}
+                disabled={quoteOverview?.quote?.status !== "DRAFT"}
                 variant="secondary-outline">
                 <Plus size={16} />
                 Add Item
@@ -514,53 +541,55 @@ const QuoteDetails = () => {
               </thead>
 
               <tbody className="bg-foreground divide-y divide-border">
-                {quoteItems.sort((a: any, b: any) => a.lineNumber - b.lineNumber).map((item: any) => (
-                  <tr key={item.id}>
-                    <td className="p-2 whitespace-nowrap text-left">
-                      <div className="text-sm text-text-muted">
-                        {item.lineNumber}
-                      </div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-text">
-                        {item.item.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-text">
-                        {item.item.description}
-                      </div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text">{item.quantity}</div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text">
-                        {formatCurrency(item.unitPrice || 0)}
-                      </div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text">
-                        {formatCurrency(item.discount || 0)}
-                      </div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text">
-                        {formatCurrency(item.tax || 0)}
-                      </div>
-                    </td>
-                    <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm font-medium text-text">
-                        {formatCurrency(item.totalPrice || 0)}
-                      </div>
-                    </td>
-                    <td className="flex items-center justify-end p-2">
-                      <Button variant="secondary-outline">
-                        <MoreHorizontal size={16} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {quoteItems
+                  .sort((a: any, b: any) => a.lineNumber - b.lineNumber)
+                  .map((item: any) => (
+                    <tr key={item.id}>
+                      <td className="p-2 whitespace-nowrap text-left">
+                        <div className="text-sm text-text-muted">
+                          {item.lineNumber}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap">
+                        <div className="text-sm font-medium text-text">
+                          {item.item.name}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm text-text">
+                          {item.item.description}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-right">
+                        <div className="text-sm text-text">{item.quantity}</div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-right">
+                        <div className="text-sm text-text">
+                          {formatCurrency(item.unitPrice || 0)}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-right">
+                        <div className="text-sm text-text">
+                          {formatCurrency(item.discount || 0)}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-right">
+                        <div className="text-sm text-text">
+                          {formatCurrency(item.tax || 0)}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-right">
+                        <div className="text-sm font-medium text-text">
+                          {formatCurrency(item.totalPrice || 0)}
+                        </div>
+                      </td>
+                      <td className="flex items-center justify-end p-2">
+                        <Button variant="secondary-outline">
+                          <MoreHorizontal size={16} />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
               <tfoot className="bg-foreground">
                 <tr>
@@ -856,8 +885,7 @@ const QuoteDetails = () => {
               variant="primary"
               disabled={!allItemsConfirmed}
               onClick={() => {
-                // TODO: Handle actual approval submission
-                setIsApprovalModalOpen(false);
+                handleApproveQuote();
               }}>
               Submit
             </Button>
@@ -869,3 +897,7 @@ const QuoteDetails = () => {
 };
 
 export default QuoteDetails;
+
+const AddItemModal = () => {};
+
+const ApproveModal = () => {};

@@ -244,7 +244,57 @@ export class QuoteService extends BaseService<Quote> {
     };
   }
 
-  public async approveQuote(quoteId: string) {}
+  public async approveQuote(quoteId: string) {
+    const quote = await this.getById(quoteId);
+
+    if (!quote.success || !quote.data) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    if (quote.data.status !== QuoteStatus.DRAFT) {
+      throw new BadRequestError("Quote is not draft");
+    }
+
+    if (!quote.data.journeyId) {
+      throw new BadRequestError("Quote has no journey");
+    }
+
+    const quoteItems = await quoteItemService.getAll({
+      filter: { quoteId },
+    });
+
+    if (!quoteItems.success || !quoteItems.data) {
+      throw new BadRequestError("Quote items not found");
+    }
+
+    if (quoteItems.data.length === 0) {
+      throw new BadRequestError("Quote has no items");
+    }
+
+    // check if quote items have a unit price
+    const hasUnitPrice = quoteItems.data.some(
+      (item) => item.unitPrice === null
+    );
+
+    const hasQuantity = quoteItems.data.some((item) => item.quantity === null);
+
+    if (hasUnitPrice || hasQuantity) {
+      throw new BadRequestError("Quote items have no unit price or quantity");
+    }
+
+    const employee = getEmployeeContext();
+
+    const updatedQuote = await this.update(quoteId, {
+      status: QuoteStatus.APPROVED,
+      approvedAt: new Date(),
+      approvedById: employee.id,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
 
   public async createRevision(quoteId: string) {}
 

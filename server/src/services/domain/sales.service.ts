@@ -156,6 +156,24 @@ export class SalesService {
       };
     }
 
+    let approvedBy: any;
+    if (quote.data.approvedById) {
+      approvedBy = await employeeService.getById(quote.data.approvedById);
+
+      if (!approvedBy.success || !approvedBy.data) {
+        throw new Error("Approved by not found");
+      }
+    } else {
+      approvedBy = {
+        success: true,
+        data: {
+          id: "system",
+          firstName: "System",
+          lastName: "System",
+        },
+      };
+    }
+
     let journey = null;
     let customer = null;
     let dealer = null;
@@ -196,6 +214,7 @@ export class SalesService {
         quote: {
           ...quote.data,
           createdBy: creator?.data,
+          approvedBy: approvedBy?.data,
         },
         journey,
         quoteItems: quoteItems.data,

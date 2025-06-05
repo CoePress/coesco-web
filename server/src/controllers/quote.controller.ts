@@ -69,4 +69,14 @@ export class QuoteController extends BaseController<Quote> {
       next(error);
     }
   }
+
+  public async approveQuote(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await quoteService.approveQuote(id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
