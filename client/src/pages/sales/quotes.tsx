@@ -27,7 +27,10 @@ const Quotes = () => {
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
 
-  const include = useMemo(() => ["journey", "journey.customer"], []);
+  const include = useMemo(
+    () => ["journey", "journey.customer", "createdBy"],
+    []
+  );
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes({
     include,
@@ -71,7 +74,7 @@ const Quotes = () => {
         row.journey ? (
           <Link
             to={`/sales/journeys/${row.journey.id}`}
-            className="text-primary hover:underline">
+            className="hover:underline">
             {row.journey.name || "-"}
           </Link>
         ) : (
@@ -85,7 +88,7 @@ const Quotes = () => {
         row.journey?.customer ? (
           <Link
             to={`/sales/companies/${row.journey.customer.id}`}
-            className="text-primary hover:underline">
+            className="hover:underline">
             {row.journey.customer.name || "-"}
           </Link>
         ) : (
@@ -93,9 +96,18 @@ const Quotes = () => {
         ),
     },
     {
-      key: "createdById",
+      key: "createdBy.name",
       header: "Created By",
-      render: (value) => value,
+      render: (_, row) =>
+        row.createdBy ? (
+          <Link
+            to={`/sales/team/${row.createdBy.id}?tab=quotes`}
+            className="hover:underline">
+            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
   ];
 

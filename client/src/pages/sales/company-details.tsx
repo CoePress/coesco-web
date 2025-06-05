@@ -1,6 +1,11 @@
 import { Edit, MapPin, Star, Download, Plus } from "lucide-react";
-import { useState, useMemo } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 
 import { PageHeader, StatusBadge, Table, Tabs } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
@@ -23,8 +28,11 @@ const JourneysTab = () => {
     [companyId]
   );
 
+  const include = useMemo(() => ["createdBy"], []);
+
   const { journeys, loading, error, refresh, pagination } = useGetJourneys({
     filter,
+    include,
   });
 
   const columns: TableColumn<any>[] = [
@@ -51,9 +59,18 @@ const JourneysTab = () => {
       render: (value) => formatCurrency(value as number),
     },
     {
-      key: "createdById",
+      key: "createdBy.name",
       header: "Created By",
-      render: (value) => value,
+      render: (_, row) =>
+        row.createdBy ? (
+          <Link
+            to={`/sales/team/${row.createdBy.id}?tab=journeys`}
+            className="hover:underline">
+            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
   ];
 
@@ -93,7 +110,7 @@ const QuotesTab = () => {
     [companyId]
   );
 
-  const include = useMemo(() => ["journey"], []);
+  const include = useMemo(() => ["journey", "createdBy"], []);
 
   const { quotes, loading, error, refresh, pagination } = useGetQuotes({
     filter,
@@ -132,9 +149,18 @@ const QuotesTab = () => {
       ),
     },
     {
-      key: "createdById",
+      key: "createdBy.name",
       header: "Created By",
-      render: (value) => value,
+      render: (_, row) =>
+        row.createdBy ? (
+          <Link
+            to={`/sales/team/${row.createdBy.id}?tab=quotes`}
+            className="hover:underline">
+            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
+          </Link>
+        ) : (
+          "-"
+        ),
     },
   ];
 
@@ -159,9 +185,24 @@ const QuotesTab = () => {
 };
 
 const CompanyDetails = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get("tab");
+    return tab && ["journeys", "quotes", "activity"].includes(tab)
+      ? tab
+      : "overview";
+  });
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (activeTab === "overview") {
+      searchParams.delete("tab");
+    } else {
+      searchParams.set("tab", activeTab);
+    }
+    setSearchParams(searchParams);
+  }, [activeTab, searchParams, setSearchParams]);
 
   const companyId = useParams().id;
 
@@ -169,7 +210,7 @@ const CompanyDetails = () => {
     companyId: companyId || "",
   });
 
-  const pageTitle = companyOverview?.company?.name;
+  const pageTitle = `${companyOverview?.company?.name}`;
   const pageDescription = companyOverview?.company?.createdAt
     ? `Customer since ${formatDate(companyOverview.company.createdAt)}`
     : "";
