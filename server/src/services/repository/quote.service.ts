@@ -332,6 +332,92 @@ export class QuoteService extends BaseService<Quote> {
     const quoteItems = await quoteItemService.getAll({
       filter: { quoteId },
     });
+
+    if (!quoteItems.success || !quoteItems.data) {
+      throw new BadRequestError("Failed to fetch quote items");
+    }
+
+    const newRevision = await this.generateRevisionNumber(quote.data);
+
+    const newQuote = await this.create({
+      journeyId: quote.data.journeyId,
+      status: QuoteStatus.DRAFT,
+      year: quote.data.year,
+      number: quote.data.number,
+      revision: newRevision,
+      subtotal: quote.data.subtotal,
+      totalAmount: quote.data.totalAmount,
+      currency: quote.data.currency,
+      createdById: quote.data.createdById,
+    });
+
+    if (!newQuote.success || !newQuote.data) {
+      throw new BadRequestError("Failed to create quote revision");
+    }
+
+    // Copy all items from the original quote
+    for (const item of quoteItems.data) {
+      await quoteItemService.create({
+        quoteId: newQuote.data.id,
+        itemId: item.itemId,
+        lineNumber: item.lineNumber,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice,
+      });
+    }
+
+    await this.update(quoteId, {
+      status: QuoteStatus.REVISED,
+    });
+
+    return {
+      success: true,
+      data: newQuote.data,
+    };
+  }
+
+  protected async generateRevisionNumber(quote: Quote): Promise<string> {
+    const lastRevision = await this.model.findFirst({
+      where: {
+        year: quote.year,
+        number: quote.number,
+      },
+      orderBy: { revision: "desc" },
+    });
+
+    if (!lastRevision) {
+      return "A";
+    }
+
+    const currentRevision = lastRevision.revision;
+
+    // Handle single letter (A-Z)
+    if (currentRevision.length === 1) {
+      const nextChar = String.fromCharCode(currentRevision.charCodeAt(0) + 1);
+      if (nextChar <= "Z") {
+        return nextChar;
+      }
+      return "AA"; // Move to double letters after Z
+    }
+
+    // Handle double letters (AA-ZZ)
+    if (currentRevision.length === 2) {
+      const firstChar = currentRevision[0];
+      const secondChar = currentRevision[1];
+
+      if (secondChar < "Z") {
+        return firstChar + String.fromCharCode(secondChar.charCodeAt(0) + 1);
+      }
+
+      if (firstChar < "Z") {
+        return String.fromCharCode(firstChar.charCodeAt(0) + 1) + "A";
+      }
+
+      throw new BadRequestError("Maximum revision limit reached (ZZ)");
+    }
+
+    throw new BadRequestError("Invalid revision format");
   }
 
   protected async validate(quote: QuoteAttributes): Promise<void> {

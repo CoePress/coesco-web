@@ -969,7 +969,7 @@ const QuoteDetails = () => {
             undone.
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex justify-end gap-2 pt-2 border-t">
             <Button
               variant="secondary-outline"
               onClick={() => setIsSendConfirmationOpen(false)}>
@@ -996,7 +996,7 @@ const QuoteDetails = () => {
             will create a copy of the current quote.
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex justify-end gap-2 pt-2 border-t">
             <Button
               variant="secondary-outline"
               onClick={() => setIsRevisionConfirmationOpen(false)}>
