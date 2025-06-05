@@ -1,18 +1,10 @@
-import { useMemo, useState } from "react";
-import {
-  PageHeader,
-  Tabs,
-  Table,
-  StatusBadge,
-  Button,
-  Modal,
-} from "@/components";
+import { useState } from "react";
+import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { Download, Edit, Plus, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import useGetJourneyOverview from "@/hooks/sales/use-get-journey-overview";
 
-// Sample/mock data
 const sampleJourney = {
   id: "journey-001",
   name: "Acme Corp Stamping Project",
@@ -31,16 +23,6 @@ const sampleJourney = {
   status: "open",
   createdBy: "mav",
   createdAt: "2025-05-28T14:39:28.115Z",
-};
-
-const sampleCustomer = {
-  id: "customer-001",
-  name: "Acme Corp",
-  industry: "Manufacturing",
-  contact: "John Smith",
-  email: "john.smith@acme.com",
-  phone: "555-123-4567",
-  address: "123 Business St, New York, NY 10001",
 };
 
 const sampleQuoteList = [
@@ -145,7 +127,9 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Customer Information Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted">Customer</h2>
+              <h2 className="font-semibold text-text-muted text-sm">
+                Customer
+              </h2>
               <Button
                 variant="secondary-outline"
                 size="sm"
@@ -155,32 +139,30 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
             </div>
             <div className="grid grid-cols-1 gap-x-8 gap-y-2">
               <div>
-                <div className="text-xs text-text-muted">Company</div>
-                <div className="text-sm text-text-muted">
-                  {customer?.name || "-"}
-                </div>
+                <div className="text-sm text-text-muted">Company</div>
+                <div className="text-sm text-text">{customer?.name || "-"}</div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Industry</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Industry</div>
+                <div className="text-sm text-text">
                   {customer?.industry || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Contact</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Contact</div>
+                <div className="text-sm text-text">
                   {customer?.contact || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Email</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Email</div>
+                <div className="text-sm text-text">
                   {customer?.email || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Phone</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Phone</div>
+                <div className="text-sm text-text">
                   {customer?.phone || "-"}
                 </div>
               </div>
@@ -190,7 +172,9 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Journey Details Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted">Journey Details</h2>
+              <h2 className="font-semibold text-text-muted text-sm">
+                Journey Details
+              </h2>
               <Button
                 variant="secondary-outline"
                 size="sm"
@@ -200,58 +184,56 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2">
               <div>
-                <div className="text-xs text-text-muted">
+                <div className="text-sm text-text-muted">
                   Journey Start Date
                 </div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text">
                   {formatDate(sampleJourney.startDate)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Journey Type</div>
-                <div className="text-sm text-text-muted">
-                  {sampleJourney.type}
-                </div>
+                <div className="text-sm text-text-muted">Journey Type</div>
+                <div className="text-sm text-text">{sampleJourney.type}</div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Lead Source</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Lead Source</div>
+                <div className="text-sm text-text">
                   {sampleJourney.leadSource}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Equipment Type</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Equipment Type</div>
+                <div className="text-sm text-text">
                   {sampleJourney.equipmentType}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Quote Type</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Quote Type</div>
+                <div className="text-sm text-text">
                   {sampleJourney.quoteType}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">COE RSM Territory</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">COE RSM Territory</div>
+                <div className="text-sm text-text">
                   {sampleJourney.rsmTerritory}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Quote #</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Quote #</div>
+                <div className="text-sm text-text">
                   {sampleJourney.quoteNumber}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Qty of Items</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Qty of Items</div>
+                <div className="text-sm text-text">
                   {sampleJourney.qtyItems}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Journey Value</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Journey Value</div>
+                <div className="text-sm text-text">
                   {formatCurrency(sampleJourney.value)}
                 </div>
               </div>
@@ -261,7 +243,7 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Journey Tracking Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted">
+              <h2 className="font-semibold text-text-muted text-sm">
                 Journey Tracking
               </h2>
               <Button
@@ -273,34 +255,34 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2">
               <div>
-                <div className="text-xs text-text-muted">Journey Stage</div>
-                <div className="text-sm text-text-muted">RFQ Completed</div>
+                <div className="text-sm text-text-muted">Journey Stage</div>
+                <div className="text-sm text-text">RFQ Completed</div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Priority</div>
-                <div className="text-sm text-text-muted">High</div>
+                <div className="text-sm text-text-muted">Priority</div>
+                <div className="text-sm text-text">High</div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Status</div>
-                <StatusBadge label="open" />
+                <div className="text-sm text-text-muted">Status</div>
+                <div className="text-sm text-text">{sampleJourney.status}</div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">
+                <div className="text-sm text-text-muted">
                   Quote Presentation Date
                 </div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text">
                   {formatDate("2023-08-05")}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Expected PO Date</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Expected PO Date</div>
+                <div className="text-sm text-text">
                   {formatDate("2025-07-25")}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">Action Date</div>
-                <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">Action Date</div>
+                <div className="text-sm text-text">
                   {formatDate("2025-11-30")}
                 </div>
               </div>
@@ -312,10 +294,12 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Project Notes Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center">
-              <h2 className="font-semibold text-text-muted mb-1">Notes</h2>
+              <h2 className="font-semibold text-text-muted text-sm mb-1">
+                Notes
+              </h2>
             </div>
             <textarea
-              className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text-muted resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
               value={sampleJourney.projectNotes}
               onChange={() => {}}
             />
@@ -324,7 +308,9 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Interactions Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted">Interactions</h2>
+              <h2 className="font-semibold text-text-muted text-sm">
+                Interactions
+              </h2>
               <Button
                 variant="secondary-outline"
                 size="sm"
@@ -356,7 +342,7 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
           {/* Quotes Card */}
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted">Quotes</h2>
+              <h2 className="font-semibold text-text-muted text-sm">Quotes</h2>
               <Button
                 variant="secondary-outline"
                 size="sm"
@@ -370,34 +356,34 @@ function JourneyDetailsTab({ journey }: { journey: any }) {
                   {
                     key: "number",
                     header: "Quote #",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                   },
                   {
                     key: "revision",
                     header: "Rev",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                   },
                   {
                     key: "status",
                     header: "Status",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                   },
                   {
                     key: "total",
                     header: "Total",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                     render: (v) => formatCurrency(v as number),
                   },
                   {
                     key: "created",
                     header: "Created",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                     render: (v) => formatDate(v as string),
                   },
                   {
                     key: "validUntil",
                     header: "Valid Until",
-                    className: "text-xs text-text-muted",
+                    className: "text-sm text-text-muted",
                     render: (v) => formatDate(v as string),
                   },
                 ]}

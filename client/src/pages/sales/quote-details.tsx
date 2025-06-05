@@ -192,184 +192,193 @@ const QuoteDetails = () => {
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
             {/* Overview */}
-            <div className="bg-foreground rounded shadow-sm border p-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex justify-between items-start col-span-2">
-                  <div className="text-sm font-medium text-neutral-400">
-                    Quote Details
-                  </div>
-                  <StatusBadge
-                    label={quoteOverview?.quote?.status}
-                    icon={
-                      quoteOverview?.quote?.status === "accepted"
-                        ? CheckCircle
-                        : PenBox
-                    }
-                    variant={
-                      quoteOverview?.quote?.status === "accepted"
-                        ? "success"
-                        : "default"
-                    }
-                  />
+            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+              <div className="flex justify-between items-start mb-2">
+                <div className="text-sm font-medium text-text-muted">
+                  Quote Details
                 </div>
+              </div>
 
+              <div className="space-y-2 grid grid-cols-2 gap-2">
                 <div>
-                  <div className="text-xs text-neutral-400">Number</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Number</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.number}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Revision</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Revision</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.revision || "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Created On</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Created On</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.createdAt
                       ? formatDate(quoteOverview?.quote?.createdAt)
                       : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Created By</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Created By</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.createdById
                       ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
                       : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Approved On</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Approved On</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.approvedAt
                       ? formatDate(quoteOverview?.quote?.approvedAt)
                       : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Approved By</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Approved By</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.approvedById
                       ? quoteOverview?.quote?.approvedBy?.name
                       : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-400">Expires On</div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-text-muted">Expires On</div>
+                  <div className="text-sm text-text">
                     {quoteOverview?.quote?.expiryDate
                       ? formatDate(quoteOverview?.quote?.expiryDate)
                       : "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm text-text-muted">Status</div>
+                  <div className="text-sm text-text">
+                    {quoteOverview?.quote?.status}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Customer */}
-            <div className="bg-foreground rounded shadow-sm border p-2">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="text-sm font-medium text-neutral-400 mb-3">
-                      Customer Details
-                    </div>
-
-                    <Link
-                      to={`/sales/companies/${customer?.id}`}
-                      className="text-sm text-neutral-400 hover:text-neutral-500">
-                      View
-                    </Link>
-                  </div>
-                  {customer ? (
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-xs text-neutral-400">Name</div>
-                        <div className="text-sm text-neutral-400">
-                          {customer?.name || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Contact</div>
-                        <div className="text-sm text-neutral-400">
-                          {customer?.contact || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Email</div>
-                        <div className="text-sm text-neutral-400">
-                          {customer?.email || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Phone</div>
-                        <div className="text-sm text-neutral-400">
-                          {customer?.phone || "-"}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-neutral-400 text-center">
-                      No customer associated with this quote
-                    </div>
-                  )}
+            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+              <div className="flex justify-between items-start mb-2">
+                <div className="text-sm font-medium text-text-muted">
+                  Customer Details
                 </div>
+
+                {customer && (
+                  <Link
+                    to={`/sales/companies/${customer?.id}`}
+                    className="text-sm text-text-muted hover:text-text cursor-pointer">
+                    View
+                  </Link>
+                )}
               </div>
+
+              {customer ? (
+                <div className="space-y-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-sm text-text-muted">Name</div>
+                    <div className="text-sm text-text">
+                      {customer?.name || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Contact</div>
+                    <div className="text-sm text-text">
+                      {customer?.contact || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Email</div>
+                    <div className="text-sm text-text">
+                      {customer?.email || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Phone</div>
+                    <div className="text-sm text-text">
+                      {customer?.phone || "-"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 items-center justify-center h-full">
+                  <div className="text-sm text-text-muted text-center">
+                    No customer associated with this quote
+                  </div>
+
+                  <Button
+                    variant="secondary-outline"
+                    className="w-max mx-auto"
+                    onClick={() => navigate("/sales/companies/new")}>
+                    <Plus size={16} />
+                    Add Customer
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Dealer */}
-            <div className="bg-foreground rounded shadow-sm border p-2">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="text-sm font-medium text-neutral-400">
-                      Dealer Details
-                    </div>
-
-                    {dealer && (
-                      <Link
-                        to={`/sales/companies/${dealer?.id}`}
-                        className="text-sm text-neutral-400 hover:text-neutral-500">
-                        View
-                      </Link>
-                    )}
-                  </div>
-                  {dealer ? (
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-xs text-neutral-400">Name</div>
-                        <div className="text-sm text-neutral-400">
-                          {dealer?.name || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Contact</div>
-                        <div className="text-sm text-neutral-400">
-                          {dealer?.contact || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Email</div>
-                        <div className="text-sm text-neutral-400">
-                          {dealer?.email || "-"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-neutral-400">Phone</div>
-                        <div className="text-sm text-neutral-400">
-                          {dealer?.phone || "-"}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-neutral-400 text-center">
-                      No dealer associated with this quote
-                    </div>
-                  )}
+            <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
+              <div className="flex justify-between items-start">
+                <div className="text-sm font-medium text-text-muted">
+                  Dealer Details
                 </div>
+
+                {dealer && (
+                  <Link
+                    to={`/sales/companies/${dealer?.id}`}
+                    className="text-sm text-text-muted hover:text-text cursor-pointer">
+                    View
+                  </Link>
+                )}
               </div>
+              {dealer ? (
+                <div className="space-y-2">
+                  <div>
+                    <div className="text-sm text-text-muted">Name</div>
+                    <div className="text-sm text-text">
+                      {dealer?.name || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Contact</div>
+                    <div className="text-sm text-text">
+                      {dealer?.contact || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Email</div>
+                    <div className="text-sm text-text">
+                      {dealer?.email || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-text-muted">Phone</div>
+                    <div className="text-sm text-text">
+                      {dealer?.phone || "-"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 items-center justify-center h-full">
+                  <div className="text-sm text-text-muted text-center">
+                    No dealer associated with this quote
+                  </div>
+
+                  <Button
+                    variant="secondary-outline"
+                    className="w-max mx-auto"
+                    onClick={() => navigate("/sales/companies/new")}>
+                    <Plus size={16} />
+                    Add Dealer
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -440,27 +449,25 @@ const QuoteDetails = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm text-text-muted">
+                      <div className="text-sm text-text">
                         {item.description}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text-muted">
-                        {item.quantity}
-                      </div>
+                      <div className="text-sm text-text">{item.quantity}</div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text-muted">
+                      <div className="text-sm text-text">
                         {formatCurrency(item.unitPrice)}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text-muted">
+                      <div className="text-sm text-text">
                         {formatCurrency(item.discount)}
                       </div>
                     </td>
                     <td className="p-2 whitespace-nowrap text-right">
-                      <div className="text-sm text-text-muted">
+                      <div className="text-sm text-text">
                         {formatCurrency(item.tax)}
                       </div>
                     </td>

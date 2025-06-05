@@ -278,7 +278,7 @@ const CompanyDetails = () => {
                       <h2 className="font-semibold text-primary">
                         {companyOverview?.company.name}
                       </h2>
-                      <p className="text-sm text-neutral-400">
+                      <p className="text-sm text-text">
                         {companyOverview?.company.industry || "-"}
                       </p>
                     </div>
@@ -287,7 +287,7 @@ const CompanyDetails = () => {
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <div className="text-xs text-text">Website</div>
+                    <div className="text-sm text-text-muted">Website</div>
                     {companyOverview?.company.website ? (
                       <a
                         href={`https://${companyOverview.company.website}`}
@@ -297,11 +297,11 @@ const CompanyDetails = () => {
                         {companyOverview.company.website}
                       </a>
                     ) : (
-                      <div className="text-sm text-neutral-400">-</div>
+                      <div className="text-sm text-text">-</div>
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-text">Email</div>
+                    <div className="text-sm text-text-muted">Email</div>
                     {companyOverview?.company.email ? (
                       <a
                         href={`mailto:${companyOverview.company.email}`}
@@ -309,37 +309,37 @@ const CompanyDetails = () => {
                         {companyOverview.company.email}
                       </a>
                     ) : (
-                      <div className="text-sm text-neutral-400">-</div>
+                      <div className="text-sm text-text">-</div>
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-text">Phone</div>
+                    <div className="text-sm text-text-muted">Phone</div>
                     <a
                       href={`tel:${companyOverview?.company.phone}`}
-                      className="text-sm text-neutral-400">
+                      className="text-sm text-text">
                       {companyOverview?.company.phone || "-"}
                     </a>
                   </div>
                   <div>
-                    <div className="text-xs text-text">Fax</div>
-                    <div className="text-sm text-neutral-400">
+                    <div className="text-sm text-text-muted">Fax</div>
+                    <div className="text-sm text-text">
                       {companyOverview?.company.fax || "-"}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <div className="text-text">Shipping Address</div>
-                    <div className="text-neutral-400">
+                    <div className="text-text-muted">Shipping Address</div>
+                    <div className="text-text">
                       123 Business Street, Suite 100
                       <br />
                       New York, NY 10001
                     </div>
                   </div>
                   <div>
-                    <div className="text-text">Billing Address</div>
-                    <div className="text-neutral-400">
+                    <div className="text-text-muted">Billing Address</div>
+                    <div className="text-text">
                       456 Finance Avenue, Floor 3<br />
                       New York, NY 10002
                     </div>
@@ -350,60 +350,70 @@ const CompanyDetails = () => {
               <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <div className="text-sm font-medium text-neutral-400 mb-3">
+                    <div className="text-sm font-medium text-text-muted mb-3">
                       Business Details
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs text-text">Industry</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">Industry</div>
+                        <div className="text-sm text-text">
                           {companyOverview?.company.industry || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-text">Founded</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">Founded</div>
+                        <div className="text-sm text-text">
                           {companyOverview?.company.yearFounded || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-text">Annual Revenue</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
+                          Annual Revenue
+                        </div>
+                        <div className="text-sm text-text">
                           {formatCurrency(
                             companyOverview?.company.revenue || 0
                           )}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-text">Employee Count</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
+                          Employee Count
+                        </div>
+                        <div className="text-sm text-text">
                           {companyOverview?.company.employeeCount || "-"}
                         </div>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-neutral-400 mb-3">
+                    <div className="text-sm font-medium text-text-muted mb-3">
                       Relationship Details
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs text-text">Customer Since</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
+                          Customer Since
+                        </div>
+                        <div className="text-sm text-text">
                           {companyOverview?.company.customerSince
                             ? formatDate(companyOverview?.company.customerSince)
                             : "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-text">Payment Terms</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
+                          Payment Terms
+                        </div>
+                        <div className="text-sm text-text">
                           {companyOverview?.company.paymentTerms || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-text">Credit Limit</div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
+                          Credit Limit
+                        </div>
+                        <div className="text-sm text-text">
                           {formatCurrency(
                             companyOverview?.company.creditLimit || 0
                           )}
@@ -417,10 +427,10 @@ const CompanyDetails = () => {
               <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-neutral-400">
+                    <div className="text-sm font-medium text-text-muted">
                       Addresses
                     </div>
-                    <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                    <button className="text-xs text-text-muted hover:text-text flex items-center gap-1 cursor-pointer">
                       View All
                     </button>
                   </div>
@@ -429,50 +439,50 @@ const CompanyDetails = () => {
                       <div className="flex items-center gap-2">
                         <MapPin
                           size={16}
-                          className="text-neutral-400"
+                          className="text-text-muted"
                         />
                         <div>
-                          <div className="text-sm text-neutral-400">
+                          <div className="text-sm text-text">
                             123 Business Street, Suite 100
                           </div>
-                          <div className="text-xs text-text">
+                          <div className="text-sm text-text-muted">
                             New York, NY 10001
                           </div>
                         </div>
                       </div>
                       <Star
                         size={16}
-                        className="text-primary fill-primary"
+                        className="text-primary fill-primary cursor-pointer"
                       />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <MapPin
                           size={16}
-                          className="text-neutral-400"
+                          className="text-text-muted"
                         />
                         <div>
-                          <div className="text-sm text-neutral-400">
+                          <div className="text-sm text-text">
                             456 Finance Avenue, Floor 3
                           </div>
-                          <div className="text-xs text-text">
+                          <div className="text-sm text-text-muted">
                             New York, NY 10002
                           </div>
                         </div>
                       </div>
                       <Star
                         size={16}
-                        className="text-neutral-300"
+                        className="text-neutral-300 cursor-pointer"
                       />
                     </div>
                   </div>
 
                   <div className="mt-4 pt-3 border-t">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-neutral-400">
+                      <div className="text-sm font-medium text-text-muted">
                         Contacts
                       </div>
-                      <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                      <button className="text-xs text-text-muted hover:text-text flex items-center gap-1 cursor-pointer">
                         View All
                       </button>
                     </div>
@@ -485,15 +495,13 @@ const CompanyDetails = () => {
                             className="h-6 w-6 rounded-full"
                           />
                           <div>
-                            <div className="text-sm text-neutral-400">
-                              John Smith
-                            </div>
-                            <div className="text-xs text-text">CEO</div>
+                            <div className="text-sm text-text">John Smith</div>
+                            <div className="text-sm text-text-muted">CEO</div>
                           </div>
                         </div>
                         <Star
                           size={16}
-                          className="text-primary fill-primary"
+                          className="text-primary fill-primary cursor-pointer"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -504,17 +512,15 @@ const CompanyDetails = () => {
                             className="h-6 w-6 rounded-full"
                           />
                           <div>
-                            <div className="text-sm text-neutral-400">
-                              Mike Wilson
-                            </div>
-                            <div className="text-xs text-text">
+                            <div className="text-sm text-text">Mike Wilson</div>
+                            <div className="text-sm text-text-muted">
                               Finance Director
                             </div>
                           </div>
                         </div>
                         <Star
                           size={16}
-                          className="text-neutral-300"
+                          className="text-neutral-300 cursor-pointer"
                         />
                       </div>
                     </div>
@@ -526,24 +532,24 @@ const CompanyDetails = () => {
             {/* <div className="grid grid-cols-2 gap-2">
               <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex justify-between items-start mb-2">
-                  <h2 className="font-semibold text-neutral-400">
+                  <h2 className="font-semibold text-text-muted">
                     Activity Summary
                   </h2>
                   <div>
-                    <button className="text-neutral-400 hover:text-neutral-600">
+                    <button className="text-text-muted hover:text-neutral-600">
                       <MoreHorizontal size={18} />
                     </button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="border rounded p-3">
-                    <div className="text-xs text-text uppercase">
+                    <div className="text-sm text-text-muted uppercase">
                       Total Quotes
                     </div>
-                    <div className="text-xl font-semibold text-neutral-400 mt-1">
+                    <div className="text-xl font-semibold text-text-muted mt-1">
                       {sampleCustomer.quotes.length}
                     </div>
-                    <div className="text-sm text-neutral-400 mt-1">
+                    <div className="text-sm text-text mt-1">
                       {formatCurrency(
                         sampleCustomer.quotes.reduce(
                           (sum, q) => sum + q.amount,
@@ -554,13 +560,13 @@ const CompanyDetails = () => {
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-text uppercase">
+                    <div className="text-sm text-text-muted uppercase">
                       Total Orders
                     </div>
-                    <div className="text-xl font-semibold text-neutral-400 mt-1">
+                    <div className="text-xl font-semibold text-text-muted mt-1">
                       {sampleCustomer.orders.length}
                     </div>
-                    <div className="text-sm text-neutral-400 mt-1">
+                    <div className="text-sm text-text mt-1">
                       {formatCurrency(
                         sampleCustomer.orders.reduce(
                           (sum, o) => sum + o.amount,
@@ -571,24 +577,24 @@ const CompanyDetails = () => {
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-text uppercase">
+                    <div className="text-sm text-text-muted uppercase">
                       Last Activity
                     </div>
-                    <div className="text-sm font-medium text-neutral-400 mt-1">
+                    <div className="text-sm font-medium text-text-muted mt-1">
                       {sampleCustomer.activities[0].description}
                     </div>
-                    <div className="text-xs text-text mt-1">
+                    <div className="text-sm text-text-muted mt-1">
                       {formatDate(sampleCustomer.activities[0].date)}
                     </div>
                   </div>
                   <div className="border rounded p-3">
-                    <div className="text-xs text-text uppercase">
+                    <div className="text-sm text-text-muted uppercase">
                       Last Order
                     </div>
-                    <div className="text-sm font-medium text-neutral-400 mt-1">
+                    <div className="text-sm font-medium text-text-muted mt-1">
                       {sampleCustomer.orders[0].id}
                     </div>
-                    <div className="text-xs text-text mt-1">
+                    <div className="text-sm text-text-muted mt-1">
                       {formatDate(sampleCustomer.orders[0].date)}
                     </div>
                   </div>
@@ -607,7 +613,7 @@ const CompanyDetails = () => {
 
               <div className="bg-foreground rounded shadow-sm border p-2">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium text-neutral-400">
+                  <h3 className="font-medium text-text-muted">
                     Recent Activity
                   </h3>
                   <button className="text-sm text-primary hover:text-primary/80">
@@ -630,15 +636,15 @@ const CompanyDetails = () => {
                           </div>
                           <div>
                             <div className="text-sm">
-                              <span className="font-medium text-neutral-400">
+                              <span className="font-medium text-text-muted">
                                 {activity.user}
                               </span>
-                              <span className="text-neutral-400">
+                              <span className="text-text-muted">
                                 {" "}
                                 {activity.description}
                               </span>
                             </div>
-                            <div className="text-xs text-text mt-1">
+                            <div className="text-sm text-text-muted mt-1">
                               {formatDate(activity.date)}
                             </div>
                           </div>
@@ -658,7 +664,7 @@ const CompanyDetails = () => {
       {activeTab === "quotes" && <QuotesTab />}
 
       {activeTab === "orders" && (
-        <div className="text-center py-8 text-neutral-400">
+        <div className="text-center py-8 text-text-muted">
           This tab content is not implemented.
         </div>
       )}
