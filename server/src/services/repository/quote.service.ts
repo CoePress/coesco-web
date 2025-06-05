@@ -245,6 +245,7 @@ export class QuoteService extends BaseService<Quote> {
   }
 
   public async approveQuote(quoteId: string) {
+    // TODO: update quote number from draft number
     const quote = await this.getById(quoteId);
 
     if (!quote.success || !quote.data) {
@@ -296,15 +297,34 @@ export class QuoteService extends BaseService<Quote> {
     };
   }
 
+  public async sendQuote(quoteId: string) {
+    const quote = await this.getById(quoteId);
+
+    if (!quote.success || !quote.data) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    if (quote.data.status !== QuoteStatus.APPROVED) {
+      throw new BadRequestError("Quote is not approved");
+    }
+
+    const updatedQuote = await this.update(quoteId, {
+      status: QuoteStatus.SENT,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
+
   public async createRevision(quoteId: string) {}
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
     if (quote.journeyId) {
-      const journey = await prisma.journey.findUnique({
-        where: { id: quote.journeyId },
-      });
+      const journey = await journeyService.getById(quote.journeyId);
 
-      if (!journey) {
+      if (!journey.success || !journey.data) {
         throw new BadRequestError("Journey not found");
       }
     }

@@ -10,9 +10,10 @@ router.get("/:id/overview", quoteController.getOverview);
 
 router.post("/", quoteController.createQuote);
 router.post("/:id/items", quoteController.addItem);
+router.post("/:id/approve", quoteController.approveQuote);
+router.post("/:id/send", quoteController.sendQuote);
 
 router.patch("/:id", quoteController.update);
-router.patch("/:id/approve", quoteController.approveQuote);
 
 router.delete("/:id", quoteController.delete);
 router.delete("/:id/items/:itemId", quoteController.removeItem);

@@ -6,6 +6,7 @@ import {
   CheckCircle,
   Check,
   Send,
+  Eye,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -23,6 +24,8 @@ import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import useGetItems from "@/hooks/sales/use-get-items";
 import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
 import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
+import { useSendQuote } from "@/hooks/sales/use-send-quote";
+import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 
 const sampleConfigurations = [
   {
@@ -87,6 +90,9 @@ const QuoteDetails = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [isSendConfirmationOpen, setIsSendConfirmationOpen] = useState(false);
+  const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
+    useState(false);
   const [showAddItemConfirmation, setShowAddItemConfirmation] = useState(false);
   const [selectedItemForConfirmation, setSelectedItemForConfirmation] =
     useState<any>(null);
@@ -135,6 +141,20 @@ const QuoteDetails = () => {
     approveQuote,
   } = useApproveQuote();
 
+  const {
+    loading: sendQuoteLoading,
+    error: sendQuoteError,
+    success: sendQuoteSuccess,
+    sendQuote,
+  } = useSendQuote();
+
+  const {
+    loading: createRevisionLoading,
+    error: createRevisionError,
+    success: createRevisionSuccess,
+    createQuoteRevision,
+  } = useCreateQuoteRevision();
+
   const handleAddItem = async (itemId: string) => {
     const item = items?.find((i: any) => i.id === itemId);
     if (!item) return;
@@ -169,6 +189,24 @@ const QuoteDetails = () => {
     if (result) {
       await refreshQuote();
       setIsApprovalModalOpen(false);
+    }
+  };
+
+  const handleSendQuote = async () => {
+    if (!quoteId) return;
+    const result = await sendQuote(quoteId);
+    if (result) {
+      await refreshQuote();
+      setIsSendConfirmationOpen(false);
+    }
+  };
+
+  const handleCreateRevision = async () => {
+    if (!quoteId) return;
+    const result = await createQuoteRevision(quoteId);
+    if (result) {
+      await refreshQuote();
+      setIsRevisionConfirmationOpen(false);
     }
   };
 
@@ -245,6 +283,58 @@ const QuoteDetails = () => {
     return Object.values(confirmedItems).every((confirmed) => confirmed);
   }, [confirmedItems]);
 
+  const renderQuoteActions = () => {
+    switch (quoteOverview?.quote?.status) {
+      case "DRAFT":
+        return [
+          {
+            type: "button",
+            label: "Approve Quote",
+            variant: "primary",
+            icon: <CheckCircle size={16} />,
+            onClick: handleApproveClick,
+            disabled: quoteItems.length === 0 || approveQuoteLoading,
+          },
+        ];
+      case "APPROVED":
+        return [
+          {
+            type: "button",
+            label: "Edit Quote",
+            variant: "secondary-outline",
+            icon: <Edit size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Send Quote",
+            variant: "primary",
+            icon: <Send size={16} />,
+            onClick: () => setIsSendConfirmationOpen(true),
+            disabled: sendQuoteLoading,
+          },
+        ];
+      case "SENT":
+        return [
+          {
+            type: "button",
+            label: "View Quote",
+            variant: "secondary-outline",
+            icon: <Eye size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Create Revision",
+            variant: "primary",
+            icon: <Edit size={16} />,
+            onClick: () => setIsRevisionConfirmationOpen(true),
+            disabled: createRevisionLoading,
+          },
+        ];
+    }
+  };
+
   return (
     <div className="w-full flex-1">
       <PageHeader
@@ -252,32 +342,7 @@ const QuoteDetails = () => {
         description={pageDescription}
         backButton
         onBack={() => navigate("/sales/quotes")}
-        actions={[
-          {
-            type: "button",
-            label:
-              quoteOverview?.quote?.status === "DRAFT"
-                ? "Approve Quote"
-                : "Send Quote",
-            variant: "primary",
-            icon:
-              quoteOverview?.quote?.status === "DRAFT" ? (
-                <CheckCircle size={16} />
-              ) : (
-                <Send size={16} />
-              ),
-            disabled:
-              quoteOverview?.quote?.status === "DRAFT" &&
-              quoteItems.length === 0,
-            onClick: () => {
-              if (quoteOverview?.quote?.status === "DRAFT") {
-                handleApproveClick();
-              } else {
-                // TODO: Handle send quote
-              }
-            },
-          },
-        ]}
+        actions={renderQuoteActions() as any}
       />
 
       <div className="mx-auto p-2">
@@ -888,6 +953,60 @@ const QuoteDetails = () => {
                 handleApproveQuote();
               }}>
               Submit
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isSendConfirmationOpen}
+        onClose={() => setIsSendConfirmationOpen(false)}
+        title="Confirm Send Quote"
+        size="xs">
+        <div className="flex flex-col gap-4">
+          <div className="text-sm text-text-muted">
+            Are you sure you want to send this quote? This action cannot be
+            undone.
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsSendConfirmationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSendQuote}
+              disabled={sendQuoteLoading}>
+              {sendQuoteLoading ? "Sending..." : "Send Quote"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isRevisionConfirmationOpen}
+        onClose={() => setIsRevisionConfirmationOpen(false)}
+        title="Confirm Create Revision"
+        size="xs">
+        <div className="flex flex-col gap-4">
+          <div className="text-sm text-text-muted">
+            Are you sure you want to create a new revision of this quote? This
+            will create a copy of the current quote.
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsRevisionConfirmationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateRevision}
+              disabled={createRevisionLoading}>
+              {createRevisionLoading ? "Creating..." : "Create Revision"}
             </Button>
           </div>
         </div>

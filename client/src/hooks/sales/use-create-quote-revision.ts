@@ -2,26 +2,26 @@ import { instance } from "@/utils";
 import { AxiosError } from "axios";
 import { useState } from "react";
 
-export const useApproveQuote = () => {
+export const useCreateQuoteRevision = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
-  const approveQuote = async (quoteId: string) => {
+  const createQuoteRevision = async (quoteId: string) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const response = await instance.post(`/quotes/${quoteId}/approve`);
+      const response = await instance.post(`/quotes/${quoteId}/revision`);
       setSuccess(true);
       return response.data;
     } catch (error) {
       const errorMessage =
         error instanceof AxiosError
           ? error.response?.data?.message ||
-            "An error occurred while approving quote."
-          : "An error occurred while approving quote.";
+            "An error occurred while creating quote revision."
+          : "An error occurred while creating quote revision.";
 
       setError(errorMessage);
       return null;
@@ -34,6 +34,6 @@ export const useApproveQuote = () => {
     loading,
     error,
     success,
-    approveQuote,
+    createQuoteRevision,
   };
 };
