@@ -1,13 +1,9 @@
 import {
   Edit,
-  CheckCircle,
-  Download,
-  DollarSign,
   Plus,
   MoreHorizontal,
-  ArrowUpRight,
   ChevronDown,
-  PenBox,
+  CheckCircle,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -15,7 +11,6 @@ import {
   Button,
   Modal,
   PageHeader,
-  StatusBadge,
   PageSearch,
   Table,
   Tabs,
@@ -93,15 +88,23 @@ const QuoteDetails = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const quoteId = useParams().id;
+  const { id: quoteId } = useParams();
 
-  const { quoteOverview, loading, error } = useGetQuoteOverview({
+  const {
+    quoteOverview,
+    loading: quoteLoading,
+    error: quoteError,
+    refresh: refreshQuote,
+  } = useGetQuoteOverview({
     quoteId: quoteId || "",
   });
 
-  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
-
-  console.log(items);
+  const {
+    items,
+    loading: itemsLoading,
+    error: itemsError,
+    refresh: refreshItems,
+  } = useGetItems();
 
   const quoteItems = useMemo(() => {
     return quoteOverview?.quoteItems || [];
@@ -156,37 +159,22 @@ const QuoteDetails = () => {
         actions={[
           {
             type: "button",
-            label: "Export",
-            variant: "secondary-outline",
-            icon: <Download size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Revise",
+            label:
+              quoteOverview?.quote?.status === "DRAFT" ? "Approve" : "Revise",
             variant: "primary",
-            icon: <Edit size={16} />,
+            icon:
+              quoteOverview?.quote?.status === "DRAFT" ? (
+                <CheckCircle size={16} />
+              ) : (
+                <Edit size={16} />
+              ),
+            disabled:
+              quoteOverview?.quote?.status === "DRAFT" &&
+              quoteItems.length === 0,
             onClick: () => {},
           },
         ]}
       />
-
-      <div className="bg-foreground border-b p-2">
-        <div className="flex gap-2">
-          <Button
-            onClick={() => {}}
-            variant="secondary-outline">
-            <ArrowUpRight size={16} />
-            Request Approval
-          </Button>
-          <Button
-            onClick={() => {}}
-            variant="secondary-outline">
-            <DollarSign size={16} />
-            Convert to Order
-          </Button>
-        </div>
-      </div>
 
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
@@ -597,13 +585,19 @@ const QuoteDetails = () => {
                   ),
                   className: "text-right",
                 },
+                {
+                  key: "actions",
+                  header: "",
+                  render: (_, row) => (
+                    <div className="flex justify-end">
+                      <Button variant="secondary-outline">Add</Button>
+                    </div>
+                  ),
+                  className: "text-right",
+                },
               ]}
               data={items || []}
               total={items?.length || 0}
-              onRowClick={(row) => {
-                console.log("Selected item:", row);
-                toggleModal();
-              }}
             />
           ) : (
             <Table

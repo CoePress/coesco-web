@@ -51,7 +51,7 @@ const Pipeline = () => {
     <div
       key={deal.id}
       draggable={true}
-      className="bg-foreground rounded shadow-sm border p-3 mb-3 cursor-move hover:shadow select-none">
+      className="bg-foreground rounded shadow-sm border p-3 cursor-move hover:shadow select-none mb-2">
       <div className="text-sm font-medium text-neutral-400 mb-1 truncate">
         {deal.name}
       </div>
@@ -228,7 +228,7 @@ const Pipeline = () => {
       {viewMode === "kanban" && (
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="h-full w-full overflow-x-auto">
-            <div className="inline-flex gap-4 p-4">
+            <div className="inline-flex gap-2 p-2">
               {pipelineStages.map((stage) => (
                 <div
                   key={stage.id}
@@ -248,8 +248,7 @@ const Pipeline = () => {
                       {formatCurrency(getStageTotalValue(stage.id))}
                     </div>
                   </div>
-                  <div
-                    className={`p-3 rounded ${stage.color} h-max overflow-y-auto`}>
+                  <div className={`rounded h-max overflow-y-auto`}>
                     {getDealsByStage(stage.id).map((deal) =>
                       renderKanbanCard(deal)
                     )}
