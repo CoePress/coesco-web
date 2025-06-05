@@ -318,7 +318,21 @@ export class QuoteService extends BaseService<Quote> {
     };
   }
 
-  public async createRevision(quoteId: string) {}
+  public async createQuoteRevision(quoteId: string) {
+    const quote = await this.getById(quoteId);
+
+    if (!quote.success || !quote.data) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    if (quote.data.status !== QuoteStatus.SENT) {
+      throw new BadRequestError("Quote is not sent");
+    }
+
+    const quoteItems = await quoteItemService.getAll({
+      filter: { quoteId },
+    });
+  }
 
   protected async validate(quote: QuoteAttributes): Promise<void> {
     if (quote.journeyId) {

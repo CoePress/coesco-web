@@ -12,6 +12,7 @@ router.post("/", quoteController.createQuote);
 router.post("/:id/items", quoteController.addItem);
 router.post("/:id/approve", quoteController.approveQuote);
 router.post("/:id/send", quoteController.sendQuote);
+router.post("/:id/revision", quoteController.createQuoteRevision);
 
 router.patch("/:id", quoteController.update);
 

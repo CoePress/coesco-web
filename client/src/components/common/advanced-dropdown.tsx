@@ -168,61 +168,59 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
       <div
         className={`relative w-full max-w-sm ${className}`}
         ref={ref}>
-        <div className="relative">
-          <div className="relative flex items-center">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
-              placeholder={mode === "create" ? createPlaceholder : placeholder}
-              disabled={disabled || (!!selectedOption && mode !== "create")}
-              className={`w-full px-3 py-2 bg-foreground border rounded-md ${
-                disabled || (!!selectedOption && mode !== "create")
-                  ? "opacity-50"
-                  : "hover:border-primary"
-              } ${
-                isOpen ? "border-primary" : "border-border"
-              } focus:outline-none focus:ring-1 leading-0 focus:ring-primary focus:border-primary text-text ${
-                mode === "create" ? "pl-20" : ""
-              }`}
-            />
-            {mode === "create" && (
-              <div className="absolute left-2 flex items-center gap-1">
-                <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded flex items-center gap-1">
-                  New
-                  <button
-                    onClick={handleExitCreateNew}
-                    tabIndex={-1}
-                    className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer">
-                    <X size={12} />
-                  </button>
-                </div>
-              </div>
-            )}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {selectedOption && mode !== "create" && (
+        <div className="relative flex items-center">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            placeholder={mode === "create" ? createPlaceholder : placeholder}
+            disabled={disabled || (!!selectedOption && mode !== "create")}
+            className={`w-full px-3 py-2 bg-foreground border rounded-md ${
+              disabled || (!!selectedOption && mode !== "create")
+                ? "opacity-50"
+                : "hover:border-primary"
+            } ${
+              isOpen ? "border-primary" : "border-border"
+            } focus:outline-none focus:ring-1 leading-0 focus:ring-primary focus:border-primary text-text ${
+              mode === "create" ? "pl-20" : ""
+            }`}
+          />
+          {mode === "create" && (
+            <div className="absolute left-2 flex items-center gap-1">
+              <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded flex items-center gap-1">
+                New
                 <button
-                  onClick={handleClear}
-                  className="p-1 hover:bg-surface rounded-full cursor-pointer">
-                  <X
-                    size={14}
-                    className="text-text-muted"
-                  />
+                  onClick={handleExitCreateNew}
+                  tabIndex={-1}
+                  className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer">
+                  <X size={12} />
                 </button>
-              )}
-              {mode !== "create" && !selectedOption && (
-                <ChevronDown
-                  size={16}
-                  className={`text-text-muted transition-transform ${
-                    isOpen ? "transform rotate-180" : ""
-                  }`}
-                />
-              )}
+              </div>
             </div>
+          )}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {selectedOption && mode !== "create" && (
+              <button
+                onClick={handleClear}
+                className="p-1 hover:bg-surface rounded-full cursor-pointer">
+                <X
+                  size={14}
+                  className="text-text-muted"
+                />
+              </button>
+            )}
+            {mode !== "create" && !selectedOption && (
+              <ChevronDown
+                size={16}
+                className={`text-text-muted transition-transform ${
+                  isOpen ? "transform rotate-180" : ""
+                }`}
+              />
+            )}
           </div>
         </div>
 
