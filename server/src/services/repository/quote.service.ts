@@ -14,6 +14,7 @@ import {
   journeyService,
   quoteItemService,
 } from "..";
+import { Decimal } from "@prisma/client/runtime/library";
 
 type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 
@@ -226,15 +227,36 @@ export class QuoteService extends BaseService<Quote> {
       filter: { quoteId },
     });
 
+    const existingItem = currentItems.data?.find(
+      (item) => item.itemId === itemId
+    );
+
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+      const unitPriceDecimal = new Decimal(existingItem.unitPrice);
+      const newTotalPrice = unitPriceDecimal.mul(newQuantity);
+
+      const updatedItem = await quoteItemService.update(existingItem.id, {
+        quantity: newQuantity,
+        totalPrice: newTotalPrice,
+      });
+
+      return {
+        success: true,
+        data: updatedItem.data,
+      };
+    }
+
     const lineNumber = (currentItems.data?.length || 0) + 1;
     const unitPrice = item.data.unitPrice;
-    const totalPrice = unitPrice * quantity;
+    const unitPriceDecimal = new Decimal(unitPrice);
+    const totalPrice = unitPriceDecimal.mul(quantity);
 
     const newQuoteItem = await quoteItemService.create({
       quoteId: quoteId,
       itemId: itemId,
       lineNumber,
-      unitPrice,
+      unitPrice: unitPriceDecimal, // Also convert this
       quantity,
       totalPrice,
     });
@@ -436,10 +458,6 @@ export class QuoteService extends BaseService<Quote> {
 
     if (!quote.year) {
       quote.year = new Date().getFullYear();
-    }
-
-    if (!quote.number) {
-      quote.number = "0000000000";
     }
   }
 }
