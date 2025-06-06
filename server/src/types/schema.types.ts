@@ -1,4 +1,4 @@
-import { EmployeeRole, MachineType } from "./enum.types";
+import { EmployeeRole } from "./enum.types";
 
 export interface IBaseEntity {
   id: string;
@@ -51,7 +51,7 @@ export interface IStateDistribution {
 export interface IOverviewMachine {
   id: string;
   name: string;
-  type: MachineType;
+  type: string;
 }
 
 export interface IOverviewAlarm {
