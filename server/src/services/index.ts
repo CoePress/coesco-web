@@ -24,6 +24,7 @@ import { ItemService } from "./repository/item.service";
 import { MachineService } from "./repository/machine.service";
 import { MachineStatusService } from "./repository/machine-status.service";
 import { UserService } from "./repository/user.service";
+import { QuoteBuilderService } from "./domain/quote-builder.service";
 
 export const machineService = new MachineService();
 export const machineDataService = new MachineDataService();
@@ -62,3 +63,4 @@ export const configurationOptionService = new ConfigurationOptionService();
 export const salesService = new SalesService();
 export const itemService = new ItemService();
 export const userService = new UserService();
+export const quoteBuilderService = new QuoteBuilderService();

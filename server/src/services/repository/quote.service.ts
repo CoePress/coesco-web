@@ -1,19 +1,9 @@
-import {
-  CompanyStatus,
-  JourneyStatus,
-  Quote,
-  QuoteStatus,
-} from "@prisma/client";
+import { Quote, QuoteStatus } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { getEmployeeContext } from "@/utils/context";
-import {
-  companyService,
-  itemService,
-  journeyService,
-  quoteItemService,
-} from "..";
+import { itemService, journeyService, quoteItemService } from "..";
 import { Decimal } from "@prisma/client/runtime/library";
 
 type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
@@ -21,6 +11,15 @@ type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
+
+  public async getLatestRevision(quoteNumber: string) {
+    const quote = await this.model.findFirst({
+      where: { number: quoteNumber },
+      orderBy: { revision: "desc" },
+    });
+
+    return quote;
+  }
 
   public async getQuoteWithTotal(quoteId: string) {
     const quote = await this.model.findUnique({
@@ -40,140 +39,6 @@ export class QuoteService extends BaseService<Quote> {
     );
 
     return { ...quote, total };
-  }
-
-  public async createQuote(data: any) {
-    const employee = getEmployeeContext();
-    const quoteNumber = await this.generateQuoteNumber(true);
-
-    const { customerId, journeyId, customerName, journeyName } = data;
-
-    if (customerId && journeyId) {
-      // create quote & attach to journey
-      const quote = await this.create({
-        journeyId: journeyId,
-        status: QuoteStatus.DRAFT,
-        year: quoteNumber.year,
-        number: quoteNumber.number,
-        revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
-      });
-
-      if (!quote.success || !quote.data) {
-        throw new BadRequestError("Failed to create quote");
-      }
-
-      return {
-        success: true,
-        data: quote.data,
-      };
-    } else if (customerId && journeyName) {
-      // create journey & attach to company
-      const journey = await journeyService.create({
-        customer: { connect: { id: customerId } },
-        createdBy: { connect: { id: employee.id } },
-        name: journeyName,
-        status: JourneyStatus.ACTIVE,
-      });
-
-      if (!journey.success || !journey.data) {
-        throw new BadRequestError("Failed to create journey");
-      }
-
-      const quote = await this.create({
-        journeyId: journey.data.id,
-        status: QuoteStatus.DRAFT,
-        year: quoteNumber.year,
-        number: quoteNumber.number,
-        revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
-      });
-
-      if (!quote.success || !quote.data) {
-        throw new BadRequestError("Failed to create quote");
-      }
-
-      return {
-        success: true,
-        data: {
-          quote: quote.data,
-          journey: journey.data,
-        },
-      };
-    } else if (customerName && journeyName) {
-      // create customer -> then create journey & attach to customer -> then create quote & attach to journey
-      const company = await companyService.create({
-        name: customerName,
-        status: CompanyStatus.SANDBOX,
-      });
-
-      if (!company.success || !company.data) {
-        throw new BadRequestError("Failed to create company");
-      }
-
-      const journey = await journeyService.create({
-        customer: { connect: { id: company.data.id } },
-        createdBy: { connect: { id: employee.id } },
-        name: journeyName,
-        status: JourneyStatus.ACTIVE,
-      });
-
-      if (!journey.success || !journey.data) {
-        throw new BadRequestError("Failed to create journey");
-      }
-
-      const quote = await this.create({
-        journeyId: journey.data.id,
-        status: QuoteStatus.DRAFT,
-        year: quoteNumber.year,
-        number: quoteNumber.number,
-        revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
-      });
-
-      if (!quote.success || !quote.data) {
-        throw new BadRequestError("Failed to create quote");
-      }
-
-      return {
-        success: true,
-        data: {
-          quote: quote.data,
-          journey: journey.data,
-          company: company.data,
-        },
-      };
-    } else {
-      // create standalone quote
-      const quote = await this.create({
-        status: QuoteStatus.DRAFT,
-        year: quoteNumber.year,
-        number: quoteNumber.number,
-        revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
-      });
-
-      if (!quote.success || !quote.data) {
-        throw new BadRequestError("Failed to create quote");
-      }
-
-      return {
-        success: true,
-        data: quote.data,
-      };
-    }
   }
 
   public async addItemToQuote(
@@ -398,7 +263,7 @@ export class QuoteService extends BaseService<Quote> {
     }
   }
 
-  protected async generateQuoteNumber(
+  async generateQuoteNumber(
     isDraft: boolean = true
   ): Promise<{ year: number; number: string }> {
     const currentYear = new Date().getFullYear();
@@ -445,7 +310,7 @@ export class QuoteService extends BaseService<Quote> {
     }
   }
 
-  protected async generateRevisionNumber(quote: Quote): Promise<string> {
+  async generateRevisionNumber(quote: Quote): Promise<string> {
     const lastRevision = await this.model.findFirst({
       where: {
         year: quote.year,

@@ -6,9 +6,9 @@ const router = Router();
 router.get("/", quoteController.getAll);
 router.get("/:id", quoteController.getById);
 router.get("/:id/items", quoteController.getItems);
-router.get("/:id/overview", quoteController.getOverview);
+router.get("/:id/overview", quoteController.getQuoteOverview);
 
-router.post("/", quoteController.createQuote);
+router.post("/", quoteController.buildQuote);
 router.post("/:id/items", quoteController.addItem);
 router.post("/:id/approve", quoteController.approveQuote);
 router.post("/:id/send", quoteController.sendQuote);

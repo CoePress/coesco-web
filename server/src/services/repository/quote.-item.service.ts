@@ -1,7 +1,8 @@
-import { QuoteItem } from "@prisma/client";
+import { Prisma, QuoteItem } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { quoteService } from "..";
 
 type QuoteItemAttributes = Omit<QuoteItem, "id" | "createdAt" | "updatedAt">;
 
@@ -9,16 +10,31 @@ export class QuoteItemService extends BaseService<QuoteItem> {
   protected model = prisma.quoteItem;
   protected entityName = "QuoteItem";
 
+  public async getByQuoteId(quoteId: string, tx?: Prisma.TransactionClient) {
+    const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
+    const quoteItems = await model.findMany({
+      where: { quoteId },
+    });
+
+    if (!quoteItems) {
+      return {
+        success: false,
+        data: null,
+        message: "No quote items found",
+      };
+    }
+
+    return { success: true, data: quoteItems };
+  }
+
   protected async validate(quoteItem: QuoteItemAttributes): Promise<void> {
     if (!quoteItem.quoteId) {
       throw new BadRequestError("Quote ID is required");
     }
 
-    const quote = await prisma.quote.findUnique({
-      where: { id: quoteItem.quoteId },
-    });
+    const quote = await quoteService.getById(quoteItem.quoteId);
 
-    if (!quote) {
+    if (!quote.success || !quote.data) {
       throw new BadRequestError("Quote not found");
     }
 
