@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "build": "tsc && tsc-alias && npm run copy",
-    "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" dist",
+    "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" \"src/widget.html\" dist",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "seed-sample": "ts-node -r tsconfig-paths/register src/scripts/seed-sample.ts",

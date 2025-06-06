@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  </head>
+  <body>
+    <button id="sendButton">Send to External System</button>
+    <div id="status"></div>
+
+    <script>
+      Office.onReady(() => {
+        document.getElementById("sendButton").onclick = sendEmail;
+      });
+
+      function sendEmail() {
+        Office.context.mailbox.item.subject.getAsync((result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            document.getElementById("status").innerText = "Sent!";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

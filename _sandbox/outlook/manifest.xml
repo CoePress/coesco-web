@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" 
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+           xsi:type="MailApp">
+  <Id>y4c88c2af-7029-4eda-b158-af1315819357</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Coe Press Equipment</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Email Forwarder"/>
+  <Description DefaultValue="Send emails to external system"/>
+  
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://api.oee.cpec.com/widget.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  
+  <Permissions>ReadWriteItem</Permissions>
+  
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+</OfficeApp>

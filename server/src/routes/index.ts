@@ -29,6 +29,11 @@ router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
 router.use("/items", protect, itemRoutes);
 
+// Widget
+router.get("/widget.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "widget.html"));
+});
+
 // System
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
