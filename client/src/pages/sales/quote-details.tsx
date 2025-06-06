@@ -7,6 +7,8 @@ import {
   Check,
   Send,
   Eye,
+  X,
+  Trash,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -134,6 +136,10 @@ const QuoteDetails = () => {
   const [isSendConfirmationOpen, setIsSendConfirmationOpen] = useState(false);
   const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
     useState(false);
+  const [isDeleteItemModalOpen, setIsDeleteItemModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingQuantity, setEditingQuantity] = useState<number>(0);
 
   const { id: quoteId } = useParams();
 
@@ -505,7 +511,20 @@ const QuoteDetails = () => {
                         </div>
                       </td>
                       <td className="p-2 whitespace-nowrap text-right">
-                        <div className="text-sm text-text">{item.quantity}</div>
+                        {editingItemId === item.id ? (
+                          <input
+                            value={editingQuantity}
+                            onChange={(e) =>
+                              setEditingQuantity(parseInt(e.target.value) || 1)
+                            }
+                            className="px-2 rounded text-right text-text text-sm w-14"
+                            autoFocus
+                          />
+                        ) : (
+                          <div className="text-sm text-text">
+                            {item.quantity}
+                          </div>
+                        )}
                       </td>
                       <td className="p-2 whitespace-nowrap text-right">
                         <div className="text-sm text-text">
@@ -528,9 +547,57 @@ const QuoteDetails = () => {
                         </div>
                       </td>
                       <td className="flex items-center justify-end p-2">
-                        <Button variant="secondary-outline">
-                          <MoreHorizontal size={16} />
-                        </Button>
+                        {editingItemId === item.id ? (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingItemId(null);
+                                setEditingQuantity(0);
+                              }}>
+                              <X size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                console.log("Quantity updated:", {
+                                  itemId: item.id,
+                                  newQuantity: editingQuantity,
+                                });
+                                setEditingItemId(null);
+                                setEditingQuantity(0);
+                              }}>
+                              <Check size={16} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (quoteOverview?.quote?.status === "DRAFT") {
+                                  setEditingItemId(item.id);
+                                  setEditingQuantity(item.quantity);
+                                }
+                              }}>
+                              <Edit size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (quoteOverview?.quote?.status === "DRAFT") {
+                                  setSelectedItem(item);
+                                  setIsDeleteItemModalOpen(true);
+                                }
+                              }}>
+                              <Trash size={16} />
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -668,6 +735,17 @@ const QuoteDetails = () => {
         isOpen={isRevisionConfirmationOpen}
         onClose={() => setIsRevisionConfirmationOpen(false)}
         quoteId={quoteId || ""}
+        onSuccess={refreshQuote}
+      />
+
+      <DeleteItemModal
+        isOpen={isDeleteItemModalOpen}
+        onClose={() => {
+          setIsDeleteItemModalOpen(false);
+          setSelectedItem(null);
+        }}
+        quoteId={quoteId || ""}
+        item={selectedItem}
         onSuccess={refreshQuote}
       />
     </div>
@@ -1253,6 +1331,70 @@ const CreateRevisionModal = ({
             onClick={handleCreateRevision}
             disabled={createRevisionLoading}>
             {createRevisionLoading ? "Creating..." : "Create Revision"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const DeleteItemModal = ({
+  isOpen,
+  onClose,
+  quoteId,
+  item,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  item: any;
+  onSuccess: () => void;
+}) => {
+  const handleDelete = async () => {
+    if (!quoteId || !item) return;
+
+    // TODO: Implement delete quote item API call
+    console.log("Deleting item:", { quoteId, itemId: item.id });
+
+    onSuccess();
+    onClose();
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Delete Item"
+      size="xs">
+      <div className="flex flex-col gap-4">
+        <div className="text-sm text-text-muted">
+          Are you sure you want to delete this item from the quote? This action
+          cannot be undone.
+        </div>
+
+        {item && (
+          <div className="space-y-2">
+            <div>
+              <div className="font-medium text-text">{item.item.name}</div>
+              <div className="text-sm text-text-muted">
+                Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
+                {formatCurrency(item.totalPrice)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}>
+            Delete Item
           </Button>
         </div>
       </div>

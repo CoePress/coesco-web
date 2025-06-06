@@ -14,6 +14,10 @@ export class QuoteItemService extends BaseService<QuoteItem> {
     const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
     const quoteItems = await model.findMany({
       where: { quoteId },
+      include: {
+        item: true,
+        configuration: true,
+      },
     });
 
     if (!quoteItems) {
