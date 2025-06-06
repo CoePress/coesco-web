@@ -2,6 +2,41 @@
 <html>
   <head>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 10px;
+        background: #f3f2f1;
+      }
+      #sendButton {
+        background: #0078d4;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 14px;
+      }
+      #sendButton:hover {
+        background: #106ebe;
+      }
+      #status {
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .success {
+        background: #dff6dd;
+        color: #107c10;
+      }
+      .error {
+        background: #fde7e9;
+        color: #a4262c;
+      }
+    </style>
   </head>
   <body>
     <button id="sendButton">Send to External System</button>
@@ -13,9 +48,17 @@
       });
 
       function sendEmail() {
+        const statusDiv = document.getElementById("status");
+        statusDiv.className = "";
+        statusDiv.innerText = "Sending...";
+
         Office.context.mailbox.item.subject.getAsync((result) => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
-            document.getElementById("status").innerText = "Sent!";
+            statusDiv.className = "success";
+            statusDiv.innerText = "Email sent successfully!";
+          } else {
+            statusDiv.className = "error";
+            statusDiv.innerText = "Failed to send email. Please try again.";
           }
         });
       }

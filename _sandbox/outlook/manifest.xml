@@ -2,7 +2,7 @@
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" 
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
            xsi:type="MailApp">
-  <Id>y4c88c2af-7029-4eda-b158-af1315819357</Id>
+  <Id>4c88c2af-7029-4eda-b158-af1315819357</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Coe Press Equipment</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -24,7 +24,18 @@
       <DesktopSettings>
         <SourceLocation DefaultValue="https://api.oee.cpec.com/widget.html"/>
         <RequestedHeight>250</RequestedHeight>
+        <RequestedWidth>350</RequestedWidth>
       </DesktopSettings>
+      <TabletSettings>
+        <SourceLocation DefaultValue="https://api.oee.cpec.com/widget.html"/>
+        <RequestedHeight>250</RequestedHeight>
+        <RequestedWidth>350</RequestedWidth>
+      </TabletSettings>
+      <PhoneSettings>
+        <SourceLocation DefaultValue="https://api.oee.cpec.com/widget.html"/>
+        <RequestedHeight>250</RequestedHeight>
+        <RequestedWidth>350</RequestedWidth>
+      </PhoneSettings>
     </Form>
   </FormSettings>
   
