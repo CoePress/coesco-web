@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import { IEmployee, IQueryParams, IApiResponse } from "@/utils/types";
+import { IApiResponse, IQueryParams } from "@/utils/types";
 import { instance } from "@/utils";
 
 const useGetEmployees = ({
@@ -11,10 +11,11 @@ const useGetEmployees = ({
   limit = 25,
   search,
   filter,
+  include,
   dateFrom,
   dateTo,
 }: IQueryParams = {}) => {
-  const [employees, setEmployees] = useState<IEmployee[] | null>(null);
+  const [employees, setEmployees] = useState<any[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
@@ -50,13 +51,11 @@ const useGetEmployees = ({
         if (filter) params.filter = filter;
         if (dateFrom) params.dateFrom = dateFrom;
         if (dateTo) params.dateTo = dateTo;
+        if (include) params.include = JSON.stringify(include);
 
-        const { data } = await instance.get<IApiResponse<IEmployee[]>>(
-          `/employees`,
-          {
-            params,
-          }
-        );
+        const { data } = await instance.get<IApiResponse<any[]>>(`/employees`, {
+          params,
+        });
 
         if (data.success) {
           setEmployees(data.data || []);
@@ -90,6 +89,7 @@ const useGetEmployees = ({
     limit,
     search,
     filter,
+    include,
     dateFrom,
     dateTo,
   ]);

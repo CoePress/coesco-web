@@ -421,7 +421,7 @@ const QuoteDetails = () => {
           </div>
 
           <Card>
-            <div className="p-2 bg-foreground border-b flex justify-between items-center">
+            <div className="bg-foreground border-b flex justify-between items-center pb-2">
               <h2 className="font-semibold text-text-muted text-sm">
                 Quote Items
               </h2>

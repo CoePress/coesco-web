@@ -1,5 +1,5 @@
 import { Plus, RefreshCcw } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   StatusBadge,
@@ -35,7 +35,7 @@ const Employees = () => {
 
   const { updateEmployee, loading: updateLoading } = useUpdateEmployee();
 
-  const columns: TableColumn<IEmployee>[] = [
+  const columns: TableColumn<any>[] = [
     {
       key: "lastName",
       header: "Name",
@@ -56,15 +56,15 @@ const Employees = () => {
       header: "Job Title",
     },
     {
-      key: "role",
+      key: "user.role",
       header: "Role",
-      render: (value) => (
+      render: (_, row) => (
         <StatusBadge
-          label={value as string}
+          label={row.user.role as string}
           variant={
-            value === "ADMIN"
+            row.user.role === "ADMIN"
               ? "error"
-              : value === "EMPLOYEE"
+              : row.user.role === "EMPLOYEE"
               ? "success"
               : "default"
           }
@@ -72,11 +72,11 @@ const Employees = () => {
       ),
     },
     {
-      key: "lastLogin",
+      key: "user.lastLogin",
       header: "Last Login",
-      render: (value) => {
-        if (!value) return null;
-        return format(value as string, "MM/dd/yyyy hh:mm a");
+      render: (_, row) => {
+        if (!row.user.lastLogin) return null;
+        return format(row.user.lastLogin as string, "MM/dd/yyyy hh:mm a");
       },
     },
     {
@@ -97,11 +97,14 @@ const Employees = () => {
     },
   ];
 
+  const include = useMemo(() => ["user"], []);
+
   const { employees, loading, error, pagination, refresh } = useGetEmployees({
     page,
     limit,
     sort,
     order,
+    include,
   });
 
   if (loading || syncLoading) {

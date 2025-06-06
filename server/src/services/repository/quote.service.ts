@@ -175,15 +175,16 @@ export class QuoteService extends BaseService<Quote> {
 
       return {
         year: currentYear,
-        number: `${currentYear.toString().slice(-2)}-DRAFT-${nextSequence
-          .toString()
-          .padStart(4, "0")}`,
+        number: `DRAFT-${nextSequence.toString().padStart(5, "0")}`,
       };
     } else {
       const lastFinal = await this.model.findFirst({
         where: {
           year: currentYear,
-          number: { not: { contains: "DRAFT" } },
+          AND: [
+            { number: { not: { contains: "DRAFT" } } },
+            { number: { not: { contains: "REV" } } },
+          ],
         },
         orderBy: { number: "desc" },
       });
@@ -196,7 +197,7 @@ export class QuoteService extends BaseService<Quote> {
         year: currentYear,
         number: `${currentYear.toString().slice(-2)}-${nextSequence
           .toString()
-          .padStart(4, "0")}`,
+          .padStart(5, "0")}`,
       };
     }
   }
@@ -245,7 +246,6 @@ export class QuoteService extends BaseService<Quote> {
   }
 
   public async approveQuote(quoteId: string) {
-    // TODO: update quote number from draft number
     const quote = await this.getById(quoteId);
 
     if (!quote.success || !quote.data) {
@@ -283,12 +283,17 @@ export class QuoteService extends BaseService<Quote> {
       throw new BadRequestError("Quote items have no unit price or quantity");
     }
 
+    // Generate real quote number
+    const { year, number } = await this.generateQuoteNumber(false);
+
     const employee = getEmployeeContext();
 
     const updatedQuote = await this.update(quoteId, {
       status: QuoteStatus.APPROVED,
       approvedAt: new Date(),
       approvedById: employee.id,
+      year,
+      number,
     });
 
     return {

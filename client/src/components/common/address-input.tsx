@@ -385,16 +385,6 @@ const AddressAutocomplete = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (isInitializing) {
-    return (
-      <div className="w-full max-w-md p-4 bg-gray-50 border border-border rounded-sm">
-        <p className="text-gray-700 text-sm">
-          Initializing address autocomplete...
-        </p>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full max-w-md p-4 bg-red-50 border border-destructive rounded-sm">
