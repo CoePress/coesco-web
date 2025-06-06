@@ -55,10 +55,14 @@ export class QuoteController extends BaseController<Quote> {
     }
   }
 
-  public async removeItem(req: Request, res: Response, next: NextFunction) {
+  public async removeItemFromQuote(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
-      const { id, itemId } = req.params;
-      const result = {};
+      const { itemId } = req.params;
+      const result = await quoteBuilderService.removeItemFromQuote(itemId);
       res.status(200).json(result);
     } catch (error) {
       next(error);

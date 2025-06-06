@@ -29,6 +29,7 @@ import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
 import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
+import { useDeleteQuoteItem } from "@/hooks/sales/use-delete-quote-item";
 
 const sampleConfigurations = [
   {
@@ -965,7 +966,7 @@ const AddItemModal = ({
                         type="number"
                         min="1"
                         defaultValue="1"
-                        className="w-20 px-2 py-1 border rounded text-right"
+                        className="w-20 py-1 border rounded text-right"
                       />
                     ),
                     className: "text-right",
@@ -1351,14 +1352,20 @@ const DeleteItemModal = ({
   item: any;
   onSuccess: () => void;
 }) => {
+  const {
+    loading: deleteItemLoading,
+    error: deleteItemError,
+    deleteQuoteItem,
+  } = useDeleteQuoteItem();
+
   const handleDelete = async () => {
     if (!quoteId || !item) return;
 
-    // TODO: Implement delete quote item API call
-    console.log("Deleting item:", { quoteId, itemId: item.id });
-
-    onSuccess();
-    onClose();
+    const result = await deleteQuoteItem(item.id);
+    if (result) {
+      onSuccess();
+      onClose();
+    }
   };
 
   return (
@@ -1372,6 +1379,10 @@ const DeleteItemModal = ({
           Are you sure you want to delete this item from the quote? This action
           cannot be undone.
         </div>
+
+        {deleteItemError && (
+          <div className="text-sm text-red-500">{deleteItemError}</div>
+        )}
 
         {item && (
           <div className="space-y-2">
@@ -1393,8 +1404,9 @@ const DeleteItemModal = ({
           </Button>
           <Button
             variant="destructive"
-            onClick={handleDelete}>
-            Delete Item
+            onClick={handleDelete}
+            disabled={deleteItemLoading}>
+            {deleteItemLoading ? "Deleting..." : "Delete Item"}
           </Button>
         </div>
       </div>

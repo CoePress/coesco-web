@@ -16,7 +16,7 @@ router.post("/:id/revision", quoteController.createQuoteRevision);
 
 router.patch("/:id", quoteController.update);
 
+router.delete("/items/:itemId", quoteController.removeItemFromQuote);
 router.delete("/:id", quoteController.delete);
-router.delete("/:id/items/:itemId", quoteController.removeItem);
 
 export default router;

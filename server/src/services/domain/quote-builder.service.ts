@@ -169,9 +169,27 @@ export class QuoteBuilderService {
     };
   }
 
-  async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
+  async removeItemFromQuote(quoteItemId: string) {
     const quoteItem = await quoteItemService.getById(quoteItemId);
-    // if remaining quantity is zero, remove entire record & update other line numbers
+
+    const quoteId = quoteItem.data?.quoteId;
+    const currentItems = await quoteItemService.getByQuoteId(quoteId ?? "");
+
+    await quoteItemService.delete(quoteItemId);
+
+    const remainingItems =
+      currentItems.data?.filter((item: any) => item.id !== quoteItemId) || [];
+
+    for (let i = 0; i < remainingItems.length; i++) {
+      await quoteItemService.update(remainingItems[i].id, {
+        lineNumber: i + 1,
+      });
+    }
+
+    return {
+      success: true,
+      data: null,
+    };
   }
 
   async updateUnitPrice(quoteItemId: string, unitPrice: number) {
