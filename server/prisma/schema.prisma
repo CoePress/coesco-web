@@ -40,7 +40,6 @@ model Employee {
   hireDate    DateTime?
   jobTitle    String
   initials    String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -178,10 +177,6 @@ model Quote {
   year         Int
   number       String
   revision     String
-  subtotal     Decimal
-  taxAmount    Decimal?
-  totalAmount  Decimal
-  currency     String
   status       QuoteStatus
   createdById  String
   approvedById String?
@@ -203,9 +198,9 @@ model QuoteItem {
   quoteId         String
   configurationId String?
   itemId          String?
-  quantity        Int      @default(1)
-  unitPrice       Decimal  @default(0)
-  totalPrice      Decimal  @default(0)
+  quantity        Int
+  unitPrice       Decimal
+  totalPrice      Decimal
   lineNumber      Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

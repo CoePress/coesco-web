@@ -129,11 +129,6 @@ export class MachineDataService {
     this.activeRequests.clear();
   }
 
-  async refreshMachines() {
-    const machines = await machineService.getAll();
-    return machines.data;
-  }
-
   async getMachineOverview(startDate: string, endDate: string) {
     const now = new Date();
     const dateRange = createDateRange(startDate, endDate);

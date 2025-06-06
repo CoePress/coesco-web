@@ -22,6 +22,26 @@ export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
 
+  public async getQuoteWithTotal(quoteId: string) {
+    const quote = await this.model.findUnique({
+      where: { id: quoteId },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!quote) {
+      throw new BadRequestError("Quote not found");
+    }
+
+    const total = quote.items.reduce(
+      (sum, item) => sum + Number(item.unitPrice) * item.quantity,
+      0
+    );
+
+    return { ...quote, total };
+  }
+
   public async createQuote(data: any) {
     const employee = getEmployeeContext();
     const quoteNumber = await this.generateQuoteNumber(true);
@@ -156,53 +176,6 @@ export class QuoteService extends BaseService<Quote> {
     }
   }
 
-  public async generateQuoteNumber(
-    isDraft: boolean = true
-  ): Promise<{ year: number; number: string }> {
-    const currentYear = new Date().getFullYear();
-
-    if (isDraft) {
-      const lastDraft = await this.model.findFirst({
-        where: {
-          year: currentYear,
-          number: { contains: "DRAFT" },
-        },
-        orderBy: { number: "desc" },
-      });
-
-      const nextSequence = lastDraft
-        ? parseInt(lastDraft.number.split("-").pop() || "0") + 1
-        : 1;
-
-      return {
-        year: currentYear,
-        number: `DRAFT-${nextSequence.toString().padStart(5, "0")}`,
-      };
-    } else {
-      const lastFinal = await this.model.findFirst({
-        where: {
-          year: currentYear,
-          AND: [
-            { number: { not: { contains: "DRAFT" } } },
-            { number: { not: { contains: "REV" } } },
-          ],
-        },
-        orderBy: { number: "desc" },
-      });
-
-      const nextSequence = lastFinal
-        ? parseInt(lastFinal.number.split("-").pop() || "0") + 1
-        : 1;
-
-      return {
-        year: currentYear,
-        number: `${currentYear.toString().slice(-2)}-${nextSequence
-          .toString()
-          .padStart(5, "0")}`,
-      };
-    }
-  }
-
   public async addItemToQuote(
     quoteId: string,
     itemId: string,
@@ -265,6 +238,12 @@ export class QuoteService extends BaseService<Quote> {
       success: true,
       data: newQuoteItem.data,
     };
+  }
+
+  public async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
+    const quoteItem = await quoteItemService.getById(quoteItemId);
+
+    // if remaining quantity is zero, remove entire record & update other line numbers
   }
 
   public async approveQuote(quoteId: string) {
@@ -404,6 +383,68 @@ export class QuoteService extends BaseService<Quote> {
     };
   }
 
+  // Helper methods
+  protected async validate(quote: QuoteAttributes): Promise<void> {
+    if (quote.journeyId) {
+      const journey = await journeyService.getById(quote.journeyId);
+
+      if (!journey.success || !journey.data) {
+        throw new BadRequestError("Journey not found");
+      }
+    }
+
+    if (!quote.year) {
+      quote.year = new Date().getFullYear();
+    }
+  }
+
+  protected async generateQuoteNumber(
+    isDraft: boolean = true
+  ): Promise<{ year: number; number: string }> {
+    const currentYear = new Date().getFullYear();
+
+    if (isDraft) {
+      const lastDraft = await this.model.findFirst({
+        where: {
+          year: currentYear,
+          number: { contains: "DRAFT" },
+        },
+        orderBy: { number: "desc" },
+      });
+
+      const nextSequence = lastDraft
+        ? parseInt(lastDraft.number.split("-").pop() || "0") + 1
+        : 1;
+
+      return {
+        year: currentYear,
+        number: `DRAFT-${nextSequence.toString().padStart(5, "0")}`,
+      };
+    } else {
+      const lastFinal = await this.model.findFirst({
+        where: {
+          year: currentYear,
+          AND: [
+            { number: { not: { contains: "DRAFT" } } },
+            { number: { not: { contains: "REV" } } },
+          ],
+        },
+        orderBy: { number: "desc" },
+      });
+
+      const nextSequence = lastFinal
+        ? parseInt(lastFinal.number.split("-").pop() || "0") + 1
+        : 1;
+
+      return {
+        year: currentYear,
+        number: `${currentYear.toString().slice(-2)}-${nextSequence
+          .toString()
+          .padStart(5, "0")}`,
+      };
+    }
+  }
+
   protected async generateRevisionNumber(quote: Quote): Promise<string> {
     const lastRevision = await this.model.findFirst({
       where: {
@@ -445,19 +486,5 @@ export class QuoteService extends BaseService<Quote> {
     }
 
     throw new BadRequestError("Invalid revision format");
-  }
-
-  protected async validate(quote: QuoteAttributes): Promise<void> {
-    if (quote.journeyId) {
-      const journey = await journeyService.getById(quote.journeyId);
-
-      if (!journey.success || !journey.data) {
-        throw new BadRequestError("Journey not found");
-      }
-    }
-
-    if (!quote.year) {
-      quote.year = new Date().getFullYear();
-    }
   }
 }

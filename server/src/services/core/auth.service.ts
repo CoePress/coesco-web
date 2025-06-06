@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/utils/prisma";
 import { IAuthResponse, IAuthTokens } from "@/types/api.types";
 import { UserRole } from "@prisma/client";
+import { userService } from "..";
 
 export class AuthService {
   private msalClient: ConfidentialClientApplication;
