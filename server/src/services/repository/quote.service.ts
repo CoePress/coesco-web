@@ -2,9 +2,7 @@ import { Quote, QuoteStatus } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
-import { getEmployeeContext } from "@/utils/context";
-import { itemService, journeyService, quoteItemService } from "..";
-import { Decimal } from "@prisma/client/runtime/library";
+import { journeyService, quoteItemService } from "..";
 
 type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 
@@ -12,7 +10,7 @@ export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
 
-  public async getLatestRevision(quoteNumber: string) {
+  async getLatestRevision(quoteNumber: string) {
     const quote = await this.model.findFirst({
       where: { number: quoteNumber },
       orderBy: { revision: "desc" },
@@ -21,7 +19,7 @@ export class QuoteService extends BaseService<Quote> {
     return quote;
   }
 
-  public async getQuoteWithTotal(quoteId: string) {
+  async getQuoteWithTotal(quoteId: string) {
     const quote = await this.model.findUnique({
       where: { id: quoteId },
       include: {
@@ -41,134 +39,13 @@ export class QuoteService extends BaseService<Quote> {
     return { ...quote, total };
   }
 
-  public async addItemToQuote(
-    quoteId: string,
-    itemId: string,
-    quantity: number = 1
-  ) {
-    const quote = await this.model.findUnique({
-      where: { id: quoteId },
-    });
-
-    if (!quote) {
-      throw new BadRequestError("Quote not found");
-    }
-
-    const item = await itemService.getById(itemId);
-
-    if (!item.success || !item.data) {
-      throw new BadRequestError("Item not found");
-    }
-
-    // Get current quote items to determine next line number
-    const currentItems = await quoteItemService.getAll({
-      filter: { quoteId },
-    });
-
-    const existingItem = currentItems.data?.find(
-      (item) => item.itemId === itemId
-    );
-
-    if (existingItem) {
-      const newQuantity = existingItem.quantity + quantity;
-      const unitPriceDecimal = new Decimal(existingItem.unitPrice);
-      const newTotalPrice = unitPriceDecimal.mul(newQuantity);
-
-      const updatedItem = await quoteItemService.update(existingItem.id, {
-        quantity: newQuantity,
-        totalPrice: newTotalPrice,
-      });
-
-      return {
-        success: true,
-        data: updatedItem.data,
-      };
-    }
-
-    const lineNumber = (currentItems.data?.length || 0) + 1;
-    const unitPrice = item.data.unitPrice;
-    const unitPriceDecimal = new Decimal(unitPrice);
-    const totalPrice = unitPriceDecimal.mul(quantity);
-
-    const newQuoteItem = await quoteItemService.create({
-      quoteId: quoteId,
-      itemId: itemId,
-      lineNumber,
-      unitPrice: unitPriceDecimal, // Also convert this
-      quantity,
-      totalPrice,
-    });
-
-    return {
-      success: true,
-      data: newQuoteItem.data,
-    };
-  }
-
-  public async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
+  async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
     const quoteItem = await quoteItemService.getById(quoteItemId);
 
     // if remaining quantity is zero, remove entire record & update other line numbers
   }
 
-  public async approveQuote(quoteId: string) {
-    const quote = await this.getById(quoteId);
-
-    if (!quote.success || !quote.data) {
-      throw new BadRequestError("Quote not found");
-    }
-
-    if (quote.data.status !== QuoteStatus.DRAFT) {
-      throw new BadRequestError("Quote is not draft");
-    }
-
-    if (!quote.data.journeyId) {
-      throw new BadRequestError("Quote has no journey");
-    }
-
-    const quoteItems = await quoteItemService.getAll({
-      filter: { quoteId },
-    });
-
-    if (!quoteItems.success || !quoteItems.data) {
-      throw new BadRequestError("Quote items not found");
-    }
-
-    if (quoteItems.data.length === 0) {
-      throw new BadRequestError("Quote has no items");
-    }
-
-    // check if quote items have a unit price
-    const hasUnitPrice = quoteItems.data.some(
-      (item) => item.unitPrice === null
-    );
-
-    const hasQuantity = quoteItems.data.some((item) => item.quantity === null);
-
-    if (hasUnitPrice || hasQuantity) {
-      throw new BadRequestError("Quote items have no unit price or quantity");
-    }
-
-    // Generate real quote number
-    const { year, number } = await this.generateQuoteNumber(false);
-
-    const employee = getEmployeeContext();
-
-    const updatedQuote = await this.update(quoteId, {
-      status: QuoteStatus.APPROVED,
-      approvedAt: new Date(),
-      approvedById: employee.id,
-      year,
-      number,
-    });
-
-    return {
-      success: true,
-      data: updatedQuote.data,
-    };
-  }
-
-  public async sendQuote(quoteId: string) {
+  async sendQuote(quoteId: string) {
     const quote = await this.getById(quoteId);
 
     if (!quote.success || !quote.data) {
@@ -189,7 +66,7 @@ export class QuoteService extends BaseService<Quote> {
     };
   }
 
-  public async createQuoteRevision(quoteId: string) {
+  async createQuoteRevision(quoteId: string) {
     const quote = await this.getById(quoteId);
 
     if (!quote.success || !quote.data) {

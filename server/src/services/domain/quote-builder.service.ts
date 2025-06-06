@@ -1,19 +1,16 @@
 import { BadRequestError } from "@/middleware/error.middleware";
 import { getEmployeeContext } from "@/utils/context";
-import {
-  CompanyStatus,
-  JourneyStatus,
-  Quote,
-  QuoteStatus,
-} from "@prisma/client";
+import { CompanyStatus, JourneyStatus, QuoteStatus } from "@prisma/client";
 import {
   companyService,
   employeeService,
+  itemService,
   journeyService,
   quoteItemService,
   quoteService,
 } from "..";
 import { prisma } from "@/utils/prisma";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export class QuoteBuilderService {
   async buildQuote(data: any) {
@@ -128,11 +125,113 @@ export class QuoteBuilderService {
     }
   }
 
-  async addItemToQuote() {}
+  async addItemToQuote(quoteId: string, itemId: string, quantity: number = 1) {
+    const currentItems = await quoteItemService.getByQuoteId(quoteId);
+    const item = await itemService.getById(itemId);
+
+    const existingItem = currentItems.data?.find(
+      (i: any) => i.itemId === itemId
+    );
+
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+      const unitPriceDecimal = new Decimal(existingItem.unitPrice);
+      const newTotalPrice = unitPriceDecimal.mul(newQuantity);
+
+      const updatedItem = await quoteItemService.update(existingItem.id, {
+        quantity: newQuantity,
+        totalPrice: newTotalPrice,
+      });
+
+      return {
+        success: true,
+        data: updatedItem.data,
+      };
+    }
+
+    const lineNumber = (currentItems.data?.length || 0) + 1;
+    const unitPrice = item.data?.unitPrice ?? 0;
+    const unitPriceDecimal = new Decimal(unitPrice);
+    const totalPrice = unitPriceDecimal.mul(quantity);
+
+    const newQuoteItem = await quoteItemService.create({
+      quoteId: quoteId,
+      itemId: itemId,
+      lineNumber,
+      unitPrice: unitPriceDecimal,
+      quantity,
+      totalPrice,
+    });
+
+    return {
+      success: true,
+      data: newQuoteItem.data,
+    };
+  }
 
   async removeItemFromQuote() {}
 
-  async updateItemInQuote() {}
+  async updateUnitPrice(quoteItemId: string, unitPrice: number) {
+    const quoteItem = await quoteItemService.getById(quoteItemId);
+    const unitPriceDecimal = new Decimal(unitPrice);
+
+    const updatedItem = await quoteItemService.update(quoteItemId, {
+      unitPrice: unitPriceDecimal,
+      totalPrice: unitPriceDecimal.mul(quoteItem.data?.quantity ?? 0),
+    });
+
+    return {
+      success: true,
+      data: updatedItem.data,
+    };
+  }
+
+  async approveQuote(quoteId: string) {
+    const quote = await quoteService.getById(quoteId);
+
+    if (quote.data?.status !== QuoteStatus.DRAFT) {
+      throw new BadRequestError("Quote is not draft");
+    }
+
+    if (!quote.data.journeyId) {
+      throw new BadRequestError("Quote has no journey");
+    }
+
+    const quoteItems = await quoteItemService.getByQuoteId(quoteId);
+
+    if (quoteItems.data.length === 0) {
+      throw new BadRequestError("Quote has no items");
+    }
+
+    const hasUnitPrice = quoteItems.data.some(
+      (item: any) => item.unitPrice === null
+    );
+
+    const hasQuantity = quoteItems.data.some(
+      (item: any) => item.quantity === null
+    );
+
+    if (hasUnitPrice || hasQuantity) {
+      throw new BadRequestError("Quote items have no unit price or quantity");
+    }
+
+    const { year, number } = await quoteService.generateQuoteNumber(false);
+
+    const employee = getEmployeeContext();
+
+    const updatedQuote = await quoteService.update(quoteId, {
+      status: QuoteStatus.APPROVED,
+      approvedAt: new Date(),
+      approvedById: employee.id,
+      year,
+      number,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
 
   async getQuoteOverview(quoteId: string) {
     return await prisma.$transaction(async (tx) => {

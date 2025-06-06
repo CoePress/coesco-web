@@ -1,5 +1,5 @@
 import { Quote } from "@prisma/client";
-import { quoteBuilderService, quoteService, salesService } from "@/services";
+import { quoteBuilderService, quoteService } from "@/services";
 import { BaseController } from "./_";
 import { NextFunction, Request, Response } from "express";
 
@@ -40,11 +40,15 @@ export class QuoteController extends BaseController<Quote> {
     }
   }
 
-  public async addItem(req: Request, res: Response, next: NextFunction) {
+  public async addItemToQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { itemId, quantity } = req.body;
-      const result = await quoteService.addItemToQuote(id, itemId, quantity);
+      const result = await quoteBuilderService.addItemToQuote(
+        id,
+        itemId,
+        quantity
+      );
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -64,7 +68,7 @@ export class QuoteController extends BaseController<Quote> {
   public async approveQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteService.approveQuote(id);
+      const result = await quoteBuilderService.approveQuote(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
