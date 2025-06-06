@@ -289,9 +289,6 @@ export class QuoteBuilderService {
       year: quote.data.year,
       number: quote.data.number,
       revision: newRevision,
-      subtotal: quote.data.subtotal,
-      totalAmount: quote.data.totalAmount,
-      currency: quote.data.currency,
       createdById: quote.data.createdById,
     });
 
