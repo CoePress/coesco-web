@@ -21,22 +21,19 @@ export class QuoteBuilderService {
 
     if (customerId && journeyId) {
       return await quoteService.create({
-        journeyId: journeyId,
+        journey: { connect: { id: journeyId } },
         status: QuoteStatus.DRAFT,
         year: quoteNumber.year,
         number: quoteNumber.number,
         revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
+        createdBy: { connect: { id: employee.id } },
       });
     } else if (customerId && journeyName) {
       const journey = await journeyService.create({
         customer: { connect: { id: customerId } },
-        createdBy: { connect: { id: employee.id } },
         name: journeyName,
         status: JourneyStatus.ACTIVE,
+        createdBy: { connect: { id: employee.id } },
       });
 
       if (!journey.success || !journey.data) {
@@ -44,15 +41,12 @@ export class QuoteBuilderService {
       }
 
       const quote = await quoteService.create({
-        journeyId: journey.data.id,
+        journey: { connect: { id: journey.data.id } },
         status: QuoteStatus.DRAFT,
         year: quoteNumber.year,
         number: quoteNumber.number,
         revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
+        createdBy: { connect: { id: employee.id } },
       });
 
       if (!quote.success || !quote.data) {
@@ -78,9 +72,9 @@ export class QuoteBuilderService {
 
       const journey = await journeyService.create({
         customer: { connect: { id: company.data.id } },
-        createdBy: { connect: { id: employee.id } },
         name: journeyName,
         status: JourneyStatus.ACTIVE,
+        createdBy: { connect: { id: employee.id } },
       });
 
       if (!journey.success || !journey.data) {
@@ -88,15 +82,12 @@ export class QuoteBuilderService {
       }
 
       const quote = await quoteService.create({
-        journeyId: journey.data.id,
+        journey: { connect: { id: journey.data.id } },
         status: QuoteStatus.DRAFT,
         year: quoteNumber.year,
         number: quoteNumber.number,
         revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
+        createdBy: { connect: { id: employee.id } },
       });
 
       if (!quote.success || !quote.data) {
@@ -117,10 +108,7 @@ export class QuoteBuilderService {
         year: quoteNumber.year,
         number: quoteNumber.number,
         revision: "A",
-        subtotal: 0,
-        totalAmount: 0,
-        currency: "USD",
-        createdById: employee.id,
+        createdBy: { connect: { id: employee.id } },
       });
     }
   }

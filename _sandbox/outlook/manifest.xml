@@ -4,17 +4,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:type="TaskPaneApp">
   
-  <Id>bfbb4398-0bd1-48d7-bbf7-942da451be3f</Id>
+  <Id>01eac144-e55a-45a7-b6e3-f1cc60ab0126</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Coe Press</ProviderName>
+  <ProviderName>OEE Company</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   
-  <DisplayName DefaultValue="OEE System Integration" />
-  <Description DefaultValue="Send emails to external OEE system" />
-  <IconUrl DefaultValue="https://api.oee.cpec.com/api/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://api.oee.cpec.com/api/icon-64.png" />
-  
-  <SupportUrl DefaultValue="https://api.oee.cpec.com/support" />
+  <DisplayName DefaultValue="OEE System" />
+  <Description DefaultValue="OEE integration" />
+  <IconUrl DefaultValue="https://via.placeholder.com/32x32.png" />
   
   <Hosts>
     <Host Name="Mailbox" />
@@ -30,22 +27,15 @@
     <Form xsi:type="ItemRead">
       <DesktopSettings>
         <SourceLocation DefaultValue="https://api.oee.cpec.com/api/widget.html" />
-        <RequestedHeight>400</RequestedHeight>
-      </DesktopSettings>
-    </Form>
-    <Form xsi:type="ItemEdit">
-      <DesktopSettings>
-        <SourceLocation DefaultValue="https://api.oee.cpec.com/api/widget.html" />
-        <RequestedHeight>400</RequestedHeight>
+        <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
   
-  <Permissions>ReadWriteItem</Permissions>
+  <Permissions>ReadItem</Permissions>
   
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit" />
   </Rule>
   
 </OfficeApp>
