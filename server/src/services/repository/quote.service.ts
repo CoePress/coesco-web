@@ -1,8 +1,8 @@
-import { Quote, QuoteStatus } from "@prisma/client";
+import { Quote } from "@prisma/client";
 import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
-import { journeyService, quoteItemService } from "..";
+import { journeyService } from "..";
 
 type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 
@@ -17,127 +17,6 @@ export class QuoteService extends BaseService<Quote> {
     });
 
     return quote;
-  }
-
-  async getQuoteWithTotal(quoteId: string) {
-    const quote = await this.model.findUnique({
-      where: { id: quoteId },
-      include: {
-        items: true,
-      },
-    });
-
-    if (!quote) {
-      throw new BadRequestError("Quote not found");
-    }
-
-    const total = quote.items.reduce(
-      (sum, item) => sum + Number(item.unitPrice) * item.quantity,
-      0
-    );
-
-    return { ...quote, total };
-  }
-
-  async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
-    const quoteItem = await quoteItemService.getById(quoteItemId);
-
-    // if remaining quantity is zero, remove entire record & update other line numbers
-  }
-
-  async sendQuote(quoteId: string) {
-    const quote = await this.getById(quoteId);
-
-    if (!quote.success || !quote.data) {
-      throw new BadRequestError("Quote not found");
-    }
-
-    if (quote.data.status !== QuoteStatus.APPROVED) {
-      throw new BadRequestError("Quote is not approved");
-    }
-
-    const updatedQuote = await this.update(quoteId, {
-      status: QuoteStatus.SENT,
-    });
-
-    return {
-      success: true,
-      data: updatedQuote.data,
-    };
-  }
-
-  async createQuoteRevision(quoteId: string) {
-    const quote = await this.getById(quoteId);
-
-    if (!quote.success || !quote.data) {
-      throw new BadRequestError("Quote not found");
-    }
-
-    if (quote.data.status !== QuoteStatus.SENT) {
-      throw new BadRequestError("Quote is not sent");
-    }
-
-    const quoteItems = await quoteItemService.getAll({
-      filter: { quoteId },
-    });
-
-    if (!quoteItems.success || !quoteItems.data) {
-      throw new BadRequestError("Failed to fetch quote items");
-    }
-
-    const newRevision = await this.generateRevisionNumber(quote.data);
-
-    const newQuote = await this.create({
-      journeyId: quote.data.journeyId,
-      status: QuoteStatus.DRAFT,
-      year: quote.data.year,
-      number: quote.data.number,
-      revision: newRevision,
-      subtotal: quote.data.subtotal,
-      totalAmount: quote.data.totalAmount,
-      currency: quote.data.currency,
-      createdById: quote.data.createdById,
-    });
-
-    if (!newQuote.success || !newQuote.data) {
-      throw new BadRequestError("Failed to create quote revision");
-    }
-
-    // Copy all items from the original quote
-    for (const item of quoteItems.data) {
-      await quoteItemService.create({
-        quoteId: newQuote.data.id,
-        itemId: item.itemId,
-        lineNumber: item.lineNumber,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-        totalPrice: item.totalPrice,
-      });
-    }
-
-    await this.update(quoteId, {
-      status: QuoteStatus.REVISED,
-    });
-
-    return {
-      success: true,
-      data: newQuote.data,
-    };
-  }
-
-  // Helper methods
-  protected async validate(quote: QuoteAttributes): Promise<void> {
-    if (quote.journeyId) {
-      const journey = await journeyService.getById(quote.journeyId);
-
-      if (!journey.success || !journey.data) {
-        throw new BadRequestError("Journey not found");
-      }
-    }
-
-    if (!quote.year) {
-      quote.year = new Date().getFullYear();
-    }
   }
 
   async generateQuoteNumber(
@@ -228,5 +107,19 @@ export class QuoteService extends BaseService<Quote> {
     }
 
     throw new BadRequestError("Invalid revision format");
+  }
+
+  protected async validate(quote: QuoteAttributes): Promise<void> {
+    if (quote.journeyId) {
+      const journey = await journeyService.getById(quote.journeyId);
+
+      if (!journey.success || !journey.data) {
+        throw new BadRequestError("Journey not found");
+      }
+    }
+
+    if (!quote.year) {
+      quote.year = new Date().getFullYear();
+    }
   }
 }

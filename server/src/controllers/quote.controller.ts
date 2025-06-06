@@ -78,7 +78,7 @@ export class QuoteController extends BaseController<Quote> {
   public async sendQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteService.sendQuote(id);
+      const result = await quoteBuilderService.sendQuote(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -92,7 +92,7 @@ export class QuoteController extends BaseController<Quote> {
   ) {
     try {
       const { id } = req.params;
-      const result = await quoteService.createQuoteRevision(id);
+      const result = await quoteBuilderService.createQuoteRevision(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);

@@ -169,7 +169,10 @@ export class QuoteBuilderService {
     };
   }
 
-  async removeItemFromQuote() {}
+  async removeItemFromQuote(quoteItemId: string, quantity: number = 1) {
+    const quoteItem = await quoteItemService.getById(quoteItemId);
+    // if remaining quantity is zero, remove entire record & update other line numbers
+  }
 
   async updateUnitPrice(quoteItemId: string, unitPrice: number) {
     const quoteItem = await quoteItemService.getById(quoteItemId);
@@ -230,6 +233,83 @@ export class QuoteBuilderService {
     return {
       success: true,
       data: updatedQuote.data,
+    };
+  }
+
+  async sendQuote(quoteId: string) {
+    // TODO: send email to customer
+    const quote = await quoteService.getById(quoteId);
+
+    if (quote.data?.status !== QuoteStatus.APPROVED) {
+      throw new BadRequestError("Quote is not approved");
+    }
+
+    const updatedQuote = await quoteService.update(quoteId, {
+      status: QuoteStatus.SENT,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
+
+  async createQuoteRevision(quoteId: string) {
+    const quote = await quoteService.getById(quoteId);
+
+    if (quote.data?.status !== QuoteStatus.SENT) {
+      throw new BadRequestError("Quote is not sent");
+    }
+
+    const quoteItems = await quoteItemService.getByQuoteId(quoteId);
+
+    const newRevision = await quoteService.generateRevisionNumber(quote.data);
+
+    const newQuote = await quoteService.create({
+      journeyId: quote.data.journeyId,
+      status: QuoteStatus.DRAFT,
+      year: quote.data.year,
+      number: quote.data.number,
+      revision: newRevision,
+      subtotal: quote.data.subtotal,
+      totalAmount: quote.data.totalAmount,
+      currency: quote.data.currency,
+      createdById: quote.data.createdById,
+    });
+
+    for (const item of quoteItems.data) {
+      await quoteItemService.create({
+        quoteId: newQuote.data?.id,
+        itemId: item.itemId,
+        lineNumber: item.lineNumber,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice,
+      });
+    }
+
+    await quoteService.update(quoteId, {
+      status: QuoteStatus.REVISED,
+    });
+
+    return {
+      success: true,
+      data: newQuote.data,
+    };
+  }
+
+  async getQuoteWithTotal(quoteId: string) {
+    const quote = await quoteService.getById(quoteId);
+    const quoteItems = await quoteItemService.getByQuoteId(quoteId);
+
+    const total = quoteItems.data?.reduce(
+      (sum: number, item: any) => sum + Number(item.unitPrice) * item.quantity,
+      0
+    );
+
+    return {
+      ...quote.data,
+      total,
     };
   }
 

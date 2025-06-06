@@ -78,6 +78,11 @@ export abstract class BaseService<TEntity> {
     }
 
     const entity = await model.create({ data });
+
+    if (!entity) {
+      throw new BadRequestError("Failed to create entity");
+    }
+
     return { success: true, data: entity };
   }
 
