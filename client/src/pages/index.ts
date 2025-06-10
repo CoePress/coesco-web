@@ -32,3 +32,10 @@ export { default as ChatPLK } from "./_test/chat-plk";
 export { default as Design } from "./_test/design";
 export { default as Sandbox } from "./_test/sandbox";
 export { default as WarehouseMap } from "./_test/map";
+
+// CRM
+export { default as Companies } from "./crm/companies";
+export { default as CompanyDetails } from "./crm/company-details";
+export { default as Contacts } from "./crm/contacts";
+export { default as ContactDetails } from "./crm/contact-details";
+export { default as Addresses } from "./crm/addresses";

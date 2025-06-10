@@ -18,10 +18,16 @@ import {
   Clock,
   GanttChart,
   Calendar,
+  MapPin,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import {
+  Addresses,
+  Companies,
+  CompanyDetails,
+  ContactDetails,
+  Contacts,
   Employees,
   Gantt,
   MachineHistory,
@@ -45,6 +51,7 @@ import {
 
 import PopupWindow from "@/components/shared/popup-window";
 import { __dev__ } from "./env";
+import Company from "@/pages/company";
 
 export type Module = {
   sequence: number;
@@ -144,6 +151,12 @@ const salesModule: Module = {
         },
       ],
     },
+    {
+      path: "/company",
+      label: "Company",
+      icon: UsersIcon,
+      component: Company,
+    },
   ],
   popups: [
     {
@@ -151,6 +164,51 @@ const salesModule: Module = {
       component: PopupWindow,
     },
   ],
+};
+
+const crmModule: Module = {
+  sequence: 2,
+  path: "/crm",
+  label: "CRM",
+  icon: UsersIcon,
+  status: "development",
+  pages: [
+    {
+      path: "/companies",
+      label: "Companies",
+      icon: UsersIcon,
+      component: SalesCompanies,
+      children: [
+        {
+          path: "/:id",
+          label: "Company Details",
+          icon: User,
+          component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      path: "/contacts",
+      label: "Contacts",
+      icon: UsersIcon,
+      component: Contacts,
+      children: [
+        {
+          path: "/:id",
+          label: "Contact Details",
+          icon: User,
+          component: ContactDetails,
+        },
+      ],
+    },
+    {
+      path: "/addresses",
+      label: "Addresses",
+      icon: MapPin,
+      component: Addresses,
+    },
+  ],
+  popups: [],
 };
 
 export const warehouseModule: Module = {
@@ -240,7 +298,13 @@ const adminModule: Module = {
   popups: [],
 };
 
-const allModules = [salesModule, productionModule, adminModule];
+const allModules = [
+  salesModule,
+  productionModule,
+  adminModule,
+  warehouseModule,
+  crmModule,
+];
 
 const devModules = allModules.filter(
   (module) => module.status === "development"

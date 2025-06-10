@@ -80,7 +80,7 @@ const Table = <T extends Record<string, any>>({
               {selectable && (
                 <th
                   scope="col"
-                  className="pl-4 py-3 text-left">
+                  className="pl-4 py-2 text-left">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-border"
@@ -93,7 +93,7 @@ const Table = <T extends Record<string, any>>({
                 <th
                   key={column.key}
                   scope="col"
-                  className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
+                  className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
                     onSortChange && column.header.toLowerCase() !== "actions"
                       ? "cursor-pointer hover:bg-surface"
                       : ""
@@ -124,7 +124,7 @@ const Table = <T extends Record<string, any>>({
                   onClick={() => onRowClick?.(row)}>
                   {selectable && (
                     <td
-                      className="pl-4 py-3 whitespace-nowrap"
+                      className="pl-4 py-2 whitespace-nowrap"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleRow(row[idField]);
@@ -140,7 +140,7 @@ const Table = <T extends Record<string, any>>({
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`px-3 py-3 whitespace-nowrap ${
+                      className={`px-2 py-2 whitespace-nowrap ${
                         column.className || ""
                       }`}>
                       {column.render
@@ -156,7 +156,7 @@ const Table = <T extends Record<string, any>>({
       </div>
 
       {pagination && (
-        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
+        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full rounded-b-lg">
           <div className="text-sm text-text-muted">
             Showing{" "}
             <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}

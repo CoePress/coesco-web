@@ -14,7 +14,7 @@ const Companies = () => {
       header: "Name",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/companies/${row.id}`}>{row.name}</Link>
+        <Link to={`/crm/companies/${row.id}`}>{row.name}</Link>
       ),
     },
     {
@@ -78,21 +78,23 @@ const Companies = () => {
         ]}
       />
 
-      <PageSearch
-        placeholder="Search companies..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-      />
+      <div className="p-2 flex flex-col">
+        <PageSearch
+          placeholder="Search companies..."
+          filters={[
+            { label: "Filters", icon: Filter, onClick: () => {} },
+            { label: "Status", icon: ChevronDown, onClick: () => {} },
+          ]}
+        />
 
-      <Table<any>
-        columns={columns}
-        data={companies || []}
-        total={companies?.length || 0}
-        idField="id"
-        pagination
-      />
+        <Table<any>
+          columns={columns}
+          data={companies || []}
+          total={companies?.length || 0}
+          idField="id"
+          pagination
+        />
+      </div>
     </div>
   );
 };

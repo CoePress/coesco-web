@@ -268,11 +268,11 @@ const Layout = ({ employee, children }: LayoutProps) => {
         setIsOpen={toggleSidebar}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* <Header
+        <Header
           employee={employee}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={sidebarExpanded}
-        /> */}
+        />
 
         {isCommandBarOpen && (
           <div className="fixed inset-0 flex items-start justify-center pt-32 z-50 bg-background/50 backdrop-blur-sm">

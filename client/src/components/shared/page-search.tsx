@@ -19,9 +19,9 @@ const PageSearch = ({
   labelTrigger,
 }: PageSearchProps) => {
   return (
-    <div className="flex items-center justify-between p-2 bg-foreground border-b">
-      <div className="flex items-center gap-3 w-2/3">
-        <div className="relative flex-1">
+    <div className="flex items-center justify-between p-2 bg-foreground border-b rounded-t-lg">
+      <div className="flex items-center gap-2 justify-between w-full">
+        <div className="relative flex-1 max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search
               size={18}
