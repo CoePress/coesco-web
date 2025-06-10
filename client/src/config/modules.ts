@@ -24,6 +24,7 @@ import { ComponentType } from "react";
 
 import {
   Addresses,
+  Companies,
   CompanyDetails,
   ContactDetails,
   Contacts,
@@ -35,8 +36,6 @@ import {
   ProductRules,
   Reports,
   SalesCatalog,
-  SalesCompanies,
-  SalesCompanyDetails,
   SalesConfigBuilder,
   SalesDashboard,
   SalesJourneyDetails,
@@ -95,6 +94,20 @@ const salesModule: Module = {
       component: SalesPipeline,
     },
     {
+      path: "/deals",
+      label: "Deals",
+      icon: Calendar,
+      component: SalesJourneys,
+      children: [
+        {
+          path: "/:id",
+          label: "Deal Details",
+          icon: Calendar,
+          component: SalesJourneyDetails,
+        },
+      ],
+    },
+    {
       path: "/quotes",
       label: "Quotes",
       icon: FileText,
@@ -109,74 +122,10 @@ const salesModule: Module = {
       ],
     },
     {
-      path: "/journeys",
-      label: "Journeys",
-      icon: Calendar,
-      component: SalesJourneys,
-      children: [
-        {
-          path: "/:id",
-          label: "Journey Details",
-          icon: Calendar,
-          component: SalesJourneyDetails,
-        },
-      ],
-    },
-    {
       path: "/companies",
       label: "Companies",
       icon: UsersIcon,
-      component: SalesCompanies,
-      children: [
-        {
-          path: "/:id",
-          label: "Company Details",
-          icon: User,
-          component: SalesCompanyDetails,
-        },
-      ],
-    },
-    {
-      path: "/catalog",
-      label: "Catalog",
-      icon: Package,
-      component: SalesCatalog,
-      children: [
-        {
-          path: "/builder",
-          label: "Builder",
-          icon: Folders,
-          component: SalesConfigBuilder,
-        },
-      ],
-    },
-    {
-      path: "/company",
-      label: "Company",
-      icon: UsersIcon,
-      component: Company,
-    },
-  ],
-  popups: [
-    {
-      path: "/popup",
-      component: PopupWindow,
-    },
-  ],
-};
-
-const crmModule: Module = {
-  sequence: 2,
-  path: "/crm",
-  label: "CRM",
-  icon: UsersIcon,
-  status: "development",
-  pages: [
-    {
-      path: "/companies",
-      label: "Companies",
-      icon: UsersIcon,
-      component: SalesCompanies,
+      component: Companies,
       children: [
         {
           path: "/:id",
@@ -206,8 +155,33 @@ const crmModule: Module = {
       icon: MapPin,
       component: Addresses,
     },
+    {
+      path: "/catalog",
+      label: "Catalog",
+      icon: Package,
+      component: SalesCatalog,
+      children: [
+        {
+          path: "/builder",
+          label: "Builder",
+          icon: Folders,
+          component: SalesConfigBuilder,
+        },
+      ],
+    },
+    {
+      path: "/company",
+      label: "Company",
+      icon: UsersIcon,
+      component: Company,
+    },
   ],
-  popups: [],
+  popups: [
+    {
+      path: "/popup",
+      component: PopupWindow,
+    },
+  ],
 };
 
 export const warehouseModule: Module = {
@@ -302,7 +276,6 @@ const allModules = [
   productionModule,
   adminModule,
   warehouseModule,
-  crmModule,
 ];
 
 const devModules = allModules.filter(

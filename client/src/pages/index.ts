@@ -17,7 +17,6 @@ export { default as SalesQuotes } from "./sales/quotes";
 export { default as SalesQuoteDetails } from "./sales/quote-details";
 export { default as SalesJourneys } from "./sales/journeys";
 export { default as SalesJourneyDetails } from "./sales/journey-details";
-export { default as SalesCompanies } from "./sales/companies";
 export { default as SalesCompanyDetails } from "./sales/company-details";
 export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
