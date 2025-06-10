@@ -143,12 +143,6 @@ const MainMenu = () => {
         </Button>
         <Button
           variant="secondary-outline"
-          className="w-32">
-          <Settings size={16} />
-          Settings
-        </Button>
-        <Button
-          variant="secondary-outline"
           onClick={handleLogout}
           className="w-32">
           <LogOut size={16} />

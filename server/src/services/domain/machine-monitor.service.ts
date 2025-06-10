@@ -57,7 +57,9 @@ export class MachineDataService {
   private activeRequests: Set<AbortController> = new Set();
 
   constructor() {
-    this.start();
+    if (config.features.collectMachineData) {
+      this.start();
+    }
   }
 
   async initialize() {

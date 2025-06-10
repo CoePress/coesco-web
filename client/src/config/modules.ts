@@ -12,9 +12,7 @@ import {
   SettingsIcon,
   Factory,
   Box,
-  Warehouse,
   Shield,
-  Map,
   Clock,
   Calendar,
   MapPin,
@@ -41,7 +39,6 @@ import {
   SalesQuoteDetails,
   SalesQuotes,
   Settings,
-  WarehouseMap,
 } from "@/pages";
 
 import PopupWindow from "@/components/shared/popup-window";
@@ -181,22 +178,22 @@ const salesModule: Module = {
   ],
 };
 
-export const warehouseModule: Module = {
-  sequence: 2,
-  path: "/warehouse",
-  label: "Warehouse",
-  icon: Warehouse,
-  status: "development",
-  pages: [
-    {
-      path: "/",
-      label: "Map",
-      icon: Map,
-      component: WarehouseMap,
-    },
-  ],
-  popups: [],
-};
+// export const warehouseModule: Module = {
+//   sequence: 2,
+//   path: "/warehouse",
+//   label: "Warehouse",
+//   icon: Warehouse,
+//   status: "development",
+//   pages: [
+//     {
+//       path: "/",
+//       label: "Map",
+//       icon: Map,
+//       component: WarehouseMap,
+//     },
+//   ],
+//   popups: [],
+// };
 
 const productionModule: Module = {
   sequence: 3,
@@ -256,12 +253,7 @@ const adminModule: Module = {
   popups: [],
 };
 
-const allModules = [
-  salesModule,
-  productionModule,
-  adminModule,
-  warehouseModule,
-];
+const allModules = [salesModule, productionModule, adminModule];
 
 const devModules = allModules.filter(
   (module) => module.status === "development"

@@ -50,6 +50,8 @@ const envSchema = z.object({
   // Misc
   FANUC_ADAPTER_IP: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("8080"),
+
+  COLLECT_MACHINE_DATA: z.boolean().default(false),
 });
 
 const env = envSchema.safeParse(process.env);
@@ -110,5 +112,8 @@ export const config = {
   fanucAdapter: {
     url: env.data.FANUC_ADAPTER_IP,
     port: env.data.FANUC_ADAPTER_PORT,
+  },
+  features: {
+    collectMachineData: env.data.COLLECT_MACHINE_DATA,
   },
 };
