@@ -360,19 +360,23 @@ export class MachineDataService {
           throw new BadRequestError("Invalid machine data or state");
         }
 
-        const openStatus = await machineStatusService.findBy({
-          machineId: machine.id,
-          endTime: null,
+        const openStatuses = await machineStatusService.getAll({
+          filter: {
+            machineId: machine.id,
+            endTime: null,
+          },
         });
 
-        if (!openStatus.data || openStatus.data.state !== state) {
+        const openStatus = openStatuses.data[0];
+
+        if (!openStatus || openStatus.state !== state) {
           try {
-            if (openStatus.data) {
-              await machineStatusService.update(openStatus.data.id, {
+            if (openStatus) {
+              await machineStatusService.update(openStatus.id, {
                 endTime: new Date(),
                 duration:
                   new Date().getTime() -
-                  new Date(openStatus.data.startTime).getTime(),
+                  new Date(openStatus.startTime).getTime(),
               });
             }
 
@@ -433,22 +437,22 @@ export class MachineDataService {
           state,
         });
       } catch (error) {
-        const openStatus = await machineStatusService.findBy({
-          machineId: machine.id,
-          endTime: null,
+        const openStatuses = await machineStatusService.getAll({
+          filter: {
+            machineId: machine.id,
+            endTime: null,
+          },
         });
+        const openStatus = openStatuses.data[0];
 
-        if (
-          !openStatus.data ||
-          openStatus.data.state !== MachineState.OFFLINE
-        ) {
+        if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
           try {
-            if (openStatus.data) {
-              await machineStatusService.update(openStatus.data.id, {
+            if (openStatus) {
+              await machineStatusService.update(openStatus.id, {
                 endTime: new Date(),
                 duration:
                   new Date().getTime() -
-                  new Date(openStatus.data.startTime).getTime(),
+                  new Date(openStatus.startTime).getTime(),
               });
             }
 
@@ -903,19 +907,22 @@ export class MachineDataService {
   }
 
   async closeMachineStatus(machineId: string) {
-    const machineStatus = await machineStatusService.findBy({
-      machineId,
-      endTime: null,
+    const openStatuses = await machineStatusService.getAll({
+      filter: {
+        machineId,
+        endTime: null,
+      },
     });
 
-    if (!machineStatus.data) {
+    if (!openStatuses.data) {
       throw new BadRequestError("Machine status not found");
     }
 
-    return await machineStatusService.update(machineStatus.data.id, {
+    return await machineStatusService.update(openStatuses.data[0].id, {
       endTime: new Date(),
       duration:
-        new Date().getTime() - new Date(machineStatus.data.startTime).getTime(),
+        new Date().getTime() -
+        new Date(openStatuses.data[0].startTime).getTime(),
     });
   }
 

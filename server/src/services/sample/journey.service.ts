@@ -1,7 +1,8 @@
 import { Journey } from "@prisma/client";
-import { BaseService } from "./_";
 import { prisma } from "@/utils/prisma";
+import { BaseService } from "../repository/_";
 import { BadRequestError } from "@/middleware/error.middleware";
+
 
 type JourneyAttributes = Omit<Journey, "id" | "createdAt" | "updatedAt">;
 
@@ -10,11 +11,13 @@ export class JourneyService extends BaseService<Journey> {
   protected entityName = "Journey";
   protected modelName = "journey";
 
-  protected async validate(journey: JourneyAttributes | any): Promise<void> {
-    const customerId = journey.customerId || journey.customer?.connect?.id;
+  protected getOrganizationFilter(organizationId: string) {
+    return { organizationId };
+  }
 
-    if (!customerId) {
-      throw new BadRequestError("Customer ID is required");
+  protected async validate(data: JourneyAttributes): Promise<void> {
+    if (!data.createdById) {
+      throw new BadRequestError("createdById is required");
     }
   }
 }

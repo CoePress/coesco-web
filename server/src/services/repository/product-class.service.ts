@@ -11,6 +11,7 @@ type ProductClassAttributes = Omit<
 export class ProductClassService extends BaseService<ProductClass> {
   protected model = prisma.productClass;
   protected entityName = "ProductClass";
+  protected modelName = "productClass";
 
   protected async validate(
     productClass: ProductClassAttributes

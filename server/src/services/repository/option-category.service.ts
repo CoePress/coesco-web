@@ -11,6 +11,7 @@ type OptionCategoryAttributes = Omit<
 export class OptionCategoryService extends BaseService<OptionCategory> {
   protected model = prisma.optionCategory;
   protected entityName = "OptionCategory";
+  protected modelName = "optionCategory";
 
   protected async validate(
     optionCategory: OptionCategoryAttributes

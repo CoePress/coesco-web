@@ -9,6 +9,7 @@ type QuoteItemAttributes = Omit<QuoteItem, "id" | "createdAt" | "updatedAt">;
 export class QuoteItemService extends BaseService<QuoteItem> {
   protected model = prisma.quoteItem;
   protected entityName = "QuoteItem";
+  protected modelName = "quoteItem";
 
   public async getByQuoteId(quoteId: string, tx?: Prisma.TransactionClient) {
     const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;

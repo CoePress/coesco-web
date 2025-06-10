@@ -11,6 +11,7 @@ type ConfigurationAttributes = Omit<
 export class ConfigurationService extends BaseService<Configuration> {
   protected model = prisma.configuration;
   protected entityName = "Configuration";
+  protected modelName = "configuration";
 
   protected async validate(
     configuration: ConfigurationAttributes

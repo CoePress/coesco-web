@@ -122,7 +122,7 @@ function toCamelCase(str: string): string {
 }
 
 // Create sample directory if it doesn't exist
-const sampleDir = path.join(__dirname, "../services/repository");
+const sampleDir = path.join(__dirname, "../services/sample");
 if (!fs.existsSync(sampleDir)) {
   fs.mkdirSync(sampleDir, { recursive: true });
 }

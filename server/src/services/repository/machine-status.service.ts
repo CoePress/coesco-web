@@ -12,6 +12,7 @@ type MachineStatusAttributes = Omit<
 export class MachineStatusService extends BaseService<MachineStatus> {
   protected model = prisma.machineStatus;
   protected entityName = "MachineStatus";
+  protected modelName = "machineStatus";
 
   public async getByDateRange(
     params: IQueryParams<MachineStatus> & { startDate: string; endDate: string }
@@ -50,7 +51,7 @@ export class MachineStatusService extends BaseService<MachineStatus> {
     const queryParams: IQueryParams<MachineStatus> = {
       ...params,
       filter: {
-        ...(params.filter || {}),
+        ...(params.filter as any),
         ...dateFilter,
       },
     };

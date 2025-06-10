@@ -8,6 +8,7 @@ type ContactAttributes = Omit<Contact, "id" | "createdAt" | "updatedAt">;
 export class ContactService extends BaseService<Contact> {
   protected model = prisma.contact;
   protected entityName = "Contact";
+  protected modelName = "contact";
 
   protected async validate(contact: ContactAttributes): Promise<void> {
     if (!contact.companyId) {

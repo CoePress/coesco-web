@@ -8,6 +8,7 @@ type AddressAttributes = Omit<Address, "id" | "createdAt" | "updatedAt">;
 export class AddressService extends BaseService<Address> {
   protected model = prisma.address;
   protected entityName = "Address";
+  protected modelName = "address";
 
   protected async validate(address: AddressAttributes): Promise<void> {
     if (!address.companyId) {

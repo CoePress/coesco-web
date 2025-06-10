@@ -8,6 +8,7 @@ type OptionRuleAttributes = Omit<OptionRule, "id" | "createdAt" | "updatedAt">;
 export class OptionRulesService extends BaseService<OptionRule> {
   protected model = prisma.optionRule;
   protected entityName = "OptionRule";
+  protected modelName = "optionRule";
 
   protected async validate(optionRule: OptionRuleAttributes): Promise<void> {
     if (!optionRule.ruleType) {

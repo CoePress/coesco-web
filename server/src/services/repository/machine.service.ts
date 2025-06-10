@@ -8,6 +8,7 @@ type MachineAttributes = Omit<Machine, "id" | "createdAt" | "updatedAt">;
 export class MachineService extends BaseService<Machine> {
   protected model = prisma.machine;
   protected entityName = "Machine";
+  protected modelName = "machine";
 
   protected async validate(machine: MachineAttributes): Promise<void> {
     if (!machine.name) {

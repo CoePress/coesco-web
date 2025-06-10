@@ -9,6 +9,7 @@ type QuoteAttributes = Omit<Quote, "id" | "createdAt" | "updatedAt">;
 export class QuoteService extends BaseService<Quote> {
   protected model = prisma.quote;
   protected entityName = "Quote";
+  protected modelName = "quote";
 
   async getLatestRevision(quoteNumber: string) {
     const quote = await this.model.findFirst({
