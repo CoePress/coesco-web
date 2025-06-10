@@ -14,7 +14,7 @@ const Companies = () => {
       header: "Name",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/crm/companies/${row.id}`}>{row.name}</Link>
+        <Link to={`/sales/companies/${row.id}`}>{row.name}</Link>
       ),
     },
     {
