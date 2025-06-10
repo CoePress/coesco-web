@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Modal from "@/components/shared/modal";
+import { Button } from "@/components";
 
 const CompanyDetails = () => {
   const [activeModal, setActiveModal] = useState<{
@@ -23,8 +24,21 @@ const CompanyDetails = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mirrorContent, setMirrorContent] = useState("");
   const mirrorRef = useRef<HTMLDivElement>(null);
-  const [mirrorScroll, setMirrorScroll] = useState(0);
+  const [_, setMirrorScroll] = useState(0);
   const [mentionDropdownIndex, setMentionDropdownIndex] = useState(0);
+
+  // Email modal state
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+
+  // Meeting modal state
+  const [meetingTitle, setMeetingTitle] = useState("");
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingHour, setMeetingHour] = useState(9);
+  const [meetingMinute, setMeetingMinute] = useState(0);
+  const [meetingAmPm, setMeetingAmPm] = useState("AM");
+  const [meetingDuration, setMeetingDuration] = useState(15);
 
   // Mock data for mentions
   const mentionOptions = [
@@ -41,6 +55,23 @@ const CompanyDetails = () => {
     setActiveModal({ type: "", isOpen: false });
     setNoteContent("");
     setShowMentionDropdown(false);
+  };
+
+  const handleEmailModalClose = () => {
+    setActiveModal({ type: "", isOpen: false });
+    setEmailRecipients("");
+    setEmailSubject("");
+    setEmailBody("");
+  };
+
+  const handleMeetingModalClose = () => {
+    setActiveModal({ type: "", isOpen: false });
+    setMeetingTitle("");
+    setMeetingDate("");
+    setMeetingHour(9);
+    setMeetingMinute(0);
+    setMeetingAmPm("AM");
+    setMeetingDuration(15);
   };
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -87,7 +118,6 @@ const CompanyDetails = () => {
           const textarea = textareaRef.current;
           const marker = mirrorRef.current?.querySelector("#mention-marker");
           if (textarea && marker && mirrorRef.current) {
-            const textareaRect = textarea.getBoundingClientRect();
             const markerRect = marker.getBoundingClientRect();
             const mirrorRect = mirrorRef.current.getBoundingClientRect();
             setMentionPosition({
@@ -171,12 +201,12 @@ const CompanyDetails = () => {
     switch (activeModal.type) {
       case "note":
         return (
-          <div className="flex flex-col gap-4 relative">
+          <div className="flex flex-col gap-2 relative">
             <textarea
               ref={textareaRef}
               value={noteContent}
               onChange={handleNoteChange}
-              className="w-full h-[300px] bg-background border border-border rounded p-3 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto relative z-0"
+              className="w-full h-60 bg-background border border-border rounded p-3 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto relative z-0"
               placeholder="Write your notes here... Use @ to mention someone"
               onScroll={() =>
                 setMirrorScroll(textareaRef.current?.scrollTop || 0)
@@ -236,16 +266,213 @@ const CompanyDetails = () => {
                 )}
               </div>
             )}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCloseModal}>
+                Submit
+              </Button>
+            </div>
           </div>
         );
       case "email":
-        return <div>Email Modal Content</div>;
+        return (
+          <div className="flex flex-col gap-2 relative">
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Recipients (comma separated)"
+              value={emailRecipients}
+              onChange={(e) => setEmailRecipients(e.target.value)}
+            />
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Subject"
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+            />
+            <textarea
+              className="w-full h-40 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
+              placeholder="Write your email here..."
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleEmailModalClose}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleEmailModalClose}>
+                Send
+              </Button>
+            </div>
+          </div>
+        );
       case "call":
-        return <div>Call Modal Content</div>;
+        return (
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Phone number"
+            />
+            <textarea
+              className="w-full h-24 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
+              placeholder="Call notes (optional)"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCloseModal}>
+                Log Call
+              </Button>
+            </div>
+          </div>
+        );
       case "task":
-        return <div>Task Modal Content</div>;
+        return (
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Task title"
+            />
+            <textarea
+              className="w-full h-24 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
+              placeholder="Task details"
+            />
+            <input
+              type="date"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Due date"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCloseModal}>
+                Create Task
+              </Button>
+            </div>
+          </div>
+        );
       case "meeting":
-        return <div>Meeting Modal Content</div>;
+        return (
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+              placeholder="Meeting title"
+              value={meetingTitle}
+              onChange={(e) => setMeetingTitle(e.target.value)}
+            />
+            <div className="flex flex-row gap-2">
+              <div className="flex flex-col items-center">
+                <label className="block text-xs text-text-muted mb-1">
+                  Date
+                </label>
+                <MiniCalendar
+                  selected={meetingDate}
+                  onSelect={setMeetingDate}
+                />
+                {meetingDate && (
+                  <div className="mt-1 text-xs text-info">
+                    Selected: {meetingDate}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2 flex-1">
+                <label className="block text-xs text-text-muted">
+                  Start Time
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+                    value={meetingHour}
+                    onChange={(e) => setMeetingHour(Number(e.target.value))}>
+                    {[...Array(12)].map((_, i) => (
+                      <option
+                        key={i + 1}
+                        value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="self-center">:</span>
+                  <select
+                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+                    value={meetingMinute}
+                    onChange={(e) => setMeetingMinute(Number(e.target.value))}>
+                    {[0, 15, 30, 45].map((min) => (
+                      <option
+                        key={min}
+                        value={min}>
+                        {min.toString().padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+                    value={meetingAmPm}
+                    onChange={(e) => setMeetingAmPm(e.target.value)}>
+                    {["AM", "PM"].map((ampm) => (
+                      <option
+                        key={ampm}
+                        value={ampm}>
+                        {ampm}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="block text-xs text-text-muted mt-2">
+                  Duration
+                </label>
+                <select
+                  className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
+                  value={meetingDuration}
+                  onChange={(e) => setMeetingDuration(Number(e.target.value))}>
+                  {[15, 30, 45, 60, 75, 90, 105, 120].map((min) => (
+                    <option
+                      key={min}
+                      value={min}>
+                      {min} minutes
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleMeetingModalClose}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleMeetingModalClose}>
+                Schedule
+              </Button>
+            </div>
+          </div>
+        );
       case "more":
         return <div>More Modal Content</div>;
       default:
@@ -671,6 +898,127 @@ const CompanyDetails = () => {
         size="sm">
         {getModalContent()}
       </Modal>
+    </div>
+  );
+};
+
+// MiniCalendar component
+const MiniCalendar = ({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (date: string) => void;
+}) => {
+  const today = new Date();
+  const [month, setMonth] = useState(today.getMonth());
+  const [year, setYear] = useState(today.getFullYear());
+
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+  const startDay = firstDayOfMonth.getDay();
+
+  const weeks: (number | null)[][] = [];
+  let week: (number | null)[] = Array(startDay).fill(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    week.push(day);
+    if (week.length === 7) {
+      weeks.push(week);
+      week = [];
+    }
+  }
+  if (week.length) weeks.push([...week, ...Array(7 - week.length).fill(null)]);
+
+  const handlePrev = () => {
+    if (month === 0) {
+      setMonth(11);
+      setYear((y) => y - 1);
+    } else {
+      setMonth((m) => m - 1);
+    }
+  };
+  const handleNext = () => {
+    if (month === 11) {
+      setMonth(0);
+      setYear((y) => y + 1);
+    } else {
+      setMonth((m) => m + 1);
+    }
+  };
+
+  const isSelected = (day: number) => {
+    if (!selected) return false;
+    const d = new Date(selected);
+    return (
+      d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
+    );
+  };
+
+  return (
+    <div className="inline-block p-2 border border-border rounded bg-background">
+      <div className="flex justify-between items-center mb-1">
+        <button
+          type="button"
+          className="px-2"
+          onClick={handlePrev}>
+          &lt;
+        </button>
+        <span className="font-semibold text-sm">
+          {new Date(year, month).toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          })}
+        </span>
+        <button
+          type="button"
+          className="px-2"
+          onClick={handleNext}>
+          &gt;
+        </button>
+      </div>
+      <div className="grid grid-cols-7 text-xs mb-1">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          <div
+            key={d}
+            className="text-center text-text-muted">
+            {d}
+          </div>
+        ))}
+      </div>
+      {weeks.map((w, i) => (
+        <div
+          key={i}
+          className="grid grid-cols-7 mb-1">
+          {w.map((day, j) =>
+            day ? (
+              <button
+                key={j}
+                className={`w-7 h-7 rounded text-sm ${
+                  isSelected(day) ? "bg-primary text-white" : "hover:bg-surface"
+                } ${
+                  day === today.getDate() &&
+                  month === today.getMonth() &&
+                  year === today.getFullYear()
+                    ? "border border-primary"
+                    : ""
+                }`}
+                onClick={() =>
+                  onSelect(
+                    `${year}-${String(month + 1).padStart(2, "0")}-${String(
+                      day
+                    ).padStart(2, "0")}`
+                  )
+                }
+                type="button">
+                {day}
+              </button>
+            ) : (
+              <div key={j} />
+            )
+          )}
+        </div>
+      ))}
     </div>
   );
 };
