@@ -16,7 +16,7 @@ const useLogout = () => {
     try {
       await instance.post(`/auth/logout`);
 
-      setUser(null);
+      setUser(null, null);
     } catch (error) {
       if (error instanceof AxiosError) {
         setError(error.response?.data.message);

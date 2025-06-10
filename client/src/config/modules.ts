@@ -24,7 +24,6 @@ import { ComponentType } from "react";
 
 import {
   Addresses,
-  Companies,
   CompanyDetails,
   ContactDetails,
   Contacts,

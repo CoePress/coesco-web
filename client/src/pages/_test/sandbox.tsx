@@ -433,7 +433,7 @@ const Sandbox = () => {
             </div>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {locationHistory.map((location, index) => (
+              {locationHistory.map((location) => (
                 <div
                   key={location.id}
                   className="bg-surface rounded p-3 cursor-pointer hover:bg-surface/80"

@@ -496,9 +496,11 @@ const CompanyDetails = () => {
 
   return (
     <div className="flex flex-1 bg-background">
-      <aside className="w-80 bg-foreground flex flex-col border-r border-border">
+      <aside className="w-max bg-foreground flex flex-col border-r border-border">
         <div className="flex flex-col items-center py-4 border-b border-border">
-          <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border"></div>
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border">
+            <span className="text-primary text-2xl font-bold">H</span>
+          </div>
           <h2 className="text-xl font-bold text-text">HubSpot</h2>
           <a
             href="https://hubspot.com"
@@ -506,11 +508,11 @@ const CompanyDetails = () => {
             hubspot.com
           </a>
 
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2 px-2">
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => handleOpenModal("note")}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <Notebook size={16} />
               </button>
               <span className="text-text-muted text-xs">Note</span>
@@ -518,7 +520,7 @@ const CompanyDetails = () => {
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => handleOpenModal("email")}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <Mail size={16} />
               </button>
               <span className="text-text-muted text-xs">Email</span>
@@ -526,7 +528,7 @@ const CompanyDetails = () => {
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => handleOpenModal("call")}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <Phone size={16} />
               </button>
               <span className="text-text-muted text-xs">Call</span>
@@ -534,7 +536,7 @@ const CompanyDetails = () => {
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => handleOpenModal("task")}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <CheckCircle size={16} />
               </button>
               <span className="text-text-muted text-xs">Task</span>
@@ -542,15 +544,15 @@ const CompanyDetails = () => {
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => handleOpenModal("meeting")}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <Calendar size={16} />
               </button>
-              <span className="text-text-muted text-xs">Meeting</span>
+              <span className="text-text-muted text-xs">Meet</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => {}}
-                className="text-text-muted text-sm hover:underline p-3 rounded-lg border border-border hover:bg-surface cursor-pointer">
+                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
                 <MoreHorizontal size={16} />
               </button>
               <span className="text-text-muted text-xs">More</span>
@@ -647,7 +649,7 @@ const CompanyDetails = () => {
       <main className="flex-1 flex flex-col p-2">
         <div className="bg-foreground px-4 pt-2 rounded-lg border border-border">
           <div className="flex space-x-8 text-sm">
-            <button className="pb-2 border-b-2 border-primary text-primary font-semibold cursor-pointer">
+            <button className="pb-2 border-b-2 border-primary/50 text-primary font-semibold cursor-pointer">
               Overview
             </button>
             <button className="pb-2 text-text-muted hover:text-primary cursor-pointer">
