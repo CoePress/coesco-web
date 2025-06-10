@@ -25,7 +25,7 @@ const MicrosoftCallback = () => {
           state,
         });
 
-        setUser(data.user);
+        setUser(data.user, data.token);
 
         navigate("/");
       } catch (error) {

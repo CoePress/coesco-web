@@ -36,33 +36,6 @@ interface AddressAutocompleteProps {
   apiKey: string;
 }
 
-declare global {
-  interface Window {
-    google: {
-      maps: {
-        places: {
-          AutocompleteService: new () => {
-            getPlacePredictions: (
-              request: { input: string; types: string[] },
-              callback: (predictions: any[], status: string) => void
-            ) => void;
-          };
-          PlacesService: new (div: HTMLElement) => {
-            getDetails: (
-              request: { placeId: string; fields: string[] },
-              callback: (place: any, status: string) => void
-            ) => void;
-          };
-          PlacesServiceStatus: {
-            OK: string;
-            ZERO_RESULTS: string;
-          };
-        };
-      };
-    };
-  }
-}
-
 // Singleton to manage Google Maps API loading
 const googleMapsLoader = {
   isLoading: false,
@@ -149,12 +122,8 @@ const AddressAutocomplete = ({
   const [predictions, setPredictions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(
-    null
-  );
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -166,11 +135,9 @@ const AddressAutocomplete = ({
     typeof window.google.maps.places.PlacesService
   > | null>(null);
 
-  // Load Google Maps API
   useEffect(() => {
     if (!apiKey) {
       setError("API key is required");
-      setIsInitializing(false);
       return;
     }
 
@@ -187,8 +154,6 @@ const AddressAutocomplete = ({
             : "Failed to initialize Google Maps"
         );
         setIsGoogleLoaded(false);
-      } finally {
-        setIsInitializing(false);
       }
     };
 
@@ -266,9 +231,7 @@ const AddressAutocomplete = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInput(value);
-    setSelectedAddress(null);
 
-    // Clear existing debounce
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -322,11 +285,9 @@ const AddressAutocomplete = ({
             },
           },
           address_components: place.address_components,
-          // Parse common address parts for convenience
           parsed: parseAddressComponents(place.address_components),
         };
 
-        setSelectedAddress(addressData);
         onAddressSelect?.(addressData);
       } else {
         setError(`Failed to get place details: ${status}`);

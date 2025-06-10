@@ -1,15 +1,11 @@
-import useLogout from "@/hooks/auth/use-logout";
 import { HelpCircle, Bell } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 type HeaderProps = {
   employee: any;
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
 };
 
-const Header = ({ employee, toggleSidebar, isSidebarOpen }: HeaderProps) => {
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+const Header = ({ employee }: HeaderProps) => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,7 +14,6 @@ const Header = ({ employee, toggleSidebar, isSidebarOpen }: HeaderProps) => {
         userMenuRef.current &&
         !userMenuRef.current.contains(event.target as Node)
       ) {
-        setIsUserMenuOpen(false);
       }
     };
 
@@ -27,6 +22,8 @@ const Header = ({ employee, toggleSidebar, isSidebarOpen }: HeaderProps) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const initials = employee.firstName[0] + employee.lastName[0];
 
   return (
     <header className="bg-foreground border-b border-border p-2">
@@ -57,7 +54,9 @@ const Header = ({ employee, toggleSidebar, isSidebarOpen }: HeaderProps) => {
           <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
             <Bell size={20} />
           </div>
-          <div className="h-10 aspect-square bg-border rounded-lg"></div>
+          <div className="h-10 aspect-square bg-border rounded-lg flex items-center justify-center">
+            <span className="text-text-muted">{initials}</span>
+          </div>
         </div>
       </div>
     </header>

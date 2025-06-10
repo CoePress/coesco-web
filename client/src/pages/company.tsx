@@ -1,6 +1,5 @@
 import { useState } from "react";
 import PageHeader from "@/components/shared/page-header";
-import Card from "@/components/shared/card";
 import Tabs from "@/components/shared/tabs";
 import StatusBadge from "@/components/shared/status-badge";
 import {
@@ -8,17 +7,12 @@ import {
   Phone,
   MessageCircle,
   Video,
-  Calendar,
   User,
   Building2,
   DollarSign,
   Ticket,
   Paperclip,
-  FileText,
-  Clock,
   CheckCircle,
-  AlertCircle,
-  Plus,
   ChevronDown,
 } from "lucide-react";
 

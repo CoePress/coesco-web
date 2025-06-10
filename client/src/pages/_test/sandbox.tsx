@@ -2,15 +2,59 @@ import { Button } from "@/components";
 import AddressAutocomplete from "@/components/common/address-input";
 import { useState, useEffect, useRef } from "react";
 
+// Type definitions
+interface Location {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: string;
+  address: string | null;
+  id?: number;
+}
+
+interface AddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+interface ParsedAddress {
+  street_number?: string;
+  street_name?: string;
+  city?: string;
+  state?: string;
+  state_long?: string;
+  country?: string;
+  country_long?: string;
+  postal_code?: string;
+}
+
+interface AddressData {
+  place_id: string;
+  formatted_address: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  address_components: AddressComponent[];
+  parsed: ParsedAddress;
+}
+
+// Extend the Window interface to include additional Google Maps types
+
 const Sandbox = () => {
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [locationError, setLocationError] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(
+    null
+  );
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [isTracking, setIsTracking] = useState(false);
-  const [locationHistory, setLocationHistory] = useState([]);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
-  const mapRef = useRef(null);
+  const [locationHistory, setLocationHistory] = useState<Location[]>([]);
+  const [map, setMap] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const GOOGLE_API_KEY = "AIzaSyAggNUxlA-WkP5yvP_l3kCIQckeQBPEyOU";
 
@@ -51,7 +95,7 @@ const Sandbox = () => {
   }, []);
 
   // Add marker to map
-  const addMarker = (location, title, type = "current") => {
+  const addMarker = (location: Location, title: string, type = "current") => {
     if (!map) return;
 
     const marker = new window.google.maps.Marker({
@@ -135,9 +179,12 @@ const Sandbox = () => {
 
     // Add selected address if it has coordinates
     if (selectedAddress && selectedAddress.geometry) {
-      const addressLocation = {
-        latitude: selectedAddress.geometry.location.lat(),
-        longitude: selectedAddress.geometry.location.lng(),
+      const addressLocation: Location = {
+        latitude: selectedAddress.geometry.location.lat,
+        longitude: selectedAddress.geometry.location.lng,
+        accuracy: 0,
+        timestamp: new Date().toISOString(),
+        address: selectedAddress.formatted_address,
       };
       addMarker(
         addressLocation,
@@ -153,7 +200,7 @@ const Sandbox = () => {
     }
   }, [currentLocation, locationHistory, selectedAddress, map]);
 
-  const handleAddressSelect = (address) => {
+  const handleAddressSelect = (address: AddressData) => {
     setSelectedAddress(address);
   };
 
@@ -165,7 +212,7 @@ const Sandbox = () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const locationData = {
+        const locationData: Location = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           accuracy: position.coords.accuracy,
@@ -222,7 +269,7 @@ const Sandbox = () => {
 
   const logCurrentLocation = () => {
     if (currentLocation) {
-      const entry = {
+      const entry: Location = {
         ...currentLocation,
         id: Date.now(),
       };
@@ -245,7 +292,7 @@ const Sandbox = () => {
     setLocationHistory([]);
   };
 
-  const centerOnLocation = (location) => {
+  const centerOnLocation = (location: Location) => {
     if (map) {
       map.setCenter({ lat: location.latitude, lng: location.longitude });
       map.setZoom(16);
@@ -348,7 +395,7 @@ const Sandbox = () => {
                 <Button
                   onClick={() => centerOnLocation(currentLocation)}
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   className="flex-1">
                   Center Map
                 </Button>
@@ -380,7 +427,7 @@ const Sandbox = () => {
               <Button
                 onClick={clearHistory}
                 size="sm"
-                variant="outline">
+                variant="ghost">
                 Clear
               </Button>
             </div>

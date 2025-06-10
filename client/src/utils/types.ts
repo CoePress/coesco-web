@@ -1,3 +1,38 @@
+declare global {
+  interface Window {
+    google: {
+      maps: {
+        places: {
+          AutocompleteService: new () => {
+            getPlacePredictions: (
+              request: { input: string; types: string[] },
+              callback: (predictions: any[], status: string) => void
+            ) => void;
+          };
+          PlacesService: new (div: HTMLElement) => {
+            getDetails: (
+              request: { placeId: string; fields: string[] },
+              callback: (place: any, status: string) => void
+            ) => void;
+          };
+          PlacesServiceStatus: {
+            OK: string;
+            ZERO_RESULTS: string;
+          };
+        };
+        // Additional types needed for the map functionality
+        Map: new (element: HTMLElement, options: any) => any;
+        Marker: new (options: any) => any;
+        InfoWindow: new (options: any) => any;
+        SymbolPath: {
+          CIRCLE: number;
+        };
+      };
+    };
+    trackingInterval: ReturnType<typeof setInterval> | null;
+  }
+}
+
 export interface IBaseEntity {
   id: string;
   createdAt: Date;
