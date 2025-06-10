@@ -3,10 +3,12 @@ export interface IApiResponse<T> {
   message?: string;
   data?: T;
   error?: string;
-  page?: number;
-  limit?: number;
-  total?: number;
-  totalPages?: number;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+  };
 }
 
 export interface IQueryParams<T> {
