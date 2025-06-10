@@ -1,6 +1,5 @@
 // Admin
 export { default as Employees } from "./admin/employees";
-export { default as ProductRules } from "./admin/product-rules";
 export { default as Settings } from "./admin/settings";
 
 // Production
@@ -8,7 +7,6 @@ export { default as ProductionDashboard } from "./production/dashboard";
 export { default as MachineHistory } from "./production/machine-history";
 export { default as Machines } from "./production/machines";
 export { default as Reports } from "./production/reports";
-export { default as Gantt } from "./production/gantt";
 
 // Sales
 export { default as SalesDashboard } from "./sales/dashboard";
