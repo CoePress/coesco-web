@@ -43,8 +43,8 @@ const Header = ({ employee }: HeaderProps) => {
 
   return (
     <header className="bg-foreground border-b border-border p-2">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-0.5 leading-none">
+      <div className="flex items-center justify-end">
+        {/* <div className="flex flex-col gap-0.5 leading-none">
           <h1 className="text-text">Companies</h1>
           <nav className="flex items-center text-sm text-text-muted gap-1">
             <a
@@ -61,7 +61,7 @@ const Header = ({ employee }: HeaderProps) => {
             <span className="text-text-muted">/</span>
             <span className="text-text">HubSpot</span>
           </nav>
-        </div>
+        </div> */}
 
         <div className="flex items-center">
           <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
@@ -117,7 +117,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         className={`flex flex-col h-full transition-opacity duration-300 ${
           isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
         }`}>
-        <div className="flex items-center justify-center h-[51px] border-b border-border relative">
+        <div className="flex items-center justify-center h-[57px] border-b border-border relative">
           <h1
             className={`text-xl font-semibold text-primary ${
               isOpen ? "opacity-100" : "opacity-0"
@@ -276,7 +276,7 @@ const Layout = ({ employee, children }: LayoutProps) => {
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
       <div className="bg-foreground hidden md:flex flex-col">
-        <div className="flex items-center justify-center h-[51px] border-b border-border px-2">
+        <div className="flex items-center justify-center h-[57px] border-b border-border px-2">
           <img
             src="/images/logo-text.png"
             alt="logo"
