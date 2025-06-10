@@ -3,17 +3,15 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "build": "tsc && tsc-alias && npm run copy",
     "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" \"src/widget.html\" dist",
-    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "seed-sample": "ts-node -r tsconfig-paths/register src/scripts/seed-sample.ts",
-    "start": "npm run build && node dist/server.js",
-    "prisma:format": "prisma format --schema=./prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
-    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "prisma:nuke": "rd /s /q prisma\\migrations 2>nul & prisma db push --force-reset --schema=./prisma/schema.prisma & npm run prisma:generate",
-    "prisma:fresh": "prisma migrate reset --force --schema=./prisma/schema.prisma & rd /s /q prisma\\migrations 2>nul & prisma migrate dev --name init --schema=./prisma/schema.prisma & npm run prisma:generate"
+    "gen": "ts-node src/scripts/generate-services.ts",
+    "prisma:nuke": "rm -rf prisma/migrations && prisma db push --force-reset && prisma format && prisma generate",
+    "prisma:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
+    "build": "tsc && tsc-alias && npm run copy",
+    "start": "npm run build && node dist/server.js"
   },
   "keywords": [],
   "author": "",

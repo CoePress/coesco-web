@@ -1,30 +1,8 @@
-import { EmployeeRole } from "./enum.types";
-
 export interface IBaseEntity {
   id: string;
   createdAt: Date;
   updatedAt: Date;
 }
-
-export interface IDepartment extends IBaseEntity {
-  name: string;
-  description?: string;
-}
-
-export interface IEmployee extends IBaseEntity {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  jobTitle: string;
-  departmentId?: string;
-  microsoftId?: string;
-  role: EmployeeRole;
-  lastLogin?: Date;
-}
-
-export interface IEmployeeAttributes
-  extends Omit<IEmployee, "createdAt" | "updatedAt"> {}
 
 export interface IMicrosoftUser {
   id: string;

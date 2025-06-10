@@ -11,26 +11,29 @@ export interface IApiResponse<T> {
   };
 }
 
-export interface IQueryParams<T> {
+export type IQueryParams<T> = {
   page?: number;
   limit?: number;
   sort?: string;
   order?: "asc" | "desc";
-  filter?: Partial<T>;
+  filter?: Partial<T> | string;
   search?: string;
   searchFields?: Array<keyof T>;
+  dateFrom?: Date | string;
+  dateTo?: Date | string;
   fields?: string[];
-  include?: string[];
-}
+  include?: string[] | Record<string, any> | string;
+  select?: string[] | Record<string, any> | string;
+};
 
 export interface IQueryBuilderResult {
   where: any;
-  orderBy: any;
+  page: number;
   take?: number;
   skip?: number;
+  orderBy?: any;
   select?: any;
   include?: any;
-  page: number;
 }
 
 export interface IApiKey {
@@ -43,9 +46,9 @@ export interface IApiKey {
   scopes: string[];
 }
 
-export interface IServiceResult<T> {
+export type IServiceResult<T> = {
   success: boolean;
-  data?: T;
+  data: T;
   meta?: {
     page?: number;
     limit?: number;
@@ -53,8 +56,7 @@ export interface IServiceResult<T> {
     totalPages?: number;
   };
   error?: string;
-  errors?: string[];
-}
+};
 
 import { Employee, User, UserRole } from "@prisma/client";
 

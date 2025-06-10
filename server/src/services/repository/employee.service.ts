@@ -23,6 +23,7 @@ type EmployeeAttributes = Omit<Employee, "id" | "createdAt" | "updatedAt">;
 export class EmployeeService extends BaseService<Employee> {
   protected model = prisma.employee;
   protected entityName = "Employee";
+  protected modelName = "employee";
 
   async sync() {
     try {
