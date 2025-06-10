@@ -60,10 +60,10 @@ const useGetJourneys = ({
         if (data.success) {
           setJourneys(data.data || []);
           setPagination({
-            total: data.total || 0,
-            totalPages: data.totalPages || 0,
-            page: data.page || 1,
-            limit: data.limit || 25,
+            total: data.meta?.total || 0,
+            totalPages: data.meta?.totalPages || 0,
+            page: data.meta?.page || 1,
+            limit: data.meta?.limit || 25,
           });
         } else {
           setError(data.error || "Failed to fetch journeys");
