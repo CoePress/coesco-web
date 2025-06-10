@@ -6,7 +6,7 @@ import {
   Notebook,
   Phone,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Modal from "@/components/shared/modal";
 
 const CompanyDetails = () => {
@@ -15,18 +15,229 @@ const CompanyDetails = () => {
     isOpen: boolean;
   }>({ type: "", isOpen: false });
 
+  // Notes state
+  const [noteContent, setNoteContent] = useState("");
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mirrorContent, setMirrorContent] = useState("");
+  const mirrorRef = useRef<HTMLDivElement>(null);
+  const [mirrorScroll, setMirrorScroll] = useState(0);
+  const [mentionDropdownIndex, setMentionDropdownIndex] = useState(0);
+
+  // Mock data for mentions
+  const mentionOptions = [
+    { id: 1, name: "John Doe", email: "john@example.com" },
+    { id: 2, name: "Jane Smith", email: "jane@example.com" },
+    { id: 3, name: "Bob Johnson", email: "bob@example.com" },
+  ];
+
   const handleOpenModal = (type: string) => {
     setActiveModal({ type, isOpen: true });
   };
 
   const handleCloseModal = () => {
     setActiveModal({ type: "", isOpen: false });
+    setNoteContent("");
+    setShowMentionDropdown(false);
+  };
+
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNoteContent(value);
+
+    // Check for @ symbol
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+    // Mirror logic
+    let mirrorHtml = value
+      .slice(0, lastAtIndex)
+      .replace(/\n/g, "<br/>")
+      .replace(/ /g, "&nbsp;");
+    if (lastAtIndex !== -1) {
+      mirrorHtml += '<span id="mention-marker">@</span>';
+      mirrorHtml += value
+        .slice(lastAtIndex + 1, cursorPosition)
+        .replace(/\n/g, "<br/>")
+        .replace(/ /g, "&nbsp;");
+    }
+    setMirrorContent(mirrorHtml);
+
+    if (lastAtIndex !== -1) {
+      const charBeforeAt =
+        lastAtIndex === 0 ? "" : textBeforeCursor[lastAtIndex - 1];
+      const searchText = textBeforeCursor.slice(lastAtIndex + 1);
+      const isInMention = searchText.includes("<") && !searchText.includes(">");
+      // Only trigger if @ is at start, after space, or after line break
+      const validTrigger =
+        lastAtIndex === 0 || charBeforeAt === " " || charBeforeAt === "\n";
+      // Hide if @ is followed by space
+      const atFollowedBySpace = searchText.startsWith(" ");
+      if (
+        validTrigger &&
+        !atFollowedBySpace &&
+        !searchText.includes(" ") &&
+        !isInMention
+      ) {
+        setMentionSearch(searchText);
+        setTimeout(() => {
+          const textarea = textareaRef.current;
+          const marker = mirrorRef.current?.querySelector("#mention-marker");
+          if (textarea && marker && mirrorRef.current) {
+            const textareaRect = textarea.getBoundingClientRect();
+            const markerRect = marker.getBoundingClientRect();
+            const mirrorRect = mirrorRef.current.getBoundingClientRect();
+            setMentionPosition({
+              top: markerRect.top - mirrorRect.top - textarea.scrollTop + 24, // 24 for line height/padding
+              left: markerRect.left - mirrorRect.left - textarea.scrollLeft,
+            });
+          }
+        }, 0);
+        setShowMentionDropdown(true);
+      } else {
+        setShowMentionDropdown(false);
+      }
+    } else {
+      setShowMentionDropdown(false);
+    }
+  };
+
+  const insertMention = (mention: {
+    id: number;
+    name: string;
+    email: string;
+  }) => {
+    if (!textareaRef.current) return;
+
+    const cursorPosition = textareaRef.current.selectionStart;
+    const textBeforeCursor = noteContent.slice(0, cursorPosition);
+    const textAfterCursor = noteContent.slice(cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+    const newContent =
+      textBeforeCursor.slice(0, lastAtIndex) +
+      `@<${mention.id}> ` +
+      textAfterCursor;
+
+    setNoteContent(newContent);
+    setShowMentionDropdown(false);
+
+    // Set cursor position after the inserted mention
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const newPosition = lastAtIndex + mention.id.toString().length + 4; // +4 for @<> and space
+        textareaRef.current.selectionStart = newPosition;
+        textareaRef.current.selectionEnd = newPosition;
+        textareaRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Filtered mention options
+  const filteredMentionOptions = mentionOptions.filter(
+    (option) =>
+      option.name.toLowerCase().includes(mentionSearch.toLowerCase()) ||
+      option.email.toLowerCase().includes(mentionSearch.toLowerCase())
+  );
+
+  const handleTextareaKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (!showMentionDropdown) return;
+    if (filteredMentionOptions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setMentionDropdownIndex(
+        (prev) => (prev + 1) % filteredMentionOptions.length
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setMentionDropdownIndex(
+        (prev) =>
+          (prev - 1 + filteredMentionOptions.length) %
+          filteredMentionOptions.length
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      insertMention(filteredMentionOptions[mentionDropdownIndex]);
+      setMentionDropdownIndex(0);
+    }
   };
 
   const getModalContent = () => {
     switch (activeModal.type) {
       case "note":
-        return <div>Note Modal Content</div>;
+        return (
+          <div className="flex flex-col gap-4 relative">
+            <textarea
+              ref={textareaRef}
+              value={noteContent}
+              onChange={handleNoteChange}
+              className="w-full h-[300px] bg-background border border-border rounded p-3 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto relative z-0"
+              placeholder="Write your notes here... Use @ to mention someone"
+              onScroll={() =>
+                setMirrorScroll(textareaRef.current?.scrollTop || 0)
+              }
+              onKeyDown={handleTextareaKeyDown}
+            />
+            {/* Hidden mirror div for mention positioning */}
+            <div
+              ref={mirrorRef}
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: 300,
+                color: "transparent",
+                background: "transparent",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                pointerEvents: "none",
+                overflow: "hidden",
+                zIndex: -1,
+                font: "inherit",
+                padding: 12,
+                borderRadius: 8,
+                border: "1px solid transparent",
+                visibility: "hidden",
+              }}
+              dangerouslySetInnerHTML={{ __html: mirrorContent + "<br />" }}
+            />
+            {showMentionDropdown && (
+              <div
+                className="absolute bg-foreground border border-border rounded shadow-lg max-h-[200px] overflow-y-auto w-64 z-10"
+                style={{
+                  top: mentionPosition.top,
+                  left: mentionPosition.left,
+                }}>
+                {filteredMentionOptions.length > 0 ? (
+                  filteredMentionOptions.map((option, idx) => (
+                    <button
+                      key={option.id}
+                      onClick={() => insertMention(option)}
+                      className={`w-full px-3 py-2 text-left hover:bg-surface flex flex-col${
+                        mentionDropdownIndex === idx ? " bg-surface" : ""
+                      }`}>
+                      <span className="text-text">{option.name}</span>
+                      <span className="text-text-muted text-xs">
+                        {option.email}
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-text-muted text-sm">
+                    No matching users found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
       case "email":
         return <div>Email Modal Content</div>;
       case "call":
@@ -41,6 +252,20 @@ const CompanyDetails = () => {
         return null;
     }
   };
+
+  // Sync scroll between textarea and mirror
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    const mirror = mirrorRef.current;
+    if (textarea && mirror) {
+      mirror.scrollTop = textarea.scrollTop;
+      mirror.scrollLeft = textarea.scrollLeft;
+    }
+  }, [noteContent]);
+
+  useEffect(() => {
+    setMentionDropdownIndex(0);
+  }, [showMentionDropdown, mentionSearch]);
 
   return (
     <div className="flex flex-1 bg-background">
@@ -184,7 +409,7 @@ const CompanyDetails = () => {
               <span className="text-text-muted">Time zone</span>
               <input
                 type="text"
-                placeholder="Enter timezone"
+                placeholder="Entertimezone"
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
