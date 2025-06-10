@@ -22,7 +22,7 @@ const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
+  const [_, setPage] = useState(1);
 
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
@@ -32,14 +32,10 @@ const Quotes = () => {
     []
   );
 
-  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
+  const { quotes, refresh, pagination } = useGetQuotes({
     include,
   });
-  const {
-    createQuote,
-    loading: createLoading,
-    error: createError,
-  } = useCreateQuote();
+  const { createQuote, loading: createLoading } = useCreateQuote();
 
   const { companies, refresh: refreshCompanies } = useGetCompanies();
   const { journeys, refresh: refreshJourneys } = useGetJourneys();

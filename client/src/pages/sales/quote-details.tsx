@@ -1,7 +1,6 @@
 import {
   Edit,
   Plus,
-  MoreHorizontal,
   ChevronDown,
   CheckCircle,
   Check,
@@ -777,7 +776,6 @@ const AddItemModal = ({
   const {
     loading: addItemLoading,
     error: addItemError,
-    success: addItemSuccess,
     createQuoteItem,
   } = useCreateQuoteItem();
 
@@ -1018,9 +1016,9 @@ const SelectDealerModal = ({
 }) => {
   const navigate = useNavigate();
 
-  const handleSelectDealer = async (dealer: any) => {
-    // TODO: Implement dealer selection logic
-    console.log("Selected dealer:", dealer);
+  const handleSelectDealer = async () => {
+    console.log("Selected dealer:", quoteId);
+    onSuccess();
     onClose();
   };
 
@@ -1065,11 +1063,11 @@ const SelectDealerModal = ({
             {
               key: "actions",
               header: "",
-              render: (_, row) => (
+              render: () => (
                 <div className="flex justify-end">
                   <Button
                     variant="secondary-outline"
-                    onClick={() => handleSelectDealer(row)}>
+                    onClick={() => handleSelectDealer()}>
                     Select
                   </Button>
                 </div>
@@ -1231,7 +1229,6 @@ const SendQuoteModal = ({
   const {
     loading: sendQuoteLoading,
     error: sendQuoteError,
-    success: sendQuoteSuccess,
     sendQuote,
   } = useSendQuote();
 
@@ -1292,7 +1289,6 @@ const CreateRevisionModal = ({
   const {
     loading: createRevisionLoading,
     error: createRevisionError,
-    success: createRevisionSuccess,
     createQuoteRevision,
   } = useCreateQuoteRevision();
 

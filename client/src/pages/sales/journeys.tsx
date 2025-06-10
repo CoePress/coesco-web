@@ -1,16 +1,15 @@
 import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import { StatusBadge, PageHeader, Table, PageSearch } from "@/components";
+import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/shared/table";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
 const Journeys = () => {
-  const navigate = useNavigate();
-  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
+  const [selectedRows] = useState<(string | number)[]>([]);
 
-  const { journeys, loading, error, refresh, pagination } = useGetJourneys();
+  const { journeys } = useGetJourneys();
 
   const columns: TableColumn<any>[] = [
     {

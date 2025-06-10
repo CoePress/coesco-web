@@ -1,4 +1,4 @@
-import { Edit, MapPin, Star, Download, Plus } from "lucide-react";
+import { Edit, MapPin, Star, Plus } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import {
   Link,
@@ -17,7 +17,7 @@ import useGetJourneys from "@/hooks/sales/use-get-journeys";
 const JourneysTab = () => {
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
+  const [_, setPage] = useState(1);
 
   const companyId = useParams().id;
 
@@ -30,7 +30,7 @@ const JourneysTab = () => {
 
   const include = useMemo(() => ["createdBy"], []);
 
-  const { journeys, loading, error, refresh, pagination } = useGetJourneys({
+  const { journeys, pagination } = useGetJourneys({
     filter,
     include,
   });
@@ -97,7 +97,7 @@ const JourneysTab = () => {
 const QuotesTab = () => {
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
+  const [_, setPage] = useState(1);
 
   const companyId = useParams().id;
 
@@ -112,7 +112,7 @@ const QuotesTab = () => {
 
   const include = useMemo(() => ["journey", "createdBy"], []);
 
-  const { quotes, loading, error, refresh, pagination } = useGetQuotes({
+  const { quotes, pagination } = useGetQuotes({
     filter,
     include,
   });
@@ -206,7 +206,7 @@ const CompanyDetails = () => {
 
   const companyId = useParams().id;
 
-  const { companyOverview, loading, error } = useGetCompanyOverview({
+  const { companyOverview } = useGetCompanyOverview({
     companyId: companyId || "",
   });
 
