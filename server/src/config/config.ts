@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { config as dotenvConfig } from "dotenv";
+import { logger } from "@/utils/logger";
 
 dotenvConfig({ path: ".env" });
 
@@ -51,16 +52,14 @@ const envSchema = z.object({
   FANUC_ADAPTER_IP: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("8080"),
 
-  COLLECT_MACHINE_DATA: z.boolean().default(false),
+  COLLECT_MACHINE_DATA: z.string().transform((val) => val === "true"),
 });
 
 const env = envSchema.safeParse(process.env);
 
 if (!env.success) {
-  console.error(
-    "❌ Invalid environment variables:",
-    JSON.stringify(env.error.format(), null, 2)
-  );
+  logger.error("❌ Invalid environment variables:", env.error.format());
+
   process.exit(1);
 }
 
