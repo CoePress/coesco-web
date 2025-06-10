@@ -1,13 +1,83 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { X, Home, Sun, Moon, Code, ChevronsRight } from "lucide-react";
+import {
+  X,
+  Home,
+  Sun,
+  Moon,
+  Code,
+  ChevronsRight,
+  HelpCircle,
+  Bell,
+} from "lucide-react";
 
 import modules from "@/config/modules";
-import Header from "./header";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
 import Button from "../shared/button";
 import { useAppContext } from "@/contexts/app.context";
+
+type HeaderProps = {
+  employee: any;
+};
+
+const Header = ({ employee }: HeaderProps) => {
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const initials = employee.firstName[0] + employee.lastName[0];
+
+  return (
+    <header className="bg-foreground border-b border-border p-2">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-0.5 leading-none">
+          <h1 className="text-text">Companies</h1>
+          <nav className="flex items-center text-sm text-text-muted gap-1">
+            <a
+              href="/"
+              className="hover:text-primary">
+              Dashboard
+            </a>
+            <span className="text-text-muted">/</span>
+            <a
+              href="/companies"
+              className="hover:text-primary">
+              Companies
+            </a>
+            <span className="text-text-muted">/</span>
+            <span className="text-text">HubSpot</span>
+          </nav>
+        </div>
+
+        <div className="flex items-center">
+          <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
+            <HelpCircle size={20} />
+          </div>
+          <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
+            <Bell size={20} />
+          </div>
+          <div className="h-10 aspect-square bg-border rounded-lg flex items-center justify-center">
+            <span className="text-text-muted">{initials}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
 
 type SidebarProps = {
   isOpen: boolean;

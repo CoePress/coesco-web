@@ -1,6 +1,13 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import modules from "./config/modules";
-import { ChatPLK, Design, Login, MainMenu, NotFound, Sandbox } from "./pages";
+import {
+  ChatPLK,
+  Design,
+  Login,
+  MainMenu,
+  NotFound,
+  Performance,
+} from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { PublicRoute, ProtectedRoute, MicrosoftCallback } from "./components";
 import { ProtectedRouteWithoutLayout } from "./components/general/routes";
@@ -104,7 +111,7 @@ const App = () => {
             />
             <Route
               path="/sandbox"
-              element={<Sandbox />}
+              element={<Performance />}
             />
           </>
         )}
