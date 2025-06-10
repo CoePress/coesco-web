@@ -16,6 +16,7 @@ import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
 import Button from "../shared/button";
 import { useAppContext } from "@/contexts/app.context";
+import { __dev__ } from "@/config/env";
 
 type HeaderProps = {
   employee: any;
@@ -310,12 +311,14 @@ const Layout = ({ employee, children }: LayoutProps) => {
           </div>
 
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-            <Link
-              key="sandbox"
-              to="/sandbox"
-              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-              <Code size={18} />
-            </Link>
+            {__dev__ && (
+              <Link
+                key="sandbox"
+                to="/sandbox"
+                className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
+                <Code size={18} />
+              </Link>
+            )}
 
             <button
               onClick={toggleTheme}
