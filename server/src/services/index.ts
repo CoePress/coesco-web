@@ -30,18 +30,6 @@ export const machineService = new MachineService();
 export const machineMonitorService = new MachineMonitorService();
 export const machineStatusService = new MachineStatusService();
 
-export const initializeServices = async () => {
-  socketService.setIo(io);
-  socketService.initialize();
-  logger.info("Socket service initialized");
-
-  await cronService.initialize();
-  logger.info("Cron service initialized");
-
-  await machineMonitorService.initialize();
-  logger.info("Machine data service initialized");
-};
-
 export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const cronService = new CronService();
@@ -64,3 +52,15 @@ export const salesService = new SalesService();
 export const itemService = new ItemService();
 export const userService = new UserService();
 export const quoteBuilderService = new QuoteBuilderService();
+
+export const initializeServices = async () => {
+  socketService.setIo(io);
+  socketService.initialize();
+  logger.info("Socket service initialized");
+
+  await cronService.initialize();
+  logger.info("Cron service initialized");
+
+  await machineMonitorService.initialize();
+  logger.info("Machine data service initialized");
+};

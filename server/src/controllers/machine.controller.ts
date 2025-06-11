@@ -22,6 +22,7 @@ export class MachineController extends BaseController<Machine> {
         req.query.startDate as string,
         req.query.endDate as string
       );
+      console.log(result);
       res.status(200).json(result);
     } catch (error) {
       next(error);
