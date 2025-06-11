@@ -3,7 +3,7 @@ import { httpServer } from "./app";
 import { __dev__, config } from "./config/config";
 import { logger } from "./utils/logger";
 import {
-  machineDataService,
+  machineMonitorService,
   cronService,
   cacheService,
   socketService,
@@ -21,7 +21,7 @@ httpServer.listen(config.port, async () => {
 const gracefulShutdown = async () => {
   logger.info("Shutting down gracefully...");
 
-  await machineDataService.stop();
+  await machineMonitorService.stop();
 
   await Promise.all([
     cronService.stop(),

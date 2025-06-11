@@ -7,7 +7,7 @@ import puppeteer from "puppeteer";
 import { config } from "@/config/config";
 import juice from "juice";
 import { IQueryParams } from "@/types/api.types";
-import { machineDataService } from "@/services";
+import { machineMonitorService } from "@/services";
 import handlebars from "handlebars";
 import HTMLtoDOCX from "html-to-docx";
 
@@ -189,7 +189,7 @@ export class EmailService {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 7);
 
-    const report = await machineDataService.getMachineOverview(
+    const report = await machineMonitorService.getMachineOverview(
       startDate.toISOString(),
       endDate.toISOString()
     );

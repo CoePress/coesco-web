@@ -34,7 +34,7 @@ interface CachedMachineState {
   timestamp: string;
 }
 
-export class MachineDataService {
+export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
   private readonly offlineState = {
     state: MachineState.OFFLINE,

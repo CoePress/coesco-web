@@ -5,7 +5,7 @@ import { CacheService } from "./core/cache.service";
 import { CronService } from "./core/cron.service";
 import { EmailService } from "./core/email.service";
 import { EmployeeService } from "./repository/employee.service";
-import { MachineDataService } from "./domain/machine-monitor.service";
+import { MachineMonitorService } from "./domain/machine-monitor.service";
 import { SocketService } from "./core/socket.service";
 import { CompanyService } from "./repository/company.service";
 import { AddressService } from "./repository/address.service";
@@ -27,7 +27,7 @@ import { UserService } from "./repository/user.service";
 import { QuoteBuilderService } from "./domain/quote-builder.service";
 
 export const machineService = new MachineService();
-export const machineDataService = new MachineDataService();
+export const machineMonitorService = new MachineMonitorService();
 export const machineStatusService = new MachineStatusService();
 
 export const initializeServices = async () => {
@@ -38,7 +38,7 @@ export const initializeServices = async () => {
   await cronService.initialize();
   logger.info("Cron service initialized");
 
-  await machineDataService.initialize();
+  await machineMonitorService.initialize();
   logger.info("Machine data service initialized");
 };
 
