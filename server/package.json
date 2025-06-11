@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "copy": "copyfiles -u 1 \"src/templates/emails/**/*.ejs\" \"src/widget.html\" dist",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
-    "seed-sample": "ts-node -r tsconfig-paths/register src/scripts/seed-sample.ts",
-    "gen": "ts-node src/scripts/generate-services.ts",
     "prisma:nuke": "rm -rf prisma/migrations && prisma db push --force-reset && prisma format && prisma generate",
     "prisma:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
+    "copy": "copyfiles -u 1 \"src/assets/**/*\" dist",
     "build": "tsc && tsc-alias && npm run copy",
     "start": "npm run build && node dist/server.js"
   },
