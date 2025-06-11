@@ -31,7 +31,7 @@ router.use("/items", protect, itemRoutes);
 
 // Widget
 router.get("/widget.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "widget.html"));
+  res.sendFile(path.join(__dirname, "..", "assets", "widgets", "widget.html"));
 });
 
 // System
