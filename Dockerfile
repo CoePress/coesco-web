@@ -1,24 +1,23 @@
 FROM node:20-alpine
 
+# Install Redis
+RUN apk add --no-cache redis
+
 WORKDIR /app
 
-# Copy package files for optimal caching
+# Copy package files
 COPY package*.json ./
 COPY turbo.json ./
 COPY apps/client/package*.json ./apps/client/
 COPY apps/server/package*.json ./apps/server/
 
-# Install all dependencies
 RUN npm install
-
-# Copy source code
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma
 RUN cd apps/server && npx prisma generate
 
-# Expose both ports
-EXPOSE 5173 8080
+EXPOSE 5173 8080 6379
 
-# Start both apps
-CMD ["npm", "run", "dev"]
+# Start Redis and apps
+CMD redis-server --daemonize yes && npm run dev
