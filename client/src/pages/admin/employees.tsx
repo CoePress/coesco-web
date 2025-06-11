@@ -13,7 +13,7 @@ import { TableColumn } from "@/components/shared/table";
 import useGetEmployees from "@/hooks/admin/use-get-employees";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
 import useUpdateEmployee from "@/hooks/admin/use-update-employee";
-import { IEmployee, EmployeeRole } from "@/utils/types";
+import { IEmployee } from "@/utils/types";
 import { format } from "date-fns";
 
 const Employees = () => {
@@ -22,10 +22,8 @@ const Employees = () => {
   const [sort, setSort] = useState("lastName");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<IEmployee | null>(
-    null
-  );
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("USER");
 
   const {
     syncEmployees,
@@ -88,7 +86,7 @@ const Employees = () => {
           size="sm"
           onClick={() => {
             setSelectedEmployee(row);
-            setSelectedRole(row.role);
+            setSelectedRole(row.user.role);
             setIsEditModalOpen(true);
           }}>
           Edit
@@ -182,10 +180,8 @@ const Employees = () => {
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-              <option value={EmployeeRole.ADMIN}>Admin</option>
-              <option value={EmployeeRole.MANAGER}>Manager</option>
-              <option value={EmployeeRole.EMPLOYEE}>Employee</option>
-              <option value={EmployeeRole.INACTIVE}>Inactive</option>
+              <option value="ADMIN">Admin</option>
+              <option value="USER">User</option>
             </select>
           </div>
 
@@ -198,10 +194,13 @@ const Employees = () => {
             <Button
               onClick={async () => {
                 if (selectedEmployee) {
-                  const result = await updateEmployee(selectedEmployee.id, {
-                    role: selectedRole as EmployeeRole,
-                  });
-                  if (result) {
+                  const updated = await updateEmployee(selectedEmployee.id, {
+                    "user.role": selectedRole.toUpperCase(),
+                  } as any);
+
+                  if (updated) {
+                    setSelectedEmployee(null);
+                    setSelectedRole("USER");
                     setIsEditModalOpen(false);
                     refresh();
                   }

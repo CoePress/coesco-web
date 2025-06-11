@@ -16,6 +16,7 @@ const useUpdateEmployee = () => {
   ) => {
     setLoading(true);
     setError(null);
+    setUpdatedEmployee(null);
 
     try {
       const { data } = await instance.patch(
@@ -25,8 +26,10 @@ const useUpdateEmployee = () => {
 
       if (data.success) {
         setUpdatedEmployee(data.data);
+        return data.data;
       } else {
         setError(data.error || "Failed to update employee");
+        return null;
       }
     } catch (error) {
       if (error instanceof AxiosError) {

@@ -152,14 +152,31 @@ export abstract class BaseService<TEntity> {
         throw new NotFoundError(`${this.entityName} with id ${id} not found`);
       }
 
-      const updateData = {
-        ...data,
-        ...(userId ? { updatedBy: userId } : {}),
-      };
+      // Handle nested updates for relationships
+      const updateData: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (key.includes(".")) {
+          const [relation, field] = key.split(".");
+          if (!updateData[relation]) {
+            updateData[relation] = {
+              update: {
+                where: { id: entity.userId },
+                data: {},
+              },
+            };
+          }
+          updateData[relation].update.data[field] = value;
+        } else {
+          updateData[key] = value;
+        }
+      }
 
       const updatedEntity = await model.update({
         where: { id },
         data: updateData,
+        include: {
+          user: true,
+        },
       });
 
       if (!updatedEntity) {

@@ -58,6 +58,7 @@ export abstract class BaseController<TEntity> {
     try {
       const { id } = req.params;
       const data = req.body;
+      console.log(data);
       const result = await this.service.update(id, data);
       res.status(200).json(result);
     } catch (error) {
