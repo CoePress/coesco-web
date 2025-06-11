@@ -1,4 +1,4 @@
-import { Plus, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
@@ -63,8 +63,8 @@ const Employees = () => {
             row.user.role === "ADMIN"
               ? "error"
               : row.user.role === "EMPLOYEE"
-              ? "success"
-              : "default"
+                ? "success"
+                : "default"
           }
         />
       ),

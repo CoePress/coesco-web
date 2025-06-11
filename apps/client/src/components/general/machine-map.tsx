@@ -1,3 +1,4 @@
+import { useTheme } from "@/contexts/theme.context";
 import { getStatusColor } from "@/utils";
 import { useState } from "react";
 
@@ -43,6 +44,7 @@ const MachineMap = ({ machines }: MachineMapProps) => {
   const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [gridSizeX] = useState(10);
   const [gridSizeY] = useState(5);
+  const { theme } = useTheme();
 
   const isoAngle = Math.PI / 6;
   const cos30 = Math.cos(isoAngle);
@@ -68,7 +70,7 @@ const MachineMap = ({ machines }: MachineMapProps) => {
       col: index % 5,
     };
 
-    const color = getStatusColor(machine.status);
+    const color = getStatusColor(machine.status, theme);
     const { x, y } = isoCoord(position.row, position.col);
     const size = 1;
     const depth = size * cellSize * sin30;

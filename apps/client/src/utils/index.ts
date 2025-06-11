@@ -3,7 +3,6 @@ import { ProductClass } from "./types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import env from "@/config/env";
-import { useTheme } from "@/contexts/theme.context";
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
