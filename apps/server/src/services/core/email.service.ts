@@ -31,8 +31,8 @@ export class EmailService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: config.smtp.host,
-      port: config.smtp.port,
+      host: config.smtpHost,
+      port: config.smtpPort,
       tls: { rejectUnauthorized: true },
     });
   }

@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
-    "prisma:nuke": "rm -rf prisma/migrations && prisma db push --force-reset && prisma format && prisma generate",
+    "prisma:nuke": "rd /s /q prisma\\migrations 2>nul & prisma db push --force-reset --schema=./prisma/schema.prisma & prisma generate",
     "prisma:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "copy": "copyfiles -u 1 \"src/assets/**/*\" dist",

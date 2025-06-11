@@ -7,8 +7,8 @@ export class CacheService {
 
   constructor() {
     this.client = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
+      host: config.redisHost,
+      port: config.redisPort,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;

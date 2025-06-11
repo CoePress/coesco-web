@@ -30,7 +30,7 @@ app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 app.use(
   cors({
-    origin: config.cors.allowedOrigins,
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

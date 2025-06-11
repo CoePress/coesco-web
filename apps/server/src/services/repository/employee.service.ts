@@ -147,12 +147,12 @@ export class EmployeeService extends BaseService<Employee> {
   }
 
   private async generateMicrosoftToken() {
-    const tokenUrl = `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/token`;
+    const tokenUrl = `https://login.microsoftonline.com/${config.azureTenantId}/oauth2/v2.0/token`;
 
     try {
       const params = new URLSearchParams({
-        client_id: config.azure.clientId,
-        client_secret: config.azure.clientSecret,
+        client_id: config.azureClientId,
+        client_secret: config.azureClientSecret,
         scope: "https://graph.microsoft.com/.default",
         grant_type: "client_credentials",
       });
@@ -164,10 +164,9 @@ export class EmployeeService extends BaseService<Employee> {
         error: error.response?.data || error.message,
         status: error.response?.status,
         config: {
-          tenantId: config.azure.tenantId,
-          clientId: config.azure.clientId,
-          // Don't log the secret
-          hasSecret: !!config.azure.clientSecret,
+          tenantId: config.azureTenantId,
+          clientId: config.azureClientId,
+          hasSecret: !!config.azureClientSecret,
         },
       });
       throw new Error(

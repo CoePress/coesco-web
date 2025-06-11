@@ -1,84 +1,111 @@
-# Turborepo starter
+# Project Name
 
-This Turborepo starter is maintained by the Turborepo core team.
+A full-stack application built with Turborepo, featuring a Vite frontend and Express backend.
 
-## Using this example
+## Prerequisites
 
-Run the following command:
+- [Node.js](https://nodejs.org/) (v18+)
+- [Turbo](https://turbo.build/repo/docs/installing) (`npm install -g turbo`)
+- [PostgreSQL](https://www.postgresql.org/) (v14+)
+- [Redis](https://redis.io/) (v6+)
 
-```sh
-npx create-turbo@latest
+## Quick Start
+
+```bash
+# 1. Clone and install
+git clone <your-repo>
+cd <your-repo>
+npm install
+
+# 2. Setup environment
+cp apps/server/.env.example apps/server/.env
+# Edit .env with your database credentials
+
+# 3. Setup database
+npm run db:setup
+
+# 4. Start development
+npm run dev
 ```
 
-## What's inside?
+**Access your app:**
 
-This Turborepo includes the following packages/apps:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8080
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Project Structure
 
 ```
-cd my-turborepo
-pnpm build
+├── apps/
+│   ├── client/          # Vite React app
+│   └── server/          # Express API server
+├── packages/            # Shared packages (if any)
+└── package.json         # Root workspace
 ```
 
-### Develop
+## Available Scripts
 
-To develop all apps and packages, run the following command:
+```bash
+# Development
+npm run dev              # Start all apps in development
+npm run dev:client       # Start only frontend
+npm run dev:server       # Start only backend
 
-```
-cd my-turborepo
-pnpm dev
-```
+# Database
+npm run db:setup         # Run migrations + seed
+npm run db:migrate       # Run migrations only
+npm run db:seed          # Seed database
+npm run db:reset         # Reset database
 
-### Remote Caching
+# Build
+npm run build            # Build all apps
+npm run build:client     # Build frontend only
+npm run build:server     # Build backend only
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
+# Production
+npm start                # Start production build
 ```
 
-## Useful Links
+## Environment Setup
 
-Learn more about the power of Turborepo:
+### Database Connection
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Create `apps/server/.env`:
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/yourdb"
+REDIS_URL="redis://localhost:6379"
+NODE_ENV="development"
+PORT=3001
+```
+
+### Required Services
+
+Make sure PostgreSQL and Redis are running:
+
+```bash
+# Check postgres
+psql -U postgres -c "SELECT version();"
+
+# Check redis
+redis-cli ping
+```
+
+## Troubleshooting
+
+**Database connection issues?**
+
+- Ensure PostgreSQL is running
+- Check your DATABASE_URL in .env
+- Try: `npm run db:reset`
+
+**Redis connection issues?**
+
+- Ensure Redis is running: `redis-server`
+- Check REDIS_URL in .env
+
+**Turbo not found?**
+
+```bash
+npm install -g turbo
+```

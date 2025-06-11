@@ -27,8 +27,8 @@ export const send = async (
   html: string
 ) => {
   const transporter = nodemailer.createTransport({
-    host: config.smtp.host,
-    port: config.smtp.port,
+    host: config.smtpHost,
+    port: config.smtpPort,
     tls: { rejectUnauthorized: true },
   });
 

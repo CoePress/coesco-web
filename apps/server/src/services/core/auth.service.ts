@@ -15,22 +15,22 @@ export class AuthService {
   constructor() {
     this.msalClient = new ConfidentialClientApplication({
       auth: {
-        clientId: config.azure.clientId,
-        clientSecret: config.azure.clientSecret,
-        authority: `https://login.microsoftonline.com/${config.azure.tenantId}`,
+        clientId: config.azureClientId,
+        clientSecret: config.azureClientSecret,
+        authority: `https://login.microsoftonline.com/${config.azureTenantId}`,
       },
     });
   }
 
   private generateTokens(userId: string): IAuthTokens {
-    const token = sign({ userId, role: UserRole.USER }, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
+    const token = sign({ userId, role: UserRole.USER }, config.jwtSecret, {
+      expiresIn: config.jwtExpiresIn,
     } as SignOptions);
 
     const refreshToken = sign(
       { userId, role: UserRole.USER },
-      config.jwt.secret,
-      { expiresIn: config.jwt.refreshExpiresIn } as SignOptions
+      config.jwtSecret,
+      { expiresIn: config.jwtRefreshExpiresIn } as SignOptions
     );
 
     return { token, refreshToken };
@@ -78,10 +78,10 @@ export class AuthService {
   async loginWithMicrosoft(): Promise<string> {
     const sessionId = randomUUID();
     return (
-      `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/authorize?` +
-      `client_id=${config.azure.clientId}&` +
+      `https://login.microsoftonline.com/${config.azureTenantId}/oauth2/v2.0/authorize?` +
+      `client_id=${config.azureClientId}&` +
       `response_type=code&` +
-      `redirect_uri=${config.azure.redirectUri}&` +
+      `redirect_uri=${config.azureRedirectUri}&` +
       `response_mode=query&` +
       `scope=openid profile email&` +
       `prompt=select_account&` +
@@ -96,7 +96,7 @@ export class AuthService {
 
     const tokenResponse = await this.msalClient.acquireTokenByCode({
       code,
-      redirectUri: config.azure.redirectUri,
+      redirectUri: config.azureRedirectUri,
       scopes: ["openid", "profile", "email"],
     });
 
@@ -140,7 +140,7 @@ export class AuthService {
       throw new UnauthorizedError("Access token is required");
     }
 
-    const decoded = verify(accessToken, config.jwt.secret) as {
+    const decoded = verify(accessToken, config.jwtSecret) as {
       userId: string;
       role: UserRole;
     };

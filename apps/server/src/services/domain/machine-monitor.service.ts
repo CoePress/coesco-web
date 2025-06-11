@@ -57,7 +57,7 @@ export class MachineMonitorService {
   private activeRequests: Set<AbortController> = new Set();
 
   constructor() {
-    if (config.features.collectMachineData) {
+    if (config.collectMachineData) {
       this.start();
     }
   }
@@ -523,7 +523,7 @@ export class MachineMonitorService {
 
     const url = isMTConnect
       ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `http://${config.fanucAdapter.url}:${config.fanucAdapter.port}/api/machines/${machine.slug}`;
+      : `http://${config.fanucAdapterIp}:${config.fanucAdapterPort}/api/machines/${machine.slug}`;
 
     const response = await this.fetchData(url);
     if (!response) {
