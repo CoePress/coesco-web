@@ -71,9 +71,7 @@ export const isProductClassDescendant = (
   return false;
 };
 
-export const getStatusColor = (status: string) => {
-  const { theme } = useTheme();
-
+export const getStatusColor = (status: string, theme: string) => {
   switch (status.toUpperCase()) {
     case "ACTIVE":
       return "#34d399";

@@ -135,6 +135,7 @@ const PageHeader = ({
     if (action.type === "datepicker") {
       return (
         <DatePicker
+          key="datepicker"
           dateRange={action.dateRange}
           setDateRange={action.setDateRange}
         />

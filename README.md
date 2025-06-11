@@ -1,3 +1,6 @@
 # Coesco Web
 
-## Perquisites  
+## Perquisites
+
+- Docker Desktop
+- Postgres 17

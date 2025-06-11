@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/contexts/theme.context";
 
 import { Card, Loader, MachineMap, Modal, PageHeader } from "@/components";
 import { useSocket } from "@/contexts/socket.context";
@@ -373,15 +374,26 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
   );
 };
 
+type IOverviewKPI = {
+  value: number;
+  change: number;
+};
+
+type IOverviewKPIs = {
+  utilization: IOverviewKPI;
+  averageRuntime: IOverviewKPI;
+  alarmCount: IOverviewKPI;
+};
+
+type IOverview = {
+  kpis: IOverviewKPIs;
+  utilization: any[];
+  states: any[];
+  machines: IOverviewMachine[];
+  alarms: IOverviewAlarm[];
+};
+
 const Dashboard = () => {
-  const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
-  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-
-  const { machineStates } = useSocket();
-
-  const navigate = useNavigate();
-
   const parseDateParam = (param: string | null, fallback: Date) => {
     if (!param) return fallback;
     const [year, month, day] = param.split("-").map(Number);
@@ -398,11 +410,22 @@ const Dashboard = () => {
   };
 
   const [dateRange, setDateRange] = useState(getInitialDateRange);
-
+  const { machineStates } = useSocket();
+  const navigate = useNavigate();
+  const { theme } = useTheme();
   const { overview, loading, error, refresh } = useGetOverview({
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
-  });
+  }) as {
+    overview: IOverview | null;
+    loading: boolean;
+    error: any;
+    refresh: () => void;
+  };
+
+  const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   const kpis = [
     {
@@ -413,30 +436,24 @@ const Dashboard = () => {
     },
     {
       title: "Utilization",
-      // @ts-ignore
-      value: `${overview?.kpis?.utilization?.value.toFixed(2) || 0}%`,
+      value: `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      // @ts-ignore
-      change: overview?.kpis?.utilization?.change || 0,
+      change: overview?.kpis?.utilization?.change ?? 0,
     },
     {
       title: "Average Runtime",
-      // @ts-ignore
-      value: formatDuration(overview?.kpis?.averageRuntime?.value || 0),
+      value: formatDuration(overview?.kpis?.averageRuntime?.value ?? 0),
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      // @ts-ignore
-      change: overview?.kpis?.averageRuntime?.change || 0,
+      change: overview?.kpis?.averageRuntime?.change ?? 0,
     },
     {
       title: "Alarms",
-      // @ts-ignore
-      value: overview?.kpis?.alarmCount?.value || 0,
+      value: overview?.kpis?.alarmCount?.value ?? 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      // @ts-ignore
-      change: overview?.kpis?.alarmCount?.change || 0,
+      change: overview?.kpis?.alarmCount?.change ?? 0,
     },
   ];
 
@@ -668,7 +685,7 @@ const Dashboard = () => {
                           fill={
                             entry.state === "OFFLINE"
                               ? "var(--surface)"
-                              : getStatusColor(entry.state)
+                              : getStatusColor(entry.state, theme)
                           }
                         />
                       ))}
@@ -693,7 +710,10 @@ const Dashboard = () => {
                             <div
                               style={{
                                 fontWeight: 500,
-                                color: getStatusColor(entry.payload.state),
+                                color: getStatusColor(
+                                  entry.payload.state,
+                                  theme
+                                ),
                               }}>
                               {entry.payload.state}
                             </div>
@@ -718,11 +738,11 @@ const Dashboard = () => {
                     <span
                       className="w-3 h-3 rounded"
                       style={{
-                        backgroundColor: getStatusColor(entry.state),
+                        backgroundColor: getStatusColor(entry.state, theme),
                       }}
                     />
                     <span className="text-xs font-medium text-nowrap">
-                      {entry.state} ({entry.percentage.toFixed(1)}%)
+                      {entry.state} ({entry.percentage?.toFixed(1) ?? 0}%)
                     </span>
                   </div>
                 ))}
@@ -753,7 +773,10 @@ const Dashboard = () => {
                         <div
                           className="w-2 h-2 rounded-full border border-border"
                           style={{
-                            backgroundColor: getStatusColor(machine.status),
+                            backgroundColor: getStatusColor(
+                              machine.status,
+                              theme
+                            ),
                           }}
                         />
                         <p className="text-sm font-medium text-text-muted truncate">
@@ -837,119 +860,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <div
-            className={`md:col-span-2 lg:col-span-3 w-full h-full bg-foreground flex flex-col rounded border ${
-              !isToday ? "opacity-50" : ""
-            }`}>
-            <div className="p-2 border-b">
-              <h3 className="text-sm text-text-muted">
-                Machines ({machines.length})
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
-              {machines &&
-                machines.map((machine: ExpandedMachine) => (
-                  <div
-                    key={machine.id}
-                    onClick={() => {
-                      setSelectedMachine(machine);
-                    }}
-                    className="flex flex-col justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div
-                          className="w-2 h-2 rounded-full border border-border"
-                          style={{
-                            backgroundColor: getStatusColor(machine.status),
-                          }}
-                        />
-                        <p className="text-sm font-medium text-text-muted truncate">
-                          {machine.name}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 min-w-0 flex-1">
-                        <Box
-                          size={12}
-                          className="text-text-muted flex-shrink-0"
-                        />
-                        <span className="truncate text-xs">
-                          {machine.program || "-"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-text-muted text-xs">Spindle</span>
-                      <span className="text-xs text-text-muted">
-                        {machine.spindleSpeed || 0} RPM
-                      </span>
-                    </div>
-                    <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all bg-text-muted/50"
-                        style={{
-                          width: `${(machine.spindleSpeed || 0) / 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          <div className="bg-foreground rounded border flex-col h-[300px] hidden lg:flex">
-            <div className="p-2 border-b flex-shrink-0">
-              <h3 className="text-sm text-text-muted">Alarms</h3>
-            </div>
-
-            <div className="overflow-y-auto flex-grow flex flex-col">
-              <div className="p-2 space-y-2 flex-1 flex flex-col">
-                {loading ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <Loader />
-                  </div>
-                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
-                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
-                    <div
-                      key={idx}
-                      className="p-2 bg-surface rounded border border-border flex justify-between">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle
-                          size={16}
-                          className="text-error"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-text-muted">
-                            {alarm.message}
-                          </p>
-                          <p className="text-xs text-text-muted">
-                            {alarm.machineId}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-xs text-text-muted leading-none">
-                        {formatDistance(new Date(alarm.timestamp), new Date(), {
-                          addSuffix: true,
-                        })}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
-                    No alarms
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div> */}
 
       {selectedMachine && (
         <Modal

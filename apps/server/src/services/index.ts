@@ -63,4 +63,10 @@ export const initializeServices = async () => {
 
   await machineMonitorService.initialize();
   logger.info("Machine data service initialized");
+
+  const employees = await employeeService.getAll();
+  if (employees.data.length === 0) {
+    await employeeService.sync();
+    logger.info("Employees synced");
+  }
 };
