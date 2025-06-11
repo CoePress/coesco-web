@@ -130,15 +130,6 @@ const Employees = () => {
             icon: <RefreshCcw size={16} />,
             onClick: () => syncEmployees(),
           },
-          {
-            type: "button",
-            label: "New Employee",
-            variant: "secondary-outline",
-            icon: <Plus size={16} />,
-            onClick: () => {
-              syncEmployees();
-            },
-          },
         ]}
       />
 

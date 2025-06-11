@@ -154,6 +154,8 @@ export abstract class BaseService<TEntity> {
 
       // Handle nested updates for relationships
       const updateData: any = {};
+      const relationsToInclude: any = {};
+
       for (const [key, value] of Object.entries(data)) {
         if (key.includes(".")) {
           const [relation, field] = key.split(".");
@@ -166,6 +168,7 @@ export abstract class BaseService<TEntity> {
             };
           }
           updateData[relation].update.data[field] = value;
+          relationsToInclude[relation] = true;
         } else {
           updateData[key] = value;
         }
@@ -174,9 +177,10 @@ export abstract class BaseService<TEntity> {
       const updatedEntity = await model.update({
         where: { id },
         data: updateData,
-        include: {
-          user: true,
-        },
+        include:
+          Object.keys(relationsToInclude).length > 0
+            ? relationsToInclude
+            : undefined,
       });
 
       if (!updatedEntity) {

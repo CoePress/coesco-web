@@ -55,21 +55,6 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
     (state) => state.machineId === machine.id
   );
 
-  // const sampleProgramHistory = [
-  //   { label: "Program 1", timestamp: "06:00", duration: 10 },
-  //   { label: "Program 2", timestamp: "06:10", duration: 20 },
-  //   { label: "Program 3", timestamp: "06:20", duration: 30 },
-  //   { label: "Program 4", timestamp: "06:30", duration: 40 },
-  //   { label: "Program 5", timestamp: "06:40", duration: 50 },
-  // ];
-
-  // const sampleStateDistribution = [
-  //   { label: "Active", value: 70 },
-  //   { label: "Idle", value: 10 },
-  //   { label: "Alarm", value: 20 },
-  //   { label: "Offline", value: 10 },
-  // ];
-
   return (
     <div className="pt-2 text-sm flex flex-col gap-2">
       <div className="grid md:grid-cols-2 gap-2">
