@@ -80,7 +80,7 @@ export const config = {
     secure: __prod__,
     sameSite: (__prod__ ? "none" : "lax") as "none" | "lax" | "strict",
     path: "/",
-    domain: __prod__ ? ".cpec.com" : "localhost",
+    domain: __prod__ ? "cpec.com" : "localhost",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
   fanucAdapterIp: env.data.FANUC_ADAPTER_IP,
