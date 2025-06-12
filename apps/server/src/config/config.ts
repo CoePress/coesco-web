@@ -74,6 +74,7 @@ export const config = {
   azureClientId: env.data.AZURE_CLIENT_ID,
   azureClientSecret: env.data.AZURE_CLIENT_SECRET,
   azureRedirectUri: env.data.AZURE_REDIRECT_URI,
+  allowedOrigins: env.data.ALLOWED_ORIGINS,
   cookieOptions: {
     httpOnly: true,
     secure: __prod__,

@@ -5,7 +5,7 @@ import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { createServer } from "http";
 import routes from "./routes";
-import { __dev__, __prod__ } from "./config/config";
+import { __dev__, __prod__, config } from "./config/config";
 import { errorHandler } from "./middleware/error.middleware";
 import {
   cspMiddleware,
@@ -16,28 +16,26 @@ import { Server } from "socket.io";
 
 const app = express();
 const httpServer = createServer(app);
+
+const corsOptions = {
+  origin: __dev__
+    ? "http://localhost:5173"
+    : ["https://portal.cpec.com", "https://api.oee.cpec.com"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+};
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-  },
+  cors: corsOptions,
   pingInterval: 5000,
   pingTimeout: 5000,
 });
 
 app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
-app.use(
-  cors({
-    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Range", "X-Content-Range"],
-  })
-);
+app.use(cors(corsOptions));
 
 app.use(cspMiddleware);
 app.use(securityHeaders);
