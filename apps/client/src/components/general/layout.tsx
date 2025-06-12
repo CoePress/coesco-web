@@ -17,6 +17,7 @@ import { useTheme } from "@/contexts/theme.context";
 import Button from "../shared/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
+import { useAuth } from "@/contexts/auth.context";
 
 type HeaderProps = {
   employee: any;
@@ -87,6 +88,7 @@ type SidebarProps = {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
+  const location = useLocation();
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -94,16 +96,16 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
   const isActive = (path: string) => {
     const trimmedPath = trimmer(path);
-    const trimmedCurrentPath = trimmer(window.location.pathname);
+    const trimmedCurrentPath = trimmer(location.pathname);
     return trimmedCurrentPath === trimmedPath;
   };
 
-  const currentModule = Object.values(modules).find((m) =>
-    window.location.pathname.startsWith(m.path)
+  const currentModule = modules.find((m) =>
+    location.pathname.startsWith(`/${m.slug}`)
   );
 
-  if (currentModule === null || currentModule === undefined) {
-    sidebarLabel = window.location.pathname.split("/")[1];
+  if (!currentModule) {
+    sidebarLabel = location.pathname.split("/")[1];
     sidebarLabel = sidebarLabel.charAt(0).toUpperCase() + sidebarLabel.slice(1);
   } else {
     sidebarLabel = currentModule.label;
@@ -137,14 +139,12 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             {(() => {
               return (
                 <>
-                  {currentModule?.pages?.map((child) => {
-                    const fullPath = `${currentModule?.path || "/"}${
-                      child.path
-                    }`;
+                  {currentModule?.pages?.map((page) => {
+                    const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
 
                     return (
                       <Link
-                        key={child.path}
+                        key={page.slug || "index"}
                         to={trimmer(fullPath)}
                         className={`flex items-center gap-3 px-4 py-2 rounded ${
                           isOpen ? "opacity-100" : "opacity-0"
@@ -153,9 +153,9 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                             ? "bg-background text-primary"
                             : "text-text-muted hover:bg-surface"
                         }`}>
-                        <child.icon size={18} />
+                        <page.icon size={18} />
                         <span className="font-medium text-sm">
-                          {child.label}
+                          {page.label}
                         </span>
                       </Link>
                     );
@@ -180,6 +180,7 @@ const Layout = ({ employee, children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const { theme, toggleTheme } = useTheme();
 
@@ -269,10 +270,10 @@ const Layout = ({ employee, children }: LayoutProps) => {
     };
   }, [isCommandBarOpen]);
 
-  const currentModule = Object.values(modules).find((m) =>
-    location.pathname.startsWith(m.path)
+  const currentModule = modules.find((m) =>
+    location.pathname.startsWith(`/${m.slug}`)
   );
-  const defaultModule = currentModule?.path.replace("/", "") || "sales";
+  const defaultModule = currentModule?.slug || "production";
 
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
@@ -296,18 +297,25 @@ const Layout = ({ employee, children }: LayoutProps) => {
                 }`}
               />
             </button>
-            {Object.values(modules).map((module) => (
-              <Link
-                key={module.path}
-                to={module.path}
-                className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${
-                  location.pathname.startsWith(module.path)
-                    ? "bg-background text-primary"
-                    : "text-text-muted hover:bg-surface"
-                }`}>
-                <module.icon size={18} />
-              </Link>
-            ))}
+            {modules
+              .filter((module) => {
+                if (module.slug === "admin" && user?.role !== "ADMIN") {
+                  return false;
+                }
+                return true;
+              })
+              .map((module) => (
+                <Link
+                  key={module.slug}
+                  to={`/${module.slug}`}
+                  className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${
+                    location.pathname.startsWith(`/${module.slug}`)
+                      ? "bg-background text-primary"
+                      : "text-text-muted hover:bg-surface"
+                  }`}>
+                  <module.icon size={18} />
+                </Link>
+              ))}
           </div>
 
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">

@@ -32,30 +32,32 @@ const MainMenu = () => {
     return "Good evening";
   };
 
+  const filteredModules = modules.filter((m) => {
+    if (m.slug === "admin" && user?.role !== "ADMIN") {
+      return false;
+    }
+    if (__dev__) {
+      return m.status !== "inactive";
+    }
+    return m.status === "active";
+  });
+
   return (
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-background">
       <div className="flex flex-col items-center gap-8">
         <h1 className="text-2xl leading-none text-primary text-center">
-          {getGreeting()}, {user?.firstName}
+          {getGreeting()}, {user?.employee?.firstName}
         </h1>
 
         <div
           className="hidden md:grid gap-2 justify-center"
           style={{
-            gridTemplateColumns: `repeat(${Math.min(
-              Object.values(modules).filter((m) => {
-                if (__dev__) {
-                  return m.status !== "inactive";
-                }
-                return m.status === "active";
-              }).length,
-              4
-            )}, auto)`,
+            gridTemplateColumns: `repeat(${Math.min(filteredModules.length, 4)}, auto)`,
           }}>
-          {modules.map((module) => (
-            <div key={module.path}>
+          {filteredModules.map((module) => (
+            <div key={module.slug}>
               {module.status !== "inactive" ? (
-                <Link to={module.path}>
+                <Link to={`/${module.slug}`}>
                   <Card className="hover:bg-surface transition-all duration-200 relative shadow">
                     <div className="absolute top-2 right-2">
                       {module.status === "development" && (
@@ -88,11 +90,11 @@ const MainMenu = () => {
         </div>
 
         <div className="flex flex-col gap-2 w-full md:hidden">
-          {Object.entries(modules).map(([key, module]) => (
-            <div key={key}>
+          {modules.map((module) => (
+            <div key={module.slug}>
               {module.status !== "inactive" ? (
                 <Link
-                  to={module.path}
+                  to={`/${module.slug}`}
                   className="w-full">
                   <Card className="hover:bg-surface transition-all duration-200 w-full shadow relative">
                     <div className="absolute top-2 right-2">

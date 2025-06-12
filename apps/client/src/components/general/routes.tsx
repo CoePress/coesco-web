@@ -3,9 +3,10 @@ import { Navigate, Outlet } from "react-router-dom";
 import Layout from "./layout";
 import Loader from "../shared/loader";
 import { useAuth } from "@/contexts/auth.context";
-import { EmployeeRole } from "@/utils/types";
+
 interface ProtectedRouteProps {
   allowedRoles?: string[];
+  withLayout?: boolean;
 }
 
 export const PublicRoute = () => {
@@ -20,7 +21,7 @@ export const PublicRoute = () => {
   }
 
   if (user) {
-    if (user.role === EmployeeRole.INACTIVE) {
+    if (user.role === "INACTIVE") {
       return (
         <Navigate
           to="/request-access"
@@ -39,7 +40,10 @@ export const PublicRoute = () => {
   return <Outlet />;
 };
 
-export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({
+  allowedRoles,
+  withLayout = true,
+}: ProtectedRouteProps) => {
   const { user, employee, isLoading } = useAuth();
 
   if (isLoading) {
@@ -59,15 +63,6 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  if (user.role === EmployeeRole.INACTIVE) {
-    return (
-      <Navigate
-        to="/request-access"
-        replace
-      />
-    );
-  }
-
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
       <Navigate
@@ -75,6 +70,10 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         replace
       />
     );
+  }
+
+  if (!withLayout) {
+    return <Outlet />;
   }
 
   return (
@@ -108,5 +107,5 @@ export const ProtectedRouteWithoutLayout = () => {
 };
 
 export const AdminRoute = () => {
-  return <ProtectedRoute allowedRoles={["admin"]} />;
+  return <ProtectedRoute allowedRoles={["ADMIN"]} />;
 };

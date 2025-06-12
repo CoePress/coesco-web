@@ -1,270 +1,103 @@
 import {
-  DollarSign,
-  FileText,
-  Kanban,
   LucideIcon,
-  Package,
   UsersIcon,
   BarChart,
-  User,
   PieChart,
-  Folders,
   SettingsIcon,
   Factory,
   Box,
   Shield,
   Clock,
-  Calendar,
-  MapPin,
 } from "lucide-react";
-import { ComponentType } from "react";
+import { ComponentType, lazy } from "react";
 
-import {
-  Addresses,
-  Companies,
-  CompanyDetails,
-  ContactDetails,
-  Contacts,
-  Employees,
-  MachineHistory,
-  Machines,
-  ProductionDashboard,
-  Reports,
-  SalesCatalog,
-  SalesConfigBuilder,
-  SalesDashboard,
-  SalesJourneyDetails,
-  SalesJourneys,
-  SalesPipeline,
-  SalesQuoteDetails,
-  SalesQuotes,
-  Settings,
-} from "@/pages";
-
-import PopupWindow from "@/components/shared/popup-window";
 import { __dev__ } from "./env";
-import Company from "@/pages/company";
 
 export type Module = {
   sequence: number;
-  path: string;
+  slug: string;
   label: string;
   icon: LucideIcon;
   status: "active" | "inactive" | "development";
   pages: Page[];
-  popups: Popup[];
 };
 
 export type Page = {
-  path: string;
+  slug: string | null;
   label: string;
   icon: LucideIcon;
   component: ComponentType;
   children?: Page[];
 };
 
-export type Popup = {
-  path: string;
-  component: ComponentType;
-};
-
-const salesModule: Module = {
-  sequence: 1,
-  path: "/sales",
-  label: "Sales",
-  icon: DollarSign,
-  status: "development",
-  pages: [
-    {
-      path: "/",
-      label: "Dashboard",
-      icon: BarChart,
-      component: SalesDashboard,
-    },
-    {
-      path: "/pipeline",
-      label: "Pipeline",
-      icon: Kanban,
-      component: SalesPipeline,
-    },
-    {
-      path: "/deals",
-      label: "Deals",
-      icon: Calendar,
-      component: SalesJourneys,
-      children: [
-        {
-          path: "/:id",
-          label: "Deal Details",
-          icon: Calendar,
-          component: SalesJourneyDetails,
-        },
-      ],
-    },
-    {
-      path: "/quotes",
-      label: "Quotes",
-      icon: FileText,
-      component: SalesQuotes,
-      children: [
-        {
-          path: "/:id",
-          label: "Quote Details",
-          icon: FileText,
-          component: SalesQuoteDetails,
-        },
-      ],
-    },
-    {
-      path: "/companies",
-      label: "Companies",
-      icon: UsersIcon,
-      component: Companies,
-      children: [
-        {
-          path: "/:id",
-          label: "Company Details",
-          icon: User,
-          component: CompanyDetails,
-        },
-      ],
-    },
-    {
-      path: "/contacts",
-      label: "Contacts",
-      icon: UsersIcon,
-      component: Contacts,
-      children: [
-        {
-          path: "/:id",
-          label: "Contact Details",
-          icon: User,
-          component: ContactDetails,
-        },
-      ],
-    },
-    {
-      path: "/addresses",
-      label: "Addresses",
-      icon: MapPin,
-      component: Addresses,
-    },
-    {
-      path: "/catalog",
-      label: "Catalog",
-      icon: Package,
-      component: SalesCatalog,
-      children: [
-        {
-          path: "/builder",
-          label: "Builder",
-          icon: Folders,
-          component: SalesConfigBuilder,
-        },
-      ],
-    },
-    {
-      path: "/company",
-      label: "Company",
-      icon: UsersIcon,
-      component: Company,
-    },
-  ],
-  popups: [
-    {
-      path: "/popup",
-      component: PopupWindow,
-    },
-  ],
-};
-
-// export const warehouseModule: Module = {
-//   sequence: 2,
-//   path: "/warehouse",
-//   label: "Warehouse",
-//   icon: Warehouse,
-//   status: "development",
-//   pages: [
-//     {
-//       path: "/",
-//       label: "Map",
-//       icon: Map,
-//       component: WarehouseMap,
-//     },
-//   ],
-//   popups: [],
-// };
+const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
+const Machines = lazy(() => import("@/pages/production/machines"));
+const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
+const Reports = lazy(() => import("@/pages/production/reports"));
+const Settings = lazy(() => import("@/pages/admin/settings"));
+const Employees = lazy(() => import("@/pages/admin/employees"));
 
 const productionModule: Module = {
-  sequence: 3,
-  path: "/production",
+  sequence: 1,
+  slug: "production",
   label: "Production",
   icon: Factory,
-  status: "active",
+  status: "active" as const,
   pages: [
     {
-      path: "/",
+      slug: null,
       label: "Dashboard",
       icon: BarChart,
       component: ProductionDashboard,
     },
     {
-      path: "/machines",
+      slug: "machines",
       label: "Machines",
       icon: Box,
       component: Machines,
     },
     {
-      path: "/machine-history",
+      slug: "machine-history",
       label: "Machine History",
       icon: Clock,
       component: MachineHistory,
     },
     {
-      path: "/reports",
+      slug: "reports",
       label: "Reports",
       icon: PieChart,
       component: Reports,
     },
   ],
-  popups: [],
 };
 
 const adminModule: Module = {
-  sequence: 4,
-  path: "/admin",
+  sequence: 2,
+  slug: "admin",
   label: "Admin",
   icon: Shield,
-  status: "active",
+  status: "active" as const,
   pages: [
     {
-      path: "/",
-      label: "Employees",
-      icon: UsersIcon,
-      component: Employees,
-    },
-    {
-      path: "/settings",
+      slug: null,
       label: "Settings",
       icon: SettingsIcon,
       component: Settings,
     },
+    {
+      slug: "employees",
+      label: "Employees",
+      icon: UsersIcon,
+      component: Employees,
+    },
   ],
-  popups: [],
 };
 
-const allModules = [salesModule, productionModule, adminModule];
-
-const devModules = allModules.filter(
-  (module) => module.status === "development"
-);
-
-const activeModules = allModules.filter((module) => module.status === "active");
-
-const unorderedModules = [...(__dev__ ? devModules : []), ...activeModules];
-
-const modules: Module[] = unorderedModules.sort(
-  (a, b) => a.sequence - b.sequence
-);
+const modules: Module[] = [productionModule, adminModule]
+  .filter(
+    (module) =>
+      module.status === "active" || (__dev__ && module.status === "development")
+  )
+  .sort((a, b) => a.sequence - b.sequence);
 
 export default modules;

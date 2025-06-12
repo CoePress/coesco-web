@@ -11,7 +11,6 @@ export { default as Loader } from "./shared/loader";
 export { default as Modal } from "./shared/modal";
 export { default as PageHeader } from "./shared/page-header";
 export { default as PageSearch } from "./shared/page-search";
-export { default as PopupWindow } from "./shared/popup-window";
 export { default as Select } from "./shared/select";
 export { default as StatusBadge } from "./shared/status-badge";
 export { default as Table } from "./shared/table";
