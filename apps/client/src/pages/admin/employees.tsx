@@ -24,6 +24,7 @@ const Employees = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("USER");
+  const [isActive, setIsActive] = useState<boolean>(true);
 
   const {
     syncEmployees,
@@ -87,6 +88,7 @@ const Employees = () => {
           onClick={() => {
             setSelectedEmployee(row);
             setSelectedRole(row.user.role);
+            setIsActive(row.user.isActive);
             setIsEditModalOpen(true);
           }}>
           Edit
@@ -176,6 +178,21 @@ const Employees = () => {
             </select>
           </div>
 
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <label
+              htmlFor="isActive"
+              className="text-sm text-text-muted">
+              Active Account
+            </label>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary-outline"
@@ -187,11 +204,13 @@ const Employees = () => {
                 if (selectedEmployee) {
                   const updated = await updateEmployee(selectedEmployee.id, {
                     "user.role": selectedRole.toUpperCase(),
+                    "user.isActive": isActive,
                   } as any);
 
                   if (updated) {
                     setSelectedEmployee(null);
                     setSelectedRole("USER");
+                    setIsActive(true);
                     setIsEditModalOpen(false);
                     refresh();
                   }
