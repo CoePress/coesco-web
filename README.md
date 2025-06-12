@@ -2,14 +2,14 @@
 
 ## Perquisites
 
-- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Docker](https://www.docker.com/products/docker-desktop/){:target="\_blank"}
 
 ## Tools (Optional)
 
-- [Cursor (IDE)](https://www.cursor.com/)
-- [DBeaver (Database Management)](https://dbeaver.io/)
-- [Redis Insight (Cache Management)](https://redis.io/insight/)
-- [Postman (API Testing)](https://www.postman.com/downloads/)
+- [Cursor (IDE)](https://www.cursor.com/){:target="\_blank"}
+- [DBeaver (Database Management)](https://dbeaver.io/){:target="\_blank"}
+- [Redis Insight (Cache Management)](https://redis.io/insight/){:target="\_blank"}
+- [Postman (API Testing)](https://www.postman.com/downloads/){:target="\_blank"}
 
 ## Environment
 
@@ -28,5 +28,3 @@ cd apps/server && cp .env.template .env && cd ..
 ```bash
 npm install
 ```
-
-
