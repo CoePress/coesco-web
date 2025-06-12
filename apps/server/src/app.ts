@@ -18,7 +18,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -31,13 +31,11 @@ app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 app.use(
   cors({
-    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["Content-Range", "X-Content-Range"],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
   })
 );
 
