@@ -1,15 +1,15 @@
 # Coesco Web
 
-## Prerequisites
+## Perquisites
 
-- <a href="https://www.docker.com/products/docker-desktop/" target="_blank">Docker</a>
+- [Docker](https://www.docker.com/products/docker-desktop/)
 
 ## Tools (Optional)
 
-- <a href="https://www.cursor.com/" target="_blank">Cursor (IDE)</a>
-- <a href="https://dbeaver.io/" target="_blank">DBeaver (Database Management)</a>
-- <a href="https://redis.io/insight/" target="_blank">Redis Insight (Cache Management)</a>
-- <a href="https://www.postman.com/downloads/" target="_blank">Postman (API Testing)</a>
+- [Cursor (IDE)](https://www.cursor.com/)
+- [DBeaver (Database Management)](https://dbeaver.io/)
+- [Redis Insight (Cache Management)](https://redis.io/insight/)
+- [Postman (API Testing)](https://www.postman.com/downloads/)
 
 ## Environment
 
