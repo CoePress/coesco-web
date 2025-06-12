@@ -77,7 +77,7 @@ export const config = {
   cookieOptions: {
     httpOnly: true,
     secure: __prod__,
-    sameSite: __prod__ ? "none" : "lax",
+    sameSite: (__prod__ ? "none" : "lax") as "none" | "lax" | "strict",
     path: "/",
     domain: __prod__ ? ".cpec.com" : "localhost",
     maxAge: 7 * 24 * 60 * 60 * 1000,
