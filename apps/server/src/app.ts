@@ -18,7 +18,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -30,7 +30,7 @@ app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
