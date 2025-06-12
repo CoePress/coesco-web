@@ -221,7 +221,13 @@ const MachineHistory = () => {
     null
   );
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <div className="w-full flex flex-1 flex-col items-center justify-center">
+        <Loader />
+      </div>
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (

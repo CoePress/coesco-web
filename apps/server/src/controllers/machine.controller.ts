@@ -7,15 +7,6 @@ export class MachineController extends BaseController<Machine> {
   protected service = machineService;
   protected entityName = "Machine";
 
-  async getMachineStatuses(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = {};
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async getMachinesOverview(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await machineMonitorService.getMachineOverview(

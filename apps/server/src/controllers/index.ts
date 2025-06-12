@@ -8,10 +8,12 @@ import { QuoteController } from "./quote.controller";
 import { EmployeeController } from "./employee.controller";
 import { JourneyController } from "./journey.controller";
 import { ItemController } from "./item.controller";
+import { MachineStatusController } from "./machine-status.controller";
 
 export const authController = new AuthController();
 export const emailController = new EmailController();
 export const machineController = new MachineController();
+export const machineStatusController = new MachineStatusController();
 export const employeeController = new EmployeeController();
 export const companyController = new CompanyController();
 export const addressController = new AddressController();

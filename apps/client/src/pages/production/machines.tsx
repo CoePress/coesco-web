@@ -5,7 +5,14 @@ import { Plus } from "lucide-react";
 const Machines = () => {
   const { machines, loading, error } = useGetMachines();
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <div className="w-full flex flex-1 flex-col items-center justify-center">
+        <Loader />
+      </div>
+    );
+  }
+
   if (error) return <div>Error</div>;
 
   const columns = [
@@ -49,6 +56,7 @@ const Machines = () => {
           },
         ]}
       />
+
       <div className="w-full flex flex-1 flex-col">
         <Table
           columns={columns}
