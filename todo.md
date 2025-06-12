@@ -17,5 +17,4 @@
 ## Pre Demo
 
 - Sample report
-- No login if not enabled
 - Machine history bug

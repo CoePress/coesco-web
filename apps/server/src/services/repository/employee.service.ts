@@ -71,6 +71,7 @@ export class EmployeeService extends BaseService<Employee> {
           create: {
             username: microsoftUser.mail,
             role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+            isActive: isAdmin ? true : false,
             microsoftId: microsoftUser.id,
           },
           update: {

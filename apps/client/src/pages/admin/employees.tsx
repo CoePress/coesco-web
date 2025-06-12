@@ -60,11 +60,11 @@ const Employees = () => {
         <StatusBadge
           label={row.user.role as string}
           variant={
-            row.user.role === "ADMIN"
-              ? "error"
-              : row.user.role === "EMPLOYEE"
-                ? "success"
-                : "default"
+            !row.user.isActive
+              ? "default"
+              : row.user.role === "ADMIN"
+                ? "error"
+                : "success"
           }
         />
       ),

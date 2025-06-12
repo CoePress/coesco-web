@@ -50,6 +50,10 @@ export class AuthService {
       throw new UnauthorizedError("Invalid credentials");
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedError("Account is inactive");
+    }
+
     const isValidPassword = await compare(password, user.password || "");
     if (!isValidPassword) {
       throw new UnauthorizedError("Invalid credentials");
@@ -115,7 +119,16 @@ export class AuthService {
       throw new UnauthorizedError("No account found for this Microsoft user");
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedError("Account is inactive");
+    }
+
     const { token, refreshToken } = this.generateTokens(user.id);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
 
     return {
       token,
