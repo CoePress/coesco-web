@@ -77,9 +77,9 @@ export const config = {
   cookieOptions: {
     httpOnly: true,
     secure: __prod__,
-    sameSite: "lax" as const,
+    sameSite: __prod__ ? "none" : "lax",
     path: "/",
-    domain: "localhost",
+    domain: __prod__ ? ".cpec.com" : "localhost",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
   fanucAdapterIp: env.data.FANUC_ADAPTER_IP,
