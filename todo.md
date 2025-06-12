@@ -6,6 +6,7 @@
   - Upgrade to pro plan on vercel or look into other hosting options
 - Setup proper CI/CD for both frontend & backend
 - Docker logs errors infinitely until resolved
+- Setup test environment
 
 ## Tools
 
