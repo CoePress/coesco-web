@@ -38,10 +38,10 @@ export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
   private readonly offlineState = {
     state: MachineState.OFFLINE,
-    execution: null,
-    controller: null,
+    execution: "OFFLINE",
+    controller: "OFFLINE",
     program: "",
-    tool: null,
+    tool: "",
     metrics: {
       spindleSpeed: 0,
       feedRate: 0,
@@ -51,7 +51,7 @@ export class MachineMonitorService {
         Z: 0,
       },
     },
-    alarm: null,
+    alarm: "",
     timestamp: new Date().toISOString(),
   };
   private activeRequests: Set<AbortController> = new Set();
@@ -564,12 +564,12 @@ export class MachineMonitorService {
       return null;
     }
 
-    const extractValue = (xml: string, dataItemId: string): string | null => {
+    const extractValue = (xml: string, dataItemId: string): string => {
       const regex = new RegExp(
         `<[^>]*dataItemId="${dataItemId}"[^>]*>([^<]*)</[^>]*>`
       );
       const match = xml.match(regex);
-      return match ? match[1] : null;
+      return match ? match[1] : "";
     };
 
     const cleanProgramComment = (comment: string): string => {
@@ -580,14 +580,14 @@ export class MachineMonitorService {
         .trim();
     };
 
-    const program = extractValue(xml, "pgm");
+    const program = extractValue(xml, "pgm") || "";
     const programComment = cleanProgramComment(extractValue(xml, "pcmt") || "");
     const programFull = `${program} ${
       programComment ? `- ${programComment}` : ""
     }`;
-    const tool = extractValue(xml, "tid");
-    const execution = extractValue(xml, "exec");
-    const controller = extractValue(xml, "mode");
+    const tool = extractValue(xml, "tid") || "";
+    const execution = extractValue(xml, "exec") || "";
+    const controller = extractValue(xml, "mode") || "";
     const spindleSpeed = parseFloat(extractValue(xml, "cs") || "0");
     const feedRate = parseFloat(extractValue(xml, "pf") || "0");
     const axisPositions = {
@@ -606,7 +606,7 @@ export class MachineMonitorService {
         feedRate,
         axisPositions,
       },
-      alarm: extractValue(xml, "alarm"),
+      alarm: extractValue(xml, "alarm") || "",
       timestamp: new Date().toISOString(),
     };
   }
@@ -619,20 +619,20 @@ export class MachineMonitorService {
     const parsedData = typeof data === "string" ? JSON.parse(data) : data;
 
     return {
-      execution: parsedData.execution,
-      controller: parsedData.controller,
-      program: parsedData.program,
-      tool: parsedData.tool,
+      execution: parsedData.execution || "",
+      controller: parsedData.controller || "",
+      program: parsedData.program || "",
+      tool: parsedData.tool || "",
       metrics: {
-        spindleSpeed: parsedData.spindleSpeed,
-        feedRate: parsedData.feedRate,
+        spindleSpeed: parsedData.spindleSpeed || 0,
+        feedRate: parsedData.feedRate || 0,
         axisPositions: {
-          X: parsedData.axisX,
-          Y: parsedData.axisY,
-          Z: parsedData.axisZ,
+          X: parsedData.axisX || 0,
+          Y: parsedData.axisY || 0,
+          Z: parsedData.axisZ || 0,
         },
       },
-      alarm: parsedData.alarm,
+      alarm: parsedData.alarm || "",
       timestamp: new Date().toISOString(),
     };
   }
