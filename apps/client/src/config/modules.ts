@@ -2,7 +2,7 @@ import {
   LucideIcon,
   UsersIcon,
   BarChart,
-  PieChart,
+  // PieChart,
   SettingsIcon,
   Factory,
   Box,
@@ -33,7 +33,7 @@ export type Page = {
 const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
 const Machines = lazy(() => import("@/pages/production/machines"));
 const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
-const Reports = lazy(() => import("@/pages/production/reports"));
+// const Reports = lazy(() => import("@/pages/production/reports"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
 
@@ -62,12 +62,12 @@ const productionModule: Module = {
       icon: Clock,
       component: MachineHistory,
     },
-    {
-      slug: "reports",
-      label: "Reports",
-      icon: PieChart,
-      component: Reports,
-    },
+    // {
+    //   slug: "reports",
+    //   label: "Reports",
+    //   icon: PieChart,
+    //   component: Reports,
+    // },
   ],
 };
 

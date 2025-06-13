@@ -47,14 +47,6 @@ const Machines = () => {
       <PageHeader
         title="Machines"
         description="Manage all machines"
-        actions={[
-          {
-            type: "button",
-            label: "Add Machine",
-            icon: <Plus size={16} />,
-            onClick: () => {},
-          },
-        ]}
       />
 
       <div className="w-full flex flex-1 flex-col">
