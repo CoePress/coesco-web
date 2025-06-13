@@ -7,6 +7,7 @@
 - Setup proper CI/CD for both frontend & backend
 - Docker logs errors infinitely until resolved
 - Setup test environment
+- Rethink rate limiting
 
 ## Tools
 

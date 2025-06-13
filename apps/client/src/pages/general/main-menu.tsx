@@ -46,7 +46,7 @@ const MainMenu = () => {
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-background">
       <div className="flex flex-col items-center gap-8">
         <h1 className="text-2xl leading-none text-primary text-center">
-          {getGreeting()}, {user?.employee?.firstName}
+          {getGreeting()}
         </h1>
 
         <div
