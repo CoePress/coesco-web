@@ -1,7 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
-import { Moon, MessageCircle, Settings, Sun, LogOut, Code } from "lucide-react";
+import { Moon, Settings, Sun, LogOut, Code } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";
@@ -14,7 +14,7 @@ const MainMenu = () => {
   const { logout } = useLogout();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  const navigate = useNavigate();
+  console.log(user);
 
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
@@ -46,7 +46,7 @@ const MainMenu = () => {
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-background">
       <div className="flex flex-col items-center gap-8">
         <h1 className="text-2xl leading-none text-primary text-center">
-          {getGreeting()}
+          {getGreeting()}, {user?.employee?.firstName}
         </h1>
 
         <div
@@ -129,13 +129,13 @@ const MainMenu = () => {
       </div>
 
       <div className="absolute bottom-2 right-2 flex-col gap-2 hidden md:flex">
-        <Button
+        {/* <Button
           variant="secondary-outline"
           onClick={() => navigate("/chat")}
           className="w-32">
           <MessageCircle size={16} />
           ChatPLK
-        </Button>
+        </Button> */}
         <Button
           variant="secondary-outline"
           onClick={toggleTheme}
@@ -153,12 +153,12 @@ const MainMenu = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 flex justify-between p-2 bg-background md:hidden">
-        <Button
+        {/* <Button
           variant="secondary-outline"
           onClick={() => navigate("/chat")}
           className="flex-1 mx-1">
           <MessageCircle size={16} />
-        </Button>
+        </Button> */}
         <Button
           variant="secondary-outline"
           onClick={toggleTheme}

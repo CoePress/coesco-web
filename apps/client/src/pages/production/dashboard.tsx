@@ -548,13 +548,13 @@ const Dashboard = () => {
             icon: <Map size={16} />,
             onClick: () => setIsMapModalOpen(true),
           },
-          {
-            type: "button",
-            label: "Timeline",
-            variant: "secondary-outline",
-            icon: <Clock size={16} />,
-            onClick: () => setIsTimelineModalOpen(true),
-          },
+          // {
+          //   type: "button",
+          //   label: "Timeline",
+          //   variant: "secondary-outline",
+          //   icon: <Clock size={16} />,
+          //   onClick: () => setIsTimelineModalOpen(true),
+          // },
           {
             type: "datepicker",
             dateRange: dateRange,
