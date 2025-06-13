@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/utils/seed.ts",
     "prisma:nuke": "rd /s /q prisma\\migrations 2>nul & prisma db push --force-reset --schema=./prisma/schema.prisma & prisma generate",
     "prisma:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",

@@ -291,10 +291,22 @@ export class MachineMonitorService {
 
       return await tx.machineStatus.create({
         data: {
-          ...data,
+          state: data.state,
+          execution: data.execution,
+          controller: data.controller,
+          program: data.program,
+          tool: data.tool,
+          metrics: data.metrics,
+          alarmCode: data.alarm || "",
+          alarmMessage: "",
           startTime: new Date(),
           endTime: null,
           duration: 0,
+          machine: {
+            connect: {
+              id: data.machineId,
+            },
+          },
         },
       });
     });
@@ -381,7 +393,6 @@ export class MachineMonitorService {
             }
 
             await machineStatusService.create({
-              machineId: machine.id,
               state,
               execution: data.execution,
               controller: data.controller,
@@ -393,6 +404,11 @@ export class MachineMonitorService {
               startTime: new Date(),
               endTime: null,
               duration: 0,
+              machine: {
+                connect: {
+                  id: machine.id,
+                },
+              },
             });
           } catch (error) {
             logger.error(
@@ -457,7 +473,6 @@ export class MachineMonitorService {
             }
 
             await machineStatusService.create({
-              machineId: machine.id,
               state: MachineState.OFFLINE,
               execution: "OFFLINE",
               controller: "OFFLINE",
@@ -469,6 +484,11 @@ export class MachineMonitorService {
               startTime: new Date(),
               endTime: null,
               duration: 0,
+              machine: {
+                connect: {
+                  id: machine.id,
+                },
+              },
             });
           } catch (error) {
             logger.error(

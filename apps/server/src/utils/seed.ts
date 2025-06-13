@@ -84,8 +84,6 @@ const machines = [
 
 const seed = async () => {
   try {
-    await employeeService.sync();
-
     for (const machine of machines) {
       try {
         const m = await machineService.create(machine);
