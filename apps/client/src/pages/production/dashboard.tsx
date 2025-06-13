@@ -426,20 +426,27 @@ const Dashboard = () => {
   const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [machineTypeFilter, setMachineTypeFilter] = useState("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const kpis = [
-    {
-      title: "Active Machines",
-      value: 0,
-      description: "Number of active machines",
-      icon: <Activity size={16} />,
-    },
     {
       title: "Utilization",
       value: `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
       change: overview?.kpis?.utilization?.change ?? 0,
+    },
+    {
+      title: "Total Runtime",
+      value: formatDuration(
+        overview?.kpis?.averageRuntime?.value
+          ? overview.kpis.averageRuntime.value * 8
+          : 0
+      ),
+      description: "Total runtime of machines",
+      icon: <Clock size={16} />,
+      change: 0,
     },
     {
       title: "Average Runtime",
@@ -548,13 +555,19 @@ const Dashboard = () => {
             icon: <Map size={16} />,
             onClick: () => setIsMapModalOpen(true),
           },
-          // {
-          //   type: "button",
-          //   label: "Timeline",
-          //   variant: "secondary-outline",
-          //   icon: <Clock size={16} />,
-          //   onClick: () => setIsTimelineModalOpen(true),
-          // },
+          {
+            type: "dropdown",
+            label: "Machines",
+            value: machineTypeFilter,
+            isOpen: isFilterOpen,
+            onOpenChange: setIsFilterOpen,
+            options: [
+              { label: "All Machines", value: "all" },
+              { label: "Lathes", value: "lathes" },
+              { label: "Mills", value: "mills" },
+            ],
+            onChange: (value) => setMachineTypeFilter(value),
+          },
           {
             type: "datepicker",
             dateRange: dateRange,

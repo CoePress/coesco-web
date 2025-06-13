@@ -28,7 +28,3 @@ cd apps/server && cp .env.template .env && cd ..
 ```bash
 npm install
 ```
-
-## TO ADD
-
-- database creation
