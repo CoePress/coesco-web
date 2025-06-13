@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { Login, MainMenu, NotFound, Sandbox } from "./pages";
+import { Login, MainMenu, NotFound, Performance, Sandbox } from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
@@ -58,6 +58,10 @@ const App = () => {
         <Route
           path="/sandbox"
           element={<Sandbox />}
+        />
+        <Route
+          path="/performance"
+          element={<Performance />}
         />
         {modules
           .filter((module) => module.slug !== "admin")
