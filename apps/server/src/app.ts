@@ -48,7 +48,7 @@ app.use(compression());
 
 const limiter = rateLimit({
   windowMs: __prod__ ? 15 * 60 * 1000 : 60 * 1000,
-  max: __prod__ ? 100 : 1000,
+  max: __prod__ ? 1000 : 10000,
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
