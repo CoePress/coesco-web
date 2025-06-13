@@ -40,7 +40,7 @@ export class MachineMonitorService {
     state: MachineState.OFFLINE,
     execution: null,
     controller: null,
-    program: null,
+    program: "",
     tool: null,
     metrics: {
       spindleSpeed: 0,
