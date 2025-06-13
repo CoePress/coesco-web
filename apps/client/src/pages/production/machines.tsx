@@ -1,6 +1,5 @@
 import { Loader, PageHeader, Table } from "@/components";
 import useGetMachines from "@/hooks/production/use-get-machines";
-import { Plus } from "lucide-react";
 
 const Machines = () => {
   const { machines, loading, error } = useGetMachines();
