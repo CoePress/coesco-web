@@ -156,7 +156,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
-    const machineCount = machines.data.length;
+    const machineCount = machines.data.length - 2;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
     const dailyFleetTarget = dailyMachineTarget * machineCount;
     const timeframeFleetTarget = dailyFleetTarget * dateRange.totalDays;
