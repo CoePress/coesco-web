@@ -3,6 +3,9 @@ FROM node:20-alpine
 # Install Redis
 RUN apk add --no-cache redis
 
+# Create Redis data directory
+RUN mkdir -p /var/lib/redis
+
 WORKDIR /app
 
 # Copy package files
@@ -19,5 +22,5 @@ RUN cd apps/server && npx prisma generate
 
 EXPOSE 5173 8080 6379
 
-# Start Redis and apps
-CMD redis-server --daemonize yes && npm run dev
+# Start Redis with specific data directory
+CMD redis-server --dir /var/lib/redis --daemonize yes && npm run dev

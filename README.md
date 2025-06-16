@@ -28,3 +28,13 @@ cd apps/server && cp .env.template .env && cd ..
 ```bash
 npm install
 ```
+
+## Docker
+
+```bash
+# Start container
+docker-compose up --build
+
+# Stop container
+docker-compose down
+```
