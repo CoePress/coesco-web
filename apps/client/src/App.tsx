@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { Login, MainMenu, NotFound, Performance, Sandbox } from "./pages";
+import { Login, MainMenu, NotFound, Performance, Sandbox, Design } from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
@@ -62,6 +62,10 @@ const App = () => {
         <Route
           path="/performance"
           element={<Performance />}
+        />
+        <Route
+          path="/design"
+          element={<Design />}
         />
         {modules
           .filter((module) => module.slug !== "admin")

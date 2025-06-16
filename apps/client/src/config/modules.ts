@@ -8,6 +8,9 @@ import {
   Box,
   Shield,
   Clock,
+  PcCase,
+  ScrollText,
+  Boxes,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
@@ -36,6 +39,8 @@ const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
 // const Reports = lazy(() => import("@/pages/production/reports"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
+const RFQ = lazy(() => import("@/pages/performance/rfq"));
+const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
 
 const productionModule: Module = {
   sequence: 1,
@@ -93,7 +98,29 @@ const adminModule: Module = {
   ],
 };
 
-const modules: Module[] = [productionModule, adminModule]
+const performanceModule: Module = {
+  sequence: 2,
+  slug: "performance",
+  label: "Performance",
+  icon: PcCase,
+  status: "active" as const,
+  pages: [
+    {
+      slug: null,
+      label: "RFQ",
+      icon: ScrollText,
+      component: RFQ,
+    },
+    {
+      slug: "material-specs",
+      label: "Material Specs",
+      icon: Boxes,
+      component: MaterialSpecs,
+    },
+  ],
+};
+
+const modules: Module[] = [productionModule, adminModule, performanceModule]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")
