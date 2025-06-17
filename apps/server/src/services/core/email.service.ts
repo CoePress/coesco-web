@@ -191,7 +191,8 @@ export class EmailService {
 
     const report = await machineMonitorService.getMachineOverview(
       startDate.toISOString(),
-      endDate.toISOString()
+      endDate.toISOString(),
+      "group"
     );
 
     const data = {

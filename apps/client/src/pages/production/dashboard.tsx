@@ -411,6 +411,7 @@ const Dashboard = () => {
   const [selectedChartFilter, setSelectedChartFilter] = useState<string>("all");
   const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
   const chartFilterRef = useRef<HTMLDivElement>(null);
+  const [visibleLines, setVisibleLines] = useState<string[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -466,6 +467,8 @@ const Dashboard = () => {
   const { overview, loading, error, refresh } = useGetOverview({
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
+    view: chartView,
+    filter: selectedChartFilter !== "all" ? selectedChartFilter : undefined,
   }) as {
     overview: IOverview | null;
     loading: boolean;
@@ -584,6 +587,19 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
 
+  // Update visibleLines when utilizationOverTime or chartView changes
+  useEffect(() => {
+    if (chartView === "group" || chartView === "machine") {
+      const keys =
+        utilizationOverTime.length > 0
+          ? Object.keys(utilizationOverTime[0]?.groups || {})
+          : [];
+      setVisibleLines(keys);
+    } else {
+      setVisibleLines([]);
+    }
+  }, [utilizationOverTime, chartView]);
+
   // const stateData = [
   //   { name: "Running", value: 45, color: "#22c55e" },
   //   { name: "Idle", value: 25, color: "#fbbf24" },
@@ -643,15 +659,12 @@ const Dashboard = () => {
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {kpis.map((metric) => (
-            <KPICard
-              key={metric.title}
-              {...metric}
-            />
+            <KPICard {...metric} />
           ))}
         </div>
 
         <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 overflow-hidden">
-          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0 overflow-hidden">
+          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0 overflow-hidden max-h-[300px]">
             <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">Utilization Over Time</h3>
               <div className="flex items-center gap-1">
@@ -690,25 +703,32 @@ const Dashboard = () => {
                     className="px-2 py-1 text-xs rounded cursor-pointer bg-surface text-text-muted hover:bg-surface/80">
                     <Filter size={12} />
                   </button>
-                  {isChartFilterOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg z-50">
-                      {getChartFilterOptions().map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => {
-                            setSelectedChartFilter(option.value);
-                            setIsChartFilterOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-xs hover:bg-surface ${
-                            selectedChartFilter === option.value
-                              ? "bg-surface"
-                              : ""
-                          }`}>
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {isChartFilterOpen &&
+                    (chartView === "group" || chartView === "machine") && (
+                      <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50">
+                        {Object.keys(utilizationOverTime[0]?.groups || {}).map(
+                          (key) => (
+                            <label
+                              key={key}
+                              className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={visibleLines.includes(key)}
+                                onChange={() => {
+                                  setVisibleLines((prev) =>
+                                    prev.includes(key)
+                                      ? prev.filter((k) => k !== key)
+                                      : [...prev, key]
+                                  );
+                                }}
+                                className="mr-2"
+                              />
+                              {key}
+                            </label>
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -773,6 +793,24 @@ const Dashboard = () => {
                     animationDuration={1000}
                     isAnimationActive={false}
                   />
+                  {(chartView === "group" || chartView === "machine") &&
+                    utilizationOverTime.length > 0 &&
+                    Object.entries(utilizationOverTime[0]?.groups || {})
+                      .filter(([key]) => visibleLines.includes(key))
+                      .map(([key, _], index) => (
+                        <Line
+                          key={key}
+                          type="monotone"
+                          dataKey={`groups.${key}.utilization`}
+                          stroke={`hsl(${(index * 137.5) % 360}, 70%, 50%)`}
+                          name={key}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 5 }}
+                          animationDuration={1000}
+                          isAnimationActive={false}
+                        />
+                      ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -783,7 +821,7 @@ const Dashboard = () => {
               <h3 className="text-sm text-text-muted">State Distribution</h3>
             </div>
             <div className="flex flex-row lg:flex-col flex-1 overflow-hidden">
-              <div className="flex-1 p-2 min-h-0 h-[200px] lg:h-[300px]">
+              <div className="flex-1 p-2 min-h-0 ">
                 {/* <ResponsiveContainer
                   width="100%"
                   height="100%">
@@ -870,7 +908,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div
-            className={`bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 lg:h-64 ${
+            className={`bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3   ${
               !isToday ? "opacity-50" : ""
             }`}>
             <div className="p-2 border-b flex items-center justify-between">
@@ -914,24 +952,35 @@ const Dashboard = () => {
                           className="text-text-muted flex-shrink-0"
                         />
                         <span className="truncate text-xs">
-                          {machine.program || "-"}
+                          Program: {machine.program || "-"}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-text-muted text-xs">Spindle</span>
+                      <span className="text-text-muted text-xs">
+                        Spindle RPM:
+                      </span>
                       <span className="text-xs text-text-muted">
-                        {machine.spindleSpeed || 0} RPM
+                        {machine.spindleSpeed || 0}
                       </span>
                     </div>
-                    <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all bg-text-muted/50"
-                        style={{
-                          width: `${(machine.spindleSpeed || 0) / 100}%`,
-                        }}
-                      />
+
+                    <div className="flex justify-between">
+                      <span className="text-text-muted text-xs">
+                        Controller:
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        {machine.controller || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-muted text-xs">
+                        Execution:
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        {machine.execution || "-"}
+                      </span>
                     </div>
                   </div>
                 ))}

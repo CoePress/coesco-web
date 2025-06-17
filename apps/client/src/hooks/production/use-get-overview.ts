@@ -7,9 +7,16 @@ import { IApiResponse, IMachineOverview } from "@/utils/types";
 export interface UseGetOverviewProps {
   startDate?: string;
   endDate?: string;
+  view?: string;
+  filter?: string;
 }
 
-const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
+const useGetOverview = ({
+  startDate,
+  endDate,
+  view,
+  filter,
+}: UseGetOverviewProps = {}) => {
   const [overview, setOverview] = useState<IMachineOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +31,8 @@ const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
         const params: Record<string, string> = {};
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
+        if (view) params.view = view;
+        if (filter) params.filter = filter;
 
         const { data } = await instance.get<IApiResponse<IMachineOverview>>(
           `/machines/overview`,
@@ -50,7 +59,7 @@ const useGetOverview = ({ startDate, endDate }: UseGetOverviewProps = {}) => {
     };
 
     getOverview();
-  }, [refreshToggle, startDate, endDate]);
+  }, [refreshToggle, startDate, endDate, view, filter]);
 
   const refresh = () => setRefreshToggle((prev) => !prev);
 

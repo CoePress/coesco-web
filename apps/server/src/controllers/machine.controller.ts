@@ -9,9 +9,11 @@ export class MachineController extends BaseController<Machine> {
 
   async getMachinesOverview(req: Request, res: Response, next: NextFunction) {
     try {
+      const { startDate, endDate, view = "all" } = req.query;
       const result = await machineMonitorService.getMachineOverview(
-        req.query.startDate as string,
-        req.query.endDate as string
+        startDate as string,
+        endDate as string,
+        view as string
       );
       res.status(200).json(result);
     } catch (error) {

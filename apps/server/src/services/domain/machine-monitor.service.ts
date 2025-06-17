@@ -34,6 +34,27 @@ interface CachedMachineState {
   timestamp: string;
 }
 
+interface MachineStateData {
+  id: string;
+  machineId: string;
+  state: MachineState;
+  execution: string;
+  controller: string;
+  program: string;
+  tool: string;
+  metrics: any;
+  alarmCode: string;
+  alarmMessage: string;
+  startTime: Date;
+  endTime: Date | null;
+  duration: number;
+  createdAt: Date;
+  updatedAt: Date;
+  machine?: {
+    type: string;
+  };
+}
+
 export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
   private readonly offlineState = {
@@ -131,7 +152,8 @@ export class MachineMonitorService {
     this.activeRequests.clear();
   }
 
-  async getMachineOverview(startDate: string, endDate: string) {
+  async getMachineOverview(startDate: string, endDate: string, view: string) {
+    view = view || "all";
     const now = new Date();
     const dateRange = createDateRange(startDate, endDate);
 
@@ -219,7 +241,8 @@ export class MachineMonitorService {
       divisions,
       states.data,
       machineCount,
-      now
+      now,
+      view
     );
 
     const totalAvailableTime =
@@ -1048,33 +1071,92 @@ export class MachineMonitorService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: any[],
+    states: MachineStateData[],
     machineCount: number,
-    now: Date
+    now: Date,
+    view: string = "all"
   ) {
+    if (view === "all") {
+      return divisions.map((division) => {
+        const divisionTotals = this.calculateStatusTotals(
+          states,
+          division.start,
+          division.end,
+          now
+        );
+
+        const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
+        const divisionDuration =
+          division.end.getTime() - division.start.getTime();
+        const divisionTotalTime = divisionDuration * machineCount;
+        const isFuture = division.start > now;
+
+        return {
+          label: division.label,
+          start: division.start,
+          end: division.end,
+          utilization: isFuture
+            ? null
+            : Number(
+                ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
+              ),
+          stateTotals: divisionTotals,
+        };
+      });
+    }
+
+    // Group by machine type or machine ID
+    const groupedStates = states.reduce(
+      (acc, state) => {
+        const key =
+          view === "group"
+            ? (state.machine?.type ?? "unknown")
+            : state.machineId;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(state);
+        return acc;
+      },
+      {} as Record<string, typeof states>
+    );
+
     return divisions.map((division) => {
-      const divisionTotals = this.calculateStatusTotals(
-        states,
-        division.start,
-        division.end,
-        now
-      );
-
-      const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
-      const divisionDuration =
-        division.end.getTime() - division.start.getTime();
-      const divisionTotalTime = divisionDuration * machineCount;
-      const isFuture = division.start > now;
-
-      return {
+      const result: any = {
         label: division.label,
         start: division.start,
         end: division.end,
-        utilization: isFuture
-          ? null
-          : Number(((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)),
-        stateTotals: divisionTotals,
+        groups: {},
       };
+
+      for (const [key, groupStates] of Object.entries(groupedStates)) {
+        const divisionTotals = this.calculateStatusTotals(
+          groupStates as any[],
+          division.start,
+          division.end,
+          now
+        );
+
+        const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
+        const divisionDuration =
+          division.end.getTime() - division.start.getTime();
+        const groupMachineCount = new Set(
+          (groupStates as any[]).map((s) => s.machineId)
+        ).size;
+        const divisionTotalTime = divisionDuration * groupMachineCount;
+        const isFuture = division.start > now;
+
+        result.groups[key] = {
+          utilization: isFuture
+            ? null
+            : Number(
+                ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
+              ),
+          stateTotals: divisionTotals,
+        };
+      }
+
+      return result;
     });
   }
 
