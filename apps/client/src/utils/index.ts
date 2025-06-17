@@ -124,3 +124,44 @@ export const instance = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+export const pythonInstance = axios.create({
+  baseURL: env.VITE_PYTHON_API_URL,
+  withCredentials: true,
+  timeout: 10000, // 10 second timeout
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+});
+
+// Add request interceptor for debugging
+pythonInstance.interceptors.request.use(
+  (config) => {
+    console.log('Making request to Python backend:', config.url);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for debugging
+pythonInstance.interceptors.response.use(
+  (response) => {
+    console.log('Response received from Python backend:', response.status);
+    return response;
+  },
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout');
+    } else if (!error.response) {
+      console.error('Network error - no response received');
+      console.error('Error details:', error);
+    } else {
+      console.error('Response error:', error.response.status, error.response.data);
+    }
+    return Promise.reject(error);
+  }
+);

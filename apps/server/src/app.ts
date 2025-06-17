@@ -19,11 +19,11 @@ const httpServer = createServer(app);
 
 const corsOptions = {
   origin: __dev__
-    ? "http://localhost:5173"
+    ? ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:3000"]
     : ["https://portal.cpec.com", "https://api.oee.cpec.com"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
 };
 

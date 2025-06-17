@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { Button } from "@/components";
 import Input from "@/components/shared/input";
 import Select from "@/components/shared/select";
@@ -7,17 +6,12 @@ import Checkbox from "@/components/shared/checkbox";
 import Textarea from "@/components/shared/textarea";
 import Text from "@/components/shared/text";
 import Card from "@/components/shared/card";
+import { useCreateRFQ, RFQFormData } from "@/hooks/performance/use-create-rfq";
+import { useGetRFQ } from "@/hooks/performance/use-get-rfq";
 
-const instance = axios.create({
-  baseURL: "http://127.0.0.1:8000/",
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-const initialState = {
+const initialState: RFQFormData = {
   referenceNumber: localStorage.getItem('performanceReferenceNumber') || "",
+  date: new Date().toISOString().split('T')[0],
   companyName: "",
   streetAddress: "",
   city: "",
@@ -102,151 +96,28 @@ const initialState = {
   specialConsiderations: "",
 };
 
-const requiredFields = [
-  "referenceNumber", "companyName", "streetAddress", "city", "state", "zip", "country", "contactName", "phone", "email", "lineApplication", "lineType", "pullThrough", "maxCoilWidth", "minCoilWidth", "maxCoilOD", "coilID", "maxCoilWeight", "slitEdge", "matSpec1", "cosmeticMaterial", "maxSPM", "dies", "avgFeedLen", "avgFeedSPM", "maxFeedLen", "maxFeedSPM", "minFeedLen", "minFeedSPM", "voltage", "feedDirection", "coilLoading"
-];
-
-type MatSpec = {
-  thickness: string;
-  width: string;
-  type: string;
-  yield: string;
-  tensile: string;
-  [key: string]: string; // Allow dynamic access
-};
-
-type PressType = {
-  gapFrame: boolean;
-  hydraulic: boolean;
-  obi: boolean;
-  servo: boolean;
-  shearDie: boolean;
-  straightSide: boolean;
-  other: boolean;
-  otherText: string;
-};
-
-type DiesType = {
-  transfer: boolean;
-  progressive: boolean;
-  blanking: boolean;
-};
-
-interface RFQFormState {
-  [key: string]: any; // For dynamic access in validation and handleChange
-  referenceNumber: string;
-  companyName: string;
-  streetAddress: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string;
-  contactName: string;
-  position: string;
-  phone: string;
-  email: string;
-  dealerName: string;
-  dealerSalesman: string;
-  daysPerWeek: string;
-  shiftsPerDay: string;
-  lineApplication: string;
-  lineType: string;
-  pullThrough: string;
-  maxCoilWidth: string;
-  minCoilWidth: string;
-  maxCoilOD: string;
-  coilID: string;
-  maxCoilWeight: string;
-  maxCoilHandling: string;
-  slitEdge: boolean;
-  millEdge: boolean;
-  coilCarRequired: string;
-  runOffBackplate: string;
-  requireRewinding: string;
-  matSpec1: MatSpec;
-  matSpec2: MatSpec;
-  matSpec3: MatSpec;
-  matSpec4: MatSpec;
-  cosmeticMaterial: string;
-  feedEquipment: string;
-  pressType: PressType;
-  tonnage: string;
-  pressBedWidth: string;
-  pressBedLength: string;
-  pressStroke: string;
-  windowOpening: string;
-  maxSPM: string;
-  dies: DiesType;
-  avgFeedLen: string;
-  avgFeedSPM: string;
-  maxFeedLen: string;
-  maxFeedSPM: string;
-  minFeedLen: string;
-  minFeedSPM: string;
-  voltage: string;
-  spaceLength: string;
-  spaceWidth: string;
-  obstructions: string;
-  mountToPress: string;
-  adequateSupport: string;
-  requireCabinet: string;
-  needMountingPlates: string;
-  passlineHeight: string;
-  loopPit: string;
-  coilChangeConcern: string;
-  coilChangeTime: string;
-  downtimeReasons: string;
-  feedDirection: string;
-  coilLoading: string;
-  safetyRequirements: string;
-  decisionDate: string;
-  idealDelivery: string;
-  earliestDelivery: string;
-  latestDelivery: string;
-  specialConsiderations: string;
-}
-
-interface RFQErrorState {
-  [key: string]: boolean;
-}
-
 const RFQ = () => {
-  const [form, setForm] = useState<RFQFormState>(() => {
-    // Try to load saved form data from localStorage
+  const [form, setForm] = useState<RFQFormData>(() => {
     const savedForm = localStorage.getItem('rfqFormData');
     return savedForm ? JSON.parse(savedForm) : initialState;
   });
-  const [errors, setErrors] = useState<RFQErrorState>({});
-  const [status, setStatus] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading, status, errors, createRFQ } = useCreateRFQ();
+  const { isLoading: isGetting, status: getStatus, fetchedRFQ, getRFQ } = useGetRFQ();
 
-  // Save form data to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('rfqFormData', JSON.stringify(form));
   }, [form]);
 
-  const sendRFQData = async () => {
-    if (!form.referenceNumber) {
-      setStatus("Please enter a reference number");
-      return;
+  useEffect(() => {
+    if (fetchedRFQ) {
+      setForm(fetchedRFQ);
     }
-    
-    setIsLoading(true);
-    try {
-      await instance.post(`/rfq/${form.referenceNumber}`, form);
-      setStatus("RFQ data sent successfully!");
-    } catch (error) {
-      console.error('Error sending RFQ data:', error);
-      setStatus("Failed to send RFQ data. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchedRFQ]);
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     if (name.includes("pressType.")) {
-      setForm((prev: any) => ({
+      setForm((prev) => ({
         ...prev,
         pressType: {
           ...prev.pressType,
@@ -254,7 +125,7 @@ const RFQ = () => {
         },
       }));
     } else if (name.includes("dies.")) {
-      setForm((prev: any) => ({
+      setForm((prev) => ({
         ...prev,
         dies: {
           ...prev.dies,
@@ -263,60 +134,28 @@ const RFQ = () => {
       }));
     } else if (name.startsWith("matSpec")) {
       const [spec, field] = name.split(".");
-      setForm((prev: any) => ({
+      setForm((prev) => ({
         ...prev,
         [spec]: {
-          ...prev[spec],
+          ...(prev[spec as keyof RFQFormData] as { [key: string]: string }),
           [field]: value,
         },
       }));
     } else {
-      setForm((prev: any) => ({
+      setForm((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
       }));
     }
   };
 
-  const validate = () => {
-    const newErrors: any = {};
-    requiredFields.forEach((field) => {
-      if (typeof form[field] === "object") {
-        // For matSpec1, dies, etc.
-        if (field === "matSpec1") {
-          ["thickness", "width", "type", "yield", "tensile"].forEach((f) => {
-            if (!form[field][f]) newErrors[`${field}.${f}`] = true;
-          });
-        }
-        if (field === "dies") {
-          if (!form.dies.transfer && !form.dies.progressive && !form.dies.blanking) {
-            newErrors.dies = true;
-          }
-        }
-      } else if (field === "slitEdge") {
-        if (!form.slitEdge && !form.millEdge) newErrors.slitEdge = true;
-      } else if (!form[field]) {
-        newErrors[field] = true;
-      }
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    if (!validate()) {
-      setStatus("Please fill all required fields.");
-      return;
-    }
-    try {
-      await instance.post("/rfq", form);
-      setStatus("RFQ submitted successfully!");
-      setForm(initialState);
-      setErrors({});
-    } catch (err) {
-      setStatus("Submission failed. Please try again.");
-    }
+    await createRFQ(form);
+  };
+
+  const handleGet = async () => {
+    await getRFQ(form.referenceNumber);
   };
 
   return (
@@ -337,33 +176,57 @@ const RFQ = () => {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
             <Button 
               as="button" 
-              onClick={() => {
-                sendRFQData();
-              }}
+              onClick={handleGet}
+              disabled={isGetting}
+            >
+              {isGetting ? 'Getting...' : 'Get RFQ'}
+            </Button>
+            <Button 
+              as="button" 
+              onClick={() => createRFQ(form)}
               disabled={isLoading}
             >
               {isLoading ? 'Sending...' : 'Send Data'}
             </Button>
           </div>
         </div>
-        {status && (
-          <div className={`mt-2 text-sm ${status.includes('success') ? 'text-green-600' : 'text-text-muted'}`}>
-            {status}
+        {(status || getStatus) && (
+          <div className={`mt-2 text-sm ${(status || getStatus).includes('success') ? 'text-green-600' : 'text-text-muted'}`}>
+            {status || getStatus}
           </div>
         )}
       </Card>
 
+      <div style={{ marginBottom: '24px' }}>
+        <Input 
+          label="Date" 
+          type="date" 
+          name="date" 
+          value={form.date} 
+          onChange={handleChange}
+          error={errors.date ? 'Required' : ''}
+          required
+        />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Input label="Company Name" required name="companyName" value={form.companyName} onChange={handleChange} error={errors.companyName ? 'Required' : ''} />
-        <Input label="State/Province" required name="state" value={form.state} onChange={handleChange} error={errors.state ? 'Required' : ''} />
-        <Input label="Street Address" required name="streetAddress" value={form.streetAddress} onChange={handleChange} error={errors.streetAddress ? 'Required' : ''} />
-        <Input label="ZIP/Postal Code" required name="zip" value={form.zip} onChange={handleChange} error={errors.zip ? 'Required' : ''} />
-        <Input label="City" required name="city" value={form.city} onChange={handleChange} error={errors.city ? 'Required' : ''} />
-        <Input label="Country" required name="country" value={form.country} onChange={handleChange} error={errors.country ? 'Required' : ''} />
-        <Input label="Contact Name" required name="contactName" value={form.contactName} onChange={handleChange} error={errors.contactName ? 'Required' : ''} />
+        <Input 
+          label="Company Name" 
+          required 
+          name="companyName" 
+          value={form.companyName} 
+          onChange={handleChange} 
+          error={errors.companyName ? 'Required' : ''} 
+        />
+        <Input label="State/Province" name="state" value={form.state} onChange={handleChange} />
+        <Input label="Street Address" name="streetAddress" value={form.streetAddress} onChange={handleChange} />
+        <Input label="ZIP/Postal Code" name="zip" value={form.zip} onChange={handleChange} />
+        <Input label="City" name="city" value={form.city} onChange={handleChange} />
+        <Input label="Country" name="country" value={form.country} onChange={handleChange} />
+        <Input label="Contact Name" name="contactName" value={form.contactName} onChange={handleChange} />
         <Input label="Position" name="position" value={form.position} onChange={handleChange} />
-        <Input label="Phone" required name="phone" value={form.phone} onChange={handleChange} error={errors.phone ? 'Required' : ''} />
-        <Input label="Email" required name="email" value={form.email} onChange={handleChange} error={errors.email ? 'Required' : ''} />
+        <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+        <Input label="Email" name="email" value={form.email} onChange={handleChange} />
         <Input label="Dealer Name" name="dealerName" value={form.dealerName} onChange={handleChange} />
         <Input label="Dealer Salesman" name="dealerSalesman" value={form.dealerSalesman} onChange={handleChange} />
       </div>
@@ -386,7 +249,7 @@ const RFQ = () => {
           error={errors.pullThrough ? 'Required' : ''}
         />
       </div>
-      <h3>Coil Specifications</h3>
+      <Text as="h3" className="mb-4 text-lg font-medium">Coil Specifications</Text>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
         <Input label="Max Coil Width (in)" required type="number" name="maxCoilWidth" value={form.maxCoilWidth} onChange={handleChange} error={errors.maxCoilWidth ? 'Required' : ''} />
         <Input label="Min Coil Width (in)" required type="number" name="minCoilWidth" value={form.minCoilWidth} onChange={handleChange} error={errors.minCoilWidth ? 'Required' : ''} />
@@ -445,7 +308,7 @@ const RFQ = () => {
           ]}
         />
       </div>
-      <h3>Material Specifications</h3>
+      <Text as="h3" className="mb-4 text-lg font-medium">Material Specifications</Text>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
         <Input label="Highest Yield/most challenging Mat Spec (thick)" required name="matSpec1.thickness" value={form.matSpec1.thickness} onChange={handleChange} error={errors['matSpec1.thickness'] ? 'Required' : ''} />
         <Input label="at Width (in)" required name="matSpec1.width" value={form.matSpec1.width} onChange={handleChange} error={errors['matSpec1.width'] ? 'Required' : ''} />
@@ -491,7 +354,7 @@ const RFQ = () => {
       <div>
         <Input label="Current brand of feed equipment" name="feedEquipment" value={form.feedEquipment} onChange={handleChange} />
       </div>
-      <h3>Type of Press</h3>
+      <Text as="h3" className="mb-4 text-lg font-medium">Type of Press</Text>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
         <Checkbox label="Gap Frame Press" name="pressType.gapFrame" checked={form.pressType.gapFrame} onChange={handleChange} />
         <Checkbox label="Hydraulic Press" name="pressType.hydraulic" checked={form.pressType.hydraulic} onChange={handleChange} />
@@ -510,7 +373,7 @@ const RFQ = () => {
         <Input label="Window Opening Size of Press (in)" name="windowOpening" value={form.windowOpening} onChange={handleChange} />
         <Input label="Press Max SPM" required name="maxSPM" value={form.maxSPM} onChange={handleChange} error={errors.maxSPM ? 'Required' : ''} />
       </div>
-      <h3>Type of Dies</h3>
+      <Text as="h3" className="mb-4 text-lg font-medium">Type of Dies</Text>
       <div>
         <div style={{ display: 'flex', gap: 24 }}>
           <Checkbox label="Transfer Dies" name="dies.transfer" checked={form.dies.transfer} onChange={handleChange} />
@@ -529,7 +392,7 @@ const RFQ = () => {
       <div style={{ margin: '12px 0' }}>
         <Input label="Voltage Required (VAC)" required name="voltage" value={form.voltage} onChange={handleChange} error={errors.voltage ? 'Required' : ''} />
       </div>
-      <h3>Space & Mounting</h3>
+      <Text as="h3" className="mb-4 text-lg font-medium">Space & Mounting</Text>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <Input label="Space allotment Length (ft)" name="spaceLength" value={form.spaceLength} onChange={handleChange} />
         <Input label="Width (ft)" name="spaceWidth" value={form.spaceWidth} onChange={handleChange} />
@@ -584,9 +447,7 @@ const RFQ = () => {
         />
       </div>
       <div style={{ margin: '24px 0', textAlign: 'center' }}>
-        {/* This button will submit the form as it is inside a <form> and is the only button. */}
-        <Button as="button" onClick={undefined}>Submit RFQ</Button>
-        {status && <div style={{ marginTop: 12, color: status.includes('success') ? 'green' : 'red' }}>{status}</div>}
+        <Button as="button">Submit RFQ</Button>
       </div>
     </form>
   );
