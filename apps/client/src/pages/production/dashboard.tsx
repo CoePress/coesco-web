@@ -705,28 +705,48 @@ const Dashboard = () => {
                   </button>
                   {isChartFilterOpen &&
                     (chartView === "group" || chartView === "machine") && (
-                      <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50">
-                        {Object.keys(utilizationOverTime[0]?.groups || {}).map(
-                          (key) => (
-                            <label
-                              key={key}
-                              className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={visibleLines.includes(key)}
-                                onChange={() => {
-                                  setVisibleLines((prev) =>
-                                    prev.includes(key)
-                                      ? prev.filter((k) => k !== key)
-                                      : [...prev, key]
-                                  );
-                                }}
-                                className="mr-2"
-                              />
-                              {key}
-                            </label>
-                          )
-                        )}
+                      <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50 max-h-[300px] overflow-y-auto">
+                        {chartView === "group"
+                          ? Object.keys(
+                              utilizationOverTime[0]?.groups || {}
+                            ).map((key) => (
+                              <label
+                                key={key}
+                                className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={visibleLines.includes(key)}
+                                  onChange={() => {
+                                    setVisibleLines((prev) =>
+                                      prev.includes(key)
+                                        ? prev.filter((k) => k !== key)
+                                        : [...prev, key]
+                                    );
+                                  }}
+                                  className="mr-2"
+                                />
+                                {key}
+                              </label>
+                            ))
+                          : machines.map((machine) => (
+                              <label
+                                key={machine.id}
+                                className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={visibleLines.includes(machine.id)}
+                                  onChange={() => {
+                                    setVisibleLines((prev) =>
+                                      prev.includes(machine.id)
+                                        ? prev.filter((k) => k !== machine.id)
+                                        : [...prev, machine.id]
+                                    );
+                                  }}
+                                  className="mr-2"
+                                />
+                                {machine.name}
+                              </label>
+                            ))}
                       </div>
                     )}
                 </div>
