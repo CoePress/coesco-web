@@ -81,7 +81,7 @@ export const getStatusColor = (status: string, theme: string) => {
     case "ALARM":
       return "#f44336";
     case "OFFLINE":
-      return theme === "dark" ? "#262626" : "#f0f0f0";
+      return theme === "dark" ? "#f0f0f0" : "#262626";
     case "UNRECORDED":
       return theme === "dark" ? "#404040" : "#d4d4d4";
     default:

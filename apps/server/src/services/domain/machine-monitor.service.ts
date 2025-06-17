@@ -156,6 +156,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
+    // hardcoded since we dont have active status
     const machineCount = machines.data.length - 2;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
     const dailyFleetTarget = dailyMachineTarget * machineCount;

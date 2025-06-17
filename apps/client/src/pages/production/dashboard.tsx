@@ -1,6 +1,5 @@
 import { startOfToday, isSameDay, formatDistance } from "date-fns";
 import {
-  Activity,
   Gauge,
   AlertTriangle,
   RefreshCcw,
@@ -8,6 +7,7 @@ import {
   Map,
   Box,
   Calendar,
+  Filter,
 } from "lucide-react";
 import {
   LineChart,
@@ -17,19 +17,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/theme.context";
 
-import { Card, Loader, MachineMap, Modal, PageHeader } from "@/components";
+import {
+  Card,
+  Loader,
+  MachineMap,
+  Modal,
+  PageHeader,
+  StatusBadge,
+} from "@/components";
 import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
-import { formatDuration, getStatusColor } from "@/utils";
+import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
 import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
 
 type ExpandedMachine = IOverviewMachine & {
@@ -401,6 +405,52 @@ const Dashboard = () => {
     return isNaN(d.getTime()) ? fallback : d;
   };
 
+  const [chartView, setChartView] = useState<"all" | "group" | "machine">(
+    "all"
+  );
+  const [selectedChartFilter, setSelectedChartFilter] = useState<string>("all");
+  const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
+  const chartFilterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        chartFilterRef.current &&
+        !chartFilterRef.current.contains(event.target as Node)
+      ) {
+        setIsChartFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const getChartFilterOptions = () => {
+    switch (chartView) {
+      case "group":
+        return [
+          { label: "All Groups", value: "all" },
+          ...Array.from(new Set(machines.map((m) => m.type))).map((type) => ({
+            label: type.charAt(0).toUpperCase() + type.slice(1),
+            value: type,
+          })),
+        ];
+      case "machine":
+        return [
+          { label: "All Machines", value: "all" },
+          ...machines.map((machine) => ({
+            label: machine.name,
+            value: machine.id,
+          })),
+        ];
+      default:
+        return [{ label: "All", value: "all" }];
+    }
+  };
+
   const getInitialDateRange = () => {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -534,13 +584,13 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
 
-  const stateData = [
-    { name: "Running", value: 45, color: "#22c55e" },
-    { name: "Idle", value: 25, color: "#fbbf24" },
-    { name: "Maintenance", value: 15, color: "#f97316" },
-    { name: "Offline", value: 10, color: "#ef4444" },
-    { name: "Setup", value: 5, color: "#8b5cf6" },
-  ];
+  // const stateData = [
+  //   { name: "Running", value: 45, color: "#22c55e" },
+  //   { name: "Idle", value: 25, color: "#fbbf24" },
+  //   { name: "Maintenance", value: 15, color: "#f97316" },
+  //   { name: "Offline", value: 10, color: "#ef4444" },
+  //   { name: "Setup", value: 5, color: "#8b5cf6" },
+  // ];
 
   return (
     <div className="w-full flex-1 flex flex-col">
@@ -590,7 +640,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
+      <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {kpis.map((metric) => (
             <KPICard
@@ -600,12 +650,69 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0">
+        <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 overflow-hidden">
+          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0 overflow-hidden">
             <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">Utilization Over Time</h3>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setChartView("all")}
+                  className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                    chartView === "all"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-text-muted hover:bg-surface/80"
+                  }`}>
+                  All
+                </button>
+                <button
+                  onClick={() => setChartView("group")}
+                  className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                    chartView === "group"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-text-muted hover:bg-surface/80"
+                  }`}>
+                  By Group
+                </button>
+                <button
+                  onClick={() => setChartView("machine")}
+                  className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                    chartView === "machine"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-text-muted hover:bg-surface/80"
+                  }`}>
+                  By Machine
+                </button>
+                <div
+                  className="relative"
+                  ref={chartFilterRef}>
+                  <button
+                    onClick={() => setIsChartFilterOpen(!isChartFilterOpen)}
+                    className="px-2 py-1 text-xs rounded cursor-pointer bg-surface text-text-muted hover:bg-surface/80">
+                    <Filter size={12} />
+                  </button>
+                  {isChartFilterOpen && (
+                    <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg z-50">
+                      {getChartFilterOptions().map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            setSelectedChartFilter(option.value);
+                            setIsChartFilterOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs hover:bg-surface ${
+                            selectedChartFilter === option.value
+                              ? "bg-surface"
+                              : ""
+                          }`}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex-1 p-2 min-h-0">
+            <div className="flex-1 p-2 min-h-0 overflow-hidden">
               <ResponsiveContainer
                 width="100%"
                 height="100%">
@@ -671,16 +778,16 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-foreground rounded border flex flex-col min-h-0">
+          <div className="bg-foreground rounded border flex flex-col min-h-0 overflow-hidden">
             <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-sm text-text-muted">State Distribution</h3>
             </div>
-            <div className="flex flex-row lg:flex-col flex-1">
-              <div className="flex-1 p-2 min-h-44 md:min-h-0">
-                <ResponsiveContainer
+            <div className="flex flex-row lg:flex-col flex-1 overflow-hidden">
+              <div className="flex-1 p-2 min-h-0 h-[200px] lg:h-[300px]">
+                {/* <ResponsiveContainer
                   width="100%"
                   height="100%">
-                  <PieChart data={stateData}>
+                  <PieChart>
                     <Pie
                       data={stateDistribution}
                       dataKey="total"
@@ -741,7 +848,7 @@ const Dashboard = () => {
                       }}
                     />
                   </PieChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer> */}
               </div>
               <div className="hidden xl:flex flex-row gap-2 text-text-muted flex-wrap justify-center p-2">
                 {stateDistribution.map((entry) => (
@@ -783,19 +890,21 @@ const Dashboard = () => {
                     className="flex flex-col justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div
-                          className="w-2 h-2 rounded-full border border-border"
-                          style={{
-                            backgroundColor: getStatusColor(
-                              machine.status,
-                              theme
-                            ),
-                          }}
-                        />
                         <p className="text-sm font-medium text-text-muted truncate">
                           {machine.name}
                         </p>
                       </div>
+                      <StatusBadge
+                        variant={
+                          getVariantFromStatus(machine.status) as
+                            | "error"
+                            | "success"
+                            | "warning"
+                            | "info"
+                        }
+                        label={machine.status}
+                        size="sm"
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
