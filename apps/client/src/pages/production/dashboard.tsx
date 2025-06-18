@@ -406,9 +406,8 @@ const Dashboard = () => {
   };
 
   const [chartView, setChartView] = useState<"all" | "group" | "machine">(
-    "all"
+    "group"
   );
-  const [selectedChartFilter, setSelectedChartFilter] = useState<string>("all");
   const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
   const chartFilterRef = useRef<HTMLDivElement>(null);
   const [visibleLines, setVisibleLines] = useState<string[]>([]);
@@ -429,29 +428,6 @@ const Dashboard = () => {
     };
   }, []);
 
-  const getChartFilterOptions = () => {
-    switch (chartView) {
-      case "group":
-        return [
-          { label: "All Groups", value: "all" },
-          ...Array.from(new Set(machines.map((m) => m.type))).map((type) => ({
-            label: type.charAt(0).toUpperCase() + type.slice(1),
-            value: type,
-          })),
-        ];
-      case "machine":
-        return [
-          { label: "All Machines", value: "all" },
-          ...machines.map((machine) => ({
-            label: machine.name,
-            value: machine.id,
-          })),
-        ];
-      default:
-        return [{ label: "All", value: "all" }];
-    }
-  };
-
   const getInitialDateRange = () => {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -468,7 +444,7 @@ const Dashboard = () => {
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
     view: chartView,
-    filter: selectedChartFilter !== "all" ? selectedChartFilter : undefined,
+    filter: chartView !== "all" ? chartView : undefined,
   }) as {
     overview: IOverview | null;
     loading: boolean;
@@ -786,6 +762,7 @@ const Dashboard = () => {
                   <Tooltip
                     formatter={(v) => `${parseFloat(v as string).toFixed(2)}%`}
                     contentStyle={{
+                      fontSize: "12px",
                       backgroundColor: "var(--foreground)",
                       color: "var(--text-muted)",
                       border: "1px solid var(--border)",
