@@ -36,5 +36,6 @@ npm install
 docker-compose up --build
 
 # Stop container
-docker-compose down
+docker-compose down --volumes --remove-orphans
+docker system prune -af
 ```

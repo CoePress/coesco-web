@@ -7,8 +7,6 @@ import {
   Moon,
   Code,
   ChevronsRight,
-  HelpCircle,
-  Bell,
   ChartLine,
 } from "lucide-react";
 
@@ -67,12 +65,12 @@ const Header = ({ employee }: HeaderProps) => {
         </div> */}
 
         <div className="flex items-center">
-          <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
+          {/* <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
             <HelpCircle size={20} />
           </div>
           <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
             <Bell size={20} />
-          </div>
+          </div> */}
           <div className="h-10 aspect-square bg-border rounded-lg flex items-center justify-center">
             <span className="text-text-muted">{initials}</span>
           </div>
