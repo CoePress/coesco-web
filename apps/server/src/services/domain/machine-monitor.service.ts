@@ -295,14 +295,15 @@ export class MachineMonitorService {
 
   async createMachineStatus(data: any) {
     return await prisma.$transaction(async (tx) => {
-      const openStatus = await tx.machineStatus.findFirst({
+      const openStatuses = await tx.machineStatus.findMany({
         where: {
           machineId: data.machineId,
           endTime: null,
         },
       });
 
-      if (openStatus) {
+      // Close ALL open statuses for this machine
+      for (const openStatus of openStatuses) {
         await tx.machineStatus.update({
           where: { id: openStatus.id },
           data: {
@@ -404,15 +405,16 @@ export class MachineMonitorService {
         });
 
         const openStatus = openStatuses.data[0];
+        const needsNewState = !openStatus || openStatus.state !== state;
 
-        if (!openStatus || openStatus.state !== state) {
+        if (needsNewState) {
           try {
-            if (openStatus) {
-              await machineStatusService.update(openStatus.id, {
+            // Close ALL open statuses for this machine
+            for (const status of openStatuses.data) {
+              await machineStatusService.update(status.id, {
                 endTime: new Date(),
                 duration:
-                  new Date().getTime() -
-                  new Date(openStatus.startTime).getTime(),
+                  new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 
@@ -484,15 +486,17 @@ export class MachineMonitorService {
           },
         });
         const openStatus = openStatuses.data[0];
+        const needsOfflineState =
+          !openStatus || openStatus.state !== MachineState.OFFLINE;
 
-        if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
+        if (needsOfflineState) {
           try {
-            if (openStatus) {
-              await machineStatusService.update(openStatus.id, {
+            // Close ALL open statuses for this machine
+            for (const status of openStatuses.data) {
+              await machineStatusService.update(status.id, {
                 endTime: new Date(),
                 duration:
-                  new Date().getTime() -
-                  new Date(openStatus.startTime).getTime(),
+                  new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 

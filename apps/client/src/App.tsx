@@ -59,10 +59,6 @@ const App = () => {
       </Route>
       <Route element={<ProtectedRoute withLayout={true} />}>
         <Route
-          path="/main-menu"
-          element={<MainMenu />}
-        />
-        <Route
           path="/sandbox"
           element={<Sandbox />}
         />

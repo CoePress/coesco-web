@@ -5,7 +5,6 @@
 - Move coesco-web repo into coe press organization
   - Upgrade to pro plan on vercel or look into other hosting options
 - Setup proper CI/CD for both frontend & backend
-- Docker logs errors infinitely until resolved
 - Rethink rate limiting
 
 ## Tools

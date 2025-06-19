@@ -14,8 +14,6 @@ const useLogin = () => {
     try {
       const { data } = await instance.get(`/auth/login/microsoft`);
 
-      console.log(data);
-
       window.location.href = data.url;
     } catch (error) {
       if (error instanceof AxiosError) {
