@@ -83,7 +83,9 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             </span>
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right truncate max-w-[200px]">
-              {realTimeData?.program || "-"}
+              {realTimeData?.program === "NO PROGRAM"
+                ? "-"
+                : realTimeData?.program || "-"}
             </span>
           </div>
         </Card>
