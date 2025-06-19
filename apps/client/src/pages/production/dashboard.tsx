@@ -456,8 +456,6 @@ const Dashboard = () => {
   const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  // const [machineTypeFilter, setMachineTypeFilter] = useState("all");
-  // const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const kpis = [
     {
@@ -564,7 +562,6 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
 
-  // Update visibleLines when utilizationOverTime or chartView changes
   useEffect(() => {
     if (chartView === "group" || chartView === "machine") {
       const keys =
@@ -576,14 +573,6 @@ const Dashboard = () => {
       setVisibleLines([]);
     }
   }, [utilizationOverTime, chartView]);
-
-  // const stateData = [
-  //   { name: "Running", value: 45, color: "#22c55e" },
-  //   { name: "Idle", value: 25, color: "#fbbf24" },
-  //   { name: "Maintenance", value: 15, color: "#f97316" },
-  //   { name: "Offline", value: 10, color: "#ef4444" },
-  //   { name: "Setup", value: 5, color: "#8b5cf6" },
-  // ];
 
   return (
     <div className="w-full flex-1 flex flex-col">
@@ -908,7 +897,10 @@ const Dashboard = () => {
 
                       <div className="flex items-center justify-between">
                         <span className="truncate text-xs">
-                          Program: {machine.program || "-"}
+                          Program:{" "}
+                          {machine.program === "NO PROGRAM"
+                            ? "-"
+                            : machine.program || "-"}
                         </span>
                       </div>
 
@@ -986,35 +978,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 overflow-hidden">
-          <div className="bg-foreground rounded border flex flex-col min-h-0 overflow-hidden">
-            <div className="p-2 border-b flex items-center justify-between">
-              <h3 className="text-sm text-text-muted">State Distribution</h3>
-            </div>
-            <div className="flex flex-row lg:flex-col flex-1 overflow-hidden">
-              <div className="hidden xl:flex flex-row gap-2 text-text-muted flex-wrap justify-center p-2">
-                {stateDistribution.map((entry) => (
-                  <div
-                    key={entry.state}
-                    className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded"
-                      style={{
-                        backgroundColor: getStatusColor(entry.state, theme),
-                      }}
-                    />
-                    <span className="text-xs font-medium text-nowrap">
-                      {entry.state} ({entry.percentage?.toFixed(1) ?? 0}%)
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-
-        </div> */}
       </div>
 
       {selectedMachine && (
