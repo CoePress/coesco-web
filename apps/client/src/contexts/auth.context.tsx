@@ -32,36 +32,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const sessionCheckDone = useRef(false);
-  const initialLoadDone = useRef(false);
+  const hasCheckedSession = useRef(false);
 
   const setUser = (user: any, employee: any) => {
     setUserState(user);
     setEmployeeState(employee);
-    sessionCheckDone.current = true;
-    initialLoadDone.current = true;
+    hasCheckedSession.current = true;
     setIsLoading(false);
   };
 
   useEffect(() => {
-    const checkUser = async () => {
-      // Skip session check for login page and auth routes
-      if (
-        location.pathname === "/login" ||
-        location.pathname.includes("/auth/")
-      ) {
+    const checkSession = async () => {
+      if (location.pathname === "/login" || location.pathname === "/callback") {
         setIsLoading(false);
         return;
       }
 
-      // If we already have user data from login, don't check session again
-      if (sessionCheckDone.current && user && employee) {
-        setIsLoading(false);
-        return;
-      }
-
-      // If this is not the initial load and we don't have user data, we need to check session
-      if (initialLoadDone.current && (!user || !employee)) {
+      if (hasCheckedSession.current) {
         setIsLoading(false);
         return;
       }
@@ -76,26 +63,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         setUserState(data.user);
         setEmployeeState(data.employee);
-        sessionCheckDone.current = true;
-        initialLoadDone.current = true;
+        hasCheckedSession.current = true;
       } catch (error: any) {
         console.log("Session check failed:", error.response?.status);
         setUserState(null);
         setEmployeeState(null);
-        sessionCheckDone.current = false;
-        
-        // Only redirect to login on initial load or if we're on a protected route
-        if (!initialLoadDone.current && location.pathname !== "/login") {
+        hasCheckedSession.current = true;
+
+        if (location.pathname !== "/login") {
           navigate("/login");
         }
-        initialLoadDone.current = true;
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkUser();
-  }, [location.pathname, navigate, user, employee]);
+    checkSession();
+  }, [location.pathname, navigate]);
 
   return (
     <AuthContext.Provider value={{ user, employee, setUser, isLoading }}>
