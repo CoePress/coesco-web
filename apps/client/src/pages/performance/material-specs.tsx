@@ -3,9 +3,20 @@ import Input from "@/components/shared/input";
 import Select from "@/components/shared/select";
 import Checkbox from "@/components/shared/checkbox";
 import Text from "@/components/shared/text";
+import Tabs from "@/components/shared/tabs";
 import { Button, Card } from "@/components";
 import { useCreateMaterialSpecs, MaterialSpecsFormData } from "@/hooks/performance/use-create-material-specs";
 import { useGetMaterialSpecs } from "@/hooks/performance/use-get-material-specs";
+import { snakeToCamel } from "@/utils";
+
+const VERSIONS = [
+  "Maximum Thick",
+  "Max @ Full",
+  "Minimum Thick",
+  "Max @ Width",
+] as const;
+
+type VersionKey = typeof VERSIONS[number];
 
 interface MaterialSpecsForm {
   referenceNumber: string;
@@ -127,7 +138,7 @@ const MaterialSpecs = () => {
 
   useEffect(() => {
     if (fetchedMaterialSpecs) {
-      setForm(fetchedMaterialSpecs as MaterialSpecsForm);
+      setForm(snakeToCamel(fetchedMaterialSpecs) as MaterialSpecsForm);
     }
   }, [fetchedMaterialSpecs]);
 
@@ -158,7 +169,7 @@ const MaterialSpecs = () => {
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
           <Input 
-            label="Reference Number" 
+            label="Reference" 
             required
             name="referenceNumber" 
             value={form.referenceNumber} 
@@ -198,7 +209,6 @@ const MaterialSpecs = () => {
             name="customer"
             value={form.customer || ''}
             onChange={handleChange}
-            required
           />
           <Input
             label="Date"
@@ -206,7 +216,6 @@ const MaterialSpecs = () => {
             type="date"
             value={form.date || today}
             onChange={handleChange}
-            required
           />
         </div>
       </Card>
@@ -214,20 +223,10 @@ const MaterialSpecs = () => {
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Material Specifications</Text>
         {/* Version Tabs (inside the card) */}
-        <div className="flex justify-center mb-4">
-          {['Maximum Thick', 'Max @ Full', 'Minimum Thick', 'Max @ Width'].map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={`px-4 py-2 mx-1 rounded-t border-b-2 font-medium ${version === v ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-transparent bg-gray-100 text-gray-500'}`}
-              onClick={() => setVersion(v as any)}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
+        
         {/* Active Version Badge (inside the card) */}
-        <div className="flex justify-center mb-2">
+        <Tabs activeTab={version} setActiveTab={tab => setVersion(tab as VersionKey)} tabs={VERSIONS.map(v => ({ label: v, value: v }))} />
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
           <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
             version === 'Maximum Thick' ? 'bg-blue-100 text-blue-800' :
             version === 'Max @ Full' ? 'bg-green-100 text-green-800' :
@@ -237,12 +236,11 @@ const MaterialSpecs = () => {
             {version} Version
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {MATERIAL_SPECS_FIELDS[version].map((field) => (
             <Input
               key={field}
               label={FIELD_LABELS[field] || field}
-              required={true}
               name={field}
               type={field.toLowerCase().includes('thickness') || field.toLowerCase().includes('width') || field.toLowerCase().includes('coil') || field.toLowerCase().includes('weight') || field.toLowerCase().includes('strength') || field.toLowerCase().includes('fpm') || field.toLowerCase().includes('rad') || field.toLowerCase().includes('length') ? 'number' : 'text'}
               value={form[field] as string || ''}
@@ -447,10 +445,6 @@ const MaterialSpecs = () => {
           />
         </div>
       </Card>
-
-      <div className="text-center">
-        <Button as="button">Save Material Specs</Button>
-      </div>
     </form>
   );
 };

@@ -165,3 +165,17 @@ pythonInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Converts snake_case keys to camelCase recursively for objects and arrays
+export function snakeToCamel(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(snakeToCamel);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      acc[camelKey] = snakeToCamel(obj[key]);
+      return acc;
+    }, {} as any);
+  }
+  return obj;
+}

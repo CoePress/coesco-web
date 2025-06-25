@@ -11,10 +11,13 @@ import {
   PcCase,
   ScrollText,
   Boxes,
+  LandPlot,
+  CogIcon,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
+import ReelDrive from '@/pages/performance/reel-drive';
 
 export type Module = {
   sequence: number;
@@ -41,6 +44,7 @@ const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
 const RFQ = lazy(() => import("@/pages/performance/rfq"));
 const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
+const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
 
 const productionModule: Module = {
   sequence: 1,
@@ -116,6 +120,18 @@ const performanceModule: Module = {
       label: "Material Specs",
       icon: Boxes,
       component: MaterialSpecs,
+    },
+    {
+      slug: "tddbhd",
+      label: "TD/DB/HD Report",
+      icon: LandPlot,
+      component: TDDBHD,
+    },
+    {
+      slug: "reel-drive",
+      label: "Reel Drive",
+      icon: CogIcon,
+      component: ReelDrive,
     },
   ],
 };

@@ -12,6 +12,7 @@ type InputProps = {
   name?: string;
   label?: string;
   error?: string;
+  readOnly?: boolean;
 };
 
 const Input = ({
@@ -26,6 +27,7 @@ const Input = ({
   name,
   label,
   error,
+  readOnly = false,
 }: InputProps) => {
   return (
     <div className="w-full">
@@ -46,6 +48,7 @@ const Input = ({
         required={required}
         id={id}
         name={name}
+        readOnly={readOnly}
         className={`
           w-full text-sm px-3 py-1.5 rounded
           border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent

@@ -8,6 +8,7 @@ import Text from "@/components/shared/text";
 import Card from "@/components/shared/card";
 import { useCreateRFQ, RFQFormData } from "@/hooks/performance/use-create-rfq";
 import { useGetRFQ } from "@/hooks/performance/use-get-rfq";
+import { snakeToCamel } from "@/utils";
 
 const initialState: RFQFormData = {
   referenceNumber: localStorage.getItem('performanceReferenceNumber') || "",
@@ -110,7 +111,7 @@ const RFQ = () => {
 
   useEffect(() => {
     if (fetchedRFQ) {
-      setForm(fetchedRFQ);
+      setForm(snakeToCamel(fetchedRFQ));
     }
   }, [fetchedRFQ]);
 
@@ -166,8 +167,8 @@ const RFQ = () => {
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
           <Input 
-            label="Reference Number" 
-            required 
+            label="Reference" 
+            required
             name="referenceNumber" 
             value={form.referenceNumber} 
             onChange={handleChange} 
@@ -207,14 +208,12 @@ const RFQ = () => {
             value={form.date} 
             onChange={handleChange}
             error={errors.date ? 'Required' : ''}
-            required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input 
             label="Company Name" 
-            required 
             name="companyName" 
             value={form.companyName} 
             onChange={handleChange} 
@@ -303,21 +302,20 @@ const RFQ = () => {
           />
           <Input 
             label="Line Application" 
-            required name="lineApplication" 
+            name="lineApplication" 
             value={form.lineApplication} 
             onChange={handleChange} 
             error={errors.lineApplication ? 'Required' : ''} 
           />
           <Input 
             label="Line Type" 
-            required name="lineType" 
+            name="lineType" 
             value={form.lineType} 
             onChange={handleChange} 
             error={errors.lineType ? 'Required' : ''}
           />
           <Select
             label="Pull Through"
-            required
             name="pullThrough"
             value={form.pullThrough}
             onChange={handleChange}
@@ -335,8 +333,6 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Input 
             label="Max Coil Width (in)" 
-            required 
-            type="number" 
             name="maxCoilWidth" 
             value={form.maxCoilWidth} 
             onChange={handleChange} 
@@ -344,8 +340,6 @@ const RFQ = () => {
           />
           <Input 
             label="Min Coil Width (in)" 
-            required 
-            type="number" 
             name="minCoilWidth" 
             value={form.minCoilWidth} 
             onChange={handleChange} 
@@ -353,8 +347,6 @@ const RFQ = () => {
           />
           <Input 
             label="Max Coil O.D. (in)" 
-            required 
-            type="number" 
             name="maxCoilOD" 
             value={form.maxCoilOD} 
             onChange={handleChange} 
@@ -362,8 +354,6 @@ const RFQ = () => {
           />
           <Input 
             label="Coil I.D. (in)" 
-            required 
-            type="number" 
             name="coilID" 
             value={form.coilID} 
             onChange={handleChange} 
@@ -371,8 +361,6 @@ const RFQ = () => {
           />
           <Input 
             label="Max Coil Weight (lbs)" 
-            required 
-            type="number" 
             name="maxCoilWeight" 
             value={form.maxCoilWeight} 
             onChange={handleChange} 
@@ -394,7 +382,6 @@ const RFQ = () => {
               name="slitEdge"
               checked={form.slitEdge}
               onChange={handleChange}
-              required
               error={errors.slitEdge ? 'At least one required' : ''}
             />
             <Checkbox
@@ -445,35 +432,35 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
           <Input 
             label="Highest Yield/most challenging Mat Spec (thick)" 
-            required name="matSpec1.thickness" 
+            name="matSpec1.thickness" 
             value={form.matSpec1.thickness} 
             onChange={handleChange} 
             error={errors['matSpec1.thickness'] ? 'Required' : ''} 
           />
           <Input 
             label="at Width (in)" 
-            required name="matSpec1.width" 
+            name="matSpec1.width" 
             value={form.matSpec1.width} 
             onChange={handleChange} 
             error={errors['matSpec1.width'] ? 'Required' : ''} 
           />
           <Input 
             label="Material Type" 
-            required name="matSpec1.type" 
+            name="matSpec1.type" 
             value={form.matSpec1.type} 
             onChange={handleChange} 
             error={errors['matSpec1.type'] ? 'Required' : ''} 
           />
           <Input 
             label="Max Yield Strength (PSI)" 
-            required name="matSpec1.yield" 
+            name="matSpec1.yield" 
             value={form.matSpec1.yield} 
             onChange={handleChange} 
             error={errors['matSpec1.yield'] ? 'Required' : ''} 
           />
           <Input 
             label="Max Tensile Strength (PSI)" 
-            required name="matSpec1.tensile" 
+            name="matSpec1.tensile" 
             value={form.matSpec1.tensile} 
             onChange={handleChange} 
             error={errors['matSpec1.tensile'] ? 'Required' : ''} 
@@ -582,7 +569,6 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Select
             label="Does the surface finish matter? Are they running a cosmetic material?"
-            required
             name="cosmeticMaterial"
             value={form.cosmeticMaterial}
             onChange={handleChange}
@@ -678,7 +664,7 @@ const RFQ = () => {
           />
           <Input 
             label="Press Max SPM" 
-            required name="maxSPM" 
+            name="maxSPM" 
             value={form.maxSPM} 
             onChange={handleChange} 
             error={errors.maxSPM ? 'Required' : ''} 
@@ -715,42 +701,42 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Input 
             label="Average feed length" 
-            required name="avgFeedLen" 
+            name="avgFeedLen" 
             value={form.avgFeedLen} 
             onChange={handleChange} 
             error={errors.avgFeedLen ? 'Required' : ''} 
           />
           <Input 
             label="at (SPM)" 
-            required name="avgFeedSPM" 
+            name="avgFeedSPM" 
             value={form.avgFeedSPM} 
             onChange={handleChange} 
             error={errors.avgFeedSPM ? 'Required' : ''} 
           />
           <Input 
             label="Maximum feed length" 
-            required name="maxFeedLen" 
+            name="maxFeedLen" 
             value={form.maxFeedLen} 
             onChange={handleChange} 
             error={errors.maxFeedLen ? 'Required' : ''} 
           />
           <Input 
             label="at (SPM)" 
-            required name="maxFeedSPM" 
+            name="maxFeedSPM" 
             value={form.maxFeedSPM} 
             onChange={handleChange} 
             error={errors.maxFeedSPM ? 'Required' : ''} 
           />
           <Input 
             label="Minimum feed length" 
-            required name="minFeedLen" 
+            name="minFeedLen" 
             value={form.minFeedLen} 
             onChange={handleChange} 
             error={errors.minFeedLen ? 'Required' : ''} 
           />
           <Input 
             label="at (SPM)" 
-            required name="minFeedSPM" 
+            name="minFeedSPM" 
             value={form.minFeedSPM} 
             onChange={handleChange} 
             error={errors.minFeedSPM ? 'Required' : ''} 
@@ -760,7 +746,7 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input 
             label="Voltage Required (VAC)" 
-            required name="voltage" 
+            name="voltage" 
             value={form.voltage} 
             onChange={handleChange} 
             error={errors.voltage ? 'Required' : ''} 
@@ -845,14 +831,14 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input 
             label="Feed Direction" 
-            required name="feedDirection" 
+            name="feedDirection" 
             value={form.feedDirection} 
             onChange={handleChange} 
             error={errors.feedDirection ? 'Required' : ''} 
           />
           <Input 
             label="Coil Loading" 
-            required name="coilLoading" 
+            name="coilLoading" 
             value={form.coilLoading} 
             onChange={handleChange} 
             error={errors.coilLoading ? 'Required' : ''} 
@@ -912,10 +898,6 @@ const RFQ = () => {
           />
         </div>
       </Card>
-
-      <div className="text-center">
-        <Button as="button">Submit RFQ</Button>
-      </div>
     </form>
   );
 };
