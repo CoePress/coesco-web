@@ -411,8 +411,22 @@ const Dashboard = () => {
     return isNaN(d.getTime()) ? fallback : d;
   };
 
+  const parseChartViewParam = (
+    param: string | null
+  ): "all" | "group" | "machine" => {
+    if (param === "group" || param === "machine" || param === "all") {
+      return param;
+    }
+    return "all";
+  };
+
+  const getInitialChartView = () => {
+    const params = new URLSearchParams(window.location.search);
+    return parseChartViewParam(params.get("chartView"));
+  };
+
   const [chartView, setChartView] = useState<"all" | "group" | "machine">(
-    "all"
+    getInitialChartView
   );
   const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
   const chartFilterRef = useRef<HTMLDivElement>(null);
@@ -536,13 +550,14 @@ const Dashboard = () => {
   useEffect(() => {
     const startStr = dateRange.start.toISOString().slice(0, 10);
     const endStr = dateRange.end.toISOString().slice(0, 10);
-    const isDefault =
+    const isDefaultDate =
       isSameDay(dateRange.start, startOfToday()) &&
       isSameDay(dateRange.end, startOfToday());
+    const isDefaultChartView = chartView === "all";
 
     const params = new URLSearchParams(window.location.search);
 
-    if (isDefault) {
+    if (isDefaultDate) {
       params.delete("startDate");
       params.delete("endDate");
     } else {
@@ -550,19 +565,31 @@ const Dashboard = () => {
       params.set("endDate", endStr);
     }
 
+    if (isDefaultChartView) {
+      params.delete("chartView");
+    } else {
+      params.set("chartView", chartView);
+    }
+
     navigate({ search: params.toString() }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, [dateRange, chartView]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const newStart = parseDateParam(params.get("startDate"), startOfToday());
     const newEnd = parseDateParam(params.get("endDate"), new Date());
+    const newChartView = parseChartViewParam(params.get("chartView"));
+
     if (
       newStart.getTime() !== dateRange.start.getTime() ||
       newEnd.getTime() !== dateRange.end.getTime()
     ) {
       setDateRange({ start: newStart, end: newEnd });
+    }
+
+    if (newChartView !== chartView) {
+      setChartView(newChartView);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
