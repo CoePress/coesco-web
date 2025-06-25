@@ -398,6 +398,11 @@ type IOverview = {
   alarms: IOverviewAlarm[];
 };
 
+// Update the helper function to capitalize and pluralize
+const capitalizeFirst = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() + "s";
+};
+
 const Dashboard = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
     if (!param) return fallback;
@@ -681,7 +686,7 @@ const Dashboard = () => {
                                     }}
                                     className="mr-2"
                                   />
-                                  {key}
+                                  {capitalizeFirst(key)}
                                 </label>
                               ))
                             : machines.map((machine) => (
@@ -782,7 +787,7 @@ const Dashboard = () => {
                           const machineName =
                             chartView === "machine"
                               ? machines.find((m) => m.id === key)?.name || key
-                              : key;
+                              : capitalizeFirst(key);
 
                           // Use shades of primary color from theme
                           const colors = [
