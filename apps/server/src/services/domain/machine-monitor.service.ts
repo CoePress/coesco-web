@@ -245,7 +245,8 @@ export class MachineMonitorService {
       machineCount,
       now,
       view,
-      machines.data
+      machines.data,
+      scale
     );
 
     const totalAvailableTime =
@@ -957,6 +958,79 @@ export class MachineMonitorService {
     return formatters[scale as keyof typeof formatters]?.(date) || "";
   }
 
+  private formatDivisionRangeLabel(
+    startDate: Date,
+    endDate: Date,
+    scale: string
+  ): string {
+    const formatters = {
+      [TimeScale.HOUR]: (start: Date, end: Date) => {
+        const startHours = (start.getUTCHours() - 4 + 24) % 12 || 12;
+        const startAmpm =
+          (start.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+
+        const adjustedEnd = new Date(end);
+        if (
+          end.getUTCMinutes() > 0 ||
+          end.getUTCSeconds() > 0 ||
+          end.getUTCMilliseconds() > 0
+        ) {
+          adjustedEnd.setUTCHours(end.getUTCHours() + 1, 0, 0, 0);
+        }
+
+        const endHours = (adjustedEnd.getUTCHours() - 4 + 24) % 12 || 12;
+        const endAmpm =
+          (adjustedEnd.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+        return `${startHours}:00 ${startAmpm} - ${endHours}:00 ${endAmpm}`;
+      },
+      [TimeScale.DAY]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.WEEK]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.MONTH]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.QUARTER]: (start: Date, end: Date) => {
+        const startQ = `Q${Math.floor(start.getMonth() / 3) + 1} ${start.getFullYear()}`;
+        const endQ = `Q${Math.floor(end.getMonth() / 3) + 1} ${end.getFullYear()}`;
+        return `${startQ} - ${endQ}`;
+      },
+      [TimeScale.YEAR]: (start: Date, end: Date) => {
+        return `${start.getFullYear()} - ${end.getFullYear()}`;
+      },
+    };
+
+    return (
+      formatters[scale as keyof typeof formatters]?.(startDate, endDate) || ""
+    );
+  }
+
   async closeMachineStatus(machineId: string) {
     const openStatuses = await machineStatusService.getAll({
       filter: {
@@ -1082,7 +1156,8 @@ export class MachineMonitorService {
     machineCount: number,
     now: Date,
     view: string = "all",
-    machines: any[]
+    machines: any[],
+    scale: string
   ) {
     if (view === "all") {
       return divisions.map((division) => {
@@ -1101,6 +1176,11 @@ export class MachineMonitorService {
 
         return {
           label: division.label,
+          rangeLabel: this.formatDivisionRangeLabel(
+            division.start,
+            division.end,
+            scale
+          ),
           start: division.start,
           end: division.end,
           utilization: isFuture
@@ -1150,6 +1230,11 @@ export class MachineMonitorService {
     return divisions.map((division) => {
       const result: any = {
         label: division.label,
+        rangeLabel: this.formatDivisionRangeLabel(
+          division.start,
+          division.end,
+          scale
+        ),
         start: division.start,
         end: division.end,
         groups: {},

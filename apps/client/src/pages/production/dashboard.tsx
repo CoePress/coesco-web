@@ -776,6 +776,16 @@ const Dashboard = () => {
                       formatter={(v) =>
                         `${parseFloat(v as string).toFixed(2)}%`
                       }
+                      labelFormatter={(label, payload) => {
+                        if (
+                          payload &&
+                          payload.length > 0 &&
+                          payload[0]?.payload?.rangeLabel
+                        ) {
+                          return payload[0].payload.rangeLabel;
+                        }
+                        return label;
+                      }}
                       contentStyle={{
                         fontSize: "12px",
                         backgroundColor: "var(--foreground)",
