@@ -167,10 +167,12 @@ export class MachineMonitorService {
       machineStatusService.getByDateRange({
         startDate: dateRange.startDate.toISOString(),
         endDate: dateRange.endDate.toISOString(),
+        include: { machine: true },
       }),
       machineStatusService.getByDateRange({
         startDate: dateRange.previousStartDate.toISOString(),
         endDate: dateRange.previousEndDate.toISOString(),
+        include: { machine: true },
       }),
     ]);
 
@@ -242,7 +244,8 @@ export class MachineMonitorService {
       states.data,
       machineCount,
       now,
-      view
+      view,
+      machines.data
     );
 
     const totalAvailableTime =
@@ -1078,7 +1081,8 @@ export class MachineMonitorService {
     states: MachineStateData[],
     machineCount: number,
     now: Date,
-    view: string = "all"
+    view: string = "all",
+    machines: any[]
   ) {
     if (view === "all") {
       return divisions.map((division) => {
@@ -1125,6 +1129,24 @@ export class MachineMonitorService {
       {} as Record<string, typeof states>
     );
 
+    // Create all possible groups/machines to ensure they're all returned
+    const allGroups = new Set<string>();
+    if (view === "group") {
+      // Get all unique machine types
+      machines.forEach((machine) => {
+        if (machine.type) {
+          allGroups.add(machine.type);
+        }
+      });
+    } else {
+      // Get all machine IDs
+      machines.forEach((machine) => {
+        if (machine.id) {
+          allGroups.add(machine.id);
+        }
+      });
+    }
+
     return divisions.map((division) => {
       const result: any = {
         label: division.label,
@@ -1133,7 +1155,9 @@ export class MachineMonitorService {
         groups: {},
       };
 
-      for (const [key, groupStates] of Object.entries(groupedStates)) {
+      // Iterate through all possible groups to ensure they're all included
+      for (const key of allGroups) {
+        const groupStates = groupedStates[key] || [];
         const divisionTotals = this.calculateStatusTotals(
           groupStates as any[],
           division.start,
@@ -1144,18 +1168,25 @@ export class MachineMonitorService {
         const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
         const divisionDuration =
           division.end.getTime() - division.start.getTime();
-        const groupMachineCount = new Set(
-          (groupStates as any[]).map((s) => s.machineId)
-        ).size;
+
+        // Calculate machine count for this specific group
+        let groupMachineCount = 0;
+        if (view === "group") {
+          groupMachineCount = machines.filter((m) => m.type === key).length;
+        } else {
+          groupMachineCount = machines.find((m) => m.id === key) ? 1 : 0;
+        }
+
         const divisionTotalTime = divisionDuration * groupMachineCount;
         const isFuture = division.start > now;
 
         result.groups[key] = {
-          utilization: isFuture
-            ? null
-            : Number(
-                ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
-              ),
+          utilization:
+            isFuture || divisionTotalTime === 0
+              ? null
+              : Number(
+                  ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
+                ),
           stateTotals: divisionTotals,
         };
       }
