@@ -347,6 +347,7 @@ model ApiKey {
   @@map("api_keys")
 }
 
+// DO NOT TOUCH BELOW
 model Machine {
   id              String                @id @default(uuid())
   slug            String                @unique

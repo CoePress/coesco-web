@@ -1,5 +1,5 @@
 import { __dev__ } from "@/config/config";
-import { employeeService, machineService } from "@/services";
+import { machineService } from "@/services";
 import { logger } from "@/utils/logger";
 import {
   MachineConnectionType,

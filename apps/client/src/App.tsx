@@ -14,14 +14,18 @@ import modules from "./config/modules";
 const App = () => {
   const content = (
     <Routes>
+      <Route
+        path="/sample"
+        element={<div>Sample</div>}
+      />
+      <Route
+        path="/callback"
+        element={<MicrosoftCallback />}
+      />
       <Route element={<PublicRoute />}>
         <Route
           path="/login"
           element={<Login />}
-        />
-        <Route
-          path="/callback"
-          element={<MicrosoftCallback />}
         />
       </Route>
       <Route element={<ProtectedRoute withLayout={false} />}>

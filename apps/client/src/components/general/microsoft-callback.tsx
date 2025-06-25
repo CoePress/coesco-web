@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
@@ -8,9 +8,14 @@ const MicrosoftCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setUser } = useAuth();
+  const hasRun = useRef(false);
 
   useEffect(() => {
+    if (hasRun.current) return;
+
     const handleCallback = async () => {
+      hasRun.current = true;
+
       const code = searchParams.get("code");
       const state = searchParams.get("state");
 
@@ -25,7 +30,7 @@ const MicrosoftCallback = () => {
           state,
         });
 
-        setUser(data.user, data.token);
+        setUser(data.user, data.employee);
 
         navigate("/");
       } catch (error) {
