@@ -407,7 +407,7 @@ const Dashboard = () => {
   };
 
   const [chartView, setChartView] = useState<"all" | "group" | "machine">(
-    "group"
+    "all"
   );
   const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
   const chartFilterRef = useRef<HTMLDivElement>(null);
