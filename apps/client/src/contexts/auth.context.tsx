@@ -33,22 +33,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const sessionCheckDone = useRef(false);
+  const initialLoadDone = useRef(false);
 
   const setUser = (user: any, employee: any) => {
     setUserState(user);
     setEmployeeState(employee);
     sessionCheckDone.current = true;
+    initialLoadDone.current = true;
     setIsLoading(false);
   };
 
   useEffect(() => {
     const checkUser = async () => {
-      // Skip session check only for login page, auth routes, or if we already confirmed the session
+      // Skip session check for login page and auth routes
       if (
         location.pathname === "/login" ||
-        location.pathname.includes("/auth/") ||
-        (sessionCheckDone.current && user && employee)
+        location.pathname.includes("/auth/")
       ) {
+        setIsLoading(false);
+        return;
+      }
+
+      // If we already have user data from login, don't check session again
+      if (sessionCheckDone.current && user && employee) {
+        setIsLoading(false);
+        return;
+      }
+
+      // If this is not the initial load and we don't have user data, we need to check session
+      if (initialLoadDone.current && (!user || !employee)) {
         setIsLoading(false);
         return;
       }
@@ -64,16 +77,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUserState(data.user);
         setEmployeeState(data.employee);
         sessionCheckDone.current = true;
+        initialLoadDone.current = true;
       } catch (error: any) {
         console.log("Session check failed:", error.response?.status);
         setUserState(null);
         setEmployeeState(null);
         sessionCheckDone.current = false;
-
-        // Redirect to login if session is invalid
-        if (location.pathname !== "/login") {
+        
+        // Only redirect to login on initial load or if we're on a protected route
+        if (!initialLoadDone.current && location.pathname !== "/login") {
           navigate("/login");
         }
+        initialLoadDone.current = true;
       } finally {
         setIsLoading(false);
       }
