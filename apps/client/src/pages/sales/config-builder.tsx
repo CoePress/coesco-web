@@ -97,13 +97,11 @@ const ConfigBuilder = () => {
   const [selectedProductClass, setSelectedProductClass] = useState<string>("");
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-  // Use hooks instead of sample data
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
   const { options: groupedCategories, loading: optionsLoading } =
     useGetOptionsByProductClass(selectedProductClass, true);
 
-  // Use grouped categories directly since they come with nested options
   const sortedCategories = groupedCategories
     ? [...groupedCategories].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];

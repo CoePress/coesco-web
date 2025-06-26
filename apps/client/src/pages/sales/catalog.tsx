@@ -3,9 +3,12 @@ import { useState } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader } from "@/components";
 import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
-import { useGetProductClasses, useGetConfigurations } from "@/hooks/config";
+import {
+  useGetProductClasses,
+  useGetConfigurations,
+  useGetOptionsByProductClass,
+} from "@/hooks/config";
 
-// Mock data for parts and services
 const sampleParts = [
   {
     id: "part-001",
@@ -588,10 +591,6 @@ const DetailModal = ({
 };
 
 const Catalog = () => {
-  const { productClasses, loading: productClassesLoading } =
-    useGetProductClasses();
-  const { configurations, loading: configurationsLoading } =
-    useGetConfigurations();
   const [viewMode] = useState<"grid" | "list">("grid");
   const [filterType, setFilterType] = useState<
     "configs" | "parts" | "services"
@@ -609,6 +608,15 @@ const Catalog = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailItem, setSelectedDetailItem] = useState<any>(null);
+
+  const { productClasses, loading: productClassesLoading } =
+    useGetProductClasses();
+  const { configurations, loading: configurationsLoading } =
+    useGetConfigurations();
+  const deepestSelectedClassId =
+    selections.length > 0 ? selections[selections.length - 1] : "";
+  const { options: productClassOptions, loading: optionsLoading } =
+    useGetOptionsByProductClass(deepestSelectedClassId);
 
   const getOptionsForLevel = (
     level: number
@@ -1001,7 +1009,7 @@ const Catalog = () => {
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-medium mb-2">Option Filters</h3>
 
-              {sortedCategories.map((category) => (
+              {productClassOptions?.map((category: any) => (
                 <div
                   key={category.id}
                   className="mb-2">
@@ -1015,10 +1023,11 @@ const Catalog = () => {
                     }
                     className="rounded border-border bg-foreground w-full">
                     <option value="">Any</option>
-                    {sampleOptions
-                      .filter((opt) => opt.categoryId === category.id)
-                      .sort((a, b) => a.displayOrder - b.displayOrder)
-                      .map((option) => (
+                    {category.options
+                      ?.sort(
+                        (a: any, b: any) => a.displayOrder - b.displayOrder
+                      )
+                      .map((option: any) => (
                         <option
                           key={option.id}
                           value={option.id}>
