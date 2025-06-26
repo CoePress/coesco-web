@@ -16,9 +16,9 @@ import { QuoteItemService } from "./repository/quote.-item.service";
 import { ProductClassService } from "./repository/product-class.service";
 import { OptionCategoryService } from "./repository/option-category.service";
 import { OptionService } from "./repository/option.service";
-import { ConfigurationService } from "./repository/configuration.service";
 import { OptionRulesService } from "./repository/option-rules.services";
 import { ConfigurationOptionService } from "./repository/configuration-option.service";
+import { ConfigBuilderService } from "./domain/config-builder.service";
 import { SalesService } from "./domain/sales.service";
 import { ItemService } from "./repository/item.service";
 import { MachineService } from "./repository/machine.service";
@@ -46,12 +46,13 @@ export const productClassService = new ProductClassService();
 export const optionCategoryService = new OptionCategoryService();
 export const optionService = new OptionService();
 export const optionRulesService = new OptionRulesService();
-export const configurationService = new ConfigurationService();
 export const configurationOptionService = new ConfigurationOptionService();
 export const salesService = new SalesService();
 export const itemService = new ItemService();
 export const userService = new UserService();
+
 export const quoteBuilderService = new QuoteBuilderService();
+export const configBuilderService = new ConfigBuilderService();
 
 export const initializeServices = async () => {
   socketService.setIo(io);

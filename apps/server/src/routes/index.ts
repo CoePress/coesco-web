@@ -15,6 +15,7 @@ import contactRoutes from "./contact.router";
 import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 import itemRoutes from "./item.routes";
+import configBuilderRoutes from "./config-builder.routes";
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
 router.use("/items", protect, itemRoutes);
+router.use("/config", protect, configBuilderRoutes);
 
 // Widget
 router.get("/widget.html", (req, res) => {
