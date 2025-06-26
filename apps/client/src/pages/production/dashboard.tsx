@@ -773,7 +773,7 @@ const Dashboard = () => {
                       tickLine={false}
                     />
                     <Tooltip
-                      formatter={(v, name, props) => {
+                      formatter={(v, _name, props) => {
                         const percentage = `${parseFloat(v as string).toFixed(2)}%`;
                         let runtime = 0;
 
