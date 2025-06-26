@@ -45,7 +45,7 @@ const salesModule: Module = {
   slug: "sales",
   label: "Sales",
   icon: DollarSign,
-  status: "active" as const,
+  status: "development" as const,
   pages: [
     {
       slug: null,

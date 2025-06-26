@@ -9,6 +9,7 @@ import {
   CircleMinus,
   Import,
   Save,
+  Minus,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -304,9 +305,9 @@ const ConfigBuilder = () => {
       case "warning":
         return <CircleX className="w-4 h-4 text-red-500" />;
       case "incomplete":
-        return <CircleMinus className="w-4 h-4 text-neutral-400" />;
+        return <CircleMinus className="w-4 h-4 text-text-muted" />;
       default:
-        return <CircleMinus className="w-4 h-4 text-neutral-400" />;
+        return <CircleMinus className="w-4 h-4 text-text-muted" />;
     }
   };
 
@@ -469,6 +470,10 @@ const ConfigBuilder = () => {
     console.log("Saving configuration:", data);
   };
 
+  const handleCollapseAll = () => {
+    setExpandedCategories([]);
+  };
+
   return (
     <div className="w-full flex-1">
       <PageHeader
@@ -514,9 +519,20 @@ const ConfigBuilder = () => {
           </div>
 
           <div className="p-2 border-b bg-foreground">
-            <h2 className="font-semibold text-neutral-400">
-              Configuration Options
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-text-muted">
+                Configuration Options
+              </h2>
+              <button
+                onClick={handleCollapseAll}
+                className="p-1 hover:bg-surface rounded cursor-pointer"
+                title="Collapse all">
+                <Minus
+                  size={16}
+                  className="text-text-muted"
+                />
+              </button>
+            </div>
           </div>
 
           <div className="divide-y">
@@ -541,7 +557,7 @@ const ConfigBuilder = () => {
                     className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(categoryStatus)}
-                      <span className="text-sm font-medium text-neutral-400">
+                      <span className="text-sm font-medium text-text-muted">
                         {category.name} {category.isRequired && "*"}
                       </span>
                     </div>
@@ -571,60 +587,74 @@ const ConfigBuilder = () => {
                             className={`text-sm ${
                               isDisabled ? "opacity-50" : ""
                             }`}>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                className="rounded border border-border"
-                                checked={isSelected}
-                                disabled={isDisabled}
-                                onChange={(e) =>
-                                  handleOptionSelect(
-                                    option.id,
-                                    category.id,
-                                    e.target.checked
-                                  )
-                                }
-                              />
-                              <span className="flex-1 text-neutral-400">
-                                {option.name}
-                              </span>
-                              <span className="text-neutral-400">
-                                {formatCurrency(option.price)}
-                              </span>
-                            </div>
-
-                            {isSelected && option.allowQuantity && (
-                              <div className="pl-6 mt-2 flex items-center gap-2">
-                                <label className="text-xs text-neutral-400">
-                                  Quantity:
-                                </label>
+                            <button
+                              onClick={() =>
+                                !isDisabled &&
+                                handleOptionSelect(
+                                  option.id,
+                                  category.id,
+                                  !isSelected
+                                )
+                              }
+                              disabled={isDisabled}
+                              className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer">
+                              <div className="flex items-center gap-2">
                                 <input
-                                  type="number"
-                                  min={1}
-                                  max={100}
-                                  value={quantity}
+                                  type="checkbox"
+                                  className="rounded border border-border"
+                                  checked={isSelected}
+                                  disabled={isDisabled}
                                   onChange={(e) =>
-                                    handleQuantityChange(
+                                    handleOptionSelect(
                                       option.id,
-                                      parseInt(e.target.value) || 1
+                                      category.id,
+                                      e.target.checked
                                     )
                                   }
-                                  className="w-16 p-1 border rounded text-xs"
+                                  onClick={(e) => e.stopPropagation()}
                                 />
+                                <span className="flex-1 text-text-muted group-hover:text-text">
+                                  {option.name}
+                                </span>
+                                <span className="text-text-muted group-hover:text-text">
+                                  {formatCurrency(option.price)}
+                                </span>
                               </div>
-                            )}
 
-                            {option.description && (
-                              <div className="pl-6 mt-1 text-xs text-neutral-400 italic">
-                                {option.description}
-                              </div>
-                            )}
+                              {isSelected && option.allowQuantity && (
+                                <div className="pl-6 mt-2 flex items-center gap-2">
+                                  <label className="text-xs text-text-muted group-hover:text-text">
+                                    Quantity:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={100}
+                                    value={quantity}
+                                    onChange={(e) =>
+                                      handleQuantityChange(
+                                        option.id,
+                                        parseInt(e.target.value) || 1
+                                      )
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-16 p-1 border rounded text-xs"
+                                  />
+                                </div>
+                              )}
+
+                              {option.description && (
+                                <div className="pl-6 mt-1 text-xs text-text-muted italic group-hover:text-text">
+                                  {option.description}
+                                </div>
+                              )}
+                            </button>
                           </div>
                         );
                       })}
 
                       {options.length === 0 && (
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-text-muted">
                           No options available for this category
                         </div>
                       )}
@@ -638,7 +668,7 @@ const ConfigBuilder = () => {
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-2 border-b bg-foreground">
-            <h2 className="font-semibold text-neutral-400">
+            <h2 className="font-semibold text-text-muted">
               Current Configuration
             </h2>
           </div>
@@ -688,7 +718,7 @@ const ConfigBuilder = () => {
                   <div
                     key={category.id}
                     className="p-2 bg-foreground border rounded">
-                    <h3 className="font-medium text-neutral-400 mb-2">
+                    <h3 className="font-medium text-text-muted mb-2">
                       {category.name}
                     </h3>
                     <div className="space-y-2">
@@ -697,11 +727,11 @@ const ConfigBuilder = () => {
                           <div
                             key={optionId}
                             className="flex items-center justify-between">
-                            <div className="text-sm text-neutral-400">
+                            <div className="text-sm text-text-muted">
                               {option?.name}{" "}
                               {quantity > 1 ? `(x${quantity})` : ""}
                             </div>
-                            <div className="text-sm font-medium text-neutral-400">
+                            <div className="text-sm font-medium text-text-muted">
                               {formatCurrency(
                                 option ? option.price * quantity : 0
                               )}
@@ -715,8 +745,8 @@ const ConfigBuilder = () => {
               })}
 
               <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
-                <div className="text-neutral-400">Total</div>
-                <div className="text-neutral-400">
+                <div className="text-text-muted">Total</div>
+                <div className="text-text-muted">
                   {formatCurrency(totalPrice)}
                 </div>
               </div>
