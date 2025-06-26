@@ -827,35 +827,37 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="h-full flex flex-col gap-2 flex-1">
-                      {stateDistribution.map((entry) => (
-                        <div
-                          key={entry.state}
-                          className="flex flex-col gap-1 flex-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-text-muted font-medium">
-                              {entry.state}
-                            </span>
-                            <div className="flex items-center gap-2 text-text-muted">
-                              <span>{formatDuration(entry.total)}</span>
-                              <span>
-                                ({entry.percentage?.toFixed(1) ?? 0}%)
+                      {stateDistribution
+                        .filter((entry) => entry.state !== "UNRECORDED")
+                        .map((entry) => (
+                          <div
+                            key={entry.state}
+                            className="flex flex-col gap-1 flex-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-text-muted font-medium">
+                                {entry.state}
                               </span>
+                              <div className="flex items-center gap-2 text-text-muted">
+                                <span>{formatDuration(entry.total)}</span>
+                                <span>
+                                  ({entry.percentage?.toFixed(1) ?? 0}%)
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-surface rounded-full flex-1 overflow-clip">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${entry.percentage ?? 0}%`,
+                                  backgroundColor: getStatusColor(
+                                    entry.state,
+                                    theme
+                                  ),
+                                }}
+                              />
                             </div>
                           </div>
-                          <div className="w-full bg-surface rounded-full flex-1 overflow-clip">
-                            <div
-                              className="h-full rounded-full transition-all duration-300"
-                              style={{
-                                width: `${entry.percentage ?? 0}%`,
-                                backgroundColor: getStatusColor(
-                                  entry.state,
-                                  theme
-                                ),
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>
