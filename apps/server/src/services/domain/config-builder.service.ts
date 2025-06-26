@@ -11,49 +11,41 @@ export class ConfigBuilderService {
     return productClasses;
   }
 
-  async getOptionsByProductClass(productClassId: string) {
-    const options = await prisma.option.findMany({
+  async getOptionCategoriesByProductClass(productClassId: string) {
+    const optionCategories = await prisma.optionCategory.findMany({
       where: {
-        category: {
-          productClassOptionCategories: {
-            some: {
-              productClassId: productClassId,
-            },
-          },
-        },
-        isActive: true,
+        productClassOptionCategories: { some: { productClassId } },
       },
-      include: {
-        category: true,
-      },
-      orderBy: [{ category: { displayOrder: "asc" } }, { displayOrder: "asc" }],
+    });
+
+    return optionCategories;
+  }
+
+  async getOptionsByOptionCategory(optionCategoryId: string) {
+    const options = await prisma.option.findMany({
+      where: { categoryId: optionCategoryId, isActive: true },
     });
 
     return options;
   }
 
-  async getOptionsByProductClassAndCategory(
-    productClassId: string,
-    categoryId: string
-  ) {
-    const options = await prisma.option.findMany({
+  async getOptionsByProductClass(productClassId: string) {
+    const optionCategories = await prisma.optionCategory.findMany({
       where: {
-        categoryId: categoryId,
-        category: {
-          productClassOptionCategories: {
-            some: {
-              productClassId: productClassId,
-            },
-          },
-        },
+        productClassOptionCategories: { some: { productClassId } },
         isActive: true,
       },
       include: {
-        category: true,
+        options: {
+          where: {
+            isActive: true,
+          },
+          orderBy: { displayOrder: "asc" },
+        },
       },
       orderBy: { displayOrder: "asc" },
     });
 
-    return options;
+    return optionCategories;
   }
 }

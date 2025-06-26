@@ -17,11 +17,10 @@ import { Button, PageHeader, Modal } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
 import {
-  sampleOptionCategories,
-  sampleOptions,
-  sampleOptionRules,
-  sampleProductClasses,
-} from "@/utils/sample-data";
+  useGetProductClasses,
+  useGetOptionCategoriesByProductClass,
+  useGetOptionsByProductClass,
+} from "@/hooks/config";
 import {
   Rule,
   RuleAction,
@@ -96,48 +95,42 @@ const ConfigBuilder = () => {
     ValidationResult[]
   >([]);
   const [configName, setConfigName] = useState("Untitled Configuration");
-  const [selectedProductClass, setSelectedProductClass] =
-    useState<string>("foo"); // Default product class
+  const [selectedProductClass, setSelectedProductClass] = useState<string>("");
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-  const getProductClassHierarchy = (productClassId: string): string[] => {
-    const hierarchy: string[] = [productClassId];
-    let currentClass = sampleProductClasses.find(
-      (pc) => pc.id === productClassId
-    );
+  // Use hooks instead of sample data
+  const { productClasses, loading: productClassesLoading } =
+    useGetProductClasses();
+  const { categories: optionCategories, loading: categoriesLoading } =
+    useGetOptionCategoriesByProductClass(selectedProductClass);
+  const { options: groupedCategories, loading: optionsLoading } =
+    useGetOptionsByProductClass(selectedProductClass, true);
 
-    while (currentClass?.parentId) {
-      hierarchy.push(currentClass.parentId);
-      currentClass = sampleProductClasses.find(
-        (pc) => pc.id === currentClass?.parentId
-      );
-    }
-
-    return hierarchy;
-  };
-
-  const sortedCategories = [...sampleOptionCategories]
-    .filter((category) => {
-      const productClassHierarchy =
-        getProductClassHierarchy(selectedProductClass);
-      return category.productClassIds.some((id) =>
-        productClassHierarchy.includes(id)
-      );
-    })
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  // Use grouped categories directly since they come with nested options
+  const sortedCategories = groupedCategories
+    ? [...groupedCategories].sort((a, b) => a.displayOrder - b.displayOrder)
+    : [];
 
   const getOptionsForCategory = (categoryId: string) => {
-    return sampleOptions
-      .filter((opt) => opt.categoryId === categoryId)
-      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (!groupedCategories) return [];
+
+    const category = groupedCategories.find((cat) => cat.id === categoryId);
+    return category?.options || [];
   };
 
   const getOptionById = (optionId: string) => {
-    return sampleOptions.find((opt) => opt.id === optionId);
+    if (!groupedCategories) return null;
+
+    for (const category of groupedCategories) {
+      const option = category.options?.find((opt: any) => opt.id === optionId);
+      if (option) return option;
+    }
+    return null;
   };
 
   const getCategoryById = (categoryId: string) => {
-    return sampleOptionCategories.find((cat) => cat.id === categoryId);
+    if (!groupedCategories) return null;
+    return groupedCategories.find((cat) => cat.id === categoryId);
   };
 
   const isOptionSelected = (optionId: string) => {
@@ -162,7 +155,7 @@ const ConfigBuilder = () => {
             isProductClassDescendant(
               selectedProductClass,
               condition.id,
-              sampleProductClasses
+              productClasses || []
             )
           );
         }
@@ -183,22 +176,9 @@ const ConfigBuilder = () => {
   };
 
   const getApplicableRules = (): Rule[] => {
-    let rules = sampleOptionRules.filter((rule) => rule.active);
-
-    rules.sort((a, b) => a.priority - b.priority);
-
-    const productClassHierarchy: string[] = [];
-    let currentClass = selectedProductClass;
-
-    while (currentClass) {
-      productClassHierarchy.push(currentClass);
-      const parentClass = sampleProductClasses.find(
-        (pc) => pc.id === currentClass
-      )?.parentId;
-      currentClass = parentClass || "";
-    }
-
-    return rules;
+    // For now, return empty array since we don't have rules in the API yet
+    // This would need to be implemented when rules are added to the backend
+    return [];
   };
 
   const shouldDisableOption = (optionId: string): boolean => {
@@ -227,9 +207,19 @@ const ConfigBuilder = () => {
   };
 
   const getDefaultOptions = () => {
-    return sampleOptions
-      .filter((option) => option.isStandard && !shouldDisableOption(option.id))
-      .map((option) => option.id);
+    if (!groupedCategories) return [];
+
+    const defaultOptions: string[] = [];
+    for (const category of groupedCategories) {
+      if (category.options) {
+        for (const option of category.options) {
+          if (option.isDefault && !shouldDisableOption(option.id)) {
+            defaultOptions.push(option.id);
+          }
+        }
+      }
+    }
+    return defaultOptions;
   };
 
   const handleOptionSelect = (
@@ -288,7 +278,7 @@ const ConfigBuilder = () => {
     if (hasSelection) {
       const categoryOptions = getOptionsForCategory(categoryId);
       const hasWarning = categoryOptions.some(
-        (opt) => isOptionRequired(opt.id) && !isOptionSelected(opt.id)
+        (opt: any) => isOptionRequired(opt.id) && !isOptionSelected(opt.id)
       );
       return hasWarning ? "warning" : "valid";
     }
@@ -344,27 +334,19 @@ const ConfigBuilder = () => {
       }
     }
 
-    for (const option of sampleOptions) {
-      if (isOptionRequired(option.id) && !isOptionSelected(option.id)) {
-        let requirementReason = "";
+    if (!groupedCategories) return results;
 
-        const requireRules = sampleOptionRules.filter(
-          (rule) =>
-            rule.targetOptionIds.includes(option.id) &&
-            rule.action === "REQUIRE" &&
-            rule.active &&
-            evaluateCondition(rule.condition)
-        );
-
-        if (requireRules.length > 0) {
-          requirementReason = ` (${requireRules[0].description})`;
+    for (const category of groupedCategories) {
+      if (category.options) {
+        for (const option of category.options) {
+          if (isOptionRequired(option.id) && !isOptionSelected(option.id)) {
+            results.push({
+              valid: false,
+              message: `${option.name} is required`,
+              type: "warning",
+            });
+          }
         }
-
-        results.push({
-          valid: false,
-          message: `${option.name} is required${requirementReason}`,
-          type: "warning",
-        });
       }
     }
 
@@ -382,9 +364,11 @@ const ConfigBuilder = () => {
   useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
-  }, [selectedOptions, selectedProductClass]);
+  }, [selectedOptions, selectedProductClass, groupedCategories]);
 
   useEffect(() => {
+    if (!groupedCategories) return;
+
     const emptyCategoryIds = sortedCategories
       .filter((category) => {
         const hasSelections = selectedOptions.some((opt) => {
@@ -411,10 +395,10 @@ const ConfigBuilder = () => {
         }
       }
     }
-  }, [selectedProductClass]);
+  }, [selectedProductClass, groupedCategories]);
 
   useEffect(() => {
-    if (selectedOptions.length > 0) {
+    if (selectedOptions.length > 0 && groupedCategories) {
       const brandOption = selectedOptions.find((so) => {
         const opt = getOptionById(so.optionId);
         return opt?.categoryId === "cat_brand";
@@ -446,7 +430,7 @@ const ConfigBuilder = () => {
     } else {
       setConfigName("Untitled Configuration");
     }
-  }, [selectedOptions]);
+  }, [selectedOptions, groupedCategories]);
 
   useEffect(() => {
     const disabledSelections = selectedOptions.filter((opt) =>
@@ -459,6 +443,13 @@ const ConfigBuilder = () => {
       );
     }
   }, [selectedOptions, selectedProductClass]);
+
+  // Set initial product class when data loads
+  useEffect(() => {
+    if (productClasses && productClasses.length > 0 && !selectedProductClass) {
+      setSelectedProductClass(productClasses[0].id);
+    }
+  }, [productClasses, selectedProductClass]);
 
   const totalPrice = calculateTotalPrice();
   const pageTitle = configName;
@@ -473,6 +464,15 @@ const ConfigBuilder = () => {
   const handleCollapseAll = () => {
     setExpandedCategories([]);
   };
+
+  // Show loading state
+  if (productClassesLoading || categoriesLoading || optionsLoading) {
+    return (
+      <div className="w-full flex-1 flex items-center justify-center">
+        <div className="text-text-muted">Loading configuration options...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex-1">
@@ -508,7 +508,7 @@ const ConfigBuilder = () => {
               className="mt-2 w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none"
               value={selectedProductClass}
               onChange={(e) => setSelectedProductClass(e.target.value)}>
-              {sampleProductClasses.map((productClass) => (
+              {productClasses?.map((productClass) => (
                 <option
                   key={productClass.id}
                   value={productClass.id}>
@@ -576,7 +576,7 @@ const ConfigBuilder = () => {
 
                   {expandedCategories.includes(category.id) && (
                     <div className="pl-4 pr-2 py-2 space-y-2">
-                      {options.map((option) => {
+                      {options.map((option: any) => {
                         const isDisabled = shouldDisableOption(option.id);
                         const isSelected = isOptionSelected(option.id);
                         const quantity = getOptionQuantity(option.id);
