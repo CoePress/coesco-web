@@ -773,9 +773,27 @@ const Dashboard = () => {
                       tickLine={false}
                     />
                     <Tooltip
-                      formatter={(v) =>
-                        `${parseFloat(v as string).toFixed(2)}%`
-                      }
+                      formatter={(v, name, props) => {
+                        const percentage = `${parseFloat(v as string).toFixed(2)}%`;
+                        let runtime = 0;
+
+                        if (chartView === "all") {
+                          runtime = props.payload?.runtime || 0;
+                        } else if (
+                          chartView === "group" ||
+                          chartView === "machine"
+                        ) {
+                          // Extract the key from the dataKey (e.g., "groups.machineId.utilization")
+                          const dataKey = props.dataKey as string;
+                          if (dataKey && dataKey.includes("groups.")) {
+                            const key = dataKey.split(".")[1];
+                            runtime =
+                              props.payload?.groups?.[key]?.runtime || 0;
+                          }
+                        }
+
+                        return `${percentage} (${formatDuration(runtime)})`;
+                      }}
                       labelFormatter={(label, payload) => {
                         if (
                           payload &&

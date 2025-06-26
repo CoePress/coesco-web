@@ -1188,6 +1188,7 @@ export class MachineMonitorService {
             : Number(
                 ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
               ),
+          runtime: divisionActiveTime,
         };
       });
     }
@@ -1271,6 +1272,7 @@ export class MachineMonitorService {
               : Number(
                   ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
                 ),
+          runtime: divisionActiveTime,
         };
       }
 
