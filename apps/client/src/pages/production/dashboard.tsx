@@ -127,61 +127,6 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
           </div>
         </Card>
       </div>
-
-      {/* <div className="hidden md:grid grid-cols-2 gap-2">
-        <Card>
-          <h4 className="text-sm font-medium mb-2 text-text-muted">
-            Program History (Last 24h)
-          </h4>
-          <div className="flex flex-col gap-2">
-            {sampleProgramHistory.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-2">
-                <span className="text-sm font-medium">{item.label}</span>
-                <span className="text-sm text-text-muted">
-                  {item.timestamp}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card>
-          <h4 className="text-sm font-medium mb-2 text-text-muted">
-            State History (Last 24h)
-          </h4>
-          <ResponsiveContainer
-            width="100%"
-            height={200}>
-            <PieChart>
-              <Pie
-                key={sampleStateDistribution
-                  .map((e) => e.label + e.value)
-                  .join("-")}
-                data={sampleStateDistribution}
-                dataKey="value"
-                nameKey="label"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                isAnimationActive={false}>
-                {sampleStateDistribution.map((entry, idx) => (
-                  <Cell
-                    key={`cell-${idx}`}
-                    strokeWidth={0}
-                    fill={
-                      entry.label === "Offline"
-                        ? "var(--surface)"
-                        : getStatusColor(entry.label)
-                    }
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div> */}
     </div>
   );
 };
@@ -398,7 +343,6 @@ type IOverview = {
   alarms: IOverviewAlarm[];
 };
 
-// Update the helper function to capitalize and pluralize
 const capitalizeFirst = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() + "s";
 };
@@ -542,10 +486,6 @@ const Dashboard = () => {
         startTime: realTime?.startTime || new Date().toISOString(),
       };
     });
-
-  // const isToday =
-  //   isSameDay(dateRange.start, startOfToday()) &&
-  //   isSameDay(dateRange.end, startOfToday());
 
   useEffect(() => {
     const startStr = dateRange.start.toISOString().slice(0, 10);
@@ -783,7 +723,6 @@ const Dashboard = () => {
                           chartView === "group" ||
                           chartView === "machine"
                         ) {
-                          // Extract the key from the dataKey (e.g., "groups.machineId.utilization")
                           const dataKey = props.dataKey as string;
                           if (dataKey && dataKey.includes("groups.")) {
                             const key = dataKey.split(".")[1];
@@ -875,6 +814,7 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               </div>
             </div>
+
             <div className="bg-foreground rounded border border-border flex flex-col">
               <div className="p-2 border-b flex items-center justify-between">
                 <h3 className="text-sm text-text-muted">State Distribution</h3>
@@ -902,9 +842,9 @@ const Dashboard = () => {
                               </span>
                             </div>
                           </div>
-                          <div className="w-full bg-surface rounded-full flex-1">
+                          <div className="w-full bg-surface rounded-full flex-1 overflow-clip">
                             <div
-                              className="h-4 rounded-full transition-all duration-300"
+                              className="h-full rounded-full transition-all duration-300"
                               style={{
                                 width: `${entry.percentage ?? 0}%`,
                                 backgroundColor: getStatusColor(
