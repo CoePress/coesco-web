@@ -2,12 +2,8 @@ import { Plus, MoreHorizontal, Import } from "lucide-react";
 import { useState } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader } from "@/components";
-import {
-  sampleConfigurations,
-  sampleOptionCategories,
-  sampleOptions,
-  sampleProductClasses,
-} from "@/utils/sample-data";
+import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
+import { useGetProductClasses, useGetConfigurations } from "@/hooks/config";
 
 // Mock data for parts and services
 const sampleParts = [
@@ -117,11 +113,15 @@ const TreeNode = ({ node }: { node: any }) => {
   );
 };
 
-const isDescendantOf = (childId: string, parentId: string): boolean => {
-  let current = sampleProductClasses.find((pc) => pc.id === childId);
+const isDescendantOf = (
+  childId: string,
+  parentId: string,
+  productClasses: any[]
+): boolean => {
+  let current = productClasses.find((pc) => pc.id === childId);
   while (current) {
     if (current.parentId === parentId) return true;
-    current = sampleProductClasses.find((pc) => pc.id === current?.parentId);
+    current = productClasses.find((pc) => pc.id === current?.parentId);
   }
   return false;
 };
@@ -238,23 +238,27 @@ const DetailModal = ({
   onClose,
   item,
   itemType,
+  productClasses,
 }: {
   isOpen: boolean;
   onClose: () => void;
   item: any;
   itemType: "configs" | "parts" | "services";
+  productClasses: any[];
 }) => {
   if (!isOpen || !item) return null;
 
   const renderConfigDetails = () => {
-    const productClass = sampleProductClasses.find(
+    const productClass = productClasses.find(
       (pc) => pc.id === item.productClassId
     );
 
-    const configOptions = item.options.map((configOpt: any) => {
-      const option = sampleOptions.find((opt) => opt.id === configOpt.optionId);
+    const configOptions = item.selectedOptions.map((configOpt: any) => {
+      const option = configOpt.option;
       const category = option
-        ? sampleOptionCategories.find((cat) => cat.id === option.categoryId)
+        ? sampleOptionCategories.find(
+            (cat: any) => cat.id === option.categoryId
+          )
         : null;
 
       return {
@@ -332,7 +336,7 @@ const DetailModal = ({
                 {item.isTemplate ? "Starting from" : "Total Price"}
               </div>
               <div className="text-3xl font-bold text-text-muted">
-                {formatCurrency(item.pricing.totalPrice, false)}
+                {formatCurrency(item.pricing?.totalPrice || 0, false)}
               </div>
             </div>
             <Button
@@ -584,6 +588,10 @@ const DetailModal = ({
 };
 
 const Catalog = () => {
+  const { productClasses, loading: productClassesLoading } =
+    useGetProductClasses();
+  const { configurations, loading: configurationsLoading } =
+    useGetConfigurations();
   const [viewMode] = useState<"grid" | "list">("grid");
   const [filterType, setFilterType] = useState<
     "configs" | "parts" | "services"
@@ -605,13 +613,15 @@ const Catalog = () => {
   const getOptionsForLevel = (
     level: number
   ): Array<{ id: string; name: string }> => {
+    if (!productClasses) return [];
+
     if (level === 0) {
-      return sampleProductClasses.filter((pc) => pc.parentId === null);
+      return productClasses.filter((pc) => pc.parentId === null);
     }
 
     const parentId = selections[level - 1];
     return parentId
-      ? sampleProductClasses.filter((pc) => pc.parentId === parentId)
+      ? productClasses.filter((pc) => pc.parentId === parentId)
       : [];
   };
 
@@ -650,19 +660,21 @@ const Catalog = () => {
   const visibleLevels = selections.length + 1;
 
   const getFilteredByProductClass = () => {
-    if (selections.length === 0) return sampleConfigurations;
+    if (!configurations) return [];
+
+    if (selections.length === 0) return configurations;
 
     const lastSelection = selections[selections.length - 1];
 
-    return sampleConfigurations.filter((config) => {
-      const configClass = sampleProductClasses.find(
+    return configurations.filter((config) => {
+      const configClass = productClasses?.find(
         (pc) => pc.id === config.productClassId
       );
       if (!configClass) return false;
 
       return (
         configClass.id === lastSelection ||
-        isDescendantOf(configClass.id, lastSelection)
+        isDescendantOf(configClass.id, lastSelection, productClasses || [])
       );
     });
   };
@@ -677,12 +689,14 @@ const Catalog = () => {
     return productClassFiltered.filter((config) => {
       return Object.entries(categoryFilters).every(([categoryId, optionId]) => {
         const categoryOptions = sampleOptions.filter(
-          (opt) => opt.categoryId === categoryId
+          (opt: any) => opt.categoryId === categoryId
         );
-        const configOptionIds = config.options.map((opt) => opt.optionId);
+        const configOptionIds = config.selectedOptions.map(
+          (opt: any) => opt.optionId
+        );
 
         return categoryOptions.some(
-          (opt) => opt.id === optionId && configOptionIds.includes(opt.id)
+          (opt: any) => opt.id === optionId && configOptionIds.includes(opt.id)
         );
       });
     });
@@ -736,14 +750,16 @@ const Catalog = () => {
   );
 
   const renderConfigCard = (config: any) => {
-    const productClass = sampleProductClasses.find(
+    const productClass = productClasses?.find(
       (pc) => pc.id === config.productClassId
     );
 
-    const configOptions = config.options.map((configOpt: any) => {
-      const option = sampleOptions.find((opt) => opt.id === configOpt.optionId);
+    const configOptions = config.selectedOptions.map((configOpt: any) => {
+      const option = configOpt.option;
       const category = option
-        ? sampleOptionCategories.find((cat) => cat.id === option.categoryId)
+        ? sampleOptionCategories.find(
+            (cat: any) => cat.id === option.categoryId
+          )
         : null;
 
       return {
@@ -820,7 +836,7 @@ const Catalog = () => {
                 {config.isTemplate ? "Starting from" : "Price"}
               </div>
               <div className="text-lg font-semibold text-text-muted">
-                {formatCurrency(config.pricing.totalPrice, false)}
+                {formatCurrency(config.pricing?.totalPrice || 0, false)}
               </div>
             </div>
             <Button
@@ -1120,7 +1136,7 @@ const Catalog = () => {
 
       <div className="p-2">
         <div className="flex gap-2">
-          <div className="w-64 flex-shrink-0">
+          <div className="w-64 flex-shrink-0 text-sm">
             <div className="bg-foreground rounded border p-2">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-semibold text-text-muted">Filters</h2>
@@ -1192,6 +1208,7 @@ const Catalog = () => {
         onClose={() => setIsDetailModalOpen(false)}
         item={selectedDetailItem}
         itemType={filterType}
+        productClasses={productClasses || []}
       />
     </div>
   );

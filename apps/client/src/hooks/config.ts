@@ -182,9 +182,48 @@ const useGetOptionsByProductClass = (
   };
 };
 
+const useGetConfigurations = () => {
+  const [configurations, setConfigurations] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+
+  useEffect(() => {
+    const getProductClasses = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data } = await instance.get(`/config/configurations`);
+        setConfigurations(data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          setError(error.response?.data.message);
+        } else {
+          setError("An error occurred. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getProductClasses();
+  }, [refreshToggle]);
+
+  const refresh = () => setRefreshToggle((prev) => !prev);
+
+  return {
+    configurations,
+    loading,
+    error,
+    refresh,
+  };
+};
+
 export {
   useGetProductClasses,
   useGetOptionCategoriesByProductClass,
   useGetOptionsByOptionCategory,
   useGetOptionsByProductClass,
+  useGetConfigurations,
 };

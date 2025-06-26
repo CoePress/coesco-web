@@ -60,4 +60,13 @@ export class ConfigBuilderController {
       next(error);
     }
   }
+
+  async getConfigurations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await configBuilderService.getConfigurations();
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -48,4 +48,17 @@ export class ConfigBuilderService {
 
     return optionCategories;
   }
+
+  async getConfigurations() {
+    const configurations = await prisma.configuration.findMany({
+      include: {
+        selectedOptions: {
+          include: {
+            option: true,
+          },
+        },
+      },
+    });
+    return configurations;
+  }
 }

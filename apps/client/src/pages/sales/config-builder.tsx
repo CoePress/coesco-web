@@ -18,7 +18,6 @@ import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
 import {
   useGetProductClasses,
-  useGetOptionCategoriesByProductClass,
   useGetOptionsByProductClass,
 } from "@/hooks/config";
 import {
@@ -101,8 +100,6 @@ const ConfigBuilder = () => {
   // Use hooks instead of sample data
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
-  const { categories: optionCategories, loading: categoriesLoading } =
-    useGetOptionCategoriesByProductClass(selectedProductClass);
   const { options: groupedCategories, loading: optionsLoading } =
     useGetOptionsByProductClass(selectedProductClass, true);
 
@@ -466,7 +463,7 @@ const ConfigBuilder = () => {
   };
 
   // Show loading state
-  if (productClassesLoading || categoriesLoading || optionsLoading) {
+  if (productClassesLoading || optionsLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
         <div className="text-text-muted">Loading configuration options...</div>

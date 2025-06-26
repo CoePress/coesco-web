@@ -3,6 +3,7 @@ import { Router } from "express";
 
 const router = Router();
 
+router.get("/configurations", configBuilderController.getConfigurations);
 router.get("/classes", configBuilderController.getProductClasses);
 router.get(
   "/classes/:id/categories",
