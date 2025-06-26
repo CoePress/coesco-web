@@ -134,7 +134,7 @@ const associatedRecords = {
   ],
 };
 
-const ToggleableList = ({
+const ToggleList = ({
   title,
   count,
   icon: Icon,
@@ -152,7 +152,7 @@ const ToggleableList = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-foreground rounded-lg border border-border p-4 shadow-sm">
+    <div className="bg-foreground rounded border border-border p-2 shadow-sm">
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}>
@@ -190,7 +190,7 @@ const ToggleableList = ({
           {items.map((item, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-2 border border-border rounded hover:bg-surface">
+              className="flex items-center gap-2 p-2 border border-border rounded hover:bg-surface">
               {renderItem(item, i)}
             </div>
           ))}
@@ -209,16 +209,13 @@ const Company = () => {
         title={`${mockContact.name} (Sample Contact)`}
         description={`${mockContact.title} at ${mockContact.company}`}
         actions={[]}
-        backButton
       />
 
       <div className="w-full mx-auto grid grid-cols-1 lg:grid-cols-4 gap-2 p-2">
-        {/* Left Sidebar - Contact Details */}
         <div className="flex flex-col gap-2">
-          {/* Contact Avatar & Quick Actions */}
-          <div className="bg-foreground rounded-lg border border-border p-4 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-foreground font-semibold text-lg">
+          <div className="bg-foreground rounded border border-border p-2 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 bg-primary rounded flex items-center justify-center text-foreground font-semibold text-lg">
                 {mockContact.name
                   .split(" ")
                   .map((n) => n[0])
@@ -232,27 +229,26 @@ const Company = () => {
               </div>
             </div>
 
-            {/* Quick Action Buttons */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded transition-colors">
                 <Mail
                   size={18}
                   className="text-primary mx-auto"
                 />
               </button>
-              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded transition-colors">
                 <Phone
                   size={18}
                   className="text-primary mx-auto"
                 />
               </button>
-              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded transition-colors">
                 <MessageCircle
                   size={18}
                   className="text-primary mx-auto"
                 />
               </button>
-              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+              <button className="p-2 bg-primary/10 hover:bg-primary/20 rounded transition-colors">
                 <Video
                   size={18}
                   className="text-primary mx-auto"
@@ -261,8 +257,7 @@ const Company = () => {
             </div>
           </div>
 
-          {/* About this contact */}
-          <div className="bg-foreground rounded-lg border border-border p-4 shadow-sm">
+          <div className="bg-foreground rounded border border-border p-2 shadow-sm">
             <h4 className="font-semibold mb-3 text-text">About this contact</h4>
             <div className="space-y-3 text-sm">
               <div>
@@ -301,27 +296,10 @@ const Company = () => {
               </div>
             </div>
           </div>
-
-          {/* Communication subscriptions */}
-          <div className="bg-foreground rounded-lg border border-border p-4 shadow-sm">
-            <h4 className="font-semibold mb-3 text-text">
-              Communication subscriptions
-            </h4>
-            <div className="space-y-2 text-sm">
-              <button className="text-info hover:underline">
-                View all properties
-              </button>
-              <br />
-              <button className="text-info hover:underline">
-                View property history
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Center Content - Activity Feed */}
         <div className="col-span-2 flex flex-col gap-2">
-          <div className="bg-foreground rounded-lg border border-border shadow-sm">
+          <div className="bg-foreground rounded border border-border shadow-sm">
             <div className="border-b border-border px-4 pt-4">
               <Tabs
                 activeTab={activeTab}
@@ -330,8 +308,8 @@ const Company = () => {
               />
             </div>
 
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
+            <div className="p-2">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-text-muted">Filter by:</span>
                   <select className="text-sm border border-border rounded px-2 py-1 bg-foreground text-text">
@@ -344,25 +322,26 @@ const Company = () => {
               </div>
 
               {activeTab === "activity" && (
-                <div className="space-y-4">
-                  <div className="mb-4">
+                <div className="space-y-2">
+                  <div className="mb-2">
                     <h5 className="font-medium text-text mb-2">Upcoming</h5>
                   </div>
 
                   {activityFeed.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex gap-3 p-3 border border-border rounded-lg bg-surface">
+                      className="flex gap-2 p-2 border border-border rounded bg-surface">
                       <div className="flex-shrink-0 mt-1">{item.icon}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-text">
+                          <span className="font-medium text-text text-sm">
                             {item.title}
                           </span>
                           {item.status === "overdue" && (
                             <StatusBadge
                               variant="warning"
                               label="Overdue"
+                              size="sm"
                             />
                           )}
                         </div>
@@ -377,7 +356,7 @@ const Company = () => {
                   ))}
 
                   <div className="mt-6">
-                    <h5 className="font-medium text-text mb-2">July 2022</h5>
+                    <h5 className="font-medium text-text mb-2">July 2025</h5>
                   </div>
                 </div>
               )}
@@ -391,9 +370,8 @@ const Company = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Associated Records */}
         <div className="flex flex-col gap-2">
-          <ToggleableList
+          <ToggleList
             title="Companies"
             count={associatedRecords.companies.length}
             icon={Building2}
@@ -417,7 +395,7 @@ const Company = () => {
             )}
           />
 
-          <ToggleableList
+          <ToggleList
             title="Deals"
             count={associatedRecords.deals.length}
             icon={DollarSign}
@@ -441,7 +419,7 @@ const Company = () => {
             )}
           />
 
-          <ToggleableList
+          <ToggleList
             title="Tickets"
             count={associatedRecords.tickets.length}
             icon={Ticket}
@@ -465,7 +443,7 @@ const Company = () => {
             )}
           />
 
-          <ToggleableList
+          <ToggleList
             title="Attachments"
             count={0}
             icon={Paperclip}
@@ -474,7 +452,7 @@ const Company = () => {
             renderItem={() => null}
           />
 
-          <ToggleableList
+          <ToggleList
             title="Contact Details"
             count={5}
             icon={User}

@@ -2,12 +2,12 @@ import {
   LucideIcon,
   UsersIcon,
   BarChart,
-  // PieChart,
   SettingsIcon,
   Factory,
   Box,
   Shield,
   Clock,
+  DollarSign,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
@@ -33,12 +33,49 @@ export type Page = {
 const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
 const Machines = lazy(() => import("@/pages/production/machines"));
 const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
-// const Reports = lazy(() => import("@/pages/production/reports"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
+const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
+const Company = lazy(() => import("@/pages/company"));
+const Catalog = lazy(() => import("@/pages/sales/catalog"));
+const ConfigBuilder = lazy(() => import("@/pages/sales/config-builder"));
+
+const salesModule: Module = {
+  sequence: 1,
+  slug: "sales",
+  label: "Sales",
+  icon: DollarSign,
+  status: "active" as const,
+  pages: [
+    {
+      slug: null,
+      label: "Dashboard",
+      icon: BarChart,
+      component: SalesDashboard,
+    },
+    {
+      slug: "company",
+      label: "Company",
+      icon: UsersIcon,
+      component: Company,
+    },
+    {
+      slug: "catalog",
+      label: "Catalog",
+      icon: Box,
+      component: Catalog,
+    },
+    {
+      slug: "config-builder",
+      label: "Config Builder",
+      icon: Box,
+      component: ConfigBuilder,
+    },
+  ],
+};
 
 const productionModule: Module = {
-  sequence: 1,
+  sequence: 2,
   slug: "production",
   label: "Production",
   icon: Factory,
@@ -62,17 +99,11 @@ const productionModule: Module = {
       icon: Clock,
       component: MachineHistory,
     },
-    // {
-    //   slug: "reports",
-    //   label: "Reports",
-    //   icon: PieChart,
-    //   component: Reports,
-    // },
   ],
 };
 
 const adminModule: Module = {
-  sequence: 2,
+  sequence: 3,
   slug: "admin",
   label: "Admin",
   icon: Shield,
@@ -93,7 +124,7 @@ const adminModule: Module = {
   ],
 };
 
-const modules: Module[] = [productionModule, adminModule]
+const modules: Module[] = [productionModule, salesModule, adminModule]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")

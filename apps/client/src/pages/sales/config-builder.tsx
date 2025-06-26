@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { Button, PageHeader, Modal } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
@@ -61,7 +60,7 @@ const SaveConfigModal = ({
       onClose={onClose}
       title="Save Configuration"
       size="xs">
-      <div className="mt-4 border rounded p-3 bg-neutral-50">
+      <div className="mt-2 border rounded p-2 bg-neutral-50">
         <h4 className="text-sm font-medium text-neutral-700 mb-2">
           Configuration Summary
         </h4>
@@ -497,11 +496,11 @@ const ConfigBuilder = () => {
       />
 
       <div className="flex h-full">
-        <div className="w-80 border-r bg-foreground overflow-y-auto">
-          <div className="p-4 border-b bg-foreground">
-            <h2 className="font-semibold text-neutral-400">Product Class</h2>
+        <div className="w-80 border-r bg-foreground overflow-y-auto text-sm">
+          <div className="p-2 border-b bg-foreground">
+            <h2 className="font-semibold text-text-muted">Product Class</h2>
             <select
-              className="mt-2 w-full p-2 bg-foreground border rounded text-neutral-400"
+              className="mt-2 w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none"
               value={selectedProductClass}
               onChange={(e) => setSelectedProductClass(e.target.value)}>
               {sampleProductClasses.map((productClass) => (
@@ -514,7 +513,7 @@ const ConfigBuilder = () => {
             </select>
           </div>
 
-          <div className="p-4 border-b bg-foreground">
+          <div className="p-2 border-b bg-foreground">
             <h2 className="font-semibold text-neutral-400">
               Configuration Options
             </h2>
@@ -539,7 +538,7 @@ const ConfigBuilder = () => {
                           : [...prev, category.id]
                       )
                     }
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-neutral-600">
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(categoryStatus)}
                       <span className="text-sm font-medium text-neutral-400">
@@ -547,14 +546,20 @@ const ConfigBuilder = () => {
                       </span>
                     </div>
                     {expandedCategories.includes(category.id) ? (
-                      <ChevronDown size={16} />
+                      <ChevronDown
+                        size={16}
+                        className="text-text-muted"
+                      />
                     ) : (
-                      <ChevronRight size={16} />
+                      <ChevronRight
+                        size={16}
+                        className="text-text-muted"
+                      />
                     )}
                   </button>
 
                   {expandedCategories.includes(category.id) && (
-                    <div className="pl-8 pr-4 py-2 space-y-3">
+                    <div className="pl-4 pr-2 py-2 space-y-2">
                       {options.map((option) => {
                         const isDisabled = shouldDisableOption(option.id);
                         const isSelected = isOptionSelected(option.id);
@@ -569,7 +574,7 @@ const ConfigBuilder = () => {
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
-                                className="rounded border-neutral-400"
+                                className="rounded border border-border"
                                 checked={isSelected}
                                 disabled={isDisabled}
                                 onChange={(e) =>
@@ -632,25 +637,25 @@ const ConfigBuilder = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 border-b bg-foreground">
+          <div className="p-2 border-b bg-foreground">
             <h2 className="font-semibold text-neutral-400">
               Current Configuration
             </h2>
           </div>
 
           {validationResults.length > 0 && (
-            <div className="p-4 space-y-2">
+            <div className="p-2 space-y-2">
               {validationResults.map((result, index) => (
                 <div
                   key={index}
-                  className={`p-2 rounded flex items-center gap-2 text-sm ${
+                  className={`p-2 rounded flex items-center gap-2 text-sm border ${
                     result.type === "error"
-                      ? "bg-yellow-100 text-yellow-800"
+                      ? "bg-error/10 text-error border-error"
                       : result.type === "warning"
-                      ? "bg-red-100 text-red-800"
-                      : result.type === "success"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
+                        ? "bg-warning/10 text-warning border-warning"
+                        : result.type === "success"
+                          ? "bg-success/10 text-success border-success"
+                          : "bg-info/10 text-info border-info"
                   }`}>
                   {result.type === "error" && <AlertCircle size={16} />}
                   {result.type === "warning" && <CircleX size={16} />}
@@ -661,8 +666,8 @@ const ConfigBuilder = () => {
             </div>
           )}
 
-          <div className="px-4">
-            <div className="space-y-4">
+          <div className="px-2">
+            <div className="space-y-2">
               {sortedCategories.map((category) => {
                 const selectedCategoryOptions = selectedOptions
                   .filter((so) => {
@@ -682,7 +687,7 @@ const ConfigBuilder = () => {
                 return (
                   <div
                     key={category.id}
-                    className="p-3 bg-foreground border rounded">
+                    className="p-2 bg-foreground border rounded">
                     <h3 className="font-medium text-neutral-400 mb-2">
                       {category.name}
                     </h3>
@@ -709,7 +714,7 @@ const ConfigBuilder = () => {
                 );
               })}
 
-              <div className="flex justify-between p-3 bg-foreground border rounded font-semibold">
+              <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
                 <div className="text-neutral-400">Total</div>
                 <div className="text-neutral-400">
                   {formatCurrency(totalPrice)}
