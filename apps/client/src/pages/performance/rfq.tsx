@@ -8,11 +8,11 @@ import Text from "@/components/shared/text";
 import Card from "@/components/shared/card";
 import { useCreateRFQ, RFQFormData } from "@/hooks/performance/use-create-rfq";
 import { useGetRFQ } from "@/hooks/performance/use-get-rfq";
-import { snakeToCamel } from "@/utils";
+import { pythonInstance } from "@/utils";
 
-const initialState: RFQFormData = {
-  referenceNumber: localStorage.getItem('performanceReferenceNumber') || "",
-  date: new Date().toISOString().split('T')[0],
+const initialState: RFQFormData & { avgFPM?: string; maxFPM?: string; minFPM?: string } = {
+  referenceNumber: "",
+  date: "",
   companyName: "",
   streetAddress: "",
   city: "",
@@ -95,13 +95,131 @@ const initialState: RFQFormData = {
   earliestDelivery: "",
   latestDelivery: "",
   specialConsiderations: "",
+  avgFPM: "",
+  maxFPM: "",
+  minFPM: "",
 };
 
+
+// Map backend RFQ data to frontend form state
+function mapBackendToFrontendRFQ(data: any): typeof initialState {
+  return {
+    referenceNumber: data.reference || '',
+    date: data.date || '',
+    companyName: data.company_name || '',
+    streetAddress: data.street_address || '',
+    city: data.city || '',
+    state: data.state_province || '',
+    zip: data.zip_code !== undefined && data.zip_code !== null ? String(data.zip_code) : '',
+    country: data.country || '',
+    contactName: data.contact_name || '',
+    position: data.contact_position || '',
+    phone: data.contact_phone_number || '',
+    email: data.contact_email || '',
+    dealerName: data.dealer_name || '',
+    dealerSalesman: data.dealer_salesman || '',
+    daysPerWeek: data.days_per_week_running !== undefined && data.days_per_week_running !== null ? String(data.days_per_week_running) : '',
+    shiftsPerDay: data.shifts_per_day !== undefined && data.shifts_per_day !== null ? String(data.shifts_per_day) : '',
+    lineApplication: data.line_application || '',
+    lineType: data.type_of_line || '',
+    pullThrough: data.pull_thru || '',
+    maxCoilWidth: data.max_coil_width !== undefined && data.max_coil_width !== null ? String(data.max_coil_width) : '',
+    minCoilWidth: data.min_coil_width !== undefined && data.min_coil_width !== null ? String(data.min_coil_width) : '',
+    maxCoilOD: data.max_coil_od !== undefined && data.max_coil_od !== null ? String(data.max_coil_od) : '',
+    coilID: data.coil_id !== undefined && data.coil_id !== null ? String(data.coil_id) : '',
+    maxCoilWeight: data.max_coil_weight !== undefined && data.max_coil_weight !== null ? String(data.max_coil_weight) : '',
+    maxCoilHandling: data.max_coil_handling_cap !== undefined && data.max_coil_handling_cap !== null ? String(data.max_coil_handling_cap) : '',
+    slitEdge: false, // Not present in backend, default to false
+    millEdge: false, // Not present in backend, default to false
+    coilCarRequired: data.coil_car === true ? 'Yes' : data.coil_car === false ? 'No' : '',
+    runOffBackplate: data.run_off_backplate === true ? 'Yes' : data.run_off_backplate === false ? 'No' : '',
+    requireRewinding: data.req_rewinding === true ? 'Yes' : data.req_rewinding === false ? 'No' : '',
+    matSpec1: {
+      thickness: data.max_material_thickness !== undefined && data.max_material_thickness !== null ? String(data.max_material_thickness) : '',
+      width: data.max_material_width !== undefined && data.max_material_width !== null ? String(data.max_material_width) : '',
+      type: data.max_material_type || '',
+      yield: data.max_yield_strength !== undefined && data.max_yield_strength !== null ? String(data.max_yield_strength) : '',
+      tensile: data.max_tensile_strength !== undefined && data.max_tensile_strength !== null ? String(data.max_tensile_strength) : '',
+    },
+    matSpec2: {
+      thickness: data.full_material_thickness !== undefined && data.full_material_thickness !== null ? String(data.full_material_thickness) : '',
+      width: data.full_material_width !== undefined && data.full_material_width !== null ? String(data.full_material_width) : '',
+      type: data.full_material_type || '',
+      yield: data.full_yield_strength !== undefined && data.full_yield_strength !== null ? String(data.full_yield_strength) : '',
+      tensile: data.full_tensile_strength !== undefined && data.full_tensile_strength !== null ? String(data.full_tensile_strength) : '',
+    },
+    matSpec3: {
+      thickness: data.min_material_thickness !== undefined && data.min_material_thickness !== null ? String(data.min_material_thickness) : '',
+      width: data.min_material_width !== undefined && data.min_material_width !== null ? String(data.min_material_width) : '',
+      type: data.min_material_type || '',
+      yield: data.min_yield_strength !== undefined && data.min_yield_strength !== null ? String(data.min_yield_strength) : '',
+      tensile: data.min_tensile_strength !== undefined && data.min_tensile_strength !== null ? String(data.min_tensile_strength) : '',
+    },
+    matSpec4: {
+      thickness: data.width_material_thickness !== undefined && data.width_material_thickness !== null ? String(data.width_material_thickness) : '',
+      width: data.width_material_width !== undefined && data.width_material_width !== null ? String(data.width_material_width) : '',
+      type: data.width_material_type || '',
+      yield: data.width_yield_strength !== undefined && data.width_yield_strength !== null ? String(data.width_yield_strength) : '',
+      tensile: data.width_tensile_strength !== undefined && data.width_tensile_strength !== null ? String(data.width_tensile_strength) : '',
+    },
+    cosmeticMaterial: data.cosmetic_material === true ? 'Yes' : data.cosmetic_material === false ? 'No' : '',
+    feedEquipment: data.brand_of_feed_equipment || '',
+    pressType: {
+      gapFrame: !!data.gap_frame_press,
+      hydraulic: !!data.hydraulic_press,
+      obi: !!data.obi,
+      servo: !!data.servo_press,
+      shearDie: !!data.shear_die_application,
+      straightSide: !!data.straight_side_press,
+      other: !!data.other,
+      otherText: '', // Not present in backend
+    },
+    tonnage: data.tonnage_of_press !== undefined && data.tonnage_of_press !== null ? String(data.tonnage_of_press) : '',
+    pressBedWidth: data.press_bed_area_width !== undefined && data.press_bed_area_width !== null ? String(data.press_bed_area_width) : '',
+    pressBedLength: data.press_bed_area_length !== undefined && data.press_bed_area_length !== null ? String(data.press_bed_area_length) : '',
+    pressStroke: data.press_stroke_length !== undefined && data.press_stroke_length !== null ? String(data.press_stroke_length) : '',
+    windowOpening: data.window_opening_size_of_press !== undefined && data.window_opening_size_of_press !== null ? String(data.window_opening_size_of_press) : '',
+    maxSPM: data.press_max_spm !== undefined && data.press_max_spm !== null ? String(data.press_max_spm) : '',
+    dies: {
+      transfer: !!data.transfer_dies,
+      progressive: !!data.progressive_dies,
+      blanking: !!data.blanking_dies,
+    },
+    avgFeedLen: data.average_feed_length !== undefined && data.average_feed_length !== null ? String(data.average_feed_length) : '',
+    avgFeedSPM: data.average_spm !== undefined && data.average_spm !== null ? String(data.average_spm) : '',
+    avgFPM: data.average_fpm !== undefined && data.average_fpm !== null ? String(data.average_fpm) : '',
+    maxFeedLen: data.max_feed_length !== undefined && data.max_feed_length !== null ? String(data.max_feed_length) : '',
+    maxFeedSPM: data.max_spm !== undefined && data.max_spm !== null ? String(data.max_spm) : '',
+    maxFPM: data.max_fpm !== undefined && data.max_fpm !== null ? String(data.max_fpm) : '',
+    minFeedLen: data.min_feed_length !== undefined && data.min_feed_length !== null ? String(data.min_feed_length) : '',
+    minFeedSPM: data.min_spm !== undefined && data.min_spm !== null ? String(data.min_spm) : '',
+    minFPM: data.min_fpm !== undefined && data.min_fpm !== null ? String(data.min_fpm) : '',
+    voltage: data.voltage_required !== undefined && data.voltage_required !== null ? String(data.voltage_required) : '',
+    spaceLength: data.space_allocated_length !== undefined && data.space_allocated_length !== null ? String(data.space_allocated_length) : '',
+    spaceWidth: data.space_allocated_width !== undefined && data.space_allocated_width !== null ? String(data.space_allocated_width) : '',
+    obstructions: data.obstructions || '',
+    mountToPress: data.feeder_mountable === true ? 'Yes' : data.feeder_mountable === false ? 'No' : '',
+    adequateSupport: data.feeder_mount_adequate_support === true ? 'Yes' : data.feeder_mount_adequate_support === false ? 'No' : '',
+    requireCabinet: '', // Not present in backend
+    needMountingPlates: data.custom_mounting === true ? 'Yes' : data.custom_mounting === false ? 'No' : '',
+    passlineHeight: data.passline_height !== undefined && data.passline_height !== null ? String(data.passline_height) : '',
+    loopPit: data.loop_pit === true ? 'Yes' : data.loop_pit === false ? 'No' : '',
+    coilChangeConcern: data.coil_change_time_concern === true ? 'Yes' : data.coil_change_time_concern === false ? 'No' : '',
+    coilChangeTime: data.coil_change_time_goal !== undefined && data.coil_change_time_goal !== null ? String(data.coil_change_time_goal) : '',
+    downtimeReasons: '', // Not present in backend
+    feedDirection: data.feed_direction || '',
+    coilLoading: data.coil_landing || '',
+    safetyRequirements: data.line_guard_safety_req === true ? 'Yes' : data.line_guard_safety_req === false ? 'No' : '',
+    decisionDate: data.project_decision_date || '',
+    idealDelivery: data.ideal_delivery_date || '',
+    earliestDelivery: data.earliest_delivery_date || '',
+    latestDelivery: data.latest_delivery_date || '',
+    specialConsiderations: data.additional_comments || '',
+  };
+}
+
 const RFQ = () => {
-  const [form, setForm] = useState<RFQFormData>(() => {
-    const savedForm = localStorage.getItem('rfqFormData');
-    return savedForm ? JSON.parse(savedForm) : initialState;
-  });
+  const [form, setForm] = useState<typeof initialState>(initialState);
   const { isLoading, status, errors, createRFQ } = useCreateRFQ();
   const { isLoading: isGetting, status: getStatus, fetchedRFQ, getRFQ } = useGetRFQ();
 
@@ -111,9 +229,37 @@ const RFQ = () => {
 
   useEffect(() => {
     if (fetchedRFQ) {
-      setForm(snakeToCamel(fetchedRFQ));
+      const data = (typeof fetchedRFQ === 'object' && 'rfq' in fetchedRFQ && fetchedRFQ.rfq)
+        ? (fetchedRFQ as any).rfq
+        : fetchedRFQ;
+      setForm(mapBackendToFrontendRFQ(data));
     }
   }, [fetchedRFQ]);
+
+  const fetchFPM = async (feed_length: string, spm: string, key: 'avgFPM' | 'maxFPM' | 'minFPM') => {
+    const length = parseFloat(feed_length);
+    const spmVal = parseFloat(spm);
+    if (!length || !spmVal) {
+      setForm((prev) => ({ ...prev, [key]: "" }));
+      return;
+    }
+    try {
+      const res = await pythonInstance.post("/rfq/calculate_fpm", { feed_length: length, spm: spmVal });
+      setForm((prev) => ({ ...prev, [key]: res.data.fpm?.toString() ?? "" }));
+    } catch {
+      setForm((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  useEffect(() => {
+    fetchFPM(form.avgFeedLen, form.avgFeedSPM, 'avgFPM');
+  }, [form.avgFeedLen, form.avgFeedSPM]);
+  useEffect(() => {
+    fetchFPM(form.maxFeedLen, form.maxFeedSPM, 'maxFPM');
+  }, [form.maxFeedLen, form.maxFeedSPM]);
+  useEffect(() => {
+    fetchFPM(form.minFeedLen, form.minFeedSPM, 'minFPM');
+  }, [form.minFeedLen, form.minFeedSPM]);
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
@@ -713,6 +859,13 @@ const RFQ = () => {
             onChange={handleChange} 
             error={errors.avgFeedSPM ? 'Required' : ''} 
           />
+          <Input
+            label="Feed Speed (FPM)"
+            name="avgFPM"
+            value={form.avgFPM}
+            readOnly
+            disabled
+          />
           <Input 
             label="Maximum feed length" 
             name="maxFeedLen" 
@@ -727,6 +880,13 @@ const RFQ = () => {
             onChange={handleChange} 
             error={errors.maxFeedSPM ? 'Required' : ''} 
           />
+          <Input
+            label="Feed Speed (FPM)"
+            name="maxFPM"
+            value={form.maxFPM}
+            readOnly
+            disabled
+          />
           <Input 
             label="Minimum feed length" 
             name="minFeedLen" 
@@ -740,6 +900,13 @@ const RFQ = () => {
             value={form.minFeedSPM} 
             onChange={handleChange} 
             error={errors.minFeedSPM ? 'Required' : ''} 
+          />
+          <Input
+            label="Feed Speed (FPM)"
+            name="minFPM"
+            value={form.minFPM}
+            readOnly
+            disabled
           />
         </div>
 

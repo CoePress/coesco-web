@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { pythonInstance } from '@/utils';
+import { useGetRFQ } from './use-get-rfq';
 
 export interface RFQFormData {
   referenceNumber: string;
@@ -116,10 +117,116 @@ const requiredFields = [
   "referenceNumber"
 ];
 
+// Map frontend RFQFormData to backend RFQCreate model
+function mapToBackendRFQ(form: RFQFormData) {
+  // Helper to convert Yes/No to boolean
+  const ynToBool = (val: string) => val === 'Yes' ? true : val === 'No' ? false : undefined;
+  // Helper to parse float or int, fallback to undefined
+  const toFloat = (val: string) => val ? parseFloat(val) : undefined;
+  const toInt = (val: string) => val ? parseInt(val) : undefined;
+
+  return {
+    date: form.date || undefined,
+    company_name: form.companyName || undefined,
+    state_province: form.state || undefined,
+    street_address: form.streetAddress || undefined,
+    zip_code: toInt(form.zip),
+    city: form.city || undefined,
+    country: form.country || undefined,
+    contact_name: form.contactName || undefined,
+    contact_position: form.position || undefined,
+    contact_phone_number: form.phone || undefined,
+    contact_email: form.email || undefined,
+    days_per_week_running: toInt(form.daysPerWeek),
+    shifts_per_day: toInt(form.shiftsPerDay),
+    line_application: form.lineApplication || undefined,
+    type_of_line: form.lineType || undefined,
+    pull_thru: form.pullThrough || undefined,
+    max_coil_width: toFloat(form.maxCoilWidth),
+    min_coil_width: toFloat(form.minCoilWidth),
+    max_coil_od: toFloat(form.maxCoilOD),
+    coil_id: toFloat(form.coilID),
+    max_coil_weight: toFloat(form.maxCoilWeight),
+    max_coil_handling_cap: toFloat(form.maxCoilHandling),
+    coil_car: ynToBool(form.coilCarRequired),
+    run_off_backplate: ynToBool(form.runOffBackplate),
+    req_rewinding: ynToBool(form.requireRewinding),
+    // Material specs
+    max_material_thickness: toFloat(form.matSpec1.thickness),
+    max_material_width: toFloat(form.matSpec1.width),
+    max_material_type: form.matSpec1.type || undefined,
+    max_yield_strength: toFloat(form.matSpec1.yield),
+    max_tensile_strength: toFloat(form.matSpec1.tensile),
+    full_material_thickness: toFloat(form.matSpec2.thickness),
+    full_material_width: toFloat(form.matSpec2.width),
+    full_material_type: form.matSpec2.type || undefined,
+    full_yield_strength: toFloat(form.matSpec2.yield),
+    full_tensile_strength: toFloat(form.matSpec2.tensile),
+    min_material_thickness: toFloat(form.matSpec3.thickness),
+    min_material_width: toFloat(form.matSpec3.width),
+    min_material_type: form.matSpec3.type || undefined,
+    min_yield_strength: toFloat(form.matSpec3.yield),
+    min_tensile_strength: toFloat(form.matSpec3.tensile),
+    width_material_thickness: toFloat(form.matSpec4.thickness),
+    width_material_width: toFloat(form.matSpec4.width),
+    width_material_type: form.matSpec4.type || undefined,
+    width_yield_strength: toFloat(form.matSpec4.yield),
+    width_tensile_strength: toFloat(form.matSpec4.tensile),
+    cosmetic_material: ynToBool(form.cosmeticMaterial),
+    brand_of_feed_equipment: form.feedEquipment || undefined,
+    gap_frame_press: form.pressType.gapFrame,
+    hydraulic_press: form.pressType.hydraulic,
+    obi: form.pressType.obi,
+    servo_press: form.pressType.servo,
+    shear_die_application: form.pressType.shearDie,
+    straight_side_press: form.pressType.straightSide,
+    other: form.pressType.other,
+    tonnage_of_press: form.tonnage || undefined,
+    press_stroke_length: toFloat(form.pressStroke),
+    press_max_spm: toFloat(form.maxSPM),
+    press_bed_area_width: toFloat(form.pressBedWidth),
+    press_bed_area_length: toFloat(form.pressBedLength),
+    window_opening_size_of_press: toFloat(form.windowOpening),
+    transfer_dies: form.dies.transfer,
+    progressive_dies: form.dies.progressive,
+    blanking_dies: form.dies.blanking,
+    average_feed_length: toFloat(form.avgFeedLen),
+    average_spm: toFloat(form.avgFeedSPM),
+    average_fpm: toFloat((form as any).avgFPM),
+    max_feed_length: toFloat(form.maxFeedLen),
+    max_spm: toFloat(form.maxFeedSPM),
+    max_fpm: toFloat((form as any).maxFPM),
+    min_feed_length: toFloat(form.minFeedLen),
+    min_spm: toFloat(form.minFeedSPM),
+    min_fpm: toFloat((form as any).minFPM),
+    voltage_required: toFloat(form.voltage),
+    space_allocated_length: toFloat(form.spaceLength),
+    space_allocated_width: toFloat(form.spaceWidth),
+    obstructions: form.obstructions || undefined,
+    feeder_mountable: ynToBool(form.mountToPress),
+    feeder_mount_adequate_support: ynToBool(form.adequateSupport),
+    custom_mounting: ynToBool(form.needMountingPlates),
+    passline_height: toFloat(form.passlineHeight),
+    loop_pit: ynToBool(form.loopPit),
+    coil_change_time_concern: ynToBool(form.coilChangeConcern),
+    coil_change_time_goal: toFloat(form.coilChangeTime),
+    feed_direction: form.feedDirection || undefined,
+    coil_landing: form.coilLoading || undefined,
+    line_guard_safety_req: ynToBool(form.safetyRequirements),
+    project_decision_date: form.decisionDate || undefined,
+    ideal_delivery_date: form.idealDelivery || undefined,
+    earliest_delivery_date: form.earliestDelivery || undefined,
+    latest_delivery_date: form.latestDelivery || undefined,
+    additional_comments: form.specialConsiderations || undefined,
+    // Add more mappings as needed
+  };
+}
+
 export const useCreateRFQ = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const { getRFQ } = useGetRFQ();
 
   const validate = (form: RFQFormData) => {
     const newErrors: Record<string, boolean> = {};
@@ -137,31 +244,42 @@ export const useCreateRFQ = () => {
       setStatus("Please enter a reference number");
       return;
     }
-    
     setIsLoading(true);
     try {
       if (!validate(form)) {
         setStatus("Please fill all required fields before sending.");
         return;
       }
-
-      const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        if (typeof value === 'object') {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, String(value));
+      // Map to backend model
+      const backendData = mapToBackendRFQ(form);
+      // Check if RFQ exists
+      let exists = false;
+      try {
+        const existing = await pythonInstance.get(`/rfq/${form.referenceNumber}`);
+        if (existing && existing.data && existing.data.rfq) {
+          exists = true;
         }
-      });
-
-      const response = await pythonInstance.post(`/rfq/${form.referenceNumber}`, formData);
-      if (response.data) {
-        setStatus(`RFQ created successfully! Reference Number: ${form.referenceNumber}`);
+      } catch (e) {
+        exists = false;
+      }
+      let response;
+      if (exists) {
+        response = await pythonInstance.put(`/rfq/${form.referenceNumber}`, backendData);
+        if (response.data) {
+          setStatus(`RFQ updated successfully! Reference Number: ${form.referenceNumber}`);
+        } else {
+          setStatus("RFQ updated successfully!");
+        }
       } else {
-        setStatus("RFQ created successfully!");
+        response = await pythonInstance.post(`/rfq/${form.referenceNumber}`, backendData);
+        if (response.data) {
+          setStatus(`RFQ created successfully! Reference Number: ${form.referenceNumber}`);
+        } else {
+          setStatus("RFQ created successfully!");
+        }
       }
     } catch (error: any) {
-      console.error('Error creating RFQ:', error);
+      console.error('Error creating/updating RFQ:', error);
       if (error.code === 'ECONNABORTED') {
         setStatus('Request timed out. Please check your connection and try again.');
       } else if (!error.response) {
@@ -170,11 +288,11 @@ export const useCreateRFQ = () => {
         const errorMessage = typeof error.response.data === 'object' 
           ? JSON.stringify(error.response.data)
           : error.response.data;
-        setStatus(`Failed to create RFQ: ${errorMessage}`);
+        setStatus(`Failed to create/update RFQ: ${errorMessage}`);
       } else if (error.message) {
-        setStatus(`Failed to create RFQ: ${error.message}`);
+        setStatus(`Failed to create/update RFQ: ${error.message}`);
       } else {
-        setStatus("Failed to create RFQ. Please try again.");
+        setStatus("Failed to create/update RFQ. Please try again.");
       }
     } finally {
       setIsLoading(false);

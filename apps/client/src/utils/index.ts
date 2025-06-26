@@ -138,7 +138,6 @@ export const pythonInstance = axios.create({
 // Add request interceptor for debugging
 pythonInstance.interceptors.request.use(
   (config) => {
-    console.log('Making request to Python backend:', config.url);
     return config;
   },
   (error) => {
@@ -150,7 +149,6 @@ pythonInstance.interceptors.request.use(
 // Add response interceptor for debugging
 pythonInstance.interceptors.response.use(
   (response) => {
-    console.log('Response received from Python backend:', response.status);
     return response;
   },
   (error) => {

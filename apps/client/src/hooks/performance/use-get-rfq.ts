@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
+import { pythonInstance } from '@/utils';
 import { RFQFormData } from './use-create-rfq';
-
-const instance = axios.create({
-  baseURL: "http://127.0.0.1:8000/",
-  withCredentials: true
-});
 
 export const useGetRFQ = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +15,8 @@ export const useGetRFQ = () => {
     
     setIsLoading(true);
     try {
-      const response = await instance.get(`/rfq/${referenceNumber}`);
+      const response = await pythonInstance.get(`/rfq/${referenceNumber}`);
+      
       setFetchedRFQ(response.data);
       setStatus("RFQ fetched successfully!");
       return response.data;
