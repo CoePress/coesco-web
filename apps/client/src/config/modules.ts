@@ -12,6 +12,7 @@ import {
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
+import OptionRules from "@/pages/admin/option-rules";
 
 export type Module = {
   sequence: number;
@@ -120,6 +121,12 @@ const adminModule: Module = {
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
+    },
+    {
+      slug: "option-rules",
+      label: "Option Rules",
+      icon: Box,
+      component: OptionRules,
     },
   ],
 };

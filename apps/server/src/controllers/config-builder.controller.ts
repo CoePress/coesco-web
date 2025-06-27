@@ -61,9 +61,34 @@ export class ConfigBuilderController {
     }
   }
 
+  async getOptionRules(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await configBuilderService.getOptionRules();
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await configBuilderService.getConfigurations();
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAvailableOptionsGroupedByCategory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const result =
+        await configBuilderService.getAvailableOptionsGroupedByCategory(
+          req.params.id
+        );
       res.status(200).json(result);
     } catch (error) {
       next(error);

@@ -220,10 +220,95 @@ const useGetConfigurations = () => {
   };
 };
 
+const useGetOptionRules = () => {
+  const [optionRules, setOptionRules] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+
+  useEffect(() => {
+    const getOptionRules = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data } = await instance.get(`/config/rules`);
+        setOptionRules(data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          setError(error.response?.data.message);
+        } else {
+          setError("An error occurred. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getOptionRules();
+  }, [refreshToggle]);
+
+  const refresh = () => setRefreshToggle((prev) => !prev);
+
+  return {
+    optionRules,
+    loading,
+    error,
+    refresh,
+  };
+};
+
+const useGetAvailableOptionsGroupedByCategory = (productClassId: string) => {
+  const [availableOptions, setAvailableOptions] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+
+  useEffect(() => {
+    const getAvailableOptions = async () => {
+      if (!productClassId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data } = await instance.get(
+          `/config/classes/${productClassId}/options/grouped`
+        );
+        setAvailableOptions(data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          setError(error.response?.data.message);
+        } else {
+          setError("An error occurred. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getAvailableOptions();
+  }, [productClassId, refreshToggle]);
+
+  const refresh = () => setRefreshToggle((prev) => !prev);
+
+  return {
+    availableOptions,
+    loading,
+    error,
+    refresh,
+  };
+};
+
 export {
   useGetProductClasses,
   useGetOptionCategoriesByProductClass,
   useGetOptionsByOptionCategory,
   useGetOptionsByProductClass,
   useGetConfigurations,
+  useGetOptionRules,
+  useGetAvailableOptionsGroupedByCategory,
 };

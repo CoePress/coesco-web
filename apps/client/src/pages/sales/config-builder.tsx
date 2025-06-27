@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, PageHeader, Modal } from "@/components";
+import { Button, PageHeader, Modal, Loader } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
 import {
   useGetProductClasses,
-  useGetOptionsByProductClass,
+  useGetAvailableOptionsGroupedByCategory,
 } from "@/hooks/config";
 import {
   Rule,
@@ -99,24 +99,27 @@ const ConfigBuilder = () => {
 
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
-  const { options: groupedCategories, loading: optionsLoading } =
-    useGetOptionsByProductClass(selectedProductClass, true);
 
-  const sortedCategories = groupedCategories
-    ? [...groupedCategories].sort((a, b) => a.displayOrder - b.displayOrder)
+  const effectiveProductClassId =
+    selectedProductClass || productClasses?.[0]?.id;
+  const { availableOptions, loading: availableOptionsLoading } =
+    useGetAvailableOptionsGroupedByCategory(effectiveProductClassId || "");
+
+  const sortedCategories = availableOptions
+    ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];
 
   const getOptionsForCategory = (categoryId: string) => {
-    if (!groupedCategories) return [];
+    if (!availableOptions) return [];
 
-    const category = groupedCategories.find((cat) => cat.id === categoryId);
+    const category = availableOptions.find((cat) => cat.id === categoryId);
     return category?.options || [];
   };
 
   const getOptionById = (optionId: string) => {
-    if (!groupedCategories) return null;
+    if (!availableOptions) return null;
 
-    for (const category of groupedCategories) {
+    for (const category of availableOptions) {
       const option = category.options?.find((opt: any) => opt.id === optionId);
       if (option) return option;
     }
@@ -124,8 +127,8 @@ const ConfigBuilder = () => {
   };
 
   const getCategoryById = (categoryId: string) => {
-    if (!groupedCategories) return null;
-    return groupedCategories.find((cat) => cat.id === categoryId);
+    if (!availableOptions) return null;
+    return availableOptions.find((cat) => cat.id === categoryId);
   };
 
   const isOptionSelected = (optionId: string) => {
@@ -171,8 +174,6 @@ const ConfigBuilder = () => {
   };
 
   const getApplicableRules = (): Rule[] => {
-    // For now, return empty array since we don't have rules in the API yet
-    // This would need to be implemented when rules are added to the backend
     return [];
   };
 
@@ -202,10 +203,10 @@ const ConfigBuilder = () => {
   };
 
   const getDefaultOptions = () => {
-    if (!groupedCategories) return [];
+    if (!availableOptions) return [];
 
     const defaultOptions: string[] = [];
-    for (const category of groupedCategories) {
+    for (const category of availableOptions) {
       if (category.options) {
         for (const option of category.options) {
           if (option.isDefault && !shouldDisableOption(option.id)) {
@@ -329,9 +330,9 @@ const ConfigBuilder = () => {
       }
     }
 
-    if (!groupedCategories) return results;
+    if (!availableOptions) return results;
 
-    for (const category of groupedCategories) {
+    for (const category of availableOptions) {
       if (category.options) {
         for (const option of category.options) {
           if (isOptionRequired(option.id) && !isOptionSelected(option.id)) {
@@ -359,10 +360,10 @@ const ConfigBuilder = () => {
   useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
-  }, [selectedOptions, selectedProductClass, groupedCategories]);
+  }, [selectedOptions, selectedProductClass, availableOptions]);
 
   useEffect(() => {
-    if (!groupedCategories) return;
+    if (!availableOptions) return;
 
     const emptyCategoryIds = sortedCategories
       .filter((category) => {
@@ -390,10 +391,10 @@ const ConfigBuilder = () => {
         }
       }
     }
-  }, [selectedProductClass, groupedCategories]);
+  }, [selectedProductClass, availableOptions]);
 
   useEffect(() => {
-    if (selectedOptions.length > 0 && groupedCategories) {
+    if (selectedOptions.length > 0 && availableOptions) {
       const brandOption = selectedOptions.find((so) => {
         const opt = getOptionById(so.optionId);
         return opt?.categoryId === "cat_brand";
@@ -425,7 +426,7 @@ const ConfigBuilder = () => {
     } else {
       setConfigName("Untitled Configuration");
     }
-  }, [selectedOptions, groupedCategories]);
+  }, [selectedOptions, availableOptions]);
 
   useEffect(() => {
     const disabledSelections = selectedOptions.filter((opt) =>
@@ -461,16 +462,16 @@ const ConfigBuilder = () => {
   };
 
   // Show loading state
-  if (productClassesLoading || optionsLoading) {
+  if (productClassesLoading || availableOptionsLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
-        <div className="text-text-muted">Loading configuration options...</div>
+        <Loader />
       </div>
     );
   }
 
   return (
-    <div className="w-full flex-1">
+    <div className="w-full flex-1 flex flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
@@ -495,7 +496,7 @@ const ConfigBuilder = () => {
         ]}
       />
 
-      <div className="flex h-full">
+      <div className="flex flex-1 overflow-hidden">
         <div className="w-80 border-r bg-foreground overflow-y-auto text-sm">
           <div className="p-2 border-b bg-foreground">
             <h2 className="font-semibold text-text-muted">Product Class</h2>

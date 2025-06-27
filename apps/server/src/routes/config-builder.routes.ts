@@ -17,5 +17,11 @@ router.get(
   "/classes/:id/options",
   configBuilderController.getOptionsByProductClass
 );
+router.get(
+  "/classes/:id/options/grouped",
+  configBuilderController.getAvailableOptionsGroupedByCategory
+);
+
+router.get("/rules", configBuilderController.getOptionRules);
 
 export default router;
