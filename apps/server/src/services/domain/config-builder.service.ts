@@ -252,4 +252,30 @@ export class ConfigBuilderService {
       violations,
     };
   }
+
+  async saveConfiguration(configuration: any) {
+    const newConfiguration = await prisma.configuration.create({
+      data: {
+        name: configuration.name,
+        description: configuration.description,
+        isTemplate: configuration.isTemplate,
+        productClassId: configuration.productClassId,
+        isActive: true,
+        productClass: {
+          connect: {
+            id: configuration.productClassId,
+          },
+        },
+      },
+    });
+
+    for (const option of configuration.selectedOptions) {
+      await prisma.configurationOption.create({
+        data: {
+          configurationId: newConfiguration.id,
+          optionId: option.optionId,
+        },
+      });
+    }
+  }
 }

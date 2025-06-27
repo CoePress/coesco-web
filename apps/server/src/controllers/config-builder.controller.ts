@@ -94,4 +94,13 @@ export class ConfigBuilderController {
       next(error);
     }
   }
+
+  async saveConfiguration(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await configBuilderService.saveConfiguration(req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

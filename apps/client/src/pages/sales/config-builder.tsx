@@ -10,6 +10,8 @@ import {
   Import,
   Save,
   Minus,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -258,7 +260,7 @@ const ConfigBuilder = () => {
 
   const getCategoryStatus = (
     categoryId: string
-  ): "valid" | "warning" | "error" | "incomplete" => {
+  ): "valid" | "warning" | "error" | "incomplete" | "default" | "custom" => {
     const category = getCategoryById(categoryId);
     if (!category) return "valid";
 
@@ -276,7 +278,33 @@ const ConfigBuilder = () => {
       const hasWarning = categoryOptions.some(
         (opt: any) => isOptionRequired(opt.id) && !isOptionSelected(opt.id)
       );
-      return hasWarning ? "warning" : "valid";
+
+      if (hasWarning) return "warning";
+
+      // Check if exactly the default options are selected
+      const selectedCategoryOptions = selectedOptions.filter((opt) => {
+        const option = getOptionById(opt.optionId);
+        return option?.categoryId === categoryId;
+      });
+
+      const defaultOptions = categoryOptions.filter(
+        (opt: any) => opt.isDefault
+      );
+      const selectedDefaultOptions = selectedCategoryOptions.filter((opt) => {
+        const option = getOptionById(opt.optionId);
+        return option?.isDefault;
+      });
+
+      // Check if the selection exactly matches the defaults
+      const hasOnlyDefaults =
+        selectedCategoryOptions.length === defaultOptions.length &&
+        selectedDefaultOptions.length === defaultOptions.length;
+
+      if (hasOnlyDefaults && defaultOptions.length > 0) {
+        return "default";
+      } else {
+        return "valid";
+      }
     }
 
     return "incomplete";
@@ -292,6 +320,10 @@ const ConfigBuilder = () => {
         return <CircleX className="w-4 h-4 text-red-500" />;
       case "incomplete":
         return <CircleMinus className="w-4 h-4 text-text-muted" />;
+      case "default":
+        return <CircleCheck className="w-4 h-4 text-blue-500" />;
+      case "custom":
+        return <CircleCheck className="w-4 h-4 text-green-500" />;
       default:
         return <CircleMinus className="w-4 h-4 text-text-muted" />;
     }
@@ -324,7 +356,7 @@ const ConfigBuilder = () => {
           results.push({
             valid: false,
             message: `${category.name} is required`,
-            type: "error",
+            type: "warning",
           });
         }
       }
@@ -363,35 +395,46 @@ const ConfigBuilder = () => {
   }, [selectedOptions, selectedProductClass, availableOptions]);
 
   useEffect(() => {
-    if (!availableOptions) return;
+    if (productClasses && productClasses.length > 0 && !selectedProductClass) {
+      setSelectedProductClass(productClasses[0].id);
+    }
+  }, [productClasses, selectedProductClass]);
 
-    const emptyCategoryIds = sortedCategories
-      .filter((category) => {
-        const hasSelections = selectedOptions.some((opt) => {
-          const option = getOptionById(opt.optionId);
-          return option?.categoryId === category.id;
-        });
-        return !hasSelections;
-      })
-      .map((cat) => cat.id);
+  // Reset selected options when product class changes
+  useEffect(() => {
+    if (!availableOptions || availableOptions.length === 0) return;
 
-    if (emptyCategoryIds.length > 0) {
-      const defaultOptions = getDefaultOptions();
-      for (const optionId of defaultOptions) {
-        const option = getOptionById(optionId);
-        if (
-          option &&
-          emptyCategoryIds.includes(option.categoryId) &&
-          !shouldDisableOption(optionId)
-        ) {
-          const category = getCategoryById(option.categoryId);
-          if (category) {
-            handleOptionSelect(optionId, category.id, true);
-          }
-        }
+    // Collapse all category dropdowns
+    setExpandedCategories([]);
+
+    // Get all default options for the current product class
+    const defaultOptions = getDefaultOptions();
+
+    // Create new selected options array with only the default options that are not disabled
+    const newSelectedOptions: SelectedOption[] = [];
+
+    for (const optionId of defaultOptions) {
+      const option = getOptionById(optionId);
+      if (option && !shouldDisableOption(optionId)) {
+        newSelectedOptions.push({ optionId, quantity: 1 });
       }
     }
+
+    // Set the new selected options
+    setSelectedOptions(newSelectedOptions);
   }, [selectedProductClass, availableOptions]);
+
+  useEffect(() => {
+    const disabledSelections = selectedOptions.filter((opt) =>
+      shouldDisableOption(opt.optionId)
+    );
+
+    if (disabledSelections.length > 0) {
+      setSelectedOptions((prev) =>
+        prev.filter((opt) => !shouldDisableOption(opt.optionId))
+      );
+    }
+  }, [selectedOptions, selectedProductClass]);
 
   useEffect(() => {
     if (selectedOptions.length > 0 && availableOptions) {
@@ -428,25 +471,6 @@ const ConfigBuilder = () => {
     }
   }, [selectedOptions, availableOptions]);
 
-  useEffect(() => {
-    const disabledSelections = selectedOptions.filter((opt) =>
-      shouldDisableOption(opt.optionId)
-    );
-
-    if (disabledSelections.length > 0) {
-      setSelectedOptions((prev) =>
-        prev.filter((opt) => !shouldDisableOption(opt.optionId))
-      );
-    }
-  }, [selectedOptions, selectedProductClass]);
-
-  // Set initial product class when data loads
-  useEffect(() => {
-    if (productClasses && productClasses.length > 0 && !selectedProductClass) {
-      setSelectedProductClass(productClasses[0].id);
-    }
-  }, [productClasses, selectedProductClass]);
-
   const totalPrice = calculateTotalPrice();
   const pageTitle = configName;
   const pageDescription = `${
@@ -459,6 +483,26 @@ const ConfigBuilder = () => {
 
   const handleCollapseAll = () => {
     setExpandedCategories([]);
+  };
+
+  const handleSelectAllDefaults = () => {
+    if (!availableOptions) return;
+
+    const defaultOptions: SelectedOption[] = [];
+    for (const category of availableOptions) {
+      if (category.options) {
+        for (const option of category.options) {
+          if (option.isDefault && !shouldDisableOption(option.id)) {
+            defaultOptions.push({ optionId: option.id, quantity: 1 });
+          }
+        }
+      }
+    }
+    setSelectedOptions(defaultOptions);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedOptions([]);
   };
 
   // Show loading state
@@ -491,7 +535,9 @@ const ConfigBuilder = () => {
             variant: "primary",
             icon: <Save size={16} />,
             onClick: () => setIsSaveModalOpen(true),
-            disabled: validationResults.some((r) => r.type === "error"),
+            disabled: validationResults.some(
+              (r) => r.type === "error" || r.type === "warning"
+            ),
           },
         ]}
       />
@@ -519,15 +565,35 @@ const ConfigBuilder = () => {
               <h2 className="font-semibold text-text-muted">
                 Configuration Options
               </h2>
-              <button
-                onClick={handleCollapseAll}
-                className="p-1 hover:bg-surface rounded cursor-pointer"
-                title="Collapse all">
-                <Minus
-                  size={16}
-                  className="text-text-muted"
-                />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleSelectAllDefaults}
+                  className="p-1 hover:bg-surface rounded cursor-pointer"
+                  title="Select all default options">
+                  <CheckSquare
+                    size={16}
+                    className="text-text-muted"
+                  />
+                </button>
+                <button
+                  onClick={handleDeselectAll}
+                  className="p-1 hover:bg-surface rounded cursor-pointer"
+                  title="Deselect all options">
+                  <Square
+                    size={16}
+                    className="text-text-muted"
+                  />
+                </button>
+                <button
+                  onClick={handleCollapseAll}
+                  className="p-1 hover:bg-surface rounded cursor-pointer"
+                  title="Collapse all">
+                  <Minus
+                    size={16}
+                    className="text-text-muted"
+                  />
+                </button>
+              </div>
             </div>
           </div>
 

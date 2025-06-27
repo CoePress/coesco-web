@@ -276,7 +276,7 @@ const useGetAvailableOptionsGroupedByCategory = (productClassId: string) => {
 
       try {
         const { data } = await instance.get(
-          `/config/classes/${productClassId}/options/grouped`
+          `/config/classes/${productClassId}/options`
         );
         setAvailableOptions(data);
       } catch (error) {

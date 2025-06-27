@@ -3,25 +3,18 @@ import { Router } from "express";
 
 const router = Router();
 
+router.post("/", configBuilderController.saveConfiguration);
+router.post("/product-class", configBuilderController.saveConfiguration);
+router.post("/option", configBuilderController.saveConfiguration);
+router.post("/option-rule", configBuilderController.saveConfiguration);
+
 router.get("/configurations", configBuilderController.getConfigurations);
 router.get("/classes", configBuilderController.getProductClasses);
-router.get(
-  "/classes/:id/categories",
-  configBuilderController.getOptionCategoriesByProductClass
-);
-router.get(
-  "/classes/:id/categories/:categoryId/options",
-  configBuilderController.getOptionsByOptionCategory
-);
+router.get("/rules", configBuilderController.getOptionRules);
+
 router.get(
   "/classes/:id/options",
-  configBuilderController.getOptionsByProductClass
-);
-router.get(
-  "/classes/:id/options/grouped",
   configBuilderController.getAvailableOptionsGroupedByCategory
 );
-
-router.get("/rules", configBuilderController.getOptionRules);
 
 export default router;
