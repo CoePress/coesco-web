@@ -8,94 +8,8 @@ import {
   useGetConfigurations,
   useGetOptionsByProductClass,
 } from "@/hooks/config";
+import useGetItems from "@/hooks/sales/use-get-items";
 import { useNavigate } from "react-router-dom";
-
-const sampleParts = [
-  {
-    id: "part-001",
-    name: "Hydraulic Cylinder",
-    description: "Heavy-duty hydraulic cylinder for industrial applications",
-    sku: "HC-2000",
-    price: 450,
-    category: "Hydraulics",
-    inStock: true,
-    stockQuantity: 25,
-    image: null,
-  },
-  {
-    id: "part-002",
-    name: "Drive Belt Assembly",
-    description: "Replacement drive belt assembly with tensioner",
-    sku: "DB-1500",
-    price: 125,
-    category: "Mechanical",
-    inStock: true,
-    stockQuantity: 12,
-    image: null,
-  },
-  {
-    id: "part-003",
-    name: "Control Panel Display",
-    description: "7-inch touchscreen control panel display",
-    sku: "CP-7000",
-    price: 850,
-    category: "Electronics",
-    inStock: false,
-    stockQuantity: 0,
-    image: null,
-  },
-  {
-    id: "part-004",
-    name: "Safety Switch",
-    description: "Emergency stop safety switch with lockout",
-    sku: "SS-100",
-    price: 65,
-    category: "Safety",
-    inStock: true,
-    stockQuantity: 35,
-    image: null,
-  },
-];
-
-const sampleServices = [
-  {
-    id: "service-001",
-    name: "Annual Maintenance",
-    description:
-      "Comprehensive annual maintenance service including inspection, cleaning, and calibration",
-    price: 2500,
-    duration: "8 hours",
-    category: "Maintenance",
-    available: true,
-  },
-  {
-    id: "service-002",
-    name: "Installation & Setup",
-    description: "Professional installation and initial setup service",
-    price: 1200,
-    duration: "4 hours",
-    category: "Installation",
-    available: true,
-  },
-  {
-    id: "service-003",
-    name: "Training Program",
-    description: "Operator training program for equipment operation and safety",
-    price: 800,
-    duration: "6 hours",
-    category: "Training",
-    available: true,
-  },
-  {
-    id: "service-004",
-    name: "Emergency Repair",
-    description: "24/7 emergency repair service with priority response",
-    price: 350,
-    duration: "Variable",
-    category: "Repair",
-    available: true,
-  },
-];
 
 const partCategories = ["Hydraulics", "Mechanical", "Electronics", "Safety"];
 const serviceCategories = ["Maintenance", "Installation", "Training", "Repair"];
@@ -619,6 +533,9 @@ const Catalog = () => {
   const { options: productClassOptions, loading: optionsLoading } =
     useGetOptionsByProductClass(deepestSelectedClassId);
 
+  const { items: parts } = useGetItems();
+  const { items: services } = useGetItems();
+
   const navigate = useNavigate();
 
   const getOptionsForLevel = (
@@ -714,7 +631,9 @@ const Catalog = () => {
   };
 
   const getVisibleParts = () => {
-    let filtered = sampleParts;
+    if (!parts) return [];
+
+    let filtered = parts;
 
     if (partCategoryFilter) {
       filtered = filtered.filter(
@@ -732,7 +651,9 @@ const Catalog = () => {
   };
 
   const getVisibleServices = () => {
-    let filtered = sampleServices;
+    if (!services) return [];
+
+    let filtered = services;
 
     if (serviceCategoryFilter) {
       filtered = filtered.filter(

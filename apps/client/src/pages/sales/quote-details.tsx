@@ -29,65 +29,7 @@ import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useDeleteQuoteItem } from "@/hooks/sales/use-delete-quote-item";
-
-const sampleConfigurations = [
-  {
-    id: "cfg-1",
-    name: "Enterprise Core Platform",
-    description: "Complete enterprise solution with advanced features",
-    pricing: {
-      basePrice: 250000,
-      adjustments: 25000,
-      totalPrice: 275000,
-    },
-    options: [
-      { name: "Advanced Analytics", price: 15000 },
-      { name: "Premium Support", price: 10000 },
-    ],
-  },
-  {
-    id: "cfg-2",
-    name: "Standard Business Package",
-    description: "Essential features for growing businesses",
-    pricing: {
-      basePrice: 125000,
-      adjustments: 12500,
-      totalPrice: 137500,
-    },
-    options: [
-      { name: "Basic Analytics", price: 7500 },
-      { name: "Standard Support", price: 5000 },
-    ],
-  },
-  {
-    id: "cfg-3",
-    name: "Professional Suite",
-    description: "Professional tools for specialized needs",
-    pricing: {
-      basePrice: 180000,
-      adjustments: 18000,
-      totalPrice: 198000,
-    },
-    options: [
-      { name: "Professional Tools", price: 12000 },
-      { name: "Priority Support", price: 6000 },
-    ],
-  },
-  {
-    id: "cfg-4",
-    name: "Basic Starter Kit",
-    description: "Entry-level solution for small businesses",
-    pricing: {
-      basePrice: 75000,
-      adjustments: 7500,
-      totalPrice: 82500,
-    },
-    options: [
-      { name: "Basic Support", price: 5000 },
-      { name: "Essential Features", price: 2500 },
-    ],
-  },
-];
+import { useGetConfigurations } from "@/hooks/config";
 
 const mockDealers = [
   {
@@ -771,18 +713,13 @@ const AddItemModal = ({
   >({});
   const [activeTab, setActiveTab] = useState("items");
 
-  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
-
   const {
     loading: addItemLoading,
     error: addItemError,
     createQuoteItem,
   } = useCreateQuoteItem();
 
-  const handleAddItem = async (itemId: string) => {
-    const item = items?.find((i: any) => i.id === itemId);
-    if (!item) return;
-
+  const handleAddItem = async (item: any) => {
     setSelectedItem(item);
     setShowConfirmation(true);
   };
@@ -873,111 +810,16 @@ const AddItemModal = ({
               ]}
             />
 
-            {activeTab === "items" ? (
-              <>
-                {itemsLoading ? (
-                  <div className="text-sm text-text-muted">
-                    Loading items...
-                  </div>
-                ) : itemsError ? (
-                  <div className="text-sm text-red-500">{itemsError}</div>
-                ) : (
-                  <Table
-                    columns={[
-                      {
-                        key: "name",
-                        header: "Item",
-                      },
-                      {
-                        key: "description",
-                        header: "Description",
-                      },
-                      {
-                        key: "unitPrice",
-                        header: "Unit Price",
-                        render: (value) => formatCurrency(value as number),
-                        className: "text-right",
-                      },
-                      {
-                        key: "quantity",
-                        header: "Quantity",
-                        render: (_, row) => (
-                          <input
-                            type="number"
-                            min="1"
-                            defaultValue={selectedQuantity[row.id] || 1}
-                            onChange={(e) =>
-                              setSelectedQuantity({
-                                ...selectedQuantity,
-                                [row.id]: parseInt(e.target.value) || 1,
-                              })
-                            }
-                            className="w-20 px-2 py-1 border rounded text-right"
-                          />
-                        ),
-                        className: "text-right",
-                      },
-                      {
-                        key: "actions",
-                        header: "",
-                        render: (_, row) => (
-                          <div className="flex justify-end">
-                            <Button
-                              variant="secondary-outline"
-                              onClick={() => handleAddItem(row.id)}
-                              disabled={addItemLoading}>
-                              {addItemLoading ? "Adding..." : "Add"}
-                            </Button>
-                          </div>
-                        ),
-                        className: "text-right",
-                      },
-                    ]}
-                    data={items || []}
-                    total={items?.length || 0}
-                  />
-                )}
-              </>
-            ) : (
-              <Table
-                columns={[
-                  {
-                    key: "name",
-                    header: "Configuration",
-                    className: "text-primary",
-                  },
-                  {
-                    key: "description",
-                    header: "Description",
-                  },
-                  {
-                    key: "pricing.totalPrice",
-                    header: "Total Price",
-                    render: (_, row) => formatCurrency(row.pricing.totalPrice),
-                    className: "text-right",
-                  },
-                  {
-                    key: "quantity",
-                    header: "Quantity",
-                    render: (_) => (
-                      <input
-                        type="number"
-                        min="1"
-                        defaultValue="1"
-                        className="w-20 py-1 border rounded text-right"
-                      />
-                    ),
-                    className: "text-right",
-                  },
-                ]}
-                data={sampleConfigurations}
-                total={sampleConfigurations.length}
-                onRowClick={(row) => {
-                  console.log("Selected configuration:", row);
-                  onClose();
-                }}
+            {activeTab === "items" && isOpen && (
+              <ItemsTab
+                onAddItem={handleAddItem}
+                addItemLoading={addItemLoading}
+                selectedQuantity={selectedQuantity}
+                setSelectedQuantity={setSelectedQuantity}
               />
             )}
+
+            {activeTab === "configurations" && isOpen && <ConfigurationsTab />}
 
             <div className="flex justify-between gap-2 pt-2 border-t">
               {activeTab === "configurations" && (
@@ -1000,6 +842,141 @@ const AddItemModal = ({
         )}
       </div>
     </Modal>
+  );
+};
+
+const ItemsTab = ({
+  onAddItem,
+  addItemLoading,
+  selectedQuantity,
+  setSelectedQuantity,
+}: {
+  onAddItem: (item: any) => void;
+  addItemLoading: boolean;
+  selectedQuantity: Record<string, number>;
+  setSelectedQuantity: (quantity: Record<string, number>) => void;
+}) => {
+  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
+
+  return (
+    <>
+      {itemsLoading ? (
+        <div className="text-sm text-text-muted">Loading items...</div>
+      ) : itemsError ? (
+        <div className="text-sm text-red-500">{itemsError}</div>
+      ) : (
+        <Table
+          columns={[
+            {
+              key: "name",
+              header: "Item",
+            },
+            {
+              key: "description",
+              header: "Description",
+            },
+            {
+              key: "unitPrice",
+              header: "Unit Price",
+              render: (value) => formatCurrency(value as number),
+              className: "text-right",
+            },
+            {
+              key: "quantity",
+              header: "Quantity",
+              render: (_, row) => (
+                <input
+                  type="number"
+                  min="1"
+                  defaultValue={selectedQuantity[row.id] || 1}
+                  onChange={(e) =>
+                    setSelectedQuantity({
+                      ...selectedQuantity,
+                      [row.id]: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className="w-20 px-2 py-1 border rounded text-right"
+                />
+              ),
+              className: "text-right",
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (_, row) => (
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => onAddItem(row)}
+                    disabled={addItemLoading}>
+                    {addItemLoading ? "Adding..." : "Add"}
+                  </Button>
+                </div>
+              ),
+              className: "text-right",
+            },
+          ]}
+          data={items || []}
+          total={items?.length || 0}
+        />
+      )}
+    </>
+  );
+};
+
+const ConfigurationsTab = () => {
+  const {
+    configurations,
+    loading: configurationsLoading,
+    error: configurationsError,
+  } = useGetConfigurations();
+
+  return (
+    <>
+      {configurationsLoading ? (
+        <div className="text-sm text-text-muted">Loading configurations...</div>
+      ) : configurationsError ? (
+        <div className="text-sm text-red-500">{configurationsError}</div>
+      ) : (
+        <Table
+          columns={[
+            {
+              key: "name",
+              header: "Configuration",
+              className: "text-primary",
+            },
+            {
+              key: "description",
+              header: "Description",
+            },
+            {
+              key: "totalPrice",
+              header: "Total Price",
+              render: (_, row) => formatCurrency(row.totalPrice || 0),
+              className: "text-right",
+            },
+            {
+              key: "quantity",
+              header: "Quantity",
+              render: (_) => (
+                <input
+                  type="number"
+                  min="1"
+                  defaultValue="1"
+                  className="w-20 py-1 border rounded text-right"
+                />
+              ),
+              className: "text-right",
+            },
+          ]}
+          data={configurations || []}
+          total={configurations?.length || 0}
+          onRowClick={(row) => {
+            console.log("Selected configuration:", row);
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -1120,10 +1097,13 @@ const ApproveQuoteModal = ({
   useEffect(() => {
     if (isOpen) {
       setConfirmedItems(
-        quoteItems.reduce((acc, item) => {
-          acc[item.id] = false;
-          return acc;
-        }, {} as Record<string, boolean>)
+        quoteItems.reduce(
+          (acc, item) => {
+            acc[item.id] = false;
+            return acc;
+          },
+          {} as Record<string, boolean>
+        )
       );
     }
   }, [isOpen, quoteItems]);

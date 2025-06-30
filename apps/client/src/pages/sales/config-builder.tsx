@@ -403,7 +403,9 @@ const ConfigBuilder = () => {
     ValidationResult[]
   >([]);
   const [configName, setConfigName] = useState("Untitled Configuration");
-  const [selectedProductClass, setSelectedProductClass] = useState<string>("");
+  const [productClassSelections, setProductClassSelections] = useState<
+    string[]
+  >([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isRequirementsModalOpen, setIsRequirementsModalOpen] = useState(false);
   const [_appliedRequirements, setAppliedRequirements] = useState<
@@ -413,6 +415,10 @@ const ConfigBuilder = () => {
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
 
+  const selectedProductClass =
+    productClassSelections.length > 0
+      ? productClassSelections[productClassSelections.length - 1]
+      : "";
   const effectiveProductClassId =
     selectedProductClass || productClasses?.[0]?.id;
   const { availableOptions, loading: availableOptionsLoading } =
@@ -421,6 +427,33 @@ const ConfigBuilder = () => {
   const sortedCategories = availableOptions
     ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];
+
+  const getOptionsForLevel = (
+    level: number
+  ): Array<{ id: string; name: string }> => {
+    if (!productClasses) return [];
+
+    if (level === 0) {
+      return productClasses.filter((pc) => pc.parentId === null);
+    }
+
+    const parentId = productClassSelections[level - 1];
+    return parentId
+      ? productClasses.filter((pc) => pc.parentId === parentId)
+      : [];
+  };
+
+  const handleProductClassSelectionChange = (level: number, value: string) => {
+    if (!value) {
+      setProductClassSelections(productClassSelections.slice(0, level));
+      return;
+    }
+
+    const newSelections = [...productClassSelections.slice(0, level), value];
+    setProductClassSelections(newSelections);
+  };
+
+  const visibleProductClassLevels = productClassSelections.length + 1;
 
   const getOptionsForCategory = (categoryId: string) => {
     if (!availableOptions) return [];
@@ -706,10 +739,17 @@ const ConfigBuilder = () => {
   }, [selectedOptions, selectedProductClass, availableOptions]);
 
   useEffect(() => {
-    if (productClasses && productClasses.length > 0 && !selectedProductClass) {
-      setSelectedProductClass(productClasses[0].id);
+    if (
+      productClasses &&
+      productClasses.length > 0 &&
+      productClassSelections.length === 0
+    ) {
+      const firstClass = productClasses.find((pc) => pc.parentId === null);
+      if (firstClass) {
+        setProductClassSelections([firstClass.id]);
+      }
     }
-  }, [productClasses, selectedProductClass]);
+  }, [productClasses, productClassSelections.length]);
 
   // Reset selected options when product class changes
   useEffect(() => {
@@ -864,18 +904,34 @@ const ConfigBuilder = () => {
         <div className="w-80 border-r bg-foreground flex flex-col min-h-0 text-sm">
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
-            <select
-              className="mt-2 w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none"
-              value={selectedProductClass}
-              onChange={(e) => setSelectedProductClass(e.target.value)}>
-              {productClasses?.map((productClass) => (
-                <option
-                  key={productClass.id}
-                  value={productClass.id}>
-                  {productClass.name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2 space-y-2">
+              {Array.from({ length: visibleProductClassLevels }).map(
+                (_, level) => {
+                  const options = getOptionsForLevel(level);
+
+                  return options.length > 0 ? (
+                    <select
+                      key={`product-class-${level}`}
+                      value={productClassSelections[level] || ""}
+                      onChange={(e) =>
+                        handleProductClassSelectionChange(level, e.target.value)
+                      }
+                      className="w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none">
+                      <option value="">
+                        Select {level === 0 ? "Category" : "Option"}
+                      </option>
+                      {options.map((option) => (
+                        <option
+                          key={option.id}
+                          value={option.id}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null;
+                }
+              )}
+            </div>
           </div>
 
           <div className="p-2 border-b bg-foreground flex-shrink-0">

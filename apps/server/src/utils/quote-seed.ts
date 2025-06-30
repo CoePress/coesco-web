@@ -973,6 +973,213 @@ export const sampleOptionRuleTriggers = [
   },
 ];
 
+// Sample Items (Spare Parts & Equipment)
+export const sampleItems = [
+  // Spindle Parts
+  {
+    name: "BT40 Spindle Taper",
+    description: "BT40 spindle taper for CNC milling machines",
+    unitPrice: 450.0,
+    isActive: true,
+  },
+  {
+    name: "HSK-A63 Spindle Taper",
+    description: "HSK-A63 high-speed spindle taper",
+    unitPrice: 850.0,
+    isActive: true,
+  },
+  {
+    name: "Spindle Belt Set",
+    description: "Replacement belt set for belt-driven spindles",
+    unitPrice: 125.0,
+    isActive: true,
+  },
+  {
+    name: "Spindle Motor Bearings",
+    description: "Precision bearings for spindle motor replacement",
+    unitPrice: 320.0,
+    isActive: true,
+  },
+
+  // Tooling
+  {
+    name: "BT40 Tool Holder Set",
+    description: "Set of 10 BT40 tool holders with collets",
+    unitPrice: 1200.0,
+    isActive: true,
+  },
+  {
+    name: "HSK-A63 Tool Holder",
+    description: "Single HSK-A63 tool holder for high-speed applications",
+    unitPrice: 280.0,
+    isActive: true,
+  },
+  {
+    name: "End Mill Set",
+    description: 'Assorted end mill set (1/4", 3/8", 1/2")',
+    unitPrice: 450.0,
+    isActive: true,
+  },
+  {
+    name: "Drill Bit Set",
+    description: 'Complete drill bit set (1/16" to 1/2")',
+    unitPrice: 380.0,
+    isActive: true,
+  },
+
+  // Laser Parts
+  {
+    name: "Fiber Laser Cutting Head",
+    description: "Replacement cutting head for fiber laser systems",
+    unitPrice: 8500.0,
+    isActive: true,
+  },
+  {
+    name: "CO2 Laser Tube",
+    description: "Replacement CO2 laser tube, 4kW",
+    unitPrice: 15000.0,
+    isActive: true,
+  },
+  {
+    name: "Laser Lens Set",
+    description: "Set of focusing lenses for laser cutting",
+    unitPrice: 1200.0,
+    isActive: true,
+  },
+  {
+    name: "Laser Nozzle Kit",
+    description: "Assorted nozzles for different material thicknesses",
+    unitPrice: 450.0,
+    isActive: true,
+  },
+
+  // Control System Parts
+  {
+    name: "Fanuc Control Panel",
+    description: "Replacement touchscreen control panel",
+    unitPrice: 3500.0,
+    isActive: true,
+  },
+  {
+    name: "Siemens Control Unit",
+    description: "Replacement Siemens 840D control unit",
+    unitPrice: 4200.0,
+    isActive: true,
+  },
+  {
+    name: "Beckhoff I/O Module",
+    description: "Additional I/O module for Beckhoff control",
+    unitPrice: 850.0,
+    isActive: true,
+  },
+
+  // Safety Equipment
+  {
+    name: "Light Curtain Sensor",
+    description: "Replacement sensor for light curtain system",
+    unitPrice: 650.0,
+    isActive: true,
+  },
+  {
+    name: "Emergency Stop Button",
+    description: "Replacement emergency stop button with lockout",
+    unitPrice: 180.0,
+    isActive: true,
+  },
+  {
+    name: "Safety Interlock Switch",
+    description: "Door interlock safety switch",
+    unitPrice: 95.0,
+    isActive: true,
+  },
+
+  // Work Table & Fixturing
+  {
+    name: "T-Slot Clamp Set",
+    description: "Complete T-slot clamping kit for work tables",
+    unitPrice: 280.0,
+    isActive: true,
+  },
+  {
+    name: "Vise Assembly",
+    description: '6" precision vise for CNC work holding',
+    unitPrice: 450.0,
+    isActive: true,
+  },
+  {
+    name: "Table Extension Kit",
+    description: "Extension kit to increase table size",
+    unitPrice: 2200.0,
+    isActive: true,
+  },
+
+  // Gas System Parts
+  {
+    name: "Oxygen Regulator",
+    description: "High-pressure oxygen regulator for laser cutting",
+    unitPrice: 350.0,
+    isActive: true,
+  },
+  {
+    name: "Nitrogen Filter",
+    description: "High-purity nitrogen filter system",
+    unitPrice: 850.0,
+    isActive: true,
+  },
+  {
+    name: "Gas Hose Assembly",
+    description: "High-pressure gas delivery hose",
+    unitPrice: 180.0,
+    isActive: true,
+  },
+
+  // Maintenance & Consumables
+  {
+    name: "Coolant Pump",
+    description: "Replacement coolant pump for machining centers",
+    unitPrice: 650.0,
+    isActive: true,
+  },
+  {
+    name: "Way Oil (5 Gallon)",
+    description: "5-gallon container of way oil for machine lubrication",
+    unitPrice: 85.0,
+    isActive: true,
+  },
+  {
+    name: "Cutting Fluid (5 Gallon)",
+    description: "5-gallon cutting fluid for machining operations",
+    unitPrice: 120.0,
+    isActive: true,
+  },
+  {
+    name: "Air Filter Set",
+    description: "Complete air filter replacement set",
+    unitPrice: 95.0,
+    isActive: true,
+  },
+
+  // Software & Documentation
+  {
+    name: "CAD/CAM Software License",
+    description: "Annual license for CAD/CAM software",
+    unitPrice: 2500.0,
+    isActive: true,
+  },
+  {
+    name: "Machine Manual Set",
+    description: "Complete set of machine operation manuals",
+    unitPrice: 150.0,
+    isActive: true,
+  },
+  {
+    name: "Training Package",
+    description: "On-site operator training package (2 days)",
+    unitPrice: 1800.0,
+    isActive: true,
+  },
+];
+
 // Sample Configurations
 export const sampleConfigurations = [
   // CNC Milling Machine - Basic Configuration
@@ -1305,6 +1512,28 @@ const seedQuoteData = async () => {
           logger.info(
             `Option rule trigger: ${trigger.ruleName} -> ${trigger.optionCode}`
           );
+        }
+      }
+    }
+
+    // Seed items (spare parts & equipment)
+    // Get the first employee to use as createdBy
+    const firstEmployee = await prisma.employee.findFirst();
+
+    if (firstEmployee) {
+      for (const item of sampleItems) {
+        const existing = await prisma.item.findFirst({
+          where: { name: item.name },
+        });
+
+        if (!existing) {
+          await prisma.item.create({
+            data: {
+              ...item,
+              createdById: firstEmployee.id,
+            },
+          });
+          logger.info(`Item "${item.name}" created`);
         }
       }
     }
