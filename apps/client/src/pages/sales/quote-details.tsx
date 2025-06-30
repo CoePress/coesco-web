@@ -750,9 +750,9 @@ const AddItemModal = ({
       onClose={onClose}
       title={showConfirmation ? "Confirm Item Addition" : "Add Item to Quote"}
       size={showConfirmation ? "sm" : "lg"}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col h-full">
         {showConfirmation ? (
-          <>
+          <div className="flex flex-col gap-4">
             <div className="text-sm text-text-muted">
               Are you sure you want to add this item to the quote?
             </div>
@@ -790,52 +790,96 @@ const AddItemModal = ({
                 {addItemLoading ? "Adding..." : "Confirm"}
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <>
-            <Tabs
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              tabs={[
-                { label: "Items", value: "items" },
-                { label: "Configurations", value: "configurations" },
-              ]}
-            />
-
-            <PageSearch
-              placeholder={`Search ${activeTab}...`}
-              filters={[
-                { label: "Category", icon: ChevronDown, onClick: () => {} },
-                { label: "Price Range", icon: ChevronDown, onClick: () => {} },
-              ]}
-            />
-
-            {activeTab === "items" && isOpen && (
-              <ItemsTab
-                onAddItem={handleAddItem}
-                addItemLoading={addItemLoading}
-                selectedQuantity={selectedQuantity}
-                setSelectedQuantity={setSelectedQuantity}
+            <div className="flex-shrink-0 space-y-4">
+              <Tabs
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                tabs={[
+                  { label: "Items", value: "items" },
+                  { label: "Configurations", value: "configurations" },
+                ]}
               />
-            )}
 
-            {activeTab === "configurations" && isOpen && <ConfigurationsTab />}
+              <PageSearch
+                placeholder={`Search ${activeTab}...`}
+                filters={[
+                  { label: "Category", icon: ChevronDown, onClick: () => {} },
+                  {
+                    label: "Price Range",
+                    icon: ChevronDown,
+                    onClick: () => {},
+                  },
+                ]}
+              />
+            </div>
 
-            <div className="flex justify-between gap-2 pt-2 border-t">
-              {activeTab === "configurations" && (
-                <Button
-                  variant="secondary-outline"
-                  onClick={() => navigate("/sales/catalog/builder")}>
-                  <Plus size={16} />
-                  New Config
-                </Button>
+            <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
+              {activeTab === "items" && isOpen && (
+                <ItemsTab
+                  onAddItem={handleAddItem}
+                  addItemLoading={addItemLoading}
+                  selectedQuantity={selectedQuantity}
+                  setSelectedQuantity={setSelectedQuantity}
+                />
               )}
-              <div className="flex gap-2 ml-auto">
-                <Button
-                  variant="secondary-outline"
-                  onClick={onClose}>
-                  Cancel
-                </Button>
+
+              {activeTab === "configurations" && isOpen && (
+                <ConfigurationsTab />
+              )}
+            </div>
+
+            <div className="flex justify-between gap-2 pt-2 border-t flex-shrink-0">
+              <Button
+                variant="secondary-outline"
+                onClick={onClose}>
+                Cancel
+              </Button>
+              <div className="flex gap-2 items-center">
+                {activeTab === "configurations" && (
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => navigate("/sales/catalog/builder")}>
+                    <Plus size={16} />
+                    New Config
+                  </Button>
+                )}
+                <div className="flex gap-1">
+                  <Button
+                    variant="secondary-outline"
+                    size="sm">
+                    <ChevronDown
+                      className="rotate-90"
+                      size={16}
+                    />
+                  </Button>
+                  <Button
+                    variant="secondary-outline"
+                    size="sm">
+                    1
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled>
+                    2
+                  </Button>
+                  <Button
+                    variant="secondary-outline"
+                    size="sm">
+                    3
+                  </Button>
+                  <Button
+                    variant="secondary-outline"
+                    size="sm">
+                    <ChevronDown
+                      className="-rotate-90"
+                      size={16}
+                    />
+                  </Button>
+                </div>
               </div>
             </div>
           </>
@@ -859,7 +903,7 @@ const ItemsTab = ({
   const { items, loading: itemsLoading, error: itemsError } = useGetItems();
 
   return (
-    <>
+    <div className="h-full flex flex-col">
       {itemsLoading ? (
         <div className="text-sm text-text-muted">Loading items...</div>
       ) : itemsError ? (
@@ -870,6 +914,7 @@ const ItemsTab = ({
             {
               key: "name",
               header: "Item",
+              className: "text-primary",
             },
             {
               key: "description",
@@ -920,7 +965,7 @@ const ItemsTab = ({
           total={items?.length || 0}
         />
       )}
-    </>
+    </div>
   );
 };
 
@@ -932,7 +977,7 @@ const ConfigurationsTab = () => {
   } = useGetConfigurations();
 
   return (
-    <>
+    <div className="h-full flex flex-col">
       {configurationsLoading ? (
         <div className="text-sm text-text-muted">Loading configurations...</div>
       ) : configurationsError ? (
@@ -976,7 +1021,7 @@ const ConfigurationsTab = () => {
           }}
         />
       )}
-    </>
+    </div>
   );
 };
 
