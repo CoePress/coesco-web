@@ -907,7 +907,11 @@ export const sampleOptionRules = [
     action: "REQUIRE",
     priority: 100,
     isActive: true,
-    condition: { optionCode: "SPIN_40HP_HS" },
+    condition: {
+      type: "SIMPLE",
+      conditionType: "OPTION",
+      id: "SPIN_40HP_HS", // This will be replaced with actual option ID during seeding
+    },
   },
   {
     name: "Small Table Excludes Umbrella Tool Changer",
@@ -915,7 +919,11 @@ export const sampleOptionRules = [
     action: "DISABLE",
     priority: 200,
     isActive: true,
-    condition: { optionCode: "TABLE_24X16" },
+    condition: {
+      type: "SIMPLE",
+      conditionType: "OPTION",
+      id: "TABLE_24X16", // This will be replaced with actual option ID during seeding
+    },
   },
   {
     name: "High-Power Laser Requires Nitrogen Generator",
@@ -923,7 +931,11 @@ export const sampleOptionRules = [
     action: "REQUIRE",
     priority: 100,
     isActive: true,
-    condition: { optionCode: "LASER_6KW_FIBER" },
+    condition: {
+      type: "SIMPLE",
+      conditionType: "OPTION",
+      id: "LASER_6KW_FIBER", // This will be replaced with actual option ID during seeding
+    },
   },
   {
     name: "CO2 Laser Excludes Nitrogen Generator",
@@ -931,7 +943,11 @@ export const sampleOptionRules = [
     action: "DISABLE",
     priority: 150,
     isActive: true,
-    condition: { optionCode: "LASER_4KW_CO2" },
+    condition: {
+      type: "SIMPLE",
+      conditionType: "OPTION",
+      id: "LASER_4KW_CO2", // This will be replaced with actual option ID during seeding
+    },
   },
 ];
 
@@ -1437,6 +1453,23 @@ const seedQuoteData = async () => {
       });
 
       if (!existing) {
+        // Replace option codes with actual option IDs in the condition
+        let condition = rule.condition;
+        if (
+          condition.type === "SIMPLE" &&
+          condition.conditionType === "OPTION"
+        ) {
+          const optionHeader = await prisma.optionHeader.findUnique({
+            where: { code: condition.id },
+          });
+          if (optionHeader) {
+            condition = {
+              ...condition,
+              id: optionHeader.id,
+            };
+          }
+        }
+
         const created = await prisma.optionRule.create({
           data: {
             name: rule.name,
@@ -1444,7 +1477,7 @@ const seedQuoteData = async () => {
             action: rule.action as OptionRuleAction,
             priority: rule.priority,
             isActive: rule.isActive,
-            condition: rule.condition,
+            condition: condition,
           },
         });
         createdRules.set(rule.name, created.id);

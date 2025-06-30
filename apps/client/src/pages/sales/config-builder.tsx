@@ -29,6 +29,7 @@ import { isProductClassDescendant } from "@/utils";
 import {
   useGetProductClasses,
   useGetAvailableOptionsGroupedByCategory,
+  useGetOptionRules,
 } from "@/hooks/config";
 import {
   Rule,
@@ -415,6 +416,8 @@ const ConfigBuilder = () => {
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
 
+  const { optionRules, loading: optionRulesLoading } = useGetOptionRules();
+
   const selectedProductClass =
     productClassSelections.length > 0
       ? productClassSelections[productClassSelections.length - 1]
@@ -519,33 +522,112 @@ const ConfigBuilder = () => {
     }
   };
 
+  const isRuleTriggered = (rule: any): boolean => {
+    // Check if any trigger option is selected
+    const triggered = rule.triggerOptions.some((triggerOption: any) =>
+      isOptionSelected(triggerOption.id)
+    );
+    console.log(
+      `Rule "${rule.name}" triggered:`,
+      triggered,
+      "trigger options:",
+      rule.triggerOptions.map((opt: any) => opt.name)
+    );
+    return triggered;
+  };
+
   const getApplicableRules = (): Rule[] => {
-    return [];
+    if (!optionRules) return [];
+
+    return optionRules
+      .filter((rule) => rule.isActive)
+      .map((rule) => ({
+        id: rule.id,
+        name: rule.name,
+        description: rule.description,
+        type: "OPTION" as const,
+        active: rule.isActive,
+        priority: rule.priority,
+        action: rule.action as RuleAction,
+        condition: rule.condition as RuleCondition,
+        targetOptionIds: rule.targetOptions.map(
+          (opt: { id: string }) => opt.id
+        ),
+        createdAt: new Date(rule.createdAt || Date.now()),
+        updatedAt: new Date(rule.updatedAt || Date.now()),
+      }));
   };
 
   const shouldDisableOption = (optionId: string): boolean => {
-    const rules = getApplicableRules()
-      .filter((rule) => rule.targetOptionIds.includes(optionId))
-      .sort((a, b) => b.priority - a.priority);
+    if (!optionRules) return false;
 
-    return rules.some(
-      (rule) =>
-        rule.active &&
-        rule.action === RuleAction.DISABLE &&
-        evaluateCondition(rule.condition)
-    );
-  };
-
-  const isOptionRequired = (optionId: string): boolean => {
-    const rules = getApplicableRules()
+    const applicableRules = optionRules
       .filter(
         (rule) =>
-          rule.targetOptionIds.includes(optionId) &&
-          rule.action === RuleAction.REQUIRE
+          rule.action === "DISABLE" &&
+          rule.targetOptions.some((target: any) => target.id === optionId)
       )
       .sort((a, b) => b.priority - a.priority);
 
-    return rules.some((rule) => evaluateCondition(rule.condition));
+    return applicableRules.some((rule) => isRuleTriggered(rule));
+  };
+
+  const isOptionRequired = (optionId: string): boolean => {
+    if (!optionRules) return false;
+
+    const applicableRules = optionRules
+      .filter(
+        (rule) =>
+          rule.action === "REQUIRE" &&
+          rule.targetOptions.some((target: any) => target.id === optionId)
+      )
+      .sort((a, b) => b.priority - a.priority);
+
+    return applicableRules.some((rule) => isRuleTriggered(rule));
+  };
+
+  const getRequiredOptions = (): string[] => {
+    const requiredOptions: string[] = [];
+
+    if (!optionRules) {
+      console.log("No option rules available");
+      return requiredOptions;
+    }
+
+    console.log(`Processing ${optionRules.length} rules for required options`);
+
+    for (const rule of optionRules) {
+      console.log(`Checking rule: ${rule.name}, action: ${rule.action}`);
+
+      if (rule.action === "REQUIRE" && isRuleTriggered(rule)) {
+        console.log(
+          `Rule "${rule.name}" is triggered, requiring:`,
+          rule.targetOptions.map((opt: { name: string }) => opt.name)
+        );
+        requiredOptions.push(
+          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+        );
+      }
+    }
+
+    console.log(`Final required options:`, requiredOptions);
+    return [...new Set(requiredOptions)];
+  };
+
+  const getDisabledOptions = (): string[] => {
+    const disabledOptions: string[] = [];
+
+    if (!optionRules) return disabledOptions;
+
+    for (const rule of optionRules) {
+      if (rule.action === "DISABLE" && isRuleTriggered(rule)) {
+        disabledOptions.push(
+          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+        );
+      }
+    }
+
+    return [...new Set(disabledOptions)];
   };
 
   const getDefaultOptions = () => {
@@ -689,6 +771,14 @@ const ConfigBuilder = () => {
   const validateConfiguration = () => {
     const results: ValidationResult[] = [];
 
+    // Log selected options
+    const selectedOptionNames = selectedOptions.map((opt) => {
+      const option = getOptionById(opt.optionId);
+      return `${option?.name} (${option?.code})`;
+    });
+    console.log("SELECTED:", selectedOptionNames.join(", "));
+
+    // Check for required categories
     for (const category of sortedCategories) {
       if (category.isRequired) {
         const hasSelection = selectedOptions.some((opt) => {
@@ -706,18 +796,32 @@ const ConfigBuilder = () => {
       }
     }
 
-    if (!availableOptions) return results;
+    // Check for required options based on rules
+    const requiredOptions = getRequiredOptions();
+    for (const optionId of requiredOptions) {
+      if (!isOptionSelected(optionId)) {
+        const option = getOptionById(optionId);
+        if (option) {
+          results.push({
+            valid: false,
+            message: `${option.name} is required based on current selection`,
+            type: "warning",
+          });
+        }
+      }
+    }
 
-    for (const category of availableOptions) {
-      if (category.options) {
-        for (const option of category.options) {
-          if (isOptionRequired(option.id) && !isOptionSelected(option.id)) {
-            results.push({
-              valid: false,
-              message: `${option.name} is required`,
-              type: "warning",
-            });
-          }
+    // Check for disabled options that are selected
+    const disabledOptions = getDisabledOptions();
+    for (const optionId of disabledOptions) {
+      if (isOptionSelected(optionId)) {
+        const option = getOptionById(optionId);
+        if (option) {
+          results.push({
+            valid: false,
+            message: `${option.name} is incompatible with current selection`,
+            type: "error",
+          });
         }
       }
     }
@@ -730,13 +834,17 @@ const ConfigBuilder = () => {
       });
     }
 
+    console.log(
+      "STATUS:",
+      results.map((r) => `${r.type}: ${r.message}`).join(", ")
+    );
     return results;
   };
 
   useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
-  }, [selectedOptions, selectedProductClass, availableOptions]);
+  }, [selectedOptions, selectedProductClass, availableOptions, optionRules]);
 
   useEffect(() => {
     if (
@@ -773,7 +881,7 @@ const ConfigBuilder = () => {
 
     // Set the new selected options
     setSelectedOptions(newSelectedOptions);
-  }, [selectedProductClass, availableOptions]);
+  }, [selectedProductClass, availableOptions, optionRules]);
 
   useEffect(() => {
     const disabledSelections = selectedOptions.filter((opt) =>
@@ -785,7 +893,7 @@ const ConfigBuilder = () => {
         prev.filter((opt) => !shouldDisableOption(opt.optionId))
       );
     }
-  }, [selectedOptions, selectedProductClass]);
+  }, [selectedOptions, selectedProductClass, optionRules]);
 
   useEffect(() => {
     if (selectedOptions.length > 0 && availableOptions) {
@@ -864,7 +972,7 @@ const ConfigBuilder = () => {
   };
 
   // Show loading state
-  if (productClassesLoading || availableOptionsLoading) {
+  if (productClassesLoading || availableOptionsLoading || optionRulesLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
         <Loader />
