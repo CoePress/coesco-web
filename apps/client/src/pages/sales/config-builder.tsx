@@ -31,13 +31,7 @@ import {
   useGetAvailableOptionsGroupedByCategory,
   useGetOptionRules,
 } from "@/hooks/config";
-import {
-  Rule,
-  RuleAction,
-  RuleCondition,
-  SelectedOption,
-  ValidationResult,
-} from "@/utils/types";
+import { RuleCondition, SelectedOption, ValidationResult } from "@/utils/types";
 
 const SaveConfigModal = ({
   isOpen,
@@ -536,28 +530,6 @@ const ConfigBuilder = () => {
     return triggered;
   };
 
-  const getApplicableRules = (): Rule[] => {
-    if (!optionRules) return [];
-
-    return optionRules
-      .filter((rule) => rule.isActive)
-      .map((rule) => ({
-        id: rule.id,
-        name: rule.name,
-        description: rule.description,
-        type: "OPTION" as const,
-        active: rule.isActive,
-        priority: rule.priority,
-        action: rule.action as RuleAction,
-        condition: rule.condition as RuleCondition,
-        targetOptionIds: rule.targetOptions.map(
-          (opt: { id: string }) => opt.id
-        ),
-        createdAt: new Date(rule.createdAt || Date.now()),
-        updatedAt: new Date(rule.updatedAt || Date.now()),
-      }));
-  };
-
   const shouldDisableOption = (optionId: string): boolean => {
     if (!optionRules) return false;
 
@@ -796,23 +768,51 @@ const ConfigBuilder = () => {
       }
     }
 
-    // Check for required options based on rules
+    // Check for required options based on rules (only if there's a selection in the category)
     const requiredOptions = getRequiredOptions();
+    console.log(
+      "REQUIRED OPTIONS:",
+      requiredOptions.map((id) => {
+        const option = getOptionById(id);
+        return `${option?.name} (${option?.code})`;
+      })
+    );
+
     for (const optionId of requiredOptions) {
       if (!isOptionSelected(optionId)) {
         const option = getOptionById(optionId);
         if (option) {
-          results.push({
-            valid: false,
-            message: `${option.name} is required based on current selection`,
-            type: "warning",
-          });
+          // Only show rule violation if there's a selection in this category
+          const category = getCategoryById(option.categoryId);
+          if (category) {
+            const hasSelectionInCategory = selectedOptions.some((opt) => {
+              const selectedOption = getOptionById(opt.optionId);
+              return selectedOption?.categoryId === category.id;
+            });
+
+            if (hasSelectionInCategory) {
+              console.log(`MISSING REQUIRED: ${option.name} (${option.code})`);
+              results.push({
+                valid: false,
+                message: `${option.name} is required based on current selection`,
+                type: "error",
+              });
+            }
+          }
         }
       }
     }
 
     // Check for disabled options that are selected
     const disabledOptions = getDisabledOptions();
+    console.log(
+      "DISABLED OPTIONS:",
+      disabledOptions.map((id) => {
+        const option = getOptionById(id);
+        return `${option?.name} (${option?.code})`;
+      })
+    );
+
     for (const optionId of disabledOptions) {
       if (isOptionSelected(optionId)) {
         const option = getOptionById(optionId);
