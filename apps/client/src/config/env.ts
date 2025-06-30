@@ -4,7 +4,7 @@ const envSchema = z.object({
   VITE_NODE_ENV: z.enum(["development", "production"]).default("development"),
   VITE_BASE_URL: z.string().url(),
   VITE_API_URL: z.string().url(),
-  VITE_PYTHON_API_URL: z.string().url().default("http://127.0.0.1:5000"),
+  VITE_PYTHON_API_URL: z.string().url().default("http://localhost:5000"),
 });
 
 const env = envSchema.safeParse(import.meta.env);

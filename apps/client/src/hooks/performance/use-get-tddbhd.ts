@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
+import { pythonInstance } from '@/utils';
 import { TDDBHDFormData } from './use-create-tddbhd';
-
-const instance = axios.create({
-  baseURL: "http://127.0.0.1:8000/",
-  withCredentials: true
-});
 
 export const useGetTDDBHD = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +14,7 @@ export const useGetTDDBHD = () => {
     }
     setIsLoading(true);
     try {
-      const response = await instance.get(`/tddbhd/${referenceNumber}`);
+      const response = await pythonInstance.get(`/tddbhd/${referenceNumber}`);
       setFetchedTDDBHD(response.data);
       setStatus("TD/DB/HD report fetched successfully!");
       return response.data;

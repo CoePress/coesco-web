@@ -3,6 +3,7 @@ import { Login, MainMenu, NotFound, Performance, Sandbox, Design } from "./pages
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
+import { PerformanceSheetProvider } from '@/contexts/performance.context';
 
 const App = () => {
   const content = (
@@ -86,7 +87,11 @@ const App = () => {
     </Routes>
   );
 
-  return <SocketProvider listenTo={[]}>{content}</SocketProvider>;
+  return (
+    <PerformanceSheetProvider>
+      <SocketProvider listenTo={[]}>{content}</SocketProvider>
+    </PerformanceSheetProvider>
+  );
 };
 
 export default App;

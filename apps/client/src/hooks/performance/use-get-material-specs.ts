@@ -15,15 +15,23 @@ export const useGetMaterialSpecs = () => {
     
     setIsLoading(true);
     setStatus('');
+    console.log('[getMaterialSpecs] Fetching material specs for reference:', referenceNumber);
     try {
-      const response = await pythonInstance.get(`/material-specs/${referenceNumber}`);
+      const response = await pythonInstance.get(`/material_specs/${referenceNumber}`);
+      console.log('[getMaterialSpecs] Reference sent:', referenceNumber);
+      console.log('[getMaterialSpecs] Raw response:', response);
+      console.log('[getMaterialSpecs] Raw response data:', response.data);
       if (response.data) {
-        setFetchedMaterialSpecs(response.data);
+        // If the response is an object keyed by reference number, extract the value
+        const data = response.data[referenceNumber] ? response.data[referenceNumber] : response.data;
+        console.log('[getMaterialSpecs] Extracted data:', data);
+        setFetchedMaterialSpecs(data);
         setStatus(`Material specs retrieved successfully for reference: ${referenceNumber}`);
       } else {
         setStatus("No material specs found for this reference number.");
       }
     } catch (error: any) {
+      console.error('[getMaterialSpecs] Error fetching material specs:', error);
       console.error('Error getting material specs:', error);
       if (error.code === 'ECONNABORTED') {
         setStatus('Request timed out. Please check your connection and try again.');
@@ -42,6 +50,7 @@ export const useGetMaterialSpecs = () => {
         setStatus("Failed to get material specs. Please try again.");
       }
     } finally {
+      console.log('[getMaterialSpecs] Done fetching material specs for reference:', referenceNumber);
       setIsLoading(false);
     }
   };

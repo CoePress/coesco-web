@@ -306,4 +306,16 @@ export const useCreateRFQ = () => {
     createRFQ,
     validate
   };
+};
+
+export const updateRFQ = async (referenceNumber: string, data: RFQFormData) => {
+  if (!referenceNumber) return 'No reference number';
+  try {
+    const backendData = mapToBackendRFQ({ ...data, referenceNumber } as RFQFormData);
+    await pythonInstance.put(`/rfq/${referenceNumber}`, backendData);
+    return 'Saved';
+  } catch (error) {
+    console.error('Error updating RFQ:', error);
+    return 'Failed to save';
+  }
 }; 

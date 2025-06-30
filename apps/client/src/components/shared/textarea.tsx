@@ -6,6 +6,7 @@ interface TextareaProps {
   id?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
   required?: boolean;
   error?: string;
   disabled?: boolean;
@@ -20,6 +21,7 @@ const Textarea = ({
   id,
   value,
   onChange,
+  onBlur,
   required = false,
   error,
   disabled = false,
@@ -43,6 +45,7 @@ const Textarea = ({
         id={id || name}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         required={required}
         disabled={disabled}
         rows={rows}

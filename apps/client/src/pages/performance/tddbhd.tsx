@@ -111,13 +111,18 @@ function getField(
   return "";
 }
 
+const getSavedTDDBHD = (reference: string, version: string) => {
+  const saved = localStorage.getItem(`tddbhdFormData_${reference}_${version}`);
+  return saved ? JSON.parse(saved) : null;
+};
+
 export default function TDDBHD() {
   const [confirmed, setConfirmed] = useState(false);
   const [version, setVersion] = useState<VersionKey>(VERSIONS[0]);
   const [materialSpecs, setMaterialSpecs] = useState<any>(null);
   const [rfq, setRFQ] = useState<any>(null);
   const [status, setStatus] = useState<string>("");
-  const [form, setForm] = useState<TDDBHDData>(() => getInitialData(VERSIONS[0], {}, {}));
+  const [form, setForm] = useState<TDDBHDData>(() => defaultTDDBHDData);
   const { createTDDBHD, isLoading: isSaving, status: backendStatus } = useCreateTDDBHD();
   const { getTDDBHD, isLoading: isGetting, status: getBackendStatus } = useGetTDDBHD();
 
@@ -185,21 +190,58 @@ export default function TDDBHD() {
     setRFQ(rfq ? JSON.parse(rfq) : null);
   }, []);
 
+  // On mount and whenever referenceNumber or version changes, try backend, then localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(`tddbhdFormData_${version}`);
-    if (stored) {
-      setForm(snakeToCamel(JSON.parse(stored)));
-    } else {
-      setForm(getInitialData(version, materialSpecs, rfq));
-    }
-  }, [version, materialSpecs, rfq]);
+    const ref = form.referenceNumber || localStorage.getItem('currentReferenceNumber');
+    if (!ref) return;
+    let didSet = false;
+    getTDDBHD(ref).then((data) => {
+      if (data && (data.referenceNumber || data.reference)) {
+        setForm(snakeToCamel(data));
+        didSet = true;
+      } else {
+        const saved = getSavedTDDBHD(ref, version);
+        if (saved) {
+          setForm(saved);
+          didSet = true;
+        }
+      }
+      if (!didSet) setForm(defaultTDDBHDData);
+    }).catch(() => {
+      const saved = getSavedTDDBHD(ref, version);
+      if (saved) setForm(saved);
+      else setForm(defaultTDDBHDData);
+    });
+  }, [form.referenceNumber, version]);
 
-  // Save to storage on form change
   useEffect(() => {
-    if (form) {
-      localStorage.setItem(`tddbhdFormData_${version}`, JSON.stringify(form));
+    if (form.referenceNumber) {
+      localStorage.setItem(`tddbhdFormData_${form.referenceNumber}_${version}` , JSON.stringify(form));
+      localStorage.setItem('currentReferenceNumber', form.referenceNumber);
     }
   }, [form, version]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'currentReferenceNumber' && e.newValue) {
+        getTDDBHD(e.newValue ?? '').then((data) => {
+          if (data && (data.referenceNumber || data.reference)) {
+            setForm(snakeToCamel(data));
+          } else {
+            const saved = getSavedTDDBHD(e.newValue ?? '', version);
+            if (saved) setForm(saved);
+            else setForm(defaultTDDBHDData);
+          }
+        }).catch(() => {
+          const saved = getSavedTDDBHD(e.newValue ?? '', version);
+          if (saved) setForm(saved);
+          else setForm(defaultTDDBHDData);
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [version]);
 
   function handleInputChange(section: keyof TDDBHDData, field: string, value: string) {
     setForm(prev => {

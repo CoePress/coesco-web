@@ -89,24 +89,73 @@ const initialState = {
   okFull: '',
 };
 
+const getSavedReelDrive = (reference: string) => {
+  const saved = localStorage.getItem(`reelDriveFormData_${reference}`);
+  return saved ? JSON.parse(saved) : null;
+};
+
 export default function ReelDrive() {
-  const [form, setForm] = useState({ ...initialState });
+  const [form, setForm] = useState(() => initialState);
   const [status, setStatus] = useState('');
   const { createReelDrive, isLoading: isSaving, status: backendStatus } = useCreateReelDrive();
   const { getReelDrive, isLoading: isGetting, status: getBackendStatus } = useGetReelDrive();
 
+  // On mount and whenever referenceNumber changes, try backend, then localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('reelDriveFormData');
-    if (stored) setForm(snakeToCamel(JSON.parse(stored)));
-  }, []);
+    const ref = form.referenceNumber || localStorage.getItem('currentReferenceNumber');
+    if (!ref) return;
+    let didSet = false;
+    getReelDrive(ref).then((data) => {
+      if (data && (data.referenceNumber || data.reference)) {
+        setForm(snakeToCamel(data));
+        didSet = true;
+      } else {
+        const saved = getSavedReelDrive(ref);
+        if (saved) {
+          setForm(saved);
+          didSet = true;
+        }
+      }
+      if (!didSet) setForm({ ...initialState });
+    }).catch(() => {
+      const saved = getSavedReelDrive(ref);
+      if (saved) setForm(saved);
+      else setForm({ ...initialState });
+    });
+  }, [form.referenceNumber]);
 
   useEffect(() => {
-    localStorage.setItem('reelDriveFormData', JSON.stringify(form));
+    if (form.referenceNumber) {
+      localStorage.setItem(`reelDriveFormData_${form.referenceNumber}`, JSON.stringify(form));
+      localStorage.setItem('currentReferenceNumber', form.referenceNumber);
+    }
   }, [form]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'currentReferenceNumber' && e.newValue) {
+        getReelDrive(e.newValue ?? '').then((data) => {
+          if (data && (data.referenceNumber || data.reference)) {
+            setForm(snakeToCamel(data));
+          } else {
+            const saved = getSavedReelDrive(e.newValue ?? '');
+            if (saved) setForm(saved);
+            else setForm({ ...initialState });
+          }
+        }).catch(() => {
+          const saved = getSavedReelDrive(e.newValue ?? '');
+          if (saved) setForm(saved);
+          else setForm({ ...initialState });
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev: typeof initialState) => ({ ...prev, [name]: value }));
   };
 
   const handleGetData = async () => {

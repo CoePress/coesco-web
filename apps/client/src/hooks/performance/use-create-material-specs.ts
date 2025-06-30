@@ -10,12 +10,11 @@ export interface MaterialSpecsFormData {
   tensileStrength?: string;
   customer?: string;
   date?: string;
-  coilWeight?: string;
-  maxFPM?: string;
+  coilWeight?: number;
   minBendRad?: string;
   minLoopLength?: string;
-  coilOD?: string;
-  coilID?: string;
+  coilOD?: number;
+  coilID?: number;
   coilODCaclculated?: string;
   feedDirection?: string;
   controlsLevel?: string;
@@ -45,7 +44,7 @@ export const useCreateMaterialSpecs = () => {
         formData.append(key, String(value));
       });
 
-      const response = await pythonInstance.post(`/material-specs/${data.referenceNumber}`, formData);
+      const response = await pythonInstance.post(`/material_specs/${data.referenceNumber}`, formData);
       setStatus('Material specs created successfully!');
       return response.data;
     } catch (error: any) {
@@ -60,10 +59,26 @@ export const useCreateMaterialSpecs = () => {
     }
   };
 
+  const updateMaterialSpecs = async (referenceNumber: string, data: MaterialSpecsFormData) => {
+    if (!referenceNumber) return 'No reference number';
+    try {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+      await pythonInstance.post(`/material_specs/${referenceNumber}`, formData);
+      return 'Saved';
+    } catch (error: any) {
+      console.error('Error updating material specs:', error);
+      return 'Failed to save';
+    }
+  };
+
   return {
     isLoading,
     status,
     errors,
     createMaterialSpecs,
+    updateMaterialSpecs,
   };
 }; 
