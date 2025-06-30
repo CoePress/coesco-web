@@ -1,6 +1,6 @@
 import { MachineStatus } from "@prisma/client";
 import { machineStatusService } from "@/services";
-import { BaseController } from "./_";
+import { BaseController } from "./_base.controller";
 
 export class MachineStatusController extends BaseController<MachineStatus> {
   protected service = machineStatusService;

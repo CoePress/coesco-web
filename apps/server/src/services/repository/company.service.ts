@@ -1,5 +1,5 @@
 import { Company, Industry } from "@prisma/client";
-import { BaseService } from "./_";
+import { BaseService } from "./_base.service";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
 

@@ -19,4 +19,9 @@ router.patch("/:id", quoteController.update);
 router.delete("/items/:itemId", quoteController.removeItemFromQuote);
 router.delete("/:id", quoteController.delete);
 
+router.post(
+  "/:quoteId/configurations/:configurationId",
+  quoteController.addConfigurationToQuote
+);
+
 export default router;

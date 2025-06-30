@@ -3,6 +3,7 @@ import { getEmployeeContext } from "@/utils/context";
 import { CompanyStatus, JourneyStatus, QuoteStatus } from "@prisma/client";
 import {
   companyService,
+  configurationService,
   employeeService,
   itemService,
   journeyService,
@@ -394,5 +395,27 @@ export class QuoteBuilderService {
         },
       };
     });
+  }
+
+  async addConfigurationToQuote(quoteId: string, configurationId: string) {
+    const quote = await quoteService.getById(quoteId);
+    const configuration = await configurationService.getById(configurationId);
+
+    if (!quote.data || !configuration.data) {
+      throw new BadRequestError("Quote or configuration not found");
+    }
+
+    const newQuoteItem = await quoteItemService.create({
+      quoteId: quote.data.id,
+      itemId: configuration.data.id,
+      lineNumber: 1,
+      unitPrice: 0,
+      quantity: 1,
+    });
+
+    return {
+      success: true,
+      data: newQuoteItem.data,
+    };
   }
 }

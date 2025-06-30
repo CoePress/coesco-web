@@ -1,6 +1,6 @@
 import { Quote } from "@prisma/client";
 import { quoteBuilderService, quoteService } from "@/services";
-import { BaseController } from "./_";
+import { BaseController } from "./_base.controller";
 import { NextFunction, Request, Response } from "express";
 
 export class QuoteController extends BaseController<Quote> {
@@ -97,6 +97,22 @@ export class QuoteController extends BaseController<Quote> {
     try {
       const { id } = req.params;
       const result = await quoteBuilderService.createQuoteRevision(id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async addConfigurationToQuote(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const result = await quoteBuilderService.addConfigurationToQuote(
+        req.params.quoteId,
+        req.params.configurationId
+      );
       res.status(200).json(result);
     } catch (error) {
       next(error);
