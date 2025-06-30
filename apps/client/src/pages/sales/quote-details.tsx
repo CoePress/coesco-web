@@ -23,13 +23,12 @@ import {
 import { formatCurrency, formatDate } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
-import useGetItems from "@/hooks/sales/use-get-items";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
 import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useDeleteQuoteItem } from "@/hooks/sales/use-delete-quote-item";
-import { useGetConfigurations } from "@/hooks/config";
 
 const mockDealers = [
   {
@@ -900,7 +899,11 @@ const ItemsTab = ({
   selectedQuantity: Record<string, number>;
   setSelectedQuantity: (quantity: Record<string, number>) => void;
 }) => {
-  const { items, loading: itemsLoading, error: itemsError } = useGetItems();
+  const {
+    entities: items,
+    loading: itemsLoading,
+    error: itemsError,
+  } = useGetEntities("/items");
 
   return (
     <div className="h-full flex flex-col">
@@ -971,10 +974,10 @@ const ItemsTab = ({
 
 const ConfigurationsTab = () => {
   const {
-    configurations,
+    entities: configurations,
     loading: configurationsLoading,
     error: configurationsError,
-  } = useGetConfigurations();
+  } = useGetEntities("/config/configurations");
 
   return (
     <div className="h-full flex flex-col">

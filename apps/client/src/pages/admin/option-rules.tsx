@@ -11,7 +11,6 @@ import {
 } from "@/components";
 import { sampleOptionRules, sampleOptions } from "@/utils/sample-data";
 import { RuleAction } from "@/utils/types";
-import { useGetOptionRules } from "@/hooks/config";
 
 interface OptionRuleRow {
   id: string;
@@ -31,8 +30,6 @@ const OptionRules = () => {
   const [editingRule, setEditingRule] = useState<OptionRuleRow | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<OptionRuleRow | null>(null);
-
-  const { optionRules, loading, error, refresh } = useGetOptionRules();
 
   const tableData: OptionRuleRow[] = sampleOptionRules.map((rule) => {
     let triggerOptionId = "";

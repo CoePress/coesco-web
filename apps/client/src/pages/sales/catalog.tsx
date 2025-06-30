@@ -3,12 +3,7 @@ import { useState } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader } from "@/components";
 import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
-import {
-  useGetProductClasses,
-  useGetConfigurations,
-  useGetOptionsByProductClass,
-} from "@/hooks/config";
-import useGetItems from "@/hooks/sales/use-get-items";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useNavigate } from "react-router-dom";
 
 const partCategories = ["Hydraulics", "Mechanical", "Electronics", "Safety"];
@@ -524,17 +519,21 @@ const Catalog = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailItem, setSelectedDetailItem] = useState<any>(null);
 
-  const { productClasses, loading: productClassesLoading } =
-    useGetProductClasses();
-  const { configurations, loading: configurationsLoading } =
-    useGetConfigurations();
+  const { entities: productClasses, loading: productClassesLoading } =
+    useGetEntities("/config/classes");
+  const { entities: configurations, loading: configurationsLoading } =
+    useGetEntities("/config/configurations");
   const deepestSelectedClassId =
     selections.length > 0 ? selections[selections.length - 1] : "";
-  const { options: productClassOptions, loading: optionsLoading } =
-    useGetOptionsByProductClass(deepestSelectedClassId);
+  const { entities: productClassOptions, loading: optionsLoading } =
+    useGetEntities(
+      deepestSelectedClassId
+        ? `/config/classes/${deepestSelectedClassId}/options`
+        : ""
+    );
 
-  const { items: parts } = useGetItems();
-  const { items: services } = useGetItems();
+  const { entities: parts } = useGetEntities("/items");
+  const { entities: services } = useGetEntities("/items");
 
   const navigate = useNavigate();
 
@@ -637,14 +636,14 @@ const Catalog = () => {
 
     if (partCategoryFilter) {
       filtered = filtered.filter(
-        (part) => part.category === partCategoryFilter
+        (part: any) => part.category === partCategoryFilter
       );
     }
 
     if (stockFilter === "in-stock") {
-      filtered = filtered.filter((part) => part.inStock);
+      filtered = filtered.filter((part: any) => part.inStock);
     } else if (stockFilter === "out-of-stock") {
-      filtered = filtered.filter((part) => !part.inStock);
+      filtered = filtered.filter((part: any) => !part.inStock);
     }
 
     return filtered;
@@ -657,11 +656,11 @@ const Catalog = () => {
 
     if (serviceCategoryFilter) {
       filtered = filtered.filter(
-        (service) => service.category === serviceCategoryFilter
+        (service: any) => service.category === serviceCategoryFilter
       );
     }
 
-    return filtered.filter((service) => service.available);
+    return filtered.filter((service: any) => service.available);
   };
 
   const getVisibleItems = () => {
@@ -676,10 +675,6 @@ const Catalog = () => {
 
   const pageTitle = "Coe Catalog";
   const pageDescription = "Complete list of equipment, parts, and services";
-
-  const sortedCategories = [...sampleOptionCategories].sort(
-    (a, b) => a.displayOrder - b.displayOrder
-  );
 
   const renderConfigCard = (config: any) => {
     const productClass = productClasses?.find(
