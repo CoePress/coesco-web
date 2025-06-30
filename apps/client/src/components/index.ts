@@ -18,8 +18,8 @@ export { default as Toast } from "./common/toast";
 export { default as Tooltip } from "./common/tooltip";
 
 // General
-export { default as CommandBar } from "./general/command-bar";
-export { default as Layout } from "./general/layout";
-export { default as MachineMap } from "./general/machine-map";
-export { default as MicrosoftCallback } from "./general/microsoft-callback";
-export { AdminRoute, ProtectedRoute, PublicRoute } from "./general/routes";
+export { default as CommandBar } from "./misc/command-bar";
+export { default as Layout } from "./misc/layout";
+export { default as MachineMap } from "./misc/machine-map";
+export { default as MicrosoftCallback } from "./misc/microsoft-callback";
+export { AdminRoute, ProtectedRoute, PublicRoute } from "./misc/routes";
