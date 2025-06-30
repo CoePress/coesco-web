@@ -181,13 +181,13 @@ const MaterialSpecs = () => {
 
   const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     handleChange(e);
-    if (form.referenceNumber) {
-      const status = await updateMaterialSpecs(form.referenceNumber, form);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
+    // if (form.referenceNumber) {
+    //   const status = await updateMaterialSpecs(form.referenceNumber, form);
+    //   setSaveStatus(status);
+    //   if (status === 'Saved') {
+    //     setTimeout(() => setSaveStatus(''), 2000);
+    //   }
+    // }
   };
 
   const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
