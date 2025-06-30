@@ -150,8 +150,8 @@ const Quotes = () => {
           typeof journeyValue === "object"
             ? journeyValue.label?.trim()
             : typeof journeyValue === "string"
-            ? journeyValue.trim()
-            : "";
+              ? journeyValue.trim()
+              : "";
         return !customerLabel || !journeyLabel;
       }
 
@@ -354,8 +354,8 @@ const Quotes = () => {
                 journeyMode === "create"
                   ? "Enter journey name"
                   : !customerValue
-                  ? "Select a customer first"
-                  : "Select a journey"
+                    ? "Select a customer first"
+                    : "Select a journey"
               }
               createPlaceholder="Enter journey name"
               disabled={!customerValue && customerMode !== "create"}

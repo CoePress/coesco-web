@@ -8,11 +8,13 @@ import {
   Shield,
   Clock,
   DollarSign,
+  Route,
+  FileText,
+  Wrench,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
-import OptionRules from "@/pages/admin/option-rules";
 
 export type Module = {
   sequence: number;
@@ -37,9 +39,17 @@ const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
 const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
-const Company = lazy(() => import("@/pages/company"));
 const Catalog = lazy(() => import("@/pages/sales/catalog"));
-const ConfigBuilder = lazy(() => import("@/pages/sales/config-builder"));
+const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
+const Quotes = lazy(() => import("@/pages/sales/quotes"));
+const QuoteDetails = lazy(() => import("@/pages/sales/quote-details"));
+const Journeys = lazy(() => import("@/pages/sales/journeys"));
+const JourneyDetails = lazy(() => import("@/pages/sales/journey-details"));
+const OptionRules = lazy(() => import("@/pages/admin/option-rules"));
+
+const Companies = lazy(() => import("@/pages/sales/companies"));
+const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
+const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
 
 const salesModule: Module = {
   sequence: 1,
@@ -55,10 +65,52 @@ const salesModule: Module = {
       component: SalesDashboard,
     },
     {
-      slug: "company",
-      label: "Company",
+      slug: "pipeline",
+      label: "Pipeline",
+      icon: DollarSign,
+      component: Pipeline,
+    },
+    {
+      slug: "companies",
+      label: "Companies",
       icon: UsersIcon,
-      component: Company,
+      component: Companies,
+      children: [
+        {
+          slug: ":id",
+          label: "Company",
+          icon: UsersIcon,
+          component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      slug: "journeys",
+      label: "Journeys",
+      icon: Route,
+      component: Journeys,
+      children: [
+        {
+          slug: ":id",
+          label: "Journey",
+          icon: Route,
+          component: JourneyDetails,
+        },
+      ],
+    },
+    {
+      slug: "quotes",
+      label: "Quotes",
+      icon: FileText,
+      component: Quotes,
+      children: [
+        {
+          slug: ":id",
+          label: "Quote",
+          icon: FileText,
+          component: QuoteDetails,
+        },
+      ],
     },
     {
       slug: "catalog",
@@ -67,10 +119,10 @@ const salesModule: Module = {
       component: Catalog,
     },
     {
-      slug: "config-builder",
-      label: "Config Builder",
-      icon: Box,
-      component: ConfigBuilder,
+      slug: "builder",
+      label: "Machine Builder",
+      icon: Wrench,
+      component: MachineBuilder,
     },
   ],
 };

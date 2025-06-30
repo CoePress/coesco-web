@@ -7,11 +7,11 @@ import {
   CircleX,
   CircleAlert,
   CircleMinus,
-  Import,
   Save,
   Minus,
   CheckSquare,
   Square,
+  Settings,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -88,6 +88,163 @@ const SaveConfigModal = ({
   );
 };
 
+const PerformanceRequirementsModal = ({
+  isOpen,
+  onClose,
+  onApply,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onApply: (requirements: Record<string, number>) => void;
+}) => {
+  const [selectedForm, setSelectedForm] = useState<string>("");
+  const [requirements, setRequirements] = useState<Record<string, number>>({});
+
+  // Sample performance forms - replace with actual data
+  const performanceForms = [
+    {
+      id: "form_1",
+      name: "High-Speed Production",
+      description: "Optimized for maximum throughput",
+      requirements: {
+        "Max Speed (RPM)": 8000,
+        "Power Output (kW)": 15,
+        "Accuracy (μm)": 5,
+        "Work Area (mm)": 1000,
+        "Tool Capacity": 24,
+        "Spindle Torque (Nm)": 120,
+        "Rapid Traverse (m/min)": 36,
+        "Cutting Feed (m/min)": 12,
+        "Coolant Flow (L/min)": 45,
+        "Air Pressure (bar)": 6,
+        "Voltage (V)": 400,
+        "Frequency (Hz)": 50,
+        "Weight (kg)": 2500,
+        "Dimensions (mm)": 3200,
+        "Noise Level (dB)": 75,
+        "Vibration (mm/s)": 2.5,
+        "Temperature Range (°C)": 45,
+        "Humidity Range (%)": 80,
+        "Duty Cycle (%)": 100,
+        "MTBF (hours)": 15000,
+      },
+    },
+    {
+      id: "form_2",
+      name: "Precision Manufacturing",
+      description: "High accuracy and fine detail work",
+      requirements: {
+        "Max Speed (RPM)": 6000,
+        "Power Output (kW)": 10,
+        "Accuracy (μm)": 2,
+        "Work Area (mm)": 800,
+        "Tool Capacity": 16,
+        "Spindle Torque (Nm)": 150,
+        "Rapid Traverse (m/min)": 24,
+        "Cutting Feed (m/min)": 8,
+        "Coolant Flow (L/min)": 50,
+        "Air Pressure (bar)": 7,
+        "Voltage (V)": 440,
+      },
+    },
+    {
+      id: "form_3",
+      name: "Heavy Duty Production",
+      description: "Robust construction for demanding environments",
+      requirements: {
+        "Max Speed (RPM)": 4000,
+        "Power Output (kW)": 25,
+        "Accuracy (μm)": 10,
+        "Work Area (mm)": 1500,
+        "Tool Capacity": 32,
+        "Spindle Torque (Nm)": 180,
+        "Rapid Traverse (m/min)": 28,
+        "Cutting Feed (m/min)": 10,
+        "Coolant Flow (L/min)": 60,
+        "Air Pressure (bar)": 8,
+        "Voltage (V)": 480,
+      },
+    },
+  ];
+
+  const handleFormSelect = (formId: string) => {
+    setSelectedForm(formId);
+    const form = performanceForms.find((f) => f.id === formId);
+    if (form) {
+      setRequirements(form.requirements as Record<string, number>);
+    }
+  };
+
+  const handleApply = () => {
+    onApply(requirements);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Apply Performance Requirements"
+      size="xs">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Select Performance Form
+          </label>
+          <select
+            className="w-full p-2 border border-border rounded bg-foreground text-text-muted"
+            value={selectedForm}
+            onChange={(e) => handleFormSelect(e.target.value)}>
+            <option value="">Choose a form...</option>
+            {performanceForms.map((form) => (
+              <option
+                key={form.id}
+                value={form.id}>
+                {form.name} - {form.description}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedForm && (
+          <div>
+            <h4 className="text-sm font-medium mb-3">
+              Performance Requirements
+            </h4>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {Object.entries(requirements).map(([key, value]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between">
+                  <span className="text-sm text-text-muted flex-1">{key}</span>
+                  <span className="text-sm font-medium text-text-muted">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 mt-4">
+        <Button
+          variant="secondary-outline"
+          onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleApply}
+          disabled={!selectedForm}>
+          Apply
+        </Button>
+      </div>
+    </Modal>
+  );
+};
+
 const ConfigBuilder = () => {
   const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
@@ -98,6 +255,10 @@ const ConfigBuilder = () => {
   const [configName, setConfigName] = useState("Untitled Configuration");
   const [selectedProductClass, setSelectedProductClass] = useState<string>("");
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isRequirementsModalOpen, setIsRequirementsModalOpen] = useState(false);
+  const [_appliedRequirements, setAppliedRequirements] = useState<
+    Record<string, number>
+  >({});
 
   const { productClasses, loading: productClassesLoading } =
     useGetProductClasses();
@@ -505,6 +666,13 @@ const ConfigBuilder = () => {
     setSelectedOptions([]);
   };
 
+  const handleApplyRequirements = (requirements: Record<string, number>) => {
+    setAppliedRequirements(requirements);
+    console.log("Applied requirements:", requirements);
+    // Here you would apply rules based on the requirements
+    // For now, just log them
+  };
+
   // Show loading state
   if (productClassesLoading || availableOptionsLoading) {
     return (
@@ -524,10 +692,10 @@ const ConfigBuilder = () => {
         actions={[
           {
             type: "button",
-            label: "Import",
+            label: "Performance",
             variant: "secondary-outline",
-            icon: <Import size={16} />,
-            onClick: () => {},
+            icon: <Settings size={16} />,
+            onClick: () => setIsRequirementsModalOpen(true),
           },
           {
             type: "button",
@@ -543,7 +711,7 @@ const ConfigBuilder = () => {
       />
 
       <div className="flex flex-1 min-h-0">
-        <div className="w-80 border-r bg-foreground flex flex-col min-h-0">
+        <div className="w-80 border-r bg-foreground flex flex-col min-h-0 text-sm">
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
             <select
@@ -826,6 +994,12 @@ const ConfigBuilder = () => {
         onSave={handleSave}
         selectedOptions={selectedOptions}
         totalPrice={totalPrice}
+      />
+
+      <PerformanceRequirementsModal
+        isOpen={isRequirementsModalOpen}
+        onClose={() => setIsRequirementsModalOpen(false)}
+        onApply={handleApplyRequirements}
       />
     </div>
   );

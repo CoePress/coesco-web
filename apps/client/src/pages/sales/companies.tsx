@@ -78,7 +78,7 @@ const Companies = () => {
         ]}
       />
 
-      <div className="p-2 flex flex-col">
+      <div className="flex flex-col">
         <PageSearch
           placeholder="Search companies..."
           filters={[
