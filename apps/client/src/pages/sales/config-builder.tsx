@@ -740,6 +740,17 @@ const ConfigBuilder = () => {
     return total;
   };
 
+  const handleErrorBannerClick = (categoryName: string) => {
+    // Find the category by name
+    const targetCategory = sortedCategories.find(
+      (cat) => cat.name === categoryName
+    );
+    if (targetCategory) {
+      // Collapse all categories except the target one
+      setExpandedCategories([targetCategory.id]);
+    }
+  };
+
   const validateConfiguration = () => {
     const results: ValidationResult[] = [];
 
@@ -749,6 +760,21 @@ const ConfigBuilder = () => {
       return `${option?.name} (${option?.code})`;
     });
     console.log("SELECTED:", selectedOptionNames.join(", "));
+
+    // Debug: Log all rules and their conditions
+    if (optionRules) {
+      console.log(
+        "ALL RULES:",
+        optionRules.map((rule) => ({
+          name: rule.name,
+          action: rule.action,
+          condition: rule.condition,
+          targetOptions: rule.targetOptions.map(
+            (opt: { name: string }) => opt.name
+          ),
+        }))
+      );
+    }
 
     // Check for required categories
     for (const category of sortedCategories) {
@@ -763,6 +789,7 @@ const ConfigBuilder = () => {
             valid: false,
             message: `${category.name} is required`,
             type: "warning",
+            categoryName: category.name,
           });
         }
       }
@@ -796,6 +823,7 @@ const ConfigBuilder = () => {
                 valid: false,
                 message: `${option.name} is required based on current selection`,
                 type: "error",
+                categoryName: category.name,
               });
             }
           }
@@ -817,10 +845,12 @@ const ConfigBuilder = () => {
       if (isOptionSelected(optionId)) {
         const option = getOptionById(optionId);
         if (option) {
+          const category = getCategoryById(option.categoryId);
           results.push({
             valid: false,
             message: `${option.name} is incompatible with current selection`,
             type: "error",
+            categoryName: category?.name,
           });
         }
       }
@@ -882,18 +912,6 @@ const ConfigBuilder = () => {
     // Set the new selected options
     setSelectedOptions(newSelectedOptions);
   }, [selectedProductClass, availableOptions, optionRules]);
-
-  useEffect(() => {
-    const disabledSelections = selectedOptions.filter((opt) =>
-      shouldDisableOption(opt.optionId)
-    );
-
-    if (disabledSelections.length > 0) {
-      setSelectedOptions((prev) =>
-        prev.filter((opt) => !shouldDisableOption(opt.optionId))
-      );
-    }
-  }, [selectedOptions, selectedProductClass, optionRules]);
 
   useEffect(() => {
     if (selectedOptions.length > 0 && availableOptions) {
@@ -1099,7 +1117,7 @@ const ConfigBuilder = () => {
                             : [...prev, category.id]
                         )
                       }
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer">
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none">
                       <div className="flex items-center gap-2">
                         {getStatusIcon(categoryStatus)}
                         <span className="text-sm font-medium text-text-muted">
@@ -1142,7 +1160,7 @@ const ConfigBuilder = () => {
                                   )
                                 }
                                 disabled={isDisabled}
-                                className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer">
+                                className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer select-none">
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="checkbox"
@@ -1161,10 +1179,25 @@ const ConfigBuilder = () => {
                                   <span className="flex-1 text-text-muted group-hover:text-text">
                                     {option.name}
                                   </span>
-                                  <span className="text-text-muted group-hover:text-text">
-                                    {formatCurrency(option.price)}
-                                  </span>
                                 </div>
+
+                                {(option.description || option.price > 0) && (
+                                  <div className="pl-6 mt-1 text-xs text-text-muted group-hover:text-text">
+                                    {option.price > 0 && (
+                                      <span className="font-medium">
+                                        {formatCurrency(option.price)}
+                                      </span>
+                                    )}
+                                    {option.price > 0 && option.description && (
+                                      <span className="mx-1">•</span>
+                                    )}
+                                    {option.description && (
+                                      <span className="italic">
+                                        {option.description}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
 
                                 {isSelected && option.allowQuantity && (
                                   <div className="pl-6 mt-2 flex items-center gap-2">
@@ -1185,12 +1218,6 @@ const ConfigBuilder = () => {
                                       onClick={(e) => e.stopPropagation()}
                                       className="w-16 p-1 border rounded text-xs"
                                     />
-                                  </div>
-                                )}
-
-                                {option.description && (
-                                  <div className="pl-6 mt-1 text-xs text-text-muted italic group-hover:text-text">
-                                    {option.description}
                                   </div>
                                 )}
                               </button>
@@ -1224,11 +1251,15 @@ const ConfigBuilder = () => {
               {validationResults.map((result, index) => (
                 <div
                   key={index}
-                  className={`p-2 rounded flex items-center gap-2 text-sm border ${
+                  onClick={() =>
+                    result.categoryName &&
+                    handleErrorBannerClick(result.categoryName)
+                  }
+                  className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
                     result.type === "error"
-                      ? "bg-error/10 text-error border-error"
+                      ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
                       : result.type === "warning"
-                        ? "bg-warning/10 text-warning border-warning"
+                        ? "bg-warning/10 text-warning border-warning hover:bg-warning/20 cursor-pointer"
                         : result.type === "success"
                           ? "bg-success/10 text-success border-success"
                           : "bg-info/10 text-info border-info"

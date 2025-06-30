@@ -79,6 +79,7 @@ export interface ValidationResult {
   valid: boolean;
   message: string;
   type: "success" | "warning" | "error" | "info";
+  categoryName?: string;
 }
 
 export interface Rule extends IBaseEntity {
