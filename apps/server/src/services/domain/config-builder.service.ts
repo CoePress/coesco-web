@@ -278,4 +278,23 @@ export class ConfigBuilderService {
       });
     }
   }
+
+  async configurationExists(configuration: any) {
+    let exists = true;
+    for (const option of configuration.selectedOptions) {
+      const existingOption = await prisma.configurationOption.findFirst({
+        where: {
+          configurationId: configuration.id,
+          optionId: option.optionId,
+        },
+      });
+
+      if (!existingOption) {
+        exists = false;
+        break;
+      }
+    }
+
+    return exists;
+  }
 }

@@ -515,7 +515,7 @@ const ConfigBuilder = () => {
   }
 
   return (
-    <div className="w-full flex-1 flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
@@ -542,9 +542,9 @@ const ConfigBuilder = () => {
         ]}
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-80 border-r bg-foreground overflow-y-auto text-sm">
-          <div className="p-2 border-b bg-foreground">
+      <div className="flex flex-1 min-h-0">
+        <div className="w-80 border-r bg-foreground flex flex-col min-h-0">
+          <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
             <select
               className="mt-2 w-full p-2 bg-foreground border border-border rounded text-text-muted focus:outline-none"
@@ -560,7 +560,7 @@ const ConfigBuilder = () => {
             </select>
           </div>
 
-          <div className="p-2 border-b bg-foreground">
+          <div className="p-2 border-b bg-foreground flex-shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-text-muted">
                 Configuration Options
@@ -597,138 +597,140 @@ const ConfigBuilder = () => {
             </div>
           </div>
 
-          <div className="divide-y">
-            {sortedCategories.map((category) => {
-              const categoryStatus = getCategoryStatus(category.id);
-              const options = getOptionsForCategory(category.id);
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="divide-y">
+              {sortedCategories.map((category) => {
+                const categoryStatus = getCategoryStatus(category.id);
+                const options = getOptionsForCategory(category.id);
 
-              if (options.length === 0) return null;
+                if (options.length === 0) return null;
 
-              return (
-                <div
-                  key={category.id}
-                  className="py-1">
-                  <button
-                    onClick={() =>
-                      setExpandedCategories((prev) =>
-                        prev.includes(category.id)
-                          ? prev.filter((id) => id !== category.id)
-                          : [...prev, category.id]
-                      )
-                    }
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(categoryStatus)}
-                      <span className="text-sm font-medium text-text-muted">
-                        {category.name} {category.isRequired && "*"}
-                      </span>
-                    </div>
-                    {expandedCategories.includes(category.id) ? (
-                      <ChevronDown
-                        size={16}
-                        className="text-text-muted"
-                      />
-                    ) : (
-                      <ChevronRight
-                        size={16}
-                        className="text-text-muted"
-                      />
-                    )}
-                  </button>
+                return (
+                  <div
+                    key={category.id}
+                    className="py-1">
+                    <button
+                      onClick={() =>
+                        setExpandedCategories((prev) =>
+                          prev.includes(category.id)
+                            ? prev.filter((id) => id !== category.id)
+                            : [...prev, category.id]
+                        )
+                      }
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(categoryStatus)}
+                        <span className="text-sm font-medium text-text-muted">
+                          {category.name} {category.isRequired && "*"}
+                        </span>
+                      </div>
+                      {expandedCategories.includes(category.id) ? (
+                        <ChevronDown
+                          size={16}
+                          className="text-text-muted"
+                        />
+                      ) : (
+                        <ChevronRight
+                          size={16}
+                          className="text-text-muted"
+                        />
+                      )}
+                    </button>
 
-                  {expandedCategories.includes(category.id) && (
-                    <div className="pl-4 pr-2 py-2 space-y-2">
-                      {options.map((option: any) => {
-                        const isDisabled = shouldDisableOption(option.id);
-                        const isSelected = isOptionSelected(option.id);
-                        const quantity = getOptionQuantity(option.id);
+                    {expandedCategories.includes(category.id) && (
+                      <div className="pl-4 pr-2 py-2 space-y-2">
+                        {options.map((option: any) => {
+                          const isDisabled = shouldDisableOption(option.id);
+                          const isSelected = isOptionSelected(option.id);
+                          const quantity = getOptionQuantity(option.id);
 
-                        return (
-                          <div
-                            key={option.id}
-                            className={`text-sm ${
-                              isDisabled ? "opacity-50" : ""
-                            }`}>
-                            <button
-                              onClick={() =>
-                                !isDisabled &&
-                                handleOptionSelect(
-                                  option.id,
-                                  category.id,
-                                  !isSelected
-                                )
-                              }
-                              disabled={isDisabled}
-                              className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer">
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  className="rounded border border-border"
-                                  checked={isSelected}
-                                  disabled={isDisabled}
-                                  onChange={(e) =>
-                                    handleOptionSelect(
-                                      option.id,
-                                      category.id,
-                                      e.target.checked
-                                    )
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <span className="flex-1 text-text-muted group-hover:text-text">
-                                  {option.name}
-                                </span>
-                                <span className="text-text-muted group-hover:text-text">
-                                  {formatCurrency(option.price)}
-                                </span>
-                              </div>
-
-                              {isSelected && option.allowQuantity && (
-                                <div className="pl-6 mt-2 flex items-center gap-2">
-                                  <label className="text-xs text-text-muted group-hover:text-text">
-                                    Quantity:
-                                  </label>
+                          return (
+                            <div
+                              key={option.id}
+                              className={`text-sm ${
+                                isDisabled ? "opacity-50" : ""
+                              }`}>
+                              <button
+                                onClick={() =>
+                                  !isDisabled &&
+                                  handleOptionSelect(
+                                    option.id,
+                                    category.id,
+                                    !isSelected
+                                  )
+                                }
+                                disabled={isDisabled}
+                                className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer">
+                                <div className="flex items-center gap-2">
                                   <input
-                                    type="number"
-                                    min={1}
-                                    max={100}
-                                    value={quantity}
+                                    type="checkbox"
+                                    className="rounded border border-border"
+                                    checked={isSelected}
+                                    disabled={isDisabled}
                                     onChange={(e) =>
-                                      handleQuantityChange(
+                                      handleOptionSelect(
                                         option.id,
-                                        parseInt(e.target.value) || 1
+                                        category.id,
+                                        e.target.checked
                                       )
                                     }
                                     onClick={(e) => e.stopPropagation()}
-                                    className="w-16 p-1 border rounded text-xs"
                                   />
+                                  <span className="flex-1 text-text-muted group-hover:text-text">
+                                    {option.name}
+                                  </span>
+                                  <span className="text-text-muted group-hover:text-text">
+                                    {formatCurrency(option.price)}
+                                  </span>
                                 </div>
-                              )}
 
-                              {option.description && (
-                                <div className="pl-6 mt-1 text-xs text-text-muted italic group-hover:text-text">
-                                  {option.description}
-                                </div>
-                              )}
-                            </button>
+                                {isSelected && option.allowQuantity && (
+                                  <div className="pl-6 mt-2 flex items-center gap-2">
+                                    <label className="text-xs text-text-muted group-hover:text-text">
+                                      Quantity:
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={100}
+                                      value={quantity}
+                                      onChange={(e) =>
+                                        handleQuantityChange(
+                                          option.id,
+                                          parseInt(e.target.value) || 1
+                                        )
+                                      }
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-16 p-1 border rounded text-xs"
+                                    />
+                                  </div>
+                                )}
+
+                                {option.description && (
+                                  <div className="pl-6 mt-1 text-xs text-text-muted italic group-hover:text-text">
+                                    {option.description}
+                                  </div>
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                        {options.length === 0 && (
+                          <div className="text-sm text-text-muted">
+                            No options available for this category
                           </div>
-                        );
-                      })}
-
-                      {options.length === 0 && (
-                        <div className="text-sm text-text-muted">
-                          No options available for this category
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-2 border-b bg-foreground">
             <h2 className="font-semibold text-text-muted">
               Current Configuration
