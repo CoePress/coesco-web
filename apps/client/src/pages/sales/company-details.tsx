@@ -7,7 +7,7 @@ import {
   Phone,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import Modal from "@/components/shared/modal";
+import Modal from "@/components/common/modal";
 import { Button } from "@/components";
 
 const CompanyDetails = () => {

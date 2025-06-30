@@ -11,7 +11,7 @@ import {
   Table,
 } from "@/components";
 import { formatCurrency } from "@/utils";
-import { TableColumn } from "@/components/shared/table";
+import { TableColumn } from "@/components/common/table";
 import useGetQuotes from "@/hooks/sales/use-get-quotes";
 import { useCreateQuote } from "@/hooks/sales/use-create-quote";
 import useGetCompanies from "@/hooks/sales/use-get-companies";

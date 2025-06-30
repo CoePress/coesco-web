@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
-import { TableColumn } from "@/components/shared/table";
+import { TableColumn } from "@/components/common/table";
 import useGetJourneys from "@/hooks/sales/use-get-journeys";
 
 const Journeys = () => {

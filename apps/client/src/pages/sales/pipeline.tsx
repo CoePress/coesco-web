@@ -10,7 +10,7 @@ import { useState } from "react";
 import { PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { sampleDeals } from "@/utils/sample-data";
-import Table from "@/components/shared/table";
+import Table from "@/components/common/table";
 
 const Pipeline = () => {
   const [viewMode, setViewMode] = useState("kanban");
@@ -149,8 +149,8 @@ const Pipeline = () => {
                 value >= 70
                   ? "bg-green-500"
                   : value >= 40
-                  ? "bg-yellow-500"
-                  : "bg-red-500"
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
               }`}
               style={{ width: `${value}%` }}></div>
           </div>

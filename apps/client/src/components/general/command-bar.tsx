@@ -105,11 +105,11 @@ const moduleConfig: ModuleConfig = {
   },
 };
 
-const CommandBar: React.FC<CommandBarProps> = ({
+const CommandBar = ({
   onNavigate,
   defaultModule = "sales",
   isOpen: externalIsOpen = false,
-}) => {
+}: CommandBarProps) => {
   const [input, setInput] = useState<string>("");
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -521,8 +521,8 @@ const CommandBar: React.FC<CommandBarProps> = ({
                   !isHeader && index === selectedIndex
                     ? "bg-surface border-l-4 border-primary"
                     : isHeader
-                    ? ""
-                    : "border-l-4 border-transparent"
+                      ? ""
+                      : "border-l-4 border-transparent"
                 }`}
                 onClick={() => {
                   if (!isHeader) {

@@ -13,7 +13,7 @@ import {
 import modules from "@/config/modules";
 import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
-import Button from "../shared/button";
+import Button from "../common/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import { useAuth } from "@/contexts/auth.context";

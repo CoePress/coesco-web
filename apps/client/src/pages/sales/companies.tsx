@@ -2,7 +2,7 @@ import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
-import { TableColumn } from "@/components/shared/table";
+import { TableColumn } from "@/components/common/table";
 import useGetCompanies from "@/hooks/sales/use-get-companies";
 
 const Companies = () => {
