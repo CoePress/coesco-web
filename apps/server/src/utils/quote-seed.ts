@@ -973,6 +973,108 @@ export const sampleOptionRuleTriggers = [
   },
 ];
 
+// Sample Configurations
+export const sampleConfigurations = [
+  // CNC Milling Machine - Basic Configuration
+  {
+    productClassCode: "CNC_MILL",
+    name: "Standard CNC Mill",
+    description: "Basic CNC milling machine with standard features",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_FANUC_31I",
+      "SPIN_15HP_BELT",
+      "TABLE_24X16",
+      "ATC_20_CHAIN",
+      "SAFETY_ESTOP",
+    ],
+  },
+  // CNC Milling Machine - High Performance Configuration
+  {
+    productClassCode: "CNC_MILL",
+    name: "High-Performance CNC Mill",
+    description: "Advanced CNC milling machine with premium features",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_SIEMENS_840D",
+      "SPIN_40HP_HS",
+      "TABLE_40X24",
+      "ATC_30_UMBRELLA",
+      "SAFETY_LIGHT_CURTAIN",
+      "SAFETY_INTERLOCK",
+    ],
+  },
+  // VMC - Production Configuration
+  {
+    productClassCode: "VMC",
+    name: "Production VMC",
+    description: "Vertical machining center optimized for production",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_FANUC_31I",
+      "SPIN_25HP_DIRECT",
+      "TABLE_32X18",
+      "ATC_30_UMBRELLA",
+      "SAFETY_ESTOP",
+      "SAFETY_INTERLOCK",
+    ],
+  },
+  // Laser System - Standard Configuration
+  {
+    productClassCode: "LASER_SYSTEM",
+    name: "Standard Laser System",
+    description: "Basic laser cutting system with standard features",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_BECKHOFF",
+      "LASER_3KW_FIBER",
+      "BED_5X10_SHUTTLE",
+      "GAS_DUAL_O2_N2",
+      "SAFETY_LIGHT_CURTAIN",
+      "SAFETY_ESTOP",
+      "SAFETY_INTERLOCK",
+    ],
+  },
+  // Laser Cutter - High Power Configuration
+  {
+    productClassCode: "LASER_CUTTER",
+    name: "High-Power Laser Cutter",
+    description: "High-power laser cutting system for thick materials",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_SIEMENS_840D",
+      "LASER_6KW_FIBER",
+      "BED_6X12_FIXED",
+      "GAS_N2_GENERATOR",
+      "SAFETY_LIGHT_CURTAIN",
+      "SAFETY_ESTOP",
+      "SAFETY_INTERLOCK",
+    ],
+  },
+  // Fiber Laser - Compact Configuration
+  {
+    productClassCode: "FIBER_LASER",
+    name: "Compact Fiber Laser",
+    description: "Compact fiber laser system for small shops",
+    isTemplate: true,
+    isActive: true,
+    selectedOptionCodes: [
+      "CTRL_BECKHOFF",
+      "LASER_3KW_FIBER",
+      "BED_5X10_SHUTTLE",
+      "GAS_DUAL_O2_N2",
+      "SAFETY_LIGHT_CURTAIN",
+      "SAFETY_ESTOP",
+      "SAFETY_INTERLOCK",
+    ],
+  },
+];
+
 const seedQuoteData = async () => {
   try {
     // Seed product classes in order (parents first)
@@ -1203,6 +1305,52 @@ const seedQuoteData = async () => {
           logger.info(
             `Option rule trigger: ${trigger.ruleName} -> ${trigger.optionCode}`
           );
+        }
+      }
+    }
+
+    // Seed configurations
+    for (const config of sampleConfigurations) {
+      const productClass = await prisma.productClass.findUnique({
+        where: { code: config.productClassCode },
+      });
+
+      if (productClass) {
+        const existing = await prisma.configuration.findFirst({
+          where: {
+            productClassId: productClass.id,
+            name: config.name,
+          },
+        });
+
+        if (!existing) {
+          const { productClassCode, selectedOptionCodes, ...configData } =
+            config;
+
+          const createdConfig = await prisma.configuration.create({
+            data: {
+              ...configData,
+              productClassId: productClass.id,
+            },
+          });
+
+          // Create configuration options
+          for (const optionCode of selectedOptionCodes) {
+            const optionHeader = await prisma.optionHeader.findUnique({
+              where: { code: optionCode },
+            });
+
+            if (optionHeader) {
+              await prisma.configurationOption.create({
+                data: {
+                  configurationId: createdConfig.id,
+                  optionId: optionHeader.id,
+                },
+              });
+            }
+          }
+
+          logger.info(`Configuration "${config.name}" created`);
         }
       }
     }

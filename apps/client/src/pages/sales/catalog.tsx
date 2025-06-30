@@ -8,6 +8,7 @@ import {
   useGetConfigurations,
   useGetOptionsByProductClass,
 } from "@/hooks/config";
+import { useNavigate } from "react-router-dom";
 
 const sampleParts = [
   {
@@ -618,6 +619,8 @@ const Catalog = () => {
   const { options: productClassOptions, loading: optionsLoading } =
     useGetOptionsByProductClass(deepestSelectedClassId);
 
+  const navigate = useNavigate();
+
   const getOptionsForLevel = (
     level: number
   ): Array<{ id: string; name: string }> => {
@@ -1138,7 +1141,9 @@ const Catalog = () => {
             label: "Create New",
             variant: "primary",
             icon: <Plus size={16} />,
-            onClick: () => {},
+            onClick: () => {
+              navigate("/sales/catalog/builder");
+            },
           },
         ]}
       />

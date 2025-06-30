@@ -117,12 +117,14 @@ const salesModule: Module = {
       label: "Catalog",
       icon: Box,
       component: Catalog,
-    },
-    {
-      slug: "builder",
-      label: "Machine Builder",
-      icon: Wrench,
-      component: MachineBuilder,
+      children: [
+        {
+          slug: "builder",
+          label: "Builder",
+          icon: Box,
+          component: MachineBuilder,
+        },
+      ],
     },
   ],
 };

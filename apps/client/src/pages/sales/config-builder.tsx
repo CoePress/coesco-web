@@ -12,10 +12,18 @@ import {
   CheckSquare,
   Square,
   Settings,
+  ChevronLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, PageHeader, Modal, Loader } from "@/components";
+import {
+  Button,
+  PageHeader,
+  Modal,
+  Loader,
+  PageSearch,
+  Table,
+} from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
 import {
@@ -99,13 +107,17 @@ const PerformanceRequirementsModal = ({
 }) => {
   const [selectedForm, setSelectedForm] = useState<string>("");
   const [requirements, setRequirements] = useState<Record<string, number>>({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Sample performance forms - replace with actual data
   const performanceForms = [
     {
       id: "form_1",
-      name: "High-Speed Production",
       description: "Optimized for maximum throughput",
+      category: "Production",
+      customerName: "Tech Solutions Inc",
+      createdDate: "2024-01-15",
+      createdBy: "John Smith",
       requirements: {
         "Max Speed (RPM)": 8000,
         "Power Output (kW)": 15,
@@ -131,8 +143,11 @@ const PerformanceRequirementsModal = ({
     },
     {
       id: "form_2",
-      name: "Precision Manufacturing",
       description: "High accuracy and fine detail work",
+      category: "Precision",
+      customerName: "Global Dynamics",
+      createdDate: "2024-02-20",
+      createdBy: "Sarah Johnson",
       requirements: {
         "Max Speed (RPM)": 6000,
         "Power Output (kW)": 10,
@@ -149,8 +164,11 @@ const PerformanceRequirementsModal = ({
     },
     {
       id: "form_3",
-      name: "Heavy Duty Production",
       description: "Robust construction for demanding environments",
+      category: "Heavy Duty",
+      customerName: "Wayne Enterprises",
+      createdDate: "2024-03-10",
+      createdBy: "Mike Wilson",
       requirements: {
         "Max Speed (RPM)": 4000,
         "Power Output (kW)": 25,
@@ -165,13 +183,56 @@ const PerformanceRequirementsModal = ({
         "Voltage (V)": 480,
       },
     },
+    {
+      id: "form_4",
+      description: "Efficient assembly and light manufacturing",
+      category: "Assembly",
+      customerName: "Stark Industries",
+      createdDate: "2024-01-30",
+      createdBy: "Lisa Chen",
+      requirements: {
+        "Max Speed (RPM)": 3000,
+        "Power Output (kW)": 5,
+        "Accuracy (μm)": 15,
+        "Work Area (mm)": 600,
+        "Tool Capacity": 8,
+        "Spindle Torque (Nm)": 80,
+        "Rapid Traverse (m/min)": 20,
+        "Cutting Feed (m/min)": 6,
+        "Coolant Flow (L/min)": 30,
+        "Air Pressure (bar)": 5,
+        "Voltage (V)": 220,
+      },
+    },
+    {
+      id: "form_5",
+      description: "Versatile machine for various applications",
+      category: "General",
+      customerName: "Acme Corporation",
+      createdDate: "2024-02-15",
+      createdBy: "David Brown",
+      requirements: {
+        "Max Speed (RPM)": 5000,
+        "Power Output (kW)": 12,
+        "Accuracy (μm)": 8,
+        "Work Area (mm)": 900,
+        "Tool Capacity": 20,
+        "Spindle Torque (Nm)": 100,
+        "Rapid Traverse (m/min)": 30,
+        "Cutting Feed (m/min)": 10,
+        "Coolant Flow (L/min)": 40,
+        "Air Pressure (bar)": 6,
+        "Voltage (V)": 380,
+      },
+    },
   ];
 
   const handleFormSelect = (formId: string) => {
-    setSelectedForm(formId);
     const form = performanceForms.find((f) => f.id === formId);
     if (form) {
+      setSelectedForm(formId);
       setRequirements(form.requirements as Record<string, number>);
+      setShowConfirmation(true);
     }
   };
 
@@ -180,66 +241,155 @@ const PerformanceRequirementsModal = ({
     onClose();
   };
 
+  const handleCancel = () => {
+    setShowConfirmation(false);
+    setSelectedForm("");
+    setRequirements({});
+  };
+
   if (!isOpen) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Apply Performance Requirements"
-      size="xs">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Select Performance Form
-          </label>
-          <select
-            className="w-full p-2 border border-border rounded bg-foreground text-text-muted"
-            value={selectedForm}
-            onChange={(e) => handleFormSelect(e.target.value)}>
-            <option value="">Choose a form...</option>
-            {performanceForms.map((form) => (
-              <option
-                key={form.id}
-                value={form.id}>
-                {form.name} - {form.description}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {selectedForm && (
-          <div>
-            <h4 className="text-sm font-medium mb-3">
-              Performance Requirements
-            </h4>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {Object.entries(requirements).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between">
-                  <span className="text-sm text-text-muted flex-1">{key}</span>
-                  <span className="text-sm font-medium text-text-muted">
-                    {value}
-                  </span>
-                </div>
-              ))}
+      title={
+        showConfirmation
+          ? "Confirm Performance Requirements"
+          : "Apply Performance Requirements"
+      }
+      size="sm">
+      <div className="flex flex-col gap-4">
+        {showConfirmation ? (
+          <>
+            <div className="text-sm text-text-muted">
+              Are you sure you want to apply these performance requirements to
+              your configuration?
             </div>
-          </div>
-        )}
-      </div>
 
-      <div className="flex gap-2 mt-4">
-        <Button
-          variant="secondary-outline"
-          onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleApply}
-          disabled={!selectedForm}>
-          Apply
-        </Button>
+            <div className="space-y-2">
+              <div>
+                <div className="font-medium text-text">
+                  {
+                    performanceForms.find((f) => f.id === selectedForm)
+                      ?.description
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium mb-3">
+                Performance Requirements
+              </h4>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {Object.entries(requirements).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between">
+                    <span className="text-sm text-text-muted flex-1">
+                      {key}
+                    </span>
+                    <span className="text-sm font-medium text-text-muted">
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button
+                variant="secondary-outline"
+                onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleApply}>
+                Apply
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <PageSearch
+              placeholder="Search performance forms..."
+              filters={[
+                { label: "Customer", icon: ChevronDown, onClick: () => {} },
+                { label: "Created By", icon: ChevronDown, onClick: () => {} },
+              ]}
+            />
+
+            <Table
+              columns={[
+                {
+                  key: "customerName",
+                  header: "Customer Name",
+                },
+                {
+                  key: "createdDate",
+                  header: "Created Date",
+                },
+                {
+                  key: "createdBy",
+                  header: "Created By",
+                },
+                {
+                  key: "actions",
+                  header: "",
+                  render: (_, row) => (
+                    <div className="flex justify-end">
+                      <Button
+                        variant="secondary-outline"
+                        onClick={() => handleFormSelect(row.id)}>
+                        Select
+                      </Button>
+                    </div>
+                  ),
+                  className: "text-right",
+                },
+              ]}
+              data={performanceForms}
+              total={performanceForms.length}
+            />
+
+            <div className="flex justify-between gap-2 pt-2 border-t">
+              <div className="flex gap-2 items-center">
+                <Button
+                  variant="secondary-outline"
+                  size="sm">
+                  <ChevronLeft size={16} />
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm">
+                  1
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm">
+                  2
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm">
+                  3
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm">
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+              <Button
+                variant="secondary-outline"
+                onClick={onClose}>
+                Cancel
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   );
