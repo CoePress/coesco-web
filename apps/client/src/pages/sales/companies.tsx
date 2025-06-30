@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/common/table";
-import useGetCompanies from "@/hooks/sales/use-get-companies";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Companies = () => {
-  const { companies } = useGetCompanies();
+  const { entities: companies } = useGetEntities("/companies");
 
   const columns: TableColumn<any>[] = [
     {

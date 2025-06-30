@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/common/table";
-import useGetJourneys from "@/hooks/sales/use-get-journeys";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Journeys = () => {
   const [selectedRows] = useState<(string | number)[]>([]);
 
-  const { journeys } = useGetJourneys();
+  const { entities: journeys } = useGetEntities("/journeys");
 
   const columns: TableColumn<any>[] = [
     {

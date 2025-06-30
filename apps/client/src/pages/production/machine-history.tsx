@@ -3,11 +3,10 @@ import PageHeader from "@/components/common/page-header";
 import { Download, Loader } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
-import useGetMachines from "@/hooks/production/use-get-machines";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { formatDuration, getVariantFromStatus } from "@/utils";
 import { TableColumn } from "@/components/common/table";
 import { IMachineStatus } from "@/utils/types";
-import useGetStatuses from "@/hooks/production/use-get-statuses";
 
 // type DropdownProps = {
 //   options: {
@@ -86,11 +85,11 @@ const MachineHistory = () => {
   );
 
   const {
-    states,
+    entities: states,
     loading: statesLoading,
     error: statesError,
     pagination,
-  } = useGetStatuses({
+  } = useGetEntities("/machine-statuses", {
     page,
     limit,
     sort,
@@ -99,10 +98,10 @@ const MachineHistory = () => {
   });
 
   const {
-    machines,
+    entities: machines,
     loading: machinesLoading,
     error: machinesError,
-  } = useGetMachines();
+  } = useGetEntities("/machines");
 
   const loading = statesLoading || machinesLoading;
   const error = statesError || machinesError;

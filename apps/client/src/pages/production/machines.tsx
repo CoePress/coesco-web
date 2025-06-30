@@ -1,8 +1,8 @@
 import { Loader, PageHeader, Table } from "@/components";
-import useGetMachines from "@/hooks/production/use-get-machines";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Machines = () => {
-  const { machines, loading, error } = useGetMachines();
+  const { entities: machines, loading, error } = useGetEntities("/machines");
 
   if (loading) {
     return (
