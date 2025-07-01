@@ -46,6 +46,7 @@ const QuoteDetails = lazy(() => import("@/pages/sales/quote-details"));
 const Journeys = lazy(() => import("@/pages/sales/journeys"));
 const JourneyDetails = lazy(() => import("@/pages/sales/journey-details"));
 const OptionRules = lazy(() => import("@/pages/admin/option-rules"));
+const Options = lazy(() => import("@/pages/sales/options"));
 
 const Companies = lazy(() => import("@/pages/sales/companies"));
 const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
@@ -125,6 +126,12 @@ const salesModule: Module = {
           component: MachineBuilder,
         },
       ],
+    },
+    {
+      slug: "options",
+      label: "Options",
+      icon: Box,
+      component: Options,
     },
   ],
 };

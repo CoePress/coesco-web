@@ -13,6 +13,8 @@ export class ConfigurationService extends BaseService<Configuration> {
   protected entityName = "Configuration";
   protected modelName = "configuration";
 
+  async getConfigurationsWithOptions(productClassId?: string) {}
+
   protected async validate(
     configuration: ConfigurationAttributes
   ): Promise<void> {
