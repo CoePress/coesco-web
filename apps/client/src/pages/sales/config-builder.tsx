@@ -26,11 +26,7 @@ import {
 } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
-import {
-  useGetProductClasses,
-  useGetAvailableOptionsGroupedByCategory,
-  useGetOptionRules,
-} from "@/hooks/config";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { RuleCondition, SelectedOption, ValidationResult } from "@/utils/types";
 
 const SaveConfigModal = ({
@@ -407,10 +403,11 @@ const ConfigBuilder = () => {
     Record<string, number>
   >({});
 
-  const { productClasses, loading: productClassesLoading } =
-    useGetProductClasses();
+  const { entities: productClasses, loading: productClassesLoading } =
+    useGetEntities("/config/classes");
 
-  const { optionRules, loading: optionRulesLoading } = useGetOptionRules();
+  const { entities: optionRules, loading: optionRulesLoading } =
+    useGetEntities("/config/rules");
 
   const selectedProductClass =
     productClassSelections.length > 0
@@ -418,8 +415,12 @@ const ConfigBuilder = () => {
       : "";
   const effectiveProductClassId =
     selectedProductClass || productClasses?.[0]?.id;
-  const { availableOptions, loading: availableOptionsLoading } =
-    useGetAvailableOptionsGroupedByCategory(effectiveProductClassId || "");
+  const { entities: availableOptions, loading: availableOptionsLoading } =
+    useGetEntities(
+      effectiveProductClassId
+        ? `/config/classes/${effectiveProductClassId}/options`
+        : null
+    );
 
   const sortedCategories = availableOptions
     ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)

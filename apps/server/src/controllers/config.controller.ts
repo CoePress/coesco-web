@@ -27,7 +27,10 @@ export class ConfigController {
       const result = await configService.getOptionCategoriesByProductClass(
         req.params.id
       );
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -42,7 +45,10 @@ export class ConfigController {
       const result = await configService.getOptionsByOptionCategory(
         req.params.categoryId
       );
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -57,7 +63,10 @@ export class ConfigController {
       const result = await configService.getOptionsByProductClass(
         req.params.id
       );
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -66,7 +75,10 @@ export class ConfigController {
   async getOptionRules(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await configService.getOptionRules();
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -93,7 +105,10 @@ export class ConfigController {
       const result = await configService.getAvailableOptionsGroupedByCategory(
         req.params.id
       );
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -102,7 +117,10 @@ export class ConfigController {
   async saveConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await configService.saveConfiguration(req.body);
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
