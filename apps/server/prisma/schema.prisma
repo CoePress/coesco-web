@@ -137,6 +137,7 @@ model Item {
   name        String
   description String?
   unitPrice   Float    @default(0)
+  type        String
   isActive    Boolean  @default(true)
   createdById String
   createdAt   DateTime @default(now())

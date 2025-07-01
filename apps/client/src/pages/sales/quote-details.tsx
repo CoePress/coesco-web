@@ -686,7 +686,7 @@ const AddItemModal = ({
   const [selectedQuantity, setSelectedQuantity] = useState<
     Record<string, number>
   >({});
-  const [activeTab, setActiveTab] = useState("items");
+  const [activeTab, setActiveTab] = useState("machines");
 
   const {
     loading: addItemLoading,
@@ -773,8 +773,9 @@ const AddItemModal = ({
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 tabs={[
-                  { label: "Items", value: "items" },
-                  { label: "Configurations", value: "configurations" },
+                  { label: "Machines", value: "machines" },
+                  { label: "Parts", value: "parts" },
+                  { label: "Services", value: "services" },
                 ]}
               />
 
@@ -792,8 +793,8 @@ const AddItemModal = ({
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
-              {activeTab === "items" && isOpen && (
-                <ItemsTab
+              {activeTab === "machines" && isOpen && (
+                <MachinesTab
                   onAddItem={handleAddItem}
                   addItemLoading={addItemLoading}
                   selectedQuantity={selectedQuantity}
@@ -801,8 +802,24 @@ const AddItemModal = ({
                 />
               )}
 
-              {activeTab === "configurations" && isOpen && (
-                <ConfigurationsTab />
+              {activeTab === "parts" && isOpen && (
+                <ItemsTab
+                  onAddItem={handleAddItem}
+                  addItemLoading={addItemLoading}
+                  selectedQuantity={selectedQuantity}
+                  setSelectedQuantity={setSelectedQuantity}
+                  filter={{ type: "parts" }}
+                />
+              )}
+
+              {activeTab === "services" && isOpen && (
+                <ItemsTab
+                  onAddItem={handleAddItem}
+                  addItemLoading={addItemLoading}
+                  selectedQuantity={selectedQuantity}
+                  setSelectedQuantity={setSelectedQuantity}
+                  filter={{ type: "services" }}
+                />
               )}
             </div>
 
@@ -869,17 +886,19 @@ const ItemsTab = ({
   addItemLoading,
   selectedQuantity,
   setSelectedQuantity,
+  filter,
 }: {
   onAddItem: (item: any) => void;
   addItemLoading: boolean;
   selectedQuantity: Record<string, number>;
   setSelectedQuantity: (quantity: Record<string, number>) => void;
+  filter?: Record<string, any>;
 }) => {
   const {
     entities: items,
     loading: itemsLoading,
     error: itemsError,
-  } = useGetEntities("/items");
+  } = useGetEntities("/items", { filter });
 
   return (
     <div className="h-full flex flex-col">
@@ -950,7 +969,17 @@ const ItemsTab = ({
   );
 };
 
-const ConfigurationsTab = () => {
+const MachinesTab = ({
+  onAddItem,
+  addItemLoading,
+  selectedQuantity,
+  setSelectedQuantity,
+}: {
+  onAddItem: (item: any) => void;
+  addItemLoading: boolean;
+  selectedQuantity: Record<string, number>;
+  setSelectedQuantity: (quantity: Record<string, number>) => void;
+}) => {
   const {
     entities: configurations,
     loading: configurationsLoading,
@@ -970,7 +999,7 @@ const ConfigurationsTab = () => {
           columns={[
             {
               key: "name",
-              header: "Configuration",
+              header: "Machine",
               className: "text-primary",
             },
             {
@@ -986,22 +1015,40 @@ const ConfigurationsTab = () => {
             {
               key: "quantity",
               header: "Quantity",
-              render: (_) => (
+              render: (_, row) => (
                 <input
                   type="number"
                   min="1"
-                  defaultValue="1"
-                  className="w-20 py-1 border rounded text-right"
+                  defaultValue={selectedQuantity[row.id] || 1}
+                  onChange={(e) =>
+                    setSelectedQuantity({
+                      ...selectedQuantity,
+                      [row.id]: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className="w-20 px-2 py-1 border rounded text-right"
                 />
+              ),
+              className: "text-right",
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (_, row) => (
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary-outline"
+                    onClick={() => onAddItem(row)}
+                    disabled={addItemLoading}>
+                    {addItemLoading ? "Adding..." : "Add"}
+                  </Button>
+                </div>
               ),
               className: "text-right",
             },
           ]}
           data={configurations || []}
           total={configurations?.length || 0}
-          onRowClick={(row) => {
-            console.log("Selected configuration:", row);
-          }}
         />
       )}
     </div>
