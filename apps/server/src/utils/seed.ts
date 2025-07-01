@@ -6,6 +6,8 @@ import {
   MachineType,
   OptionRuleAction,
 } from "@prisma/client";
+import { employeeService } from "@/services";
+import { __dev__ } from "@/config/config";
 
 // Product Classes
 export const sampleProductClasses = [
@@ -1013,6 +1015,7 @@ export const sampleCompanies = [
     logoUrl: "https://example.com/logos/precision-mfg.png",
     notes:
       "High-volume automotive parts manufacturer. Looking to expand into aerospace.",
+    tags: ["customer", "dealer"],
     status: "ACTIVE",
   },
   {
@@ -1032,6 +1035,7 @@ export const sampleCompanies = [
     logoUrl: "https://example.com/logos/advanced-metalworks.png",
     notes:
       "Specializes in custom metal fabrication and welding. Strong relationship with construction industry.",
+    tags: ["customer", "dealer"],
     status: "ACTIVE",
   },
   {
@@ -1051,6 +1055,7 @@ export const sampleCompanies = [
     logoUrl: "https://example.com/logos/innovation-eng.png",
     notes:
       "R&D-focused company developing new manufacturing processes. Frequent early adopter of new technology.",
+    tags: ["customer", "dealer"],
     status: "ACTIVE",
   },
   {
@@ -1070,6 +1075,7 @@ export const sampleCompanies = [
     logoUrl: "https://example.com/logos/heritage-tool.png",
     notes:
       "Family-owned tool and die shop. Conservative approach to new equipment purchases.",
+    tags: ["customer"],
     status: "ACTIVE",
   },
   {
@@ -1089,6 +1095,7 @@ export const sampleCompanies = [
     logoUrl: "https://example.com/logos/global-aerospace.png",
     notes:
       "Major aerospace supplier. Requires strict quality certifications and documentation.",
+    tags: ["dealer"],
     status: "ACTIVE",
   },
 ];
@@ -1955,8 +1962,13 @@ const seedMachines = async () => {
 };
 
 const seed = async () => {
-  await seedSampleData();
+  await employeeService.sync();
   await seedMachines();
+
+  if (__dev__) {
+    await seedSampleData();
+  }
+
   logger.info("All seeding completed successfully");
   process.exit(0);
 };
