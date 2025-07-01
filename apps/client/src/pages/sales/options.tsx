@@ -2,16 +2,13 @@ import { useState } from "react";
 import {
   Plus,
   Edit,
-  Trash2,
   Eye,
   EyeOff,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   Code,
   Target,
-  Minus,
-  Plus as PlusIcon,
+  Filter,
 } from "lucide-react";
 import { PageHeader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
@@ -48,6 +45,9 @@ const Options = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAction, setSelectedAction] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedProductClass, setSelectedProductClass] =
+    useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   // API calls
   const { entities: optionCategories, loading: categoriesLoading } =
@@ -232,40 +232,82 @@ const Options = () => {
         <div className="w-80 border-r bg-foreground flex flex-col min-h-0">
           {/* Filters */}
           <div className="p-2 border-b bg-foreground flex-shrink-0">
-            <div className="space-y-3">
-              <div>
+            <div className="space-y-2">
+              <div className="flex gap-2 relative">
                 <input
                   type="text"
                   placeholder="Search rules..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 px-2 py-1 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  value={selectedAction}
-                  onChange={(e) => setSelectedAction(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option value="all">All Actions</option>
-                  <option value="DISABLE">Disable</option>
-                  <option value="REQUIRE">Require</option>
-                  <option value="SET_VALUE">Set Value</option>
-                  <option value="SHOW_MESSAGE">Show Message</option>
-                </select>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option value="all">All Categories</option>
-                  {categories.map((cat: any) => (
-                    <option
-                      key={cat.id}
-                      value={cat.name}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`px-2 py-2 border border-border rounded text-text-muted hover:text-text focus:outline-none focus:ring-2 focus:ring-primary ${
+                    showFilters
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : ""
+                  }`}>
+                  <Filter className="w-4 h-4" />
+                </button>
+
+                {showFilters && (
+                  <div className="absolute top-full left-0 right-0 z-10 bg-foreground border border-border rounded shadow-lg p-2 space-y-2">
+                    <div>
+                      <label className="block text-xs font-medium text-text-muted mb-1">
+                        Action
+                      </label>
+                      <select
+                        value={selectedAction}
+                        onChange={(e) => setSelectedAction(e.target.value)}
+                        className="w-full px-2 py-1 text-xs bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="all">All Actions</option>
+                        <option value="DISABLE">Disable</option>
+                        <option value="REQUIRE">Require</option>
+                        <option value="SET_VALUE">Set Value</option>
+                        <option value="SHOW_MESSAGE">Show Message</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-muted mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-2 py-1 text-xs bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="all">All Categories</option>
+                        {categories.map((cat: any) => (
+                          <option
+                            key={cat.id}
+                            value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-muted mb-1">
+                        Product Class
+                      </label>
+                      <select
+                        value={selectedProductClass}
+                        onChange={(e) =>
+                          setSelectedProductClass(e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-xs bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="all">All Product Classes</option>
+                        {(productClasses || []).map((pc: any) => (
+                          <option
+                            key={pc.id}
+                            value={pc.name}>
+                            {pc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -276,7 +318,7 @@ const Options = () => {
               {filteredRules.map((rule: any) => (
                 <div
                   key={rule.id}
-                  className={`p-4 cursor-pointer hover:bg-surface ${
+                  className={`p-2 cursor-pointer hover:bg-surface ${
                     selectedRule?.id === rule.id
                       ? "bg-surface border-l-2 border-l-primary"
                       : ""
@@ -285,54 +327,19 @@ const Options = () => {
                     setSelectedRule(rule);
                     setIsEditing(false);
                   }}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-text">{rule.name}</h3>
-                      {rule.description && (
-                        <p className="text-sm text-text-muted mt-1">
-                          {rule.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            rule.action === "REQUIRE"
-                              ? "bg-success/10 text-success border border-success/20"
-                              : rule.action === "DISABLE"
-                                ? "bg-error/10 text-error border border-error/20"
-                                : rule.action === "SET_VALUE"
-                                  ? "bg-info/10 text-info border border-info/20"
-                                  : "bg-warning/10 text-warning border border-warning/20"
-                          }`}>
-                          {rule.action}
-                        </span>
-                        <span className="text-xs text-text-muted">
-                          Priority: {rule.priority}
-                        </span>
-                        {rule.isActive ? (
-                          <Eye className="w-4 h-4 text-success" />
-                        ) : (
-                          <EyeOff className="w-4 h-4 text-text-muted" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditRule(rule);
-                        }}
-                        className="p-1 text-text-muted hover:text-text">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRule(rule.id);
-                        }}
-                        className="p-1 text-text-muted hover:text-error">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-text">
+                      {rule.name}
+                    </h3>
+                    {rule.description && (
+                      <p className="text-xs text-text-muted mt-1">
+                        {rule.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-text-muted">
+                        {rule.action}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -345,22 +352,22 @@ const Options = () => {
         <div className="flex-1 flex flex-col">
           {selectedRule ? (
             <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="p-4 space-y-4">
+              <div className="p-2 space-y-2">
                 {/* Basic Information */}
-                <div className="bg-foreground border border-border rounded p-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="bg-foreground border border-border rounded p-2">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-text-muted">
                       Basic Information
                     </h3>
                     {!isEditing && (
                       <button
                         onClick={() => setIsEditing(true)}
-                        className="p-1 text-text-muted hover:text-text">
+                        className="p-2 text-text-muted hover:text-text">
                         <Edit className="w-4 h-4" />
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-sm font-medium text-text-muted mb-1">
                         Rule Name
@@ -375,10 +382,10 @@ const Options = () => {
                               name: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       ) : (
-                        <div className="px-3 py-2 bg-surface border border-border rounded text-text">
+                        <div className="px-2 py-2 bg-surface border border-border rounded text-text">
                           {selectedRule.name}
                         </div>
                       )}
@@ -396,14 +403,14 @@ const Options = () => {
                               action: e.target.value as any,
                             })
                           }
-                          className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                          className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
                           <option value="DISABLE">Disable Options</option>
                           <option value="REQUIRE">Require Options</option>
                           <option value="SET_VALUE">Set Value</option>
                           <option value="SHOW_MESSAGE">Show Message</option>
                         </select>
                       ) : (
-                        <div className="px-3 py-2 bg-surface border border-border rounded">
+                        <div className="px-2 py-2 bg-surface border border-border rounded">
                           <span
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               selectedRule.action === "REQUIRE"
@@ -420,7 +427,7 @@ const Options = () => {
                       )}
                     </div>
                   </div>
-                  <div className="mt-4">
+                  <div className="mt-2">
                     <label className="block text-sm font-medium text-text-muted mb-1">
                       Description
                     </label>
@@ -434,15 +441,15 @@ const Options = () => {
                           })
                         }
                         rows={2}
-                        className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     ) : (
-                      <div className="px-3 py-2 bg-surface border border-border rounded text-text min-h-[60px]">
+                      <div className="px-2 py-2 bg-surface border border-border rounded text-text min-h-[60px]">
                         {selectedRule.description || "No description provided"}
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="grid grid-cols-3 gap-2 mt-2">
                     <div>
                       <label className="block text-sm font-medium text-text-muted mb-1">
                         Priority
@@ -457,10 +464,10 @@ const Options = () => {
                               priority: parseInt(e.target.value) || 100,
                             })
                           }
-                          className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       ) : (
-                        <div className="px-3 py-2 bg-surface border border-border rounded text-text">
+                        <div className="px-2 py-2 bg-surface border border-border rounded text-text">
                           {selectedRule.priority}
                         </div>
                       )}
@@ -483,33 +490,24 @@ const Options = () => {
                           <div className="flex items-center">
                             {selectedRule.isActive ? (
                               <CheckCircle className="w-5 h-5 text-success mr-2" />
-                            ) : (
-                              <XCircle className="w-5 h-5 text-error mr-2" />
-                            )}
+                            ) : null}
                           </div>
                         )}
-                        <span className="ml-2 text-sm text-text-muted">
-                          {isEditing
-                            ? "Active"
-                            : selectedRule.isActive
-                              ? "Active"
-                              : "Inactive"}
-                        </span>
                       </label>
                     </div>
                   </div>
                 </div>
 
                 {/* Conditions */}
-                <div className="bg-foreground border border-border rounded p-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="bg-foreground border border-border rounded p-2">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-text-muted">
                       Conditions (Triggers)
                     </h3>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="border border-border rounded p-3">
+                  <div className="space-y-2">
+                    <div className="border border-border rounded p-2">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-text-muted">
                           Condition
@@ -517,7 +515,7 @@ const Options = () => {
                       </div>
 
                       {isEditing ? (
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2">
                           <div>
                             <label className="block text-sm font-medium text-text-muted mb-1">
                               Type
@@ -529,7 +527,7 @@ const Options = () => {
                                   type: e.target.value as any,
                                 })
                               }
-                              className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                              className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
                               <option value="SIMPLE">Simple</option>
                               <option value="COMPLEX">Complex</option>
                             </select>
@@ -546,7 +544,7 @@ const Options = () => {
                                   conditionType: e.target.value as any,
                                 })
                               }
-                              className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                              className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
                               <option value="OPTION">Option Selection</option>
                               <option value="EXPRESSION">Expression</option>
                             </select>
@@ -564,7 +562,7 @@ const Options = () => {
                                     operator: e.target.value as any,
                                   })
                                 }
-                                className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                                className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="SELECTED">Is Selected</option>
                                 <option value="NOT_SELECTED">
                                   Is Not Selected
@@ -583,7 +581,7 @@ const Options = () => {
                                     operator: e.target.value as any,
                                   })
                                 }
-                                className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                                className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="=">=</option>
                                 <option value="!=">!=</option>
                                 <option value="<">&lt;</option>
@@ -627,13 +625,13 @@ const Options = () => {
                 </div>
 
                 {/* Trigger Options */}
-                <div className="bg-foreground border border-border rounded p-4">
-                  <h3 className="font-medium text-text-muted mb-3">
+                <div className="bg-foreground border border-border rounded p-2">
+                  <h3 className="font-medium text-text-muted mb-2">
                     Trigger Options
                   </h3>
 
                   {isEditing ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                       {/* Available Options */}
                       <div>
                         <h4 className="font-medium text-text-muted mb-2">
@@ -644,7 +642,7 @@ const Options = () => {
                             <div
                               key={category.id}
                               className="border border-border rounded">
-                              <div className="px-3 py-2 bg-surface border-b border-border">
+                              <div className="px-2 py-2 bg-surface border-b border-border">
                                 <h5 className="font-medium text-sm text-text-muted">
                                   {category.name}
                                 </h5>
@@ -726,7 +724,7 @@ const Options = () => {
                             </div>
                           ))}
                           {selectedRule.triggerOptions.length === 0 && (
-                            <div className="text-center py-6 text-text-muted">
+                            <div className="text-center py-2 text-text-muted">
                               <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                               <p className="text-sm">
                                 No trigger options selected
@@ -741,7 +739,7 @@ const Options = () => {
                       {selectedRule.triggerOptions.map((option: any) => (
                         <div
                           key={option.id}
-                          className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded">
+                          className="flex items-center justify-between p-2 bg-primary/10 border border-primary/20 rounded">
                           <div>
                             <div className="font-medium text-sm text-text">
                               {option.name}
@@ -754,7 +752,7 @@ const Options = () => {
                         </div>
                       ))}
                       {selectedRule.triggerOptions.length === 0 && (
-                        <div className="text-center py-6 text-text-muted">
+                        <div className="text-center py-2 text-text-muted">
                           <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                           <p className="text-sm">No trigger options selected</p>
                         </div>
@@ -764,13 +762,13 @@ const Options = () => {
                 </div>
 
                 {/* Target Options */}
-                <div className="bg-foreground border border-border rounded p-4">
-                  <h3 className="font-medium text-text-muted mb-3">
+                <div className="bg-foreground border border-border rounded p-2">
+                  <h3 className="font-medium text-text-muted mb-2">
                     Target Options
                   </h3>
 
                   {isEditing ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                       {/* Available Options */}
                       <div>
                         <h4 className="font-medium text-text-muted mb-2">
@@ -781,7 +779,7 @@ const Options = () => {
                             <div
                               key={category.id}
                               className="border border-border rounded">
-                              <div className="px-3 py-2 bg-surface border-b border-border">
+                              <div className="px-2 py-2 bg-surface border-b border-border">
                                 <h5 className="font-medium text-sm text-text-muted">
                                   {category.name}
                                 </h5>
@@ -843,7 +841,7 @@ const Options = () => {
                             );
                           })}
                           {uniqueTargetOptions.length === 0 && (
-                            <div className="text-center py-6 text-text-muted">
+                            <div className="text-center py-2 text-text-muted">
                               <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                               <p className="text-sm">
                                 No target options selected
@@ -859,7 +857,7 @@ const Options = () => {
                         return (
                           <div
                             key={option.id}
-                            className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded">
+                            className="flex items-center justify-between p-2 bg-primary/10 border border-primary/20 rounded">
                             <div>
                               <div className="font-medium text-sm text-text">
                                 {option.name}
@@ -873,7 +871,7 @@ const Options = () => {
                         );
                       })}
                       {uniqueTargetOptions.length === 0 && (
-                        <div className="text-center py-6 text-text-muted">
+                        <div className="text-center py-2 text-text-muted">
                           <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                           <p className="text-sm">No target options selected</p>
                         </div>
@@ -885,8 +883,8 @@ const Options = () => {
                 {/* Action-specific fields */}
                 {(selectedRule.action === "SET_VALUE" ||
                   selectedRule.action === "SHOW_MESSAGE") && (
-                  <div className="bg-foreground border border-border rounded p-4">
-                    <h3 className="font-medium text-text-muted mb-3">
+                  <div className="bg-foreground border border-border rounded p-2">
+                    <h3 className="font-medium text-text-muted mb-2">
                       {selectedRule.action === "SET_VALUE"
                         ? "Value Settings"
                         : "Message Settings"}
@@ -908,10 +906,10 @@ const Options = () => {
                               })
                             }
                             placeholder="Enter the value to set"
-                            className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         ) : (
-                          <div className="px-3 py-2 bg-surface border border-border rounded text-text">
+                          <div className="px-2 py-2 bg-surface border border-border rounded text-text">
                             {selectedRule.targetValue || "No value set"}
                           </div>
                         )}
@@ -932,10 +930,10 @@ const Options = () => {
                             }
                             rows={3}
                             placeholder="Enter the message to display"
-                            className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-2 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         ) : (
-                          <div className="px-3 py-2 bg-surface border border-border rounded text-text min-h-[80px]">
+                          <div className="px-2 py-2 bg-surface border border-border rounded text-text min-h-[80px]">
                             {selectedRule.message || "No message set"}
                           </div>
                         )}
@@ -946,15 +944,15 @@ const Options = () => {
 
                 {/* Action Buttons */}
                 {isEditing && (
-                  <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
                     <button
                       onClick={handleCancelEdit}
-                      className="px-4 py-2 border border-border rounded text-sm font-medium text-text-muted hover:bg-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                      className="px-2 py-2 border border-border rounded text-sm font-medium text-text-muted hover:bg-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveRule}
-                      className="px-4 py-2 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                      className="px-2 py-2 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                       Save Rule
                     </button>
                   </div>
@@ -973,7 +971,7 @@ const Options = () => {
                 </p>
                 <button
                   onClick={handleCreateRule}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-primary hover:bg-secondary">
+                  className="inline-flex items-center px-2 py-2 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-primary hover:bg-secondary">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Rule
                 </button>
