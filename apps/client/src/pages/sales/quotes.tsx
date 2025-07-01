@@ -13,7 +13,7 @@ import {
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/common/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useCreateQuote } from "@/hooks/sales/use-create-quote";
+import { useCreateEntity } from "@/hooks/_base/use-create-entity";
 import AdvancedDropdown from "@/components/common/advanced-dropdown";
 
 const Quotes = () => {
@@ -34,7 +34,8 @@ const Quotes = () => {
   } = useGetEntities("/quotes", {
     include,
   });
-  const { createQuote, loading: createLoading } = useCreateQuote();
+  const { createEntity: createQuote, loading: createLoading } =
+    useCreateEntity("/quotes");
 
   const columns: TableColumn<any>[] = [
     {
@@ -177,7 +178,7 @@ const CreateQuoteModal = ({
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  createQuote: (params: Record<string, string>) => Promise<any>;
+  createQuote: (params: any) => Promise<any>;
   loading: boolean;
 }) => {
   const [customerValue, setCustomerValue] = useState<
@@ -266,7 +267,7 @@ const CreateQuoteModal = ({
   }, [customerValue, journeyValue, loading]);
 
   const handleCreateQuote = async () => {
-    let params: Record<string, string> = {};
+    let params: any = {};
     if (
       customerValue &&
       typeof customerValue === "object" &&

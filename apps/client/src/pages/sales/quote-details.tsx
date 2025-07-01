@@ -25,11 +25,11 @@ import { formatCurrency, formatDate } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useCreateQuoteItem } from "@/hooks/sales/use-create-quote-item";
+import { useCreateEntity } from "@/hooks/_base/use-create-entity";
+import { useDeleteEntity } from "@/hooks/_base/use-delete-entity";
 import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
-import { useDeleteQuoteItem } from "@/hooks/sales/use-delete-quote-item";
 
 const QuoteDetails = () => {
   const navigate = useNavigate();
@@ -691,8 +691,8 @@ const AddItemModal = ({
   const {
     loading: addItemLoading,
     error: addItemError,
-    createQuoteItem,
-  } = useCreateQuoteItem();
+    createEntity: createQuoteItem,
+  } = useCreateEntity(`/quotes/${quoteId}/items`);
 
   const handleAddItem = async (item: any) => {
     setSelectedItem(item);
@@ -702,7 +702,7 @@ const AddItemModal = ({
   const handleConfirmAddItem = async () => {
     if (!quoteId || !selectedItem) return;
 
-    const result = await createQuoteItem(quoteId, {
+    const result = await createQuoteItem({
       itemId: selectedItem.id,
       quantity: selectedQuantity[selectedItem.id] || 1,
     });
@@ -1413,13 +1413,13 @@ const DeleteItemModal = ({
   const {
     loading: deleteItemLoading,
     error: deleteItemError,
-    deleteQuoteItem,
-  } = useDeleteQuoteItem();
+    deleteEntity: deleteQuoteItem,
+  } = useDeleteEntity(`/quotes/${quoteId}/items`);
 
   const handleDelete = async () => {
     if (!quoteId || !item) return;
 
-    const result = await deleteQuoteItem(item.id);
+    const result = await deleteQuoteItem(`${item.id}`);
     if (result) {
       onSuccess();
       onClose();

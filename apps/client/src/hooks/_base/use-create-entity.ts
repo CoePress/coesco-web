@@ -7,13 +7,13 @@ export const useCreateEntity = <T = any>(endpoint: string) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
-  const createEntity = async (params?: T) => {
+  const createEntity = async (body?: T) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const response = await instance.post(endpoint, params);
+      const response = await instance.post(endpoint, body);
       setSuccess(true);
       return response.data;
     } catch (error) {
