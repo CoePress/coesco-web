@@ -4,6 +4,7 @@ import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader } from "@/components";
 import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useGetOptionRules } from "@/hooks/config";
 import { useNavigate } from "react-router-dom";
 
 const partCategories = ["Hydraulics", "Mechanical", "Electronics", "Safety"];
@@ -534,8 +535,69 @@ const Catalog = () => {
 
   const { entities: parts } = useGetEntities("/items");
   const { entities: services } = useGetEntities("/items");
+  const { optionRules } = useGetOptionRules();
 
   const navigate = useNavigate();
+
+  // Function to check if an option is disabled by rules for the current product class
+  const getDisabledOptionsForProductClass = (
+    productClassId: string
+  ): string[] => {
+    if (!optionRules || !productClassId || !productClassOptions) return [];
+
+    const disabledOptions = new Set<string>();
+
+    // Get all available options for the current product class
+    const availableOptions = new Set<string>();
+    productClassOptions.forEach((category: any) => {
+      category.options?.forEach((option: any) => {
+        availableOptions.add(option.id);
+      });
+    });
+
+    optionRules.forEach((rule) => {
+      if (rule.action === "DISABLE") {
+        // Check if any of the trigger options are available for this product class
+        const hasTriggerOption = rule.triggerOptions.some(
+          (triggerOption: any) => {
+            return availableOptions.has(triggerOption.id);
+          }
+        );
+
+        // Check if any of the target options are available for this product class
+        const hasTargetOption = rule.targetOptions.some((targetOption: any) => {
+          return availableOptions.has(targetOption.id);
+        });
+
+        // Only apply the rule if both trigger and target options are available
+        if (hasTriggerOption && hasTargetOption) {
+          rule.targetOptions.forEach((targetOption: any) => {
+            if (availableOptions.has(targetOption.id)) {
+              disabledOptions.add(targetOption.id);
+            }
+          });
+        }
+      }
+    });
+
+    return Array.from(disabledOptions);
+  };
+
+  // Function to check if a category filter is valid for the current product class
+  const getValidCategoryFiltersForProductClass = (productClassId: string) => {
+    if (!productClassId) return {};
+
+    const disabledOptions = getDisabledOptionsForProductClass(productClassId);
+    const validFilters: { [key: string]: string } = {};
+
+    Object.entries(categoryFilters).forEach(([categoryId, optionId]) => {
+      if (!disabledOptions.includes(optionId)) {
+        validFilters[categoryId] = optionId;
+      }
+    });
+
+    return validFilters;
+  };
 
   const getOptionsForLevel = (
     level: number
@@ -560,6 +622,11 @@ const Catalog = () => {
 
     const newSelections = [...selections.slice(0, level), value];
     setSelections(newSelections);
+
+    // If we're changing the product class, clear category filters
+    if (level <= 1) {
+      setCategoryFilters({});
+    }
   };
 
   const handleCategoryFilterChange = (categoryId: string, optionId: string) => {
@@ -567,6 +634,15 @@ const Catalog = () => {
       const newFilters = { ...categoryFilters };
       delete newFilters[categoryId];
       setCategoryFilters(newFilters);
+      return;
+    }
+
+    // Check if the selected option is disabled for the current product class
+    const disabledOptions = getDisabledOptionsForProductClass(
+      deepestSelectedClassId
+    );
+    if (disabledOptions.includes(optionId)) {
+      // Don't allow selecting disabled options
       return;
     }
 
@@ -928,34 +1004,46 @@ const Catalog = () => {
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-medium mb-2">Option Filters</h3>
 
-              {productClassOptions?.map((category: any) => (
-                <div
-                  key={category.id}
-                  className="mb-2">
-                  <label className="block text-sm mb-1">
-                    {category.name} {category.isRequired && "*"}
-                  </label>
-                  <select
-                    value={categoryFilters[category.id] || ""}
-                    onChange={(e) =>
-                      handleCategoryFilterChange(category.id, e.target.value)
-                    }
-                    className="rounded border-border bg-foreground w-full">
-                    <option value="">Any</option>
-                    {category.options
-                      ?.sort(
-                        (a: any, b: any) => a.displayOrder - b.displayOrder
-                      )
-                      .map((option: any) => (
-                        <option
-                          key={option.id}
-                          value={option.id}>
-                          {option.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              ))}
+              {productClassOptions?.map((category: any) => {
+                const disabledOptions = getDisabledOptionsForProductClass(
+                  deepestSelectedClassId
+                );
+
+                return (
+                  <div
+                    key={category.id}
+                    className="mb-2">
+                    <label className="block text-sm mb-1">
+                      {category.name} {category.isRequired && "*"}
+                    </label>
+                    <select
+                      value={categoryFilters[category.id] || ""}
+                      onChange={(e) =>
+                        handleCategoryFilterChange(category.id, e.target.value)
+                      }
+                      className="rounded border-border bg-foreground w-full">
+                      <option value="">Any</option>
+                      {category.options
+                        ?.sort(
+                          (a: any, b: any) => a.displayOrder - b.displayOrder
+                        )
+                        .map((option: any) => {
+                          const isDisabled = disabledOptions.includes(
+                            option.id
+                          );
+                          return (
+                            <option
+                              key={option.id}
+                              value={option.id}
+                              disabled={isDisabled}>
+                              {option.name} {isDisabled && "(Disabled)"}
+                            </option>
+                          );
+                        })}
+                    </select>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>
