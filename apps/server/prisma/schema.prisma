@@ -44,7 +44,6 @@ model Company {
   taxId         String?
   logoUrl       String?
   notes         String?
-  tags          String[] @default([])
   status        CompanyStatus @default(ACTIVE)
   createdById   String?
   createdAt     DateTime      @default(now())

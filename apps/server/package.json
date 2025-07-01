@@ -4,7 +4,6 @@
   "main": "server.js",
   "scripts": {
     "db:seed": "ts-node -r tsconfig-paths/register src/utils/seed.ts",
-    "db:seed-quote": "ts-node -r tsconfig-paths/register src/utils/quote-seed.ts",
     "db:nuke": "rd /s /q prisma\\migrations 2>nul & npx prisma db push --force-reset --schema=./prisma/schema.prisma & npx prisma generate",
     "db:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
