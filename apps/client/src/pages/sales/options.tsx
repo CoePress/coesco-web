@@ -17,14 +17,6 @@ import { PageHeader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useGetOptionRules } from "@/hooks/config";
 
-interface OptionCategory {
-  id: string;
-  name: string;
-  description?: string;
-  allowMultiple: boolean;
-  isActive: boolean;
-}
-
 interface RuleCondition {
   id: string;
   type: "OPTION" | "EXPRESSION";
@@ -57,11 +49,11 @@ const Options = () => {
 
   // API calls
   const { entities: optionCategories, loading: categoriesLoading } =
-    useGetEntities("/config/categories");
+    useGetEntities("/categories");
   const { entities: options, loading: optionsLoading } =
-    useGetEntities("/config/options");
+    useGetEntities("/options");
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/config/classes");
+    useGetEntities("/classes");
   const { optionRules, loading: rulesLoading } = useGetOptionRules();
 
   // Transform API data to match component expectations
