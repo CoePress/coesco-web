@@ -11,7 +11,10 @@ export class ConfigService {
       },
     });
 
-    return productClasses;
+    // Deduplicate by id
+    return productClasses.filter(
+      (pc, idx, arr) => arr.findIndex((p) => p.id === pc.id) === idx
+    );
   }
 
   async getOptionCategoriesByProductClass(productClassId: string) {
@@ -28,11 +31,16 @@ export class ConfigService {
         },
       });
 
-    return productClassCategories.map((pcc) => ({
+    const result = productClassCategories.map((pcc) => ({
       ...pcc.optionCategory,
       displayOrder: pcc.displayOrder,
       isRequired: pcc.isRequired,
     }));
+
+    // Deduplicate by id
+    return result.filter(
+      (cat, idx, arr) => arr.findIndex((c) => c.id === cat.id) === idx
+    );
   }
 
   async getOptionsByOptionCategory(
@@ -57,7 +65,7 @@ export class ConfigService {
 
     // If productClassId provided, only return options available for that product class
     if (productClassId) {
-      return optionHeaders
+      const result = optionHeaders
         .filter((oh) => oh.optionDetails.length > 0)
         .map((oh) => ({
           ...oh,
@@ -67,9 +75,17 @@ export class ConfigService {
           optionDetails: undefined, // Remove raw details from response
         }))
         .sort((a, b) => a.displayOrder - b.displayOrder);
+
+      // Deduplicate by id
+      return result.filter(
+        (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+      );
     }
 
-    return optionHeaders;
+    // Deduplicate by id
+    return optionHeaders.filter(
+      (oh, idx, arr) => arr.findIndex((o) => o.id === oh.id) === idx
+    );
   }
 
   async getOptionsByProductClass(productClassId: string) {
@@ -90,7 +106,7 @@ export class ConfigService {
       },
     });
 
-    return optionDetails.map((od) => ({
+    const result = optionDetails.map((od) => ({
       id: od.optionHeader.id,
       code: od.optionHeader.code,
       name: od.optionHeader.name,
@@ -102,6 +118,11 @@ export class ConfigService {
       isDefault: od.isDefault,
       isActive: od.isActive,
     }));
+
+    // Deduplicate by id
+    return result.filter(
+      (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+    );
   }
 
   async getOptionRules() {
@@ -126,7 +147,7 @@ export class ConfigService {
       },
     });
 
-    return optionRules.map((rule) => ({
+    const result = optionRules.map((rule) => ({
       id: rule.id,
       name: rule.name,
       description: rule.description,
@@ -146,6 +167,21 @@ export class ConfigService {
         description: targetOption.option.description,
       })),
     }));
+
+    // Deduplicate rules by id and deduplicate options within each rule
+    return result
+      .map((rule) => ({
+        ...rule,
+        triggerOptions: rule.triggerOptions.filter(
+          (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+        ),
+        targetOptions: rule.targetOptions.filter(
+          (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+        ),
+      }))
+      .filter(
+        (rule, idx, arr) => arr.findIndex((r) => r.id === rule.id) === idx
+      );
   }
 
   async getConfigurations(productClassId?: string) {
@@ -168,7 +204,7 @@ export class ConfigService {
       },
     });
 
-    return configurations.map((config) => ({
+    const result = configurations.map((config) => ({
       id: config.id,
       name: config.name,
       description: config.description,
@@ -185,6 +221,18 @@ export class ConfigService {
         categoryName: so.option.category.name,
       })),
     }));
+
+    // Deduplicate configurations by id and deduplicate options within each config
+    return result
+      .map((config) => ({
+        ...config,
+        selectedOptions: config.selectedOptions.filter(
+          (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+        ),
+      }))
+      .filter(
+        (config, idx, arr) => arr.findIndex((c) => c.id === config.id) === idx
+      );
   }
 
   async getAvailableOptionsGroupedByCategory(productClassId: string) {
@@ -204,7 +252,18 @@ export class ConfigService {
       })
     );
 
-    return result;
+    // Deduplicate categories and options within each category
+    return result
+      .map((category) => ({
+        ...category,
+        options: category.options.filter(
+          (opt, idx, arr) => arr.findIndex((o) => o.id === opt.id) === idx
+        ),
+      }))
+      .filter(
+        (category, idx, arr) =>
+          arr.findIndex((c) => c.id === category.id) === idx
+      );
   }
 
   async validateConfiguration(selectedOptionIds: string[]) {

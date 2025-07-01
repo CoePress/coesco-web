@@ -16,7 +16,11 @@ const useGetProductClasses = () => {
 
       try {
         const { data } = await instance.get(`/config/classes`);
-        setProductClasses(data);
+        if (data.success) {
+          setProductClasses(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch product classes");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -61,7 +65,11 @@ const useGetOptionCategoriesByProductClass = (productClassId: string) => {
         const { data } = await instance.get(
           `/config/classes/${productClassId}/categories`
         );
-        setCategories(data);
+        if (data.success) {
+          setCategories(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch categories");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -106,7 +114,11 @@ const useGetOptionsByOptionCategory = (optionCategoryId: string) => {
         const { data } = await instance.get(
           `/config/categories/${optionCategoryId}/options`
         );
-        setOptions(data);
+        if (data.success) {
+          setOptions(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch options");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -157,7 +169,11 @@ const useGetOptionsByProductClass = (
             params: { grouped },
           }
         );
-        setOptions(data);
+        if (data.success) {
+          setOptions(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch options");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -195,7 +211,11 @@ const useGetConfigurations = () => {
 
       try {
         const { data } = await instance.get(`/config/configurations`);
-        setConfigurations(data);
+        if (data.success) {
+          setConfigurations(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch configurations");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -233,7 +253,11 @@ const useGetOptionRules = () => {
 
       try {
         const { data } = await instance.get(`/config/rules`);
-        setOptionRules(data);
+        if (data.success) {
+          setOptionRules(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch option rules");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
@@ -278,7 +302,11 @@ const useGetAvailableOptionsGroupedByCategory = (productClassId: string) => {
         const { data } = await instance.get(
           `/config/classes/${productClassId}/options`
         );
-        setAvailableOptions(data);
+        if (data.success) {
+          setAvailableOptions(data.data || []);
+        } else {
+          setError(data.error || "Failed to fetch available options");
+        }
       } catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);

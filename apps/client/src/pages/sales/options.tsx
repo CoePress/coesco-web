@@ -19,7 +19,8 @@ import { useGetOptionRules } from "@/hooks/config";
 
 interface RuleCondition {
   id: string;
-  type: "OPTION" | "EXPRESSION";
+  type: "SIMPLE" | "COMPLEX";
+  conditionType: "OPTION" | "EXPRESSION";
   operator?: "SELECTED" | "NOT_SELECTED" | "=" | "!=" | "<" | ">" | "<=" | ">=";
   optionId?: string;
   expression?: string;
@@ -33,8 +34,9 @@ interface OptionRule {
   action: "DISABLE" | "REQUIRE" | "SET_VALUE" | "SHOW_MESSAGE";
   priority: number;
   isActive: boolean;
-  conditions: RuleCondition[];
-  targetOptions: string[];
+  condition: RuleCondition;
+  triggerOptions: any[]; // From API - array of objects with id, code, name, description
+  targetOptions: any[]; // From API - array of objects with id, code, name, description
   targetValue?: string;
   message?: string;
   productClassIds?: string[];
@@ -56,10 +58,19 @@ const Options = () => {
     useGetEntities("/classes");
   const { optionRules, loading: rulesLoading } = useGetOptionRules();
 
-  // Transform API data to match component expectations
-  const categories = optionCategories || [];
-  const allOptions = options || [];
-  const rules = optionRules || [];
+  // Transform API data to match component expectations and deduplicate
+  const categories = (optionCategories || []).filter(
+    (cat: any, index: number, self: any[]) =>
+      index === self.findIndex((c: any) => c.id === cat.id)
+  );
+  const allOptions = (options || []).filter(
+    (opt: any, index: number, self: any[]) =>
+      index === self.findIndex((o: any) => o.id === opt.id)
+  );
+  const rules = (optionRules || []).filter(
+    (rule: any, index: number, self: any[]) =>
+      index === self.findIndex((r: any) => r.id === rule.id)
+  );
 
   const filteredRules = rules.filter((rule) => {
     const matchesSearch =
@@ -78,7 +89,13 @@ const Options = () => {
       action: "DISABLE",
       priority: 100,
       isActive: true,
-      conditions: [],
+      condition: {
+        id: Date.now().toString(),
+        type: "SIMPLE",
+        conditionType: "OPTION",
+        operator: "SELECTED",
+      },
+      triggerOptions: [],
       targetOptions: [],
     };
     setSelectedRule(newRule);
@@ -86,7 +103,21 @@ const Options = () => {
   };
 
   const handleEditRule = (rule: OptionRule) => {
-    setSelectedRule(rule);
+    setSelectedRule({
+      ...rule,
+      condition: rule.condition || {
+        id: Date.now().toString(),
+        type: "SIMPLE",
+        conditionType: "OPTION",
+        operator: "SELECTED",
+      },
+      triggerOptions: Array.isArray(rule.triggerOptions)
+        ? rule.triggerOptions
+        : [],
+      targetOptions: Array.isArray(rule.targetOptions)
+        ? rule.targetOptions
+        : [],
+    });
     setIsEditing(true);
   };
 
@@ -102,12 +133,15 @@ const Options = () => {
   const handleSaveRule = () => {
     if (!selectedRule) return;
 
-    if (selectedRule.conditions.length === 0) {
+    if (
+      !selectedRule.condition ||
+      Object.keys(selectedRule.condition).length === 0
+    ) {
       alert("At least one condition is required");
       return;
     }
 
-    if (selectedRule.targetOptions.length === 0) {
+    if (uniqueTargetOptions.length === 0) {
       alert("At least one target option is required");
       return;
     }
@@ -122,61 +156,39 @@ const Options = () => {
     setSelectedRule(null);
   };
 
-  const addCondition = () => {
-    if (!selectedRule) return;
-
-    const newCondition: RuleCondition = {
-      id: Date.now().toString(),
-      type: "OPTION",
-      operator: "SELECTED",
-    };
-
-    setSelectedRule({
-      ...selectedRule,
-      conditions: [...selectedRule.conditions, newCondition],
-    });
-  };
-
-  const removeCondition = (conditionId: string) => {
+  const updateCondition = (updates: Partial<RuleCondition>) => {
     if (!selectedRule) return;
 
     setSelectedRule({
       ...selectedRule,
-      conditions: selectedRule.conditions.filter((c) => c.id !== conditionId),
-    });
-  };
-
-  const updateCondition = (
-    conditionId: string,
-    updates: Partial<RuleCondition>
-  ) => {
-    if (!selectedRule) return;
-
-    setSelectedRule({
-      ...selectedRule,
-      conditions: selectedRule.conditions.map((c) =>
-        c.id === conditionId ? { ...c, ...updates } : c
-      ),
+      condition: { ...selectedRule.condition, ...updates },
     });
   };
 
   const addTargetOption = (optionId: string) => {
     if (!selectedRule) return;
 
-    if (!selectedRule.targetOptions.includes(optionId)) {
+    const option = allOptions.find((opt: any) => opt.id === optionId);
+    if (option && !uniqueTargetOptions.some((opt) => opt.id === optionId)) {
       setSelectedRule({
         ...selectedRule,
-        targetOptions: [...selectedRule.targetOptions, optionId],
+        targetOptions: [...uniqueTargetOptions, option],
       });
     }
   };
+
+  // Ensure targetOptions doesn't have duplicates
+  const uniqueTargetOptions =
+    selectedRule?.targetOptions?.filter(
+      (opt, index, self) => self.findIndex((o) => o.id === opt.id) === index
+    ) || [];
 
   const removeTargetOption = (optionId: string) => {
     if (!selectedRule) return;
 
     setSelectedRule({
       ...selectedRule,
-      targetOptions: selectedRule.targetOptions.filter((id) => id !== optionId),
+      targetOptions: uniqueTargetOptions.filter((opt) => opt.id !== optionId),
     });
   };
 
@@ -494,224 +506,261 @@ const Options = () => {
                     <h3 className="font-medium text-text-muted">
                       Conditions (Triggers)
                     </h3>
-                    {isEditing && (
-                      <button
-                        onClick={addCondition}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded text-primary bg-primary/10 hover:bg-primary/20">
-                        <PlusIcon className="w-4 h-4 mr-1" />
-                        Add Condition
-                      </button>
-                    )}
                   </div>
 
                   <div className="space-y-3">
-                    {selectedRule.conditions.map((condition, index) => (
-                      <div
-                        key={condition.id}
-                        className="border border-border rounded p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-text-muted">
-                            Condition {index + 1}
-                          </h4>
-                          {isEditing && (
-                            <button
-                              onClick={() => removeCondition(condition.id)}
-                              className="text-error hover:text-error/80">
-                              <Minus className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                    <div className="border border-border rounded p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-text-muted">
+                          Condition
+                        </h4>
+                      </div>
 
-                        {isEditing ? (
-                          <div className="grid grid-cols-3 gap-3">
+                      {isEditing ? (
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">
+                              Type
+                            </label>
+                            <select
+                              value={selectedRule.condition.type}
+                              onChange={(e) =>
+                                updateCondition({
+                                  type: e.target.value as any,
+                                })
+                              }
+                              className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                              <option value="SIMPLE">Simple</option>
+                              <option value="COMPLEX">Complex</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-1">
+                              Condition Type
+                            </label>
+                            <select
+                              value={selectedRule.condition.conditionType}
+                              onChange={(e) =>
+                                updateCondition({
+                                  conditionType: e.target.value as any,
+                                })
+                              }
+                              className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                              <option value="OPTION">Option Selection</option>
+                              <option value="EXPRESSION">Expression</option>
+                            </select>
+                          </div>
+
+                          {selectedRule.condition.conditionType === "OPTION" ? (
                             <div>
                               <label className="block text-sm font-medium text-text-muted mb-1">
-                                Type
+                                Operator
                               </label>
                               <select
-                                value={condition.type}
+                                value={selectedRule.condition.operator}
                                 onChange={(e) =>
-                                  updateCondition(condition.id, {
-                                    type: e.target.value as any,
+                                  updateCondition({
+                                    operator: e.target.value as any,
                                   })
                                 }
                                 className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                                <option value="OPTION">Option Selection</option>
-                                <option value="EXPRESSION">Expression</option>
+                                <option value="SELECTED">Is Selected</option>
+                                <option value="NOT_SELECTED">
+                                  Is Not Selected
+                                </option>
                               </select>
                             </div>
-
-                            {condition.type === "OPTION" ? (
-                              <>
-                                <div>
-                                  <label className="block text-sm font-medium text-text-muted mb-1">
-                                    Operator
-                                  </label>
-                                  <select
-                                    value={condition.operator}
-                                    onChange={(e) =>
-                                      updateCondition(condition.id, {
-                                        operator: e.target.value as any,
-                                      })
-                                    }
-                                    className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="SELECTED">
-                                      Is Selected
-                                    </option>
-                                    <option value="NOT_SELECTED">
-                                      Is Not Selected
-                                    </option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-text-muted mb-1">
-                                    Option
-                                  </label>
-                                  <select
-                                    value={condition.optionId || ""}
-                                    onChange={(e) =>
-                                      updateCondition(condition.id, {
-                                        optionId: e.target.value,
-                                      })
-                                    }
-                                    className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="">Select Option</option>
-                                    {allOptions.map((opt: any) => (
-                                      <option
-                                        key={opt.id}
-                                        value={opt.id}>
-                                        {opt.name} (
-                                        {getCategoryById(opt.categoryId)
-                                          ?.name || "Unknown"}
-                                        )
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div>
-                                  <label className="block text-sm font-medium text-text-muted mb-1">
-                                    Operator
-                                  </label>
-                                  <select
-                                    value={condition.operator}
-                                    onChange={(e) =>
-                                      updateCondition(condition.id, {
-                                        operator: e.target.value as any,
-                                      })
-                                    }
-                                    className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="=">=</option>
-                                    <option value="!=">!=</option>
-                                    <option value="<">&lt;</option>
-                                    <option value=">">&gt;</option>
-                                    <option value="<=">&lt;=</option>
-                                    <option value=">=">&gt;=</option>
-                                  </select>
-                                </div>
-                                <div className="col-span-2">
-                                  <label className="block text-sm font-medium text-text-muted mb-1">
-                                    Expression
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={condition.expression || ""}
-                                    onChange={(e) =>
-                                      updateCondition(condition.id, {
-                                        expression: e.target.value,
-                                      })
-                                    }
-                                    placeholder="e.g., spindle_power * 1.5"
-                                    className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                                  />
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-text-muted">
-                                Type:
-                              </span>
-                              <span className="text-sm text-text">
-                                {condition.type}
-                              </span>
+                          ) : (
+                            <div>
+                              <label className="block text-sm font-medium text-text-muted mb-1">
+                                Operator
+                              </label>
+                              <select
+                                value={selectedRule.condition.operator}
+                                onChange={(e) =>
+                                  updateCondition({
+                                    operator: e.target.value as any,
+                                  })
+                                }
+                                className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="=">=</option>
+                                <option value="!=">!=</option>
+                                <option value="<">&lt;</option>
+                                <option value=">">&gt;</option>
+                                <option value="<=">&lt;=</option>
+                                <option value=">=">&gt;=</option>
+                              </select>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-text-muted">
-                                Operator:
-                              </span>
-                              <span className="text-sm text-text">
-                                {condition.operator}
-                              </span>
-                            </div>
-                            {condition.type === "OPTION" &&
-                              condition.optionId && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-text-muted">
-                                    Option:
-                                  </span>
-                                  <span className="text-sm text-text">
-                                    {getOptionById(condition.optionId)?.name ||
-                                      "Unknown Option"}
-                                  </span>
-                                </div>
-                              )}
-                            {condition.type === "EXPRESSION" &&
-                              condition.expression && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-text-muted">
-                                    Expression:
-                                  </span>
-                                  <span className="text-sm text-text">
-                                    {condition.expression}
-                                  </span>
-                                </div>
-                              )}
-                            {condition.type === "EXPRESSION" &&
-                              condition.value && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-text-muted">
-                                    Value:
-                                  </span>
-                                  <span className="text-sm text-text">
-                                    {condition.value}
-                                  </span>
-                                </div>
-                              )}
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-text-muted">
+                              Type:
+                            </span>
+                            <span className="text-sm text-text">
+                              {selectedRule.condition.type}
+                            </span>
                           </div>
-                        )}
-
-                        {isEditing && condition.type === "EXPRESSION" && (
-                          <div className="mt-3">
-                            <label className="block text-sm font-medium text-text-muted mb-1">
-                              Value
-                            </label>
-                            <input
-                              type="text"
-                              value={condition.value || ""}
-                              onChange={(e) =>
-                                updateCondition(condition.id, {
-                                  value: e.target.value,
-                                })
-                              }
-                              placeholder="e.g., 1000"
-                              className="w-full px-3 py-2 bg-foreground border border-border rounded text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-text-muted">
+                              Condition Type:
+                            </span>
+                            <span className="text-sm text-text">
+                              {selectedRule.condition.conditionType}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                    {selectedRule.conditions.length === 0 && (
-                      <div className="text-center py-6 text-text-muted">
-                        <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-text-muted" />
-                        <p className="text-sm">No conditions defined</p>
-                      </div>
-                    )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-text-muted">
+                              Operator:
+                            </span>
+                            <span className="text-sm text-text">
+                              {selectedRule.condition.operator}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Trigger Options */}
+                <div className="bg-foreground border border-border rounded p-4">
+                  <h3 className="font-medium text-text-muted mb-3">
+                    Trigger Options
+                  </h3>
+
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Available Options */}
+                      <div>
+                        <h4 className="font-medium text-text-muted mb-2">
+                          Available Options
+                        </h4>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {categories.map((category: any) => (
+                            <div
+                              key={category.id}
+                              className="border border-border rounded">
+                              <div className="px-3 py-2 bg-surface border-b border-border">
+                                <h5 className="font-medium text-sm text-text-muted">
+                                  {category.name}
+                                </h5>
+                              </div>
+                              <div className="p-2 space-y-1">
+                                {allOptions
+                                  .filter(
+                                    (opt: any) => opt.categoryId === category.id
+                                  )
+                                  .map((option: any) => (
+                                    <button
+                                      key={option.id}
+                                      onClick={() => {
+                                        if (
+                                          !selectedRule.triggerOptions.some(
+                                            (t: any) => t.id === option.id
+                                          )
+                                        ) {
+                                          setSelectedRule({
+                                            ...selectedRule,
+                                            triggerOptions: [
+                                              ...selectedRule.triggerOptions,
+                                              option,
+                                            ],
+                                          });
+                                        }
+                                      }}
+                                      disabled={selectedRule.triggerOptions.some(
+                                        (t: any) => t.id === option.id
+                                      )}
+                                      className={`w-full text-left px-2 py-1 rounded text-sm ${
+                                        selectedRule.triggerOptions.some(
+                                          (t: any) => t.id === option.id
+                                        )
+                                          ? "bg-surface text-text-muted cursor-not-allowed"
+                                          : "hover:bg-primary/10 text-text-muted hover:text-text"
+                                      }`}>
+                                      {option.name}
+                                    </button>
+                                  ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Selected Triggers */}
+                      <div>
+                        <h4 className="font-medium text-text-muted mb-2">
+                          Selected Triggers
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedRule.triggerOptions.map((option: any) => (
+                            <div
+                              key={option.id}
+                              className="flex items-center justify-between p-2 bg-primary/10 border border-primary/20 rounded">
+                              <div>
+                                <div className="font-medium text-sm text-text">
+                                  {option.name}
+                                </div>
+                                <div className="text-xs text-text-muted">
+                                  {getCategoryById(option.categoryId)?.name ||
+                                    "Unknown"}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setSelectedRule({
+                                    ...selectedRule,
+                                    triggerOptions:
+                                      selectedRule.triggerOptions.filter(
+                                        (t: any) => t.id !== option.id
+                                      ),
+                                  });
+                                }}
+                                className="text-primary hover:text-primary/80">
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                          {selectedRule.triggerOptions.length === 0 && (
+                            <div className="text-center py-6 text-text-muted">
+                              <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
+                              <p className="text-sm">
+                                No trigger options selected
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedRule.triggerOptions.map((option: any) => (
+                        <div
+                          key={option.id}
+                          className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded">
+                          <div>
+                            <div className="font-medium text-sm text-text">
+                              {option.name}
+                            </div>
+                            <div className="text-xs text-text-muted">
+                              {getCategoryById(option.categoryId)?.name ||
+                                "Unknown"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {selectedRule.triggerOptions.length === 0 && (
+                        <div className="text-center py-6 text-text-muted">
+                          <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
+                          <p className="text-sm">No trigger options selected</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Target Options */}
@@ -746,12 +795,12 @@ const Options = () => {
                                     <button
                                       key={option.id}
                                       onClick={() => addTargetOption(option.id)}
-                                      disabled={selectedRule.targetOptions.includes(
-                                        option.id
+                                      disabled={uniqueTargetOptions.some(
+                                        (opt) => opt.id === option.id
                                       )}
                                       className={`w-full text-left px-2 py-1 rounded text-sm ${
-                                        selectedRule.targetOptions.includes(
-                                          option.id
+                                        uniqueTargetOptions.some(
+                                          (opt) => opt.id === option.id
                                         )
                                           ? "bg-surface text-text-muted cursor-not-allowed"
                                           : "hover:bg-primary/10 text-text-muted hover:text-text"
@@ -771,13 +820,10 @@ const Options = () => {
                           Selected Targets
                         </h4>
                         <div className="space-y-2">
-                          {selectedRule.targetOptions.map((optionId) => {
-                            const option = getOptionById(optionId);
-                            if (!option) return null;
-
+                          {uniqueTargetOptions.map((option) => {
                             return (
                               <div
-                                key={optionId}
+                                key={option.id}
                                 className="flex items-center justify-between p-2 bg-primary/10 border border-primary/20 rounded">
                                 <div>
                                   <div className="font-medium text-sm text-text">
@@ -789,14 +835,14 @@ const Options = () => {
                                   </div>
                                 </div>
                                 <button
-                                  onClick={() => removeTargetOption(optionId)}
+                                  onClick={() => removeTargetOption(option.id)}
                                   className="text-primary hover:text-primary/80">
                                   <XCircle className="w-4 h-4" />
                                 </button>
                               </div>
                             );
                           })}
-                          {selectedRule.targetOptions.length === 0 && (
+                          {uniqueTargetOptions.length === 0 && (
                             <div className="text-center py-6 text-text-muted">
                               <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                               <p className="text-sm">
@@ -809,13 +855,10 @@ const Options = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {selectedRule.targetOptions.map((optionId) => {
-                        const option = getOptionById(optionId);
-                        if (!option) return null;
-
+                      {uniqueTargetOptions.map((option) => {
                         return (
                           <div
-                            key={optionId}
+                            key={option.id}
                             className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded">
                             <div>
                               <div className="font-medium text-sm text-text">
@@ -829,7 +872,7 @@ const Options = () => {
                           </div>
                         );
                       })}
-                      {selectedRule.targetOptions.length === 0 && (
+                      {uniqueTargetOptions.length === 0 && (
                         <div className="text-center py-6 text-text-muted">
                           <Target className="w-6 h-6 mx-auto mb-2 text-text-muted" />
                           <p className="text-sm">No target options selected</p>
