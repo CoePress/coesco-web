@@ -5,7 +5,7 @@ import { IApiResponse, IQueryParams } from "@/utils/types";
 import { instance } from "@/utils";
 
 export const useGetEntities = <T = any>(
-  endpoint: string,
+  endpoint: string | null,
   {
     sort = "createdAt",
     order = "desc",
@@ -36,6 +36,12 @@ export const useGetEntities = <T = any>(
 
   useEffect(() => {
     const getEntities = async () => {
+      if (!endpoint) {
+        setLoading(false);
+        setEntities([]);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 

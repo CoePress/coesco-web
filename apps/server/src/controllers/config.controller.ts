@@ -9,7 +9,10 @@ export class ConfigController {
   ) {
     try {
       const result = await configService.getProductClasses();
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
