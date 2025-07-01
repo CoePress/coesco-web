@@ -30,12 +30,12 @@ const initialState: RFQFormData & { avgFPM?: string; maxFPM?: string; minFPM?: s
   lineApplication: "Press Feed",
   lineType: "Conventional",
   pullThrough: "No",
-  maxCoilWidth: "",
-  minCoilWidth: "",
+  coilWidthMax: "",
+  coilWidthMin: "",
   maxCoilOD: "",
   coilID: "",
-  maxCoilWeight: "",
-  maxCoilHandling: "",
+  coilWeightMax: "",
+  coilHandlingMax: "",
   slitEdge: false,
   millEdge: false,
   coilCarRequired: "No",
@@ -123,12 +123,12 @@ function mapBackendToFrontendRFQ(data: any): typeof initialState {
     lineApplication: data.line_application || '',
     lineType: data.type_of_line || '',
     pullThrough: data.pull_thru || '',
-    maxCoilWidth: data.max_coil_width !== undefined && data.max_coil_width !== null ? String(data.max_coil_width) : '',
-    minCoilWidth: data.min_coil_width !== undefined && data.min_coil_width !== null ? String(data.min_coil_width) : '',
+    coilWidthMax: data.coil_width_max !== undefined && data.coil_width_max !== null ? String(data.max_coil_width) : '',
+    coilWidthMin: data.coil_width_min !== undefined && data.coil_width_min !== null ? String(data.min_coil_width) : '',
     maxCoilOD: data.max_coil_od !== undefined && data.max_coil_od !== null ? String(data.max_coil_od) : '',
     coilID: data.coil_id !== undefined && data.coil_id !== null ? String(data.coil_id) : '',
-    maxCoilWeight: data.max_coil_weight !== undefined && data.max_coil_weight !== null ? String(data.max_coil_weight) : '',
-    maxCoilHandling: data.max_coil_handling_cap !== undefined && data.max_coil_handling_cap !== null ? String(data.max_coil_handling_cap) : '',
+    coilWeightMax: data.coil_weight_max !== undefined && data.coil_weight_max !== null ? String(data.max_coil_weight) : '',
+    coilHandlingMax: data.coil_handling_cap_max !== undefined && data.coil_handling_cap_max !== null ? String(data.max_coil_handling_cap) : '',
     slitEdge: false, // Not present in backend, default to false
     millEdge: false, // Not present in backend, default to false
     coilCarRequired: data.coil_car === true ? 'Yes' : data.coil_car === false ? 'No' : '',
@@ -254,12 +254,6 @@ const RFQ = () => {
     return () => window.removeEventListener('storage', handleStorage);
   }, [form.referenceNumber]);
 
-  useEffect(() => {
-    if (form.referenceNumber) {
-      getRFQ(form.referenceNumber);
-    }
-  }, [form.referenceNumber]);
-
   const fetchFPM = async (feed_length: string, spm: string, key: 'avgFPM' | 'maxFPM' | 'minFPM') => {
     const length = parseFloat(feed_length);
     const spmVal = parseFloat(spm);
@@ -329,44 +323,6 @@ const RFQ = () => {
     await getRFQ(form.referenceNumber);
   };
 
-  const handleBlur = async (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (form.referenceNumber) {
-      const updatedForm = { ...form, [name]: value };
-      const status = await updateRFQ(form.referenceNumber, updatedForm);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
-  };
-
-  const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    handleChange(e);
-    const { name, value } = e.target;
-    if (form.referenceNumber) {
-      const updatedForm = { ...form, [name]: value };
-      const status = await updateRFQ(form.referenceNumber, updatedForm);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
-  };
-
-  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleChange(e);
-    const { name, checked } = e.target;
-    if (form.referenceNumber) {
-      const updatedForm = { ...form, [name]: checked };
-      const status = await updateRFQ(form.referenceNumber, updatedForm);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto text-sm p-6">
       {saveStatus && <div className={`text-xs ${saveStatus === 'Saved' ? 'text-green-600' : 'text-error'}`}>{saveStatus}</div>}
@@ -385,7 +341,6 @@ const RFQ = () => {
               localStorage.setItem('currentReferenceNumber', e.target.value);
             }}
             error={errors.referenceNumber ? 'Required' : ''} 
-            onBlur={handleBlur}
           />
           <div className="flex items-end gap-2">
             <Button 
@@ -421,7 +376,6 @@ const RFQ = () => {
             value={form.date} 
             onChange={handleChange}
             error={errors.date ? 'Required' : ''}
-            onBlur={handleBlur}
           />
         </div>
 
@@ -431,85 +385,73 @@ const RFQ = () => {
             name="companyName" 
             value={form.companyName} 
             onChange={handleChange} 
-            error={errors.companyName ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.companyName ? 'Required' : ''}
           />
           <Input 
             label="State/Province" 
             name="state" 
             value={form.state} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Street Address" 
             name="streetAddress" 
             value={form.streetAddress} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="ZIP/Postal Code" 
             name="zip" 
             value={form.zip} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="City" 
             name="city" 
             value={form.city} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Country" 
             name="country" 
             value={form.country} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Contact Name" 
             name="contactName" 
             value={form.contactName} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Position" 
             name="position" 
             value={form.position} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Phone" 
             name="phone" 
             value={form.phone} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Email" 
             name="email" 
             value={form.email} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Dealer Name" 
             name="dealerName" 
             value={form.dealerName} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Dealer Salesman" 
             name="dealerSalesman" 
             value={form.dealerSalesman} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -518,21 +460,19 @@ const RFQ = () => {
             label="How many days/week is the company running?" 
             name="daysPerWeek" 
             value={form.daysPerWeek} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="How many shifts/day is the company running?" 
             name="shiftsPerDay" 
             value={form.shiftsPerDay} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Select
             label="Line Application" 
             name="lineApplication" 
             value={form.lineApplication} 
-            onChange={handleSelectChange} 
+            onChange={handleChange} 
             options={[
               { value: "pressFeed", label: "Press Feed" },
               { value: "cutToLength", label: "Cut To Length" },
@@ -544,7 +484,7 @@ const RFQ = () => {
             label="Type of Line"
             name="lineType"
             value={form.lineType}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "compact", label: "Compact" },
               { value: "compactCTL", label: "Compact CTL" },
@@ -570,7 +510,7 @@ const RFQ = () => {
             label="Pull Through"
             name="pullThrough"
             value={form.pullThrough}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "No", label: "No" },
               { value: "Yes", label: "Yes" },
@@ -585,51 +525,45 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Input 
             label="Max Coil Width (in)" 
-            name="maxCoilWidth" 
-            value={form.maxCoilWidth} 
+            name="coilWidthMax" 
+            value={form.coilWidthMax} 
             onChange={handleChange} 
-            error={errors.maxCoilWidth ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.coilWidthMax ? 'Required' : ''}
           />
           <Input 
             label="Min Coil Width (in)" 
-            name="minCoilWidth" 
-            value={form.minCoilWidth} 
+            name="coilWidthMin" 
+            value={form.coilWidthMin} 
             onChange={handleChange} 
-            error={errors.minCoilWidth ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.coilWidthMin ? 'Required' : ''}
           />
           <Input 
             label="Max Coil O.D. (in)" 
             name="maxCoilOD" 
             value={form.maxCoilOD} 
             onChange={handleChange} 
-            error={errors.maxCoilOD ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.maxCoilOD ? 'Required' : ''}
           />
           <Input 
             label="Coil I.D. (in)" 
             name="coilID" 
             value={form.coilID} 
             onChange={handleChange} 
-            error={errors.coilID ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.coilID ? 'Required' : ''}
           />
           <Input 
             label="Max Coil Weight (lbs)" 
-            name="maxCoilWeight" 
-            value={form.maxCoilWeight} 
+            name="coilWeightMax" 
+            value={form.coilWeightMax} 
             onChange={handleChange} 
-            error={errors.maxCoilWeight ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.coilWeightMax ? 'Required' : ''}
           />
           <Input 
             label="Max Coil Handling Capacity (lbs)" 
             type="number" 
-            name="maxCoilHandling" 
-            value={form.maxCoilHandling} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            name="coilHandlingMax" 
+            value={form.coilHandlingMax} 
+            onChange={handleChange}
           />
         </div>
 
@@ -639,14 +573,14 @@ const RFQ = () => {
               label="Slit Edge"
               name="slitEdge"
               checked={form.slitEdge}
-              onChange={handleCheckboxChange}
+              onChange={handleChange}
               error={errors.slitEdge ? 'At least one required' : ''}
             />
             <Checkbox
               label="Mill Edge"
               name="millEdge"
               checked={form.millEdge}
-              onChange={handleCheckboxChange}
+              onChange={handleChange}
             />
           </div>
         </div>
@@ -656,7 +590,7 @@ const RFQ = () => {
             label="Will a coil car be required?"
             name="coilCarRequired"
             value={form.coilCarRequired}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "No", label: "No" },
               { value: "Yes", label: "Yes" },
@@ -666,7 +600,7 @@ const RFQ = () => {
             label="Will you be running off the Backplate?"
             name="runOffBackplate"
             value={form.runOffBackplate}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "No", label: "No" },
               { value: "Yes", label: "Yes" },
@@ -676,7 +610,7 @@ const RFQ = () => {
             label="Are you running partial coils, i.e. will you require rewinding?"
             name="requireRewinding"
             value={form.requireRewinding}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "No", label: "No" },
               { value: "Yes", label: "Yes" },
@@ -693,40 +627,35 @@ const RFQ = () => {
             name="matSpec1.thickness" 
             value={form.matSpec1.thickness} 
             onChange={handleChange} 
-            error={errors['matSpec1.thickness'] ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors['matSpec1.thickness'] ? 'Required' : ''}
           />
           <Input 
             label="at Width (in)" 
             name="matSpec1.width" 
             value={form.matSpec1.width} 
             onChange={handleChange} 
-            error={errors['matSpec1.width'] ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors['matSpec1.width'] ? 'Required' : ''}
           />
           <Input 
             label="Material Type" 
             name="matSpec1.type" 
             value={form.matSpec1.type} 
             onChange={handleChange} 
-            error={errors['matSpec1.type'] ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors['matSpec1.type'] ? 'Required' : ''}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
             name="matSpec1.yield" 
             value={form.matSpec1.yield} 
             onChange={handleChange} 
-            error={errors['matSpec1.yield'] ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors['matSpec1.yield'] ? 'Required' : ''}
           />
           <Input 
             label="Max Tensile Strength (PSI)" 
             name="matSpec1.tensile" 
             value={form.matSpec1.tensile} 
             onChange={handleChange} 
-            error={errors['matSpec1.tensile'] ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors['matSpec1.tensile'] ? 'Required' : ''}
           />
         </div>
 
@@ -736,35 +665,30 @@ const RFQ = () => {
             name="matSpec2.thickness" 
             value={form.matSpec2.thickness} 
             onChange={handleChange}
-            onBlur={handleBlur}
           />
           <Input 
             label="at Full Machine Width (in)" 
             name="matSpec2.width" 
             value={form.matSpec2.width} 
             onChange={handleChange}
-            onBlur={handleBlur}
           />
           <Input 
             label="Material Type" 
             name="matSpec2.type" 
             value={form.matSpec2.type} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
             name="matSpec2.yield" 
             value={form.matSpec2.yield} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Tensile Strength (PSI)" 
             name="matSpec2.tensile" 
             value={form.matSpec2.tensile} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -773,36 +697,31 @@ const RFQ = () => {
             label="Minimum Material Thickness (in)" 
             name="matSpec3.thickness"
             value={form.matSpec3.thickness} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="at Minimum Material Width (in)" 
             name="matSpec3.width" 
             value={form.matSpec3.width} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Material Type"
             name="matSpec3.type" 
             value={form.matSpec3.type} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
             name="matSpec3.yield"
             value={form.matSpec3.yield} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Tensile Strength (PSI)" 
             name="matSpec3.tensile"
             value={form.matSpec3.tensile} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -811,36 +730,31 @@ const RFQ = () => {
             label="Max Mat Thickness to be Run (in)" 
             name="matSpec4.thickness" 
             value={form.matSpec4.thickness} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="at Width (in)" 
             name="matSpec4.width" 
             value={form.matSpec4.width} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Material Type" 
             name="matSpec4.type" 
             value={form.matSpec4.type} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
             name="matSpec4.yield" 
             value={form.matSpec4.yield} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Max Tensile Strength (PSI)" 
             name="matSpec4.tensile" 
             value={form.matSpec4.tensile} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -849,14 +763,14 @@ const RFQ = () => {
             label="Does the surface finish matter? Are they running a cosmetic material?"
             name="cosmeticMaterial"
             value={form.cosmeticMaterial}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "No", label: "No" },
               { value: "Yes", label: "Yes" },
             ]}
             error={errors.cosmeticMaterial ? 'Required' : ''}
           />
-          <Input label="Current brand of feed equipment" name="feedEquipment" value={form.feedEquipment} onChange={handleChange} onBlur={handleBlur} />
+          <Input label="Current brand of feed equipment" name="feedEquipment" value={form.feedEquipment} onChange={handleChange} />
         </div>
       </Card>
 
@@ -867,46 +781,46 @@ const RFQ = () => {
             label="Gap Frame Press" 
             name="pressType.gapFrame" 
             checked={form.pressType.gapFrame} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="Hydraulic Press" 
             name="pressType.hydraulic" 
             checked={form.pressType.hydraulic} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="OBI" 
             name="pressType.obi" 
             checked={form.pressType.obi} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="Servo Press" 
             name="pressType.servo" 
             checked={form.pressType.servo} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="Shear Die Application" 
             name="pressType.shearDie" 
             checked={form.pressType.shearDie} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="Straight Side Press" 
             name="pressType.straightSide" 
             checked={form.pressType.straightSide} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
           <Checkbox 
             label="Other" 
             name="pressType.other" 
             checked={form.pressType.other} 
-            onChange={handleCheckboxChange} 
+            onChange={handleChange} 
           />
 
-          {form.pressType.other && <Input label="Other..." name="pressType.otherText" value={form.pressType.otherText} onChange={handleChange} onBlur={handleBlur} />}
+          {form.pressType.other && <Input label="Other..." name="pressType.otherText" value={form.pressType.otherText} onChange={handleChange} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -914,44 +828,38 @@ const RFQ = () => {
             label="Tonnage of Press"
             name="tonnage" 
             value={form.tonnage} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Press Bed Area: Width (in)" 
             name="pressBedWidth" 
             value={form.pressBedWidth} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Length (in)" 
             name="pressBedLength" 
             value={form.pressBedLength} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Press Stroke Length (in)" 
             name="pressStroke" 
             value={form.pressStroke} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Window Opening Size of Press (in)" 
             name="windowOpening" 
             value={form.windowOpening} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Press Max SPM" 
             name="maxSPM" 
             value={form.maxSPM} 
             onChange={handleChange} 
-            error={errors.maxSPM ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.maxSPM ? 'Required' : ''}
           />
         </div>
       </Card>
@@ -964,13 +872,13 @@ const RFQ = () => {
               label="Transfer Dies" 
               name="dies.transfer" 
               checked={form.dies.transfer} 
-              onChange={handleCheckboxChange} 
+              onChange={handleChange} 
             />
             <Checkbox 
               label="Progressive Dies" 
               name="dies.progressive" 
               checked={form.dies.progressive} 
-              onChange={handleCheckboxChange} 
+              onChange={handleChange} 
               required 
               error={errors.dies ? 'At least one required' : ''}
             />
@@ -978,7 +886,7 @@ const RFQ = () => {
               label="Blanking Dies"
               name="dies.blanking" 
               checked={form.dies.blanking} 
-              onChange={handleCheckboxChange} 
+              onChange={handleChange} 
             />
           </div>
         </div>
@@ -989,16 +897,14 @@ const RFQ = () => {
             name="avgFeedLen" 
             value={form.avgFeedLen} 
             onChange={handleChange} 
-            error={errors.avgFeedLen ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.avgFeedLen ? 'Required' : ''}
           />
           <Input 
             label="at (SPM)" 
             name="avgFeedSPM" 
             value={form.avgFeedSPM} 
             onChange={handleChange} 
-            error={errors.avgFeedSPM ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.avgFeedSPM ? 'Required' : ''}
           />
           <Input
             label="Feed Speed (FPM)"
@@ -1012,16 +918,14 @@ const RFQ = () => {
             name="maxFeedLen" 
             value={form.maxFeedLen} 
             onChange={handleChange} 
-            error={errors.maxFeedLen ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.maxFeedLen ? 'Required' : ''}
           />
           <Input 
             label="at (SPM)" 
             name="maxFeedSPM" 
             value={form.maxFeedSPM} 
             onChange={handleChange} 
-            error={errors.maxFeedSPM ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.maxFeedSPM ? 'Required' : ''}
           />
           <Input
             label="Feed Speed (FPM)"
@@ -1035,16 +939,14 @@ const RFQ = () => {
             name="minFeedLen" 
             value={form.minFeedLen} 
             onChange={handleChange} 
-            error={errors.minFeedLen ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.minFeedLen ? 'Required' : ''}
           />
           <Input 
             label="at (SPM)" 
             name="minFeedSPM" 
             value={form.minFeedSPM} 
             onChange={handleChange} 
-            error={errors.minFeedSPM ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.minFeedSPM ? 'Required' : ''}
           />
           <Input
             label="Feed Speed (FPM)"
@@ -1061,8 +963,7 @@ const RFQ = () => {
             name="voltage" 
             value={form.voltage} 
             onChange={handleChange} 
-            error={errors.voltage ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.voltage ? 'Required' : ''}
           />
         </div>
       </Card>
@@ -1074,15 +975,13 @@ const RFQ = () => {
             label="Space allotment Length (ft)" 
             name="spaceLength" 
             value={form.spaceLength} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Width (ft)" 
             name="spaceWidth" 
             value={form.spaceWidth} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -1091,64 +990,55 @@ const RFQ = () => {
             label="Are there any walls or columns obstructing the equipment's location?" 
             name="obstructions" 
             value={form.obstructions} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Can the feeder be mounted to the press?" 
             name="mountToPress" 
             value={form.mountToPress} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="If 'YES', we must verify there is adequate structural support to mount to. Is there adequate support?" 
             name="adequateSupport" 
             value={form.adequateSupport} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="If 'No', it will require a cabinet. Will you need custom mounting plate(s)?" 
             name="needMountingPlates" 
             value={form.needMountingPlates} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Passline Height (in):" 
             name="passlineHeight" 
             value={form.passlineHeight} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Will there be a loop pit?" 
             name="loopPit" 
             value={form.loopPit} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Is coil change time a concern?" 
             name="coilChangeConcern" 
             value={form.coilChangeConcern} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="If so, what is your coil change time goal? (min)" 
             name="coilChangeTime" 
             value={form.coilChangeTime} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="What are reasons you experience unplanned downtime?" 
             name="downtimeReasons" 
             value={form.downtimeReasons} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -1158,16 +1048,14 @@ const RFQ = () => {
             name="feedDirection" 
             value={form.feedDirection} 
             onChange={handleChange} 
-            error={errors.feedDirection ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.feedDirection ? 'Required' : ''}
           />
           <Input 
             label="Coil Loading" 
             name="coilLoading" 
             value={form.coilLoading} 
             onChange={handleChange} 
-            error={errors.coilLoading ? 'Required' : ''} 
-            onBlur={handleBlur}
+            error={errors.coilLoading ? 'Required' : ''}
           />
         </div>
 
@@ -1176,8 +1064,7 @@ const RFQ = () => {
             label="Will your line require guarding or special safety requirements?" 
             name="safetyRequirements" 
             value={form.safetyRequirements} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
       </Card>
@@ -1190,32 +1077,28 @@ const RFQ = () => {
             name="decisionDate" 
             type="date" 
             value={form.decisionDate} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Ideal Delivery Date" 
             name="idealDelivery" 
             type="date" 
             value={form.idealDelivery} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Earliest date customer can accept delivery" 
             name="earliestDelivery" 
             type="date" 
             value={form.earliestDelivery} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
           <Input 
             label="Latest date customer can accept delivery" 
             name="latestDelivery" 
             type="date" 
             value={form.latestDelivery} 
-            onChange={handleChange} 
-            onBlur={handleBlur}
+            onChange={handleChange}
           />
         </div>
 
@@ -1226,7 +1109,6 @@ const RFQ = () => {
             value={form.specialConsiderations}
             onChange={handleChange}
             rows={3}
-            onBlur={handleBlur}
           />
         </div>
       </Card>

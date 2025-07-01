@@ -36,7 +36,7 @@ const MATERIAL_SPECS_FIELDS = {
 };
 const FIELD_LABELS: { [key: string]: string } = {
   coilWidth: 'Coil Width (in)',
-  coilWeight: 'Coil Weight',
+  coilWeight: 'Coil Weight (Max)',
   materialThickness: 'Material Thickness (in)',
   materialType: 'Material Type',
   yieldStrength: 'Yield Strength (psi)',
@@ -61,6 +61,35 @@ const versionKeyMap = {
   'Max @ Width': 'MaxAtWidth',
 } as const;
 
+function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState): MaterialSpecsFormData {
+  return {
+    referenceNumber: form.referenceNumber,
+    materialType: form.MaximumThick.materialType,
+    thickness: form.MaximumThick.thickness,
+    width: form.MaximumThick.width,
+    yieldStrength: form.MaximumThick.yieldStrength,
+    tensileStrength: form.MaximumThick.tensileStrength,
+    customer: form.companyName,
+    date: form.date,
+    coilWeight: form.coilWeightMax ? Number(form.coilWeightMax) : undefined,
+    minBendRad: form.MaximumThick.minBendRad,
+    minLoopLength: form.MaximumThick.minLoopLength,
+    coilOD: form.MaximumThick.coilOD ? Number(form.MaximumThick.coilOD) : undefined,
+    coilID: form.MaximumThick.coilID ? Number(form.MaximumThick.coilID) : undefined,
+    coilODCaclculated: form.MaximumThick.coilODCalculated,
+    feedDirection: form.feedDirection,
+    controlsLevel: form.controlsLevel,
+    typeOfLine: form.typeOfLine,
+    feedControls: form.feedControls,
+    passline: form.passline,
+    typeOfRoll: form.typeOfRoll,
+    reelBackplate: form.reelBackplate,
+    reelStyle: form.reelStyle,
+    lightGauge: form.lightGauge,
+    nonMarking: form.nonMarking,
+  };
+}
+
 const MaterialSpecs = () => {
   const { performanceSheet: form, setPerformanceSheet, updatePerformanceSheet } = usePerformanceSheet();
   const { isLoading, status, errors, createMaterialSpecs, updateMaterialSpecs } = useCreateMaterialSpecs();
@@ -73,8 +102,8 @@ const MaterialSpecs = () => {
   const today = localStorage.getItem('date') || '';
 
   // Get coil width boundaries from RFQ form (as numbers)
-  const minCoilWidth = Number(form.minCoilWidth) || undefined;
-  const maxCoilWidth = Number(form.maxCoilWidth) || undefined;
+  const coilWidthMin = Number(form.coilWidthMin) || undefined;
+  const coilWidthMax = Number(form.coilWidthMax) || undefined;
 
   useEffect(() => {
     if (form.referenceNumber) {
@@ -105,22 +134,9 @@ const MaterialSpecs = () => {
       const mapped = mapBackendToFrontendMaterialSpecs(fetchedMaterialSpecs);
       // Always preserve the user's referenceNumber in the form state
       mapped.referenceNumber = form.referenceNumber || mapped.referenceNumber;
-      console.log('[MaterialSpecs] Mapped data to setPerformanceSheet:', mapped);
       setPerformanceSheet(snakeToCamel(mapped) as PerformanceSheetState);
     }
   }, [fetchedMaterialSpecs, setPerformanceSheet]);
-
-  useEffect(() => {
-    if (form.referenceNumber) {
-      getMaterialSpecs(form.referenceNumber).then((data: any) => {
-        if (data && (data.referenceNumber || data.reference)) {
-          const mapped = mapBackendToFrontendMaterialSpecs(data);
-          mapped.referenceNumber = form.referenceNumber;
-          setPerformanceSheet(snakeToCamel(mapped) as PerformanceSheetState);
-        }
-      });
-    }
-  }, [form.referenceNumber]);
 
   const currentVersionKey = versionKeyMap[version];
   const versionData = form[currentVersionKey] || {};
@@ -169,43 +185,12 @@ const MaterialSpecs = () => {
     }
   };
 
-  const handleBlur = async (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (form.referenceNumber) {
-      const status = await updateMaterialSpecs(form.referenceNumber, form);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
-  };
-
-  const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    handleChange(e);
-    // if (form.referenceNumber) {
-    //   const status = await updateMaterialSpecs(form.referenceNumber, form);
-    //   setSaveStatus(status);
-    //   if (status === 'Saved') {
-    //     setTimeout(() => setSaveStatus(''), 2000);
-    //   }
-    // }
-  };
-
-  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleChange(e);
-    if (form.referenceNumber) {
-      const status = await updateMaterialSpecs(form.referenceNumber, form);
-      setSaveStatus(status);
-      if (status === 'Saved') {
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    }
-  };
-
   // Only create material specs if Send Data is pressed and no data exists for the reference
   const handleSendData = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fetchedMaterialSpecs) {
-      await createMaterialSpecs(form);
+      const mapped = mapPerformanceSheetToMaterialSpecsFormData(form);
+      await createMaterialSpecs(mapped);
     } else {
       // Optionally, show a message that specs already exist
       // setStatus('Material specs already exist for this reference.');
@@ -266,7 +251,7 @@ const MaterialSpecs = () => {
           <Input
             label="Customer"
             name="customer"
-            value={form.customer || ''}
+            value={form.companyName || ''}
             onChange={handleChange}
           />
           <Input
@@ -302,11 +287,11 @@ const MaterialSpecs = () => {
               label={FIELD_LABELS[field] || field}
               name={field}
               type={field.toLowerCase().includes('thickness') || field.toLowerCase().includes('width') || field.toLowerCase().includes('coil') || field.toLowerCase().includes('weight') || field.toLowerCase().includes('strength') || field.toLowerCase().includes('fpm') || field.toLowerCase().includes('rad') || field.toLowerCase().includes('length') ? 'number' : 'text'}
-              value={versionData[field] ?? ''}
+              value={(versionData as Record<string, any>)[field] ?? ''}
               onChange={handleChange}
-              error={errors[field as keyof typeof errors] as string | undefined}
-              min={field === 'coilWidth' ? minCoilWidth : undefined}
-              max={field === 'coilWidth' ? maxCoilWidth : undefined}
+              error={(errors as Record<string, any>)[field] ? 'Required' : ''}
+              min={field === 'coilWidth' ? coilWidthMin : undefined}
+              max={field === 'coilWidth' ? coilWidthMax : undefined}
             />
           ))}
         </div>
@@ -319,18 +304,18 @@ const MaterialSpecs = () => {
             label="Select Feed Direction"
             name="feedDirection"
             value={form.feedDirection ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "rightToLeft", label: "Right to Left" },
               { value: "leftToRight", label: "Left to Right" },
             ]}
-            error={errors.feedDirection}
+            error={errors.feedDirection ? 'Required' : ''}
           />
           <Select
             label="Select Controls Level"
             name="controlsLevel"
             value={form.controlsLevel ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "miniDriveSystem", label: "Mini-Drive System" },
               { value: "relayMachine", label: "Relay Machine" },
@@ -342,13 +327,13 @@ const MaterialSpecs = () => {
               { value: "allenBradleyPlus", label: "Allen Bradley Plus" },
               { value: "fullyAutoamtic", label: "Fully Automatic"}
             ]}
-            error={errors.feedDirection}
+            error={errors.controlsLevel ? 'Required' : ''}
           />
           <Select
             label="Type of Line"
             name="typeOfLine"
             value={form.typeOfLine ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "compact", label: "Compact" },
               { value: "compactCTL", label: "Compact CTL" },
@@ -367,9 +352,8 @@ const MaterialSpecs = () => {
               { value: "reelPullOff", label: "Reel-Pull Off" },
               { value: "threadingTable", label: "Threading Table" },
               { value: "other", label: "Other" },
-
             ]}
-            error={errors.feedDirection}
+            error={errors.typeOfLine ? 'Required' : ''}
           />
 
           <Input 
@@ -378,7 +362,7 @@ const MaterialSpecs = () => {
             type="text"
             value={form.feedControls ?? ''}
             onChange={handleChange}
-            error={errors.feedControls}
+            error={errors.feedControls ? 'Required' : ''}
             disabled
           />
 
@@ -386,7 +370,7 @@ const MaterialSpecs = () => {
             label="Passline"
             name="passline"
             value={form.passline ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "none", label: "None" },
               { value: "37", label: "37\"" },
@@ -450,59 +434,58 @@ const MaterialSpecs = () => {
               { value: "72", label: "72\"" },
               { value: "75", label: "75\"" },
               { value: "76", label: "76\"" },
-
             ]}
-            error={errors.feedDirection}
+            error={errors.passline ? 'Required' : ''}
           />
           
           <Select
             label="Select Roll"
             name="typeOfRoll"
             value={form.typeOfRoll ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "7RollStrBackbend", label: "7 Roll Str. Backbend" },
               { value: "9RollStrBackbend", label: "9 Roll Str. Backbend" },
               { value: "11RollStrBackbend", label: "11 Roll Str. Backbend" },
             ]}
-            error={errors.feedDirection}
+            error={errors.typeOfRoll ? 'Required' : ''}
           />
 
           <Select
             label="Reel Backplate"
             name="reelBackplate"
             value={form.reelBackplate ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "standardBackplate", label: "Standard Backplate" },
               { value: "fullODBackplate", label: "Full OD Backplate" },
             ]}
-            error={errors.feedDirection}
+            error={errors.reelBackplate ? 'Required' : ''}
           />
 
           <Select
             label="Reel Style"
             name="reelStyle"
             value={form.reelStyle ?? ''}
-            onChange={handleSelectChange}
+            onChange={handleChange}
             options={[
               { value: "singleEnded", label: "Single Ended" },
               { value: "doubleEnded", label: "Double Ended" },
             ]}
-            error={errors.feedDirection}
+            error={errors.reelStyle ? 'Required' : ''}
           />
 
           <Checkbox 
             label="Light Gauge Non-Marking" 
             name="lightGauge" 
             checked={form.lightGauge} 
-            onChange={handleCheckboxChange}
+            onChange={handleChange}
           />
           <Checkbox 
             label="Non-Marking" 
             name="nonMarking" 
             checked={form.nonMarking} 
-            onChange={handleCheckboxChange}
+            onChange={handleChange}
           />
         </div>
       </Card>

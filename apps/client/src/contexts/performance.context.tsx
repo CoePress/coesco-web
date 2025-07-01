@@ -1,24 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { RFQFormData } from '@/hooks/performance/use-create-rfq';
 
-// Extend with avgFPM, maxFPM, minFPM as in rfq.tsx
+// RFQ variables (flat fields)
 export type PerformanceSheetState = RFQFormData & {
-  avgFPM?: string;
-  maxFPM?: number;
-  minFPM?: string;
-  // Material Specs fields (unique only, do not repeat maxFPM/minFPM)
-  materialType?: string;
-  thickness?: string;
-  width?: string;
-  yieldStrength?: string;
-  tensileStrength?: string;
-  customer?: string;
-  coilWeight?: number;
-  minBendRad?: string;
-  minLoopLength?: string;
-  coilOD?: number;
-  coilID?: number;
-  coilODCaclculated?: string;
+  // --- Material Specs versioned fields ---
+  MaximumThick: MaterialSpecsVersion;
+  MaxAtFull: MaterialSpecsVersion;
+  MinimumThick: MaterialSpecsVersion;
+  MaxAtWidth: MaterialSpecsVersion;
+  // --- Material Specs top-level fields ---
   controlsLevel?: string;
   typeOfLine?: string;
   feedControls?: string;
@@ -28,78 +18,41 @@ export type PerformanceSheetState = RFQFormData & {
   reelStyle?: string;
   lightGauge?: boolean;
   nonMarking?: boolean;
-  // Add per-version objects for material specs
-  MaximumThick?: { [key: string]: any };
-  MaxAtFull?: { [key: string]: any };
-  MinimumThick?: { [key: string]: any };
-  MaxAtWidth?: { [key: string]: any };
-  // Add required RFQFormData properties
-  coilWidthMax?: number;
-  coilWidthMin?: number;
-  coilODMax?: number;
-  // Add any other required RFQFormData properties here, using undefined or '' as appropriate
-  slitEdge: boolean;
-  millEdge: boolean;
-  coilCarRequired: string;
-  runOffBackplate: string;
-  requireRewinding: string;
-  matSpec1: { thickness: string; width: string; type: string; yield: string; tensile: string };
-  matSpec2: { thickness: string; width: string; type: string; yield: string; tensile: string };
-  matSpec3: { thickness: string; width: string; type: string; yield: string; tensile: string };
-  matSpec4: { thickness: string; width: string; type: string; yield: string; tensile: string };
-  cosmeticMaterial: string;
-  feedEquipment: string;
-  pressType: {
-    gapFrame: boolean;
-    hydraulic: boolean;
-    obi: boolean;
-    servo: boolean;
-    shearDie: boolean;
-    straightSide: boolean;
-    other: boolean;
-    otherText: string;
-  };
-  tonnage: string;
-  pressBedWidth: string;
-  pressBedLength: string;
-  pressStroke: string;
-  windowOpening: string;
-  maxSPM: string;
-  dies: {
-    transfer: boolean;
-    progressive: boolean;
-    blanking: boolean;
-  };
-  avgFeedLen: string;
-  avgFeedSPM: string;
-  maxFeedLen: string;
-  maxFeedSPM: string;
-  minFeedLen: string;
-  minFeedSPM: string;
-  voltage: string;
-  spaceLength: string;
-  spaceWidth: string;
-  obstructions: string;
-  mountToPress: string;
-  adequateSupport: string;
-  requireCabinet: string;
-  needMountingPlates: string;
-  passlineHeight: string;
-  loopPit: string;
-  coilChangeConcern: string;
-  coilChangeTime: string;
-  downtimeReasons: string;
-  feedDirection: string;
-  coilLoading: string;
-  safetyRequirements: string;
-  decisionDate: string;
-  idealDelivery: string;
-  earliestDelivery: string;
-  latestDelivery: string;
-  specialConsiderations: string;
 };
 
+// Versioned material specs fields for each version
+export type MaterialSpecsVersion = {
+  materialType: string;
+  thickness: string;
+  width: string;
+  yieldStrength: string;
+  tensileStrength: string;
+  coilID: string;
+  coilOD: string;
+  coilWeight: string;
+  minBendRad: string;
+  minLoopLength: string;
+  coilODCalculated: string;
+};
+
+// Initial state for a versioned material spec
+const initialMaterialSpecsVersion: MaterialSpecsVersion = {
+  materialType: '',
+  thickness: '',
+  width: '',
+  yieldStrength: '',
+  tensileStrength: '',
+  coilID: '',
+  coilOD: '',
+  coilWeight: '',
+  minBendRad: '',
+  minLoopLength: '',
+  coilODCalculated: '',
+};
+
+// Initial state for the context
 const initialState: PerformanceSheetState = {
+  // --- RFQ variables (from lines 14-100 in rfq.tsx) ---
   referenceNumber: '',
   date: '',
   companyName: '',
@@ -116,15 +69,15 @@ const initialState: PerformanceSheetState = {
   dealerSalesman: '',
   daysPerWeek: '',
   shiftsPerDay: '',
-  lineApplication: '',
-  lineType: '',
+  lineApplication: 'Press Feed',
+  lineType: 'Conventional',
   pullThrough: 'No',
-  // Add required RFQFormData properties
-  coilWidthMax: 0,
-  coilWidthMin: 0,
-  coilODMax: 0,
-  coilID: 0,
-  // Add any other required RFQFormData properties here, using 0 or '' as appropriate
+  coilWidthMin: '',
+  coilWidthMax: '',
+  maxCoilOD: '',
+  coilID: '',
+  coilWeightMax: '',
+  coilHandlingMax: '',
   slitEdge: false,
   millEdge: false,
   coilCarRequired: 'No',
@@ -184,18 +137,12 @@ const initialState: PerformanceSheetState = {
   earliestDelivery: '',
   latestDelivery: '',
   specialConsiderations: '',
-  avgFPM: '',
-  minFPM: '',
-  // Material Specs fields (unique only, do not repeat maxFPM/minFPM)
-  materialType: '',
-  thickness: '',
-  width: '',
-  yieldStrength: '',
-  tensileStrength: '',
-  customer: '',
-  minBendRad: '',
-  minLoopLength: '',
-  coilODCaclculated: '',
+  // --- Material Specs versioned fields ---
+  MaximumThick: { ...initialMaterialSpecsVersion },
+  MaxAtFull: { ...initialMaterialSpecsVersion },
+  MinimumThick: { ...initialMaterialSpecsVersion },
+  MaxAtWidth: { ...initialMaterialSpecsVersion },
+  // --- Material Specs top-level fields ---
   controlsLevel: '',
   typeOfLine: '',
   feedControls: '',
@@ -205,10 +152,6 @@ const initialState: PerformanceSheetState = {
   reelStyle: '',
   lightGauge: false,
   nonMarking: false,
-  MaximumThick: {},
-  MaxAtFull: {},
-  MinimumThick: {},
-  MaxAtWidth: {},
 };
 
 interface PerformanceSheetContextType {

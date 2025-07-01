@@ -22,12 +22,12 @@ export interface RFQFormData {
   lineApplication: string;
   lineType: string;
   pullThrough: string;
-  maxCoilWidth: string;
-  minCoilWidth: string;
+  coilWidthMax: string;
+  coilWidthMin: string;
   maxCoilOD: string;
   coilID: string;
-  maxCoilWeight: string;
-  maxCoilHandling: string;
+  coilWeightMax: string;
+  coilHandlingMax: string;
   slitEdge: boolean;
   millEdge: boolean;
   coilCarRequired: string;
@@ -142,12 +142,12 @@ function mapToBackendRFQ(form: RFQFormData) {
     line_application: form.lineApplication || undefined,
     type_of_line: form.lineType || undefined,
     pull_thru: form.pullThrough || undefined,
-    max_coil_width: toFloat(form.maxCoilWidth),
-    min_coil_width: toFloat(form.minCoilWidth),
+    coil_width_max: toFloat(form.coilWidthMax),
+    coil_width_min: toFloat(form.coilWidthMin),
     max_coil_od: toFloat(form.maxCoilOD),
     coil_id: toFloat(form.coilID),
-    max_coil_weight: toFloat(form.maxCoilWeight),
-    max_coil_handling_cap: toFloat(form.maxCoilHandling),
+    coil_weight_max: toFloat(form.coilWeightMax),
+    coil_handling_cap_max: toFloat(form.coilHandlingMax),
     coil_car: ynToBool(form.coilCarRequired),
     run_off_backplate: ynToBool(form.runOffBackplate),
     req_rewinding: ynToBool(form.requireRewinding),

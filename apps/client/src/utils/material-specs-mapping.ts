@@ -80,6 +80,7 @@ const GENERAL_BACKEND_TO_FRONTEND = {
  * @returns The mapped frontend data object
  */
 export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
+  console.log('[MaterialSpecsMapping] backendData:', backendData);
   const result: any = {};
 
   // General fields
@@ -118,10 +119,10 @@ export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
 
   // Set shared fields across all versions using max_ backend fields
   const sharedFields = {
-    coilWeight: backendData.max_coil_weight,
     maxFPM: backendData.max_fpm,
     coilOD: backendData.max_coil_od,
     coilID: backendData.coil_id,
+    coilWeight: backendData.coil_weight_max,
   };
   ['MaximumThick', 'MaxAtFull', 'MinimumThick', 'MaxAtWidth'].forEach(versionKey => {
     Object.entries(sharedFields).forEach(([frontendKey, value]) => {
@@ -149,6 +150,7 @@ export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
   result.nonMarking = backendData.non_marking ?? false;
   result.date = backendData.date ?? '';
 
+  console.log('[MaterialSpecsMapping] mapped result:', result);
   return result;
 }
 
@@ -202,6 +204,96 @@ export function mapFrontendToBackendMaterialSpecs(form: any): any {
   if (form.customer !== undefined) backendData.company_name = form.customer;
 
   return backendData;
+}
+
+// Type for the backend payload
+export interface MaterialSpecsCreatePayload {
+  customer?: string;
+  date?: string;
+  max_coil_width?: number | string;
+  max_coil_weight?: string;
+  max_material_thickness?: number | string;
+  max_material_type?: string;
+  max_yield_strength?: number | string;
+  max_tensile_strength?: number | string;
+  full_coil_width?: number | string;
+  full_coil_weight?: number | string;
+  full_material_thickness?: number | string;
+  full_material_type?: string;
+  full_yield_strength?: number | string;
+  full_tensile_strength?: number | string;
+  min_coil_width?: number | string;
+  min_coil_weight?: number | string;
+  min_material_thickness?: number | string;
+  min_material_type?: string;
+  min_yield_strength?: number | string;
+  min_tensile_strength?: number | string;
+  width_coil_width?: number | string;
+  width_coil_weight?: number | string;
+  width_material_thickness?: number | string;
+  width_material_type?: string;
+  width_yield_strength?: number | string;
+  width_tensile_strength?: number | string;
+  coil_id?: string;
+  feed_direction?: string;
+  controls_level?: string;
+  type_of_line?: string;
+  feed_controls?: string;
+  passline?: string;
+  selected_roll?: string;
+  reel_backplate?: string;
+  reel_style?: string;
+  light_guage?: boolean;
+  non_marking?: boolean;
+  // Add other fields as needed
+}
+
+// Mapping function for TypeScript projects
+export function mapMaterialSpecsToBackend(form: any): MaterialSpecsCreatePayload {
+  return {
+    customer: form.companyName,
+    date: form.date,
+    // --- MaximumThick (matSpec1) ---
+    max_coil_width: form.matSpec1.width,
+    max_coil_weight: form.coilWeight,
+    max_material_thickness: form.matSpec1.thickness,
+    max_material_type: form.matSpec1.type,
+    max_yield_strength: form.matSpec1.yield,
+    max_tensile_strength: form.matSpec1.tensile,
+    // --- MaxAtFull (matSpec2) ---
+    full_coil_width: form.matSpec2.width,
+    full_coil_weight: form.coilWeight,
+    full_material_thickness: form.matSpec2.thickness,
+    full_material_type: form.matSpec2.type,
+    full_yield_strength: form.matSpec2.yield,
+    full_tensile_strength: form.matSpec2.tensile,
+    // --- MinimumThick (matSpec3) ---
+    min_coil_width: form.matSpec3.width,
+    min_coil_weight: form.coilWeight,
+    min_material_thickness: form.matSpec3.thickness,
+    min_material_type: form.matSpec3.type,
+    min_yield_strength: form.matSpec3.yield,
+    min_tensile_strength: form.matSpec3.tensile,
+    // --- MaxAtWidth (matSpec4) ---
+    width_coil_width: form.matSpec4.width,
+    width_coil_weight: form.coilWeight,
+    width_material_thickness: form.matSpec4.thickness,
+    width_material_type: form.matSpec4.type,
+    width_yield_strength: form.matSpec4.yield,
+    width_tensile_strength: form.matSpec4.tensile,
+    // --- Shared fields ---
+    coil_id: form.coilID,
+    feed_direction: form.feedDirection,
+    controls_level: form.controlsLevel,
+    type_of_line: form.typeOfLine,
+    feed_controls: form.feedControls,
+    passline: form.passline,
+    selected_roll: form.typeOfRoll,
+    reel_backplate: form.reelBackplate,
+    reel_style: form.reelStyle,
+    light_guage: form.lightGauge,
+    non_marking: form.nonMarking,
+  };
 }
 
 export { BACKEND_TO_FRONTEND_MAP, GENERAL_BACKEND_TO_FRONTEND }; 
