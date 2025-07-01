@@ -14,6 +14,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   Button,
   Card,
+  Loader,
   Modal,
   PageHeader,
   PageSearch,
@@ -30,49 +31,11 @@ import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useDeleteQuoteItem } from "@/hooks/sales/use-delete-quote-item";
 
-const mockDealers = [
-  {
-    id: "dlr-1",
-    name: "Tech Solutions Inc",
-    contact: "Peter Parker",
-    email: "peter@techsolutions.com",
-    phone: "+1 (555) 123-4567",
-    location: "New York, NY",
-    status: "Active",
-  },
-  {
-    id: "dlr-2",
-    name: "Global Dynamics",
-    contact: "Nathan Stark",
-    email: "nathan@globaldynamics.com",
-    phone: "+1 (555) 234-5678",
-    location: "Los Angeles, CA",
-    status: "Active",
-  },
-  {
-    id: "dlr-3",
-    name: "Wayne Enterprises",
-    contact: "Bruce Wayne",
-    email: "bruce@wayneenterprises.com",
-    phone: "+1 (555) 345-6789",
-    location: "Gotham City",
-    status: "Active",
-  },
-  {
-    id: "dlr-4",
-    name: "Stark Industries",
-    contact: "Tony Stark",
-    email: "tony@starkindustries.com",
-    phone: "+1 (555) 456-7890",
-    location: "Malibu, CA",
-    status: "Active",
-  },
-];
-
 const QuoteDetails = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDealerModalOpen, setIsDealerModalOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSendConfirmationOpen, setIsSendConfirmationOpen] = useState(false);
   const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
@@ -298,7 +261,7 @@ const QuoteDetails = () => {
                     variant="secondary-outline"
                     className="w-max mx-auto"
                     disabled={quoteOverview?.quote?.status !== "DRAFT"}
-                    onClick={() => navigate("/sales/companies/new")}>
+                    onClick={() => setIsCustomerModalOpen(true)}>
                     <Plus size={16} />
                     Add Customer
                   </Button>
@@ -650,12 +613,15 @@ const QuoteDetails = () => {
         onSuccess={refreshQuote}
       />
 
-      <SelectDealerModal
-        isOpen={isDealerModalOpen}
-        onClose={() => setIsDealerModalOpen(false)}
-        quoteId={quoteId || ""}
-        onSuccess={refreshQuote}
-      />
+      {isDealerModalOpen && (
+        <SelectCompanyModal
+          isOpen={isDealerModalOpen}
+          onClose={() => setIsDealerModalOpen(false)}
+          quoteId={quoteId || ""}
+          onSuccess={refreshQuote}
+          type="dealer"
+        />
+      )}
 
       <ApproveQuoteModal
         isOpen={isApprovalModalOpen}
@@ -689,6 +655,16 @@ const QuoteDetails = () => {
         item={selectedItem}
         onSuccess={refreshQuote}
       />
+
+      {isCustomerModalOpen && (
+        <SelectCompanyModal
+          isOpen={isCustomerModalOpen}
+          onClose={() => setIsCustomerModalOpen(false)}
+          quoteId={quoteId || ""}
+          onSuccess={refreshQuote}
+          type="customer"
+        />
+      )}
     </div>
   );
 };
@@ -908,7 +884,9 @@ const ItemsTab = ({
   return (
     <div className="h-full flex flex-col">
       {itemsLoading ? (
-        <div className="text-sm text-text-muted">Loading items...</div>
+        <div className="flex justify-center items-center h-full">
+          <Loader />
+        </div>
       ) : itemsError ? (
         <div className="text-sm text-red-500">{itemsError}</div>
       ) : (
@@ -977,12 +955,14 @@ const ConfigurationsTab = () => {
     entities: configurations,
     loading: configurationsLoading,
     error: configurationsError,
-  } = useGetEntities("/config/configurations");
+  } = useGetEntities("/configurations");
 
   return (
     <div className="h-full flex flex-col">
       {configurationsLoading ? (
-        <div className="text-sm text-text-muted">Loading configurations...</div>
+        <div className="flex justify-center items-center h-full">
+          <Loader />
+        </div>
       ) : configurationsError ? (
         <div className="text-sm text-red-500">{configurationsError}</div>
       ) : (
@@ -1028,34 +1008,41 @@ const ConfigurationsTab = () => {
   );
 };
 
-const SelectDealerModal = ({
+const SelectCompanyModal = ({
   isOpen,
   onClose,
   quoteId,
   onSuccess,
+  type,
 }: {
   isOpen: boolean;
   onClose: () => void;
   quoteId: string;
   onSuccess: () => void;
+  type: "customer" | "dealer";
 }) => {
   const navigate = useNavigate();
+  const { entities: companies } = useGetEntities("/companies");
 
-  const handleSelectDealer = async () => {
-    console.log("Selected dealer:", quoteId);
+  const handleSelectCompany = async () => {
+    console.log(`Selected ${type}:`, quoteId);
     onSuccess();
     onClose();
   };
+
+  const title = type === "customer" ? "Select Customer" : "Select Dealer";
+  const placeholder = `Search ${type}s...`;
+  const newButtonText = `New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Select Dealer"
+      title={title}
       size="lg">
       <div className="flex flex-col gap-4">
         <PageSearch
-          placeholder="Search dealers..."
+          placeholder={placeholder}
           filters={[
             { label: "Location", icon: ChevronDown, onClick: () => {} },
             { label: "Status", icon: ChevronDown, onClick: () => {} },
@@ -1066,7 +1053,7 @@ const SelectDealerModal = ({
           columns={[
             {
               key: "name",
-              header: "Dealer",
+              header: type.charAt(0).toUpperCase() + type.slice(1),
               className: "text-primary",
             },
             {
@@ -1082,8 +1069,8 @@ const SelectDealerModal = ({
               header: "Phone",
             },
             {
-              key: "location",
-              header: "Location",
+              key: "website",
+              header: "Website",
             },
             {
               key: "actions",
@@ -1092,7 +1079,7 @@ const SelectDealerModal = ({
                 <div className="flex justify-end">
                   <Button
                     variant="secondary-outline"
-                    onClick={() => handleSelectDealer()}>
+                    onClick={() => handleSelectCompany()}>
                     Select
                   </Button>
                 </div>
@@ -1100,8 +1087,8 @@ const SelectDealerModal = ({
               className: "text-right",
             },
           ]}
-          data={mockDealers}
-          total={mockDealers.length}
+          data={companies || []}
+          total={companies?.length || 0}
         />
 
         <div className="flex justify-between gap-2 pt-2 border-t">
@@ -1109,7 +1096,7 @@ const SelectDealerModal = ({
             variant="secondary-outline"
             onClick={() => navigate("/sales/companies/new")}>
             <Plus size={16} />
-            New Dealer
+            {newButtonText}
           </Button>
           <div className="flex gap-2 ml-auto">
             <Button

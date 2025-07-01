@@ -78,23 +78,21 @@ const Companies = () => {
         ]}
       />
 
-      <div className="flex flex-col">
-        <PageSearch
-          placeholder="Search companies..."
-          filters={[
-            { label: "Filters", icon: Filter, onClick: () => {} },
-            { label: "Status", icon: ChevronDown, onClick: () => {} },
-          ]}
-        />
+      <PageSearch
+        placeholder="Search companies..."
+        filters={[
+          { label: "Filters", icon: Filter, onClick: () => {} },
+          { label: "Status", icon: ChevronDown, onClick: () => {} },
+        ]}
+      />
 
-        <Table<any>
-          columns={columns}
-          data={companies || []}
-          total={companies?.length || 0}
-          idField="id"
-          pagination
-        />
-      </div>
+      <Table<any>
+        columns={columns}
+        data={companies || []}
+        total={companies?.length || 0}
+        idField="id"
+        pagination
+      />
     </div>
   );
 };

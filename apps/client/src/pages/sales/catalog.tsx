@@ -522,7 +522,7 @@ const Catalog = () => {
   const { entities: productClasses, loading: productClassesLoading } =
     useGetEntities("/config/classes");
   const { entities: configurations, loading: configurationsLoading } =
-    useGetEntities("/config/configurations");
+    useGetEntities("/configurations");
   const deepestSelectedClassId =
     selections.length > 0 ? selections[selections.length - 1] : "";
   const { entities: productClassOptions, loading: optionsLoading } =

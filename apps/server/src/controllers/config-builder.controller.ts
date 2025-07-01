@@ -73,7 +73,10 @@ export class ConfigBuilderController {
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await configBuilderService.getConfigurations();
-      res.status(200).json(result);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
       next(error);
     }

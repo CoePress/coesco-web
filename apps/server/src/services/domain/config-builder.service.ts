@@ -187,7 +187,6 @@ export class ConfigBuilderService {
     }));
   }
 
-  // Helper method to get available options for a specific product class with category grouping
   async getAvailableOptionsGroupedByCategory(productClassId: string) {
     const categories =
       await this.getOptionCategoriesByProductClass(productClassId);
@@ -208,7 +207,6 @@ export class ConfigBuilderService {
     return result;
   }
 
-  // Helper method to validate a configuration against rules
   async validateConfiguration(selectedOptionIds: string[]) {
     const rules = await this.getOptionRules();
     const violations = [];
