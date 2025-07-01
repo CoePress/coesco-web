@@ -1,5 +1,5 @@
 import { Quote } from "@prisma/client";
-import { quoteBuilderService, quoteService } from "@/services";
+import { quotingService, quoteService } from "@/services";
 import { BaseController } from "./_base.controller";
 import { NextFunction, Request, Response } from "express";
 
@@ -9,7 +9,7 @@ export class QuoteController extends BaseController<Quote> {
 
   public async buildQuote(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await quoteBuilderService.buildQuote(req.body);
+      const result = await quotingService.buildQuote(req.body);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -23,7 +23,7 @@ export class QuoteController extends BaseController<Quote> {
   ) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.getQuoteOverview(id);
+      const result = await quotingService.getQuoteOverview(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -44,11 +44,7 @@ export class QuoteController extends BaseController<Quote> {
     try {
       const { id } = req.params;
       const { itemId, quantity } = req.body;
-      const result = await quoteBuilderService.addItemToQuote(
-        id,
-        itemId,
-        quantity
-      );
+      const result = await quotingService.addItemToQuote(id, itemId, quantity);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -62,7 +58,7 @@ export class QuoteController extends BaseController<Quote> {
   ) {
     try {
       const { itemId } = req.params;
-      const result = await quoteBuilderService.removeItemFromQuote(itemId);
+      const result = await quotingService.removeItemFromQuote(itemId);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -72,7 +68,7 @@ export class QuoteController extends BaseController<Quote> {
   public async approveQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.approveQuote(id);
+      const result = await quotingService.approveQuote(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -82,7 +78,7 @@ export class QuoteController extends BaseController<Quote> {
   public async sendQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.sendQuote(id);
+      const result = await quotingService.sendQuote(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -96,7 +92,7 @@ export class QuoteController extends BaseController<Quote> {
   ) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.createQuoteRevision(id);
+      const result = await quotingService.createQuoteRevision(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -109,7 +105,7 @@ export class QuoteController extends BaseController<Quote> {
     next: NextFunction
   ) {
     try {
-      const result = await quoteBuilderService.addConfigurationToQuote(
+      const result = await quotingService.addConfigurationToQuote(
         req.params.quoteId,
         req.params.configurationId
       );

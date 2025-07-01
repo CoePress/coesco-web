@@ -13,13 +13,13 @@ import { ContactService } from "./repository/contact.service";
 import { JourneyService } from "./repository/journey.service";
 import { QuoteService } from "./repository/quote.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
-import { ConfigBuilderService } from "./domain/config-builder.service";
+import { ConfigService } from "./domain/config.service";
 import { SalesService } from "./domain/sales.service";
 import { ItemService } from "./repository/item.service";
 import { MachineService } from "./repository/machine.service";
 import { MachineStatusService } from "./repository/machine-status.service";
 import { UserService } from "./repository/user.service";
-import { QuoteBuilderService } from "./domain/quote-builder.service";
+import { QuotingService } from "./domain/quoting.service";
 import { ConfigurationService } from "./repository/configuration.service";
 
 export const machineService = new MachineService();
@@ -43,8 +43,8 @@ export const itemService = new ItemService();
 export const userService = new UserService();
 export const configurationService = new ConfigurationService();
 
-export const quoteBuilderService = new QuoteBuilderService();
-export const configBuilderService = new ConfigBuilderService();
+export const quotingService = new QuotingService();
+export const configService = new ConfigService();
 
 export const initializeServices = async () => {
   socketService.setIo(io);

@@ -1,6 +1,6 @@
 import { prisma } from "@/utils/prisma";
 
-export class ConfigBuilderService {
+export class ConfigService {
   async getProductClasses() {
     const productClasses = await prisma.productClass.findMany({
       where: {

@@ -15,7 +15,7 @@ import contactRoutes from "./contact.router";
 import journeyRoutes from "./journey.routes";
 import quoteRoutes from "./quote.routes";
 import itemRoutes from "./item.routes";
-import configBuilderRoutes from "./config-builder.routes";
+import configBuilderRoutes from "./config.routes";
 import configurationRoutes from "./configuration.routes";
 
 const router = Router();

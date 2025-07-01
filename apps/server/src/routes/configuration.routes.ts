@@ -1,8 +1,8 @@
-import { configBuilderController } from "@/controllers";
+import { configController } from "@/controllers";
 import { Router } from "express";
 
 const router = Router();
 
-router.get("/", configBuilderController.getConfigurations);
+router.get("/", configController.getConfigurations);
 
 export default router;

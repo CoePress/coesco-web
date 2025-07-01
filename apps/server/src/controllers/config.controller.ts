@@ -1,14 +1,14 @@
-import { configBuilderService, quoteBuilderService } from "@/services";
+import { configService } from "@/services";
 import { NextFunction, Request, Response } from "express";
 
-export class ConfigBuilderController {
+export class ConfigController {
   public async getProductClasses(
     req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
-      const result = await configBuilderService.getProductClasses();
+      const result = await configService.getProductClasses();
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -21,10 +21,9 @@ export class ConfigBuilderController {
     next: NextFunction
   ) {
     try {
-      const result =
-        await configBuilderService.getOptionCategoriesByProductClass(
-          req.params.id
-        );
+      const result = await configService.getOptionCategoriesByProductClass(
+        req.params.id
+      );
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -37,7 +36,7 @@ export class ConfigBuilderController {
     next: NextFunction
   ) {
     try {
-      const result = await configBuilderService.getOptionsByOptionCategory(
+      const result = await configService.getOptionsByOptionCategory(
         req.params.categoryId
       );
       res.status(200).json(result);
@@ -52,7 +51,7 @@ export class ConfigBuilderController {
     next: NextFunction
   ) {
     try {
-      const result = await configBuilderService.getOptionsByProductClass(
+      const result = await configService.getOptionsByProductClass(
         req.params.id
       );
       res.status(200).json(result);
@@ -63,7 +62,7 @@ export class ConfigBuilderController {
 
   async getOptionRules(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configBuilderService.getOptionRules();
+      const result = await configService.getOptionRules();
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -72,7 +71,7 @@ export class ConfigBuilderController {
 
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configBuilderService.getConfigurations();
+      const result = await configService.getConfigurations();
       res.status(200).json({
         success: true,
         data: result,
@@ -88,10 +87,9 @@ export class ConfigBuilderController {
     next: NextFunction
   ) {
     try {
-      const result =
-        await configBuilderService.getAvailableOptionsGroupedByCategory(
-          req.params.id
-        );
+      const result = await configService.getAvailableOptionsGroupedByCategory(
+        req.params.id
+      );
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -100,7 +98,7 @@ export class ConfigBuilderController {
 
   async saveConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configBuilderService.saveConfiguration(req.body);
+      const result = await configService.saveConfiguration(req.body);
       res.status(200).json(result);
     } catch (error) {
       next(error);

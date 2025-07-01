@@ -13,7 +13,7 @@ import {
 import { prisma } from "@/utils/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 
-export class QuoteBuilderService {
+export class QuotingService {
   async buildQuote(data: any) {
     const { customerId, journeyId, customerName, journeyName } = data;
 
