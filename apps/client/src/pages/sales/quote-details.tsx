@@ -447,17 +447,25 @@ const QuoteDetails = () => {
                 className="grid p-2 text-xs font-medium text-text-muted uppercase"
                 style={{
                   gridTemplateColumns:
-                    "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 64px",
+                    "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
                 <div></div>
-                <div>Line</div>
-                <div>Item</div>
-                <div>Description</div>
-                <div className="text-right">Quantity</div>
-                <div className="text-right">Unit Price</div>
-                <div className="text-right">Discount</div>
-                <div className="text-right">Tax</div>
-                <div className="text-right">Total</div>
+                <div className="truncate whitespace-nowrap">Line</div>
+                <div className="truncate whitespace-nowrap">Item</div>
+                <div className="truncate whitespace-nowrap">Description</div>
+                <div className="text-right truncate whitespace-nowrap">
+                  Quantity
+                </div>
+                <div className="text-right truncate whitespace-nowrap">
+                  Unit Price
+                </div>
+                <div className="text-right truncate whitespace-nowrap">
+                  Discount
+                </div>
+                <div className="text-right truncate whitespace-nowrap">Tax</div>
+                <div className="text-right truncate whitespace-nowrap">
+                  Total
+                </div>
                 <div className="text-right"></div>
               </div>
             </div>
@@ -483,7 +491,7 @@ const QuoteDetails = () => {
                       className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId && draggedItemId !== item.id ? "opacity-50" : ""}`}
                       style={{
                         gridTemplateColumns:
-                          "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 64px",
+                          "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                       }}>
                       <div className="flex items-center">
                         <GripVertical
@@ -495,13 +503,19 @@ const QuoteDetails = () => {
                           }}
                         />
                       </div>
-                      <div className="text-sm text-text-muted">
+                      <div
+                        className="text-sm text-text-muted truncate whitespace-nowrap"
+                        title={item.lineNumber}>
                         {item.lineNumber}
                       </div>
-                      <div className="text-sm font-medium text-text">
+                      <div
+                        className="text-sm font-medium text-text truncate whitespace-nowrap"
+                        title={item.item.name}>
                         {item.item.name}
                       </div>
-                      <div className="text-sm text-text">
+                      <div
+                        className="text-sm text-text truncate whitespace-nowrap"
+                        title={item.item.description}>
                         {item.item.description}
                       </div>
                       <div className="text-sm text-text text-right">
@@ -530,7 +544,7 @@ const QuoteDetails = () => {
                       <div className="text-sm font-medium text-text text-right">
                         {formatCurrency(item.totalPrice || 0)}
                       </div>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 min-w-0">
                         {editingItemId === item.id ? (
                           <>
                             <Button
@@ -857,8 +871,9 @@ const AddItemModal = ({
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
-              {activeTab === "machines" && isOpen && (
+              {activeTab === "machines" && (
                 <MachinesTab
+                  key="machines"
                   onAddItem={handleAddItem}
                   addItemLoading={addItemLoading}
                   selectedQuantity={selectedQuantity}
@@ -866,8 +881,9 @@ const AddItemModal = ({
                 />
               )}
 
-              {activeTab === "parts" && isOpen && (
+              {activeTab === "parts" && (
                 <ItemsTab
+                  key="parts"
                   onAddItem={handleAddItem}
                   addItemLoading={addItemLoading}
                   selectedQuantity={selectedQuantity}
@@ -876,8 +892,9 @@ const AddItemModal = ({
                 />
               )}
 
-              {activeTab === "services" && isOpen && (
+              {activeTab === "services" && (
                 <ItemsTab
+                  key="services"
                   onAddItem={handleAddItem}
                   addItemLoading={addItemLoading}
                   selectedQuantity={selectedQuantity}
@@ -1477,18 +1494,25 @@ const DeleteItemModal = ({
   const {
     loading: deleteItemLoading,
     error: deleteItemError,
+    success: deleteItemSuccess,
     deleteEntity: deleteQuoteItem,
-  } = useDeleteEntity(`/quotes/${quoteId}/items`);
+  } = useDeleteEntity(`/quotes/items`);
 
   const handleDelete = async () => {
     if (!quoteId || !item) return;
 
-    const result = await deleteQuoteItem(`${item.id}`);
-    if (result) {
+    console.log(item);
+
+    await deleteQuoteItem(`${item.id}`);
+  };
+
+  // Close modal and refresh on successful delete
+  useEffect(() => {
+    if (deleteItemSuccess) {
       onSuccess();
       onClose();
     }
-  };
+  }, [deleteItemSuccess, onSuccess, onClose]);
 
   return (
     <Modal
