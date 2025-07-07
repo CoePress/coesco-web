@@ -451,10 +451,9 @@ export class QuotingService {
       const totalItems = allItems.length + 1;
 
       if (lineNumber > totalItems) {
-        throw new BadRequestError(`Line number cannot exceed ${totalItems}`);
+        lineNumber = totalItems;
       }
 
-      // Update the target item's line number
       const updatedQuoteItem = await quoteItemService.update(
         quoteItemId,
         {
@@ -467,42 +466,43 @@ export class QuotingService {
         throw new BadRequestError("Failed to update quote item");
       }
 
-      // Reorder remaining items
       const oldLineNumber = quoteItem.data.lineNumber;
-      let newLineNumber = lineNumber;
+      const newLineNumber = lineNumber;
 
-      // If moving to a higher line number, shift items down
+      const itemsToReorder = allItems.map((item) => ({
+        ...item,
+        targetLineNumber: item.lineNumber,
+      }));
+
       if (newLineNumber > oldLineNumber) {
-        for (const item of allItems) {
+        for (const item of itemsToReorder) {
           if (
             item.lineNumber > oldLineNumber &&
             item.lineNumber <= newLineNumber
           ) {
-            await quoteItemService.update(
-              item.id,
-              {
-                lineNumber: item.lineNumber - 1,
-              },
-              tx
-            );
+            item.targetLineNumber = item.lineNumber - 1;
           }
         }
-      }
-      // If moving to a lower line number, shift items up
-      else if (newLineNumber < oldLineNumber) {
-        for (const item of allItems) {
+      } else if (newLineNumber < oldLineNumber) {
+        for (const item of itemsToReorder) {
           if (
             item.lineNumber >= newLineNumber &&
             item.lineNumber < oldLineNumber
           ) {
-            await quoteItemService.update(
-              item.id,
-              {
-                lineNumber: item.lineNumber + 1,
-              },
-              tx
-            );
+            item.targetLineNumber = item.lineNumber + 1;
           }
+        }
+      }
+
+      for (const item of itemsToReorder) {
+        if (item.targetLineNumber !== item.lineNumber) {
+          await quoteItemService.update(
+            item.id,
+            {
+              lineNumber: item.targetLineNumber,
+            },
+            tx
+          );
         }
       }
 
