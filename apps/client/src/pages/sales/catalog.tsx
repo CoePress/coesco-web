@@ -1,7 +1,7 @@
 import { Plus, MoreHorizontal, Import } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
-import { Button, Modal, PageHeader } from "@/components";
+import { Button, Modal, PageHeader, Loader } from "@/components";
 import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useGetOptionRules } from "@/hooks/config";
@@ -45,11 +45,15 @@ const QuoteModal = ({
   onClose,
   item,
   itemType,
+  quotes,
+  quotesLoading,
 }: {
   isOpen: boolean;
   onClose: () => void;
   item: any;
   itemType: "configs" | "parts" | "services";
+  quotes: any[];
+  quotesLoading: boolean;
 }) => {
   const [selectedQuote, setSelectedQuote] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -104,14 +108,26 @@ const QuoteModal = ({
       <label className="block text-sm font-medium text-text mb-1">
         Select Quote
       </label>
-      <select
-        className="w-full p-2 border rounded bg-foreground"
-        value={selectedQuote}
-        onChange={(e) => setSelectedQuote(e.target.value)}>
-        <option value="">Select existing quote...</option>
-        <option value="1234">Quote #1234</option>
-        <option value="5678">Quote #5678</option>
-      </select>
+      {quotesLoading ? (
+        <div className="flex items-center gap-2 p-2 border rounded bg-foreground">
+          <Loader size="sm" />
+          <span className="text-sm text-text-muted">Loading quotes...</span>
+        </div>
+      ) : (
+        <select
+          className="w-full p-2 border rounded bg-foreground"
+          value={selectedQuote}
+          onChange={(e) => setSelectedQuote(e.target.value)}>
+          <option value="">Select existing quote...</option>
+          {quotes?.map((quote: any) => (
+            <option
+              key={quote.id}
+              value={quote.id}>
+              {quote.number} - {quote.journey?.customer?.name || "No Customer"}
+            </option>
+          ))}
+        </select>
+      )}
 
       {itemType === "parts" && (
         <div>
@@ -203,7 +219,7 @@ const DetailModal = ({
 
         {/* Product Class */}
         {productClass && (
-          <div className="bg-surface p-4 rounded-lg">
+          <div className="bg-surface p-2 rounded-lg">
             <h4 className="font-semibold text-text-muted mb-2">
               Product Class
             </h4>
@@ -243,7 +259,7 @@ const DetailModal = ({
         </div>
 
         {/* Pricing */}
-        <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+        <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">
           <div className="flex justify-between items-center">
             <div>
               <div className="text-sm text-text-muted">
@@ -311,7 +327,7 @@ const DetailModal = ({
             Pricing & Availability
           </h4>
           <div className="space-y-3">
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
               <div className="text-sm text-text-muted mb-1">Unit Price</div>
               <div className="text-2xl font-bold text-text-muted">
                 {formatCurrency(item.price, false)}
@@ -329,12 +345,10 @@ const DetailModal = ({
         </div>
       </div>
 
-      {/* Action */}
       <div className="flex justify-end">
         <Button
           onClick={() => {
             onClose();
-            // TODO: Open quote modal
           }}
           variant="primary"
           disabled={!item.inStock}>
@@ -360,24 +374,16 @@ const DetailModal = ({
           </h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">Category</span>
-              <span className="font-medium text-text-muted">
-                {item.category}
-              </span>
+              <span className="text-text-muted">Service Type</span>
+              <span className="font-medium text-text-muted">{item.type}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">Duration</span>
-              <span className="font-medium text-text-muted">
-                {item.duration}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">Availability</span>
+              <span className="text-text-muted">Status</span>
               <span
                 className={`font-medium ${
-                  item.available ? "text-green-600" : "text-red-600"
+                  item.isActive ? "text-green-600" : "text-red-600"
                 }`}>
-                {item.available ? "Available" : "Currently Unavailable"}
+                {item.isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
@@ -386,18 +392,16 @@ const DetailModal = ({
         <div>
           <h4 className="font-semibold text-text-muted mb-3">Pricing</h4>
           <div className="space-y-3">
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
               <div className="text-sm text-text-muted mb-1">Service Price</div>
               <div className="text-2xl font-bold text-text-muted">
-                {formatCurrency(item.price, false)}
+                {formatCurrency(item.unitPrice, false)}
               </div>
             </div>
             <div className="p-3 bg-surface rounded-lg">
               <div className="text-sm text-text-muted mb-1">Service Type</div>
               <div className="font-medium text-text-muted">
-                {item.category === "Emergency Repair"
-                  ? "24/7 Emergency Service"
-                  : "Standard Service"}
+                Professional Service
               </div>
             </div>
           </div>
@@ -407,44 +411,13 @@ const DetailModal = ({
       {/* What's Included */}
       <div>
         <h4 className="font-semibold text-text-muted mb-3">What's Included</h4>
-        <div className="bg-surface p-4 rounded-lg">
+        <div className="bg-surface p-2 rounded-lg">
           <ul className="space-y-2 text-text-muted">
-            {item.category === "Maintenance" && (
-              <>
-                <li>• Comprehensive equipment inspection</li>
-                <li>• Cleaning and lubrication of moving parts</li>
-                <li>• Calibration of sensors and controls</li>
-                <li>• Performance testing and optimization</li>
-                <li>• Detailed maintenance report</li>
-              </>
-            )}
-            {item.category === "Installation" && (
-              <>
-                <li>• Professional equipment installation</li>
-                <li>• Initial setup and configuration</li>
-                <li>• Basic operator training</li>
-                <li>• Safety checks and testing</li>
-                <li>• Installation documentation</li>
-              </>
-            )}
-            {item.category === "Training" && (
-              <>
-                <li>• Comprehensive operator training</li>
-                <li>• Safety procedures and protocols</li>
-                <li>• Equipment operation techniques</li>
-                <li>• Troubleshooting basics</li>
-                <li>• Training materials and certification</li>
-              </>
-            )}
-            {item.category === "Repair" && (
-              <>
-                <li>• 24/7 emergency response</li>
-                <li>• On-site diagnostic assessment</li>
-                <li>• Parts replacement and repair</li>
-                <li>• Testing and verification</li>
-                <li>• Repair warranty</li>
-              </>
-            )}
+            <li>• Professional service delivery</li>
+            <li>• Quality assurance and testing</li>
+            <li>• Documentation and reporting</li>
+            <li>• Customer support and follow-up</li>
+            <li>• Warranty and guarantee coverage</li>
           </ul>
         </div>
       </div>
@@ -457,8 +430,8 @@ const DetailModal = ({
             // TODO: Open quote modal
           }}
           variant="primary"
-          disabled={!item.available}>
-          {item.available ? "Add to Quote" : "Request Information"}
+          disabled={!item.isActive}>
+          {item.isActive ? "Add to Quote" : "Request Information"}
         </Button>
       </div>
     </div>
@@ -533,13 +506,34 @@ const Catalog = () => {
         : ""
     );
 
-  const { entities: parts } = useGetEntities("/items");
-  const { entities: services } = useGetEntities("/items");
+  const partsFilter = useMemo(() => ({ type: "parts" }), []);
+  const servicesFilter = useMemo(() => ({ type: "services" }), []);
+  const quotesFilter = useMemo(
+    () => ({ include: ["journey", "journey.customer"] }),
+    []
+  );
+
+  const { entities: parts, loading: partsLoading } = useGetEntities("/items", {
+    filter: partsFilter,
+  });
+
+  const { entities: services, loading: servicesLoading } = useGetEntities(
+    "/items",
+    {
+      filter: servicesFilter,
+    }
+  );
+
+  // Fetch quotes for the quote modal
+  const { entities: quotes, loading: quotesLoading } = useGetEntities(
+    "/quotes",
+    quotesFilter
+  );
+
   const { optionRules } = useGetOptionRules();
 
   const navigate = useNavigate();
 
-  // Function to check if an option is disabled by rules for the current product class
   const getDisabledOptionsForProductClass = (
     productClassId: string
   ): string[] => {
@@ -547,7 +541,6 @@ const Catalog = () => {
 
     const disabledOptions = new Set<string>();
 
-    // Get all available options for the current product class
     const availableOptions = new Set<string>();
     productClassOptions.forEach((category: any) => {
       category.options?.forEach((option: any) => {
@@ -557,19 +550,16 @@ const Catalog = () => {
 
     optionRules.forEach((rule) => {
       if (rule.action === "DISABLE") {
-        // Check if any of the trigger options are available for this product class
         const hasTriggerOption = rule.triggerOptions.some(
           (triggerOption: any) => {
             return availableOptions.has(triggerOption.id);
           }
         );
 
-        // Check if any of the target options are available for this product class
         const hasTargetOption = rule.targetOptions.some((targetOption: any) => {
           return availableOptions.has(targetOption.id);
         });
 
-        // Only apply the rule if both trigger and target options are available
         if (hasTriggerOption && hasTargetOption) {
           rule.targetOptions.forEach((targetOption: any) => {
             if (availableOptions.has(targetOption.id)) {
@@ -583,7 +573,6 @@ const Catalog = () => {
     return Array.from(disabledOptions);
   };
 
-  // Function to check if a category filter is valid for the current product class
   const getValidCategoryFiltersForProductClass = (productClassId: string) => {
     if (!productClassId) return {};
 
@@ -623,7 +612,6 @@ const Catalog = () => {
     const newSelections = [...selections.slice(0, level), value];
     setSelections(newSelections);
 
-    // If we're changing the product class, clear category filters
     if (level <= 1) {
       setCategoryFilters({});
     }
@@ -637,12 +625,10 @@ const Catalog = () => {
       return;
     }
 
-    // Check if the selected option is disabled for the current product class
     const disabledOptions = getDisabledOptionsForProductClass(
       deepestSelectedClassId
     );
     if (disabledOptions.includes(optionId)) {
-      // Don't allow selecting disabled options
       return;
     }
 
@@ -736,7 +722,8 @@ const Catalog = () => {
       );
     }
 
-    return filtered.filter((service: any) => service.available);
+    // Filter by isActive instead of available, since API uses isActive
+    return filtered.filter((service: any) => service.isActive !== false);
   };
 
   const getVisibleItems = () => {
@@ -859,64 +846,51 @@ const Catalog = () => {
   const renderPartCard = (part: any) => (
     <div
       key={part.id}
-      className="bg-foreground rounded border hover:shadow-md transition-shadow">
-      <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
-        {part.image ? (
-          <img
-            src={part.image}
-            alt={part.name}
-            className="w-full h-48 object-cover rounded-t-lg"
-          />
-        ) : (
-          <span>No Image Available</span>
-        )}
+      className="bg-foreground rounded border hover:shadow-md transition-shadow p-2">
+      <div className="flex justify-between items-start">
+        <div className="overflow-hidden w-full">
+          <h3 className="text-lg font-medium text-text-muted">{part.name}</h3>
+          <p className="text-sm text-text-muted mt-1 truncate">
+            {part.description}
+          </p>
+          <p className="text-xs text-text-muted mt-2">
+            SKU: {part.sku} | Category: {part.category}
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span
+              className={`text-xs px-2 py-1 rounded ${part.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+              {part.inStock
+                ? `In Stock (${part.stockQuantity})`
+                : "Out of Stock"}
+            </span>
+          </div>
+        </div>
+        <button
+          className="text-text-muted hover:text-text"
+          onClick={() => {
+            setSelectedDetailItem(part);
+            setIsDetailModalOpen(true);
+          }}>
+          <MoreHorizontal size={20} />
+        </button>
       </div>
-      <div className="p-2">
-        <div className="flex justify-between items-start">
-          <div className="overflow-hidden w-full">
-            <h3 className="text-lg font-medium text-text-muted">{part.name}</h3>
-            <p className="text-sm text-text-muted mt-1 truncate">
-              {part.description}
-            </p>
-            <p className="text-xs text-text-muted mt-2">
-              SKU: {part.sku} | Category: {part.category}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span
-                className={`text-xs px-2 py-1 rounded ${part.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                {part.inStock
-                  ? `In Stock (${part.stockQuantity})`
-                  : "Out of Stock"}
-              </span>
-            </div>
-          </div>
-          <button
-            className="text-text-muted hover:text-text"
-            onClick={() => {
-              setSelectedDetailItem(part);
-              setIsDetailModalOpen(true);
-            }}>
-            <MoreHorizontal size={20} />
-          </button>
-        </div>
 
-        <div className="mt-4 pt-4 border-t flex gap-2 flex-col">
-          <div>
-            <div className="text-xs text-text-muted">Price</div>
-            <div className="text-lg font-semibold text-text-muted">
-              {formatCurrency(part.price, false)}
-            </div>
+      <div className="mt-4 pt-4 border-t flex justify-between items-center">
+        <div>
+          <div className="text-xs text-text-muted">Price</div>
+          <div className="text-lg font-semibold text-text-muted">
+            {formatCurrency(part.price, false)}
           </div>
-          <Button
-            onClick={() => {
-              setSelectedItem(part);
-              setIsQuoteModalOpen(true);
-            }}
-            variant="primary"
-            disabled={!part.inStock}>
-            Add to Quote
-          </Button>
         </div>
+        <Button
+          onClick={() => {
+            setSelectedItem(part);
+            setIsQuoteModalOpen(true);
+          }}
+          variant="primary"
+          disabled={!part.inStock}>
+          Add to Quote
+        </Button>
       </div>
     </div>
   );
@@ -924,50 +898,44 @@ const Catalog = () => {
   const renderServiceCard = (service: any) => (
     <div
       key={service.id}
-      className="bg-foreground rounded border hover:shadow-md transition-shadow">
-      <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
-        <span className="text-4xl"></span>
+      className="bg-foreground rounded border hover:shadow-md transition-shadow p-2">
+      <div className="flex justify-between items-start">
+        <div className="overflow-hidden w-full">
+          <h3 className="text-lg font-medium text-text-muted">
+            {service.name}
+          </h3>
+          <p className="text-sm text-text-muted mt-1 truncate">
+            {service.description}
+          </p>
+          <p className="text-xs text-text-muted mt-2">
+            Service Type: {service.type}
+          </p>
+        </div>
+        <button
+          className="text-text-muted hover:text-text"
+          onClick={() => {
+            setSelectedDetailItem(service);
+            setIsDetailModalOpen(true);
+          }}>
+          <MoreHorizontal size={20} />
+        </button>
       </div>
 
-      <div className="p-2">
-        <div className="flex justify-between items-start">
-          <div className="overflow-hidden w-full">
-            <h3 className="text-lg font-medium text-text-muted">
-              {service.name}
-            </h3>
-            <p className="text-sm text-text-muted mt-1 truncate">
-              {service.description}
-            </p>
-            <p className="text-xs text-text-muted mt-2">
-              Duration: {service.duration} | Category: {service.category}
-            </p>
+      <div className="mt-4 pt-4 border-t flex justify-between items-center">
+        <div>
+          <div className="text-xs text-text-muted">Price</div>
+          <div className="text-lg font-semibold text-text-muted">
+            {formatCurrency(service.unitPrice, false)}
           </div>
-          <button
-            className="text-text-muted hover:text-text"
-            onClick={() => {
-              setSelectedDetailItem(service);
-              setIsDetailModalOpen(true);
-            }}>
-            <MoreHorizontal size={20} />
-          </button>
         </div>
-
-        <div className="mt-4 pt-4 border-t flex gap-2 flex-col">
-          <div>
-            <div className="text-xs text-text-muted">Price</div>
-            <div className="text-lg font-semibold text-text-muted">
-              {formatCurrency(service.price, false)}
-            </div>
-          </div>
-          <Button
-            onClick={() => {
-              setSelectedItem(service);
-              setIsQuoteModalOpen(true);
-            }}
-            variant="primary">
-            Add to Quote
-          </Button>
-        </div>
+        <Button
+          onClick={() => {
+            setSelectedItem(service);
+            setIsQuoteModalOpen(true);
+          }}
+          variant="primary">
+          Add to Quote
+        </Button>
       </div>
     </div>
   );
@@ -978,72 +946,91 @@ const Catalog = () => {
         <>
           <div className="flex flex-col gap-2 text-text-muted">
             <h3 className="text-sm font-medium">Product Class</h3>
-            {Array.from({ length: visibleLevels }).map((_, level) => {
-              const options = getOptionsForLevel(level);
+            {productClassesLoading ? (
+              <div className="flex items-center gap-2 p-2">
+                <Loader size="sm" />
+                <span className="text-sm">Loading product classes...</span>
+              </div>
+            ) : (
+              Array.from({ length: visibleLevels }).map((_, level) => {
+                const options = getOptionsForLevel(level);
 
-              return options.length > 0 ? (
-                <select
-                  key={`product-class-${level}`}
-                  value={selections[level] || ""}
-                  onChange={(e) => handleSelectionChange(level, e.target.value)}
-                  className="rounded border-border bg-foreground">
-                  <option value="">
-                    Select {level === 0 ? "Category" : "Option"}
-                  </option>
-                  {options.map((option) => (
-                    <option
-                      key={option.id}
-                      value={option.id}>
-                      {option.name}
+                return options.length > 0 ? (
+                  <select
+                    key={`product-class-${level}`}
+                    value={selections[level] || ""}
+                    onChange={(e) =>
+                      handleSelectionChange(level, e.target.value)
+                    }
+                    className="rounded border-border bg-foreground">
+                    <option value="">
+                      Select {level === 0 ? "Category" : "Option"}
                     </option>
-                  ))}
-                </select>
-              ) : null;
-            })}
+                    {options.map((option) => (
+                      <option
+                        key={option.id}
+                        value={option.id}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null;
+              })
+            )}
 
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-medium mb-2">Option Filters</h3>
 
-              {productClassOptions?.map((category: any) => {
-                const disabledOptions = getDisabledOptionsForProductClass(
-                  deepestSelectedClassId
-                );
+              {optionsLoading ? (
+                <div className="flex items-center gap-2 p-2">
+                  <Loader size="sm" />
+                  <span className="text-sm">Loading options...</span>
+                </div>
+              ) : (
+                productClassOptions?.map((category: any) => {
+                  const disabledOptions = getDisabledOptionsForProductClass(
+                    deepestSelectedClassId
+                  );
 
-                return (
-                  <div
-                    key={category.id}
-                    className="mb-2">
-                    <label className="block text-sm mb-1">
-                      {category.name} {category.isRequired && "*"}
-                    </label>
-                    <select
-                      value={categoryFilters[category.id] || ""}
-                      onChange={(e) =>
-                        handleCategoryFilterChange(category.id, e.target.value)
-                      }
-                      className="rounded border-border bg-foreground w-full">
-                      <option value="">Any</option>
-                      {category.options
-                        ?.sort(
-                          (a: any, b: any) => a.displayOrder - b.displayOrder
-                        )
-                        .map((option: any) => {
-                          const isDisabled = disabledOptions.includes(
-                            option.id
-                          );
-                          return (
-                            <option
-                              key={option.id}
-                              value={option.id}
-                              disabled={isDisabled}>
-                              {option.name} {isDisabled && "(Disabled)"}
-                            </option>
-                          );
-                        })}
-                    </select>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={category.id}
+                      className="mb-2">
+                      <label className="block text-sm mb-1">
+                        {category.name} {category.isRequired && "*"}
+                      </label>
+                      <select
+                        value={categoryFilters[category.id] || ""}
+                        onChange={(e) =>
+                          handleCategoryFilterChange(
+                            category.id,
+                            e.target.value
+                          )
+                        }
+                        className="rounded border-border bg-foreground w-full">
+                        <option value="">Any</option>
+                        {category.options
+                          ?.sort(
+                            (a: any, b: any) => a.displayOrder - b.displayOrder
+                          )
+                          .map((option: any) => {
+                            const isDisabled = disabledOptions.includes(
+                              option.id
+                            );
+                            return (
+                              <option
+                                key={option.id}
+                                value={option.id}
+                                disabled={isDisabled}>
+                                {option.name} {isDisabled && "(Disabled)"}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </>
@@ -1054,19 +1041,26 @@ const Catalog = () => {
       return (
         <div className="flex flex-col gap-2 text-text-muted">
           <h3 className="text-sm font-medium">Part Category</h3>
-          <select
-            value={partCategoryFilter}
-            onChange={(e) => setPartCategoryFilter(e.target.value)}
-            className="rounded border-border bg-foreground">
-            <option value="">All Categories</option>
-            {partCategories.map((category) => (
-              <option
-                key={category}
-                value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+          {partsLoading ? (
+            <div className="flex items-center gap-2 p-2">
+              <Loader size="sm" />
+              <span className="text-sm">Loading parts...</span>
+            </div>
+          ) : (
+            <select
+              value={partCategoryFilter}
+              onChange={(e) => setPartCategoryFilter(e.target.value)}
+              className="rounded border-border bg-foreground">
+              <option value="">All Categories</option>
+              {partCategories.map((category) => (
+                <option
+                  key={category}
+                  value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          )}
 
           <h3 className="text-sm font-medium mt-4">Stock Status</h3>
           <select
@@ -1085,19 +1079,26 @@ const Catalog = () => {
       return (
         <div className="flex flex-col gap-2 text-text-muted">
           <h3 className="text-sm font-medium">Service Category</h3>
-          <select
-            value={serviceCategoryFilter}
-            onChange={(e) => setServiceCategoryFilter(e.target.value)}
-            className="rounded border-border bg-foreground">
-            <option value="">All Categories</option>
-            {serviceCategories.map((category) => (
-              <option
-                key={category}
-                value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+          {servicesLoading ? (
+            <div className="flex items-center gap-2 p-2">
+              <Loader size="sm" />
+              <span className="text-sm">Loading services...</span>
+            </div>
+          ) : (
+            <select
+              value={serviceCategoryFilter}
+              onChange={(e) => setServiceCategoryFilter(e.target.value)}
+              className="rounded border-border bg-foreground">
+              <option value="">All Categories</option>
+              {serviceCategories.map((category) => (
+                <option
+                  key={category}
+                  value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       );
     }
@@ -1106,6 +1107,24 @@ const Catalog = () => {
   };
 
   const renderContent = () => {
+    // Check if any relevant data is loading
+    const isLoading =
+      (filterType === "configs" &&
+        (productClassesLoading || configurationsLoading || optionsLoading)) ||
+      (filterType === "parts" && partsLoading) ||
+      (filterType === "services" && servicesLoading);
+
+    if (isLoading) {
+      return (
+        <div className="col-span-full flex items-center justify-center p-8 bg-foreground rounded border">
+          <div className="flex flex-col items-center gap-2">
+            <Loader size="lg" />
+            <p className="text-text-muted">Loading {filterType}...</p>
+          </div>
+        </div>
+      );
+    }
+
     const items = getVisibleItems();
 
     if (items.length === 0) {
@@ -1219,6 +1238,8 @@ const Catalog = () => {
         onClose={() => setIsQuoteModalOpen(false)}
         item={selectedItem}
         itemType={filterType}
+        quotes={quotes || []}
+        quotesLoading={quotesLoading}
       />
 
       <DetailModal
