@@ -1,4 +1,4 @@
-import { Plus, MoreHorizontal, Import } from "lucide-react";
+import { Plus, MoreHorizontal, Import, Filter } from "lucide-react";
 import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader, Loader } from "@/components";
@@ -6,9 +6,6 @@ import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useGetOptionRules } from "@/hooks/config";
 import { useNavigate } from "react-router-dom";
-
-const partCategories = ["Hydraulics", "Mechanical", "Electronics", "Safety"];
-const serviceCategories = ["Maintenance", "Installation", "Training", "Repair"];
 
 const TreeNode = ({ node }: { node: any }) => {
   return (
@@ -578,66 +575,6 @@ const Catalog = () => {
     return validFilters;
   };
 
-  const getOptionsForLevel = (
-    level: number
-  ): Array<{ id: string; name: string }> => {
-    if (!productClasses) return [];
-
-    if (level === 0) {
-      return productClasses.filter((pc) => pc.parentId === null);
-    }
-
-    const parentId = selections[level - 1];
-    return parentId
-      ? productClasses.filter((pc) => pc.parentId === parentId)
-      : [];
-  };
-
-  const handleSelectionChange = (level: number, value: string) => {
-    if (!value) {
-      setSelections(selections.slice(0, level));
-      return;
-    }
-
-    const newSelections = [...selections.slice(0, level), value];
-    setSelections(newSelections);
-
-    if (level <= 1) {
-      setCategoryFilters({});
-    }
-  };
-
-  const handleCategoryFilterChange = (categoryId: string, optionId: string) => {
-    if (!optionId) {
-      const newFilters = { ...categoryFilters };
-      delete newFilters[categoryId];
-      setCategoryFilters(newFilters);
-      return;
-    }
-
-    const disabledOptions = getDisabledOptionsForProductClass(
-      deepestSelectedClassId
-    );
-    if (disabledOptions.includes(optionId)) {
-      return;
-    }
-
-    setCategoryFilters({
-      ...categoryFilters,
-      [categoryId]: optionId,
-    });
-  };
-
-  const resetFilters = () => {
-    setSelections([]);
-    setCategoryFilters({});
-    setPartCategoryFilter("");
-    setServiceCategoryFilter("");
-    setStockFilter("all");
-  };
-
-  const visibleLevels = selections.length + 1;
-
   const getFilteredByProductClass = () => {
     if (!configurations) return [];
 
@@ -734,21 +671,6 @@ const Catalog = () => {
       (pc) => pc.id === config.productClassId
     );
 
-    const configOptions = config.selectedOptions.map((configOpt: any) => {
-      const option = configOpt.option;
-      const category = option
-        ? sampleOptionCategories.find(
-            (cat: any) => cat.id === option.categoryId
-          )
-        : null;
-
-      return {
-        ...configOpt,
-        option,
-        category,
-      };
-    });
-
     return (
       <div
         key={config.id}
@@ -789,28 +711,7 @@ const Catalog = () => {
             </button>
           </div>
 
-          <div className="mt-3 text-xs text-text-muted">
-            {configOptions
-              .filter((co: any) => co.category && co.option)
-              .sort(
-                (a: any, b: any) =>
-                  (a.category?.displayOrder || 0) -
-                  (b.category?.displayOrder || 0)
-              )
-              .map((co: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex justify-between">
-                  <span>{co.category?.name}:</span>
-                  <span>
-                    {co.option?.name}{" "}
-                    {co.quantity > 1 ? ` (x${co.quantity})` : ""}
-                  </span>
-                </div>
-              ))}
-          </div>
-
-          <div className="mt-4 pt-4 border-t flex gap-2 flex-col">
+          <div className="mt-4 pt-4 border-t flex justify-between items-center">
             <div>
               <div className="text-xs text-text-muted">
                 {config.isTemplate ? "Starting from" : "Price"}
@@ -920,172 +821,6 @@ const Catalog = () => {
     </div>
   );
 
-  const renderFilters = () => {
-    if (filterType === "configs") {
-      return (
-        <>
-          <div className="flex flex-col gap-2 text-text-muted">
-            <h3 className="text-sm font-medium">Product Class</h3>
-            {productClassesLoading ? (
-              <div className="flex items-center gap-2 p-2">
-                <Loader size="sm" />
-                <span className="text-sm">Loading product classes...</span>
-              </div>
-            ) : (
-              Array.from({ length: visibleLevels }).map((_, level) => {
-                const options = getOptionsForLevel(level);
-
-                return options.length > 0 ? (
-                  <select
-                    key={`product-class-${level}`}
-                    value={selections[level] || ""}
-                    onChange={(e) =>
-                      handleSelectionChange(level, e.target.value)
-                    }
-                    className="rounded border-border bg-foreground">
-                    <option value="">
-                      Select {level === 0 ? "Category" : "Option"}
-                    </option>
-                    {options.map((option) => (
-                      <option
-                        key={option.id}
-                        value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : null;
-              })
-            )}
-
-            <div className="border-t pt-4 mt-2">
-              <h3 className="text-sm font-medium mb-2">Option Filters</h3>
-
-              {optionsLoading ? (
-                <div className="flex items-center gap-2 p-2">
-                  <Loader size="sm" />
-                  <span className="text-sm">Loading options...</span>
-                </div>
-              ) : (
-                productClassOptions?.map((category: any) => {
-                  const disabledOptions = getDisabledOptionsForProductClass(
-                    deepestSelectedClassId
-                  );
-
-                  return (
-                    <div
-                      key={category.id}
-                      className="mb-2">
-                      <label className="block text-sm mb-1">
-                        {category.name} {category.isRequired && "*"}
-                      </label>
-                      <select
-                        value={categoryFilters[category.id] || ""}
-                        onChange={(e) =>
-                          handleCategoryFilterChange(
-                            category.id,
-                            e.target.value
-                          )
-                        }
-                        className="rounded border-border bg-foreground w-full">
-                        <option value="">Any</option>
-                        {category.options
-                          ?.sort(
-                            (a: any, b: any) => a.displayOrder - b.displayOrder
-                          )
-                          .map((option: any) => {
-                            const isDisabled = disabledOptions.includes(
-                              option.id
-                            );
-                            return (
-                              <option
-                                key={option.id}
-                                value={option.id}
-                                disabled={isDisabled}>
-                                {option.name} {isDisabled && "(Disabled)"}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    if (filterType === "parts") {
-      return (
-        <div className="flex flex-col gap-2 text-text-muted">
-          <h3 className="text-sm font-medium">Part Category</h3>
-          {partsLoading ? (
-            <div className="flex items-center gap-2 p-2">
-              <Loader size="sm" />
-              <span className="text-sm">Loading parts...</span>
-            </div>
-          ) : (
-            <select
-              value={partCategoryFilter}
-              onChange={(e) => setPartCategoryFilter(e.target.value)}
-              className="rounded border-border bg-foreground">
-              <option value="">All Categories</option>
-              {partCategories.map((category) => (
-                <option
-                  key={category}
-                  value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          )}
-
-          <h3 className="text-sm font-medium mt-4">Stock Status</h3>
-          <select
-            value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value as any)}
-            className="rounded border-border bg-foreground">
-            <option value="all">All Items</option>
-            <option value="in-stock">In Stock Only</option>
-            <option value="out-of-stock">Out of Stock</option>
-          </select>
-        </div>
-      );
-    }
-
-    if (filterType === "services") {
-      return (
-        <div className="flex flex-col gap-2 text-text-muted">
-          <h3 className="text-sm font-medium">Service Category</h3>
-          {servicesLoading ? (
-            <div className="flex items-center gap-2 p-2">
-              <Loader size="sm" />
-              <span className="text-sm">Loading services...</span>
-            </div>
-          ) : (
-            <select
-              value={serviceCategoryFilter}
-              onChange={(e) => setServiceCategoryFilter(e.target.value)}
-              className="rounded border-border bg-foreground">
-              <option value="">All Categories</option>
-              {serviceCategories.map((category) => (
-                <option
-                  key={category}
-                  value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   const renderContent = () => {
     // Check if any relevant data is loading
     const isLoading =
@@ -1134,6 +869,13 @@ const Catalog = () => {
         actions={[
           {
             type: "button",
+            label: "Filter",
+            variant: "secondary-outline",
+            icon: <Filter size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
             label: "Import",
             variant: "secondary-outline",
             icon: <Import size={16} />,
@@ -1152,64 +894,47 @@ const Catalog = () => {
       />
 
       <div className="p-2">
-        <div className="flex gap-2">
-          <div className="w-64 flex-shrink-0 text-sm">
-            <div className="bg-foreground rounded border p-2">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-semibold text-text-muted">Filters</h2>
-                <Button
-                  onClick={resetFilters}
-                  variant="ghost">
-                  Reset
-                </Button>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex flex-col gap-1">
-                  <button
-                    className={`px-3 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                      filterType === "configs"
-                        ? "bg-primary text-background"
-                        : "bg-surface text-text-muted hover:bg-foreground"
-                    }`}
-                    onClick={() => setFilterType("configs")}>
-                    Configurations
-                  </button>
-                  <button
-                    className={`px-3 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                      filterType === "parts"
-                        ? "bg-primary text-background"
-                        : "bg-surface text-text-muted hover:bg-foreground"
-                    }`}
-                    onClick={() => setFilterType("parts")}>
-                    Parts
-                  </button>
-                  <button
-                    className={`px-3 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                      filterType === "services"
-                        ? "bg-primary text-background"
-                        : "bg-surface text-text-muted hover:bg-foreground"
-                    }`}
-                    onClick={() => setFilterType("services")}>
-                    Services
-                  </button>
-                </div>
-              </div>
-
-              {renderFilters()}
-            </div>
+        {/* Tabs */}
+        <div className="mb-2">
+          <div className="inline-flex gap-1 bg-surface rounded-lg p-1">
+            <button
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
+                filterType === "configs"
+                  ? "bg-primary text-background"
+                  : "text-text-muted hover:bg-foreground"
+              }`}
+              onClick={() => setFilterType("configs")}>
+              Machines
+            </button>
+            <button
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
+                filterType === "parts"
+                  ? "bg-primary text-background"
+                  : "text-text-muted hover:bg-foreground"
+              }`}
+              onClick={() => setFilterType("parts")}>
+              Parts
+            </button>
+            <button
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
+                filterType === "services"
+                  ? "bg-primary text-background"
+                  : "text-text-muted hover:bg-foreground"
+              }`}
+              onClick={() => setFilterType("services")}>
+              Services
+            </button>
           </div>
+        </div>
 
-          <div className="flex-1">
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2"
-                  : "space-y-4"
-              }>
-              {renderContent()}
-            </div>
-          </div>
+        {/* Content */}
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2"
+              : "space-y-4"
+          }>
+          {renderContent()}
         </div>
       </div>
 
