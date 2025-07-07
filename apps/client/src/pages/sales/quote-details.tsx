@@ -71,6 +71,7 @@ const QuoteDetails = () => {
   }, []);
 
   const handleDragStart = (itemId: string) => {
+    if (quoteOverview?.quote?.status !== "DRAFT") return;
     setDraggedItemId(itemId);
   };
 
@@ -447,9 +448,11 @@ const QuoteDetails = () => {
                 className="grid p-2 text-xs font-medium text-text-muted uppercase"
                 style={{
                   gridTemplateColumns:
-                    "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                    quoteOverview?.quote?.status === "DRAFT"
+                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                <div></div>
+                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
                 <div className="truncate whitespace-nowrap">Line</div>
                 <div className="truncate whitespace-nowrap">Item</div>
                 <div className="truncate whitespace-nowrap">Description</div>
@@ -491,18 +494,22 @@ const QuoteDetails = () => {
                       className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId && draggedItemId !== item.id ? "opacity-50" : ""}`}
                       style={{
                         gridTemplateColumns:
-                          "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                          quoteOverview?.quote?.status === "DRAFT"
+                            ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                            : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                       }}>
-                      <div className="flex items-center">
-                        <GripVertical
-                          size={16}
-                          className="text-text-muted cursor-grab"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            handleDragStart(item.id);
-                          }}
-                        />
-                      </div>
+                      {quoteOverview?.quote?.status === "DRAFT" && (
+                        <div className="flex items-center">
+                          <GripVertical
+                            size={16}
+                            className="text-text-muted cursor-grab"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              handleDragStart(item.id);
+                            }}
+                          />
+                        </div>
+                      )}
                       <div
                         className="text-sm text-text-muted truncate whitespace-nowrap"
                         title={item.lineNumber}>
