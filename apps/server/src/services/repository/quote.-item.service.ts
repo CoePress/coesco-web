@@ -12,7 +12,7 @@ export class QuoteItemService extends BaseService<QuoteItem> {
   protected modelName = "quoteItem";
 
   public async getByQuoteId(quoteId: string, tx?: Prisma.TransactionClient) {
-    const model = tx ? (tx as any)[this.entityName.toLowerCase()] : this.model;
+    const model = tx ? (tx as any)[this.modelName] : this.model;
     const quoteItems = await model.findMany({
       where: { quoteId },
       include: {

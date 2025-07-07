@@ -426,7 +426,7 @@ export class QuotingService {
 
   async updateQuoteItemLineNumber(quoteItemId: string, lineNumber: number) {
     return await prisma.$transaction(async (tx) => {
-      const quoteItem = await quoteItemService.getById(quoteItemId);
+      const quoteItem = await quoteItemService.getById(quoteItemId, tx);
 
       if (!quoteItem.data) {
         throw new BadRequestError("Quote item not found");
@@ -455,9 +455,13 @@ export class QuotingService {
       }
 
       // Update the target item's line number
-      const updatedQuoteItem = await quoteItemService.update(quoteItemId, {
-        lineNumber,
-      });
+      const updatedQuoteItem = await quoteItemService.update(
+        quoteItemId,
+        {
+          lineNumber,
+        },
+        tx
+      );
 
       if (!updatedQuoteItem.success || !updatedQuoteItem.data) {
         throw new BadRequestError("Failed to update quote item");
@@ -474,9 +478,13 @@ export class QuotingService {
             item.lineNumber > oldLineNumber &&
             item.lineNumber <= newLineNumber
           ) {
-            await quoteItemService.update(item.id, {
-              lineNumber: item.lineNumber - 1,
-            });
+            await quoteItemService.update(
+              item.id,
+              {
+                lineNumber: item.lineNumber - 1,
+              },
+              tx
+            );
           }
         }
       }
@@ -487,9 +495,13 @@ export class QuotingService {
             item.lineNumber >= newLineNumber &&
             item.lineNumber < oldLineNumber
           ) {
-            await quoteItemService.update(item.id, {
-              lineNumber: item.lineNumber + 1,
-            });
+            await quoteItemService.update(
+              item.id,
+              {
+                lineNumber: item.lineNumber + 1,
+              },
+              tx
+            );
           }
         }
       }

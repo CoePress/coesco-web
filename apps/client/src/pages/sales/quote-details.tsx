@@ -31,6 +31,7 @@ import { useDeleteEntity } from "@/hooks/_base/use-delete-entity";
 import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
+import { useUpdateLineNumber } from "@/hooks/sales/use-update-linenumber";
 
 const QuoteDetails = () => {
   const navigate = useNavigate();
@@ -66,6 +67,8 @@ const QuoteDetails = () => {
   const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
     quoteId: quoteId || "",
   });
+
+  const { updateLineNumber } = useUpdateLineNumber();
 
   const quoteItems = quoteOverview?.quoteItems || [];
   const customer = quoteOverview?.customer || null;
@@ -384,7 +387,7 @@ const QuoteDetails = () => {
             {/* Drop Zones and Items */}
             <div
               className={`relative select-none ${draggedItemId ? "cursor-grabbing" : ""}`}
-              onMouseUp={() => {
+              onMouseUp={async () => {
                 if (draggedItemId && hoveredRowId) {
                   // Calculate new line numbers based on drop position
                   const currentItems = quoteItems.sort(
@@ -415,23 +418,11 @@ const QuoteDetails = () => {
                       }
                     }
 
-                    console.log(
-                      `Dragged item "${draggedItem.item.name}" to line ${newLineNumber}`
-                    );
-                    console.log(
-                      "Updated line numbers:",
-                      currentItems.map((item: any) => ({
-                        id: item.id,
-                        name: item.item.name,
-                        currentLine: item.lineNumber,
-                        newLine:
-                          item.id === draggedItemId
-                            ? newLineNumber
-                            : item.lineNumber > draggedItem.lineNumber
-                              ? item.lineNumber - 1
-                              : item.lineNumber,
-                      }))
-                    );
+                    // Call the API to update the line number
+                    await updateLineNumber(draggedItemId, newLineNumber);
+
+                    // Refresh the quote data to get updated line numbers
+                    refreshQuote();
                   }
                 }
 
