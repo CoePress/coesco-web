@@ -297,26 +297,16 @@ const DetailModal = ({
           <h4 className="font-semibold text-text-muted mb-3">Specifications</h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">SKU</span>
-              <span className="font-mono font-medium text-text-muted">
-                {item.sku}
-              </span>
+              <span className="text-text-muted">Type</span>
+              <span className="font-medium text-text-muted">{item.type}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">Category</span>
-              <span className="font-medium text-text-muted">
-                {item.category}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-              <span className="text-text-muted">Stock Status</span>
+              <span className="text-text-muted">Status</span>
               <span
                 className={`font-medium ${
-                  item.inStock ? "text-green-600" : "text-red-600"
+                  item.isActive ? "text-green-600" : "text-red-600"
                 }`}>
-                {item.inStock
-                  ? `In Stock (${item.stockQuantity} units)`
-                  : "Out of Stock"}
+                {item.isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
@@ -330,13 +320,13 @@ const DetailModal = ({
             <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
               <div className="text-sm text-text-muted mb-1">Unit Price</div>
               <div className="text-2xl font-bold text-text-muted">
-                {formatCurrency(item.price, false)}
+                {formatCurrency(item.unitPrice, false)}
               </div>
             </div>
             <div className="p-3 bg-surface rounded-lg">
               <div className="text-sm text-text-muted mb-1">Availability</div>
               <div className="font-medium text-text-muted">
-                {item.inStock
+                {item.isActive
                   ? "Ready for immediate shipment"
                   : "Backorder available"}
               </div>
@@ -351,8 +341,8 @@ const DetailModal = ({
             onClose();
           }}
           variant="primary"
-          disabled={!item.inStock}>
-          {item.inStock ? "Add to Quote" : "Request Quote"}
+          disabled={!item.isActive}>
+          {item.isActive ? "Add to Quote" : "Request Quote"}
         </Button>
       </div>
     </div>
@@ -703,9 +693,9 @@ const Catalog = () => {
     }
 
     if (stockFilter === "in-stock") {
-      filtered = filtered.filter((part: any) => part.inStock);
+      filtered = filtered.filter((part: any) => part.isActive);
     } else if (stockFilter === "out-of-stock") {
-      filtered = filtered.filter((part: any) => !part.inStock);
+      filtered = filtered.filter((part: any) => !part.isActive);
     }
 
     return filtered;
@@ -853,17 +843,7 @@ const Catalog = () => {
           <p className="text-sm text-text-muted mt-1 truncate">
             {part.description}
           </p>
-          <p className="text-xs text-text-muted mt-2">
-            SKU: {part.sku} | Category: {part.category}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span
-              className={`text-xs px-2 py-1 rounded ${part.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-              {part.inStock
-                ? `In Stock (${part.stockQuantity})`
-                : "Out of Stock"}
-            </span>
-          </div>
+          <p className="text-xs text-text-muted mt-2">Type: {part.type}</p>
         </div>
         <button
           className="text-text-muted hover:text-text"
@@ -879,7 +859,7 @@ const Catalog = () => {
         <div>
           <div className="text-xs text-text-muted">Price</div>
           <div className="text-lg font-semibold text-text-muted">
-            {formatCurrency(part.price, false)}
+            {formatCurrency(part.unitPrice, false)}
           </div>
         </div>
         <Button
@@ -888,7 +868,7 @@ const Catalog = () => {
             setIsQuoteModalOpen(true);
           }}
           variant="primary"
-          disabled={!part.inStock}>
+          disabled={!part.isActive}>
           Add to Quote
         </Button>
       </div>
