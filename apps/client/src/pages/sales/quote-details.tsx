@@ -8,6 +8,7 @@ import {
   Eye,
   X,
   Trash,
+  GripVertical,
 } from "lucide-react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
@@ -22,7 +23,7 @@ import {
   Tabs,
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
@@ -44,6 +45,9 @@ const QuoteDetails = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingQuantity, setEditingQuantity] = useState<number>(0);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const draggedElementRef = useRef<HTMLElement | null>(null);
 
   const { id: quoteId } = useParams();
 
@@ -349,6 +353,11 @@ const QuoteDetails = () => {
                   <th
                     scope="col"
                     className="p-2 text-left text-xs font-medium text-text-muted uppercase">
+                    <span className="sr-only">Drag</span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
                     Line
                   </th>
                   <th
@@ -394,11 +403,75 @@ const QuoteDetails = () => {
                 </tr>
               </thead>
 
-              <tbody className="bg-foreground divide-y divide-border">
+              <tbody
+                className={`bg-foreground divide-y divide-border select-none ${
+                  draggedItemId ? "cursor-grabbing" : "cursor-grab"
+                }`}
+                onMouseDown={(e) => {
+                  const target = e.target as HTMLElement;
+                  const row = target.closest("tr");
+                  if (row) {
+                    const itemId = row.getAttribute("data-item-id");
+                    if (itemId) {
+                      setDraggedItemId(itemId);
+                    }
+                  }
+                }}
+                onMouseUp={() => {
+                  setDraggedItemId(null);
+                  setHoveredRowId(null);
+                }}
+                onMouseMove={(e) => {
+                  if (draggedItemId) {
+                    const target = e.target as HTMLElement;
+                    const row = target.closest("tr");
+                    if (row) {
+                      const itemId = row.getAttribute("data-item-id");
+                      if (itemId && itemId !== draggedItemId) {
+                        // Check if we're hovering in the top half of the first row
+                        const rect = row.getBoundingClientRect();
+                        const mouseY = e.clientY;
+                        const isTopHalf = mouseY < rect.top + rect.height / 2;
+
+                        if (itemId === quoteItems[0]?.id && isTopHalf) {
+                          setHoveredRowId("top");
+                        } else {
+                          setHoveredRowId(itemId);
+                        }
+                      } else {
+                        setHoveredRowId(null);
+                      }
+                    } else {
+                      setHoveredRowId(null);
+                    }
+                  }
+                }}
+                onMouseLeave={() => setHoveredRowId(null)}>
                 {quoteItems
                   .sort((a: any, b: any) => a.lineNumber - b.lineNumber)
                   .map((item: any) => (
-                    <tr key={item.id}>
+                    <tr
+                      key={item.id}
+                      data-item-id={item.id}
+                      className={`select-none ${
+                        draggedItemId === item.id ? "opacity-50" : ""
+                      } ${
+                        hoveredRowId === item.id
+                          ? "border-b border-b-primary"
+                          : ""
+                      } ${
+                        hoveredRowId === "top" && item.id === quoteItems[0]?.id
+                          ? "border-t border-t-primary"
+                          : ""
+                      }`}>
+                      <td className="p-2 whitespace-nowrap text-left">
+                        <div className="select-none">
+                          <GripVertical
+                            size={16}
+                            className="text-text-muted"
+                          />
+                        </div>
+                      </td>
                       <td className="p-2 whitespace-nowrap text-left">
                         <div className="text-sm text-text-muted">
                           {item.lineNumber}
@@ -509,7 +582,7 @@ const QuoteDetails = () => {
               <tfoot className="bg-foreground">
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="p-2 text-right text-sm uppercase text-text-muted">
                     Subtotal
                   </td>
@@ -528,7 +601,7 @@ const QuoteDetails = () => {
                 </tr>
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="p-2 text-right text-sm uppercase text-text-muted">
                     Discount
                   </td>
@@ -554,7 +627,7 @@ const QuoteDetails = () => {
                 </tr>
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="p-2 text-right text-sm uppercase text-text-muted">
                     Tax
                   </td>
@@ -573,7 +646,7 @@ const QuoteDetails = () => {
                 </tr>
                 <tr className="border-t border-border">
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="p-2 text-right text-sm uppercase font-bold text-text-muted">
                     Total
                   </td>
