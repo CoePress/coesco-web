@@ -52,13 +52,20 @@ const QuoteDetails = () => {
   const { id: quoteId } = useParams();
 
   useEffect(() => {
+    const handleMouseUp = () => {
+      setDraggedItemId(null);
+      setHoveredRowId(null);
+    };
+
     const handleMouseLeave = () => {
       setDraggedItemId(null);
       setHoveredRowId(null);
     };
 
+    document.addEventListener("mouseup", handleMouseUp);
     document.addEventListener("mouseleave", handleMouseLeave);
     return () => {
+      document.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
@@ -104,29 +111,30 @@ const QuoteDetails = () => {
   };
 
   const handleDragMove = (e: React.MouseEvent) => {
-    if (draggedItemId) {
-      const dropZones = document.querySelectorAll("[data-drop-zone]");
-      let closestZone: HTMLElement | null = null;
-      let closestDistance = Infinity;
+    if (!draggedItemId) return;
 
-      dropZones.forEach((zone) => {
-        const el = zone as HTMLElement;
-        const rect = el.getBoundingClientRect();
-        const zoneCenter = rect.top + rect.height / 2;
-        const distance = Math.abs(e.clientY - zoneCenter);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestZone = el;
-        }
-      });
+    const dropZones = document.querySelectorAll("[data-drop-zone]");
+    let closestZone: HTMLElement | null = null;
+    let closestDistance = Infinity;
 
-      if (closestZone !== null) {
-        // @ts-ignore
-        const zoneId = closestZone.getAttribute("data-drop-zone");
-        setHoveredRowId(zoneId || null);
-      } else {
-        setHoveredRowId(null);
+    dropZones.forEach((zone) => {
+      const el = zone as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      const zoneCenter = rect.top + rect.height / 2;
+      const distance = Math.abs(e.clientY - zoneCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestZone = el;
       }
+    });
+
+    if (closestZone !== null) {
+      const zoneId = (closestZone as HTMLElement).getAttribute(
+        "data-drop-zone"
+      );
+      setHoveredRowId(zoneId || null);
+    } else {
+      setHoveredRowId(null);
     }
   };
 
