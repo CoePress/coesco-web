@@ -385,6 +385,56 @@ const QuoteDetails = () => {
             <div
               className={`relative select-none ${draggedItemId ? "cursor-grabbing" : ""}`}
               onMouseUp={() => {
+                if (draggedItemId && hoveredRowId) {
+                  // Calculate new line numbers based on drop position
+                  const currentItems = quoteItems.sort(
+                    (a: any, b: any) => a.lineNumber - b.lineNumber
+                  );
+                  const draggedItem = currentItems.find(
+                    (item: any) => item.id === draggedItemId
+                  );
+
+                  if (draggedItem) {
+                    let newLineNumber = 1;
+
+                    if (hoveredRowId === "top") {
+                      // Dropped at the top
+                      newLineNumber = 1;
+                    } else {
+                      // Dropped after a specific item
+                      const afterItemId = hoveredRowId.replace("after-", "");
+                      const afterItem = currentItems.find(
+                        (item: any) => item.id === afterItemId
+                      );
+
+                      if (afterItem) {
+                        newLineNumber = afterItem.lineNumber + 1;
+                      } else {
+                        // If no after item found, place at the end
+                        newLineNumber = currentItems.length + 1;
+                      }
+                    }
+
+                    console.log(
+                      `Dragged item "${draggedItem.item.name}" to line ${newLineNumber}`
+                    );
+                    console.log(
+                      "Updated line numbers:",
+                      currentItems.map((item: any) => ({
+                        id: item.id,
+                        name: item.item.name,
+                        currentLine: item.lineNumber,
+                        newLine:
+                          item.id === draggedItemId
+                            ? newLineNumber
+                            : item.lineNumber > draggedItem.lineNumber
+                              ? item.lineNumber - 1
+                              : item.lineNumber,
+                      }))
+                    );
+                  }
+                }
+
                 setDraggedItemId(null);
                 setHoveredRowId(null);
               }}
