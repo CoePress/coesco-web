@@ -23,7 +23,7 @@ import {
   Tabs,
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
@@ -47,9 +47,21 @@ const QuoteDetails = () => {
   const [editingQuantity, setEditingQuantity] = useState<number>(0);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
-  const draggedElementRef = useRef<HTMLElement | null>(null);
 
   const { id: quoteId } = useParams();
+
+  // Reset drag state when mouse leaves the window
+  useEffect(() => {
+    const handleMouseLeave = () => {
+      setDraggedItemId(null);
+      setHoveredRowId(null);
+    };
+
+    document.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
 
   const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
     quoteId: quoteId || "",
@@ -347,147 +359,98 @@ const QuoteDetails = () => {
                 Add Item
               </Button>
             </div>
-            <table className="min-w-full divide-y divide-border">
-              <thead className="bg-foreground">
-                <tr>
-                  <th
-                    scope="col"
-                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
-                    <span className="sr-only">Drag</span>
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
-                    Line
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
-                    Item
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-left text-xs font-medium text-text-muted uppercase">
-                    Description
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    Quantity
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    Unit Price
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    Discount
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    Tax
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    Total
-                  </th>
-                  <th
-                    scope="col"
-                    className="p-2 text-right text-xs font-medium text-text-muted uppercase">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
 
-              <tbody
-                className={`bg-foreground divide-y divide-border select-none ${
-                  draggedItemId ? "cursor-grabbing" : "cursor-grab"
-                }`}
-                onMouseDown={(e) => {
-                  const target = e.target as HTMLElement;
-                  const row = target.closest("tr");
-                  if (row) {
-                    const itemId = row.getAttribute("data-item-id");
-                    if (itemId) {
-                      setDraggedItemId(itemId);
-                    }
-                  }
-                }}
-                onMouseUp={() => {
-                  setDraggedItemId(null);
-                  setHoveredRowId(null);
-                }}
-                onMouseMove={(e) => {
-                  if (draggedItemId) {
-                    const target = e.target as HTMLElement;
-                    const row = target.closest("tr");
-                    if (row) {
-                      const itemId = row.getAttribute("data-item-id");
-                      if (itemId && itemId !== draggedItemId) {
-                        // Check if we're hovering in the top half of the first row
-                        const rect = row.getBoundingClientRect();
-                        const mouseY = e.clientY;
-                        const isTopHalf = mouseY < rect.top + rect.height / 2;
+            {/* Header */}
+            <div className="bg-foreground border-b border-border">
+              <div
+                className="grid p-2 text-xs font-medium text-text-muted uppercase"
+                style={{
+                  gridTemplateColumns:
+                    "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 64px",
+                }}>
+                <div></div>
+                <div>Line</div>
+                <div>Item</div>
+                <div>Description</div>
+                <div className="text-right">Quantity</div>
+                <div className="text-right">Unit Price</div>
+                <div className="text-right">Discount</div>
+                <div className="text-right">Tax</div>
+                <div className="text-right">Total</div>
+                <div className="text-right"></div>
+              </div>
+            </div>
 
-                        if (itemId === quoteItems[0]?.id && isTopHalf) {
-                          setHoveredRowId("top");
-                        } else {
-                          setHoveredRowId(itemId);
-                        }
-                      } else {
-                        setHoveredRowId(null);
-                      }
-                    } else {
-                      setHoveredRowId(null);
+            {/* Drop Zones and Items */}
+            <div
+              className={`relative select-none ${draggedItemId ? "cursor-grabbing" : ""}`}
+              onMouseUp={() => {
+                setDraggedItemId(null);
+                setHoveredRowId(null);
+              }}
+              onMouseMove={(e) => {
+                if (draggedItemId) {
+                  const dropZones =
+                    document.querySelectorAll("[data-drop-zone]");
+                  let closestZone: HTMLElement | null = null;
+                  let closestDistance = Infinity;
+                  dropZones.forEach((zone) => {
+                    const el = zone as HTMLElement;
+                    const rect = el.getBoundingClientRect();
+                    const zoneCenter = rect.top + rect.height / 2;
+                    const distance = Math.abs(e.clientY - zoneCenter);
+                    if (distance < closestDistance) {
+                      closestDistance = distance;
+                      closestZone = el;
                     }
+                  });
+                  if (closestZone !== null) {
+                    // @ts-ignore
+                    const zoneId = closestZone.getAttribute("data-drop-zone");
+                    setHoveredRowId(zoneId);
+                  } else {
+                    setHoveredRowId(null);
                   }
-                }}
-                onMouseLeave={() => setHoveredRowId(null)}>
-                {quoteItems
-                  .sort((a: any, b: any) => a.lineNumber - b.lineNumber)
-                  .map((item: any) => (
-                    <tr
-                      key={item.id}
+                }
+              }}
+              onMouseLeave={() => setHoveredRowId(null)}>
+              <div
+                data-drop-zone="top"
+                className={`h-1 transition-colors ${hoveredRowId === "top" ? "bg-primary" : "bg-transparent"}`}
+                style={{ margin: 0, border: 0 }}
+              />
+              {quoteItems
+                .sort((a: any, b: any) => a.lineNumber - b.lineNumber)
+                .map((item: any) => (
+                  <div key={item.id}>
+                    {/* Item row */}
+                    <div
                       data-item-id={item.id}
-                      className={`select-none ${
-                        draggedItemId === item.id ? "opacity-50" : ""
-                      } ${
-                        hoveredRowId === item.id
-                          ? "border-b border-b-primary"
-                          : ""
-                      } ${
-                        hoveredRowId === "top" && item.id === quoteItems[0]?.id
-                          ? "border-t border-t-primary"
-                          : ""
-                      }`}>
-                      <td className="p-2 whitespace-nowrap text-left">
-                        <div className="select-none">
-                          <GripVertical
-                            size={16}
-                            className="text-text-muted"
-                          />
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-left">
-                        <div className="text-sm text-text-muted">
-                          {item.lineNumber}
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap">
-                        <div className="text-sm font-medium text-text">
-                          {item.item.name}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-text">
-                          {item.item.description}
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-right">
+                      className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId === item.id ? "opacity-50" : ""}`}
+                      style={{
+                        gridTemplateColumns:
+                          "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 64px",
+                      }}>
+                      <div className="flex items-center">
+                        <GripVertical
+                          size={16}
+                          className="text-text-muted cursor-grab"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setDraggedItemId(item.id);
+                          }}
+                        />
+                      </div>
+                      <div className="text-sm text-text-muted">
+                        {item.lineNumber}
+                      </div>
+                      <div className="text-sm font-medium text-text">
+                        {item.item.name}
+                      </div>
+                      <div className="text-sm text-text">
+                        {item.item.description}
+                      </div>
+                      <div className="text-sm text-text text-right">
                         {editingItemId === item.id ? (
                           <input
                             value={editingQuantity}
@@ -498,34 +461,24 @@ const QuoteDetails = () => {
                             autoFocus
                           />
                         ) : (
-                          <div className="text-sm text-text">
-                            {item.quantity}
-                          </div>
+                          item.quantity
                         )}
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-right">
-                        <div className="text-sm text-text">
-                          {formatCurrency(item.unitPrice || 0)}
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-right">
-                        <div className="text-sm text-text">
-                          {formatCurrency(item.discount || 0)}
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-right">
-                        <div className="text-sm text-text">
-                          {formatCurrency(item.tax || 0)}
-                        </div>
-                      </td>
-                      <td className="p-2 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-text">
-                          {formatCurrency(item.totalPrice || 0)}
-                        </div>
-                      </td>
-                      <td className="flex items-center justify-end p-2">
+                      </div>
+                      <div className="text-sm text-text text-right">
+                        {formatCurrency(item.unitPrice || 0)}
+                      </div>
+                      <div className="text-sm text-text text-right">
+                        {formatCurrency(item.discount || 0)}
+                      </div>
+                      <div className="text-sm text-text text-right">
+                        {formatCurrency(item.tax || 0)}
+                      </div>
+                      <div className="text-sm font-medium text-text text-right">
+                        {formatCurrency(item.totalPrice || 0)}
+                      </div>
+                      <div className="flex items-center justify-end gap-1">
                         {editingItemId === item.id ? (
-                          <div className="flex gap-1">
+                          <>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -539,18 +492,14 @@ const QuoteDetails = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                console.log("Quantity updated:", {
-                                  itemId: item.id,
-                                  newQuantity: editingQuantity,
-                                });
                                 setEditingItemId(null);
                                 setEditingQuantity(0);
                               }}>
                               <Check size={16} />
                             </Button>
-                          </div>
+                          </>
                         ) : (
-                          <div className="flex gap-1">
+                          <>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -573,108 +522,96 @@ const QuoteDetails = () => {
                               }}>
                               <Trash size={16} />
                             </Button>
-                          </div>
+                          </>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-              <tfoot className="bg-foreground">
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-2 text-right text-sm uppercase text-text-muted">
-                    Subtotal
-                  </td>
-                  <td
-                    colSpan={2}
-                    className="p-2 text-right text-sm text-text-muted">
-                    {formatCurrency(
-                      quoteItems.reduce(
-                        (acc: number, item: any) =>
-                          acc + Number(item.totalPrice),
-                        0
-                      )
-                    )}
-                  </td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-2 text-right text-sm uppercase text-text-muted">
-                    Discount
-                  </td>
-                  <td
-                    colSpan={2}
-                    className="p-2 text-right text-sm text-text-muted">
-                    {quoteItems.reduce(
+                      </div>
+                    </div>
+                    <div
+                      data-drop-zone={`after-${item.id}`}
+                      className={`h-1 transition-colors ${hoveredRowId === `after-${item.id}` ? "bg-primary" : "bg-transparent"}`}
+                      style={{ margin: 0, border: 0 }}
+                    />
+                  </div>
+                ))}
+            </div>
+
+            <div className="bg-foreground">
+              <div className="grid grid-cols-10 gap-2 p-2">
+                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+                  Subtotal
+                </div>
+                <div className="col-span-2 text-right text-sm text-text-muted">
+                  {formatCurrency(
+                    quoteItems.reduce(
+                      (acc: number, item: any) => acc + Number(item.totalPrice),
+                      0
+                    )
+                  )}
+                </div>
+                <div className="col-span-2"></div>
+              </div>
+              <div className="grid grid-cols-10 gap-2 p-2">
+                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+                  Discount
+                </div>
+                <div className="col-span-2 text-right text-sm text-text-muted">
+                  {quoteItems.reduce(
+                    (acc: number, item: any) =>
+                      acc + (Number(item.discount) || 0),
+                    0
+                  ) > 0
+                    ? "-"
+                    : ""}{" "}
+                  {formatCurrency(
+                    quoteItems.reduce(
                       (acc: number, item: any) =>
                         acc + (Number(item.discount) || 0),
                       0
-                    ) > 0
-                      ? "-"
-                      : ""}{" "}
-                    {formatCurrency(
+                    )
+                  )}
+                </div>
+                <div className="col-span-2"></div>
+              </div>
+              <div className="grid grid-cols-10 gap-2 p-2">
+                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+                  Tax
+                </div>
+                <div className="col-span-2 text-right text-sm text-text-muted">
+                  {formatCurrency(
+                    quoteItems.reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.taxAmount) || 0),
+                      0
+                    )
+                  )}
+                </div>
+                <div className="col-span-2"></div>
+              </div>
+              <div className="grid grid-cols-10 gap-2 p-2 border-t border-border">
+                <div className="col-span-6 text-right text-sm uppercase font-bold text-text-muted">
+                  Total
+                </div>
+                <div className="col-span-2 text-right text-sm font-bold text-text-muted">
+                  {formatCurrency(
+                    quoteItems.reduce(
+                      (acc: number, item: any) => acc + Number(item.totalPrice),
+                      0
+                    ) -
                       quoteItems.reduce(
                         (acc: number, item: any) =>
                           acc + (Number(item.discount) || 0),
                         0
-                      )
-                    )}
-                  </td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-2 text-right text-sm uppercase text-text-muted">
-                    Tax
-                  </td>
-                  <td
-                    colSpan={2}
-                    className="p-2 text-right text-sm text-text-muted">
-                    {formatCurrency(
+                      ) +
                       quoteItems.reduce(
                         (acc: number, item: any) =>
                           acc + (Number(item.taxAmount) || 0),
                         0
                       )
-                    )}
-                  </td>
-                  <td></td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td
-                    colSpan={6}
-                    className="p-2 text-right text-sm uppercase font-bold text-text-muted">
-                    Total
-                  </td>
-                  <td
-                    colSpan={2}
-                    className="p-2 text-right text-sm font-bold text-text-muted">
-                    {formatCurrency(
-                      quoteItems.reduce(
-                        (acc: number, item: any) =>
-                          acc + Number(item.totalPrice),
-                        0
-                      ) -
-                        quoteItems.reduce(
-                          (acc: number, item: any) =>
-                            acc + (Number(item.discount) || 0),
-                          0
-                        ) +
-                        quoteItems.reduce(
-                          (acc: number, item: any) =>
-                            acc + (Number(item.taxAmount) || 0),
-                          0
-                        )
-                    )}
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+                  )}
+                </div>
+                <div className="col-span-2"></div>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
