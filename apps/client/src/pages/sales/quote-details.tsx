@@ -51,7 +51,6 @@ const QuoteDetails = () => {
 
   const { id: quoteId } = useParams();
 
-  // Reset drag state when mouse leaves the window
   useEffect(() => {
     const handleMouseLeave = () => {
       setDraggedItemId(null);
@@ -63,6 +62,77 @@ const QuoteDetails = () => {
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
+
+  const handleDragStart = (itemId: string) => {
+    setDraggedItemId(itemId);
+  };
+
+  const handleDragEnd = async () => {
+    if (draggedItemId && hoveredRowId) {
+      const currentItems = quoteItems.sort(
+        (a: any, b: any) => a.lineNumber - b.lineNumber
+      );
+      const draggedItem = currentItems.find(
+        (item: any) => item.id === draggedItemId
+      );
+
+      if (draggedItem) {
+        let newLineNumber = 1;
+
+        if (hoveredRowId === "top") {
+          newLineNumber = 1;
+        } else {
+          const afterItemId = hoveredRowId.replace("after-", "");
+          const afterItem = currentItems.find(
+            (item: any) => item.id === afterItemId
+          );
+
+          if (afterItem) {
+            newLineNumber = afterItem.lineNumber + 1;
+          } else {
+            newLineNumber = currentItems.length + 1;
+          }
+        }
+
+        await updateLineNumber(draggedItemId, newLineNumber);
+        refreshQuote();
+      }
+    }
+
+    setDraggedItemId(null);
+    setHoveredRowId(null);
+  };
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (draggedItemId) {
+      const dropZones = document.querySelectorAll("[data-drop-zone]");
+      let closestZone: HTMLElement | null = null;
+      let closestDistance = Infinity;
+
+      dropZones.forEach((zone) => {
+        const el = zone as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const zoneCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(e.clientY - zoneCenter);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestZone = el;
+        }
+      });
+
+      if (closestZone !== null) {
+        // @ts-ignore
+        const zoneId = closestZone.getAttribute("data-drop-zone");
+        setHoveredRowId(zoneId || null);
+      } else {
+        setHoveredRowId(null);
+      }
+    }
+  };
+
+  const handleDragLeave = () => {
+    setHoveredRowId(null);
+  };
 
   const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
     quoteId: quoteId || "",
@@ -387,74 +457,9 @@ const QuoteDetails = () => {
             {/* Drop Zones and Items */}
             <div
               className={`relative select-none ${draggedItemId ? "cursor-grabbing" : ""}`}
-              onMouseUp={async () => {
-                if (draggedItemId && hoveredRowId) {
-                  // Calculate new line numbers based on drop position
-                  const currentItems = quoteItems.sort(
-                    (a: any, b: any) => a.lineNumber - b.lineNumber
-                  );
-                  const draggedItem = currentItems.find(
-                    (item: any) => item.id === draggedItemId
-                  );
-
-                  if (draggedItem) {
-                    let newLineNumber = 1;
-
-                    if (hoveredRowId === "top") {
-                      // Dropped at the top
-                      newLineNumber = 1;
-                    } else {
-                      // Dropped after a specific item
-                      const afterItemId = hoveredRowId.replace("after-", "");
-                      const afterItem = currentItems.find(
-                        (item: any) => item.id === afterItemId
-                      );
-
-                      if (afterItem) {
-                        newLineNumber = afterItem.lineNumber + 1;
-                      } else {
-                        // If no after item found, place at the end
-                        newLineNumber = currentItems.length + 1;
-                      }
-                    }
-
-                    // Call the API to update the line number
-                    await updateLineNumber(draggedItemId, newLineNumber);
-
-                    // Refresh the quote data to get updated line numbers
-                    refreshQuote();
-                  }
-                }
-
-                setDraggedItemId(null);
-                setHoveredRowId(null);
-              }}
-              onMouseMove={(e) => {
-                if (draggedItemId) {
-                  const dropZones =
-                    document.querySelectorAll("[data-drop-zone]");
-                  let closestZone: HTMLElement | null = null;
-                  let closestDistance = Infinity;
-                  dropZones.forEach((zone) => {
-                    const el = zone as HTMLElement;
-                    const rect = el.getBoundingClientRect();
-                    const zoneCenter = rect.top + rect.height / 2;
-                    const distance = Math.abs(e.clientY - zoneCenter);
-                    if (distance < closestDistance) {
-                      closestDistance = distance;
-                      closestZone = el;
-                    }
-                  });
-                  if (closestZone !== null) {
-                    // @ts-ignore
-                    const zoneId = closestZone.getAttribute("data-drop-zone");
-                    setHoveredRowId(zoneId);
-                  } else {
-                    setHoveredRowId(null);
-                  }
-                }
-              }}
-              onMouseLeave={() => setHoveredRowId(null)}>
+              onMouseUp={handleDragEnd}
+              onMouseMove={handleDragMove}
+              onMouseLeave={handleDragLeave}>
               <div
                 data-drop-zone="top"
                 className={`h-px transition-colors ${hoveredRowId === "top" ? "bg-primary" : "bg-transparent"}`}
@@ -467,7 +472,7 @@ const QuoteDetails = () => {
                     {/* Item row */}
                     <div
                       data-item-id={item.id}
-                      className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId === item.id ? "opacity-50" : ""}`}
+                      className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId && draggedItemId !== item.id ? "opacity-50" : ""}`}
                       style={{
                         gridTemplateColumns:
                           "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 64px",
@@ -478,7 +483,7 @@ const QuoteDetails = () => {
                           className="text-text-muted cursor-grab"
                           onMouseDown={(e) => {
                             e.stopPropagation();
-                            setDraggedItemId(item.id);
+                            handleDragStart(item.id);
                           }}
                         />
                       </div>
