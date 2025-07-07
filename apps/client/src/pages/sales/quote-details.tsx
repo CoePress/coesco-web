@@ -416,7 +416,7 @@ const QuoteDetails = () => {
               onMouseLeave={() => setHoveredRowId(null)}>
               <div
                 data-drop-zone="top"
-                className={`h-1 transition-colors ${hoveredRowId === "top" ? "bg-primary" : "bg-transparent"}`}
+                className={`h-px transition-colors ${hoveredRowId === "top" ? "bg-primary" : "bg-transparent"}`}
                 style={{ margin: 0, border: 0 }}
               />
               {quoteItems
@@ -528,7 +528,7 @@ const QuoteDetails = () => {
                     </div>
                     <div
                       data-drop-zone={`after-${item.id}`}
-                      className={`h-1 transition-colors ${hoveredRowId === `after-${item.id}` ? "bg-primary" : "bg-transparent"}`}
+                      className={`h-px transition-colors ${hoveredRowId === `after-${item.id}` ? "bg-primary" : "bg-transparent"}`}
                       style={{ margin: 0, border: 0 }}
                     />
                   </div>
