@@ -24,4 +24,9 @@ router.post(
   quoteController.addConfigurationToQuote
 );
 
+router.patch(
+  "/items/:itemId/line-number",
+  quoteController.updateQuoteItemLineNumber
+);
+
 export default router;

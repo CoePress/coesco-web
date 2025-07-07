@@ -114,4 +114,22 @@ export class QuoteController extends BaseController<Quote> {
       next(error);
     }
   }
+
+  public async updateQuoteItemLineNumber(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { itemId } = req.params;
+      const { lineNumber } = req.body;
+      const result = await quotingService.updateQuoteItemLineNumber(
+        itemId,
+        lineNumber
+      );
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

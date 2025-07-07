@@ -1,6 +1,11 @@
 import { BadRequestError } from "@/middleware/error.middleware";
 import { getEmployeeContext } from "@/utils/context";
-import { CompanyStatus, JourneyStatus, QuoteStatus } from "@prisma/client";
+import {
+  CompanyStatus,
+  JourneyStatus,
+  QuoteStatus,
+  QuoteItem,
+} from "@prisma/client";
 import {
   companyService,
   configurationService,
@@ -417,5 +422,82 @@ export class QuotingService {
       success: true,
       data: newQuoteItem.data,
     };
+  }
+
+  async updateQuoteItemLineNumber(quoteItemId: string, lineNumber: number) {
+    return await prisma.$transaction(async (tx) => {
+      const quoteItem = await quoteItemService.getById(quoteItemId);
+
+      if (!quoteItem.data) {
+        throw new BadRequestError("Quote item not found");
+      }
+
+      if (lineNumber < 1) {
+        throw new BadRequestError("Line number must be at least 1");
+      }
+
+      const quoteItems = await quoteItemService.getByQuoteId(
+        quoteItem.data.quoteId,
+        tx
+      );
+
+      if (!quoteItems.success || !quoteItems.data) {
+        throw new BadRequestError("Failed to retrieve quote items");
+      }
+
+      const allItems = (
+        quoteItems.data as (QuoteItem & { item?: any; configuration?: any })[]
+      ).filter((item) => item.id !== quoteItemId);
+      const totalItems = allItems.length + 1;
+
+      if (lineNumber > totalItems) {
+        throw new BadRequestError(`Line number cannot exceed ${totalItems}`);
+      }
+
+      // Update the target item's line number
+      const updatedQuoteItem = await quoteItemService.update(quoteItemId, {
+        lineNumber,
+      });
+
+      if (!updatedQuoteItem.success || !updatedQuoteItem.data) {
+        throw new BadRequestError("Failed to update quote item");
+      }
+
+      // Reorder remaining items
+      const oldLineNumber = quoteItem.data.lineNumber;
+      let newLineNumber = lineNumber;
+
+      // If moving to a higher line number, shift items down
+      if (newLineNumber > oldLineNumber) {
+        for (const item of allItems) {
+          if (
+            item.lineNumber > oldLineNumber &&
+            item.lineNumber <= newLineNumber
+          ) {
+            await quoteItemService.update(item.id, {
+              lineNumber: item.lineNumber - 1,
+            });
+          }
+        }
+      }
+      // If moving to a lower line number, shift items up
+      else if (newLineNumber < oldLineNumber) {
+        for (const item of allItems) {
+          if (
+            item.lineNumber >= newLineNumber &&
+            item.lineNumber < oldLineNumber
+          ) {
+            await quoteItemService.update(item.id, {
+              lineNumber: item.lineNumber + 1,
+            });
+          }
+        }
+      }
+
+      return {
+        success: true,
+        data: updatedQuoteItem.data,
+      };
+    });
   }
 }
