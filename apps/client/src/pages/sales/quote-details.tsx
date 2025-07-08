@@ -276,133 +276,61 @@ const QuoteDetails = () => {
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
-            {/* Overview */}
+            {/* Quote Info */}
             <Card>
-              <div className="flex justify-between items-start mb-2">
-                <div className="text-sm font-medium text-text-muted">
-                  Quote Details
+              <div className="text-xs text-text-muted mb-1">Quote</div>
+              <div className="space-y-1">
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.number}
                 </div>
-              </div>
-
-              <div className="space-y-2 grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-sm text-text-muted">Number</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.number}
-                  </div>
+                <div className="text-xs text-text-muted">
+                  Rev {quoteOverview?.quote?.revision || "A"}
                 </div>
-                <div>
-                  <div className="text-sm text-text-muted">Revision</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.revision || "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Created On</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.createdAt
-                      ? formatDate(quoteOverview?.quote?.createdAt)
-                      : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Created By</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.createdById
-                      ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
-                      : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Approved On</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.approvedAt
-                      ? formatDate(quoteOverview?.quote?.approvedAt)
-                      : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Approved By</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.approvedById
-                      ? `${quoteOverview?.quote?.approvedBy?.firstName} ${quoteOverview?.quote?.approvedBy?.lastName}`
-                      : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-muted">Expires On</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.expiryDate
-                      ? formatDate(quoteOverview?.quote?.expiryDate)
-                      : "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm text-text-muted">Status</div>
-                  <div className="text-sm text-text">
-                    {quoteOverview?.quote?.status}
-                  </div>
+                <div className="text-xs text-text-muted">
+                  {quoteOverview?.quote?.status}
                 </div>
               </div>
             </Card>
 
             {/* Customer */}
             <Card>
-              <div className="flex justify-between items-start mb-2">
-                <div className="text-sm font-medium text-text-muted">
-                  Customer Details
-                </div>
-
-                {customer && (
-                  <Link
-                    to={`/sales/companies/${customer?.id}`}
-                    className="text-sm text-text-muted hover:text-text cursor-pointer">
-                    View
-                  </Link>
-                )}
-              </div>
-
+              <div className="text-xs text-text-muted mb-1">Customer</div>
               {customer ? (
-                <div className="space-y-2 grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm text-text-muted">Name</div>
-                    <div className="text-sm text-text">
-                      {customer?.name || "-"}
+                    <div className="text-sm font-medium text-text">
+                      {customer?.name || "Acme Manufacturing Co."}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      {customer?.contact || "John Smith"}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      {customer?.email || "john@acme.com"}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      {customer?.phone || "(555) 123-4567"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-text-muted">Contact</div>
-                    <div className="text-sm text-text">
-                      {customer?.contact || "-"}
+                    <div className="text-xs text-text-muted">
+                      123 Industrial Blvd
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Email</div>
-                    <div className="text-sm text-text">
-                      {customer?.email || "-"}
+                    <div className="text-xs text-text-muted">
+                      Detroit, MI 48201
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Phone</div>
-                    <div className="text-sm text-text">
-                      {customer?.phone || "-"}
-                    </div>
+                    <div className="text-xs text-text-muted">United States</div>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 items-center justify-center h-full">
-                  <div className="text-sm text-text-muted text-center">
-                    No customer associated with this quote
-                  </div>
-
+                <div className="space-y-2">
+                  <div className="text-xs text-text-muted">No customer</div>
                   <Button
                     variant="secondary-outline"
-                    className="w-max mx-auto"
+                    size="sm"
                     disabled={quoteOverview?.quote?.status !== "DRAFT"}
                     onClick={() => setIsCustomerModalOpen(true)}>
-                    <Plus size={16} />
-                    Add Customer
+                    <Plus size={14} />
+                    Add
                   </Button>
                 </div>
               )}
@@ -410,58 +338,23 @@ const QuoteDetails = () => {
 
             {/* Dealer */}
             <Card>
-              <div className="flex justify-between items-start">
-                <div className="text-sm font-medium text-text-muted">
-                  Dealer Details
-                </div>
-
-                {dealer && (
-                  <Link
-                    to={`/sales/companies/${dealer?.id}`}
-                    className="text-sm text-text-muted hover:text-text cursor-pointer">
-                    View
-                  </Link>
-                )}
-              </div>
+              <div className="text-xs text-text-muted mb-1">Dealer</div>
               {dealer ? (
-                <div className="space-y-2">
-                  <div>
-                    <div className="text-sm text-text-muted">Name</div>
-                    <div className="text-sm text-text">
-                      {dealer?.name || "-"}
-                    </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-text">{dealer?.name}</div>
+                  <div className="text-xs text-text-muted">
+                    {dealer?.contact}
                   </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Contact</div>
-                    <div className="text-sm text-text">
-                      {dealer?.contact || "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Email</div>
-                    <div className="text-sm text-text">
-                      {dealer?.email || "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Phone</div>
-                    <div className="text-sm text-text">
-                      {dealer?.phone || "-"}
-                    </div>
-                  </div>
+                  <div className="text-xs text-text-muted">{dealer?.email}</div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 items-center justify-center h-full">
-                  <div className="text-sm text-text-muted text-center">
-                    No dealer associated with this quote
-                  </div>
-
+                <div className="space-y-2">
                   <Button
                     variant="secondary-outline"
-                    className="w-max mx-auto"
+                    size="sm"
                     disabled={quoteOverview?.quote?.status !== "DRAFT"}
                     onClick={() => setIsDealerModalOpen(true)}>
-                    <Plus size={16} />
+                    <Plus size={14} />
                     Add Dealer
                   </Button>
                 </div>
@@ -472,7 +365,7 @@ const QuoteDetails = () => {
           <Card>
             <div className="bg-foreground border-b flex justify-between items-center pb-2">
               <h2 className="font-semibold text-text-muted text-sm">
-                Quote Items
+                Line Items
               </h2>
               <Button
                 onClick={() => setIsModalOpen(true)}
@@ -1613,7 +1506,7 @@ const DeleteItemModal = ({
       onSuccess();
       onClose();
     }
-  }, [deleteItemSuccess, onSuccess, onClose]);
+  }, [deleteItemSuccess]);
 
   return (
     <Modal
