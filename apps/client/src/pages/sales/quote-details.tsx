@@ -1655,7 +1655,7 @@ const QuotePreviewModal = ({
       onClose={onClose}
       title="Quote Preview"
       size="lg">
-      <div className="flex flex-col h-[60vh]">
+      <div className="flex flex-col h-[50vh]">
         <div className="flex-1 overflow-y-auto min-h-0">
           <iframe
             src="/sample.pdf"
