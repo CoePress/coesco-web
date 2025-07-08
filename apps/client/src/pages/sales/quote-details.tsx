@@ -279,15 +279,68 @@ const QuoteDetails = () => {
             {/* Quote Info */}
             <Card>
               <div className="text-xs text-text-muted mb-1">Quote</div>
-              <div className="space-y-1">
-                <div className="text-sm text-text">
-                  {quoteOverview?.quote?.number}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <div className="text-xs text-text-muted">Number</div>
+                    <div className="text-xs text-text">{quoteOverview?.quote?.number || "Q-2024-001"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-text-muted">Revision</div>
+                    <div className="text-xs text-text">{quoteOverview?.quote?.revision || "A"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-text-muted">Status</div>
+                    <div className="text-xs text-text">{quoteOverview?.quote?.status || "DRAFT"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-text-muted">Created</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.createdAt
+                        ? formatDate(quoteOverview?.quote?.createdAt)
+                        : "Jan 15, 2024"}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-text-muted">
-                  Rev {quoteOverview?.quote?.revision || "A"}
-                </div>
-                <div className="text-xs text-text-muted">
-                  {quoteOverview?.quote?.status}
+                <div className="space-y-2">
+                  <div>
+                    <div className="text-xs text-text-muted">Created By</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.createdById
+                        ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
+                        : "Alex Chen"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-text-muted">Expires</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.expiryDate
+                        ? formatDate(quoteOverview?.quote?.expiryDate)
+                        : "Feb 15, 2024"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-text-muted">Total</div>
+                    <div className="text-xs text-text">
+                      {formatCurrency(
+                        (quoteItems.reduce(
+                          (acc: number, item: any) =>
+                            acc + Number(item.totalPrice),
+                          0
+                        ) || 12500) -
+                          (quoteItems.reduce(
+                            (acc: number, item: any) =>
+                              acc + (Number(item.discount) || 0),
+                            0
+                          ) || 0) +
+                          (quoteItems.reduce(
+                            (acc: number, item: any) =>
+                              acc + (Number(item.taxAmount) || 0),
+                            0
+                          ) || 1250)
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -297,28 +350,53 @@ const QuoteDetails = () => {
               <div className="text-xs text-text-muted mb-1">Customer</div>
               {customer ? (
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-text">
-                      {customer?.name || "Acme Manufacturing Co."}
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-xs text-text-muted">Name</div>
+                      <div className="text-xs text-text">
+                        {customer?.name || "Acme Manufacturing Co."}
+                      </div>
                     </div>
-                    <div className="text-xs text-text-muted">
-                      {customer?.contact || "John Smith"}
+                    <div>
+                      <div className="text-xs text-text-muted">Contact</div>
+                      <div className="text-xs text-text">
+                        {customer?.contact || "John Smith"}
+                      </div>
                     </div>
-                    <div className="text-xs text-text-muted">
-                      {customer?.email || "john@acme.com"}
+                    <div>
+                      <div className="text-xs text-text-muted">Email</div>
+                      <div className="text-xs text-text">
+                        {customer?.email || "john@acme.com"}
+                      </div>
                     </div>
-                    <div className="text-xs text-text-muted">
-                      {customer?.phone || "(555) 123-4567"}
+                    <div>
+                      <div className="text-xs text-text-muted">Phone</div>
+                      <div className="text-xs text-text">
+                        {customer?.phone || "(555) 123-4567"}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-text-muted">
-                      123 Industrial Blvd
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs text-text-muted">Shipping</div>
+                      <div className="text-xs text-text">
+                        123 Industrial Blvd
+                      </div>
+                      <div className="text-xs text-text">
+                        Detroit, MI 48201
+                      </div>
+                      <div className="text-xs text-text">United States</div>
                     </div>
-                    <div className="text-xs text-text-muted">
-                      Detroit, MI 48201
+                    <div>
+                      <div className="text-xs text-text-muted">Billing</div>
+                      <div className="text-xs text-text">
+                        456 Corporate Plaza
+                      </div>
+                      <div className="text-xs text-text">
+                        Chicago, IL 60601
+                      </div>
+                      <div className="text-xs text-text">United States</div>
                     </div>
-                    <div className="text-xs text-text-muted">United States</div>
                   </div>
                 </div>
               ) : (
@@ -348,7 +426,7 @@ const QuoteDetails = () => {
                   <div className="text-xs text-text-muted">{dealer?.email}</div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="flex justify-center items-center h-full">
                   <Button
                     variant="secondary-outline"
                     size="sm"
