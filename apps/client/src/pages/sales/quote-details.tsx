@@ -217,14 +217,16 @@ const QuoteDetails = () => {
   const renderQuoteActions = () => {
     const actions = [];
 
-    // Add preview button for all statuses
-    actions.push({
-      type: "button",
-      label: "Preview",
-      variant: "secondary-outline",
-      icon: <Eye size={16} />,
-      onClick: () => setIsPreviewModalOpen(true),
-    });
+    // Add preview button only if there are quote items
+    if (quoteItems.length > 0) {
+      actions.push({
+        type: "button",
+        label: "Preview",
+        variant: "secondary-outline",
+        icon: <Eye size={16} />,
+        onClick: () => setIsPreviewModalOpen(true),
+      });
+    }
 
     switch (quoteOverview?.quote?.status) {
       case "DRAFT":
@@ -425,7 +427,7 @@ const QuoteDetails = () => {
                   <div className="text-xs text-text-muted">{dealer?.email}</div>
                 </div>
               ) : (
-                <div className="flex justify-center items-center h-full">
+                <div className="flex justify-center items-center flex-1">
                   <Button
                     variant="secondary-outline"
                     size="sm"
@@ -446,6 +448,7 @@ const QuoteDetails = () => {
               </h2>
               <Button
                 onClick={() => setIsModalOpen(true)}
+                size="sm"
                 disabled={quoteOverview?.quote?.status !== "DRAFT"}
                 variant="secondary-outline">
                 <Plus size={16} />
@@ -1655,7 +1658,7 @@ const QuotePreviewModal = ({
       onClose={onClose}
       title="Quote Preview"
       size="lg">
-      <div className="flex flex-col h-[50vh]">
+      <div className="flex flex-col h-[65vh]">
         <div className="flex-1 overflow-y-auto min-h-0">
           <iframe
             src="/sample.pdf"
