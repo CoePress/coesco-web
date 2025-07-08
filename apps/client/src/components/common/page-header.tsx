@@ -144,7 +144,7 @@ const PageHeader = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-2 border-b sticky top-0 bg-foreground z-10">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-2 border-b sticky top-0 bg-foreground z-10 min-h-[57px]">
       <div className="flex items-center gap-2">
         {backButton && (
           <button

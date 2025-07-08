@@ -1,12 +1,10 @@
 import {
-  Edit,
   Plus,
   ChevronDown,
   CheckCircle,
   Check,
   Send,
   Eye,
-  X,
   Trash,
   GripVertical,
 } from "lucide-react";
@@ -32,6 +30,7 @@ import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
 import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useUpdateLineNumber } from "@/hooks/sales/use-update-linenumber";
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 
 const QuoteDetails = () => {
   const navigate = useNavigate();
@@ -45,7 +44,10 @@ const QuoteDetails = () => {
   const [isDeleteItemModalOpen, setIsDeleteItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingQuantity, setEditingQuantity] = useState<number>(0);
+  const [editingField, setEditingField] = useState<
+    "quantity" | "unitPrice" | null
+  >(null);
+  const [editingValue, setEditingValue] = useState<string>("");
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
@@ -143,11 +145,50 @@ const QuoteDetails = () => {
     setHoveredRowId(null);
   };
 
+  const handleDoubleClick = (
+    itemId: string,
+    field: "quantity" | "unitPrice",
+    currentValue: any
+  ) => {
+    if (quoteOverview?.quote?.status !== "DRAFT") return;
+    setEditingItemId(itemId);
+    setEditingField(field);
+    setEditingValue(currentValue.toString());
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItemId || !editingField || !editingValue) return;
+
+    const item = quoteItems.find((item: any) => item.id === editingItemId);
+    if (!item) return;
+
+    const updateData: any = {};
+    if (editingField === "quantity") {
+      updateData.quantity = parseInt(editingValue) || 1;
+    } else if (editingField === "unitPrice") {
+      updateData.unitPrice = parseFloat(editingValue) || 0;
+    }
+
+    await updateQuoteItem(editingItemId, updateData);
+    refreshQuote();
+
+    setEditingItemId(null);
+    setEditingField(null);
+    setEditingValue("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setEditingField(null);
+    setEditingValue("");
+  };
+
   const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
     quoteId: quoteId || "",
   });
 
   const { updateLineNumber } = useUpdateLineNumber();
+  const { updateEntity: updateQuoteItem } = useUpdateEntity(`/quotes/items`);
 
   const quoteItems = quoteOverview?.quoteItems || [];
   const customer = quoteOverview?.customer || null;
@@ -191,7 +232,7 @@ const QuoteDetails = () => {
             type: "button",
             label: "Edit Quote",
             variant: "secondary-outline",
-            icon: <Edit size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => {},
           },
           {
@@ -215,7 +256,7 @@ const QuoteDetails = () => {
             type: "button",
             label: "Create Revision",
             variant: "primary",
-            icon: <Edit size={16} />,
+            icon: <Plus size={16} />,
             onClick: () => setIsRevisionConfirmationOpen(true),
           },
         ];
@@ -525,13 +566,24 @@ const QuoteDetails = () => {
                         title={item.item.description}>
                         {item.item.description}
                       </div>
-                      <div className="text-sm text-text text-right">
-                        {editingItemId === item.id ? (
+                      <div
+                        className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
+                        onDoubleClick={() =>
+                          handleDoubleClick(item.id, "quantity", item.quantity)
+                        }>
+                        {editingItemId === item.id &&
+                        editingField === "quantity" ? (
                           <input
-                            value={editingQuantity}
-                            onChange={(e) =>
-                              setEditingQuantity(parseInt(e.target.value) || 1)
-                            }
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleSaveEdit();
+                              } else if (e.key === "Escape") {
+                                handleCancelEdit();
+                              }
+                            }}
                             className="px-2 rounded text-right text-text text-sm w-14"
                             autoFocus
                           />
@@ -539,8 +591,34 @@ const QuoteDetails = () => {
                           item.quantity
                         )}
                       </div>
-                      <div className="text-sm text-text text-right">
-                        {formatCurrency(item.unitPrice || 0)}
+                      <div
+                        className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
+                        onDoubleClick={() =>
+                          handleDoubleClick(
+                            item.id,
+                            "unitPrice",
+                            item.unitPrice
+                          )
+                        }>
+                        {editingItemId === item.id &&
+                        editingField === "unitPrice" ? (
+                          <input
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleSaveEdit();
+                              } else if (e.key === "Escape") {
+                                handleCancelEdit();
+                              }
+                            }}
+                            className="px-2 rounded text-right text-text text-sm w-20"
+                            autoFocus
+                          />
+                        ) : (
+                          formatCurrency(item.unitPrice || 0)
+                        )}
                       </div>
                       <div className="text-sm text-text text-right">
                         {formatCurrency(item.discount || 0)}
@@ -552,53 +630,17 @@ const QuoteDetails = () => {
                         {formatCurrency(item.totalPrice || 0)}
                       </div>
                       <div className="flex items-center justify-end gap-1 min-w-0">
-                        {editingItemId === item.id ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingItemId(null);
-                                setEditingQuantity(0);
-                              }}>
-                              <X size={16} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingItemId(null);
-                                setEditingQuantity(0);
-                              }}>
-                              <Check size={16} />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (quoteOverview?.quote?.status === "DRAFT") {
-                                  setEditingItemId(item.id);
-                                  setEditingQuantity(item.quantity);
-                                }
-                              }}>
-                              <Edit size={16} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (quoteOverview?.quote?.status === "DRAFT") {
-                                  setSelectedItem(item);
-                                  setIsDeleteItemModalOpen(true);
-                                }
-                              }}>
-                              <Trash size={16} />
-                            </Button>
-                          </>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (quoteOverview?.quote?.status === "DRAFT") {
+                              setSelectedItem(item);
+                              setIsDeleteItemModalOpen(true);
+                            }
+                          }}>
+                          <Trash size={16} />
+                        </Button>
                       </div>
                     </div>
                     <div
@@ -611,11 +653,25 @@ const QuoteDetails = () => {
             </div>
 
             <div className="bg-foreground">
-              <div className="grid grid-cols-10 gap-2 p-2">
-                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+              <div
+                className="grid p-2"
+                style={{
+                  gridTemplateColumns:
+                    quoteOverview?.quote?.status === "DRAFT"
+                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                }}>
+                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div className="text-right text-xs uppercase text-text-muted">
                   Subtotal
                 </div>
-                <div className="col-span-2 text-right text-sm text-text-muted">
+                <div className="text-right text-sm text-text-muted">
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) => acc + Number(item.totalPrice),
@@ -623,13 +679,26 @@ const QuoteDetails = () => {
                     )
                   )}
                 </div>
-                <div className="col-span-2"></div>
               </div>
-              <div className="grid grid-cols-10 gap-2 p-2">
-                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+              <div
+                className="grid p-2"
+                style={{
+                  gridTemplateColumns:
+                    quoteOverview?.quote?.status === "DRAFT"
+                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                }}>
+                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div className="text-right text-xs uppercase text-text-muted">
                   Discount
                 </div>
-                <div className="col-span-2 text-right text-sm text-text-muted">
+                <div className="text-right text-sm text-text-muted">
                   {quoteItems.reduce(
                     (acc: number, item: any) =>
                       acc + (Number(item.discount) || 0),
@@ -645,13 +714,26 @@ const QuoteDetails = () => {
                     )
                   )}
                 </div>
-                <div className="col-span-2"></div>
               </div>
-              <div className="grid grid-cols-10 gap-2 p-2">
-                <div className="col-span-6 text-right text-sm uppercase text-text-muted">
+              <div
+                className="grid p-2"
+                style={{
+                  gridTemplateColumns:
+                    quoteOverview?.quote?.status === "DRAFT"
+                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                }}>
+                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div className="text-right text-xs uppercase text-text-muted">
                   Tax
                 </div>
-                <div className="col-span-2 text-right text-sm text-text-muted">
+                <div className="text-right text-sm text-text-muted">
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) =>
@@ -660,13 +742,26 @@ const QuoteDetails = () => {
                     )
                   )}
                 </div>
-                <div className="col-span-2"></div>
               </div>
-              <div className="grid grid-cols-10 gap-2 p-2 border-t border-border">
-                <div className="col-span-6 text-right text-sm uppercase font-bold text-text-muted">
+              <div
+                className="grid p-2 border-t border-border"
+                style={{
+                  gridTemplateColumns:
+                    quoteOverview?.quote?.status === "DRAFT"
+                      ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
+                      : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
+                }}>
+                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div className="text-right text-xs uppercase font-bold text-text-muted">
                   Total
                 </div>
-                <div className="col-span-2 text-right text-sm font-bold text-text-muted">
+                <div className="text-right text-sm font-bold text-text-muted">
                   {formatCurrency(
                     quoteItems.reduce(
                       (acc: number, item: any) => acc + Number(item.totalPrice),
@@ -684,7 +779,6 @@ const QuoteDetails = () => {
                       )
                   )}
                 </div>
-                <div className="col-span-2"></div>
               </div>
             </div>
           </Card>

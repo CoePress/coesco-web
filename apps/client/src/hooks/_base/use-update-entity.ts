@@ -15,7 +15,7 @@ export const useUpdateEntity = <T = any>(endpoint: string) => {
     setSuccess(false);
 
     try {
-      const response = await instance.put<IApiResponse<T>>(
+      const response = await instance.patch<IApiResponse<T>>(
         `${endpoint}/${id}`,
         params
       );
