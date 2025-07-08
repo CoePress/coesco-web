@@ -42,6 +42,7 @@ const QuoteDetails = () => {
   const [isRevisionConfirmationOpen, setIsRevisionConfirmationOpen] =
     useState(false);
   const [isDeleteItemModalOpen, setIsDeleteItemModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<
@@ -214,53 +215,49 @@ const QuoteDetails = () => {
   )} • ${quoteOverview?.quote?.status}`;
 
   const renderQuoteActions = () => {
+    const actions = [];
+
+    // Add preview button for all statuses
+    actions.push({
+      type: "button",
+      label: "Preview",
+      variant: "secondary-outline",
+      icon: <Eye size={16} />,
+      onClick: () => setIsPreviewModalOpen(true),
+    });
+
     switch (quoteOverview?.quote?.status) {
       case "DRAFT":
-        return [
-          {
-            type: "button",
-            label: "Approve Quote",
-            variant: "primary",
-            icon: <CheckCircle size={16} />,
-            disabled: quoteItems.length === 0,
-            onClick: () => setIsApprovalModalOpen(true),
-          },
-        ];
+        actions.push({
+          type: "button",
+          label: "Approve Quote",
+          variant: "primary",
+          icon: <CheckCircle size={16} />,
+          disabled: quoteItems.length === 0,
+          onClick: () => setIsApprovalModalOpen(true),
+        });
+        break;
       case "APPROVED":
-        return [
-          {
-            type: "button",
-            label: "Edit Quote",
-            variant: "secondary-outline",
-            icon: <Eye size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Send Quote",
-            variant: "primary",
-            icon: <Send size={16} />,
-            onClick: () => setIsSendConfirmationOpen(true),
-          },
-        ];
+        actions.push({
+          type: "button",
+          label: "Send Quote",
+          variant: "primary",
+          icon: <Send size={16} />,
+          onClick: () => setIsSendConfirmationOpen(true),
+        });
+        break;
       case "SENT":
-        return [
-          {
-            type: "button",
-            label: "View Quote",
-            variant: "secondary-outline",
-            icon: <Eye size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Create Revision",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: () => setIsRevisionConfirmationOpen(true),
-          },
-        ];
+        actions.push({
+          type: "button",
+          label: "Create Revision",
+          variant: "primary",
+          icon: <Plus size={16} />,
+          onClick: () => setIsRevisionConfirmationOpen(true),
+        });
+        break;
     }
+
+    return actions;
   };
 
   return (
@@ -283,15 +280,21 @@ const QuoteDetails = () => {
                 <div className="space-y-2">
                   <div>
                     <div className="text-xs text-text-muted">Number</div>
-                    <div className="text-xs text-text">{quoteOverview?.quote?.number || "Q-2024-001"}</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.number || "Q-2024-001"}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Revision</div>
-                    <div className="text-xs text-text">{quoteOverview?.quote?.revision || "A"}</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.revision || "A"}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Status</div>
-                    <div className="text-xs text-text">{quoteOverview?.quote?.status || "DRAFT"}</div>
+                    <div className="text-xs text-text">
+                      {quoteOverview?.quote?.status || "DRAFT"}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-text-muted">Created</div>
@@ -382,9 +385,7 @@ const QuoteDetails = () => {
                       <div className="text-xs text-text">
                         123 Industrial Blvd
                       </div>
-                      <div className="text-xs text-text">
-                        Detroit, MI 48201
-                      </div>
+                      <div className="text-xs text-text">Detroit, MI 48201</div>
                       <div className="text-xs text-text">United States</div>
                     </div>
                     <div>
@@ -392,9 +393,7 @@ const QuoteDetails = () => {
                       <div className="text-xs text-text">
                         456 Corporate Plaza
                       </div>
-                      <div className="text-xs text-text">
-                        Chicago, IL 60601
-                      </div>
+                      <div className="text-xs text-text">Chicago, IL 60601</div>
                       <div className="text-xs text-text">United States</div>
                     </div>
                   </div>
@@ -815,6 +814,13 @@ const QuoteDetails = () => {
           type="customer"
         />
       )}
+
+      <QuotePreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        quoteOverview={quoteOverview}
+        quoteItems={quoteItems}
+      />
     </div>
   );
 };
@@ -1626,6 +1632,36 @@ const DeleteItemModal = ({
             disabled={deleteItemLoading}>
             {deleteItemLoading ? "Deleting..." : "Delete Item"}
           </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const QuotePreviewModal = ({
+  isOpen,
+  onClose,
+  quoteOverview,
+  quoteItems,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  quoteOverview: any;
+  quoteItems: any[];
+}) => {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Quote Preview"
+      size="lg">
+      <div className="flex flex-col h-[60vh]">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <iframe
+            src="/sample.pdf"
+            className="w-full h-full border-0"
+            title="Quote Preview"
+          />
         </div>
       </div>
     </Modal>
