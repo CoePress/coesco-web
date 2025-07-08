@@ -535,3 +535,13 @@ model QuoteItem {
 
   @@map("quote_items")
 }
+
+model PerformanceSheet {
+  id String @id @default(uuid())
+  referenceNumber String
+  data Json @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("performance_sheets")
+}
