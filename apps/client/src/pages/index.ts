@@ -18,7 +18,7 @@ export { default as SalesJourneyDetails } from "./sales/journey-details";
 export { default as SalesCompanyDetails } from "./sales/company-details";
 export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
-export { default as Performance } from "./performance/rfq";
+export { default as Performance } from "./performance";
 
 // General
 export { default as Login } from "./general/login";

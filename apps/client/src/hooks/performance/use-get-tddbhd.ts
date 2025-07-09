@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { pythonInstance } from '@/utils';
-import { TDDBHDFormData } from './use-create-tddbhd';
+import { TDDBHDFormData, VersionKey, VersionedSection } from './use-create-tddbhd';
 
 export const useGetTDDBHD = () => {
   const [isLoading, setIsLoading] = useState(false);

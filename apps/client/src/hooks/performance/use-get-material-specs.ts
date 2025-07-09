@@ -15,13 +15,11 @@ export const useGetMaterialSpecs = () => {
     
     setIsLoading(true);
     setStatus('');
-    console.log('[getMaterialSpecs] Fetching material specs for reference:', referenceNumber);
     try {
       const response = await pythonInstance.get(`/material_specs/${referenceNumber}`);
       if (response.data) {
         // If the response is an object keyed by reference number, extract the value
         const data = response.data[referenceNumber] ? response.data[referenceNumber] : response.data;
-        console.log('[getMaterialSpecs] Extracted data:', data);
         setFetchedMaterialSpecs(data);
         setStatus(`Material specs retrieved successfully for reference: ${referenceNumber}`);
       } else {
@@ -45,7 +43,6 @@ export const useGetMaterialSpecs = () => {
         setStatus("Failed to get material specs. Please try again.");
       }
     } finally {
-      console.log('[getMaterialSpecs] Done fetching material specs for reference:', referenceNumber);
       setIsLoading(false);
     }
   };

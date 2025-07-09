@@ -55,7 +55,7 @@ const initialState: PerformanceSheetState = {
   // --- RFQ variables (from lines 14-100 in rfq.tsx) ---
   referenceNumber: '',
   date: '',
-  companyName: '',
+  customer: '',
   streetAddress: '',
   city: '',
   state: '',

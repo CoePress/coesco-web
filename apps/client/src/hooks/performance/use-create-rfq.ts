@@ -5,7 +5,7 @@ import { useGetRFQ } from './use-get-rfq';
 export interface RFQFormData {
   referenceNumber: string;
   date: string;
-  companyName: string;
+  customer: string;
   streetAddress: string;
   city: string;
   state: string;
@@ -127,7 +127,7 @@ function mapToBackendRFQ(form: RFQFormData) {
 
   return {
     date: form.date || undefined,
-    company_name: form.companyName || undefined,
+    customer: form.customer || undefined,
     state_province: form.state || undefined,
     street_address: form.streetAddress || undefined,
     zip_code: toInt(form.zip),
@@ -245,6 +245,7 @@ export const useCreateRFQ = () => {
       return;
     }
     setIsLoading(true);
+    setStatus('Sending RFQ...');
     try {
       if (!validate(form)) {
         setStatus("Please fill all required fields before sending.");
@@ -255,6 +256,7 @@ export const useCreateRFQ = () => {
       // Check if RFQ exists
       let exists = false;
       try {
+        setStatus('Checking for existing RFQ...');
         const existing = await pythonInstance.get(`/rfq/${form.referenceNumber}`);
         if (existing && existing.data && existing.data.rfq) {
           exists = true;
@@ -264,18 +266,20 @@ export const useCreateRFQ = () => {
       }
       let response;
       if (exists) {
+        setStatus('Updating RFQ...');
         response = await pythonInstance.put(`/rfq/${form.referenceNumber}`, backendData);
-        if (response.data) {
+        if (response.status === 200) {
           setStatus(`RFQ updated successfully! Reference Number: ${form.referenceNumber}`);
         } else {
-          setStatus("RFQ updated successfully!");
+          setStatus("No changes were made. RFQ was not updated.");
         }
       } else {
+        setStatus('Creating RFQ...');
         response = await pythonInstance.post(`/rfq/${form.referenceNumber}`, backendData);
-        if (response.data) {
-          setStatus(`RFQ created successfully! Reference Number: ${form.referenceNumber}`);
+        if (response.status === 200) {
+          setStatus(`RFQ created/updated successfully! Reference Number: ${form.referenceNumber}`);
         } else {
-          setStatus("RFQ created successfully!");
+          setStatus("No changes were made. RFQ was not created.");
         }
       }
     } catch (error: any) {

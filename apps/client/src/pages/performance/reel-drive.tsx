@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Card from '@/components/shared/card';
 import Input from '@/components/shared/input';
 import Text from '@/components/shared/text';
@@ -89,69 +89,11 @@ const initialState = {
   okFull: '',
 };
 
-const getSavedReelDrive = (reference: string) => {
-  const saved = localStorage.getItem(`reelDriveFormData_${reference}`);
-  return saved ? JSON.parse(saved) : null;
-};
-
 export default function ReelDrive() {
   const [form, setForm] = useState(() => initialState);
   const [status, setStatus] = useState('');
   const { createReelDrive, isLoading: isSaving, status: backendStatus } = useCreateReelDrive();
   const { getReelDrive, isLoading: isGetting, status: getBackendStatus } = useGetReelDrive();
-
-  // On mount and whenever referenceNumber changes, try backend, then localStorage
-  useEffect(() => {
-    const ref = form.referenceNumber || localStorage.getItem('currentReferenceNumber');
-    if (!ref) return;
-    let didSet = false;
-    getReelDrive(ref).then((data) => {
-      if (data && (data.referenceNumber || data.reference)) {
-        setForm(snakeToCamel(data));
-        didSet = true;
-      } else {
-        const saved = getSavedReelDrive(ref);
-        if (saved) {
-          setForm(saved);
-          didSet = true;
-        }
-      }
-      if (!didSet) setForm({ ...initialState });
-    }).catch(() => {
-      const saved = getSavedReelDrive(ref);
-      if (saved) setForm(saved);
-      else setForm({ ...initialState });
-    });
-  }, [form.referenceNumber]);
-
-  useEffect(() => {
-    if (form.referenceNumber) {
-      localStorage.setItem(`reelDriveFormData_${form.referenceNumber}`, JSON.stringify(form));
-      localStorage.setItem('currentReferenceNumber', form.referenceNumber);
-    }
-  }, [form]);
-
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'currentReferenceNumber' && e.newValue) {
-        getReelDrive(e.newValue ?? '').then((data) => {
-          if (data && (data.referenceNumber || data.reference)) {
-            setForm(snakeToCamel(data));
-          } else {
-            const saved = getSavedReelDrive(e.newValue ?? '');
-            if (saved) setForm(saved);
-            else setForm({ ...initialState });
-          }
-        }).catch(() => {
-          const saved = getSavedReelDrive(e.newValue ?? '');
-          if (saved) setForm(saved);
-          else setForm({ ...initialState });
-        });
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -169,22 +111,10 @@ export default function ReelDrive() {
         setForm(snakeToCamel(backendData));
         setStatus('Loaded from backend.');
       } else {
-        const stored = localStorage.getItem('reelDriveFormData');
-        if (stored) {
-          setForm(snakeToCamel(JSON.parse(stored)));
-          setStatus('Loaded from localStorage.');
-        } else {
-          setStatus('No saved data found.');
-        }
+        setStatus('No saved data found.');
       }
     } catch (err) {
-      const stored = localStorage.getItem('reelDriveFormData');
-      if (stored) {
-        setForm(snakeToCamel(JSON.parse(stored)));
-        setStatus('Backend unavailable. Loaded from localStorage.');
-      } else {
-        setStatus('Backend unavailable. No saved data found.');
-      }
+      setStatus('Backend unavailable. No saved data found.');
     }
   };
 
@@ -197,14 +127,12 @@ export default function ReelDrive() {
       await createReelDrive(form);
       setStatus('Saved to backend.');
     } catch (err) {
-      localStorage.setItem('reelDriveFormData', JSON.stringify(form));
-      setStatus('Backend unavailable. Saved to localStorage.');
+      setStatus('Backend unavailable. Unable to save.');
     }
   };
 
   return (
-    <form className="max-w-[1200px] mx-auto text-sm p-6">
-      <Text as="h2" className="text-center my-8 text-2xl font-semibold">REEL DRIVE CALCULATION</Text>
+    <div className="max-w-[1200px] mx-auto text-sm p-6">
       {/* Reference Info */}
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
@@ -381,6 +309,6 @@ export default function ReelDrive() {
       {status && <div className="text-center text-xs text-primary mt-2">{status}</div>}
       {backendStatus && <div className="text-center text-xs text-primary mt-2">{backendStatus}</div>}
       {getBackendStatus && <div className="text-center text-xs text-primary mt-2">{getBackendStatus}</div>}
-    </form>
+    </div>
   );
 } 

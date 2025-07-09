@@ -1,5 +1,7 @@
 // Utility for mapping backend material specs fields to frontend form fields
 
+import { MATERIAL_TYPE_OPTIONS } from './select-options';
+
 const BACKEND_TO_FRONTEND_MAP = {
   'Maximum Thick': {
     max_material_width: 'coilWidth',
@@ -72,7 +74,17 @@ const GENERAL_BACKEND_TO_FRONTEND = {
   reel_style: 'reelStyle',
   light_guage: 'lightGauge',
   non_marking: 'nonMarking',
+  coil_width_max: 'coilWidthMax',
+  coil_width_min: 'coilWidthMin',
 };
+
+// --- MATERIAL TYPE MAPPING ---
+const MATERIAL_TYPE_LABEL_TO_VALUE: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map(opt => [opt.label, opt.value])
+);
+const MATERIAL_TYPE_VALUE_TO_LABEL: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map(opt => [opt.value, opt.label])
+);
 
 /**
  * Transforms backend material specs data to the frontend form structure.
@@ -80,13 +92,13 @@ const GENERAL_BACKEND_TO_FRONTEND = {
  * @returns The mapped frontend data object
  */
 export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
-  console.log('[MaterialSpecsMapping] backendData:', backendData);
   const result: any = {};
 
   // General fields
   Object.entries(GENERAL_BACKEND_TO_FRONTEND).forEach(([backendKey, frontendKey]) => {
     if (backendData[backendKey] !== undefined) {
-      result[frontendKey] = backendData[backendKey];
+      const value = backendData[backendKey];
+      result[frontendKey] = value === null ? '' : value;
     }
   });
 
@@ -98,48 +110,88 @@ export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
 
   Object.entries(BACKEND_TO_FRONTEND_MAP['Maximum Thick']).forEach(([backendKey, frontendKey]) => {
     if (backendData[backendKey] !== undefined) {
-      result.MaximumThick[frontendKey] = backendData[backendKey];
+      let value = backendData[backendKey];
+      if (frontendKey === 'materialType') {
+        // Map label to value for materialType
+        value = value === null ? '' : value;
+        result.MaximumThick[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
+      } else {
+        result.MaximumThick[frontendKey] = value === null ? '' : value;
+      }
+    } else {
+      result.MaximumThick[frontendKey] = '';
     }
   });
   Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Full']).forEach(([backendKey, frontendKey]) => {
     if (backendData[backendKey] !== undefined) {
-      result.MaxAtFull[frontendKey] = backendData[backendKey];
+      let value = backendData[backendKey];
+      if (frontendKey === 'materialType') {
+        value = value === null ? '' : value;
+        result.MaxAtFull[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
+      } else {
+        result.MaxAtFull[frontendKey] = value === null ? '' : value;
+      }
+    } else {
+      result.MaxAtFull[frontendKey] = '';
     }
   });
   Object.entries(BACKEND_TO_FRONTEND_MAP['Minimum Thick']).forEach(([backendKey, frontendKey]) => {
     if (backendData[backendKey] !== undefined) {
-      result.MinimumThick[frontendKey] = backendData[backendKey];
+      let value = backendData[backendKey];
+      if (frontendKey === 'materialType') {
+        value = value === null ? '' : value;
+        result.MinimumThick[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
+      } else {
+        result.MinimumThick[frontendKey] = value === null ? '' : value;
+      }
+    } else {
+      result.MinimumThick[frontendKey] = '';
     }
   });
   Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Width']).forEach(([backendKey, frontendKey]) => {
     if (backendData[backendKey] !== undefined) {
-      result.MaxAtWidth[frontendKey] = backendData[backendKey];
+      let value = backendData[backendKey];
+      if (frontendKey === 'materialType') {
+        value = value === null ? '' : value;
+        result.MaxAtWidth[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
+      } else {
+        result.MaxAtWidth[frontendKey] = value === null ? '' : value;
+      }
+    } else {
+      result.MaxAtWidth[frontendKey] = '';
     }
   });
 
-  // Set shared fields across all versions using max_ backend fields
-  const sharedFields = {
-    maxFPM: backendData.max_fpm,
-    coilOD: backendData.max_coil_od,
-    coilID: backendData.coil_id,
-    coilWeight: backendData.coil_weight_max,
-  };
-  ['MaximumThick', 'MaxAtFull', 'MinimumThick', 'MaxAtWidth'].forEach(versionKey => {
-    Object.entries(sharedFields).forEach(([frontendKey, value]) => {
-      if (value !== undefined) {
-        result[versionKey][frontendKey] = value;
-      }
-    });
+  // --- NEW: Map calculated fields for all versions ---
+  const calculatedFieldMap = [
+    { version: 'MaximumThick', prefix: 'max' },
+    { version: 'MaxAtFull', prefix: 'full' },
+    { version: 'MinimumThick', prefix: 'min' },
+    { version: 'MaxAtWidth', prefix: 'width' },
+  ];
+  calculatedFieldMap.forEach(({ version, prefix }) => {
+    // min_bend_rad -> minBendRad
+    if (backendData[`${prefix}_min_bend_rad`] !== undefined) {
+      result[version].minBendRad = backendData[`${prefix}_min_bend_rad`];
+    }
+    // min_loop_length -> minLoopLength
+    if (backendData[`${prefix}_min_loop_length`] !== undefined) {
+      result[version].minLoopLength = backendData[`${prefix}_min_loop_length`];
+    }
+    // coil_od_calculated -> coilODCalculated
+    if (backendData[`${prefix}_coil_od_calculated`] !== undefined) {
+      result[version].coilODCalculated = backendData[`${prefix}_coil_od_calculated`];
+    }
   });
 
   if (backendData.referenceNumber) result.referenceNumber = backendData.referenceNumber;
 
   if (backendData.passline_height !== undefined) result.passline = backendData.passline_height;
-  if (backendData.company_name !== undefined) result.customer = backendData.company_name;
+  if (backendData.customer !== undefined) result.customer = backendData.customer;
 
   // Ensure all expected frontend fields are present with defaults
   result.passline = backendData.passline_height ?? '';
-  result.customer = backendData.company_name ?? '';
+  result.customer = backendData.customer ?? '';
   result.feedDirection = backendData.feed_direction ?? '';
   result.controlsLevel = backendData.controls_level ?? '';
   result.typeOfLine = backendData.type_of_line ?? '';
@@ -150,7 +202,10 @@ export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
   result.nonMarking = backendData.non_marking ?? false;
   result.date = backendData.date ?? '';
 
-  console.log('[MaterialSpecsMapping] mapped result:', result);
+  // Ensure top-level coilWidthMax and coilWidthMin are set
+  result.coilWidthMax = backendData.coil_width_max === null || backendData.coil_width_max === undefined ? '' : backendData.coil_width_max;
+  result.coilWidthMin = backendData.coil_width_min === null || backendData.coil_width_min === undefined ? '' : backendData.coil_width_min;
+
   return result;
 }
 
@@ -168,6 +223,11 @@ export function mapFrontendToBackendMaterialSpecs(form: any): any {
       backendData[backendKey] = form[frontendKey];
     }
   });
+
+  // Company name sync: set customer from customer
+  if (form.customer !== undefined) {
+    backendData.customer = form.customer;
+  }
 
   // Versioned fields
   Object.entries(BACKEND_TO_FRONTEND_MAP['Maximum Thick']).forEach(([backendKey, frontendKey]) => {
@@ -201,7 +261,25 @@ export function mapFrontendToBackendMaterialSpecs(form: any): any {
 
   // Explicit mappings for passline and customer
   if (form.passline !== undefined) backendData.passline_height = form.passline;
-  if (form.customer !== undefined) backendData.company_name = form.customer;
+  if (form.customer !== undefined) backendData.customer = form.customer;
+
+  // --- MATERIAL TYPE: value to label mapping for backend ---
+  if (form.MaximumThick && form.MaximumThick.materialType) {
+    backendData.max_material_type = MATERIAL_TYPE_VALUE_TO_LABEL[form.MaximumThick.materialType] ?? form.MaximumThick.materialType;
+  }
+  if (form.MaxAtFull && form.MaxAtFull.materialType) {
+    backendData.full_material_type = MATERIAL_TYPE_VALUE_TO_LABEL[form.MaxAtFull.materialType] ?? form.MaxAtFull.materialType;
+  }
+  if (form.MinimumThick && form.MinimumThick.materialType) {
+    backendData.min_material_type = MATERIAL_TYPE_VALUE_TO_LABEL[form.MinimumThick.materialType] ?? form.MinimumThick.materialType;
+  }
+  if (form.MaxAtWidth && form.MaxAtWidth.materialType) {
+    backendData.width_material_type = MATERIAL_TYPE_VALUE_TO_LABEL[form.MaxAtWidth.materialType] ?? form.MaxAtWidth.materialType;
+  }
+
+  // In mapFrontendToBackendMaterialSpecs, add explicit mapping for coilWidthMax and coilWidthMin
+  if (form.coilWidthMax !== undefined) backendData.coil_width_max = form.coilWidthMax;
+  if (form.coilWidthMin !== undefined) backendData.coil_width_min = form.coilWidthMin;
 
   return backendData;
 }
@@ -251,7 +329,7 @@ export interface MaterialSpecsCreatePayload {
 // Mapping function for TypeScript projects
 export function mapMaterialSpecsToBackend(form: any): MaterialSpecsCreatePayload {
   return {
-    customer: form.companyName,
+    customer: form.customer,
     date: form.date,
     // --- MaximumThick (matSpec1) ---
     max_coil_width: form.matSpec1.width,

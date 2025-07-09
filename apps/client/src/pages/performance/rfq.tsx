@@ -6,14 +6,19 @@ import Checkbox from "@/components/shared/checkbox";
 import Textarea from "@/components/shared/textarea";
 import Text from "@/components/shared/text";
 import Card from "@/components/shared/card";
-import { useCreateRFQ, RFQFormData, updateRFQ } from "@/hooks/performance/use-create-rfq";
+import { useCreateRFQ, RFQFormData } from "@/hooks/performance/use-create-rfq";
 import { useGetRFQ } from "@/hooks/performance/use-get-rfq";
 import { pythonInstance } from "@/utils";
+import {
+  TYPE_OF_LINE_OPTIONS,
+  MATERIAL_TYPE_OPTIONS,
+  YES_NO_OPTIONS,
+} from '@/utils/select-options';
 
 const initialState: RFQFormData & { avgFPM?: string; maxFPM?: string; minFPM?: string } = {
   referenceNumber: "",
   date: "",
-  companyName: "",
+  customer: "",
   streetAddress: "",
   city: "",
   state: "",
@@ -28,7 +33,7 @@ const initialState: RFQFormData & { avgFPM?: string; maxFPM?: string; minFPM?: s
   daysPerWeek: "",
   shiftsPerDay: "",
   lineApplication: "Press Feed",
-  lineType: "Conventional",
+  lineType: "",
   pullThrough: "No",
   coilWidthMax: "",
   coilWidthMin: "",
@@ -100,13 +105,36 @@ const initialState: RFQFormData & { avgFPM?: string; maxFPM?: string; minFPM?: s
   minFPM: "",
 };
 
+// Add mapping for material type and yes/no fields
+const MATERIAL_TYPE_LABEL_TO_VALUE = {
+  "Aluminum": "aluminum",
+  "Galvanized": "galvanized",
+  "HS Steel": "hsSteel",
+  "Hot Rolled Steel": "hotRolledSteel",
+  "Dual Phase": "dualPhase",
+  "Cold Rolled Steel": "coldRolledSteel",
+  "Stainless Steel": "sainlessSteel",
+  "Titanium": "titanium",
+  "Brass": "brass",
+  "Beryl Copper": "berylCopper",
+};
+const YES_NO_MAP = { true: 'Yes', false: 'No', 'Yes': 'Yes', 'No': 'No', '': '' };
+
+function mapYesNo(val: any): string {
+  if (val === true || val === 'Yes') return 'Yes';
+  if (val === false || val === 'No') return 'No';
+  return '';
+}
+function mapMaterialType(val: any): string {
+  return typeof val === 'string' && val in MATERIAL_TYPE_LABEL_TO_VALUE ? MATERIAL_TYPE_LABEL_TO_VALUE[val as keyof typeof MATERIAL_TYPE_LABEL_TO_VALUE] : '';
+}
 
 // Map backend RFQ data to frontend form state
 function mapBackendToFrontendRFQ(data: any): typeof initialState {
   return {
     referenceNumber: data.reference || '',
     date: data.date || '',
-    companyName: data.company_name || '',
+    customer: data.customer || '',
     streetAddress: data.street_address || '',
     city: data.city || '',
     state: data.state_province || '',
@@ -122,47 +150,47 @@ function mapBackendToFrontendRFQ(data: any): typeof initialState {
     shiftsPerDay: data.shifts_per_day !== undefined && data.shifts_per_day !== null ? String(data.shifts_per_day) : '',
     lineApplication: data.line_application || '',
     lineType: data.type_of_line || '',
-    pullThrough: data.pull_thru || '',
-    coilWidthMax: data.coil_width_max !== undefined && data.coil_width_max !== null ? String(data.max_coil_width) : '',
-    coilWidthMin: data.coil_width_min !== undefined && data.coil_width_min !== null ? String(data.min_coil_width) : '',
+    pullThrough: mapYesNo(data.pull_thru),
+    coilWidthMax: data.coil_width_max !== undefined && data.coil_width_max !== null ? String(data.coil_width_max) : '',
+    coilWidthMin: data.coil_width_min !== undefined && data.coil_width_min !== null ? String(data.coil_width_min) : '',
     maxCoilOD: data.max_coil_od !== undefined && data.max_coil_od !== null ? String(data.max_coil_od) : '',
     coilID: data.coil_id !== undefined && data.coil_id !== null ? String(data.coil_id) : '',
     coilWeightMax: data.coil_weight_max !== undefined && data.coil_weight_max !== null ? String(data.max_coil_weight) : '',
     coilHandlingMax: data.coil_handling_cap_max !== undefined && data.coil_handling_cap_max !== null ? String(data.max_coil_handling_cap) : '',
     slitEdge: false, // Not present in backend, default to false
     millEdge: false, // Not present in backend, default to false
-    coilCarRequired: data.coil_car === true ? 'Yes' : data.coil_car === false ? 'No' : '',
-    runOffBackplate: data.run_off_backplate === true ? 'Yes' : data.run_off_backplate === false ? 'No' : '',
-    requireRewinding: data.req_rewinding === true ? 'Yes' : data.req_rewinding === false ? 'No' : '',
+    coilCarRequired: mapYesNo(data.coil_car),
+    runOffBackplate: mapYesNo(data.run_off_backplate),
+    requireRewinding: mapYesNo(data.req_rewinding),
     matSpec1: {
       thickness: data.max_material_thickness !== undefined && data.max_material_thickness !== null ? String(data.max_material_thickness) : '',
       width: data.max_material_width !== undefined && data.max_material_width !== null ? String(data.max_material_width) : '',
-      type: data.max_material_type || '',
+      type: mapMaterialType(data.max_material_type),
       yield: data.max_yield_strength !== undefined && data.max_yield_strength !== null ? String(data.max_yield_strength) : '',
       tensile: data.max_tensile_strength !== undefined && data.max_tensile_strength !== null ? String(data.max_tensile_strength) : '',
     },
     matSpec2: {
       thickness: data.full_material_thickness !== undefined && data.full_material_thickness !== null ? String(data.full_material_thickness) : '',
       width: data.full_material_width !== undefined && data.full_material_width !== null ? String(data.full_material_width) : '',
-      type: data.full_material_type || '',
+      type: mapMaterialType(data.full_material_type),
       yield: data.full_yield_strength !== undefined && data.full_yield_strength !== null ? String(data.full_yield_strength) : '',
       tensile: data.full_tensile_strength !== undefined && data.full_tensile_strength !== null ? String(data.full_tensile_strength) : '',
     },
     matSpec3: {
       thickness: data.min_material_thickness !== undefined && data.min_material_thickness !== null ? String(data.min_material_thickness) : '',
       width: data.min_material_width !== undefined && data.min_material_width !== null ? String(data.min_material_width) : '',
-      type: data.min_material_type || '',
+      type: mapMaterialType(data.min_material_type),
       yield: data.min_yield_strength !== undefined && data.min_yield_strength !== null ? String(data.min_yield_strength) : '',
       tensile: data.min_tensile_strength !== undefined && data.min_tensile_strength !== null ? String(data.min_tensile_strength) : '',
     },
     matSpec4: {
       thickness: data.width_material_thickness !== undefined && data.width_material_thickness !== null ? String(data.width_material_thickness) : '',
       width: data.width_material_width !== undefined && data.width_material_width !== null ? String(data.width_material_width) : '',
-      type: data.width_material_type || '',
+      type: mapMaterialType(data.width_material_type),
       yield: data.width_yield_strength !== undefined && data.width_yield_strength !== null ? String(data.width_yield_strength) : '',
       tensile: data.width_tensile_strength !== undefined && data.width_tensile_strength !== null ? String(data.width_tensile_strength) : '',
     },
-    cosmeticMaterial: data.cosmetic_material === true ? 'Yes' : data.cosmetic_material === false ? 'No' : '',
+    cosmeticMaterial: mapYesNo(data.cosmetic_material),
     feedEquipment: data.brand_of_feed_equipment || '',
     pressType: {
       gapFrame: !!data.gap_frame_press,
@@ -198,18 +226,18 @@ function mapBackendToFrontendRFQ(data: any): typeof initialState {
     spaceLength: data.space_allocated_length !== undefined && data.space_allocated_length !== null ? String(data.space_allocated_length) : '',
     spaceWidth: data.space_allocated_width !== undefined && data.space_allocated_width !== null ? String(data.space_allocated_width) : '',
     obstructions: data.obstructions || '',
-    mountToPress: data.feeder_mountable === true ? 'Yes' : data.feeder_mountable === false ? 'No' : '',
-    adequateSupport: data.feeder_mount_adequate_support === true ? 'Yes' : data.feeder_mount_adequate_support === false ? 'No' : '',
+    mountToPress: mapYesNo(data.feeder_mountable),
+    adequateSupport: mapYesNo(data.feeder_mount_adequate_support),
     requireCabinet: '', // Not present in backend
-    needMountingPlates: data.custom_mounting === true ? 'Yes' : data.custom_mounting === false ? 'No' : '',
+    needMountingPlates: mapYesNo(data.custom_mounting),
     passlineHeight: data.passline_height !== undefined && data.passline_height !== null ? String(data.passline_height) : '',
-    loopPit: data.loop_pit === true ? 'Yes' : data.loop_pit === false ? 'No' : '',
-    coilChangeConcern: data.coil_change_time_concern === true ? 'Yes' : data.coil_change_time_concern === false ? 'No' : '',
+    loopPit: mapYesNo(data.loop_pit),
+    coilChangeConcern: mapYesNo(data.coil_change_time_concern),
     coilChangeTime: data.coil_change_time_goal !== undefined && data.coil_change_time_goal !== null ? String(data.coil_change_time_goal) : '',
     downtimeReasons: '', // Not present in backend
     feedDirection: data.feed_direction || '',
     coilLoading: data.coil_landing || '',
-    safetyRequirements: data.line_guard_safety_req === true ? 'Yes' : data.line_guard_safety_req === false ? 'No' : '',
+    safetyRequirements: mapYesNo(data.line_guard_safety_req),
     decisionDate: data.project_decision_date || '',
     idealDelivery: data.ideal_delivery_date || '',
     earliestDelivery: data.earliest_delivery_date || '',
@@ -222,11 +250,6 @@ const RFQ = () => {
   const [form, setForm] = useState<typeof initialState>(initialState);
   const { isLoading, status, errors, createRFQ } = useCreateRFQ();
   const { isLoading: isGetting, status: getStatus, fetchedRFQ, getRFQ } = useGetRFQ();
-  const [saveStatus, setSaveStatus] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('rfqFormData', JSON.stringify(form));
-  }, [form]);
 
   useEffect(() => {
     if (fetchedRFQ) {
@@ -236,23 +259,6 @@ const RFQ = () => {
       setForm(mapBackendToFrontendRFQ(data));
     }
   }, [fetchedRFQ]);
-
-  useEffect(() => {
-    const ref = localStorage.getItem('currentReferenceNumber') || '';
-    if (ref && ref !== form.referenceNumber) {
-      setForm(prev => ({ ...prev, referenceNumber: ref || '' }));
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'currentReferenceNumber' && e.newValue && e.newValue !== form.referenceNumber) {
-        setForm(prev => ({ ...prev, referenceNumber: e.newValue || '' }));
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [form.referenceNumber]);
 
   const fetchFPM = async (feed_length: string, spm: string, key: 'avgFPM' | 'maxFPM' | 'minFPM') => {
     const length = parseFloat(feed_length);
@@ -314,20 +320,12 @@ const RFQ = () => {
     }
   };
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    await createRFQ(form);
-  };
-
   const handleGet = async () => {
     await getRFQ(form.referenceNumber);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto text-sm p-6">
-      {saveStatus && <div className={`text-xs ${saveStatus === 'Saved' ? 'text-green-600' : 'text-error'}`}>{saveStatus}</div>}
-      <Text as="h2" className="text-center my-8 text-2xl font-semibold">Request for Quote</Text>
-      
+    <div className="max-w-[1200px] mx-auto text-sm p-6">
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
@@ -338,7 +336,6 @@ const RFQ = () => {
             value={form.referenceNumber} 
             onChange={e => {
               setForm(prev => ({ ...prev, referenceNumber: e.target.value }));
-              localStorage.setItem('currentReferenceNumber', e.target.value);
             }}
             error={errors.referenceNumber ? 'Required' : ''} 
           />
@@ -382,10 +379,10 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input 
             label="Company Name" 
-            name="companyName" 
-            value={form.companyName} 
+            name="customer" 
+            value={form.customer} 
             onChange={handleChange} 
-            error={errors.companyName ? 'Required' : ''}
+            error={errors.customer ? 'Required' : ''}
           />
           <Input 
             label="State/Province" 
@@ -485,36 +482,14 @@ const RFQ = () => {
             name="lineType"
             value={form.lineType}
             onChange={handleChange}
-            options={[
-              { value: "compact", label: "Compact" },
-              { value: "compactCTL", label: "Compact CTL" },
-              { value: "conventional", label: "Conventional" },
-              { value: "conventionalCTL", label: "Conventional CTL" },
-              { value: "pullThrough", label: "Pull Through" },
-              { value: "pullThroughCompact", label: "Pull Through Compact" },
-              { value: "pullThroughCTL", label: "Pull Through CTL" },
-              { value: "feed", label: "Feed" },
-              { value: "feedPullThough", label: "Feed-Pull Through"},
-              { value: "feedPullThroughShear", label: "Feed-Pull Through-Shear"},
-              { value: "feedShear", label: "Feed-Shear"},
-              { value: "straightener", label: "Straightener"},
-              { value: "straightenerReelCombo", label: "Straightener-Reel Combination" },
-              { value: "reelMotorized", label: "Reel-Motorized" },
-              { value: "reelPullOff", label: "Reel-Pull Off" },
-              { value: "threadingTable", label: "Threading Table" },
-              { value: "other", label: "Other" },
-
-            ]}
+            options={TYPE_OF_LINE_OPTIONS}
           />
           <Select
             label="Pull Through"
             name="pullThrough"
             value={form.pullThrough}
             onChange={handleChange}
-            options={[
-              { value: "No", label: "No" },
-              { value: "Yes", label: "Yes" },
-            ]}
+            options={YES_NO_OPTIONS}
             error={errors.pullThrough ? 'Required' : ''}
           />
         </div>
@@ -528,34 +503,39 @@ const RFQ = () => {
             name="coilWidthMax" 
             value={form.coilWidthMax} 
             onChange={handleChange} 
+            type="number"
             error={errors.coilWidthMax ? 'Required' : ''}
           />
           <Input 
             label="Min Coil Width (in)" 
             name="coilWidthMin" 
             value={form.coilWidthMin} 
-            onChange={handleChange} 
+            onChange={handleChange}
+            type="number"
             error={errors.coilWidthMin ? 'Required' : ''}
           />
           <Input 
             label="Max Coil O.D. (in)" 
             name="maxCoilOD" 
             value={form.maxCoilOD} 
-            onChange={handleChange} 
+            onChange={handleChange}
+            type="number" 
             error={errors.maxCoilOD ? 'Required' : ''}
           />
           <Input 
             label="Coil I.D. (in)" 
             name="coilID" 
             value={form.coilID} 
-            onChange={handleChange} 
+            onChange={handleChange}
+            type="number" 
             error={errors.coilID ? 'Required' : ''}
           />
           <Input 
             label="Max Coil Weight (lbs)" 
             name="coilWeightMax" 
             value={form.coilWeightMax} 
-            onChange={handleChange} 
+            onChange={handleChange}
+            type="number" 
             error={errors.coilWeightMax ? 'Required' : ''}
           />
           <Input 
@@ -591,30 +571,21 @@ const RFQ = () => {
             name="coilCarRequired"
             value={form.coilCarRequired}
             onChange={handleChange}
-            options={[
-              { value: "No", label: "No" },
-              { value: "Yes", label: "Yes" },
-            ]}
+            options={YES_NO_OPTIONS}
           />
           <Select
             label="Will you be running off the Backplate?"
             name="runOffBackplate"
             value={form.runOffBackplate}
             onChange={handleChange}
-            options={[
-              { value: "No", label: "No" },
-              { value: "Yes", label: "Yes" },
-            ]}
+            options={YES_NO_OPTIONS}
           />
           <Select
             label="Are you running partial coils, i.e. will you require rewinding?"
             name="requireRewinding"
             value={form.requireRewinding}
             onChange={handleChange}
-            options={[
-              { value: "No", label: "No" },
-              { value: "Yes", label: "Yes" },
-            ]}
+            options={YES_NO_OPTIONS}
           />
         </div>
       </Card>
@@ -627,6 +598,7 @@ const RFQ = () => {
             name="matSpec1.thickness" 
             value={form.matSpec1.thickness} 
             onChange={handleChange} 
+            type="number"
             error={errors['matSpec1.thickness'] ? 'Required' : ''}
           />
           <Input 
@@ -634,20 +606,22 @@ const RFQ = () => {
             name="matSpec1.width" 
             value={form.matSpec1.width} 
             onChange={handleChange} 
+            type="number"
             error={errors['matSpec1.width'] ? 'Required' : ''}
           />
-          <Input 
-            label="Material Type" 
-            name="matSpec1.type" 
-            value={form.matSpec1.type} 
-            onChange={handleChange} 
-            error={errors['matSpec1.type'] ? 'Required' : ''}
+          <Select
+            label="Material Type"
+            name="matSpec1.type"
+            value={form.matSpec1.type}
+            onChange={handleChange}
+            options={MATERIAL_TYPE_OPTIONS}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
             name="matSpec1.yield" 
             value={form.matSpec1.yield} 
             onChange={handleChange} 
+            type="number"
             error={errors['matSpec1.yield'] ? 'Required' : ''}
           />
           <Input 
@@ -655,6 +629,7 @@ const RFQ = () => {
             name="matSpec1.tensile" 
             value={form.matSpec1.tensile} 
             onChange={handleChange} 
+            type="number"
             error={errors['matSpec1.tensile'] ? 'Required' : ''}
           />
         </div>
@@ -672,11 +647,12 @@ const RFQ = () => {
             value={form.matSpec2.width} 
             onChange={handleChange}
           />
-          <Input 
-            label="Material Type" 
-            name="matSpec2.type" 
-            value={form.matSpec2.type} 
+          <Select
+            label="Material Type"
+            name="matSpec2.type"
+            value={form.matSpec2.type}
             onChange={handleChange}
+            options={MATERIAL_TYPE_OPTIONS}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
@@ -705,11 +681,12 @@ const RFQ = () => {
             value={form.matSpec3.width} 
             onChange={handleChange}
           />
-          <Input 
+          <Select
             label="Material Type"
-            name="matSpec3.type" 
-            value={form.matSpec3.type} 
+            name="matSpec3.type"
+            value={form.matSpec3.type}
             onChange={handleChange}
+            options={MATERIAL_TYPE_OPTIONS}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
@@ -738,11 +715,12 @@ const RFQ = () => {
             value={form.matSpec4.width} 
             onChange={handleChange}
           />
-          <Input 
-            label="Material Type" 
-            name="matSpec4.type" 
-            value={form.matSpec4.type} 
+          <Select
+            label="Material Type"
+            name="matSpec4.type"
+            value={form.matSpec4.type}
             onChange={handleChange}
+            options={MATERIAL_TYPE_OPTIONS}
           />
           <Input 
             label="Max Yield Strength (PSI)" 
@@ -1112,7 +1090,7 @@ const RFQ = () => {
           />
         </div>
       </Card>
-    </form>
+    </div>
   );
 };
 

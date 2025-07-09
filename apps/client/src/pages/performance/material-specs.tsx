@@ -1,15 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Input from "@/components/shared/input";
 import Select from "@/components/shared/select";
 import Checkbox from "@/components/shared/checkbox";
 import Text from "@/components/shared/text";
 import Tabs from "@/components/shared/tabs";
 import { Button, Card } from "@/components";
-import { useCreateMaterialSpecs, MaterialSpecsFormData } from "@/hooks/performance/use-create-material-specs";
+import { useCreateMaterialSpecs, calculateMaterialSpecs, calculateMaterialSpecsVariant } from "@/hooks/performance/use-create-material-specs";
 import { useGetMaterialSpecs } from "@/hooks/performance/use-get-material-specs";
 import { snakeToCamel } from "@/utils";
-import { usePerformanceSheet, initialState, PerformanceSheetState } from '@/contexts/performance.context';
-import { mapBackendToFrontendMaterialSpecs } from '@/utils/material-specs-mapping';
+import { usePerformanceSheet, PerformanceSheetState } from '@/contexts/performance.context';
+import { mapBackendToFrontendMaterialSpecs, mapFrontendToBackendMaterialSpecs } from '@/utils/material-specs-mapping';
+import {
+  FEED_DIRECTION_OPTIONS,
+  CONTROLS_LEVEL_OPTIONS,
+  TYPE_OF_LINE_OPTIONS,
+  PASSLINE_OPTIONS,
+  ROLL_TYPE_OPTIONS,
+  REEL_BACKPLATE_OPTIONS,
+  REEL_STYLE_OPTIONS,
+  MATERIAL_TYPE_OPTIONS,
+} from '@/utils/select-options';
 
 const VERSIONS = [
   "Maximum Thick",
@@ -49,11 +59,6 @@ const FIELD_LABELS: { [key: string]: string } = {
   coilODCalculated: 'Coil O.D. Calculated'
 };
 
-const getSavedSpecs = (reference: string) => {
-  const saved = localStorage.getItem(`materialSpecsFormData_${reference}`);
-  return saved ? JSON.parse(saved) : null;
-};
-
 const versionKeyMap = {
   'Maximum Thick': 'MaximumThick',
   'Max @ Full': 'MaxAtFull',
@@ -61,33 +66,115 @@ const versionKeyMap = {
   'Max @ Width': 'MaxAtWidth',
 } as const;
 
-function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState): MaterialSpecsFormData {
-  return {
-    referenceNumber: form.referenceNumber,
-    materialType: form.MaximumThick.materialType,
-    thickness: form.MaximumThick.thickness,
-    width: form.MaximumThick.width,
-    yieldStrength: form.MaximumThick.yieldStrength,
-    tensileStrength: form.MaximumThick.tensileStrength,
-    customer: form.companyName,
-    date: form.date,
-    coilWeight: form.coilWeightMax ? Number(form.coilWeightMax) : undefined,
-    minBendRad: form.MaximumThick.minBendRad,
-    minLoopLength: form.MaximumThick.minLoopLength,
-    coilOD: form.MaximumThick.coilOD ? Number(form.MaximumThick.coilOD) : undefined,
-    coilID: form.MaximumThick.coilID ? Number(form.MaximumThick.coilID) : undefined,
-    coilODCaclculated: form.MaximumThick.coilODCalculated,
-    feedDirection: form.feedDirection,
-    controlsLevel: form.controlsLevel,
-    typeOfLine: form.typeOfLine,
-    feedControls: form.feedControls,
-    passline: form.passline,
-    typeOfRoll: form.typeOfRoll,
-    reelBackplate: form.reelBackplate,
-    reelStyle: form.reelStyle,
-    lightGauge: form.lightGauge,
-    nonMarking: form.nonMarking,
+function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState, currentVersion: 'Maximum Thick' | 'Max @ Full' | 'Minimum Thick' | 'Max @ Width' = 'Maximum Thick'): any {
+  const versionKey = versionKeyMap[currentVersion];
+  const versionData = form[versionKey] || {};
+  
+  // Create base data object
+  const baseData = {
+    referenceNumber: form.referenceNumber || '',
+    customer: form.customer || '', // customer and customer are the same
+    date: form.date || '',
+    coil_id: versionData.coilID || '',
+    feed_direction: form.feedDirection || '',
+    controls_level: form.controlsLevel || '',
+    type_of_line: form.typeOfLine || '',
+    feed_controls: form.feedControls || '',
+    passline: form.passline || '',
+    selected_roll: form.typeOfRoll || '',
+    reel_backplate: form.reelBackplate || '',
+    reel_style: form.reelStyle || '',
+    light_guage: form.lightGauge || false,
+    non_marking: form.nonMarking || false,
   };
+
+  // Add version-specific fields based on current version
+  switch (currentVersion) {
+    case 'Maximum Thick':
+      return {
+        ...baseData,
+        max_coil_width: versionData.width || '',
+        max_coil_weight: versionData.coilWeight || '',
+        max_material_thickness: versionData.thickness || '',
+        max_material_type: versionData.materialType || '',
+        max_yield_strength: versionData.yieldStrength || '',
+        max_tensile_strength: versionData.tensileStrength || '',
+        max_fpm: '', // Add FPM field for max version
+        max_min_bend_rad: versionData.minBendRad || '',
+        max_min_loop_length: versionData.minLoopLength || '',
+        max_coil_od: versionData.coilOD || '',
+        max_coil_od_calculated: versionData.coilODCalculated || '',
+        // Backward compatibility aliases
+        coil_width_max: versionData.width ? Number(versionData.width) : undefined,
+        coil_weight_max: form.coilWeightMax ? Number(form.coilWeightMax) : undefined,
+      };
+    
+    case 'Max @ Full':
+      return {
+        ...baseData,
+        full_coil_width: versionData.width || '',
+        full_coil_weight: versionData.coilWeight || '',
+        full_material_thickness: versionData.thickness || '',
+        full_material_type: versionData.materialType || '',
+        full_yield_strength: versionData.yieldStrength || '',
+        full_tensile_strength: versionData.tensileStrength || '',
+        full_fpm: '', // Add FPM field for full version
+        full_min_bend_rad: versionData.minBendRad || '',
+        full_min_loop_length: versionData.minLoopLength || '',
+        full_coil_od: versionData.coilOD || '',
+        full_coil_od_calculated: versionData.coilODCalculated || '',
+      };
+    
+    case 'Minimum Thick':
+      return {
+        ...baseData,
+        min_coil_width: versionData.width || '',
+        min_coil_weight: versionData.coilWeight || '',
+        min_material_thickness: versionData.thickness || '',
+        min_material_type: versionData.materialType || '',
+        min_yield_strength: versionData.yieldStrength || '',
+        min_tensile_strength: versionData.tensileStrength || '',
+        min_fpm: '', // Add FPM field for min version
+        min_min_bend_rad: versionData.minBendRad || '',
+        min_min_loop_length: versionData.minLoopLength || '',
+        min_coil_od: versionData.coilOD || '',
+        min_coil_od_calculated: versionData.coilODCalculated || '',
+      };
+    
+    case 'Max @ Width':
+      return {
+        ...baseData,
+        width_coil_width: versionData.width || '',
+        width_coil_weight: versionData.coilWeight || '',
+        width_material_thickness: versionData.thickness || '',
+        width_material_type: versionData.materialType || '',
+        width_yield_strength: versionData.yieldStrength || '',
+        width_tensile_strength: versionData.tensileStrength || '',
+        width_fpm: '', // Add FPM field for width version
+        width_min_bend_rad: versionData.minBendRad || '',
+        width_min_loop_length: versionData.minLoopLength || '',
+        width_coil_od: versionData.coilOD || '',
+        width_coil_od_calculated: versionData.coilODCalculated || '',
+      };
+    
+    default:
+      return baseData;
+  }
+}
+
+const REQUIRED_FIELDS = [
+  "coilWeight", "coilID", "materialType", "materialThickness", "yieldStrength", "coilWidth"
+];
+
+function hasAllRequiredFields(versionData: any) {
+  return (
+    versionData.coilWeight &&
+    versionData.coilID &&
+    versionData.materialType &&
+    (versionData.materialThickness || versionData.thickness) &&
+    versionData.yieldStrength &&
+    (versionData.coilWidth || versionData.width)
+  );
 }
 
 const MaterialSpecs = () => {
@@ -95,51 +182,31 @@ const MaterialSpecs = () => {
   const { isLoading, status, errors, createMaterialSpecs, updateMaterialSpecs } = useCreateMaterialSpecs();
   const { isLoading: isGetting, status: getStatus, fetchedMaterialSpecs, getMaterialSpecs } = useGetMaterialSpecs();
   const [version, setVersion] = useState<'Maximum Thick' | 'Max @ Full' | 'Minimum Thick' | 'Max @ Width'>('Maximum Thick');
-  const [saveStatus, setSaveStatus] = useState('');
-
-  // Get customer and date
-  const customer = localStorage.getItem('companyName') || '';
-  const today = localStorage.getItem('date') || '';
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Get coil width boundaries from RFQ form (as numbers)
   const coilWidthMin = Number(form.coilWidthMin) || undefined;
   const coilWidthMax = Number(form.coilWidthMax) || undefined;
 
   useEffect(() => {
-    if (form.referenceNumber) {
-      localStorage.setItem(`materialSpecsFormData_${form.referenceNumber}`, JSON.stringify(form));
-      localStorage.setItem('currentReferenceNumber', form.referenceNumber);
-    }
-  }, [form]);
-
-  useEffect(() => {
-    const ref = localStorage.getItem('currentReferenceNumber') || '';
-    if (ref && ref !== form.referenceNumber) {
-      updatePerformanceSheet({ referenceNumber: ref });
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'currentReferenceNumber' && e.newValue && e.newValue !== form.referenceNumber) {
-        updatePerformanceSheet({ referenceNumber: e.newValue });
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [form.referenceNumber]);
-
-  useEffect(() => {
     if (fetchedMaterialSpecs) {
+      // Map backend to frontend for known fields
       const mapped = mapBackendToFrontendMaterialSpecs(fetchedMaterialSpecs);
+      // Mapped fields take precedence over snakeToCamel(fetchedMaterialSpecs)
+      const merged = { ...snakeToCamel(fetchedMaterialSpecs), ...mapped };
+      Object.keys(mapped).forEach((k) => {
+        if (typeof mapped[k] === 'object' && mapped[k] !== null) {
+          merged[k] = { ...((snakeToCamel((fetchedMaterialSpecs as any)[k]) || {})), ...mapped[k] };
+        }
+      });
       // Always preserve the user's referenceNumber in the form state
-      mapped.referenceNumber = form.referenceNumber || mapped.referenceNumber;
-      setPerformanceSheet(snakeToCamel(mapped) as PerformanceSheetState);
+      merged.referenceNumber = form.referenceNumber || mapped.referenceNumber;
+      setPerformanceSheet(merged as PerformanceSheetState);
     }
   }, [fetchedMaterialSpecs, setPerformanceSheet]);
 
   const currentVersionKey = versionKeyMap[version];
-  const versionData = form[currentVersionKey] || {};
+  const versionData = form[currentVersionKey as keyof typeof form] || {};
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -147,7 +214,6 @@ const MaterialSpecs = () => {
     const { name, value, type } = e.target;
     if (name === 'referenceNumber') {
       updatePerformanceSheet({ referenceNumber: value });
-      localStorage.setItem('currentReferenceNumber', value);
       return;
     }
     // Handle top-level fields
@@ -185,28 +251,90 @@ const MaterialSpecs = () => {
     }
   };
 
-  // Only create material specs if Send Data is pressed and no data exists for the reference
-  const handleSendData = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fetchedMaterialSpecs) {
-      const mapped = mapPerformanceSheetToMaterialSpecsFormData(form);
-      await createMaterialSpecs(mapped);
-    } else {
-      // Optionally, show a message that specs already exist
-      // setStatus('Material specs already exist for this reference.');
+  const triggerCalculation = async (versionKey: string, versionData: any) => {
+    let coilWeight = form.coilWeightMax !== undefined && form.coilWeightMax !== null && form.coilWeightMax !== ''
+      ? Number(form.coilWeightMax)
+      : (versionData.coilWeight !== undefined && versionData.coilWeight !== null && versionData.coilWeight !== ''
+          ? Number(versionData.coilWeight)
+          : 0);
+
+    const payload = {
+      material_type: typeof versionData.materialType === 'string' ? versionData.materialType : '',
+      material_thickness: Number(versionData.materialThickness ?? versionData.thickness ?? 0),
+      yield_strength: Number(versionData.yieldStrength ?? 0),
+      material_width: Number(versionData.coilWidth ?? versionData.width ?? 0),
+      coil_weight_max: coilWeight,
+      coil_id: Number(versionData.coilID ?? 0),
+    };
+
+    // Guard: Only send if all required fields are present and valid
+    const allValid = (
+      typeof payload.material_type === 'string' && payload.material_type.trim() !== '' &&
+      typeof payload.material_thickness === 'number' && !isNaN(payload.material_thickness) && payload.material_thickness > 0 &&
+      typeof payload.yield_strength === 'number' && !isNaN(payload.yield_strength) && payload.yield_strength > 0 &&
+      typeof payload.material_width === 'number' && !isNaN(payload.material_width) && payload.material_width > 0 &&
+      typeof payload.coil_weight_max === 'number' && !isNaN(payload.coil_weight_max) && payload.coil_weight_max > 0 &&
+      typeof payload.coil_id === 'number' && !isNaN(payload.coil_id) && payload.coil_id > 0
+    );
+    if (!allValid) {
+      return;
+    }
+
+    // Call backend
+    try {
+      const result = await calculateMaterialSpecsVariant(payload);
+      // Update only the calculated fields for this version
+      updatePerformanceSheet({
+        [versionKey as keyof PerformanceSheetState]: {
+          ...((form[versionKey as keyof PerformanceSheetState] as object) || {}),
+          minBendRad: result['min_bend_rad'],
+          minLoopLength: result['min_loop_length'],
+          coilODCalculated: result['coil_od_calculated'],
+        },
+      });
+    } catch (e) {
+      // Optionally handle error
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    // Only trigger on required fields
+    const { name } = e.target;
+    if (!REQUIRED_FIELDS.includes(name)) return;
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    debounceTimeout.current = setTimeout(() => {
+      const versionData = form[currentVersionKey as keyof PerformanceSheetState] || {};
+      if (hasAllRequiredFields(versionData)) {
+        triggerCalculation(currentVersionKey, versionData);
+      }
+    }, 400); // Debounce to avoid rapid calls
+  };
+
+  // Send data to backend - always update/merge, whether specs exist or not
+  const handleSendData = async () => {
+    try {
+      // Map the entire form to backend payload (all versions)
+      const mapped = mapFrontendToBackendMaterialSpecs(form);
+      
+      if (fetchedMaterialSpecs) {
+        // Update existing specs (merge with existing data)
+        await updateMaterialSpecs(form.referenceNumber, mapped);
+      } else {
+        // Create new specs
+        await createMaterialSpecs(mapped);
+      }
+    } catch (error) {
+      console.error('[MaterialSpecs] Error in handleSendData:', error);
     }
   };
 
   // Only fetch material specs, do not create
   const handleGet = async () => {
     const data = await getMaterialSpecs(form.referenceNumber);
-    console.log('[MaterialSpecs] Data returned from getMaterialSpecs:', data);
   };
 
   return (
-    <form onSubmit={handleSendData} className="max-w-[1200px] mx-auto text-sm p-6">
-      <Text as="h2" className="text-center my-8 text-2xl font-semibold">Material Specifications</Text>
-      
+    <div className="max-w-[1200px] mx-auto text-sm p-6">
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
@@ -217,7 +345,6 @@ const MaterialSpecs = () => {
             value={form.referenceNumber} 
             onChange={e => {
               updatePerformanceSheet({ referenceNumber: e.target.value });
-              localStorage.setItem('currentReferenceNumber', e.target.value);
             }}
             error={errors.referenceNumber ? 'Required' : ''}
           />
@@ -231,6 +358,7 @@ const MaterialSpecs = () => {
             </Button>
             <Button 
               as="button" 
+              onClick={handleSendData}
               disabled={isLoading}
             >
               {isLoading ? 'Sending...' : 'Send Data'}
@@ -251,14 +379,14 @@ const MaterialSpecs = () => {
           <Input
             label="Customer"
             name="customer"
-            value={form.companyName || ''}
+            value={form.customer || ''}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={form.date || today}
+            value={form.date || ''}
             onChange={handleChange}
           />
         </div>
@@ -281,19 +409,35 @@ const MaterialSpecs = () => {
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MATERIAL_SPECS_FIELDS[version].map((field) => (
-            <Input
-              key={field}
-              label={FIELD_LABELS[field] || field}
-              name={field}
-              type={field.toLowerCase().includes('thickness') || field.toLowerCase().includes('width') || field.toLowerCase().includes('coil') || field.toLowerCase().includes('weight') || field.toLowerCase().includes('strength') || field.toLowerCase().includes('fpm') || field.toLowerCase().includes('rad') || field.toLowerCase().includes('length') ? 'number' : 'text'}
-              value={(versionData as Record<string, any>)[field] ?? ''}
-              onChange={handleChange}
-              error={(errors as Record<string, any>)[field] ? 'Required' : ''}
-              min={field === 'coilWidth' ? coilWidthMin : undefined}
-              max={field === 'coilWidth' ? coilWidthMax : undefined}
-            />
-          ))}
+          {MATERIAL_SPECS_FIELDS[version].map((field) => {
+            if (field === 'materialType') {
+              return (
+                <Select
+                  key={field}
+                  label={FIELD_LABELS[field] || field}
+                  name={field}
+                  value={(versionData as Record<string, any>)[field] ?? ''}
+                  onChange={handleChange}
+                  options={MATERIAL_TYPE_OPTIONS}
+                  error={(errors as Record<string, any>)[field] ? 'Required' : ''}
+                />
+              );
+            }
+            return (
+              <Input
+                key={field}
+                label={FIELD_LABELS[field] || field}
+                name={field}
+                type={field.toLowerCase().includes('thickness') || field.toLowerCase().includes('width') || field.toLowerCase().includes('coil') || field.toLowerCase().includes('weight') || field.toLowerCase().includes('strength') || field.toLowerCase().includes('fpm') || field.toLowerCase().includes('rad') || field.toLowerCase().includes('length') ? 'number' : 'text'}
+                value={(versionData as Record<string, any>)[field] ?? ''}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={(errors as Record<string, any>)[field] ? 'Required' : ''}
+                min={field === 'coilWidth' ? coilWidthMin : undefined}
+                max={field === 'coilWidth' ? coilWidthMax : undefined}
+              />
+            );
+          })}
         </div>
       </Card>
 
@@ -305,10 +449,7 @@ const MaterialSpecs = () => {
             name="feedDirection"
             value={form.feedDirection ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "rightToLeft", label: "Right to Left" },
-              { value: "leftToRight", label: "Left to Right" },
-            ]}
+            options={FEED_DIRECTION_OPTIONS}
             error={errors.feedDirection ? 'Required' : ''}
           />
           <Select
@@ -316,17 +457,7 @@ const MaterialSpecs = () => {
             name="controlsLevel"
             value={form.controlsLevel ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "miniDriveSystem", label: "Mini-Drive System" },
-              { value: "relayMachine", label: "Relay Machine" },
-              { value: "syncMaster", label: "SyncMaster" },
-              { value: "ipIndexerBasic", label: "IP Indexer Basic" },
-              { value: "allenBradleyBasic", label: "Allen Bradley Basic" },
-              { value: "syncMasterPlus", label: "SyncMaster Plus" },
-              { value: "ipIndexerPlus", label: "IP Indexer Plus" },
-              { value: "allenBradleyPlus", label: "Allen Bradley Plus" },
-              { value: "fullyAutoamtic", label: "Fully Automatic"}
-            ]}
+            options={CONTROLS_LEVEL_OPTIONS}
             error={errors.controlsLevel ? 'Required' : ''}
           />
           <Select
@@ -334,25 +465,7 @@ const MaterialSpecs = () => {
             name="typeOfLine"
             value={form.typeOfLine ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "compact", label: "Compact" },
-              { value: "compactCTL", label: "Compact CTL" },
-              { value: "conventional", label: "Conventional" },
-              { value: "conventionalCTL", label: "Conventional CTL" },
-              { value: "pullThrough", label: "Pull Through" },
-              { value: "pullThroughCompact", label: "Pull Through Compact" },
-              { value: "pullThroughCTL", label: "Pull Through CTL" },
-              { value: "feed", label: "Feed" },
-              { value: "feedPullThough", label: "Feed-Pull Through"},
-              { value: "feedPullThroughShear", label: "Feed-Pull Through-Shear"},
-              { value: "feedShear", label: "Feed-Shear"},
-              { value: "straightener", label: "Straightener"},
-              { value: "straightenerReelCombo", label: "Straightener-Reel Combination" },
-              { value: "reelMotorized", label: "Reel-Motorized" },
-              { value: "reelPullOff", label: "Reel-Pull Off" },
-              { value: "threadingTable", label: "Threading Table" },
-              { value: "other", label: "Other" },
-            ]}
+            options={TYPE_OF_LINE_OPTIONS}
             error={errors.typeOfLine ? 'Required' : ''}
           />
 
@@ -371,70 +484,7 @@ const MaterialSpecs = () => {
             name="passline"
             value={form.passline ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "none", label: "None" },
-              { value: "37", label: "37\"" },
-              { value: "39", label: "39\"" },
-              { value: "40", label: "40\"" },
-              { value: "40.5", label: "40.5\"" },
-              { value: "41", label: "41\"" },
-              { value: "41.5", label: "41.5\"" },
-              { value: "42", label: "42\"" },
-              { value: "43", label: "43\"" },
-              { value: "43.625", label: "43.625\"" },
-              { value: "44", label: "44\"" },
-              { value: "45", label: "45\"" },
-              { value: "45.5", label: "45.5\"" },
-              { value: "46", label: "46\"" },
-              { value: "46.5", label: "46.5\"" },
-              { value: "47", label: "47\"" },
-              { value: "47.4", label: "47.4\"" },
-              { value: "47.5", label: "47.5\"" },
-              { value: "48", label: "48\"" },
-              { value: "48.5", label: "48.5\"" },
-              { value: "49", label: "49\"" },
-              { value: "49.5", label: "49.5\"" },
-              { value: "50", label: "50\"" },
-              { value: "50.5", label: "50.5\"" },
-              { value: "50.75", label: "50.75\"" },
-              { value: "51", label: "51\"" },
-              { value: "51.5", label: "51.5\"" },
-              { value: "51.75", label: "51.75\"" },
-              { value: "52", label: "52\"" },
-              { value: "52.25", label: "52.25\"" },
-              { value: "52.5", label: "52.5\"" },
-              { value: "53", label: "53\"" },
-              { value: "54", label: "54\"" },
-              { value: "54.5", label: "54.5\"" },
-              { value: "54.75", label: "54.75\"" },
-              { value: "55", label: "55\"" },
-              { value: "55.25", label: "55.25\"" },
-              { value: "55.5", label: "55.5\"" },
-              { value: "55.75", label: "55.75\"" },
-              { value: "56", label: "56\"" },
-              { value: "56.5", label: "56.5\"" },
-              { value: "57", label: "57\"" },
-              { value: "58", label: "58\"" },
-              { value: "58.25", label: "58.25\"" },
-              { value: "59", label: "59\"" },
-              { value: "59.5", label: "59.5\"" },
-              { value: "60", label: "60\"" },
-              { value: "60.5", label: "60.5\"" },
-              { value: "61", label: "61\"" },
-              { value: "62", label: "62\"" },
-              { value: "62.5", label: "62.5\"" },
-              { value: "63", label: "63\"" },
-              { value: "64", label: "64\"" },
-              { value: "64.5", label: "64.5\"" },
-              { value: "65", label: "65\"" },
-              { value: "66", label: "66\"" },
-              { value: "66.5", label: "66.5\"" },
-              { value: "67", label: "67\"" },
-              { value: "70", label: "70\"" },
-              { value: "72", label: "72\"" },
-              { value: "75", label: "75\"" },
-              { value: "76", label: "76\"" },
-            ]}
+            options={PASSLINE_OPTIONS}
             error={errors.passline ? 'Required' : ''}
           />
           
@@ -443,11 +493,7 @@ const MaterialSpecs = () => {
             name="typeOfRoll"
             value={form.typeOfRoll ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "7RollStrBackbend", label: "7 Roll Str. Backbend" },
-              { value: "9RollStrBackbend", label: "9 Roll Str. Backbend" },
-              { value: "11RollStrBackbend", label: "11 Roll Str. Backbend" },
-            ]}
+            options={ROLL_TYPE_OPTIONS}
             error={errors.typeOfRoll ? 'Required' : ''}
           />
 
@@ -456,10 +502,7 @@ const MaterialSpecs = () => {
             name="reelBackplate"
             value={form.reelBackplate ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "standardBackplate", label: "Standard Backplate" },
-              { value: "fullODBackplate", label: "Full OD Backplate" },
-            ]}
+            options={REEL_BACKPLATE_OPTIONS}
             error={errors.reelBackplate ? 'Required' : ''}
           />
 
@@ -468,10 +511,7 @@ const MaterialSpecs = () => {
             name="reelStyle"
             value={form.reelStyle ?? ''}
             onChange={handleChange}
-            options={[
-              { value: "singleEnded", label: "Single Ended" },
-              { value: "doubleEnded", label: "Double Ended" },
-            ]}
+            options={REEL_STYLE_OPTIONS}
             error={errors.reelStyle ? 'Required' : ''}
           />
 
@@ -490,12 +530,7 @@ const MaterialSpecs = () => {
         </div>
       </Card>
 
-      {saveStatus && (
-        <div className="mt-2 text-sm text-green-600">
-          {saveStatus}
-        </div>
-      )}
-    </form>
+    </div>
   );
 };
 

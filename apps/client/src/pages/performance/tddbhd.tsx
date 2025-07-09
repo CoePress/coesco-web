@@ -2,11 +2,13 @@ import Card from "@/components/shared/card";
 import Input from "@/components/shared/input";
 import Text from "@/components/shared/text";
 import Tabs from "@/components/shared/tabs";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components";
 import { useCreateTDDBHD } from '@/hooks/performance/use-create-tddbhd';
 import { useGetTDDBHD } from '@/hooks/performance/use-get-tddbhd';
 import { snakeToCamel } from "@/utils";
+import Select from "@/components/shared/select";
+import { MATERIAL_TYPE_OPTIONS, YES_NO_OPTIONS } from '@/utils/select-options';
 
 const VERSIONS = [
   "Maximum Thick",
@@ -17,11 +19,15 @@ const VERSIONS = [
 
 type VersionKey = typeof VERSIONS[number];
 
+type VersionedSection<T> = {
+  [K in VersionKey]: T;
+};
+
 type TDDBHDData = {
   referenceNumber: string;
   customer: string;
   date: string;
-  reel: {
+  reel: VersionedSection<{
     model: string;
     width: string;
     backplate: string;
@@ -31,224 +37,126 @@ type TDDBHDData = {
     yieldStrength: string;
     airPressure: string;
     decelRate: string;
-  };
-  coil: {
+  }>;
+  coil: VersionedSection<{
     weight: string;
     od: string;
     dispReel: string;
     webTensionPsi: string;
     webTensionLbs: string;
-  };
-  brake: {
+  }>;
+  brake: VersionedSection<{
     padDiameter: string;
     cylinderBore: string;
     friction: string;
-  };
-  threadingDrive: {
+  }>;
+  threadingDrive: VersionedSection<{
     airClutch: string;
     hydThreadingDrive: string;
     torqueAtMandrel: string;
     rewindTorque: string;
-  };
-  holdDown: {
+  }>;
+  holdDown: VersionedSection<{
     assy: string;
     pressure: string;
     forceRequired: string;
     forceAvailable: string;
     minWidth: string;
-  };
-  cylinder: {
+  }>;
+  cylinder: VersionedSection<{
     type: string;
     pressure: string;
-  };
-  dragBrake: {
+  }>;
+  dragBrake: VersionedSection<{
     model: string;
     quantity: string;
     torqueRequired: string;
     failsafePSI: string;
     failsafeHoldingForce: string;
-  };
+  }>;
 };
+
+const emptyReel = { model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: '' };
+const emptyCoil = { weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: '' };
+const emptyBrake = { padDiameter: '', cylinderBore: '', friction: '' };
+const emptyThreadingDrive = { airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: '' };
+const emptyHoldDown = { assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: '' };
+const emptyCylinder = { type: '', pressure: '' };
+const emptyDragBrake = { model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: '' };
 
 const defaultTDDBHDData: TDDBHDData = {
   referenceNumber: '',
   customer: '',
   date: '',
   reel: {
-    model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: ''
+    'Maximum Thick': { ...emptyReel },
+    'Max @ Full': { ...emptyReel },
+    'Minimum Thick': { ...emptyReel },
+    'Max @ Width': { ...emptyReel },
   },
   coil: {
-    weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: ''
+    'Maximum Thick': { ...emptyCoil },
+    'Max @ Full': { ...emptyCoil },
+    'Minimum Thick': { ...emptyCoil },
+    'Max @ Width': { ...emptyCoil },
   },
   brake: {
-    padDiameter: '', cylinderBore: '', friction: ''
+    'Maximum Thick': { ...emptyBrake },
+    'Max @ Full': { ...emptyBrake },
+    'Minimum Thick': { ...emptyBrake },
+    'Max @ Width': { ...emptyBrake },
   },
   threadingDrive: {
-    airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: ''
+    'Maximum Thick': { ...emptyThreadingDrive },
+    'Max @ Full': { ...emptyThreadingDrive },
+    'Minimum Thick': { ...emptyThreadingDrive },
+    'Max @ Width': { ...emptyThreadingDrive },
   },
   holdDown: {
-    assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: ''
+    'Maximum Thick': { ...emptyHoldDown },
+    'Max @ Full': { ...emptyHoldDown },
+    'Minimum Thick': { ...emptyHoldDown },
+    'Max @ Width': { ...emptyHoldDown },
   },
   cylinder: {
-    type: '', pressure: ''
+    'Maximum Thick': { ...emptyCylinder },
+    'Max @ Full': { ...emptyCylinder },
+    'Minimum Thick': { ...emptyCylinder },
+    'Max @ Width': { ...emptyCylinder },
   },
   dragBrake: {
-    model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: ''
-  }
+    'Maximum Thick': { ...emptyDragBrake },
+    'Max @ Full': { ...emptyDragBrake },
+    'Minimum Thick': { ...emptyDragBrake },
+    'Max @ Width': { ...emptyDragBrake },
+  },
 };
 
-function getField(
-  ms: any,
-  rfq: any,
-  msField: string,
-  rfqField: string,
-  version: VersionKey
-) {
-  // Try to get from Material Specs (versioned), then RFQ, then empty string
-  if (ms && ms[msField + "_" + version]) return ms[msField + "_" + version];
-  if (ms && ms[msField]) return ms[msField];
-  if (rfq && rfq[rfqField]) return rfq[rfqField];
-  return "";
-}
-
-const getSavedTDDBHD = (reference: string, version: string) => {
-  const saved = localStorage.getItem(`tddbhdFormData_${reference}_${version}`);
-  return saved ? JSON.parse(saved) : null;
-};
+// Add mapping for material type label to value
+const MATERIAL_TYPE_LABEL_TO_VALUE: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map(opt => [opt.label, opt.value])
+);
 
 export default function TDDBHD() {
   const [confirmed, setConfirmed] = useState(false);
   const [version, setVersion] = useState<VersionKey>(VERSIONS[0]);
-  const [materialSpecs, setMaterialSpecs] = useState<any>(null);
-  const [rfq, setRFQ] = useState<any>(null);
   const [status, setStatus] = useState<string>("");
   const [form, setForm] = useState<TDDBHDData>(() => defaultTDDBHDData);
   const { createTDDBHD, isLoading: isSaving, status: backendStatus } = useCreateTDDBHD();
   const { getTDDBHD, isLoading: isGetting, status: getBackendStatus } = useGetTDDBHD();
 
-  // Helper to get initial data for a version
-  function getInitialData(version: VersionKey, materialSpecs: any = {}, rfq: any = {}): TDDBHDData {
-    return {
-      referenceNumber: rfq?.referenceNumber || materialSpecs?.referenceNumber || '',
-      customer: rfq?.companyName || materialSpecs?.customer || '',
-      date: rfq?.date || materialSpecs?.date || '',
-      reel: {
-        model: getField(materialSpecs, rfq, "reelModel", "reelModel", version),
-        width: getField(materialSpecs, rfq, "width", "reelWidth", version),
-        backplate: getField(materialSpecs, rfq, "reelBackplate", "backplateDiameter", version),
-        materialType: getField(materialSpecs, rfq, "materialType", "materialType", version),
-        materialWidth: getField(materialSpecs, rfq, "materialWidth", "materialWidth", version),
-        thickness: getField(materialSpecs, rfq, "materialThickness", "materialThickness", version),
-        yieldStrength: getField(materialSpecs, rfq, "yieldStrength", "materialYieldStrength", version),
-        airPressure: getField(materialSpecs, rfq, "airPressure", "airPressureAvailable", version),
-        decelRate: getField(materialSpecs, rfq, "decelRate", "requiredDecelRate", version),
-      },
-      coil: {
-        weight: getField(materialSpecs, rfq, "coilWeight", "coilWeight", version),
-        od: getField(materialSpecs, rfq, "coilOD", "coilOD", version),
-        dispReel: getField(materialSpecs, rfq, "dispReel", "dispReelMtr", version),
-        webTensionPsi: getField(materialSpecs, rfq, "webTensionPsi", "webTensionPsi", version),
-        webTensionLbs: getField(materialSpecs, rfq, "webTensionLbs", "webTensionLbs", version),
-      },
-      brake: {
-        padDiameter: getField(materialSpecs, rfq, "brakePadDiameter", "brakePadDiameter", version),
-        cylinderBore: getField(materialSpecs, rfq, "cylinderBore", "cylinderBore", version),
-        friction: getField(materialSpecs, rfq, "friction", "coefficientOfFriction", version),
-      },
-      threadingDrive: {
-        airClutch: getField(materialSpecs, rfq, "airClutch", "airClutch", version),
-        hydThreadingDrive: getField(materialSpecs, rfq, "hydThreadingDrive", "hydThreadingDrive", version),
-        torqueAtMandrel: getField(materialSpecs, rfq, "torqueAtMandrel", "torqueAtMandrel", version),
-        rewindTorque: getField(materialSpecs, rfq, "rewindTorque", "rewindTorqueReq", version),
-      },
-      holdDown: {
-        assy: getField(materialSpecs, rfq, "holdDownAssy", "holdDownAssy", version),
-        pressure: getField(materialSpecs, rfq, "holddownPressure", "holddownPressure", version),
-        forceRequired: getField(materialSpecs, rfq, "holdDownForceRequired", "holdDownForceRequired", version),
-        forceAvailable: getField(materialSpecs, rfq, "holdDownForceAvailable", "holdDownForceAvailable", version),
-        minWidth: getField(materialSpecs, rfq, "minMaterialWidth", "minMaterialWidth", version),
-      },
-      cylinder: {
-        type: getField(materialSpecs, rfq, "cylinderType", "cylinderType", version),
-        pressure: getField(materialSpecs, rfq, "cylinderPressure", "cylinderPressure", version),
-      },
-      dragBrake: {
-        model: getField(materialSpecs, rfq, "brakeModel", "brakeModel", version),
-        quantity: getField(materialSpecs, rfq, "brakeQuantity", "brakeQuantity", version),
-        torqueRequired: getField(materialSpecs, rfq, "torqueRequired", "torqueRequired", version),
-        failsafePSI: getField(materialSpecs, rfq, "failsafeSingleStagePsi", "failsafeSingleStagePsi", version),
-        failsafeHoldingForce: getField(materialSpecs, rfq, "failsafeHoldingForce", "failsafeHoldingForce", version),
-      },
-    };
-  }
-
-  // Load from storage or initialize on mount and version change
-  useEffect(() => {
-    const ms = localStorage.getItem("materialSpecsFormData");
-    const rfq = localStorage.getItem("rfqFormData");
-    setMaterialSpecs(ms ? JSON.parse(ms) : null);
-    setRFQ(rfq ? JSON.parse(rfq) : null);
-  }, []);
-
-  // On mount and whenever referenceNumber or version changes, try backend, then localStorage
-  useEffect(() => {
-    const ref = form.referenceNumber || localStorage.getItem('currentReferenceNumber');
-    if (!ref) return;
-    let didSet = false;
-    getTDDBHD(ref).then((data) => {
-      if (data && (data.referenceNumber || data.reference)) {
-        setForm(snakeToCamel(data));
-        didSet = true;
-      } else {
-        const saved = getSavedTDDBHD(ref, version);
-        if (saved) {
-          setForm(saved);
-          didSet = true;
-        }
-      }
-      if (!didSet) setForm(defaultTDDBHDData);
-    }).catch(() => {
-      const saved = getSavedTDDBHD(ref, version);
-      if (saved) setForm(saved);
-      else setForm(defaultTDDBHDData);
-    });
-  }, [form.referenceNumber, version]);
-
-  useEffect(() => {
-    if (form.referenceNumber) {
-      localStorage.setItem(`tddbhdFormData_${form.referenceNumber}_${version}` , JSON.stringify(form));
-      localStorage.setItem('currentReferenceNumber', form.referenceNumber);
-    }
-  }, [form, version]);
-
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'currentReferenceNumber' && e.newValue) {
-        getTDDBHD(e.newValue ?? '').then((data) => {
-          if (data && (data.referenceNumber || data.reference)) {
-            setForm(snakeToCamel(data));
-          } else {
-            const saved = getSavedTDDBHD(e.newValue ?? '', version);
-            if (saved) setForm(saved);
-            else setForm(defaultTDDBHDData);
-          }
-        }).catch(() => {
-          const saved = getSavedTDDBHD(e.newValue ?? '', version);
-          if (saved) setForm(saved);
-          else setForm(defaultTDDBHDData);
-        });
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [version]);
-
-  function handleInputChange(section: keyof TDDBHDData, field: string, value: string) {
+  function handleInputChange(section: keyof Omit<TDDBHDData, 'referenceNumber' | 'customer' | 'date'>, field: string, value: string) {
     setForm(prev => {
       const prevData = prev ?? defaultTDDBHDData;
       return {
         ...prevData,
-        [section]: Object.assign({}, (prevData[section] || {}), { [field]: value })
+        [section]: {
+          ...prevData[section],
+          [version]: {
+            ...prevData[section][version],
+            [field]: value
+          }
+        }
       };
     });
   }
@@ -264,111 +172,140 @@ export default function TDDBHD() {
       return;
     }
     try {
+      setStatus('Fetching from backend...');
       const backendData = await getTDDBHD(form.referenceNumber);
       if (backendData) {
-        const camelData = snakeToCamel(backendData);
+        // Map flat backend fields to versioned frontend structure
+        const versionMap = [
+          { key: 'Maximum Thick', prefix: 'max' },
+          { key: 'Max @ Full', prefix: 'full' },
+          { key: 'Minimum Thick', prefix: 'min' },
+          { key: 'Max @ Width', prefix: 'width' },
+        ];
+        const buildReel = (prefix: string) => ({
+          model: '',
+          width: backendData[`${prefix}_material_width`] ?? '',
+          backplate: '',
+          materialType: MATERIAL_TYPE_LABEL_TO_VALUE[backendData[`${prefix}_material_type`]] ?? backendData[`${prefix}_material_type`] ?? '',
+          materialWidth: backendData[`${prefix}_material_width`] ?? '',
+          thickness: backendData[`${prefix}_material_thickness`] ?? '',
+          yieldStrength: backendData[`${prefix}_yield_strength`] ?? '',
+          airPressure: '',
+          decelRate: '',
+        });
+        const buildCoil = (prefix: string) => ({
+          weight: backendData[`${prefix}_coil_weight`] ?? '',
+          od: backendData[`${prefix}_coil_od`] ?? '',
+          dispReel: '',
+          webTensionPsi: '',
+          webTensionLbs: '',
+        });
+        const buildBrake = (prefix: string) => ({
+          padDiameter: '',
+          cylinderBore: '',
+          friction: '',
+        });
+        const buildThreadingDrive = (prefix: string) => ({
+          airClutch: '',
+          hydThreadingDrive: '',
+          torqueAtMandrel: '',
+          rewindTorque: '',
+        });
+        const buildHoldDown = (prefix: string) => ({
+          assy: '',
+          pressure: '',
+          forceRequired: '',
+          forceAvailable: '',
+          minWidth: '',
+        });
+        const buildCylinder = (prefix: string) => ({
+          type: '',
+          pressure: '',
+        });
+        const buildDragBrake = (prefix: string) => ({
+          model: '',
+          quantity: '',
+          torqueRequired: '',
+          failsafePSI: '',
+          failsafeHoldingForce: '',
+        });
+        const reel: any = {};
+        const coil: any = {};
+        const brake: any = {};
+        const threadingDrive: any = {};
+        const holdDown: any = {};
+        const cylinder: any = {};
+        const dragBrake: any = {};
+        versionMap.forEach(({ key, prefix }) => {
+          reel[key] = buildReel(prefix);
+          coil[key] = buildCoil(prefix);
+          brake[key] = buildBrake(prefix);
+          threadingDrive[key] = buildThreadingDrive(prefix);
+          holdDown[key] = buildHoldDown(prefix);
+          cylinder[key] = buildCylinder(prefix);
+          dragBrake[key] = buildDragBrake(prefix);
+        });
         setForm((prev: TDDBHDData | undefined) => {
           const prevData = prev ?? defaultTDDBHDData;
-          return Object.assign({}, prevData, {
-            referenceNumber: camelData.referenceNumber || prevData.referenceNumber || '',
-            customer: camelData.customer || prevData.customer || '',
-            date: camelData.date || prevData.date || '',
-            reel: camelData.reelSpecs,
-            coil: {
-              weight: camelData.coilBrakeSpecs.coilWeight,
-              od: camelData.coilBrakeSpecs.coilOD,
-              dispReel: camelData.coilBrakeSpecs.dispReel,
-              webTensionPsi: camelData.coilBrakeSpecs.webTension,
-              webTensionLbs: camelData.coilBrakeSpecs.webTension2,
-            },
-            brake: {
-              padDiameter: camelData.coilBrakeSpecs.brakePadDiameter,
-              cylinderBore: camelData.coilBrakeSpecs.cylinderBore,
-              friction: camelData.coilBrakeSpecs.friction,
-            },
-            threadingDrive: camelData.threadingDrive,
-            holdDown: camelData.holdDown,
-            cylinder: camelData.cylinder,
-            dragBrake: camelData.dragBrake,
-          });
+          return {
+            ...prevData,
+            referenceNumber: backendData.reference || prevData.referenceNumber || '',
+            customer: backendData.customer || backendData.customer || prevData.customer || '',
+            date: backendData.date || prevData.date || '',
+            reel,
+            coil,
+            brake,
+            threadingDrive,
+            holdDown,
+            cylinder,
+            dragBrake,
+          };
         });
-        setConfirmed(camelData.confirmedMinWidthOK || false);
         setStatus('Loaded from backend.');
       } else {
-        const stored = localStorage.getItem(`tddbhdFormData_${version}`);
-        if (stored) {
-          setForm(snakeToCamel(JSON.parse(stored)));
-          setStatus('Loaded from localStorage.');
-        } else {
-          setStatus('No saved data found.');
-        }
+        setStatus('No saved data found.');
       }
     } catch (err) {
-      const stored = localStorage.getItem(`tddbhdFormData_${version}`);
-      if (stored) {
-        setForm(snakeToCamel(JSON.parse(stored)));
-        setStatus('Backend unavailable. Loaded from localStorage.');
-      } else {
-        setStatus('Backend unavailable. No saved data found.');
-      }
+      setStatus('Backend unavailable. No saved data found.');
     }
   }
 
   async function handleSetData() {
-    if (!form) return;
+    if (!form.referenceNumber) {
+      setStatus('No reference number.');
+      return;
+    }
     const tddbhdFormData = {
       referenceNumber: form.referenceNumber,
       customer: form.customer,
       date: form.date,
-      reelSpecs: { ...form.reel },
-      coilBrakeSpecs: {
-        coilWeight: form.coil.weight,
-        coilOD: form.coil.od,
-        dispReel: form.coil.dispReel,
-        webTension: form.coil.webTensionPsi,
-        webTension2: form.coil.webTensionLbs,
-        brakePadDiameter: form.brake.padDiameter,
-        cylinderBore: form.brake.cylinderBore,
-        friction: form.brake.friction,
-      },
-      threadingDrive: { ...form.threadingDrive },
-      holdDown: { ...form.holdDown },
-      cylinder: { ...form.cylinder },
-      dragBrake: { ...form.dragBrake },
-      resultsTable: [],
-      confirmedMinWidthOK: confirmed,
+      reel: form.reel,
+      coil: form.coil,
+      brake: form.brake,
+      threadingDrive: form.threadingDrive,
+      holdDown: form.holdDown,
+      cylinder: form.cylinder,
+      dragBrake: form.dragBrake,
     };
     try {
+      setStatus('Saving to backend...');
       await createTDDBHD(tddbhdFormData);
       setStatus('Saved to backend.');
     } catch (err) {
-      localStorage.setItem(`tddbhdFormData_${version}`, JSON.stringify(form));
-      setStatus('Backend unavailable. Saved to localStorage.');
+      setStatus('Backend unavailable. Unable to save.');
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Optionally just save to localStorage or do nothing
-    if (form) {
-      localStorage.setItem(`tddbhdFormData_${version}`, JSON.stringify(form));
-      setStatus('Saved to localStorage.');
-    }
-  }
-
-  // Use form state for all fields
-  const data = form;
+  // Use form state for all fields with safe fallback
+  const data = form || defaultTDDBHDData;
 
   return (
-    <form className="max-w-[1200px] mx-auto text-sm p-6" onSubmit={handleSubmit}>
-      <Text as="h2" className="text-center my-8 text-2xl font-semibold">
-        THREADING DRIVE, DRAG BRAKE & HOLDDOWN
-      </Text>
+    <div className="max-w-[1200px] mx-auto text-sm p-6">
       {/* Reference Info */}
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
-          <Input label="Reference" name="referenceNumber" value={data.referenceNumber} onChange={handleChange} required />
+          <Input label="Reference" name="referenceNumber" value={data.referenceNumber || ''} onChange={handleChange} required />
           <div className="flex items-end gap-2">
             <Button as="button" onClick={handleGetData} disabled={isGetting}>Get TDDBHD</Button>
             <Button as="button" onClick={handleSetData} disabled={isSaving}>Set Data</Button>
@@ -379,8 +316,8 @@ export default function TDDBHD() {
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Customer & Date</Text>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input label="Customer" name="customer" value={data.customer} onChange={handleChange} />
-          <Input label="Date" name="date" type="date" value={data.date} onChange={handleChange} />
+          <Input label="Customer" name="customer" value={data.customer || ''} onChange={handleChange} />
+          <Input label="Date" name="date" type="date" value={data.date || ''} onChange={handleChange} />
         </div>
       </Card>
       {/* Version Tabs and Badge */}
@@ -401,65 +338,70 @@ export default function TDDBHD() {
         </div>
       {/* TD/DB/HD Layout for selected version */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Input label="Reel Model" value={data.reel.model} onChange={e => handleInputChange('reel', 'model', e.target.value)} />
-          <Input label="Reel Width" value={data.reel.width} onChange={e => handleInputChange('reel', 'width', e.target.value)} />
-          <Input label="Backplate Diameter" value={data.reel.backplate} onChange={e => handleInputChange('reel', 'backplate', e.target.value)} />
-          <Input label="Material Type" value={data.reel.materialType} onChange={e => handleInputChange('reel', 'materialType', e.target.value)} />
-          <Input label="Material Width (in)" value={data.reel.materialWidth} onChange={e => handleInputChange('reel', 'materialWidth', e.target.value)} />
-          <Input label="Material Thickness (in)" value={data.reel.thickness} onChange={e => handleInputChange('reel', 'thickness', e.target.value)} />
-          <Input label="Material Yield Strength (psi)" value={data.reel.yieldStrength} onChange={e => handleInputChange('reel', 'yieldStrength', e.target.value)} />
-          <Input label="Air Pressure Available (psi)" value={data.reel.airPressure} onChange={e => handleInputChange('reel', 'airPressure', e.target.value)} />
-          <Input label="Required Decel. Rate (ft/sec²)" value={data.reel.decelRate} onChange={e => handleInputChange('reel', 'decelRate', e.target.value)} />
+          <Input label="Reel Model" value={data.reel[version]?.model || ''} onChange={e => handleInputChange('reel', 'model', e.target.value)} />
+          <Input label="Reel Width" value={data.reel[version]?.width || ''} onChange={e => handleInputChange('reel', 'width', e.target.value)} />
+          <Input label="Backplate Diameter" value={data.reel[version]?.backplate || ''} onChange={e => handleInputChange('reel', 'backplate', e.target.value)} />
+          <Select
+            label="Material Type"
+            value={data.reel[version]?.materialType || ''}
+            onChange={e => handleInputChange('reel', 'materialType', e.target.value)}
+            options={MATERIAL_TYPE_OPTIONS}
+          />
+          <Input label="Material Width (in)" value={data.reel[version]?.materialWidth || ''} onChange={e => handleInputChange('reel', 'materialWidth', e.target.value)} />
+          <Input label="Material Thickness (in)" value={data.reel[version]?.thickness || ''} onChange={e => handleInputChange('reel', 'thickness', e.target.value)} />
+          <Input label="Material Yield Strength (psi)" value={data.reel[version]?.yieldStrength || ''} onChange={e => handleInputChange('reel', 'yieldStrength', e.target.value)} />
+          <Input label="Air Pressure Available (psi)" value={data.reel[version]?.airPressure || ''} onChange={e => handleInputChange('reel', 'airPressure', e.target.value)} />
+          <Input label="Required Decel. Rate (ft/sec²)" value={data.reel[version]?.decelRate || ''} onChange={e => handleInputChange('reel', 'decelRate', e.target.value)} />
         </div>
       </Card>
       <Card className="mb-8 p-6">
         <Text as="h3" className="mb-4 text-lg font-medium">Coil, Brake & Other Specs</Text>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Input label="Coil Weight (lbs)" value={data.coil.weight} onChange={e => handleInputChange('coil', 'weight', e.target.value)} />
-          <Input label="Coil O.D. (in)" value={data.coil.od} onChange={e => handleInputChange('coil', 'od', e.target.value)} />
-          <Input label="Disp. (Reel) Mtr." value={data.coil.dispReel} onChange={e => handleInputChange('coil', 'dispReel', e.target.value)} />
-          <Input label="Web Tension (psi)" value={data.coil.webTensionPsi} onChange={e => handleInputChange('coil', 'webTensionPsi', e.target.value)} />
-          <Input label="Web Tension (lbs)" value={data.coil.webTensionLbs} onChange={e => handleInputChange('coil', 'webTensionLbs', e.target.value)} />
-          <Input label="Brake Pad Diameter (in)" value={data.brake.padDiameter} onChange={e => handleInputChange('brake', 'padDiameter', e.target.value)} />
-          <Input label="Cylinder Bore (in)" value={data.brake.cylinderBore} onChange={e => handleInputChange('brake', 'cylinderBore', e.target.value)} />
-          <Input label="Coefficient of Friction" value={data.brake.friction} onChange={e => handleInputChange('brake', 'friction', e.target.value)} />
+          <Input label="Coil Weight (lbs)" value={data.coil[version]?.weight || ''} onChange={e => handleInputChange('coil', 'weight', e.target.value)} />
+          <Input label="Coil O.D. (in)" value={data.coil[version]?.od || ''} onChange={e => handleInputChange('coil', 'od', e.target.value)} />
+          <Input label="Disp. (Reel) Mtr." value={data.coil[version]?.dispReel || ''} onChange={e => handleInputChange('coil', 'dispReel', e.target.value)} />
+          <Input label="Web Tension (psi)" value={data.coil[version]?.webTensionPsi || ''} onChange={e => handleInputChange('coil', 'webTensionPsi', e.target.value)} />
+          <Input label="Web Tension (lbs)" value={data.coil[version]?.webTensionLbs || ''} onChange={e => handleInputChange('coil', 'webTensionLbs', e.target.value)} />
+          <Input label="Brake Pad Diameter (in)" value={data.brake[version]?.padDiameter || ''} onChange={e => handleInputChange('brake', 'padDiameter', e.target.value)} />
+          <Input label="Cylinder Bore (in)" value={data.brake[version]?.cylinderBore || ''} onChange={e => handleInputChange('brake', 'cylinderBore', e.target.value)} />
+          <Input label="Coefficient of Friction" value={data.brake[version]?.friction || ''} onChange={e => handleInputChange('brake', 'friction', e.target.value)} />
         </div>
       </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card className="p-6">
           <Text as="h3" className="mb-4 text-lg font-medium">Threading Drive</Text>
-          <Input label="Air Clutch" value={data.threadingDrive.airClutch} onChange={e => handleInputChange('threadingDrive', 'airClutch', e.target.value)} />
-          <Input label="Hyd. Threading Drive" value={data.threadingDrive.hydThreadingDrive} onChange={e => handleInputChange('threadingDrive', 'hydThreadingDrive', e.target.value)} />
-          <Input label="Torque At Mandrel (in. lbs.)" value={data.threadingDrive.torqueAtMandrel} onChange={e => handleInputChange('threadingDrive', 'torqueAtMandrel', e.target.value)} />
-          <Input label="Rewind Torque Req. (in. lbs.)" value={data.threadingDrive.rewindTorque} onChange={e => handleInputChange('threadingDrive', 'rewindTorque', e.target.value)} />
+          <Input label="Air Clutch" value={data.threadingDrive[version]?.airClutch || ''} onChange={e => handleInputChange('threadingDrive', 'airClutch', e.target.value)} />
+          <Input label="Hyd. Threading Drive" value={data.threadingDrive[version]?.hydThreadingDrive || ''} onChange={e => handleInputChange('threadingDrive', 'hydThreadingDrive', e.target.value)} />
+          <Input label="Torque At Mandrel (in. lbs.)" value={data.threadingDrive[version]?.torqueAtMandrel || ''} onChange={e => handleInputChange('threadingDrive', 'torqueAtMandrel', e.target.value)} />
+          <Input label="Rewind Torque Req. (in. lbs.)" value={data.threadingDrive[version]?.rewindTorque || ''} onChange={e => handleInputChange('threadingDrive', 'rewindTorque', e.target.value)} />
         </Card>
         <Card className="p-6">
           <Text as="h3" className="mb-4 text-lg font-medium">Hold Down</Text>
-          <Input label="Hold Down Assy" value={data.holdDown.assy} onChange={e => handleInputChange('holdDown', 'assy', e.target.value)} />
-          <Input label="Holddown Pressure (psi)" value={data.holdDown.pressure} onChange={e => handleInputChange('holdDown', 'pressure', e.target.value)} />
-          <Input label="Hold Down Force Required (lbs)" value={data.holdDown.forceRequired} onChange={e => handleInputChange('holdDown', 'forceRequired', e.target.value)} />
-          <Input label="Hold Down Force Available (lbs)" value={data.holdDown.forceAvailable} onChange={e => handleInputChange('holdDown', 'forceAvailable', e.target.value)} />
-          <Input label="Min. Material Width (in)" value={data.holdDown.minWidth} onChange={e => handleInputChange('holdDown', 'minWidth', e.target.value)} />
+          <Input label="Hold Down Assy" value={data.holdDown[version]?.assy || ''} onChange={e => handleInputChange('holdDown', 'assy', e.target.value)} />
+          <Input label="Holddown Pressure (psi)" value={data.holdDown[version]?.pressure || ''} onChange={e => handleInputChange('holdDown', 'pressure', e.target.value)} />
+          <Input label="Hold Down Force Required (lbs)" value={data.holdDown[version]?.forceRequired || ''} onChange={e => handleInputChange('holdDown', 'forceRequired', e.target.value)} />
+          <Input label="Hold Down Force Available (lbs)" value={data.holdDown[version]?.forceAvailable || ''} onChange={e => handleInputChange('holdDown', 'forceAvailable', e.target.value)} />
+          <Input label="Min. Material Width (in)" value={data.holdDown[version]?.minWidth || ''} onChange={e => handleInputChange('holdDown', 'minWidth', e.target.value)} />
         </Card>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card className="p-6">
           <Text as="h3" className="mb-4 text-lg font-medium">Cylinder</Text>
-          <Input label="Type" value={data.cylinder.type} onChange={e => handleInputChange('cylinder', 'type', e.target.value)} />
-          <Input label="Pressure (psi)" value={data.cylinder.pressure} onChange={e => handleInputChange('cylinder', 'pressure', e.target.value)} />
+          <Input label="Type" value={data.cylinder[version]?.type || ''} onChange={e => handleInputChange('cylinder', 'type', e.target.value)} />
+          <Input label="Pressure (psi)" value={data.cylinder[version]?.pressure || ''} onChange={e => handleInputChange('cylinder', 'pressure', e.target.value)} />
         </Card>
         <Card className="p-6">
           <Text as="h3" className="mb-4 text-lg font-medium">Drag Brake</Text>
-          <Input label="Brake Model" value={data.dragBrake.model} onChange={e => handleInputChange('dragBrake', 'model', e.target.value)} />
-          <Input label="Brake Quantity" value={data.dragBrake.quantity} onChange={e => handleInputChange('dragBrake', 'quantity', e.target.value)} />
-          <Input label="Torque Required (in. lbs.)" value={data.dragBrake.torqueRequired} onChange={e => handleInputChange('dragBrake', 'torqueRequired', e.target.value)} />
-          <Input label="Failsafe - Single Stage (psi air req.)" value={data.dragBrake.failsafePSI} onChange={e => handleInputChange('dragBrake', 'failsafePSI', e.target.value)} />
-          <Input label="Failsafe Holding Force (in. lbs.)" value={data.dragBrake.failsafeHoldingForce} onChange={e => handleInputChange('dragBrake', 'failsafeHoldingForce', e.target.value)} />
+          <Input label="Brake Model" value={data.dragBrake[version]?.model || ''} onChange={e => handleInputChange('dragBrake', 'model', e.target.value)} />
+          <Input label="Brake Quantity" value={data.dragBrake[version]?.quantity || ''} onChange={e => handleInputChange('dragBrake', 'quantity', e.target.value)} />
+          <Input label="Torque Required (in. lbs.)" value={data.dragBrake[version]?.torqueRequired || ''} onChange={e => handleInputChange('dragBrake', 'torqueRequired', e.target.value)} />
+          <Input label="Failsafe - Single Stage (psi air req.)" value={data.dragBrake[version]?.failsafePSI || ''} onChange={e => handleInputChange('dragBrake', 'failsafePSI', e.target.value)} />
+          <Input label="Failsafe Holding Force (in. lbs.)" value={data.dragBrake[version]?.failsafeHoldingForce || ''} onChange={e => handleInputChange('dragBrake', 'failsafeHoldingForce', e.target.value)} />
         </Card>
       </div>
       {status && <div className="text-center text-xs text-primary mt-2">{status}</div>}
       {backendStatus && <div className="text-center text-xs text-primary mt-2">{backendStatus}</div>}
       {getBackendStatus && <div className="text-center text-xs text-primary mt-2">{getBackendStatus}</div>}
-    </form>
+    </div>
   );
 } 

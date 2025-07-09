@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { pythonInstance } from '@/utils';
 
+export type VersionKey = 'Maximum Thick' | 'Max @ Full' | 'Minimum Thick' | 'Max @ Width';
+
+export type VersionedSection<T> = {
+  [K in VersionKey]: T;
+};
+
 export interface TDDBHDFormData {
   customer: string;
   date: string;
   referenceNumber: string;
-  reelSpecs: {
+  reel: VersionedSection<{
     model: string;
     width: string;
     backplate: string;
@@ -15,51 +21,45 @@ export interface TDDBHDFormData {
     yieldStrength: string;
     airPressure: string;
     decelRate: string;
-  };
-  coilBrakeSpecs: {
-    coilWeight: string;
-    coilOD: string;
+  }>;
+  coil: VersionedSection<{
+    weight: string;
+    od: string;
     dispReel: string;
-    webTension: string;
-    webTension2: string;
-    brakePadDiameter: string;
+    webTensionPsi: string;
+    webTensionLbs: string;
+  }>;
+  brake: VersionedSection<{
+    padDiameter: string;
     cylinderBore: string;
     friction: string;
-  };
-  threadingDrive: {
+  }>;
+  threadingDrive: VersionedSection<{
     airClutch: string;
     hydThreadingDrive: string;
     torqueAtMandrel: string;
     rewindTorque: string;
-  };
-  holdDown: {
+  }>;
+  holdDown: VersionedSection<{
     assy: string;
     pressure: string;
     forceRequired: string;
     forceAvailable: string;
     minWidth: string;
-  };
-  cylinder: {
+  }>;
+  cylinder: VersionedSection<{
     type: string;
     pressure: string;
-  };
-  dragBrake: {
+  }>;
+  dragBrake: VersionedSection<{
     model: string;
     quantity: string;
     torqueRequired: string;
     failsafePSI: string;
     failsafeHoldingForce: string;
-  };
-  resultsTable: Array<{
-    config: string;
-    torque: number;
-    passed: string;
-    width: number;
-    matlRequired: number;
-    psi: number;
-    torqueRequired: number;
   }>;
-  confirmedMinWidthOK: boolean;
+  resultsTable?: Array<any>;
+  confirmedMinWidthOK?: boolean;
 }
 
 const requiredFields = ["customer", "date", "referenceNumber"];
