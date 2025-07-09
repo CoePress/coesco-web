@@ -540,7 +540,7 @@ model QuoteItem {
 // PERFORMANCE SHEET MODELS
 model PerformanceSheet {
   id String @id @default(uuid())
-  referenceNumber String
+  referenceNumber String @unique
   data Json @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
