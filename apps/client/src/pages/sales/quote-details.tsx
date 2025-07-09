@@ -8,7 +8,7 @@ import {
   Trash,
   GripVertical,
 } from "lucide-react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   Button,
@@ -46,7 +46,7 @@ const QuoteDetails = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<
-    "quantity" | "unitPrice" | null
+    "quantity" | "unitPrice" | "discount" | "tax" | null
   >(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
@@ -148,7 +148,7 @@ const QuoteDetails = () => {
 
   const handleDoubleClick = (
     itemId: string,
-    field: "quantity" | "unitPrice",
+    field: "quantity" | "unitPrice" | "discount" | "tax",
     currentValue: any
   ) => {
     if (quoteOverview?.quote?.status !== "DRAFT") return;
@@ -168,6 +168,10 @@ const QuoteDetails = () => {
       updateData.quantity = parseInt(editingValue) || 1;
     } else if (editingField === "unitPrice") {
       updateData.unitPrice = parseFloat(editingValue) || 0;
+    } else if (editingField === "discount") {
+      updateData.discount = parseFloat(editingValue) || 0;
+    } else if (editingField === "tax") {
+      updateData.tax = parseFloat(editingValue) || 0;
     }
 
     await updateQuoteItem(editingItemId, updateData);
@@ -593,8 +597,34 @@ const QuoteDetails = () => {
                           formatCurrency(item.unitPrice || 0)
                         )}
                       </div>
-                      <div className="text-sm text-text text-right">
-                        {formatCurrency(item.discount || 0)}
+                      <div
+                        className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
+                        onDoubleClick={() =>
+                          handleDoubleClick(
+                            item.id,
+                            "discount",
+                            item.discount || 0
+                          )
+                        }>
+                        {editingItemId === item.id &&
+                        editingField === "discount" ? (
+                          <input
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleSaveEdit();
+                              } else if (e.key === "Escape") {
+                                handleCancelEdit();
+                              }
+                            }}
+                            className="px-2 rounded text-right text-text text-sm w-20"
+                            autoFocus
+                          />
+                        ) : (
+                          formatCurrency(item.discount || 0)
+                        )}
                       </div>
                       <div className="text-sm text-text text-right">
                         {formatCurrency(item.tax || 0)}
