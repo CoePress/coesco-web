@@ -1,5 +1,4 @@
 import { __prod__ } from "@/config/config";
-import { logger } from "@/utils/logger";
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 
