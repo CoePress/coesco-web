@@ -535,13 +535,17 @@ const QuoteDetails = () => {
                       </div>
                       <div
                         className="text-sm font-medium text-text truncate whitespace-nowrap"
-                        title={item.item.name}>
-                        {item.item.name}
+                        title={item.item?.name || item.configuration?.name}>
+                        {item.item?.name || item.configuration?.name}
                       </div>
                       <div
                         className="text-sm text-text truncate whitespace-nowrap"
-                        title={item.item.description}>
-                        {item.item.description}
+                        title={
+                          item.item?.description ||
+                          item.configuration?.description
+                        }>
+                        {item.item?.description ||
+                          item.configuration?.description}
                       </div>
                       <div
                         className="text-sm text-text text-right cursor-pointer hover:bg-foreground/50 px-1 rounded"
@@ -891,8 +895,12 @@ const AddItemModal = ({
   const handleConfirmAddItem = async () => {
     if (!quoteId || !selectedItem) return;
 
+    // Determine item type based on active tab
+    const itemType = activeTab === "machines" ? "configuration" : "item";
+
     const result = await createQuoteItem({
       itemId: selectedItem.id,
+      itemType: itemType,
       quantity: selectedQuantity[selectedItem.id] || 1,
     });
     if (result) {
@@ -1433,7 +1441,9 @@ const ApproveQuoteModal = ({
               key={item.id}
               className="flex items-center justify-between p-3 bg-foreground rounded border">
               <div className="flex-1">
-                <div className="font-medium text-text">{item.item.name}</div>
+                <div className="font-medium text-text">
+                  {item.item?.name || item.configuration?.name}
+                </div>
                 <div className="text-sm text-text-muted">
                   Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
                   {formatCurrency(item.totalPrice)}
@@ -1644,7 +1654,9 @@ const DeleteItemModal = ({
         {item && (
           <div className="space-y-2">
             <div>
-              <div className="font-medium text-text">{item.item.name}</div>
+              <div className="font-medium text-text">
+                {item.item?.name || item.configuration?.name}
+              </div>
               <div className="text-sm text-text-muted">
                 Quantity: {item.quantity} × {formatCurrency(item.unitPrice)} ={" "}
                 {formatCurrency(item.totalPrice)}

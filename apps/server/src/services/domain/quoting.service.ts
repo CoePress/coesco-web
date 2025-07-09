@@ -119,9 +119,17 @@ export class QuotingService {
     }
   }
 
-  async addItemToQuote(quoteId: string, itemId: string, quantity: number = 1) {
+  async addItemToQuote(
+    quoteId: string,
+    itemType: string,
+    itemId: string,
+    quantity: number = 1
+  ) {
     const currentItems = await quoteItemService.getByQuoteId(quoteId);
-    const item = await itemService.getById(itemId);
+    const item =
+      itemType === "item"
+        ? await itemService.getById(itemId)
+        : await configurationService.getById(itemId);
 
     const existingItem = currentItems.data?.find(
       (i: any) => i.itemId === itemId
@@ -144,13 +152,17 @@ export class QuotingService {
     }
 
     const lineNumber = (currentItems.data?.length || 0) + 1;
-    const unitPrice = item.data?.unitPrice ?? 0;
+    const unitPrice =
+      itemType === "item"
+        ? ((item.data as any)?.unitPrice ?? 0)
+        : ((item.data as any)?.price ?? 0);
     const unitPriceDecimal = new Decimal(unitPrice);
     const totalPrice = unitPriceDecimal.mul(quantity);
 
     const newQuoteItem = await quoteItemService.create({
       quoteId: quoteId,
-      itemId: itemId,
+      configurationId: itemType === "configuration" ? itemId : undefined,
+      itemId: itemType === "item" ? itemId : undefined,
       lineNumber,
       unitPrice: unitPriceDecimal,
       quantity,
