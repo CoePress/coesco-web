@@ -2,13 +2,13 @@ import { useState } from "react";
 import {
   Plus,
   Edit,
-  Eye,
-  EyeOff,
   CheckCircle,
   XCircle,
   Code,
   Target,
   Filter,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { PageHeader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
@@ -32,8 +32,8 @@ interface OptionRule {
   priority: number;
   isActive: boolean;
   condition: RuleCondition;
-  triggerOptions: any[]; // From API - array of objects with id, code, name, description
-  targetOptions: any[]; // From API - array of objects with id, code, name, description
+  triggerOptions: any[];
+  targetOptions: any[];
   targetValue?: string;
   message?: string;
   productClassIds?: string[];
@@ -48,8 +48,13 @@ const Options = () => {
   const [selectedProductClass, setSelectedProductClass] =
     useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedTriggerCategory, setExpandedTriggerCategory] = useState<
+    string | null
+  >(null);
+  const [expandedTargetCategory, setExpandedTargetCategory] = useState<
+    string | null
+  >(null);
 
-  // API calls
   const { entities: optionCategories, loading: categoriesLoading } =
     useGetEntities("/categories");
   const { entities: options, loading: optionsLoading } =
@@ -58,7 +63,6 @@ const Options = () => {
     useGetEntities("/classes");
   const { optionRules, loading: rulesLoading } = useGetOptionRules();
 
-  // Transform API data to match component expectations and deduplicate
   const categories = (optionCategories || []).filter(
     (cat: any, index: number, self: any[]) =>
       index === self.findIndex((c: any) => c.id === cat.id)
@@ -101,33 +105,6 @@ const Options = () => {
     setIsEditing(true);
   };
 
-  const handleEditRule = (rule: OptionRule) => {
-    setSelectedRule({
-      ...rule,
-      condition: rule.condition || {
-        id: Date.now().toString(),
-        conditionType: "SELECTION",
-        operator: "SELECTED",
-      },
-      triggerOptions: Array.isArray(rule.triggerOptions)
-        ? rule.triggerOptions
-        : [],
-      targetOptions: Array.isArray(rule.targetOptions)
-        ? rule.targetOptions
-        : [],
-    });
-    setIsEditing(true);
-  };
-
-  const handleDeleteRule = (ruleId: string) => {
-    // TODO: Implement API call to delete rule
-    console.log("Delete rule:", ruleId);
-    if (selectedRule?.id === ruleId) {
-      setSelectedRule(null);
-      setIsEditing(false);
-    }
-  };
-
   const handleSaveRule = () => {
     if (!selectedRule) return;
 
@@ -144,7 +121,6 @@ const Options = () => {
       return;
     }
 
-    // TODO: Implement API call to save rule
     console.log("Save rule:", selectedRule);
     setIsEditing(false);
   };
@@ -175,7 +151,6 @@ const Options = () => {
     }
   };
 
-  // Ensure targetOptions doesn't have duplicates
   const uniqueTargetOptions =
     selectedRule?.targetOptions?.filter(
       (opt, index, self) => self.findIndex((o) => o.id === opt.id) === index
@@ -190,12 +165,21 @@ const Options = () => {
     });
   };
 
-  const getOptionById = (id: string) =>
-    allOptions.find((opt: any) => opt.id === id);
   const getCategoryById = (id: string) =>
     categories.find((cat: any) => cat.id === id);
 
-  // Show loading state
+  const toggleTriggerCategory = (categoryId: string) => {
+    setExpandedTriggerCategory(
+      expandedTriggerCategory === categoryId ? null : categoryId
+    );
+  };
+
+  const toggleTargetCategory = (categoryId: string) => {
+    setExpandedTargetCategory(
+      expandedTargetCategory === categoryId ? null : categoryId
+    );
+  };
+
   if (
     categoriesLoading ||
     optionsLoading ||
@@ -214,21 +198,38 @@ const Options = () => {
       <PageHeader
         title="Option Rules"
         description={`${rules.length} rules · ${filteredRules.length} filtered`}
-        actions={[
-          {
-            type: "button",
-            label: "Create Rule",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: handleCreateRule,
-          },
-        ]}
+        actions={
+          isEditing
+            ? [
+                {
+                  type: "button",
+                  label: "Cancel",
+                  variant: "secondary",
+                  icon: <XCircle size={16} />,
+                  onClick: handleCancelEdit,
+                },
+                {
+                  type: "button",
+                  label: "Save Rule",
+                  variant: "primary",
+                  icon: <CheckCircle size={16} />,
+                  onClick: handleSaveRule,
+                },
+              ]
+            : [
+                {
+                  type: "button",
+                  label: "Create Rule",
+                  variant: "primary",
+                  icon: <Plus size={16} />,
+                  onClick: handleCreateRule,
+                },
+              ]
+        }
       />
 
       <div className="flex flex-1 min-h-0">
-        {/* Rules List */}
         <div className="w-80 border-r bg-foreground flex flex-col min-h-0">
-          {/* Filters */}
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <div className="space-y-2">
               <div className="flex gap-2 relative">
@@ -308,7 +309,6 @@ const Options = () => {
             </div>
           </div>
 
-          {/* Rules List */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="divide-y">
               {filteredRules.map((rule: any) => (
@@ -344,12 +344,10 @@ const Options = () => {
           </div>
         </div>
 
-        {/* Rule Details/Editor */}
         <div className="flex-1 flex flex-col">
           {selectedRule ? (
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="p-2 space-y-2">
-                {/* Basic Information & Conditions */}
                 <div className="bg-foreground border border-border rounded p-2">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-sm text-text-muted">
@@ -365,7 +363,6 @@ const Options = () => {
                   </div>
 
                   <div className="space-y-2">
-                    {/* Name - Full Width */}
                     <div>
                       <label className="block text-xs font-medium text-text-muted mb-1">
                         Rule Name
@@ -389,7 +386,6 @@ const Options = () => {
                       )}
                     </div>
 
-                    {/* Description - Full Width */}
                     <div>
                       <label className="block text-xs font-medium text-text-muted mb-1">
                         Description
@@ -414,7 +410,6 @@ const Options = () => {
                       )}
                     </div>
 
-                    {/* Status and Action Row */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-text-muted mb-1">
@@ -492,7 +487,6 @@ const Options = () => {
                       </div>
                     </div>
 
-                    {/* Condition Type and Operator Row */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-text-muted mb-1">
@@ -562,7 +556,6 @@ const Options = () => {
                       </div>
                     </div>
 
-                    {/* Field and Value Row (only for Expression) */}
                     {selectedRule.condition.conditionType === "EXPRESSION" && (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -629,7 +622,6 @@ const Options = () => {
                   </div>
                 </div>
 
-                {/* Trigger Options - Only show for SELECTION mode */}
                 {selectedRule.condition.conditionType === "SELECTION" && (
                   <div className="bg-foreground border border-border rounded p-2">
                     <h3 className="font-medium text-xs text-text-muted mb-2">
@@ -638,7 +630,6 @@ const Options = () => {
 
                     {isEditing ? (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                        {/* Available Options */}
                         <div>
                           <h4 className="font-medium text-xs text-text-muted mb-2">
                             Available Options
@@ -648,55 +639,69 @@ const Options = () => {
                               <div
                                 key={category.id}
                                 className="border border-border rounded">
-                                <div className="px-2 py-2 bg-surface border-b border-border">
+                                <button
+                                  onClick={() =>
+                                    toggleTriggerCategory(category.id)
+                                  }
+                                  className={`w-full px-2 py-2 bg-surface hover:bg-primary/5 flex items-center justify-between ${
+                                    expandedTriggerCategory === category.id
+                                      ? "border-b border-border"
+                                      : ""
+                                  }`}>
                                   <h5 className="font-medium text-xs text-text-muted">
                                     {category.name}
                                   </h5>
-                                </div>
-                                <div className="p-2 space-y-1">
-                                  {allOptions
-                                    .filter(
-                                      (opt: any) =>
-                                        opt.categoryId === category.id
-                                    )
-                                    .map((option: any) => (
-                                      <button
-                                        key={option.id}
-                                        onClick={() => {
-                                          if (
-                                            !selectedRule.triggerOptions.some(
+                                  {expandedTriggerCategory === category.id ? (
+                                    <ChevronDown className="w-3 h-3 text-text-muted" />
+                                  ) : (
+                                    <ChevronRight className="w-3 h-3 text-text-muted" />
+                                  )}
+                                </button>
+                                {expandedTriggerCategory === category.id && (
+                                  <div className="p-2 space-y-1">
+                                    {allOptions
+                                      .filter(
+                                        (opt: any) =>
+                                          opt.categoryId === category.id
+                                      )
+                                      .map((option: any) => (
+                                        <button
+                                          key={option.id}
+                                          onClick={() => {
+                                            if (
+                                              !selectedRule.triggerOptions.some(
+                                                (t: any) => t.id === option.id
+                                              )
+                                            ) {
+                                              setSelectedRule({
+                                                ...selectedRule,
+                                                triggerOptions: [
+                                                  ...selectedRule.triggerOptions,
+                                                  option,
+                                                ],
+                                              });
+                                            }
+                                          }}
+                                          disabled={selectedRule.triggerOptions.some(
+                                            (t: any) => t.id === option.id
+                                          )}
+                                          className={`w-full text-left px-2 py-1 rounded text-xs ${
+                                            selectedRule.triggerOptions.some(
                                               (t: any) => t.id === option.id
                                             )
-                                          ) {
-                                            setSelectedRule({
-                                              ...selectedRule,
-                                              triggerOptions: [
-                                                ...selectedRule.triggerOptions,
-                                                option,
-                                              ],
-                                            });
-                                          }
-                                        }}
-                                        disabled={selectedRule.triggerOptions.some(
-                                          (t: any) => t.id === option.id
-                                        )}
-                                        className={`w-full text-left px-2 py-1 rounded text-xs ${
-                                          selectedRule.triggerOptions.some(
-                                            (t: any) => t.id === option.id
-                                          )
-                                            ? "bg-surface text-text-muted cursor-not-allowed"
-                                            : "hover:bg-primary/10 text-text-muted hover:text-text"
-                                        }`}>
-                                        {option.name}
-                                      </button>
-                                    ))}
-                                </div>
+                                              ? "bg-surface text-text-muted cursor-not-allowed"
+                                              : "hover:bg-primary/10 text-text-muted hover:text-text"
+                                          }`}>
+                                          {option.name}
+                                        </button>
+                                      ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
                         </div>
 
-                        {/* Selected Triggers */}
                         <div>
                           <h4 className="font-medium text-xs text-text-muted mb-2">
                             Selected Triggers
@@ -771,7 +776,6 @@ const Options = () => {
                   </div>
                 )}
 
-                {/* Target Options */}
                 <div className="bg-foreground border border-border rounded p-2">
                   <h3 className="font-medium text-xs text-text-muted mb-2">
                     Target Options
@@ -779,7 +783,6 @@ const Options = () => {
 
                   {isEditing ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                      {/* Available Options */}
                       <div>
                         <h4 className="font-medium text-xs text-text-muted mb-2">
                           Available Options
@@ -789,40 +792,57 @@ const Options = () => {
                             <div
                               key={category.id}
                               className="border border-border rounded">
-                              <div className="px-2 py-2 bg-surface border-b border-border">
+                              <button
+                                onClick={() =>
+                                  toggleTargetCategory(category.id)
+                                }
+                                className={`w-full px-2 py-2 bg-surface hover:bg-primary/5 flex items-center justify-between ${
+                                  expandedTargetCategory === category.id
+                                    ? "border-b border-border"
+                                    : ""
+                                }`}>
                                 <h5 className="font-medium text-xs text-text-muted">
                                   {category.name}
                                 </h5>
-                              </div>
-                              <div className="p-2 space-y-1">
-                                {allOptions
-                                  .filter(
-                                    (opt: any) => opt.categoryId === category.id
-                                  )
-                                  .map((option: any) => (
-                                    <button
-                                      key={option.id}
-                                      onClick={() => addTargetOption(option.id)}
-                                      disabled={uniqueTargetOptions.some(
-                                        (opt) => opt.id === option.id
-                                      )}
-                                      className={`w-full text-left px-2 py-1 rounded text-xs ${
-                                        uniqueTargetOptions.some(
+                                {expandedTargetCategory === category.id ? (
+                                  <ChevronDown className="w-3 h-3 text-text-muted" />
+                                ) : (
+                                  <ChevronRight className="w-3 h-3 text-text-muted" />
+                                )}
+                              </button>
+                              {expandedTargetCategory === category.id && (
+                                <div className="p-2 space-y-1">
+                                  {allOptions
+                                    .filter(
+                                      (opt: any) =>
+                                        opt.categoryId === category.id
+                                    )
+                                    .map((option: any) => (
+                                      <button
+                                        key={option.id}
+                                        onClick={() =>
+                                          addTargetOption(option.id)
+                                        }
+                                        disabled={uniqueTargetOptions.some(
                                           (opt) => opt.id === option.id
-                                        )
-                                          ? "bg-surface text-text-muted cursor-not-allowed"
-                                          : "hover:bg-primary/10 text-text-muted hover:text-text"
-                                      }`}>
-                                      {option.name}
-                                    </button>
-                                  ))}
-                              </div>
+                                        )}
+                                        className={`w-full text-left px-2 py-1 rounded text-xs ${
+                                          uniqueTargetOptions.some(
+                                            (opt) => opt.id === option.id
+                                          )
+                                            ? "bg-surface text-text-muted cursor-not-allowed"
+                                            : "hover:bg-primary/10 text-text-muted hover:text-text"
+                                        }`}>
+                                        {option.name}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Selected Targets */}
                       <div>
                         <h4 className="font-medium text-xs text-text-muted mb-2">
                           Selected Targets
@@ -890,7 +910,6 @@ const Options = () => {
                   )}
                 </div>
 
-                {/* Action-specific fields */}
                 {(selectedRule.action === "SET_VALUE" ||
                   selectedRule.action === "SHOW_MESSAGE") && (
                   <div className="bg-foreground border border-border rounded p-2">
@@ -949,22 +968,6 @@ const Options = () => {
                         )}
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                {isEditing && (
-                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                    <button
-                      onClick={handleCancelEdit}
-                      className="px-2 py-2 border border-border rounded text-sm font-medium text-text-muted hover:bg-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveRule}
-                      className="px-2 py-2 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                      Save Rule
-                    </button>
                   </div>
                 )}
               </div>
