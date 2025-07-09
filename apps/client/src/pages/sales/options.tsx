@@ -9,8 +9,9 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
+  Trash,
 } from "lucide-react";
-import { PageHeader } from "@/components";
+import { PageHeader, Modal, Button, Tabs } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useGetOptionRules } from "@/hooks/config";
 
@@ -54,6 +55,8 @@ const Options = () => {
   const [expandedTargetCategory, setExpandedTargetCategory] = useState<
     string | null
   >(null);
+  const [isCategoryOptionModalOpen, setIsCategoryOptionModalOpen] =
+    useState(false);
 
   const { entities: optionCategories, loading: categoriesLoading } =
     useGetEntities("/categories");
@@ -217,6 +220,13 @@ const Options = () => {
                 },
               ]
             : [
+                {
+                  type: "button",
+                  label: "Categories & Options",
+                  variant: "secondary-outline",
+                  icon: <Plus size={16} />,
+                  onClick: () => setIsCategoryOptionModalOpen(true),
+                },
                 {
                   type: "button",
                   label: "Create Rule",
@@ -993,7 +1003,394 @@ const Options = () => {
           )}
         </div>
       </div>
+
+      <CreateCategoryOptionModal
+        isOpen={isCategoryOptionModalOpen}
+        onClose={() => setIsCategoryOptionModalOpen(false)}
+        onSuccess={() => {
+          // TODO: Refresh categories and options data
+          console.log("Category/Option created successfully");
+        }}
+      />
     </div>
+  );
+};
+
+const CreateCategoryOptionModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
+  const [activeTab, setActiveTab] = useState("category");
+  const [categoryData, setCategoryData] = useState({
+    name: "",
+    description: "",
+    code: "",
+    isActive: true,
+  });
+  const [optionData, setOptionData] = useState({
+    name: "",
+    description: "",
+    code: "",
+    type: "text",
+    isRequired: false,
+    isActive: true,
+    defaultValue: "",
+    options: [] as string[],
+  });
+  const [newOption, setNewOption] = useState("");
+
+  const handleCategorySubmit = async () => {
+    // TODO: Implement category creation logic
+    console.log("Creating category:", categoryData);
+    onSuccess();
+    onClose();
+  };
+
+  const handleOptionSubmit = async () => {
+    // TODO: Implement option creation logic
+    console.log("Creating option:", optionData);
+    onSuccess();
+    onClose();
+  };
+
+  const handleAddOption = () => {
+    if (newOption.trim()) {
+      setOptionData((prev) => ({
+        ...prev,
+        options: [...prev.options, newOption.trim()],
+      }));
+      setNewOption("");
+    }
+  };
+
+  const handleRemoveOption = (index: number) => {
+    setOptionData((prev) => ({
+      ...prev,
+      options: prev.options.filter((_, i) => i !== index),
+    }));
+  };
+
+  const resetForm = () => {
+    setCategoryData({
+      name: "",
+      description: "",
+      code: "",
+      isActive: true,
+    });
+    setOptionData({
+      name: "",
+      description: "",
+      code: "",
+      type: "text",
+      isRequired: false,
+      isActive: true,
+      defaultValue: "",
+      options: [],
+    });
+    setNewOption("");
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Create Category & Options"
+      size="md">
+      <div className="flex flex-col gap-4">
+        <Tabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={[
+            { label: "Category", value: "category" },
+            { label: "Option", value: "option" },
+          ]}
+        />
+
+        {activeTab === "category" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Category Name *
+              </label>
+              <input
+                type="text"
+                value={categoryData.name}
+                onChange={(e) =>
+                  setCategoryData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter category name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Category Code *
+              </label>
+              <input
+                type="text"
+                value={categoryData.code}
+                onChange={(e) =>
+                  setCategoryData((prev) => ({ ...prev, code: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter category code (e.g., CAT001)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Description
+              </label>
+              <textarea
+                value={categoryData.description}
+                onChange={(e) =>
+                  setCategoryData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
+                placeholder="Enter category description"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="category-active"
+                checked={categoryData.isActive}
+                onChange={(e) =>
+                  setCategoryData((prev) => ({
+                    ...prev,
+                    isActive: e.target.checked,
+                  }))
+                }
+                className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+              />
+              <label
+                htmlFor="category-active"
+                className="text-sm text-text">
+                Active
+              </label>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "option" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Option Name *
+              </label>
+              <input
+                type="text"
+                value={optionData.name}
+                onChange={(e) =>
+                  setOptionData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter option name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Option Code *
+              </label>
+              <input
+                type="text"
+                value={optionData.code}
+                onChange={(e) =>
+                  setOptionData((prev) => ({ ...prev, code: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter option code (e.g., OPT001)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Option Type *
+              </label>
+              <select
+                value={optionData.type}
+                onChange={(e) =>
+                  setOptionData((prev) => ({ ...prev, type: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="text">Text</option>
+                <option value="number">Number</option>
+                <option value="select">Select</option>
+                <option value="multiselect">Multi-Select</option>
+                <option value="checkbox">Checkbox</option>
+                <option value="date">Date</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Description
+              </label>
+              <textarea
+                value={optionData.description}
+                onChange={(e) =>
+                  setOptionData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
+                placeholder="Enter option description"
+              />
+            </div>
+
+            {(optionData.type === "select" ||
+              optionData.type === "multiselect") && (
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">
+                  Option Values
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddOption();
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Enter option value"
+                    />
+                    <Button
+                      variant="secondary-outline"
+                      onClick={handleAddOption}
+                      disabled={!newOption.trim()}>
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                  {optionData.options.length > 0 && (
+                    <div className="space-y-1">
+                      {optionData.options.map((option, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-foreground rounded border">
+                          <span className="text-sm">{option}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveOption(index)}>
+                            <Trash size={14} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Default Value
+              </label>
+              <input
+                type="text"
+                value={optionData.defaultValue}
+                onChange={(e) =>
+                  setOptionData((prev) => ({
+                    ...prev,
+                    defaultValue: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter default value"
+              />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="option-required"
+                  checked={optionData.isRequired}
+                  onChange={(e) =>
+                    setOptionData((prev) => ({
+                      ...prev,
+                      isRequired: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <label
+                  htmlFor="option-required"
+                  className="text-sm text-text">
+                  Required
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="option-active"
+                  checked={optionData.isActive}
+                  onChange={(e) =>
+                    setOptionData((prev) => ({
+                      ...prev,
+                      isActive: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <label
+                  htmlFor="option-active"
+                  className="text-sm text-text">
+                  Active
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={
+              activeTab === "category"
+                ? handleCategorySubmit
+                : handleOptionSubmit
+            }
+            disabled={
+              activeTab === "category"
+                ? !categoryData.name || !categoryData.code
+                : !optionData.name || !optionData.code
+            }>
+            Create {activeTab === "category" ? "Category" : "Option"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 };
 

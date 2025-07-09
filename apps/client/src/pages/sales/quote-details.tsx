@@ -332,21 +332,21 @@ const QuoteDetails = () => {
                     <div className="text-xs text-text-muted">Total</div>
                     <div className="text-xs text-text">
                       {formatCurrency(
-                        (quoteItems.reduce(
+                        quoteItems.reduce(
                           (acc: number, item: any) =>
                             acc + Number(item.totalPrice),
                           0
-                        ) || 12500) -
-                          (quoteItems.reduce(
+                        ) -
+                          quoteItems.reduce(
                             (acc: number, item: any) =>
                               acc + (Number(item.discount) || 0),
                             0
-                          ) || 0) +
-                          (quoteItems.reduce(
+                          ) +
+                          quoteItems.reduce(
                             (acc: number, item: any) =>
                               acc + (Number(item.taxAmount) || 0),
                             0
-                          ) || 1250)
+                          )
                       )}
                     </div>
                   </div>
