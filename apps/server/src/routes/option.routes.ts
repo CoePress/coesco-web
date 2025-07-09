@@ -3,6 +3,6 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/", configController.getOptionCategoriesByProductClass);
+router.get("/", configController.getOptionsByProductClass);
 
 export default router;
