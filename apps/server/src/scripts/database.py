@@ -85,9 +85,9 @@ class Database:
 
 if __name__ == "__main__":
     db = Database(
-        host="localhost",
-        database="coesco_dev",
-        user="postgres",
+        host="10.231.200.65:5432",
+        database="coesco_test",
+        user="cpec",
         password="password"
     )
 
