@@ -2,7 +2,6 @@ import {
   LucideIcon,
   UsersIcon,
   BarChart,
-  // PieChart,
   SettingsIcon,
   Factory,
   Box,
@@ -13,11 +12,15 @@ import {
   Boxes,
   LandPlot,
   CogIcon,
+  DollarSign,
+  Route,
+  FileText,
+  Wrench,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
-import ReelDrive from '@/pages/performance/reel-drive';
+import ReelDrive from "@/pages/performance/reel-drive";
 
 export type Module = {
   sequence: number;
@@ -39,15 +42,111 @@ export type Page = {
 const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
 const Machines = lazy(() => import("@/pages/production/machines"));
 const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
-// const Reports = lazy(() => import("@/pages/production/reports"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
 const RFQ = lazy(() => import("@/pages/performance/rfq"));
 const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
 const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
+const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
+const Catalog = lazy(() => import("@/pages/sales/catalog"));
+const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
+const Quotes = lazy(() => import("@/pages/sales/quotes"));
+const QuoteDetails = lazy(() => import("@/pages/sales/quote-details"));
+const Journeys = lazy(() => import("@/pages/sales/journeys"));
+const JourneyDetails = lazy(() => import("@/pages/sales/journey-details"));
+const OptionRules = lazy(() => import("@/pages/admin/option-rules"));
+const Options = lazy(() => import("@/pages/sales/options"));
+
+const Companies = lazy(() => import("@/pages/sales/companies"));
+const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
+const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
+
+const salesModule: Module = {
+  sequence: 1,
+  slug: "sales",
+  label: "Sales",
+  icon: DollarSign,
+  status: "development" as const,
+  pages: [
+    {
+      slug: null,
+      label: "Dashboard",
+      icon: BarChart,
+      component: SalesDashboard,
+    },
+    {
+      slug: "pipeline",
+      label: "Pipeline",
+      icon: DollarSign,
+      component: Pipeline,
+    },
+    {
+      slug: "companies",
+      label: "Companies",
+      icon: UsersIcon,
+      component: Companies,
+      children: [
+        {
+          slug: ":id",
+          label: "Company",
+          icon: UsersIcon,
+          component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      slug: "journeys",
+      label: "Journeys",
+      icon: Route,
+      component: Journeys,
+      children: [
+        {
+          slug: ":id",
+          label: "Journey",
+          icon: Route,
+          component: JourneyDetails,
+        },
+      ],
+    },
+    {
+      slug: "quotes",
+      label: "Quotes",
+      icon: FileText,
+      component: Quotes,
+      children: [
+        {
+          slug: ":id",
+          label: "Quote",
+          icon: FileText,
+          component: QuoteDetails,
+        },
+      ],
+    },
+    {
+      slug: "catalog",
+      label: "Catalog",
+      icon: Box,
+      component: Catalog,
+      children: [
+        {
+          slug: "builder",
+          label: "Builder",
+          icon: Box,
+          component: MachineBuilder,
+        },
+      ],
+    },
+    {
+      slug: "options",
+      label: "Options",
+      icon: Box,
+      component: Options,
+    },
+  ],
+};
 
 const productionModule: Module = {
-  sequence: 1,
+  sequence: 2,
   slug: "production",
   label: "Production",
   icon: Factory,
@@ -71,17 +170,11 @@ const productionModule: Module = {
       icon: Clock,
       component: MachineHistory,
     },
-    // {
-    //   slug: "reports",
-    //   label: "Reports",
-    //   icon: PieChart,
-    //   component: Reports,
-    // },
   ],
 };
 
 const adminModule: Module = {
-  sequence: 2,
+  sequence: 3,
   slug: "admin",
   label: "Admin",
   icon: Shield,
@@ -98,6 +191,12 @@ const adminModule: Module = {
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
+    },
+    {
+      slug: "option-rules",
+      label: "Option Rules",
+      icon: Box,
+      component: OptionRules,
     },
   ],
 };
@@ -136,7 +235,12 @@ const performanceModule: Module = {
   ],
 };
 
-const modules: Module[] = [productionModule, adminModule, performanceModule]
+const modules: Module[] = [
+  productionModule,
+  salesModule,
+  adminModule,
+  performanceModule,
+]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")

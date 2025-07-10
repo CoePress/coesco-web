@@ -1,21 +1,70 @@
 import { Routes, Route } from "react-router-dom";
-import { Login, MainMenu, NotFound, Performance, Sandbox, Design } from "./pages";
+import {
+  Design,
+  Login,
+  MainMenu,
+  NotFound,
+  Performance,
+  Sandbox,
+} from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
-import { PerformanceSheetProvider } from '@/contexts/performance.context';
+import { PerformanceSheetProvider } from "@/contexts/performance.context";
+
+// Helper function to generate all routes including children as separate routes
+const generateAllRoutes = (pages: any[], moduleSlug: string) => {
+  const routes: any[] = [];
+
+  pages.forEach((page) => {
+    // Add the main page route
+    if (page.slug) {
+      routes.push(
+        <Route
+          key={`${moduleSlug}-${page.slug}`}
+          path={page.slug}
+          element={<page.component />}
+        />
+      );
+    } else {
+      routes.push(
+        <Route
+          key={`${moduleSlug}-index`}
+          path=""
+          element={<page.component />}
+        />
+      );
+    }
+
+    // Add child routes as separate routes
+    if (page.children) {
+      page.children.forEach((child: any) => {
+        const childPath = page.slug ? `${page.slug}/${child.slug}` : child.slug;
+        routes.push(
+          <Route
+            key={`${moduleSlug}-${childPath}`}
+            path={childPath}
+            element={<child.component />}
+          />
+        );
+      });
+    }
+  });
+
+  return routes;
+};
 
 const App = () => {
   const content = (
     <Routes>
+      <Route
+        path="/callback"
+        element={<MicrosoftCallback />}
+      />
       <Route element={<PublicRoute />}>
         <Route
           path="/login"
           element={<Login />}
-        />
-        <Route
-          path="/callback"
-          element={<MicrosoftCallback />}
         />
       </Route>
       <Route element={<ProtectedRoute withLayout={false} />}>
@@ -41,21 +90,11 @@ const App = () => {
             <Route
               key={module.slug}
               path={`/${module.slug}`}>
-              {module.pages.map((page) => (
-                <Route
-                  key={page.slug || "index"}
-                  path={page.slug || ""}
-                  element={<page.component />}
-                />
-              ))}
+              {generateAllRoutes(module.pages, module.slug)}
             </Route>
           ))}
       </Route>
       <Route element={<ProtectedRoute withLayout={true} />}>
-        <Route
-          path="/main-menu"
-          element={<MainMenu />}
-        />
         <Route
           path="/sandbox"
           element={<Sandbox />}
@@ -74,13 +113,7 @@ const App = () => {
             <Route
               key={module.slug}
               path={`/${module.slug}`}>
-              {module.pages.map((page) => (
-                <Route
-                  key={page.slug || "index"}
-                  path={page.slug || ""}
-                  element={<page.component />}
-                />
-              ))}
+              {generateAllRoutes(module.pages, module.slug)}
             </Route>
           ))}
       </Route>

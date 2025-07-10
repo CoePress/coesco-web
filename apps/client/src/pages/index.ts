@@ -1,6 +1,7 @@
 // Admin
 export { default as Employees } from "./admin/employees";
 export { default as Settings } from "./admin/settings";
+export { default as OptionRules } from "./admin/option-rules";
 
 // Production
 export { default as ProductionDashboard } from "./production/dashboard";
@@ -11,11 +12,12 @@ export { default as Reports } from "./production/reports";
 // Sales
 export { default as SalesDashboard } from "./sales/dashboard";
 export { default as SalesPipeline } from "./sales/pipeline";
+export { default as SalesCompanies } from "./sales/companies";
+export { default as SalesCompanyDetails } from "./sales/company-details";
 export { default as SalesQuotes } from "./sales/quotes";
 export { default as SalesQuoteDetails } from "./sales/quote-details";
 export { default as SalesJourneys } from "./sales/journeys";
 export { default as SalesJourneyDetails } from "./sales/journey-details";
-export { default as SalesCompanyDetails } from "./sales/company-details";
 export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
 export { default as Performance } from "./performance";
@@ -30,10 +32,3 @@ export { default as ChatPLK } from "./_test/chat-plk";
 export { default as Design } from "./_test/design";
 export { default as Sandbox } from "./_test/sandbox";
 export { default as WarehouseMap } from "./_test/map";
-
-// CRM
-export { default as Companies } from "./crm/companies";
-export { default as CompanyDetails } from "./crm/company-details";
-export { default as Contacts } from "./crm/contacts";
-export { default as ContactDetails } from "./crm/contact-details";
-export { default as Addresses } from "./crm/addresses";

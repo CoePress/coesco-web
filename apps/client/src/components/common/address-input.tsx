@@ -30,7 +30,7 @@ interface AddressData {
   parsed: ParsedAddress;
 }
 
-interface AddressAutocompleteProps {
+interface AddressInputProps {
   onAddressSelect: (address: AddressData) => void;
   placeholder?: string;
   apiKey: string;
@@ -113,11 +113,11 @@ const googleMapsLoader = {
   },
 };
 
-const AddressAutocomplete = ({
+const AddressInput = ({
   onAddressSelect,
   placeholder = "Enter address...",
   apiKey,
-}: AddressAutocompleteProps) => {
+}: AddressInputProps) => {
   const [input, setInput] = useState("");
   const [predictions, setPredictions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -406,4 +406,4 @@ const AddressAutocomplete = ({
   );
 };
 
-export default AddressAutocomplete;
+export default AddressInput;

@@ -1,5 +1,5 @@
 import { employeeService } from "@/services";
-import { BaseController } from "./_";
+import { BaseController } from "./_base.controller";
 import { Employee } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 

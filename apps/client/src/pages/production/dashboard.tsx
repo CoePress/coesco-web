@@ -1,13 +1,12 @@
 import { startOfToday, isSameDay, formatDistance } from "date-fns";
 import {
-  Activity,
   Gauge,
   AlertTriangle,
   RefreshCcw,
   Clock,
   Map,
-  Box,
   Calendar,
+  Filter,
 } from "lucide-react";
 import {
   LineChart,
@@ -17,19 +16,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/theme.context";
 
-import { Card, Loader, MachineMap, Modal, PageHeader } from "@/components";
+import {
+  Card,
+  Loader,
+  MachineMap,
+  Modal,
+  PageHeader,
+  StatusBadge,
+} from "@/components";
 import { useSocket } from "@/contexts/socket.context";
 import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
-import { formatDuration, getStatusColor } from "@/utils";
+import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
 import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
 
 type ExpandedMachine = IOverviewMachine & {
@@ -58,7 +61,7 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
 
   return (
     <div className="pt-2 text-sm flex flex-col gap-2">
-      <div className="grid md:grid-cols-2 gap-2">
+      <div className="grid gap-2">
         <Card>
           <h4 className="text-sm font-medium mb-2 text-text-muted">
             Status Information
@@ -80,7 +83,9 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
             </span>
             <span className="text-muted-foreground">Program:</span>
             <span className="font-medium text-right truncate max-w-[200px]">
-              {realTimeData?.program || "-"}
+              {realTimeData?.program === "NO PROGRAM"
+                ? "-"
+                : realTimeData?.program || "-"}
             </span>
           </div>
         </Card>
@@ -120,61 +125,6 @@ const MachineDetails = ({ machine }: MachineDetailsProps) => {
               {Number(realTimeData?.metrics?.axisPositions?.Z || 0).toFixed(3)}
             </span>
           </div>
-        </Card>
-      </div>
-
-      <div className="hidden md:grid grid-cols-2 gap-2">
-        <Card>
-          <h4 className="text-sm font-medium mb-2 text-text-muted">
-            Program History (Last 24h)
-          </h4>
-          <div className="flex flex-col gap-2">
-            {/* {sampleProgramHistory.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-2">
-                <span className="text-sm font-medium">{item.label}</span>
-                <span className="text-sm text-text-muted">
-                  {item.timestamp}
-                </span>
-              </div>
-            ))} */}
-          </div>
-        </Card>
-
-        <Card>
-          <h4 className="text-sm font-medium mb-2 text-text-muted">
-            State History (Last 24h)
-          </h4>
-          {/* <ResponsiveContainer
-            width="100%"
-            height={200}>
-            <PieChart>
-              <Pie
-                key={sampleStateDistribution
-                  .map((e) => e.label + e.value)
-                  .join("-")}
-                data={sampleStateDistribution}
-                dataKey="value"
-                nameKey="label"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                isAnimationActive={false}>
-                {sampleStateDistribution.map((entry, idx) => (
-                  <Cell
-                    key={`cell-${idx}`}
-                    strokeWidth={0}
-                    fill={
-                      entry.label === "Offline"
-                        ? "var(--surface)"
-                        : getStatusColor(entry.label)
-                    }
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer> */}
         </Card>
       </div>
     </div>
@@ -393,6 +343,10 @@ type IOverview = {
   alarms: IOverviewAlarm[];
 };
 
+const capitalizeFirst = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() + "s";
+};
+
 const Dashboard = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
     if (!param) return fallback;
@@ -400,6 +354,43 @@ const Dashboard = () => {
     const d = new Date(year, month - 1, day);
     return isNaN(d.getTime()) ? fallback : d;
   };
+
+  const parseChartViewParam = (
+    param: string | null
+  ): "all" | "group" | "machine" => {
+    if (param === "group" || param === "machine" || param === "all") {
+      return param;
+    }
+    return "all";
+  };
+
+  const getInitialChartView = () => {
+    const params = new URLSearchParams(window.location.search);
+    return parseChartViewParam(params.get("chartView"));
+  };
+
+  const [chartView, setChartView] = useState<"all" | "group" | "machine">(
+    getInitialChartView
+  );
+  const [isChartFilterOpen, setIsChartFilterOpen] = useState(false);
+  const chartFilterRef = useRef<HTMLDivElement>(null);
+  const [visibleLines, setVisibleLines] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        chartFilterRef.current &&
+        !chartFilterRef.current.contains(event.target as Node)
+      ) {
+        setIsChartFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const getInitialDateRange = () => {
     const params = new URLSearchParams(window.location.search);
@@ -416,6 +407,8 @@ const Dashboard = () => {
   const { overview, loading, error, refresh } = useGetOverview({
     startDate: dateRange.start.toISOString().slice(0, 10),
     endDate: dateRange.end.toISOString().slice(0, 10),
+    view: chartView,
+    filter: chartView !== "all" ? chartView : undefined,
   }) as {
     overview: IOverview | null;
     loading: boolean;
@@ -426,8 +419,6 @@ const Dashboard = () => {
   const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [machineTypeFilter, setMachineTypeFilter] = useState("all");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const kpis = [
     {
@@ -496,20 +487,17 @@ const Dashboard = () => {
       };
     });
 
-  const isToday =
-    isSameDay(dateRange.start, startOfToday()) &&
-    isSameDay(dateRange.end, startOfToday());
-
   useEffect(() => {
     const startStr = dateRange.start.toISOString().slice(0, 10);
     const endStr = dateRange.end.toISOString().slice(0, 10);
-    const isDefault =
+    const isDefaultDate =
       isSameDay(dateRange.start, startOfToday()) &&
       isSameDay(dateRange.end, startOfToday());
+    const isDefaultChartView = chartView === "all";
 
     const params = new URLSearchParams(window.location.search);
 
-    if (isDefault) {
+    if (isDefaultDate) {
       params.delete("startDate");
       params.delete("endDate");
     } else {
@@ -517,30 +505,46 @@ const Dashboard = () => {
       params.set("endDate", endStr);
     }
 
+    if (isDefaultChartView) {
+      params.delete("chartView");
+    } else {
+      params.set("chartView", chartView);
+    }
+
     navigate({ search: params.toString() }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, [dateRange, chartView]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const newStart = parseDateParam(params.get("startDate"), startOfToday());
     const newEnd = parseDateParam(params.get("endDate"), new Date());
+    const newChartView = parseChartViewParam(params.get("chartView"));
+
     if (
       newStart.getTime() !== dateRange.start.getTime() ||
       newEnd.getTime() !== dateRange.end.getTime()
     ) {
       setDateRange({ start: newStart, end: newEnd });
     }
+
+    if (newChartView !== chartView) {
+      setChartView(newChartView);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.location.search]);
 
-  const stateData = [
-    { name: "Running", value: 45, color: "#22c55e" },
-    { name: "Idle", value: 25, color: "#fbbf24" },
-    { name: "Maintenance", value: 15, color: "#f97316" },
-    { name: "Offline", value: 10, color: "#ef4444" },
-    { name: "Setup", value: 5, color: "#8b5cf6" },
-  ];
+  useEffect(() => {
+    if (chartView === "group" || chartView === "machine") {
+      const keys =
+        utilizationOverTime.length > 0
+          ? Object.keys(utilizationOverTime[0]?.groups || {})
+          : [];
+      setVisibleLines(keys);
+    } else {
+      setVisibleLines([]);
+    }
+  }, [utilizationOverTime, chartView]);
 
   return (
     <div className="w-full flex-1 flex flex-col">
@@ -554,19 +558,6 @@ const Dashboard = () => {
             variant: "secondary-outline",
             icon: <Map size={16} />,
             onClick: () => setIsMapModalOpen(true),
-          },
-          {
-            type: "dropdown",
-            label: "Machines",
-            value: machineTypeFilter,
-            isOpen: isFilterOpen,
-            onOpenChange: setIsFilterOpen,
-            options: [
-              { label: "All Machines", value: "all" },
-              { label: "Lathes", value: "lathes" },
-              { label: "Mills", value: "mills" },
-            ],
-            onChange: (value) => setMachineTypeFilter(value),
           },
           {
             type: "datepicker",
@@ -590,285 +581,402 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
+      <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {kpis.map((metric) => (
-            <KPICard
-              key={metric.title}
-              {...metric}
-            />
+            <KPICard {...metric} />
           ))}
         </div>
 
-        <div className="grid h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <div className="bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 min-h-0">
-            <div className="p-2 border-b flex items-center justify-between">
-              <h3 className="text-sm text-text-muted">Utilization Over Time</h3>
-            </div>
-            <div className="flex-1 p-2 min-h-0">
-              <ResponsiveContainer
-                width="100%"
-                height="100%">
-                <LineChart data={utilizationOverTime}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    horizontal={true}
-                    stroke="var(--border)"
-                  />
-                  <XAxis
-                    dataKey="label"
-                    padding={{ left: 0, right: 0 }}
-                    tick={{ fontSize: 12 }}
-                    tickMargin={5}
-                    tickFormatter={(value, index) =>
-                      index % 2 === 0 ? value : ""
-                    }
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                    width={35}
-                    tick={{ fontSize: 12 }}
-                    padding={{ top: 0, bottom: 0 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(v) => `${parseFloat(v as string).toFixed(2)}%`}
-                    contentStyle={{
-                      backgroundColor: "var(--foreground)",
-                      color: "var(--text-muted)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="utilization"
-                    stroke="var(--primary)"
-                    name="Utilization"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    animationDuration={1000}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="previous"
-                    stroke="var(--text-muted)"
-                    opacity={0.5}
-                    name="Previous"
-                    strokeWidth={2}
-                    animationDuration={1000}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="flex-1 grid grid-cols-4 gap-2">
+            <div className="bg-foreground rounded border border-border col-span-3 flex flex-col">
+              <div className="p-2 border-b flex items-center justify-between">
+                <h3 className="text-sm text-text-muted">
+                  Utilization Over Time
+                </h3>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setChartView("all")}
+                    className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                      chartView === "all"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface text-text-muted hover:bg-surface/80"
+                    }`}>
+                    All
+                  </button>
+                  <button
+                    onClick={() => setChartView("group")}
+                    className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                      chartView === "group"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface text-text-muted hover:bg-surface/80"
+                    }`}>
+                    By Group
+                  </button>
+                  <button
+                    onClick={() => setChartView("machine")}
+                    className={`px-2 py-1 text-xs rounded cursor-pointer ${
+                      chartView === "machine"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface text-text-muted hover:bg-surface/80"
+                    }`}>
+                    By Machine
+                  </button>
+                  <div
+                    className="relative"
+                    ref={chartFilterRef}>
+                    <button
+                      onClick={() => setIsChartFilterOpen(!isChartFilterOpen)}
+                      className="px-2 py-1 text-xs rounded cursor-pointer bg-surface text-text-muted hover:bg-surface/80">
+                      <Filter size={12} />
+                    </button>
+                    {isChartFilterOpen &&
+                      (chartView === "group" || chartView === "machine") && (
+                        <div className="absolute right-0 mt-1 w-48 bg-foreground border rounded shadow-lg text-text-muted z-50 max-h-[300px] overflow-y-auto">
+                          {chartView === "group"
+                            ? Object.keys(
+                                utilizationOverTime[0]?.groups || {}
+                              ).map((key) => (
+                                <label
+                                  key={key}
+                                  className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={visibleLines.includes(key)}
+                                    onChange={() => {
+                                      setVisibleLines((prev) =>
+                                        prev.includes(key)
+                                          ? prev.filter((k) => k !== key)
+                                          : [...prev, key]
+                                      );
+                                    }}
+                                    className="mr-2"
+                                  />
+                                  {capitalizeFirst(key)}
+                                </label>
+                              ))
+                            : machines.map((machine) => (
+                                <label
+                                  key={machine.id}
+                                  className="flex items-center px-3 py-2 text-xs hover:bg-surface cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={visibleLines.includes(machine.id)}
+                                    onChange={() => {
+                                      setVisibleLines((prev) =>
+                                        prev.includes(machine.id)
+                                          ? prev.filter((k) => k !== machine.id)
+                                          : [...prev, machine.id]
+                                      );
+                                    }}
+                                    className="mr-2"
+                                  />
+                                  {machine.name}
+                                </label>
+                              ))}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
 
-          <div className="bg-foreground rounded border flex flex-col min-h-0">
-            <div className="p-2 border-b flex items-center justify-between">
-              <h3 className="text-sm text-text-muted">State Distribution</h3>
-            </div>
-            <div className="flex flex-row lg:flex-col flex-1">
-              <div className="flex-1 p-2 min-h-44 md:min-h-0">
+              <div className="flex-1 p-2 min-h-0 overflow-hidden">
                 <ResponsiveContainer
                   width="100%"
                   height="100%">
-                  <PieChart data={stateData}>
-                    <Pie
-                      data={stateDistribution}
-                      dataKey="total"
-                      nameKey="state"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="80%"
+                  <LineChart data={utilizationOverTime}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      horizontal={true}
                       stroke="var(--border)"
-                      strokeWidth={1}
-                      isAnimationActive={false}
-                      animationDuration={1000}>
-                      {stateDistribution.map((entry, _) => (
-                        <Cell
-                          key={`cell-${entry.state}`}
-                          fill={
-                            entry.state === "OFFLINE"
-                              ? "var(--surface)"
-                              : getStatusColor(entry.state, theme)
-                          }
-                        />
-                      ))}
-                    </Pie>
+                    />
+                    <XAxis
+                      dataKey="label"
+                      padding={{ left: 0, right: 0 }}
+                      tick={{ fontSize: 12 }}
+                      tickMargin={5}
+                      tickFormatter={(value, index) =>
+                        index % 2 === 0 ? value : ""
+                      }
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tickFormatter={(v) => `${v}%`}
+                      width={35}
+                      tick={{ fontSize: 12 }}
+                      padding={{ top: 0, bottom: 0 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
                     <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const entry = payload[0];
+                      formatter={(v, _name, props) => {
+                        const percentage = `${parseFloat(v as string).toFixed(2)}%`;
+                        let runtime = 0;
 
-                        const total = entry.payload.total;
-                        const percentage = entry.payload.percentage;
+                        if (chartView === "all") {
+                          runtime = props.payload?.runtime || 0;
+                        } else if (
+                          chartView === "group" ||
+                          chartView === "machine"
+                        ) {
+                          const dataKey = props.dataKey as string;
+                          if (dataKey && dataKey.includes("groups.")) {
+                            const key = dataKey.split(".")[1];
+                            runtime =
+                              props.payload?.groups?.[key]?.runtime || 0;
+                          }
+                        }
 
-                        return (
-                          <div
-                            style={{
-                              background: "var(--foreground)",
-                              color: "var(--text-muted)",
-                              border: "1px solid var(--border)",
-                              borderRadius: 4,
-                              padding: 8,
-                            }}>
-                            <div
-                              style={{
-                                fontWeight: 500,
-                                color: getStatusColor(
-                                  entry.payload.state,
-                                  theme
-                                ),
-                              }}>
-                              {entry.payload.state}
-                            </div>
-                            <div className="mt-1">
-                              <p>
-                                {formatDuration(total)} ({percentage.toFixed(2)}
-                                %)
-                              </p>
-                            </div>
-                          </div>
-                        );
+                        return `${percentage} (${formatDuration(runtime)})`;
+                      }}
+                      labelFormatter={(label, payload) => {
+                        if (
+                          payload &&
+                          payload.length > 0 &&
+                          payload[0]?.payload?.rangeLabel
+                        ) {
+                          return payload[0].payload.rangeLabel;
+                        }
+                        return label;
+                      }}
+                      contentStyle={{
+                        fontSize: "12px",
+                        backgroundColor: "var(--foreground)",
+                        color: "var(--text-muted)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "4px",
                       }}
                     />
-                  </PieChart>
+                    <Line
+                      type="monotone"
+                      dataKey="utilization"
+                      stroke="var(--primary)"
+                      name="Utilization"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                      animationDuration={1000}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="previous"
+                      stroke="var(--text-muted)"
+                      opacity={0.5}
+                      name="Previous"
+                      strokeWidth={2}
+                      animationDuration={1000}
+                      isAnimationActive={false}
+                    />
+                    {(chartView === "group" || chartView === "machine") &&
+                      utilizationOverTime.length > 0 &&
+                      Object.entries(utilizationOverTime[0]?.groups || {})
+                        .filter(([key]) => visibleLines.includes(key))
+                        .map(([key, _], index) => {
+                          // Get machine name for tooltip
+                          const machineName =
+                            chartView === "machine"
+                              ? machines.find((m) => m.id === key)?.name || key
+                              : capitalizeFirst(key);
+
+                          // Use shades of primary color from theme
+                          const colors = [
+                            "#e8a80c", // primary
+                            "#d4a00b", // darker shade
+                            "#c4930d", // secondary
+                            "#b8860b", // even darker
+                            "#a67c0a", // dark shade
+                            "#947209", // darker
+                            "#826608", // darkest
+                            "#705607", // very dark
+                          ];
+
+                          return (
+                            <Line
+                              key={key}
+                              type="monotone"
+                              dataKey={`groups.${key}.utilization`}
+                              stroke={colors[index % colors.length]}
+                              name={machineName}
+                              strokeWidth={2}
+                              dot={{ r: 3 }}
+                              activeDot={{ r: 5 }}
+                              animationDuration={1000}
+                              isAnimationActive={false}
+                            />
+                          );
+                        })}
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="hidden xl:flex flex-row gap-2 text-text-muted flex-wrap justify-center p-2">
-                {stateDistribution.map((entry) => (
-                  <div
-                    key={entry.state}
-                    className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded"
-                      style={{
-                        backgroundColor: getStatusColor(entry.state, theme),
-                      }}
-                    />
-                    <span className="text-xs font-medium text-nowrap">
-                      {entry.state} ({entry.percentage?.toFixed(1) ?? 0}%)
-                    </span>
-                  </div>
-                ))}
+            </div>
+
+            <div className="bg-foreground rounded border border-border flex flex-col">
+              <div className="p-2 border-b flex items-center justify-between">
+                <h3 className="text-sm text-text-muted">State Distribution</h3>
+              </div>
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 p-2 min-h-0">
+                  {loading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Loader />
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col gap-2 flex-1">
+                      {stateDistribution
+                        .filter((entry) => entry.state !== "UNRECORDED")
+                        .map((entry) => (
+                          <div
+                            key={entry.state}
+                            className="flex flex-col gap-1 flex-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-text-muted font-medium">
+                                {entry.state}
+                              </span>
+                              <div className="flex items-center gap-2 text-text-muted">
+                                <span>{formatDuration(entry.total)}</span>
+                                <span>
+                                  ({entry.percentage?.toFixed(1) ?? 0}%)
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-surface rounded-full flex-1 overflow-clip">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${entry.percentage ?? 0}%`,
+                                  backgroundColor: getStatusColor(
+                                    entry.state,
+                                    theme
+                                  ),
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          <div
-            className={`bg-foreground rounded border flex flex-col md:col-span-2 lg:col-span-3 lg:h-64 ${
-              !isToday ? "opacity-50" : ""
-            }`}>
-            <div className="p-2 border-b flex items-center justify-between">
-              <h3 className="text-sm text-text-muted">
-                Machines ({machines.length})
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
-              {machines &&
-                machines.map((machine: ExpandedMachine) => (
-                  <div
-                    key={machine.id}
-                    onClick={() => {
-                      setSelectedMachine(machine);
-                    }}
-                    className="flex flex-col justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div
-                          className="w-2 h-2 rounded-full border border-border"
-                          style={{
-                            backgroundColor: getStatusColor(
-                              machine.status,
-                              theme
-                            ),
-                          }}
+          <div className="flex-1 grid grid-cols-4 gap-2">
+            <div className="bg-foreground rounded border border-border col-span-3 flex flex-col">
+              <div className="p-2 border-b flex items-center justify-between">
+                <h3 className="text-sm text-text-muted">Machines (Live)</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-1">
+                {machines &&
+                  machines.map((machine: ExpandedMachine) => (
+                    <div
+                      key={machine.id}
+                      onClick={() => {
+                        setSelectedMachine(machine);
+                      }}
+                      className="flex flex-col flex-1 justify-between p-2 gap-1 bg-surface rounded hover:bg-surface/80 border border-border cursor-pointer text-text-muted text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-sm font-medium text-text-muted truncate">
+                            {machine.name}
+                          </p>
+                        </div>
+                        <StatusBadge
+                          variant={
+                            getVariantFromStatus(machine.status) as
+                              | "error"
+                              | "success"
+                              | "warning"
+                              | "info"
+                          }
+                          label={machine.status}
+                          size="sm"
                         />
-                        <p className="text-sm font-medium text-text-muted truncate">
-                          {machine.name}
-                        </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 min-w-0 flex-1">
-                        <Box
-                          size={12}
-                          className="text-text-muted flex-shrink-0"
-                        />
+                      <div className="flex items-center justify-between">
                         <span className="truncate text-xs">
-                          {machine.program || "-"}
+                          Program:{" "}
+                          {machine.program === "NO PROGRAM"
+                            ? "-"
+                            : machine.program || "-"}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-text-muted text-xs">
+                          Spindle RPM:
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {machine.spindleSpeed || 0}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-text-muted text-xs">
+                          Controller:
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {machine.controller || "-"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-muted text-xs">
+                          Execution:
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {machine.execution || "-"}
                         </span>
                       </div>
                     </div>
+                  ))}
+              </div>
+            </div>
+            <div className="bg-foreground rounded border border-border flex flex-col">
+              <div className="p-2 border-b flex items-center justify-between">
+                <h3 className="text-sm text-text-muted">Alarms</h3>
+              </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-text-muted text-xs">Spindle</span>
-                      <span className="text-xs text-text-muted">
-                        {machine.spindleSpeed || 0} RPM
-                      </span>
-                    </div>
-                    <div className="w-full rounded-full h-1.5 border border-border bg-surface overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all bg-text-muted/50"
-                        style={{
-                          width: `${(machine.spindleSpeed || 0) / 100}%`,
-                        }}
-                      />
-                    </div>
+              <div className="p-2 space-y-2 flex-1 flex flex-col">
+                {loading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader />
                   </div>
-                ))}
-            </div>
-          </div>
-          <div className="bg-foreground rounded border flex flex-col">
-            <div className="p-2 border-b flex items-center justify-between">
-              <h3 className="text-sm text-text-muted">Alarms</h3>
-            </div>
-
-            <div className="p-2 space-y-2 flex-1 flex flex-col">
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Loader />
-                </div>
-              ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
-                overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
-                  <div
-                    key={idx}
-                    className="p-2 bg-surface rounded border border-border flex justify-between">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle
-                        size={16}
-                        className="text-error"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-text-muted">
-                          {alarm.message}
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          {alarm.machineId}
-                        </p>
+                ) : overview?.alarms.length && overview?.alarms.length > 0 ? (
+                  overview?.alarms.map((alarm: IOverviewAlarm, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-surface rounded border border-border flex justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle
+                          size={16}
+                          className="text-error"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-text-muted">
+                            {alarm.message}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {alarm.machineId}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-text-muted leading-none">
+                        {formatDistance(new Date(alarm.timestamp), new Date(), {
+                          addSuffix: true,
+                        })}
                       </div>
                     </div>
-                    <div className="text-xs text-text-muted leading-none">
-                      {formatDistance(new Date(alarm.timestamp), new Date(), {
-                        addSuffix: true,
-                      })}
-                    </div>
+                  ))
+                ) : (
+                  <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
+                    No alarms
                   </div>
-                ))
-              ) : (
-                <div className="flex-1 text-text-muted text-sm py-2 flex items-center justify-center">
-                  No alarms
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -881,7 +989,7 @@ const Dashboard = () => {
             setSelectedMachine(null);
           }}
           title={`Machine Details - ${selectedMachine.name}`}
-          size="md">
+          size="xs">
           <MachineDetails machine={selectedMachine} />
         </Modal>
       )}

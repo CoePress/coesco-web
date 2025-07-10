@@ -1,7 +1,7 @@
-import { Configuration } from "@prisma/client";
-import { BaseService } from "./_";
+import { BaseService } from "./_base.service";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { Configuration } from "@prisma/client";
 
 type ConfigurationAttributes = Omit<
   Configuration,
@@ -13,11 +13,13 @@ export class ConfigurationService extends BaseService<Configuration> {
   protected entityName = "Configuration";
   protected modelName = "configuration";
 
+  async getConfigurationsWithOptions(productClassId?: string) {}
+
   protected async validate(
     configuration: ConfigurationAttributes
   ): Promise<void> {
     if (!configuration.name) {
-      throw new BadRequestError("Name is required");
+      throw new BadRequestError("Configuration name is required");
     }
   }
 }

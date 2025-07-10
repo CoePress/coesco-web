@@ -2,10 +2,10 @@
 
 ## To Do
 
+- Add ability to reset the fanuc adapter from portal
 - Move coesco-web repo into coe press organization
   - Upgrade to pro plan on vercel or look into other hosting options
 - Setup proper CI/CD for both frontend & backend
-- Docker logs errors infinitely until resolved
 - Rethink rate limiting
 
 ## Tools
@@ -15,7 +15,8 @@
 - Vercel Pro ($20/user/month - can get by with one account)
 - Google API (free with limits)
 
-## Pre Demo
+## Questions
 
-- Sample report
-- Machine history bug
+- Should we separate machines, parts & services in quote-details?
+- What fields do we want displayed in quote-details items table?
+- Who can access the option rule-manager?

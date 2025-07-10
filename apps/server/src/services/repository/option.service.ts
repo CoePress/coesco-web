@@ -1,18 +1,25 @@
-import { Option } from "@prisma/client";
-import { BaseService } from "./_";
+import { BaseService } from "./_base.service";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { OptionHeader } from "@prisma/client";
 
-type OptionAttributes = Omit<Option, "id" | "createdAt" | "updatedAt">;
+type OptionHeaderAttributes = Omit<
+  OptionHeader,
+  "id" | "createdAt" | "updatedAt"
+>;
 
-export class OptionService extends BaseService<Option> {
-  protected model = prisma.option;
-  protected entityName = "Option";
-  protected modelName = "option";
+export class OptionHeaderService extends BaseService<OptionHeader> {
+  protected model = prisma.optionHeader;
+  protected entityName = "OptionHeader";
+  protected modelName = "optionHeader";
 
-  protected async validate(option: OptionAttributes): Promise<void> {
-    if (!option.name) {
-      throw new BadRequestError("Name is required");
+  async getConfigurationsWithOptions(productClassId?: string) {}
+
+  protected async validate(
+    optionHeader: OptionHeaderAttributes
+  ): Promise<void> {
+    if (!optionHeader.name) {
+      throw new BadRequestError("Option header name is required");
     }
   }
 }

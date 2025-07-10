@@ -1,5 +1,5 @@
 import { User } from "@prisma/client";
-import { BaseService } from "./_";
+import { BaseService } from "./_base.service";
 import { prisma } from "@/utils/prisma";
 
 type UserAttributes = Omit<User, "id" | "createdAt" | "updatedAt">;

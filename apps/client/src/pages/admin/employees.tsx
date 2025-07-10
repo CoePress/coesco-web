@@ -9,8 +9,8 @@ import {
   Loader,
   Modal,
 } from "@/components";
-import { TableColumn } from "@/components/shared/table";
-import useGetEmployees from "@/hooks/admin/use-get-employees";
+import { TableColumn } from "@/components/common/table";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
 import useUpdateEmployee from "@/hooks/admin/use-update-employee";
 import { IEmployee } from "@/utils/types";
@@ -99,7 +99,13 @@ const Employees = () => {
 
   const include = useMemo(() => ["user"], []);
 
-  const { employees, loading, error, pagination, refresh } = useGetEmployees({
+  const {
+    entities: employees,
+    loading,
+    error,
+    pagination,
+    refresh,
+  } = useGetEntities("/employees", {
     page,
     limit,
     sort,

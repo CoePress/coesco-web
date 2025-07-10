@@ -13,18 +13,14 @@ import { ContactService } from "./repository/contact.service";
 import { JourneyService } from "./repository/journey.service";
 import { QuoteService } from "./repository/quote.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
-import { ProductClassService } from "./repository/product-class.service";
-import { OptionCategoryService } from "./repository/option-category.service";
-import { OptionService } from "./repository/option.service";
-import { ConfigurationService } from "./repository/configuration.service";
-import { OptionRulesService } from "./repository/option-rules.services";
-import { ConfigurationOptionService } from "./repository/configuration-option.service";
+import { ConfigService } from "./domain/config.service";
 import { SalesService } from "./domain/sales.service";
 import { ItemService } from "./repository/item.service";
 import { MachineService } from "./repository/machine.service";
 import { MachineStatusService } from "./repository/machine-status.service";
 import { UserService } from "./repository/user.service";
-import { QuoteBuilderService } from "./domain/quote-builder.service";
+import { QuotingService } from "./domain/quoting.service";
+import { ConfigurationService } from "./repository/configuration.service";
 
 export const machineService = new MachineService();
 export const machineMonitorService = new MachineMonitorService();
@@ -42,16 +38,13 @@ export const contactService = new ContactService();
 export const journeyService = new JourneyService();
 export const quoteService = new QuoteService();
 export const quoteItemService = new QuoteItemService();
-export const productClassService = new ProductClassService();
-export const optionCategoryService = new OptionCategoryService();
-export const optionService = new OptionService();
-export const optionRulesService = new OptionRulesService();
-export const configurationService = new ConfigurationService();
-export const configurationOptionService = new ConfigurationOptionService();
 export const salesService = new SalesService();
 export const itemService = new ItemService();
 export const userService = new UserService();
-export const quoteBuilderService = new QuoteBuilderService();
+export const configurationService = new ConfigurationService();
+
+export const quotingService = new QuotingService();
+export const configService = new ConfigService();
 
 export const initializeServices = async () => {
   socketService.setIo(io);

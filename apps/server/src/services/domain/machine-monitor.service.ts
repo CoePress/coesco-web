@@ -34,6 +34,27 @@ interface CachedMachineState {
   timestamp: string;
 }
 
+interface MachineStateData {
+  id: string;
+  machineId: string;
+  state: MachineState;
+  execution: string;
+  controller: string;
+  program: string;
+  tool: string;
+  metrics: any;
+  alarmCode: string;
+  alarmMessage: string;
+  startTime: Date;
+  endTime: Date | null;
+  duration: number;
+  createdAt: Date;
+  updatedAt: Date;
+  machine?: {
+    type: string;
+  };
+}
+
 export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
   private readonly offlineState = {
@@ -131,7 +152,8 @@ export class MachineMonitorService {
     this.activeRequests.clear();
   }
 
-  async getMachineOverview(startDate: string, endDate: string) {
+  async getMachineOverview(startDate: string, endDate: string, view: string) {
+    view = view || "all";
     const now = new Date();
     const dateRange = createDateRange(startDate, endDate);
 
@@ -145,10 +167,12 @@ export class MachineMonitorService {
       machineStatusService.getByDateRange({
         startDate: dateRange.startDate.toISOString(),
         endDate: dateRange.endDate.toISOString(),
+        include: { machine: true },
       }),
       machineStatusService.getByDateRange({
         startDate: dateRange.previousStartDate.toISOString(),
         endDate: dateRange.previousEndDate.toISOString(),
+        include: { machine: true },
       }),
     ]);
 
@@ -156,6 +180,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
+    // hardcoded since we dont have active status
     const machineCount = machines.data.length - 2;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
     const dailyFleetTarget = dailyMachineTarget * machineCount;
@@ -218,7 +243,10 @@ export class MachineMonitorService {
       divisions,
       states.data,
       machineCount,
-      now
+      now,
+      view,
+      machines.data,
+      scale
     );
 
     const totalAvailableTime =
@@ -271,14 +299,15 @@ export class MachineMonitorService {
 
   async createMachineStatus(data: any) {
     return await prisma.$transaction(async (tx) => {
-      const openStatus = await tx.machineStatus.findFirst({
+      const openStatuses = await tx.machineStatus.findMany({
         where: {
           machineId: data.machineId,
           endTime: null,
         },
       });
 
-      if (openStatus) {
+      // Close ALL open statuses for this machine
+      for (const openStatus of openStatuses) {
         await tx.machineStatus.update({
           where: { id: openStatus.id },
           data: {
@@ -380,15 +409,16 @@ export class MachineMonitorService {
         });
 
         const openStatus = openStatuses.data[0];
+        const needsNewState = !openStatus || openStatus.state !== state;
 
-        if (!openStatus || openStatus.state !== state) {
+        if (needsNewState) {
           try {
-            if (openStatus) {
-              await machineStatusService.update(openStatus.id, {
+            // Close ALL open statuses for this machine
+            for (const status of openStatuses.data) {
+              await machineStatusService.update(status.id, {
                 endTime: new Date(),
                 duration:
-                  new Date().getTime() -
-                  new Date(openStatus.startTime).getTime(),
+                  new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 
@@ -460,15 +490,17 @@ export class MachineMonitorService {
           },
         });
         const openStatus = openStatuses.data[0];
+        const needsOfflineState =
+          !openStatus || openStatus.state !== MachineState.OFFLINE;
 
-        if (!openStatus || openStatus.state !== MachineState.OFFLINE) {
+        if (needsOfflineState) {
           try {
-            if (openStatus) {
-              await machineStatusService.update(openStatus.id, {
+            // Close ALL open statuses for this machine
+            for (const status of openStatuses.data) {
+              await machineStatusService.update(status.id, {
                 endTime: new Date(),
                 duration:
-                  new Date().getTime() -
-                  new Date(openStatus.startTime).getTime(),
+                  new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 
@@ -926,6 +958,79 @@ export class MachineMonitorService {
     return formatters[scale as keyof typeof formatters]?.(date) || "";
   }
 
+  private formatDivisionRangeLabel(
+    startDate: Date,
+    endDate: Date,
+    scale: string
+  ): string {
+    const formatters = {
+      [TimeScale.HOUR]: (start: Date, end: Date) => {
+        const startHours = (start.getUTCHours() - 4 + 24) % 12 || 12;
+        const startAmpm =
+          (start.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+
+        const adjustedEnd = new Date(end);
+        if (
+          end.getUTCMinutes() > 0 ||
+          end.getUTCSeconds() > 0 ||
+          end.getUTCMilliseconds() > 0
+        ) {
+          adjustedEnd.setUTCHours(end.getUTCHours() + 1, 0, 0, 0);
+        }
+
+        const endHours = (adjustedEnd.getUTCHours() - 4 + 24) % 12 || 12;
+        const endAmpm =
+          (adjustedEnd.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+        return `${startHours}:00 ${startAmpm} - ${endHours}:00 ${endAmpm}`;
+      },
+      [TimeScale.DAY]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.WEEK]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.MONTH]: (start: Date, end: Date) => {
+        const startStr = start.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        const endStr = end.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+      },
+      [TimeScale.QUARTER]: (start: Date, end: Date) => {
+        const startQ = `Q${Math.floor(start.getMonth() / 3) + 1} ${start.getFullYear()}`;
+        const endQ = `Q${Math.floor(end.getMonth() / 3) + 1} ${end.getFullYear()}`;
+        return `${startQ} - ${endQ}`;
+      },
+      [TimeScale.YEAR]: (start: Date, end: Date) => {
+        return `${start.getFullYear()} - ${end.getFullYear()}`;
+      },
+    };
+
+    return (
+      formatters[scale as keyof typeof formatters]?.(startDate, endDate) || ""
+    );
+  }
+
   async closeMachineStatus(machineId: string) {
     const openStatuses = await machineStatusService.getAll({
       filter: {
@@ -1047,33 +1152,131 @@ export class MachineMonitorService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: any[],
+    states: MachineStateData[],
     machineCount: number,
-    now: Date
+    now: Date,
+    view: string = "all",
+    machines: any[],
+    scale: string
   ) {
+    if (view === "all") {
+      return divisions.map((division) => {
+        const divisionTotals = this.calculateStatusTotals(
+          states,
+          division.start,
+          division.end,
+          now
+        );
+
+        const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
+        const divisionDuration =
+          division.end.getTime() - division.start.getTime();
+        const divisionTotalTime = divisionDuration * machineCount;
+        const isFuture = division.start > now;
+
+        return {
+          label: division.label,
+          rangeLabel: this.formatDivisionRangeLabel(
+            division.start,
+            division.end,
+            scale
+          ),
+          start: division.start,
+          end: division.end,
+          utilization: isFuture
+            ? null
+            : Number(
+                ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
+              ),
+          runtime: divisionActiveTime,
+        };
+      });
+    }
+
+    // Group by machine type or machine ID
+    const groupedStates = states.reduce(
+      (acc, state) => {
+        const key =
+          view === "group"
+            ? (state.machine?.type ?? "unknown")
+            : state.machineId;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(state);
+        return acc;
+      },
+      {} as Record<string, typeof states>
+    );
+
+    // Create all possible groups/machines to ensure they're all returned
+    const allGroups = new Set<string>();
+    if (view === "group") {
+      // Get all unique machine types
+      machines.forEach((machine) => {
+        if (machine.type) {
+          allGroups.add(machine.type);
+        }
+      });
+    } else {
+      // Get all machine IDs
+      machines.forEach((machine) => {
+        if (machine.id) {
+          allGroups.add(machine.id);
+        }
+      });
+    }
+
     return divisions.map((division) => {
-      const divisionTotals = this.calculateStatusTotals(
-        states,
-        division.start,
-        division.end,
-        now
-      );
-
-      const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
-      const divisionDuration =
-        division.end.getTime() - division.start.getTime();
-      const divisionTotalTime = divisionDuration * machineCount;
-      const isFuture = division.start > now;
-
-      return {
+      const result: any = {
         label: division.label,
+        rangeLabel: this.formatDivisionRangeLabel(
+          division.start,
+          division.end,
+          scale
+        ),
         start: division.start,
         end: division.end,
-        utilization: isFuture
-          ? null
-          : Number(((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)),
-        stateTotals: divisionTotals,
+        groups: {},
       };
+
+      // Iterate through all possible groups to ensure they're all included
+      for (const key of allGroups) {
+        const groupStates = groupedStates[key] || [];
+        const divisionTotals = this.calculateStatusTotals(
+          groupStates as any[],
+          division.start,
+          division.end,
+          now
+        );
+
+        const divisionActiveTime = divisionTotals[MachineState.ACTIVE] ?? 0;
+        const divisionDuration =
+          division.end.getTime() - division.start.getTime();
+
+        // Calculate machine count for this specific group
+        let groupMachineCount = 0;
+        if (view === "group") {
+          groupMachineCount = machines.filter((m) => m.type === key).length;
+        } else {
+          groupMachineCount = machines.find((m) => m.id === key) ? 1 : 0;
+        }
+
+        const divisionTotalTime = divisionDuration * groupMachineCount;
+        const isFuture = division.start > now;
+
+        result.groups[key] = {
+          utilization:
+            isFuture || divisionTotalTime === 0
+              ? null
+              : Number(
+                  ((divisionActiveTime / divisionTotalTime) * 100).toFixed(2)
+                ),
+          runtime: divisionActiveTime,
+        };
+      }
+
+      return result;
     });
   }
 

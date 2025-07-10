@@ -1,5 +1,5 @@
 import { journeyService, salesService } from "@/services";
-import { BaseController } from "./_";
+import { BaseController } from "./_base.controller";
 import { Journey } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 

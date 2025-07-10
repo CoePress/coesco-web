@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FileText, Mail, Clock, Plus, Send } from "lucide-react";
 
 import { Button, Card, PageHeader, Modal } from "@/components";
-import useGetTemplates from "@/hooks/emails/use-get-templates";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { instance } from "@/utils";
 
 const Reports = () => {
@@ -19,7 +19,11 @@ const Reports = () => {
   const [timezone, setTimezone] = useState("America/New_York");
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
 
-  const { templates, loading, error } = useGetTemplates();
+  const {
+    entities: templates,
+    loading,
+    error,
+  } = useGetEntities("/email/templates");
 
   const timezones = [
     "America/New_York",
@@ -357,8 +361,8 @@ const Reports = () => {
                   {selectedTemplate
                     ? "Template Preview"
                     : selectedReport
-                    ? "Report Details"
-                    : "Preview"}
+                      ? "Report Details"
+                      : "Preview"}
                 </h3>
               </div>
               <div className="flex-1 overflow-hidden">

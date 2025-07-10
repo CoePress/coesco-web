@@ -5,7 +5,9 @@ import {
   useEffect,
   ReactNode,
   useContext,
+  useRef,
 } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import env from "@/config/env";
 
@@ -25,12 +27,32 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<any>(null);
-  const [employee, setEmployee] = useState<any>(null);
+  const [user, setUserState] = useState<any>(null);
+  const [employee, setEmployeeState] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const hasCheckedSession = useRef(false);
+
+  const setUser = (user: any, employee: any) => {
+    setUserState(user);
+    setEmployeeState(employee);
+    hasCheckedSession.current = true;
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    const checkUser = async () => {
+    const checkSession = async () => {
+      if (location.pathname === "/login" || location.pathname === "/callback") {
+        setIsLoading(false);
+        return;
+      }
+
+      if (hasCheckedSession.current) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const { data } = await axios.get(`${env.VITE_API_URL}/auth/session`, {
           headers: {
@@ -39,18 +61,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           withCredentials: true,
         });
 
-        setUser(data.user);
-        setEmployee(data.employee);
-      } catch (error) {
-        setUser(null);
-        setEmployee(null);
+        setUserState(data.user);
+        setEmployeeState(data.employee);
+        hasCheckedSession.current = true;
+      } catch (error: any) {
+        console.log("Session check failed:", error.response?.status);
+        setUserState(null);
+        setEmployeeState(null);
+        hasCheckedSession.current = true;
+
+        if (location.pathname !== "/login") {
+          navigate("/login");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkUser();
-  }, []);
+    checkSession();
+  }, [location.pathname, navigate]);
 
   return (
     <AuthContext.Provider value={{ user, employee, setUser, isLoading }}>

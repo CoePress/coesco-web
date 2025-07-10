@@ -5,7 +5,7 @@ import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { createServer } from "http";
 import routes from "./routes";
-import { __dev__, __prod__, config } from "./config/config";
+import { __dev__, __prod__ } from "./config/config";
 import { errorHandler } from "./middleware/error.middleware";
 import {
   cspMiddleware,
@@ -58,6 +58,7 @@ const limiter = rateLimit({
   },
   skip: (req, res) => __dev__,
 });
+
 app.use("/api", limiter);
 
 app.use((req, res, next) => {

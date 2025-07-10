@@ -9,6 +9,7 @@ import { EmployeeController } from "./employee.controller";
 import { JourneyController } from "./journey.controller";
 import { ItemController } from "./item.controller";
 import { MachineStatusController } from "./machine-status.controller";
+import { ConfigController } from "./config.controller";
 
 export const authController = new AuthController();
 export const emailController = new EmailController();
@@ -21,3 +22,4 @@ export const contactController = new ContactController();
 export const journeyController = new JourneyController();
 export const quoteController = new QuoteController();
 export const itemController = new ItemController();
+export const configController = new ConfigController();

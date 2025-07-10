@@ -1,13 +1,12 @@
 import { StatusBadge, Table } from "@/components";
-import PageHeader from "@/components/shared/page-header";
-import { Calendar, Download, Loader } from "lucide-react";
-import { format, startOfToday } from "date-fns";
-import { useState } from "react";
-import useGetMachines from "@/hooks/production/use-get-machines";
+import PageHeader from "@/components/common/page-header";
+import { Download, Loader } from "lucide-react";
+import { format } from "date-fns";
+import { useState, useMemo } from "react";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { formatDuration, getVariantFromStatus } from "@/utils";
-import { TableColumn } from "@/components/shared/table";
+import { TableColumn } from "@/components/common/table";
 import { IMachineStatus } from "@/utils/types";
-import useGetStatuses from "@/hooks/production/use-get-statuses";
 
 // type DropdownProps = {
 //   options: {
@@ -70,44 +69,39 @@ import useGetStatuses from "@/hooks/production/use-get-statuses";
 // };
 
 const MachineHistory = () => {
-  const parseDateParam = (param: string | null, fallback: Date) => {
-    if (!param) return fallback;
-    const [year, month, day] = param.split("-").map(Number);
-    const d = new Date(year, month - 1, day);
-    return isNaN(d.getTime()) ? fallback : d;
-  };
-
-  const getInitialDateRange = () => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      start: parseDateParam(params.get("startDate"), startOfToday()),
-      end: parseDateParam(params.get("endDate"), new Date()),
-    };
-  };
-
-  const [dateRange, setDateRange] = useState(getInitialDateRange);
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [sort, setSort] = useState("startTime");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedMachine, setSelectedMachine] = useState("");
+
+  const filter = useMemo(
+    () => ({
+      state: selectedState || undefined,
+      machineId: selectedMachine || undefined,
+    }),
+    [selectedState, selectedMachine]
+  );
 
   const {
-    states,
+    entities: states,
     loading: statesLoading,
     error: statesError,
     pagination,
-  } = useGetStatuses({
+  } = useGetEntities("/machines/statuses", {
     page,
     limit,
     sort,
     order,
+    filter,
   });
 
   const {
-    machines,
+    entities: machines,
     loading: machinesLoading,
     error: machinesError,
-  } = useGetMachines();
+  } = useGetEntities("/machines");
 
   const loading = statesLoading || machinesLoading;
   const error = statesError || machinesError;
@@ -126,19 +120,8 @@ const MachineHistory = () => {
     ...(machines?.map((machine) => ({
       label: machine.name,
       value: machine.id,
-      // disabled: !states?.some((state) => state.machineId === machine.id),
     })) || []),
   ];
-
-  const [selectedState, setSelectedState] = useState("");
-  const [selectedMachine, setSelectedMachine] = useState("");
-
-  const filteredStates =
-    states?.filter(
-      (state) =>
-        (!selectedState || state.state === selectedState) &&
-        (!selectedMachine || state.machineId === selectedMachine)
-    ) || [];
 
   const columns = [
     {
@@ -256,13 +239,6 @@ const MachineHistory = () => {
             label: "Filter by state",
           },
           {
-            type: "datepicker",
-            dateRange: dateRange,
-            setDateRange: setDateRange,
-            icon: <Calendar size={16} />,
-          },
-
-          {
             type: "button",
             label: "Export",
             icon: <Download size={16} />,
@@ -273,8 +249,8 @@ const MachineHistory = () => {
 
       <Table<IMachineStatus>
         columns={columns as TableColumn<IMachineStatus>[]}
-        data={filteredStates}
-        total={filteredStates.length}
+        data={states || []}
+        total={pagination.total}
         idField="id"
         pagination
         currentPage={pagination.page}
