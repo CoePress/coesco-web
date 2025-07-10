@@ -1,6 +1,6 @@
 # Website Audit 7/10/2025
 
-## PageSpeed Insights
+## PageSpeed Insights (Homepage)
 
 - **Mobile**
 - Performance: 8
@@ -24,6 +24,8 @@
   - https://cpec.com/equipment/complete-lines/cut-to-length/ this link falls under Equipment & Applications
 - Navbar is a mess - multiple links to the same pages (contacts), careers shouldn't be under contacts
 - https://cpec.com/videos/ remove auto play, can't pause or stop the video in hero section
+- Super weird scroll behavior on multiple pages - https://cpec.com/service/#pm-support
+- Cookie & privacy policies should be on their own pages, not in modals
 
 ## Quick Wins
 
