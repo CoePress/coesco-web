@@ -15,6 +15,10 @@ scp -r . system@10.231.200.20:~/App/
 ## Service
 
 ```bash
+# SSH into the pi
+ssh system@10.231.200.20
+
+# Reload Daemon
 sudo systemctl daemon-reload
 
 # Stop the service

@@ -9,5 +9,12 @@ def test_endpoint():
         "status": "success"
     })
 
+@app.route('/sample', methods=['GET'])
+def sample_endpoint():
+    return jsonify({
+        "message": "Sample API is working!",
+        "status": "success"
+    })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,103 +1,31 @@
-# Simple Website Audit SOP
+# Website Audit 7/10/2025
 
-**Time:** 1-2 hours | **Tools:** Google PageSpeed, SEMrush | **Sites:** Corporate/E-commerce
+## PageSpeed Insights
 
----
+- **Mobile**
+- Performance: 8
+- Accessibility: 84
+- Best Practices: 93
+- SEO: 85
 
-## Setup (5 min)
+- **Desktop**
+- Performance: 33
+- Accessibility: 87
+- Best Practices: 74
+- SEO: 85
 
-- [ ] Get website URL and access credentials
-- [ ] Open PageSpeed Insights & SEMrush
-- [ ] Create audit report document
+## Suggestions
 
----
+- Remove video from hero section (root cause for performance issues)
+- Remove excessive & slow animations (https://cpec.com/applications/ - example)
+- Structure equipment & applications information for programmatic SEO
+- Clean the url structure (huge when it comes to site crawling)
+  - https://cpec.com/why-coe/news/ news shouldn't be a child of why-coe
+  - https://cpec.com/equipment/complete-lines/cut-to-length/ this link falls under Equipment & Applications
+- Navbar is a mess - multiple links to the same pages (contacts), careers shouldn't be under contacts
+- https://cpec.com/videos/ remove auto play, can't pause or stop the video in hero section
 
-## Technical Health (30 min)
+## Quick Wins
 
-### Core Technical
-
-- [ ] SSL certificate working (https://)
-- [ ] Site loads on mobile & desktop
-- [ ] No broken links on main pages
-- [ ] XML sitemap exists (`/sitemap.xml`)
-- [ ] Robots.txt exists (`/robots.txt`)
-
-### Performance (PageSpeed)
-
-- [ ] Test homepage (mobile & desktop)
-- [ ] Test 2-3 key pages
-- [ ] Record Core Web Vitals scores
-- [ ] Note major speed issues
-
----
-
-## SEO Basics (25 min)
-
-### On-Page Elements
-
-- [ ] Title tags on all pages (50-60 chars)
-- [ ] Meta descriptions present (150-160 chars)
-- [ ] H1 tags unique on each page
-- [ ] Images have alt text
-- [ ] Contact info easily found
-
-### SEMrush Check
-
-- [ ] Run site audit
-- [ ] Check top 10 organic keywords
-- [ ] Review major SEO issues flagged
-- [ ] Note competitor performance
-
----
-
-## User Experience (20 min)
-
-### Navigation & Mobile
-
-- [ ] Main navigation works
-- [ ] Mobile menu functional
-- [ ] Contact forms work
-- [ ] Site search works (if present)
-- [ ] Text readable on mobile
-
-### E-commerce (if applicable)
-
-- [ ] Add to cart works
-- [ ] Checkout process functional
-- [ ] Payment options clear
-- [ ] Product images load properly
-
----
-
-## Security & Compliance (10 min)
-
-- [ ] Privacy policy present
-- [ ] Terms of service available
-- [ ] Cookie consent (if needed)
-- [ ] No security warnings in browser
-
----
-
-## Quick Wins Report
-
-### High Priority (Fix Now)
-
-- [ ] Security issues
-- [ ] Broken functionality
-- [ ] Major speed problems (>5s load)
-
-### Medium Priority (Fix This Month)
-
-- [ ] Performance improvements
-- [ ] Missing SEO elements
-- [ ] UX improvements
-
-### Low Priority (Fix Later)
-
-- [ ] Nice-to-have features
-- [ ] Content optimizations
-
----
-
-**Total Time:** ~90 minutes  
-**Next Audit:** 3 months
+- Dynamic copyright year in footer
+- Manifest (simple LLM friendly page) - What we do & for who, best applications, additional services / info
