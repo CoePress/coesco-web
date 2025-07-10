@@ -138,5 +138,9 @@ export const YES_NO_OPTIONS = [
 
 export const REEL_MODEL_OPTIONS = [
   { value: "CPR-040", label: "CPR-040" },
-  { value: "CPR-"}
+  { value: "CPR-060", label: "CPR-060" },
+  { value: "CPR-080", label: "CPR-080" },
+  { value: "CPR-100", label: "CPR-100" },
+  { value: "CPR-150", label: "CPR-150" },
+  { value: "CPR-200", label: "CPR-200" },
 ];
