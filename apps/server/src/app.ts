@@ -17,6 +17,10 @@ import { Server } from "socket.io";
 const app = express();
 const httpServer = createServer(app);
 
+// Configure server to handle keep-alive connections properly
+httpServer.keepAliveTimeout = 5000; // 5 seconds
+httpServer.headersTimeout = 6000; // 6 seconds (higher than keepAliveTimeout)
+
 const corsOptions = {
   origin: __dev__
     ? "http://localhost:5173"

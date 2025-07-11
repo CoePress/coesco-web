@@ -8,7 +8,7 @@
     "db:fresh": "prisma migrate reset --force && rm -rf prisma/migrations && prisma migrate dev --name init && prisma format && prisma generate",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "dev:clean": "npm run kill:port && npm run dev",
-    "kill:port": "for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :8080') do taskkill /f /pid %a 2>nul",
+    "kill:port": "for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :8080 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul",
     "kill:node": "taskkill /f /im node.exe 2>nul || echo No Node.js processes found",
     "copy": "copyfiles -u 1 \"src/assets/**/*\" dist",
     "build": "tsc && tsc-alias && npm run copy",

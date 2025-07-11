@@ -53,7 +53,23 @@ export class SocketService {
   async stop() {
     if (!this.io) return;
     try {
-      await this.io.close();
+      logger.info("Closing Socket.IO server...");
+
+      // Close all client connections first
+      this.io.of("/client").disconnectSockets(true);
+
+      // Then close the server
+      await new Promise<void>((resolve, reject) => {
+        this.io!.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      logger.info("Socket.IO server closed");
     } catch (err) {
       logger.error(`Socket.IO close error: ${err}`);
     }

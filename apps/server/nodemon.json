@@ -7,6 +7,10 @@
     "NODE_ENV": "development"
   },
   "restartable": "rs",
-  "delay": 1000,
-  "verbose": true
+  "delay": 2000,
+  "verbose": true,
+  "signal": "SIGTERM",
+  "killSignal": "SIGKILL",
+  "stdout": true,
+  "stderr": true
 }
