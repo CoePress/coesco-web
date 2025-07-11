@@ -16,7 +16,9 @@ function App() {
 
       {isInstalled ? (
         <div className="text-center">
-          <p className="text-lg text-green-600 mb-2">✅ App is installed!</p>
+          <p className="text-lg text-green-600 mb-2">
+            ✅ App is installed! Version: 0.0.1
+          </p>
           <p className="text-sm text-gray-600">
             You're running the PWA version
           </p>
