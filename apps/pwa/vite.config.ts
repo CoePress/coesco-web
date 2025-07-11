@@ -10,6 +10,10 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "robots.txt"],
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       manifest: {
         name: "Coesco Web App",
         short_name: "Coesco",

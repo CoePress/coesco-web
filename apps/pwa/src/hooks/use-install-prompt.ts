@@ -39,6 +39,20 @@ export function useInstallPrompt(): InstallPromptState {
     const isPWAInstalled = isStandalone || isFullscreen || isMinimalUI;
     setIsInstalled(isPWAInstalled);
 
+    // Handle service worker updates
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        // New service worker has taken control, reload the page
+        window.location.reload();
+      });
+
+      // Check for updates on app start
+      navigator.serviceWorker.ready.then((registration) => {
+        // Check for updates every time the app is opened
+        registration.update();
+      });
+    }
+
     if (isIOSDevice) {
       // iOS Safari and Chrome support PWA installation but not beforeinstallprompt
       // Check if it's in standalone mode (already installed)
