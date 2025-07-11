@@ -20,20 +20,20 @@ export default defineConfig({
         start_url: "/",
         display: "standalone",
         background_color: "#ffffff",
-        theme_color: "#1f2937", // Match Tailwind's gray-800 or your brand color
+        theme_color: "#000000",
         icons: [
           {
-            src: "/vite.svg",
+            src: "/react.svg",
             sizes: "192x192",
             type: "image/svg+xml",
           },
           {
-            src: "/vite.svg",
+            src: "/react.svg",
             sizes: "512x512",
             type: "image/svg+xml",
           },
           {
-            src: "/vite.svg",
+            src: "/react.svg",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any maskable",
