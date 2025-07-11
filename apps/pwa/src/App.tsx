@@ -1,90 +1,173 @@
-import { useInstallPrompt } from "./hooks/use-install-prompt";
+import { useState } from "react";
 
 function App() {
-  const {
-    isSupported,
-    isIOS,
-    isIOSSafari,
-    isIOSChrome,
-    isInstalled,
-    promptInstall,
-  } = useInstallPrompt();
+  const [activeSection, setActiveSection] = useState("dashboard");
+
+  const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "sales", label: "Sales", icon: "💰" },
+    { id: "production", label: "Production", icon: "🏭" },
+    { id: "admin", label: "Admin", icon: "⚙️" },
+  ];
+
+  const quickActions = [
+    { label: "New Quote", icon: "📋", color: "bg-blue-500" },
+    { label: "Machine Status", icon: "🔧", color: "bg-green-500" },
+    { label: "Reports", icon: "📈", color: "bg-purple-500" },
+    { label: "Settings", icon: "⚙️", color: "bg-gray-500" },
+  ];
+
+  const stats = [
+    { label: "Active Quotes", value: "12", change: "+3" },
+    { label: "Machines Online", value: "8/10", change: "+2" },
+    { label: "Today's Orders", value: "5", change: "+1" },
+  ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-900 p-4">
-      <h1 className="text-2xl font-bold mb-4">Coesco PWA</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="flex justify-between items-center p-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg">C</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Coesco</h1>
+              <p className="text-xs text-gray-500">Internal Dashboard</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              v0.0.3
+            </span>
+            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-gray-600 text-sm">👤</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {isInstalled ? (
-        <div className="text-center">
-          <p className="text-lg text-green-600 mb-2">
-            ✅ App is installed! Version: 0.0.3
-          </p>
-          <p className="text-sm text-gray-600">
-            You're running the PWA version
+      {/* Main Content */}
+      <main className="flex-1 p-4 pb-20">
+        {/* Welcome Section */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            Good Morning
+          </h2>
+          <p className="text-gray-600 text-sm">
+            Here's what's happening with your business today
           </p>
         </div>
-      ) : isSupported ? (
-        <div className="text-center">
-          {isIOSSafari ? (
-            <div className="max-w-md">
-              <p className="text-lg mb-4">Install this app on your iPhone:</p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <ol className="text-left text-sm space-y-2">
-                  <li>
-                    1. Tap the <strong>Share</strong> button (⬆️) in Safari
-                  </li>
-                  <li>
-                    2. Scroll down and tap <strong>"Add to Home Screen"</strong>
-                  </li>
-                  <li>
-                    3. Tap <strong>"Add"</strong> to install
-                  </li>
-                </ol>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {stats.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg p-4 shadow-sm border">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {stat.value}
+                  </p>
+                </div>
+                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  {stat.change}
+                </span>
               </div>
-              <p className="text-xs text-gray-500">
-                Instructions for Safari on iOS
-              </p>
             </div>
-          ) : isIOSChrome ? (
-            <div className="max-w-md">
-              <p className="text-lg mb-4">Install this app on your iPhone:</p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <ol className="text-left text-sm space-y-2">
-                  <li>
-                    1. Tap the <strong>three dots</strong> (⋯) menu in Chrome
-                  </li>
-                  <li>
-                    2. Tap <strong>"Add to Home Screen"</strong>
-                  </li>
-                  <li>
-                    3. Tap <strong>"Add"</strong> to install
-                  </li>
-                </ol>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                className="bg-white rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow text-left">
+                <div
+                  className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mb-3`}>
+                  <span className="text-white text-xl">{action.icon}</span>
+                </div>
+                <p className="font-medium text-gray-900">{action.label}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            Recent Activity
+          </h3>
+          <div className="bg-white rounded-lg shadow-sm border">
+            <div className="p-4 border-b">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 text-sm">📋</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    New quote created
+                  </p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
+                </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Instructions for Chrome on iOS
-              </p>
             </div>
-          ) : (
+            <div className="p-4 border-b">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-sm">🔧</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    Machine #5 came online
+                  </p>
+                  <p className="text-xs text-gray-500">15 minutes ago</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-purple-600 text-sm">📊</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    Weekly report generated
+                  </p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+        <div className="grid grid-cols-4 gap-1">
+          {menuItems.map((item) => (
             <button
-              onClick={promptInstall}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
-              Install App
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={`p-4 text-center transition-colors ${
+                activeSection === item.id
+                  ? "text-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}>
+              <div className="text-xl mb-1">{item.icon}</div>
+              <span className="text-xs font-medium">{item.label}</span>
             </button>
-          )}
+          ))}
         </div>
-      ) : (
-        <div className="text-center max-w-md">
-          <p className="text-sm text-gray-500 mb-2">
-            {isIOS
-              ? "To install this app, open it in Safari or Chrome browser"
-              : "App installation not supported on this browser"}
-          </p>
-          <p className="text-xs text-gray-400">
-            PWA installation requires a compatible browser
-          </p>
-        </div>
-      )}
+      </nav>
     </div>
   );
 }
