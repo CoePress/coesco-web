@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+/* Global styles for mobile */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Global scrollbar styles */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  border: 3px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--background);
+}
+
+/* For all elements with scrollable overflow */
+*:not(body)::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*:not(body)::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 8px;
+}
+
+*:not(body)::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  border: 3px solid var(--background);
+}
+
+*:not(body)::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Apply to specific elements that might have their own scrolling context */
+textarea,
+div[style*="overflow"],
+.scrollable-element {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--background);
+}
+
+/* No scrollbar utility class */
+.no-scrollbar {
+  /* Hide scrollbar for webkit browsers */
+  -webkit-scrollbar: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
