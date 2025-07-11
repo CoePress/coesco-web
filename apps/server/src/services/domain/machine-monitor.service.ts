@@ -1287,4 +1287,17 @@ export class MachineMonitorService {
       type: machine.type,
     }));
   }
+
+  async resetFanucAdapter() {
+    const response = await fetch(
+      `http://${config.fanucAdapterIp}:${config.fanucAdapterPort}/api/reset`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.json();
+  }
 }
