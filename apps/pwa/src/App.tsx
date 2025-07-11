@@ -56,7 +56,7 @@ function App() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-            v0.0.3
+            v0.0.4
           </span>
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-gray-600 text-sm">👤</span>
