@@ -17,9 +17,31 @@ function useScreenSize() {
   return isMobile;
 }
 
+// Custom hook to handle service worker updates and auto-refresh
+function useServiceWorkerUpdates() {
+  useEffect(() => {
+    // Handle service worker updates
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        // New service worker has taken control, reload the page
+        window.location.reload();
+      });
+
+      // Check for updates on app start
+      navigator.serviceWorker.ready.then((registration) => {
+        // Check for updates every time the app is opened
+        registration.update();
+      });
+    }
+  }, []);
+}
+
 function App() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const isMobile = useScreenSize();
+
+  // Enable service worker updates and auto-refresh
+  useServiceWorkerUpdates();
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
