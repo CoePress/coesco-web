@@ -7,6 +7,202 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ORGANIZATION MODELS
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  password    String?
+  microsoftId String?   @unique
+  role        UserRole  @default(USER)
+  isActive    Boolean   @default(false)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee?
+
+  @@map("users")
+}
+
+model Employee {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  number      String    @unique
+  firstName   String
+  lastName    String
+  email       String?   @unique
+  phoneNumber String?
+  isActive    Boolean   @default(true)
+  hireDate    DateTime?
+  jobTitle    String
+  initials    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id])
+  journeys         Journey[] @relation("RsmJourneys")
+  createdCompanies Company[] @relation("CustomerCreatedBy")
+  createdJourneys  Journey[] @relation("JourneyCreatedBy")
+  createdQuotes    Quote[]   @relation("QuoteCreatedBy")
+  approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
+
+  @@index([number])
+  @@map("employees")
+}
+
+// CONFIGURATION MODELS
+model ProductClass {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  parentId    String?
+  depth       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
+  children                     ProductClass[]               @relation("ProductClassHierarchy")
+  optionDetails                OptionDetails[]
+  configurations               Configuration[]
+  productClassOptionCategories ProductClassOptionCategory[]
+
+  @@map("product_classes")
+}
+
+model OptionCategory {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  description   String?
+  allowMultiple Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  optionHeaders                OptionHeader[]
+  productClassOptionCategories ProductClassOptionCategory[]
+
+  @@map("option_categories")
+}
+
+model ProductClassOptionCategory {
+  productClassId   String
+  optionCategoryId String
+  displayOrder     Int     @default(0)
+  isRequired       Boolean @default(false)
+
+  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
+  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([productClassId, optionCategoryId])
+  @@map("product_class_option_categories")
+}
+
+model OptionHeader {
+  id          String   @id @default(uuid())
+  categoryId  String
+  name        String
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category               OptionCategory          @relation(fields: [categoryId], references: [id])
+  optionDetails          OptionDetails[]
+  optionRuleTargets      OptionRuleTarget[]
+  optionRuleTriggers     OptionRuleTrigger[]
+  configurationOptions   ConfigurationOption[]
+
+  @@map("option_headers")
+}
+
+model OptionDetails {
+  id             String   @id @default(uuid())
+  productClassId String
+  optionHeaderId String
+  price          Decimal
+  displayOrder   Int      @default(0)
+  isActive       Boolean  @default(true)
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  productClass ProductClass @relation(fields: [productClassId], references: [id])
+  optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
+
+  @@unique([productClassId, optionHeaderId])
+  @@map("option_details")
+}
+
+model OptionRule {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  action      OptionRuleAction
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  condition   Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  targetOptions OptionRuleTarget[]
+  triggerOptions OptionRuleTrigger[]
+  
+  @@map("option_rules")
+}
+
+model OptionRuleTarget {
+  ruleId   String
+  optionId String
+
+  rule   OptionRule @relation(fields: [ruleId], references: [id])
+  option OptionHeader     @relation(fields: [optionId], references: [id])
+
+  @@id([ruleId, optionId])
+  @@map("option_rule_targets")
+}
+
+model OptionRuleTrigger {
+  ruleId   String
+  optionId String
+
+  rule   OptionRule @relation(fields: [ruleId], references: [id])
+  option OptionHeader     @relation(fields: [optionId], references: [id])
+
+  @@id([ruleId, optionId])
+  @@map("option_rule_triggers")
+}
+
+model Configuration {
+  id             String   @id @default(uuid())
+  productClassId String
+  name           String
+  description    String?
+  isTemplate     Boolean
+  isActive       Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  productClass    ProductClass          @relation(fields: [productClassId], references: [id])
+  selectedOptions ConfigurationOption[]
+  quoteItems      QuoteItem[]
+
+  @@map("configurations")
+}
+
+model ConfigurationOption {
+  configurationId String
+  optionId        String
+
+  configuration Configuration @relation(fields: [configurationId], references: [id])
+  option        OptionHeader        @relation(fields: [optionId], references: [id])
+
+  @@id([configurationId, optionId])
+  @@map("configuration_options")
+}
+
+// CUSTOMER JOURNEY MODELS
 model Address {
   id           String   @id @default(uuid())
   companyId    String
@@ -59,34 +255,6 @@ model Company {
   @@map("companies")
 }
 
-model Configuration {
-  id             String   @id @default(uuid())
-  productClassId String
-  name           String
-  description    String?
-  isTemplate     Boolean
-  isActive       Boolean
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  productClass    ProductClass          @relation(fields: [productClassId], references: [id])
-  selectedOptions ConfigurationOption[]
-  quoteItems      QuoteItem[]
-
-  @@map("configurations")
-}
-
-model ConfigurationOption {
-  configurationId String
-  optionId        String
-
-  configuration Configuration @relation(fields: [configurationId], references: [id])
-  option        OptionHeader        @relation(fields: [optionId], references: [id])
-
-  @@id([configurationId, optionId])
-  @@map("configuration_options")
-}
-
 model Contact {
   id        String   @id @default(uuid())
   companyId String
@@ -104,48 +272,6 @@ model Contact {
   dealerJourneys   Journey[] @relation("JourneyDealerContact")
 
   @@map("contacts")
-}
-
-model Employee {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  number      String    @unique
-  firstName   String
-  lastName    String
-  email       String?   @unique
-  phoneNumber String?
-  isActive    Boolean   @default(true)
-  hireDate    DateTime?
-  jobTitle    String
-  initials    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user             User      @relation(fields: [userId], references: [id])
-  journeys         Journey[] @relation("RsmJourneys")
-  createdCompanies Company[] @relation("CustomerCreatedBy")
-  createdJourneys  Journey[] @relation("JourneyCreatedBy")
-  createdQuotes    Quote[]   @relation("QuoteCreatedBy")
-  approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
-
-  @@index([number])
-  @@map("employees")
-}
-
-model Item {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  unitPrice   Float    @default(0)
-  type        String
-  isActive    Boolean  @default(true)
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  quoteItems QuoteItem[]
-
-  @@map("items")
 }
 
 model Journey {
@@ -195,6 +321,76 @@ model JourneyInteraction {
   @@map("journey_interactions")
 }
 
+// QUOTE MODELS
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  unitPrice   Float    @default(0)
+  type        String
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quoteItems QuoteItem[]
+
+  @@map("items")
+}
+
+model Quote {
+  id           String      @id @default(uuid())
+  journeyId    String?
+  year         Int
+  number       String
+  revision     String
+  status       QuoteStatus
+  createdById  String
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
+  items      QuoteItem[] @relation("QuoteItems")
+
+  @@unique([number, revision])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id              String   @id @default(uuid())
+  quoteId         String
+  configurationId String?
+  itemId          String?
+  quantity        Int
+  unitPrice       Decimal
+  totalPrice      Decimal
+  lineNumber      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  quote         Quote          @relation("QuoteItems", fields: [quoteId], references: [id])
+  configuration Configuration? @relation(fields: [configurationId], references: [id])
+  item          Item?          @relation(fields: [itemId], references: [id])
+
+  @@map("quote_items")
+}
+
+// PERFORMANCE SHEET MODELS
+model PerformanceSheet {
+  id String @id @default(uuid())
+  referenceNumber String @unique
+  data Json @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("performance_sheets")
+}
+
+// MACHINE MODELS
 model Machine {
   id              String                @id @default(uuid())
   slug            String                @unique
@@ -236,61 +432,7 @@ model MachineStatus {
   @@map("machine_statuses")
 }
 
-model OptionRule {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  action      OptionRuleAction
-  priority    Int      @default(0)
-  isActive    Boolean  @default(true)
-  condition   Json
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  targetOptions OptionRuleTarget[]
-  triggerOptions OptionRuleTrigger[]
-  
-  @@map("option_rules")
-}
-
-model OptionRuleTarget {
-  ruleId   String
-  optionId String
-
-  rule   OptionRule @relation(fields: [ruleId], references: [id])
-  option OptionHeader     @relation(fields: [optionId], references: [id])
-
-  @@id([ruleId, optionId])
-  @@map("option_rule_targets")
-}
-
-model OptionRuleTrigger {
-  ruleId   String
-  optionId String
-
-  rule   OptionRule @relation(fields: [ruleId], references: [id])
-  option OptionHeader     @relation(fields: [optionId], references: [id])
-
-  @@id([ruleId, optionId])
-  @@map("option_rule_triggers")
-}
-
-model User {
-  id          String    @id @default(uuid())
-  username    String    @unique
-  password    String?
-  microsoftId String?   @unique
-  role        UserRole  @default(USER)
-  isActive    Boolean   @default(false)
-  lastLogin   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  employee Employee?
-
-  @@map("users")
-}
-
+// ENUMS
 enum CompanyStatus {
   ACTIVE
   INACTIVE
@@ -404,146 +546,4 @@ enum TimeScale {
 enum UserRole {
   USER
   ADMIN
-}
-
-// CONFIGURATION MODELS
-
-model ProductClass {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  name        String
-  description String?
-  parentId    String?
-  depth       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
-  children                     ProductClass[]               @relation("ProductClassHierarchy")
-  optionDetails                OptionDetails[]
-  configurations               Configuration[]
-  productClassOptionCategories ProductClassOptionCategory[]
-
-  @@map("product_classes")
-}
-
-model OptionCategory {
-  id            String   @id @default(uuid())
-  name          String   @unique
-  description   String?
-  allowMultiple Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  optionHeaders                OptionHeader[]
-  productClassOptionCategories ProductClassOptionCategory[]
-
-  @@map("option_categories")
-}
-
-model OptionHeader {
-  id          String   @id @default(uuid())
-  categoryId  String
-  name        String
-  code        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  category               OptionCategory          @relation(fields: [categoryId], references: [id])
-  optionDetails          OptionDetails[]
-  optionRuleTargets      OptionRuleTarget[]
-  optionRuleTriggers     OptionRuleTrigger[]
-  configurationOptions   ConfigurationOption[]
-
-  @@map("option_headers")
-}
-
-model OptionDetails {
-  id             String   @id @default(uuid())
-  productClassId String
-  optionHeaderId String
-  price          Decimal
-  displayOrder   Int      @default(0)
-  isActive       Boolean  @default(true)
-  isDefault      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  productClass ProductClass @relation(fields: [productClassId], references: [id])
-  optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
-
-  @@unique([productClassId, optionHeaderId])
-  @@map("option_details")
-}
-
-model ProductClassOptionCategory {
-  productClassId   String
-  optionCategoryId String
-  displayOrder     Int     @default(0)
-  isRequired       Boolean @default(false)
-
-  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
-  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
-
-  @@id([productClassId, optionCategoryId])
-  @@map("product_class_option_categories")
-}
-
-
-// QUOTE MODELS
-
-model Quote {
-  id           String      @id @default(uuid())
-  journeyId    String?
-  year         Int
-  number       String
-  revision     String
-  status       QuoteStatus
-  createdById  String
-  approvedById String?
-  approvedAt   DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
-  createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
-  approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
-  items      QuoteItem[] @relation("QuoteItems")
-
-  @@unique([number, revision])
-  @@map("quotes")
-}
-
-model QuoteItem {
-  id              String   @id @default(uuid())
-  quoteId         String
-  configurationId String?
-  itemId          String?
-  quantity        Int
-  unitPrice       Decimal
-  totalPrice      Decimal
-  lineNumber      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  quote         Quote          @relation("QuoteItems", fields: [quoteId], references: [id])
-  configuration Configuration? @relation(fields: [configurationId], references: [id])
-  item          Item?          @relation(fields: [itemId], references: [id])
-
-  @@map("quote_items")
-}
-
-
-// PERFORMANCE SHEET MODELS
-model PerformanceSheet {
-  id String @id @default(uuid())
-  referenceNumber String @unique
-  data Json @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("performance_sheets")
 }
