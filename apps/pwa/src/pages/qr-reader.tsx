@@ -12,6 +12,7 @@ const QRReader: React.FC = () => {
         video: {
           width: 640,
           height: 480,
+          facingMode: "environment",
         },
       });
 
