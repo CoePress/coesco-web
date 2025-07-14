@@ -39,12 +39,76 @@ function useServiceWorkerUpdates() {
   }, []);
 }
 
+function SplashScreen() {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => {
+        if (prev === "...") return "";
+        return prev + ".";
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl">
+          <span className="text-blue-600 font-bold text-4xl">C</span>
+        </div>
+        <h1 className="text-white text-3xl font-bold mb-2">Coesco</h1>
+        <p className="text-blue-100 text-lg mb-8">Internal Dashboard</p>
+        <div className="flex items-center justify-center space-x-2">
+          <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+          <div
+            className="w-2 h-2 bg-white rounded-full animate-bounce"
+            style={{ animationDelay: "0.1s" }}></div>
+          <div
+            className="w-2 h-2 bg-white rounded-full animate-bounce"
+            style={{ animationDelay: "0.2s" }}></div>
+        </div>
+        <p className="text-blue-100 text-sm mt-4">Loading{dots}</p>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
+  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useScreenSize();
   const location = useLocation();
   const version = "0.0.4";
 
   useServiceWorkerUpdates();
+
+  useEffect(() => {
+    // Simulate app initialization time
+    const initializeApp = async () => {
+      // Wait for a minimum time to show splash screen
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Wait for service worker to be ready (if available)
+      if ("serviceWorker" in navigator) {
+        try {
+          await navigator.serviceWorker.ready;
+        } catch (error) {
+          console.log("Service worker not available");
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    initializeApp();
+  }, []);
+
+  // Show splash screen while loading
+  if (isLoading) {
+    return <SplashScreen />;
+  }
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊", path: "/" },
