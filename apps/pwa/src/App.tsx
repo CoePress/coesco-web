@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import Home from "./pages/home";
+import QRReader from "./pages/qr-reader";
 import IndexedDBExample from "./components/IndexedDBExample";
 
 function useScreenSize() {
@@ -229,6 +230,10 @@ function AppContent() {
         <Route
           path="/admin"
           element={<div>Admin Page - Coming Soon</div>}
+        />
+        <Route
+          path="/qr-reader"
+          element={<QRReader />}
         />
       </Routes>
     </main>

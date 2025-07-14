@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../hooks/use-notifications";
 
 const Home = () => {
+  const navigate = useNavigate();
   const notifications = useNotifications();
   const [notificationSetup, setNotificationSetup] = useState(false);
 
   const quickActions = [
-    { label: "New Quote", icon: "📋", color: "bg-blue-500" },
-    { label: "Machine Status", icon: "🔧", color: "bg-green-500" },
-    { label: "Reports", icon: "📈", color: "bg-purple-500" },
-    { label: "Settings", icon: "⚙️", color: "bg-gray-500" },
+    { label: "New Quote", icon: "📋", color: "bg-blue-500", path: null },
+    { label: "QR Scanner", icon: "📱", color: "bg-indigo-500", path: "/qr-reader" },
+    { label: "Machine Status", icon: "🔧", color: "bg-green-500", path: null },
+    { label: "Reports", icon: "📈", color: "bg-purple-500", path: null },
   ];
 
-  // Auto-setup notifications when component loads
   useEffect(() => {
     const setupNotifications = async () => {
       if (notifications.isSupported && notifications.permission === "default") {
@@ -45,16 +46,16 @@ const Home = () => {
         <p className="text-gray-600 text-sm">
           Here's what's happening with your business today
         </p>
-        
-        {/* Notification Status Indicator */}
+
         {notifications.isSupported && (
-          <div className={`mt-3 p-3 rounded-lg text-sm ${
-            notifications.permission === "granted" && notificationSetup
-              ? "bg-green-50 border border-green-200 text-green-700"
-              : notifications.permission === "denied"
-              ? "bg-red-50 border border-red-200 text-red-700"
-              : "bg-yellow-50 border border-yellow-200 text-yellow-700"
-          }`}>
+          <div
+            className={`mt-3 p-3 rounded-lg text-sm ${
+              notifications.permission === "granted" && notificationSetup
+                ? "bg-green-50 border border-green-200 text-green-700"
+                : notifications.permission === "denied"
+                  ? "bg-red-50 border border-red-200 text-red-700"
+                  : "bg-yellow-50 border border-yellow-200 text-yellow-700"
+            }`}>
             {notifications.permission === "granted" && notificationSetup ? (
               <div className="flex items-center space-x-2">
                 <span>🔔</span>
@@ -63,7 +64,10 @@ const Home = () => {
             ) : notifications.permission === "denied" ? (
               <div className="flex items-center space-x-2">
                 <span>🔕</span>
-                <span>Notifications blocked - enable in browser settings to get daily reminders</span>
+                <span>
+                  Notifications blocked - enable in browser settings to get
+                  daily reminders
+                </span>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -71,19 +75,17 @@ const Home = () => {
                 <span>Setting up daily notifications...</span>
               </div>
             )}
-            
-            {/* Test notification button - only show if permissions granted */}
+
             {notifications.permission === "granted" && (
               <button
                 onClick={() => {
                   new Notification("Coesco Test Notification", {
                     body: "This is a test of your notification system!",
                     icon: "/logo-text.png",
-                    tag: "test-notification",
+                    tag: `test-notification-${Date.now()}`,
                   });
                 }}
-                className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
-              >
+                className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors">
                 Test Notification
               </button>
             )}
@@ -119,6 +121,7 @@ const Home = () => {
           {quickActions.map((action, index) => (
             <button
               key={index}
+              onClick={() => action.path && navigate(action.path)}
               className="bg-white rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow text-left">
               <div
                 className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mb-3`}>
