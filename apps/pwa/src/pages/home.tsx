@@ -1,10 +1,36 @@
+import { useEffect, useState } from "react";
+import { useNotifications } from "../hooks/use-notifications";
+
 const Home = () => {
+  const notifications = useNotifications();
+  const [notificationSetup, setNotificationSetup] = useState(false);
+
   const quickActions = [
     { label: "New Quote", icon: "📋", color: "bg-blue-500" },
     { label: "Machine Status", icon: "🔧", color: "bg-green-500" },
     { label: "Reports", icon: "📈", color: "bg-purple-500" },
     { label: "Settings", icon: "⚙️", color: "bg-gray-500" },
   ];
+
+  // Auto-setup notifications when component loads
+  useEffect(() => {
+    const setupNotifications = async () => {
+      if (notifications.isSupported && notifications.permission === "default") {
+        const granted = await notifications.requestPermission();
+        if (granted) {
+          notifications.scheduleDaily955Notification();
+          setNotificationSetup(true);
+          console.log("Daily 9:55 EST notification has been set up!");
+        }
+      } else if (notifications.permission === "granted" && !notificationSetup) {
+        notifications.scheduleDaily955Notification();
+        setNotificationSetup(true);
+        console.log("Daily 9:55 EST notification has been set up!");
+      }
+    };
+
+    setupNotifications();
+  }, [notifications, notificationSetup]);
 
   const stats = [
     { label: "Active Quotes", value: "12", change: "+3" },
@@ -19,6 +45,50 @@ const Home = () => {
         <p className="text-gray-600 text-sm">
           Here's what's happening with your business today
         </p>
+        
+        {/* Notification Status Indicator */}
+        {notifications.isSupported && (
+          <div className={`mt-3 p-3 rounded-lg text-sm ${
+            notifications.permission === "granted" && notificationSetup
+              ? "bg-green-50 border border-green-200 text-green-700"
+              : notifications.permission === "denied"
+              ? "bg-red-50 border border-red-200 text-red-700"
+              : "bg-yellow-50 border border-yellow-200 text-yellow-700"
+          }`}>
+            {notifications.permission === "granted" && notificationSetup ? (
+              <div className="flex items-center space-x-2">
+                <span>🔔</span>
+                <span>Daily reminder set for 9:55 AM EST</span>
+              </div>
+            ) : notifications.permission === "denied" ? (
+              <div className="flex items-center space-x-2">
+                <span>🔕</span>
+                <span>Notifications blocked - enable in browser settings to get daily reminders</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span>⏰</span>
+                <span>Setting up daily notifications...</span>
+              </div>
+            )}
+            
+            {/* Test notification button - only show if permissions granted */}
+            {notifications.permission === "granted" && (
+              <button
+                onClick={() => {
+                  new Notification("Coesco Test Notification", {
+                    body: "This is a test of your notification system!",
+                    icon: "/logo-text.png",
+                    tag: "test-notification",
+                  });
+                }}
+                className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+              >
+                Test Notification
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 mb-6 grid-cols-1 sm:grid-cols-3">

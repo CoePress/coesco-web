@@ -13,6 +13,7 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
       manifest: {
         name: "Coesco Web App",
@@ -39,6 +40,9 @@ export default defineConfig({
             purpose: "any maskable",
           },
         ],
+      },
+      devOptions: {
+        enabled: true,
       },
     }),
   ],

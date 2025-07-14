@@ -55,10 +55,8 @@ export class SocketService {
     try {
       logger.info("Closing Socket.IO server...");
 
-      // Close all client connections first
       this.io.of("/client").disconnectSockets(true);
 
-      // Then close the server
       await new Promise<void>((resolve, reject) => {
         this.io!.close((err) => {
           if (err) {
