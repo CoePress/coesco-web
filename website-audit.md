@@ -30,6 +30,7 @@
 - Search is only for articles - should be for equipment, applications, parts & services
 - E-commerce store front for parts - more of a business decision but people don't want to call if they know what they need
 - Overall design rework
+- GET GOOGLE REVIEWS. 7 reviews total. 3.7 stars. why would google show us?
 
 ## Quick Wins
 

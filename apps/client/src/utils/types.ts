@@ -20,7 +20,6 @@ declare global {
             ZERO_RESULTS: string;
           };
         };
-        // Additional types needed for the map functionality
         Map: new (element: HTMLElement, options: any) => any;
         Marker: new (options: any) => any;
         InfoWindow: new (options: any) => any;
@@ -252,119 +251,6 @@ export interface IQueryParams {
   fields?: string[];
   include?: string[];
 }
-
-// export interface ISettings extends IBaseEntity {
-//   moduleSlug: string;
-//   settings: Record<string, any>;
-// }
-
-// export interface IStateOverview {
-//   kpis: {
-//     [key: string]: {
-//       value: number;
-//       change: number;
-//     };
-//   };
-//   utilization: {
-//     label: string;
-//     start: Date;
-//     end: Date;
-//     utilization: number;
-//   }[];
-//   states: {
-//     state: string;
-//     total: number;
-//     percentage: number;
-//   }[];
-//   machines: IOverviewMachine[];
-//   alarms: IOverviewAlarm[];
-// }
-
-// export interface IOverviewMachine {
-//   id: string;
-//   name: string;
-//   type: MachineType;
-//   status: string;
-//   program: string;
-//   tool: string;
-//   position: Record<MachineAxis, number>;
-//   spindleLoad: number;
-//   spindleSpeed: number;
-//   estimatedCompletion: Date;
-// }
-
-// export interface IOverviewAlarm {
-//   id: string;
-//   machineId: string;
-//   timestamp: Date;
-//   type: string;
-//   severity: string;
-//   message?: string;
-// }
-
-// export type MachineType = "LATHE" | "MILL";
-// export type MachineController = "MAZAK" | "FANUC";
-
-// export interface IMachine extends IBaseEntity {
-//   slug: string;
-//   name: string;
-//   type: MachineType;
-//   controller: MachineController;
-//   controllerModel: string;
-// }
-
-// export interface IMachineQueryParams extends IQueryParams {
-//   type?: MachineType;
-//   controller?: MachineController;
-// }
-
-// export interface IStateQueryParams extends IQueryParams {
-//   machineId?: string;
-// }
-
-// export type MachineAxis = "X" | "Y" | "Z" | "A" | "B" | "C";
-
-// export interface IMachineState extends IBaseEntity {
-//   machineId: string;
-//   timestamp: Date;
-//   durationMs: number;
-//   state: string;
-//   execution: string;
-//   controller: string;
-//   program: string;
-//   tool: string;
-//   position: Record<MachineAxis, number>;
-//   feedRate: number;
-//   spindleSpeed: number;
-// }
-
-// export interface IStateTimeline {
-//   startDate: Date;
-//   endDate: Date;
-//   machines: {
-//     id: string;
-//     name: string;
-//     timeline: {
-//       state: string;
-//       startTime: Date;
-//       endTime: Date;
-//       durationMs: number;
-//     }[];
-//   }[];
-// }
-
-// export interface ICurrentState {
-//   machineId: string;
-//   state: string;
-//   startTime: Date;
-//   endTime: Date;
-//   durationMs: number;
-//   program: string;
-//   tool: string;
-//   position: Record<MachineAxis, number>;
-//   feedRate: number;
-//   spindleSpeed: number;
-// }
 
 export enum MachineType {
   LATHE = "LATHE",

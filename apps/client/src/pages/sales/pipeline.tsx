@@ -9,11 +9,12 @@ import { useState } from "react";
 
 import { PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { sampleDeals } from "@/utils/sample-data";
 import Table from "@/components/common/table";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Pipeline = () => {
   const [viewMode, setViewMode] = useState("kanban");
+  const { entities: deals, loading: dealsLoading } = useGetEntities("/deals");
 
   const pipelineStages = [
     { id: 1, name: "Lead", color: "bg-neutral-400" },
@@ -25,7 +26,7 @@ const Pipeline = () => {
   ];
 
   const getDealsByStage = (stageId: number) => {
-    return sampleDeals.filter((deal) => deal.stage === stageId);
+    return deals?.filter((deal) => deal.stage === stageId);
   };
 
   const getPriorityStyles = (priority: string) => {
@@ -42,8 +43,8 @@ const Pipeline = () => {
   };
 
   const getStageTotalValue = (stageId: number) => {
-    return sampleDeals
-      .filter((deal) => deal.stage === stageId)
+    return deals
+      ?.filter((deal) => deal.stage === stageId)
       .reduce((sum, deal) => sum + deal.value, 0);
   };
 
@@ -81,13 +82,10 @@ const Pipeline = () => {
     </div>
   );
 
-  const totalPipelineValue = sampleDeals.reduce(
-    (sum, deal) => sum + deal.value,
-    0
-  );
+  const totalPipelineValue = deals?.reduce((sum, deal) => sum + deal.value, 0);
 
   const pageTitle = "Sales Pipeline";
-  const pageDescription = `${sampleDeals.length} deals · ${formatCurrency(
+  const pageDescription = `${deals?.length} deals · ${formatCurrency(
     totalPipelineValue
   )} total value`;
 
@@ -241,7 +239,7 @@ const Pipeline = () => {
                         {stage.name}
                       </h3>
                       <span className="text-xs text-neutral-400">
-                        {getDealsByStage(stage.id).length}
+                        {getDealsByStage(stage.id)?.length}
                       </span>
                     </div>
                     <div className="text-xs text-neutral-400">
@@ -249,7 +247,7 @@ const Pipeline = () => {
                     </div>
                   </div>
                   <div className={`rounded h-max overflow-y-auto`}>
-                    {getDealsByStage(stage.id).map((deal) =>
+                    {getDealsByStage(stage.id)?.map((deal) =>
                       renderKanbanCard(deal)
                     )}
                     <button className="w-full p-2 bg-foreground bg-opacity-60 rounded border border-dashed border-border text-sm text-neutral-400 hover:bg-opacity-80 flex items-center justify-center gap-1">
@@ -267,8 +265,8 @@ const Pipeline = () => {
       {viewMode === "list" && (
         <Table
           columns={tableColumns as any}
-          data={sampleDeals}
-          total={sampleDeals.length}
+          data={deals || []}
+          total={deals?.length || 0}
           className="bg-foreground rounded shadow-sm border"
         />
       )}

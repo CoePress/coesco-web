@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader } from "lucide-react";
 import {
   Button,
   PageHeader,
@@ -9,7 +9,7 @@ import {
   Input,
   Tabs,
 } from "@/components";
-import { sampleOptionRules, sampleOptions } from "@/utils/sample-data";
+import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { RuleAction } from "@/utils/types";
 
 interface OptionRuleRow {
@@ -31,34 +31,42 @@ const OptionRules = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<OptionRuleRow | null>(null);
 
-  const tableData: OptionRuleRow[] = sampleOptionRules.map((rule) => {
-    let triggerOptionId = "";
-    if (
-      rule.condition.type === "SIMPLE" &&
-      rule.condition.conditionType === "OPTION"
-    ) {
-      triggerOptionId = rule.condition.id;
-    }
+  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
+    "/config/option-rules"
+  );
 
-    const triggerOption =
-      sampleOptions.find((opt) => opt.id === triggerOptionId) ||
-      sampleOptions[0];
-    const targetOption =
-      sampleOptions.find((opt) => opt.id === rule.targetOptionIds[0]) ||
-      sampleOptions[0];
+  const { entities: options, loading: optionsLoading } =
+    useGetEntities("/config/options");
 
-    return {
-      id: rule.id,
-      name: rule.name,
-      description: rule.description,
-      triggerOption: triggerOption.name,
-      targetOption: targetOption.name,
-      ruleType: rule.action,
-      active: rule.active,
-      createdAt: rule.createdAt,
-      updatedAt: rule.updatedAt,
-    };
-  });
+  const tableData: OptionRuleRow[] = (optionRules || [])
+    .filter((rule) => rule !== null)
+    .map((rule) => {
+      let triggerOptionId = "";
+      if (
+        rule.condition.type === "SIMPLE" &&
+        rule.condition.conditionType === "OPTION"
+      ) {
+        triggerOptionId = rule.condition.id;
+      }
+
+      const triggerOption =
+        options?.find((opt) => opt.id === triggerOptionId) || options?.[0];
+      const targetOption =
+        options?.find((opt) => opt.id === rule.targetOptionIds[0]) ||
+        options?.[0];
+
+      return {
+        id: rule.id,
+        name: rule.name,
+        description: rule.description,
+        triggerOption: triggerOption.name,
+        targetOption: targetOption.name,
+        ruleType: rule.action,
+        active: rule.active,
+        createdAt: rule.createdAt,
+        updatedAt: rule.updatedAt,
+      };
+    });
 
   const columns = [
     {
@@ -164,6 +172,12 @@ const OptionRules = () => {
     setRuleToDelete(null);
   };
 
+  const loading = optionRulesLoading || optionsLoading;
+
+  if (loading) {
+    return <Loader />;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -247,9 +261,10 @@ interface RuleFormProps {
   rule?: OptionRuleRow | null;
   onSave: (data: any) => void;
   onCancel: () => void;
+  options?: any[];
 }
 
-const RuleForm = ({ rule, onSave, onCancel }: RuleFormProps) => {
+const RuleForm = ({ rule, onSave, onCancel, options }: RuleFormProps) => {
   const [formData, setFormData] = useState({
     name: rule?.name || "",
     description: rule?.description || "",
@@ -314,7 +329,7 @@ const RuleForm = ({ rule, onSave, onCancel }: RuleFormProps) => {
             Trigger Option
           </label>
           <Select
-            options={sampleOptions.map((option) => ({
+            options={(options || []).map((option: any) => ({
               value: option.id,
               label: option.name,
             }))}
@@ -331,7 +346,7 @@ const RuleForm = ({ rule, onSave, onCancel }: RuleFormProps) => {
             Target Option
           </label>
           <Select
-            options={sampleOptions.map((option) => ({
+            options={(options || []).map((option: any) => ({
               value: option.id,
               label: option.name,
             }))}
@@ -369,7 +384,13 @@ const RuleForm = ({ rule, onSave, onCancel }: RuleFormProps) => {
   );
 };
 
-const PerformanceRulesForm = ({ onClose }: { onClose: () => void }) => {
+const PerformanceRulesForm = ({
+  onClose,
+  options,
+}: {
+  onClose: () => void;
+  options?: any[];
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -425,7 +446,7 @@ const PerformanceRulesForm = ({ onClose }: { onClose: () => void }) => {
       <div>
         <label className="block text-sm font-medium mb-1">Target Option</label>
         <Select
-          options={sampleOptions.map((option) => ({
+          options={(options || []).map((option: any) => ({
             value: option.id,
             label: option.name,
           }))}

@@ -11,12 +11,10 @@ import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
 
-// Helper function to generate all routes including children as separate routes
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
 
   pages.forEach((page) => {
-    // Add the main page route
     if (page.slug) {
       routes.push(
         <Route
@@ -35,7 +33,6 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
       );
     }
 
-    // Add child routes as separate routes
     if (page.children) {
       page.children.forEach((child: any) => {
         const childPath = page.slug ? `${page.slug}/${child.slug}` : child.slug;
@@ -56,6 +53,7 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
 const App = () => {
   const content = (
     <Routes>
+      {/* Public routes */}
       <Route
         path="/callback"
         element={<MicrosoftCallback />}
@@ -66,6 +64,7 @@ const App = () => {
           element={<Login />}
         />
       </Route>
+      {/* Protected routes without layout */}
       <Route element={<ProtectedRoute withLayout={false} />}>
         <Route
           path="/"
@@ -93,6 +92,8 @@ const App = () => {
             </Route>
           ))}
       </Route>
+
+      {/* Protected routes with layout */}
       <Route element={<ProtectedRoute withLayout={true} />}>
         <Route
           path="/sandbox"

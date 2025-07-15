@@ -1,6 +1,7 @@
 import { Button } from "@/components";
 import AddressAutocomplete from "@/components/common/address-input";
 import { useState, useEffect, useRef } from "react";
+import { useNotifications } from "@/hooks/use-notifications";
 
 // Type definitions
 interface Location {
@@ -55,16 +56,16 @@ const Sandbox = () => {
   const [map, setMap] = useState<any>(null);
   const [markers, setMarkers] = useState<any[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
+  const { notify } = useNotifications();
 
   const GOOGLE_API_KEY = "AIzaSyAggNUxlA-WkP5yvP_l3kCIQckeQBPEyOU";
 
-  // Initialize Google Map
   useEffect(() => {
     const initMap = () => {
       if (mapRef.current && window.google) {
         const mapInstance = new window.google.maps.Map(mapRef.current, {
           zoom: 13,
-          center: { lat: 42.3601, lng: -71.0589 }, // Default to Boston
+          center: { lat: 42.58989240286784, lng: -83.05560293111002 },
           styles: [
             {
               featureType: "all",
@@ -94,6 +95,13 @@ const Sandbox = () => {
     }
   }, []);
 
+  const notifyMe = () => {
+    notify({    
+      title: "Hello",
+      body: "World",
+    });
+  };
+
   // Add marker to map
   const addMarker = (location: Location, title: string, type = "current") => {
     if (!map) return;
@@ -109,8 +117,8 @@ const Sandbox = () => {
           type === "current"
             ? "#e8a80c"
             : type === "history"
-            ? "#0284c7"
-            : "#34d399",
+              ? "#0284c7"
+              : "#34d399",
         fillOpacity: 0.8,
         strokeColor: "#ffffff",
         strokeWeight: 2,
@@ -333,6 +341,7 @@ const Sandbox = () => {
               <strong>Selected:</strong> {selectedAddress.formatted_address}
             </div>
           )}
+          <Button onClick={notifyMe}>Notify Me</Button>
         </div>
 
         {/* Location Tracking Section */}

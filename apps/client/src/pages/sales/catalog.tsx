@@ -2,9 +2,9 @@ import { Plus, MoreHorizontal, Import, Filter } from "lucide-react";
 import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader, Loader } from "@/components";
-import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useNavigate } from "react-router-dom";
+import { useGetOptionRules } from "@/hooks/config";
 
 const TreeNode = ({ node }: { node: any }) => {
   return (
@@ -165,13 +165,15 @@ const DetailModal = ({
   item,
   itemType,
   productClasses,
+  optionCategories,
 }: {
   isOpen: boolean;
   onClose: () => void;
   item: any;
   itemType: "configs" | "parts" | "services";
   productClasses: any[];
-}) => {
+  optionCategories: any[];
+  }) => {
   if (!isOpen || !item) return null;
 
   const renderConfigDetails = () => {
@@ -182,7 +184,7 @@ const DetailModal = ({
     const configOptions = item.selectedOptions.map((configOpt: any) => {
       const option = configOpt.option;
       const category = option
-        ? sampleOptionCategories.find(
+          ? optionCategories?.find(
             (cat: any) => cat.id === option.categoryId
           )
         : null;
@@ -492,6 +494,9 @@ const Catalog = () => {
         : ""
     );
 
+  const { entities: optionCategories, loading: optionCategoriesLoading } =
+    useGetEntities("/config/option-categories");
+
   const partsFilter = useMemo(() => ({ type: "parts" }), []);
   const servicesFilter = useMemo(() => ({ type: "services" }), []);
   const quotesFilter = useMemo(
@@ -510,13 +515,12 @@ const Catalog = () => {
     }
   );
 
-  // Fetch quotes for the quote modal
   const { entities: quotes, loading: quotesLoading } = useGetEntities(
     "/quotes",
     quotesFilter
   );
 
-  // const { optionRules } = useGetOptionRules();
+  const { optionRules } = useGetOptionRules();
 
   const navigate = useNavigate();
 
@@ -603,14 +607,14 @@ const Catalog = () => {
 
     return productClassFiltered.filter((config) => {
       return Object.entries(categoryFilters).every(([categoryId, optionId]) => {
-        const categoryOptions = sampleOptions.filter(
+        const categoryOptions = optionCategories?.filter(
           (opt: any) => opt.categoryId === categoryId
         );
         const configOptionIds = config.selectedOptions.map(
           (opt: any) => opt.optionId
         );
 
-        return categoryOptions.some(
+        return categoryOptions?.some(
           (opt: any) => opt.id === optionId && configOptionIds.includes(opt.id)
         );
       });
@@ -648,7 +652,6 @@ const Catalog = () => {
       );
     }
 
-    // Filter by isActive instead of available, since API uses isActive
     return filtered.filter((service: any) => service.isActive !== false);
   };
 
@@ -821,7 +824,6 @@ const Catalog = () => {
   );
 
   const renderContent = () => {
-    // Check if any relevant data is loading
     const isLoading =
       (filterType === "configs" &&
         (productClassesLoading || configurationsLoading || optionsLoading)) ||
@@ -952,6 +954,7 @@ const Catalog = () => {
         item={selectedDetailItem}
         itemType={filterType}
         productClasses={productClasses || []}
+        optionCategories={optionCategories || []}
       />
     </div>
   );
