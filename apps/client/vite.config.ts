@@ -9,7 +9,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "robots.txt", "images/logo-full.png"],
+      includeAssets: [
+        "favicon.ico",
+        "robots.txt",
+        "images/app-icon.svg",
+        "images/logo-full.png",
+      ],
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
@@ -25,6 +30,11 @@ export default defineConfig({
         theme_color: "#2563eb",
         icons: [
           {
+            src: "/images/app-icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+          },
+          {
             src: "/images/logo-full.png",
             sizes: "192x192",
             type: "image/png",
@@ -35,10 +45,10 @@ export default defineConfig({
             type: "image/png",
           },
           {
-            src: "/images/logo-full.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable",
+            src: "/images/app-icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "maskable",
           },
         ],
       },
