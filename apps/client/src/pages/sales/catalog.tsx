@@ -173,7 +173,7 @@ const DetailModal = ({
   itemType: "configs" | "parts" | "services";
   productClasses: any[];
   optionCategories: any[];
-  }) => {
+}) => {
   if (!isOpen || !item) return null;
 
   const renderConfigDetails = () => {
@@ -184,9 +184,7 @@ const DetailModal = ({
     const configOptions = item.selectedOptions.map((configOpt: any) => {
       const option = configOpt.option;
       const category = option
-          ? optionCategories?.find(
-            (cat: any) => cat.id === option.categoryId
-          )
+        ? optionCategories?.find((cat: any) => cat.id === option.categoryId)
         : null;
 
       return {
@@ -494,7 +492,7 @@ const Catalog = () => {
         : ""
     );
 
-  const { entities: optionCategories, loading: optionCategoriesLoading } =
+  const { entities: optionCategories, loading: _optionCategoriesLoading } =
     useGetEntities("/config/option-categories");
 
   const partsFilter = useMemo(() => ({ type: "parts" }), []);
@@ -520,7 +518,7 @@ const Catalog = () => {
     quotesFilter
   );
 
-  const { optionRules } = useGetOptionRules();
+  // const { optionRules } = useGetOptionRules();
 
   const navigate = useNavigate();
 

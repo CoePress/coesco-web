@@ -25,17 +25,17 @@ export default defineConfig({
         theme_color: "#2563eb",
         icons: [
           {
-            src: "/app-icon.svg",
+            src: "/logo-full.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/app-icon.svg",
+            src: "/logo-full.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "/app-icon.svg",
+            src: "/logo-full.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",

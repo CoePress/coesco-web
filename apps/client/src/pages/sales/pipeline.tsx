@@ -14,7 +14,7 @@ import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Pipeline = () => {
   const [viewMode, setViewMode] = useState("kanban");
-  const { entities: deals, loading: dealsLoading } = useGetEntities("/deals");
+  const { entities: deals, loading: _dealsLoading } = useGetEntities("/deals");
 
   const pipelineStages = [
     { id: 1, name: "Lead", color: "bg-neutral-400" },
