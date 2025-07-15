@@ -1694,6 +1694,8 @@ const QuotePreviewModal = ({
   quoteOverview: any;
   quoteItems: any[];
 }) => {
+  console.log(quoteOverview);
+  console.log(quoteItems);
   return (
     <Modal
       isOpen={isOpen}

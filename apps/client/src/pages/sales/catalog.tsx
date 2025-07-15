@@ -466,13 +466,13 @@ const Catalog = () => {
   const [filterType, setFilterType] = useState<
     "configs" | "parts" | "services"
   >("configs");
-  const [selections, setSelections] = useState<string[]>([]);
-  const [categoryFilters, setCategoryFilters] = useState<{
+  const [selections, _setSelections] = useState<string[]>([]);
+  const [categoryFilters, _setCategoryFilters] = useState<{
     [key: string]: string;
   }>({});
-  const [partCategoryFilter, setPartCategoryFilter] = useState("");
-  const [serviceCategoryFilter, setServiceCategoryFilter] = useState("");
-  const [stockFilter, setStockFilter] = useState<
+  const [partCategoryFilter, _setPartCategoryFilter] = useState("");
+  const [serviceCategoryFilter, _setServiceCategoryFilter] = useState("");
+  const [stockFilter, _setStockFilter] = useState<
     "all" | "in-stock" | "out-of-stock"
   >("all");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -486,7 +486,7 @@ const Catalog = () => {
     useGetEntities("/configurations");
   const deepestSelectedClassId =
     selections.length > 0 ? selections[selections.length - 1] : "";
-  const { entities: productClassOptions, loading: optionsLoading } =
+  const { entities: _productClassOptions, loading: optionsLoading } =
     useGetEntities(
       deepestSelectedClassId
         ? `/config/classes/${deepestSelectedClassId}/options`
@@ -517,63 +517,63 @@ const Catalog = () => {
     quotesFilter
   );
 
-  const { optionRules } = useGetOptionRules();
+  // const { optionRules } = useGetOptionRules();
 
   const navigate = useNavigate();
 
-  const getDisabledOptionsForProductClass = (
-    productClassId: string
-  ): string[] => {
-    if (!optionRules || !productClassId || !productClassOptions) return [];
+  // const getDisabledOptionsForProductClass = (
+  //   productClassId: string
+  // ): string[] => {
+  //   if (!optionRules || !productClassId || !productClassOptions) return [];
 
-    const disabledOptions = new Set<string>();
+  //   const disabledOptions = new Set<string>();
 
-    const availableOptions = new Set<string>();
-    productClassOptions.forEach((category: any) => {
-      category.options?.forEach((option: any) => {
-        availableOptions.add(option.id);
-      });
-    });
+  //   const availableOptions = new Set<string>();
+  //   productClassOptions.forEach((category: any) => {
+  //     category.options?.forEach((option: any) => {
+  //       availableOptions.add(option.id);
+  //     });
+  //   });
 
-    optionRules.forEach((rule) => {
-      if (rule.action === "DISABLE") {
-        const hasTriggerOption = rule.triggerOptions.some(
-          (triggerOption: any) => {
-            return availableOptions.has(triggerOption.id);
-          }
-        );
+  //   optionRules.forEach((rule) => {
+  //     if (rule.action === "DISABLE") {
+  //       const hasTriggerOption = rule.triggerOptions.some(
+  //         (triggerOption: any) => {
+  //           return availableOptions.has(triggerOption.id);
+  //         }
+  //       );
 
-        const hasTargetOption = rule.targetOptions.some((targetOption: any) => {
-          return availableOptions.has(targetOption.id);
-        });
+  //       const hasTargetOption = rule.targetOptions.some((targetOption: any) => {
+  //         return availableOptions.has(targetOption.id);
+  //       });
 
-        if (hasTriggerOption && hasTargetOption) {
-          rule.targetOptions.forEach((targetOption: any) => {
-            if (availableOptions.has(targetOption.id)) {
-              disabledOptions.add(targetOption.id);
-            }
-          });
-        }
-      }
-    });
+  //       if (hasTriggerOption && hasTargetOption) {
+  //         rule.targetOptions.forEach((targetOption: any) => {
+  //           if (availableOptions.has(targetOption.id)) {
+  //             disabledOptions.add(targetOption.id);
+  //           }
+  //         });
+  //       }
+  //     }
+  //   });
 
-    return Array.from(disabledOptions);
-  };
+  //   return Array.from(disabledOptions);
+  // };
 
-  const getValidCategoryFiltersForProductClass = (productClassId: string) => {
-    if (!productClassId) return {};
+  // const getValidCategoryFiltersForProductClass = (productClassId: string) => {
+  //   if (!productClassId) return {};
 
-    const disabledOptions = getDisabledOptionsForProductClass(productClassId);
-    const validFilters: { [key: string]: string } = {};
+  //   const disabledOptions = getDisabledOptionsForProductClass(productClassId);
+  //   const validFilters: { [key: string]: string } = {};
 
-    Object.entries(categoryFilters).forEach(([categoryId, optionId]) => {
-      if (!disabledOptions.includes(optionId)) {
-        validFilters[categoryId] = optionId;
-      }
-    });
+  //   Object.entries(categoryFilters).forEach(([categoryId, optionId]) => {
+  //     if (!disabledOptions.includes(optionId)) {
+  //       validFilters[categoryId] = optionId;
+  //     }
+  //   });
 
-    return validFilters;
-  };
+  //   return validFilters;
+  // };
 
   const getFilteredByProductClass = () => {
     if (!configurations) return [];
