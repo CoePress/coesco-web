@@ -68,7 +68,8 @@ export abstract class BaseService<TEntity> {
   async getById(
     id: string,
     tx?: Prisma.TransactionClient,
-    include?: any
+    include?: any,
+    throwError: boolean = false
   ): Promise<IServiceResult<TEntity>> {
     try {
       const model = this.getModel(tx);
@@ -89,11 +90,10 @@ export abstract class BaseService<TEntity> {
 
       return { success: true, data: entity };
     } catch (error: any) {
-      if (error instanceof NotFoundError) throw error;
-      console.error(`Error in ${this.entityName}.getById:`, error);
-      throw new BadRequestError(
-        `Failed to fetch ${this.entityName}: ${error.message}`
-      );
+      if (throwError) {
+        throw error;
+      }
+      return { success: false, data: null as any };
     }
   }
 

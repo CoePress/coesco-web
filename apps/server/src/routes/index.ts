@@ -1,9 +1,5 @@
-import { Router, RequestHandler } from "express";
-import path from "path";
-import fs from "fs";
-import puppeteer from "puppeteer";
+import { Router } from "express";
 
-import { __dev__ } from "@/config/config";
 import { protect } from "@/middleware/auth.middleware";
 import authRoutes from "./auth.routes";
 import emailRoutes from "./email.routes";
@@ -20,7 +16,7 @@ import configurationRoutes from "./configuration.routes";
 import classRoutes from "./class.routes";
 import optionRoutes from "./option.routes";
 import categoryRoutes from "./category.routes";
-import { systemController } from "@/controllers";
+import systemRoutes from "./system.routes";
 
 const router = Router();
 
@@ -34,84 +30,11 @@ router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
 router.use("/quotes", protect, quoteRoutes);
 router.use("/items", protect, itemRoutes);
-
 router.use("/config", protect, configBuilderRoutes);
-
 router.use("/configurations", protect, configurationRoutes);
 router.use("/classes", protect, classRoutes);
 router.use("/options", protect, optionRoutes);
 router.use("/categories", protect, categoryRoutes);
-
-// Widget
-router.get("/widget.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "assets", "widgets", "widget.html"));
-});
-
-// System
-router.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-router.get("/system/entities", protect, systemController.getEntityTypes);
-router.get("/system/entities/:entityType", systemController.getEntityFields);
-
-router.get("/templates/:slug", (async (req, res) => {
-  const { slug } = req.params;
-  const templatePath = path.join(
-    __dirname,
-    "..",
-    "templates",
-    "documents",
-    `${slug}.html`
-  );
-
-  try {
-    if (!fs.existsSync(templatePath)) {
-      return res.status(404).json({ error: "Template not found" });
-    }
-
-    const template = fs.readFileSync(templatePath, "utf-8");
-    const tempHtmlPath = path.join(__dirname, "..", "templates", "temp.html");
-    fs.writeFileSync(tempHtmlPath, template);
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    const page = await browser.newPage();
-    await page.goto(`file://${tempHtmlPath}`, {
-      waitUntil: "networkidle0",
-    });
-
-    const pdf = await page.pdf({
-      format: "Letter",
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: {
-        top: "1in",
-        right: "1in",
-        bottom: "1in",
-        left: "1in",
-      },
-    });
-
-    await browser.close();
-    fs.unlinkSync(tempHtmlPath); // Clean up temp file
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=${slug}.pdf`);
-    res.send(Buffer.from(pdf));
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    res.status(500).json({ error: "Error generating PDF" });
-  }
-}) as RequestHandler);
-
-router.use("*", (req, res) => {
-  res.status(404).json({
-    error: `Route not found: ${req.method} ${req.originalUrl}`,
-  });
-});
+router.use("/system", systemRoutes);
 
 export default router;
