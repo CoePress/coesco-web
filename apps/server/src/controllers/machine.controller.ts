@@ -29,4 +29,13 @@ export class MachineController extends BaseController<Machine> {
       next(error);
     }
   }
+
+  async resetFanucAdapter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await machineMonitorService.resetFanucAdapter();
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

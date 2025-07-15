@@ -1,9 +1,5 @@
 # Coesco Web
 
-## Perquisites
-
-- [Docker](https://www.docker.com/products/docker-desktop/)
-
 ## Tools (Optional)
 
 - [Cursor (IDE)](https://www.cursor.com/)
@@ -27,17 +23,6 @@ cd apps/server && cp .env.template .env && cd ..
 
 ```bash
 npm install
-```
-
-## Docker
-
-```bash
-# Start container
-docker-compose up --build
-
-# Stop container
-docker-compose down --volumes --remove-orphans
-docker system prune -af
 ```
 
 - If you ever see the following error, run the command below
@@ -65,8 +50,4 @@ les\ts-node\src\index.ts:1621:12)
   address: '::',
   port: 8080
 }
-```
-
-```bash
-Taskkill /f /im node.exe
 ```

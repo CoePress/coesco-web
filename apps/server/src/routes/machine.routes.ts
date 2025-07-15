@@ -9,6 +9,8 @@ router.get("/overview", machineController.getMachinesOverview);
 router.get("/timeline", machineController.getMachinesTimeline);
 router.get("/:id", machineController.getById);
 
+router.post("/reset-fanuc-adapter", machineController.resetFanucAdapter);
+
 router.post("/", machineController.create);
 
 router.put("/:id", machineController.update);
