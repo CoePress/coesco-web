@@ -1,4 +1,4 @@
-import { Loader, PageHeader, Table } from "@/components";
+import { Button, Loader, PageHeader, Table } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Machines = () => {

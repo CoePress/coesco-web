@@ -379,15 +379,68 @@ model QuoteItem {
   @@map("quote_items")
 }
 
+model PerformanceSheetVersion {
+  id String @id @default(uuid())
+  fields Json @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  performanceSheets PerformanceSheet[]
+
+  @@map("performance_sheet_versions")
+}
+
 // PERFORMANCE SHEET MODELS
 model PerformanceSheet {
   id String @id @default(uuid())
-  referenceNumber String @unique
+  versionId String
+  referenceNumber String
+  revisionNumber Int
   data Json @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  version PerformanceSheetVersion @relation(fields: [versionId], references: [id])
+  links PerformanceSheetLink[]
+
+  @@unique([referenceNumber, revisionNumber])
   @@map("performance_sheets")
+}
+
+model PerformanceSheetLink {
+  id String @id @default(uuid())
+  performanceSheetId String
+  entityType String
+  entityId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  performanceSheet PerformanceSheet @relation(fields: [performanceSheetId], references: [id])
+
+  @@map("performance_sheet_links")
+}
+
+model FieldWatchList {
+  id String @id @default(uuid())
+  entityType String
+  field String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("field_watch_lists")
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+  entityType String
+  entityId String
+  action String
+  oldData Json @default("{}")
+  newData Json @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("audit_logs")
 }
 
 // MACHINE MODELS

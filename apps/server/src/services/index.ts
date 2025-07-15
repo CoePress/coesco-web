@@ -21,10 +21,12 @@ import { MachineStatusService } from "./repository/machine-status.service";
 import { UserService } from "./repository/user.service";
 import { QuotingService } from "./domain/quoting.service";
 import { ConfigurationService } from "./repository/configuration.service";
+import { SystemService } from "./core/system.service";
 
 export const machineService = new MachineService();
 export const machineMonitorService = new MachineMonitorService();
 export const machineStatusService = new MachineStatusService();
+export const systemService = new SystemService();
 
 export const authService = new AuthService();
 export const cacheService = new CacheService();

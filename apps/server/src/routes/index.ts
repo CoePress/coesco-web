@@ -20,6 +20,7 @@ import configurationRoutes from "./configuration.routes";
 import classRoutes from "./class.routes";
 import optionRoutes from "./option.routes";
 import categoryRoutes from "./category.routes";
+import { systemController } from "@/controllers";
 
 const router = Router();
 
@@ -50,6 +51,9 @@ router.get("/widget.html", (req, res) => {
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+router.get("/system/entities", protect, systemController.getEntityTypes);
+router.get("/system/entities/:entityType", systemController.getEntityFields);
 
 router.get("/templates/:slug", (async (req, res) => {
   const { slug } = req.params;
