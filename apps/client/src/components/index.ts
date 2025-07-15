@@ -17,9 +17,10 @@ export { default as Text } from "./common/text";
 export { default as Toast } from "./common/toast";
 export { default as Tooltip } from "./common/tooltip";
 
-// General
+// Misc
 export { default as CommandBar } from "./misc/command-bar";
 export { default as Layout } from "./misc/layout";
 export { default as MachineMap } from "./misc/machine-map";
 export { default as MicrosoftCallback } from "./misc/microsoft-callback";
+export { default as MobileLayout } from "./misc/mobile-layout";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./misc/routes";

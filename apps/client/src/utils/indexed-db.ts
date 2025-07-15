@@ -1,8 +1,5 @@
-// IndexedDB Service for PWA
-// Provides a clean interface for IndexedDB operations
-
 export interface DatabaseSchema {
-  // Define your data models here
+  //  update to get this from the server
   user: {
     id: string;
     name: string;
@@ -28,12 +25,11 @@ export interface DatabaseSchema {
     location: string;
   };
 
-  // Add more schemas as needed
   cache: {
     key: string;
     data: any;
     timestamp: Date;
-    ttl?: number; // Time to live in milliseconds
+    ttl?: number;
   };
 }
 
@@ -47,13 +43,9 @@ class IndexedDBService {
   private initPromise: Promise<void> | null = null;
 
   constructor() {
-    // Auto-initialize when service is created
     this.initPromise = this.initialize();
   }
 
-  /**
-   * Initialize the IndexedDB database
-   */
   private async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
@@ -73,7 +65,6 @@ class IndexedDBService {
         this.db = (event.target as IDBOpenDBRequest).result;
         this.isInitialized = true;
 
-        // Handle database errors after opening
         this.db.onerror = (event: Event) => {
           console.error("Database error:", event);
         };
@@ -84,24 +75,18 @@ class IndexedDBService {
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
 
-        // Create object stores (tables)
         this.createObjectStores(db);
       };
     });
   }
 
-  /**
-   * Create object stores based on the schema
-   */
   private createObjectStores(db: IDBDatabase): void {
-    // Users store
     if (!db.objectStoreNames.contains("user")) {
       const userStore = db.createObjectStore("user", { keyPath: "id" });
       userStore.createIndex("email", "email", { unique: true });
       userStore.createIndex("lastLogin", "lastLogin", { unique: false });
     }
 
-    // Quotes store
     if (!db.objectStoreNames.contains("quotes")) {
       const quotesStore = db.createObjectStore("quotes", { keyPath: "id" });
       quotesStore.createIndex("companyId", "companyId", { unique: false });
@@ -109,23 +94,18 @@ class IndexedDBService {
       quotesStore.createIndex("createdAt", "createdAt", { unique: false });
     }
 
-    // Machines store
     if (!db.objectStoreNames.contains("machines")) {
       const machinesStore = db.createObjectStore("machines", { keyPath: "id" });
       machinesStore.createIndex("status", "status", { unique: false });
       machinesStore.createIndex("location", "location", { unique: false });
     }
 
-    // Cache store
     if (!db.objectStoreNames.contains("cache")) {
       const cacheStore = db.createObjectStore("cache", { keyPath: "key" });
       cacheStore.createIndex("timestamp", "timestamp", { unique: false });
     }
   }
 
-  /**
-   * Ensure database is initialized before operations
-   */
   private async ensureInitialized(): Promise<void> {
     if (!this.isInitialized && this.initPromise) {
       await this.initPromise;
@@ -136,9 +116,6 @@ class IndexedDBService {
     }
   }
 
-  /**
-   * Add a record to a store
-   */
   async add<T extends StoreNames>(
     storeName: T,
     data: DatabaseSchema[T]
@@ -155,9 +132,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Get a record by ID
-   */
   async get<T extends StoreNames>(
     storeName: T,
     id: string
@@ -174,9 +148,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Get all records from a store
-   */
   async getAll<T extends StoreNames>(
     storeName: T
   ): Promise<DatabaseSchema[T][]> {
@@ -192,9 +163,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Update a record (put operation)
-   */
   async update<T extends StoreNames>(
     storeName: T,
     data: DatabaseSchema[T]
@@ -211,9 +179,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Delete a record
-   */
   async delete<T extends StoreNames>(storeName: T, id: string): Promise<void> {
     await this.ensureInitialized();
 
@@ -227,9 +192,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Clear all records from a store
-   */
   async clear<T extends StoreNames>(storeName: T): Promise<void> {
     await this.ensureInitialized();
 
@@ -243,9 +205,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Get records by index
-   */
   async getByIndex<T extends StoreNames>(
     storeName: T,
     indexName: string,
@@ -264,9 +223,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Count records in a store
-   */
   async count<T extends StoreNames>(storeName: T): Promise<number> {
     await this.ensureInitialized();
 
@@ -280,9 +236,6 @@ class IndexedDBService {
     });
   }
 
-  /**
-   * Cache operations with TTL support
-   */
   async setCache(key: string, data: any, ttl?: number): Promise<void> {
     const cacheItem: DatabaseSchema["cache"] = {
       key,
@@ -299,13 +252,11 @@ class IndexedDBService {
 
     if (!cacheItem) return null;
 
-    // Check if cache has expired
     if (cacheItem.ttl) {
       const now = new Date().getTime();
       const cacheTime = cacheItem.timestamp.getTime();
 
       if (now - cacheTime > cacheItem.ttl) {
-        // Cache expired, remove it
         await this.delete("cache", key);
         return null;
       }
@@ -314,9 +265,6 @@ class IndexedDBService {
     return cacheItem.data;
   }
 
-  /**
-   * Clean up expired cache entries
-   */
   async cleanupExpiredCache(): Promise<void> {
     const allCacheItems = await this.getAll("cache");
     const now = new Date().getTime();
@@ -328,9 +276,6 @@ class IndexedDBService {
     }
   }
 
-  /**
-   * Get database info
-   */
   async getDatabaseInfo(): Promise<{
     name: string;
     version: number;
@@ -354,9 +299,6 @@ class IndexedDBService {
     };
   }
 
-  /**
-   * Close the database connection
-   */
   close(): void {
     if (this.db) {
       this.db.close();
@@ -366,8 +308,6 @@ class IndexedDBService {
   }
 }
 
-// Export singleton instance
 export const indexedDB = new IndexedDBService();
 
-// Export types for use in components
 export type { StoreNames };

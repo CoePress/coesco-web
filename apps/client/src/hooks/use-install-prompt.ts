@@ -9,7 +9,7 @@ interface InstallPromptState {
   promptInstall: () => void;
 }
 
-export function useInstallPrompt(): InstallPromptState {
+export const useInstallPrompt = (): InstallPromptState => {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -18,7 +18,6 @@ export function useInstallPrompt(): InstallPromptState {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if it's iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isSafari =
       /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
@@ -28,7 +27,6 @@ export function useInstallPrompt(): InstallPromptState {
     setIsIOSSafari(isIOSDevice && isSafari);
     setIsIOSChrome(isIOSDevice && isChrome);
 
-    // Check if PWA is already installed
     const isStandalone = window.matchMedia(
       "(display-mode: standalone)"
     ).matches;
@@ -39,26 +37,19 @@ export function useInstallPrompt(): InstallPromptState {
     const isPWAInstalled = isStandalone || isFullscreen || isMinimalUI;
     setIsInstalled(isPWAInstalled);
 
-    // Handle service worker updates
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        // New service worker has taken control, reload the page
         window.location.reload();
       });
 
-      // Check for updates on app start
       navigator.serviceWorker.ready.then((registration) => {
-        // Check for updates every time the app is opened
         registration.update();
       });
     }
 
     if (isIOSDevice) {
-      // iOS Safari and Chrome support PWA installation but not beforeinstallprompt
-      // Check if it's in standalone mode (already installed)
       setIsSupported(!isPWAInstalled);
     } else {
-      // Android/Chrome support
       const handler = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -75,13 +66,10 @@ export function useInstallPrompt(): InstallPromptState {
 
   const promptInstall = async () => {
     if (isIOS) {
-      // iOS doesn't support programmatic installation
-      // We'll show instructions in the UI instead
       return;
     }
 
     if (deferredPrompt && "prompt" in deferredPrompt) {
-      // Cast to correct type
       const promptEvent = deferredPrompt as any;
       promptEvent.prompt();
       const result = await promptEvent.userChoice;
@@ -98,4 +86,4 @@ export function useInstallPrompt(): InstallPromptState {
     isInstalled,
     promptInstall,
   };
-}
+};

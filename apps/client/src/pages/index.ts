@@ -32,3 +32,6 @@ export { default as ChatPLK } from "./_test/chat-plk";
 export { default as Design } from "./_test/design";
 export { default as Sandbox } from "./_test/sandbox";
 export { default as WarehouseMap } from "./_test/map";
+
+// PWA
+export { default as Splash } from "./splash";

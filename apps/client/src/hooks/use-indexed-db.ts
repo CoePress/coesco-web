@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { indexedDB, DatabaseSchema, StoreNames } from "../services/indexeddb";
+import { indexedDB, DatabaseSchema, StoreNames } from "@/utils/indexed-db";
 
 interface UseIndexedDBReturn<T extends StoreNames> {
   data: DatabaseSchema[T][] | null;
   loading: boolean;
   error: string | null;
 
-  // CRUD operations
   add: (item: DatabaseSchema[T]) => Promise<void>;
   get: (id: string) => Promise<DatabaseSchema[T] | undefined>;
   update: (item: DatabaseSchema[T]) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
 
-  // Utility operations
   count: () => Promise<number>;
   refresh: () => Promise<void>;
   getByIndex: (indexName: string, value: any) => Promise<DatabaseSchema[T][]>;
@@ -27,18 +25,14 @@ interface CacheHookReturn {
   error: string | null;
 }
 
-/**
- * Hook for managing IndexedDB operations with a specific store
- */
-export function useIndexedDB<T extends StoreNames>(
+export const useIndexedDB = <T extends StoreNames>(
   storeName: T,
   autoLoad: boolean = true
-): UseIndexedDBReturn<T> {
+): UseIndexedDBReturn<T> => {
   const [data, setData] = useState<DatabaseSchema[T][] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load all data from the store
   const loadData = useCallback(async () => {
     if (!autoLoad) return;
 
@@ -56,19 +50,16 @@ export function useIndexedDB<T extends StoreNames>(
     }
   }, [storeName, autoLoad]);
 
-  // Load data on mount
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Add a new item
   const add = useCallback(
     async (item: DatabaseSchema[T]) => {
       setError(null);
 
       try {
         await indexedDB.add(storeName, item);
-        // Refresh data after adding
         await loadData();
       } catch (err) {
         const errorMessage =
@@ -80,7 +71,6 @@ export function useIndexedDB<T extends StoreNames>(
     [storeName, loadData]
   );
 
-  // Get a single item
   const get = useCallback(
     async (id: string): Promise<DatabaseSchema[T] | undefined> => {
       setError(null);
@@ -97,14 +87,12 @@ export function useIndexedDB<T extends StoreNames>(
     [storeName]
   );
 
-  // Update an item
   const update = useCallback(
     async (item: DatabaseSchema[T]) => {
       setError(null);
 
       try {
         await indexedDB.update(storeName, item);
-        // Refresh data after updating
         await loadData();
       } catch (err) {
         const errorMessage =
@@ -116,14 +104,12 @@ export function useIndexedDB<T extends StoreNames>(
     [storeName, loadData]
   );
 
-  // Delete an item
   const remove = useCallback(
     async (id: string) => {
       setError(null);
 
       try {
         await indexedDB.delete(storeName, id);
-        // Refresh data after deleting
         await loadData();
       } catch (err) {
         const errorMessage =
@@ -135,13 +121,11 @@ export function useIndexedDB<T extends StoreNames>(
     [storeName, loadData]
   );
 
-  // Clear all items
   const clear = useCallback(async () => {
     setError(null);
 
     try {
       await indexedDB.clear(storeName);
-      // Refresh data after clearing
       await loadData();
     } catch (err) {
       const errorMessage =
@@ -151,7 +135,6 @@ export function useIndexedDB<T extends StoreNames>(
     }
   }, [storeName, loadData]);
 
-  // Count items
   const count = useCallback(async (): Promise<number> => {
     setError(null);
 
@@ -165,12 +148,10 @@ export function useIndexedDB<T extends StoreNames>(
     }
   }, [storeName]);
 
-  // Refresh data manually
   const refresh = useCallback(async () => {
     await loadData();
   }, [loadData]);
 
-  // Get items by index
   const getByIndex = useCallback(
     async (indexName: string, value: any): Promise<DatabaseSchema[T][]> => {
       setError(null);
@@ -200,12 +181,9 @@ export function useIndexedDB<T extends StoreNames>(
     refresh,
     getByIndex,
   };
-}
+};
 
-/**
- * Hook for managing cache operations
- */
-export function useCache(): CacheHookReturn {
+export const useCache = (): CacheHookReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -264,12 +242,9 @@ export function useCache(): CacheHookReturn {
     loading,
     error,
   };
-}
+};
 
-/**
- * Hook for getting database statistics and info
- */
-export function useDatabaseInfo() {
+export const useDatabaseInfo = () => {
   const [info, setInfo] = useState<{
     name: string;
     version: number;
@@ -306,4 +281,4 @@ export function useDatabaseInfo() {
     error,
     refresh: loadInfo,
   };
-}
+};

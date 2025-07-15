@@ -8,66 +8,6 @@ import { formatDuration, getVariantFromStatus } from "@/utils";
 import { TableColumn } from "@/components/common/table";
 import { IMachineStatus } from "@/utils/types";
 
-// type DropdownProps = {
-//   options: {
-//     label: string;
-//     value: string;
-//     disabled?: boolean;
-//   }[];
-//   onChange: (value: string) => void;
-//   selectedValue?: string;
-//   isOpen: boolean;
-//   onOpenChange: (isOpen: boolean) => void;
-//   label: string;
-// };
-
-// const Dropdown = ({
-//   options,
-//   onChange,
-//   selectedValue,
-//   isOpen,
-//   onOpenChange,
-//   label,
-// }: DropdownProps) => {
-//   const selectedOption = options.find((opt) => opt.value === selectedValue);
-
-//   return (
-//     <div className="relative">
-//       <Button
-//         variant="secondary-outline"
-//         onClick={() => onOpenChange(!isOpen)}>
-//         <span>{selectedOption?.label || label}</span>
-//       </Button>
-
-//       {isOpen && (
-//         <div className="absolute right-0 mt-2 w-48 rounded bg-foreground p-2 shadow-lg ring-1 ring-border ring-opacity-5">
-//           <label className="text-sm text-text-muted mb-2 block">{label}</label>
-
-//           <div className="flex flex-col gap-1">
-//             {options.map((option) => (
-//               <Button
-//                 key={option.value}
-//                 variant={
-//                   option.value === selectedValue
-//                     ? "primary"
-//                     : "secondary-outline"
-//                 }
-//                 disabled={option.disabled}
-//                 onClick={() => {
-//                   onChange(option.value);
-//                   onOpenChange(false);
-//                 }}
-//                 className="w-full justify-start text-left text-sm text-nowrap">
-//                 {option.label}
-//               </Button>
-//             ))}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
 const MachineHistory = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
