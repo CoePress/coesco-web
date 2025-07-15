@@ -4,7 +4,6 @@ import { formatCurrency } from "@/utils";
 import { Button, Modal, PageHeader, Loader } from "@/components";
 import { sampleOptionCategories, sampleOptions } from "@/utils/sample-data";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useGetOptionRules } from "@/hooks/config";
 import { useNavigate } from "react-router-dom";
 
 const TreeNode = ({ node }: { node: any }) => {
