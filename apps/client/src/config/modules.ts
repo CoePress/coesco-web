@@ -46,7 +46,8 @@ const Journeys = lazy(() => import("@/pages/sales/journeys"));
 const JourneyDetails = lazy(() => import("@/pages/sales/journey-details"));
 const OptionRules = lazy(() => import("@/pages/admin/option-rules"));
 const Options = lazy(() => import("@/pages/sales/options"));
-
+const AuditLogs = lazy(() => import("@/pages/admin/audit-logs"));
+const AuditConfig = lazy(() => import("@/pages/admin/audit-config"));
 const Companies = lazy(() => import("@/pages/sales/companies"));
 const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
 const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
@@ -187,6 +188,18 @@ const adminModule: Module = {
       label: "Option Rules",
       icon: Box,
       component: OptionRules,
+    },
+    {
+      slug: "audit-logs",
+      label: "Audit Logs",
+      icon: FileText,
+      component: AuditLogs,
+    },
+    {
+      slug: "audit-config",
+      label: "Audit Config",
+      icon: FileText,
+      component: AuditConfig,
     },
   ],
 };

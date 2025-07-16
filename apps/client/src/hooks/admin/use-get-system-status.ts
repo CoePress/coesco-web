@@ -21,7 +21,7 @@ const useGetSystemStatus = (
     setError(null);
 
     try {
-      const { data } = await instance.get(`/health`);
+      const { data } = await instance.get(`/system/health`);
 
       if (data.status === "ok") {
         setStatus("good");
