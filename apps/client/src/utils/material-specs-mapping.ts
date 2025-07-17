@@ -1,69 +1,12 @@
 // Utility for mapping backend material specs fields to frontend form fields
 
 import { MATERIAL_TYPE_OPTIONS } from './select-options';
+import { mapBackendToFrontend, MappingConfig } from './universal-mapping';
 
-const BACKEND_TO_FRONTEND_MAP = {
-  'Maximum Thick': {
-    max_material_width: 'coilWidth',
-    max_coil_weight: 'coilWeight',
-    max_material_thickness: 'materialThickness',
-    max_material_type: 'materialType',
-    max_yield_strength: 'yieldStrength',
-    max_tensile_strength: 'materialTensile',
-    max_fpm: 'maxFPM',
-    max_min_bend_rad: 'minBendRad',
-    max_min_loop_length: 'minLoopLength',
-    max_coil_od: 'coilOD',
-    max_coil_id: 'coilID',
-    max_coil_od_calculated: 'coilODCalculated',
-  },
-  'Max @ Full': {
-    full_material_width: 'coilWidth',
-    full_coil_weight: 'coilWeight',
-    full_material_thickness: 'materialThickness',
-    full_material_type: 'materialType',
-    full_yield_strength: 'yieldStrength',
-    full_tensile_strength: 'materialTensile',
-    full_fpm: 'maxFPM',
-    full_min_bend_rad: 'minBendRad',
-    full_min_loop_length: 'minLoopLength',
-    full_coil_od: 'coilOD',
-    full_coil_id: 'coilID',
-    full_coil_od_calculated: 'coilODCalculated',
-  },
-  'Minimum Thick': {
-    min_material_width: 'coilWidth',
-    min_coil_weight: 'coilWeight',
-    min_material_thickness: 'materialThickness',
-    min_material_type: 'materialType',
-    min_yield_strength: 'yieldStrength',
-    min_tensile_strength: 'materialTensile',
-    min_fpm: 'maxFPM',
-    min_min_bend_rad: 'minBendRad',
-    min_min_loop_length: 'minLoopLength',
-    min_coil_od: 'coilOD',
-    min_coil_id: 'coilID',
-    min_coil_od_calculated: 'coilODCalculated',
-  },
-  'Max @ Width': {
-    width_material_width: 'coilWidth',
-    width_coil_weight: 'coilWeight',
-    width_material_thickness: 'materialThickness',
-    width_material_type: 'materialType',
-    width_yield_strength: 'yieldStrength',
-    width_tensile_strength: 'materialTensile',
-    width_fpm: 'maxFPM',
-    width_min_bend_rad: 'minBendRad',
-    width_min_loop_length: 'minLoopLength',
-    width_coil_od: 'coilOD',
-    width_coil_id: 'coilID',
-    width_coil_od_calculated: 'coilODCalculated',
-  }
-};
-
-const GENERAL_BACKEND_TO_FRONTEND = {
+export const MATERIAL_SPECS_MAPPING: MappingConfig = {
   customer: 'customer',
   date: 'date',
+  referenceNumber: 'referenceNumber',
   feed_direction: 'feedDirection',
   controls_level: 'controlsLevel',
   type_of_line: 'typeOfLine',
@@ -76,137 +19,105 @@ const GENERAL_BACKEND_TO_FRONTEND = {
   non_marking: 'nonMarking',
   coil_width_max: 'coilWidthMax',
   coil_width_min: 'coilWidthMin',
+  // Add all other top-level fields from RFQ/PerformanceSheetState
+  street_address: 'streetAddress',
+  city: 'city',
+  state_province: 'state',
+  zip_code: { key: 'zip', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  country: 'country',
+  contact_name: 'contactName',
+  contact_position: 'position',
+  contact_phone_number: 'phone',
+  contact_email: 'email',
+  dealer_name: 'dealerName',
+  dealer_salesman: 'dealerSalesman',
+  days_per_week_running: { key: 'daysPerWeek', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  shifts_per_day: { key: 'shiftsPerDay', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  line_application: 'lineApplication',
+  pull_thru: { key: 'pullThrough', transform: (v) => v ? 'Yes' : 'No' },
+  max_coil_od: { key: 'maxCoilOD', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  coil_id: { key: 'coilID', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  coil_weight_max: { key: 'coilWeightMax', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  coil_handling_cap_max: { key: 'coilHandlingMax', transform: (v) => v !== undefined && v !== null ? String(v) : '' },
+  // Add more as needed for your full form coverage
 };
 
-// --- MATERIAL TYPE MAPPING ---
-const MATERIAL_TYPE_LABEL_TO_VALUE: Record<string, string> = Object.fromEntries(
-  MATERIAL_TYPE_OPTIONS.map(opt => [opt.label, opt.value])
-);
-const MATERIAL_TYPE_VALUE_TO_LABEL: Record<string, string> = Object.fromEntries(
-  MATERIAL_TYPE_OPTIONS.map(opt => [opt.value, opt.label])
-);
+// --- Versioned mapping configs ---
+const MAX_THICK_MAPPING = {
+  max_material_thickness: 'materialThickness',
+  max_coil_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.max_material_width !== undefined && backend.max_material_width !== null ? String(backend.max_material_width) : '') },
+  max_material_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.max_coil_width !== undefined && backend.max_coil_width !== null ? String(backend.max_coil_width) : '') },
+  max_material_type: 'materialType',
+  max_yield_strength: 'yieldStrength',
+  max_tensile_strength: 'materialTensile',
+  coil_id: 'coilID',
+  max_coil_weight: 'coilWeight',
+  max_min_bend_rad: 'minBendRad',
+  max_min_loop_length: 'minLoopLength',
+  max_coil_od: 'coilOD',
+  max_coil_od_calculated: 'coilODCalculated',
+  max_fpm: 'maxFPM',
+};
+const AT_FULL_MAPPING = {
+  full_material_thickness: 'materialThickness',
+  full_coil_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.full_material_width !== undefined && backend.full_material_width !== null ? String(backend.full_material_width) : '') },
+  full_material_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.full_coil_width !== undefined && backend.full_coil_width !== null ? String(backend.full_coil_width) : '') },
+  full_material_type: 'materialType',
+  full_yield_strength: 'yieldStrength',
+  full_tensile_strength: 'materialTensile',
+  coil_id: 'coilID',
+  full_coil_weight: 'coilWeight',
+  full_min_bend_rad: 'minBendRad',
+  full_min_loop_length: 'minLoopLength',
+  full_coil_od: 'coilOD',
+  full_coil_od_calculated: 'coilODCalculated',
+  max_fpm: 'maxFPM',
+};
+const MIN_THICK_MAPPING = {
+  min_material_thickness: 'materialThickness',
+  min_coil_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.min_material_width !== undefined && backend.min_material_width !== null ? String(backend.min_material_width) : '') },
+  min_material_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.min_coil_width !== undefined && backend.min_coil_width !== null ? String(backend.min_coil_width) : '') },
+  min_material_type: 'materialType',
+  min_yield_strength: 'yieldStrength',
+  min_tensile_strength: 'materialTensile',
+  coil_id: 'coilID',
+  min_coil_weight: 'coilWeight',
+  min_min_bend_rad: 'minBendRad',
+  min_min_loop_length: 'minLoopLength',
+  min_coil_od: 'coilOD',
+  min_coil_od_calculated: 'coilODCalculated',
+  max_fpm: 'maxFPM',
+};
+const AT_WIDTH_MAPPING = {
+  width_material_thickness: 'materialThickness',
+  width_coil_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.width_material_width !== undefined && backend.width_material_width !== null ? String(backend.width_material_width) : '') },
+  width_material_width: { key: 'coilWidth', transform: (v: any, backend: any) => v !== undefined && v !== null ? String(v) : (backend.width_coil_width !== undefined && backend.width_coil_width !== null ? String(backend.width_coil_width) : '') },
+  width_material_type: 'materialType',
+  width_yield_strength: 'yieldStrength',
+  width_tensile_strength: 'materialTensile',
+  coil_id: 'coilID',
+  width_coil_weight: 'coilWeight',
+  width_min_bend_rad: 'minBendRad',
+  width_min_loop_length: 'minLoopLength',
+  width_coil_od: 'coilOD',
+  width_coil_od_calculated: 'coilODCalculated',
+  max_fpm: 'maxFPM',
+};
 
-/**
- * Transforms backend material specs data to the frontend form structure.
- * @param backendData The data object from the backend
- * @returns The mapped frontend data object
- */
-export function mapBackendToFrontendMaterialSpecs(backendData: any): any {
-  const result: any = {};
-
-  // General fields
-  Object.entries(GENERAL_BACKEND_TO_FRONTEND).forEach(([backendKey, frontendKey]) => {
-    if (backendData[backendKey] !== undefined) {
-      const value = backendData[backendKey];
-      result[frontendKey] = value === null ? '' : value;
-    }
-  });
-
-  // Versioned fields
-  result.MaximumThick = {};
-  result.MaxAtFull = {};
-  result.MinimumThick = {};
-  result.MaxAtWidth = {};
-
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Maximum Thick']).forEach(([backendKey, frontendKey]) => {
-    if (backendData[backendKey] !== undefined) {
-      let value = backendData[backendKey];
-      if (frontendKey === 'materialType') {
-        // Map label to value for materialType
-        value = value === null ? '' : value;
-        result.MaximumThick[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
-      } else {
-        result.MaximumThick[frontendKey] = value === null ? '' : value;
-      }
-    } else {
-      result.MaximumThick[frontendKey] = '';
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Full']).forEach(([backendKey, frontendKey]) => {
-    if (backendData[backendKey] !== undefined) {
-      let value = backendData[backendKey];
-      if (frontendKey === 'materialType') {
-        value = value === null ? '' : value;
-        result.MaxAtFull[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
-      } else {
-        result.MaxAtFull[frontendKey] = value === null ? '' : value;
-      }
-    } else {
-      result.MaxAtFull[frontendKey] = '';
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Minimum Thick']).forEach(([backendKey, frontendKey]) => {
-    if (backendData[backendKey] !== undefined) {
-      let value = backendData[backendKey];
-      if (frontendKey === 'materialType') {
-        value = value === null ? '' : value;
-        result.MinimumThick[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
-      } else {
-        result.MinimumThick[frontendKey] = value === null ? '' : value;
-      }
-    } else {
-      result.MinimumThick[frontendKey] = '';
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Width']).forEach(([backendKey, frontendKey]) => {
-    if (backendData[backendKey] !== undefined) {
-      let value = backendData[backendKey];
-      if (frontendKey === 'materialType') {
-        value = value === null ? '' : value;
-        result.MaxAtWidth[frontendKey] = MATERIAL_TYPE_LABEL_TO_VALUE[value] ?? value;
-      } else {
-        result.MaxAtWidth[frontendKey] = value === null ? '' : value;
-      }
-    } else {
-      result.MaxAtWidth[frontendKey] = '';
-    }
-  });
-
-  // --- NEW: Map calculated fields for all versions ---
-  const calculatedFieldMap = [
-    { version: 'MaximumThick', prefix: 'max' },
-    { version: 'MaxAtFull', prefix: 'full' },
-    { version: 'MinimumThick', prefix: 'min' },
-    { version: 'MaxAtWidth', prefix: 'width' },
-  ];
-  calculatedFieldMap.forEach(({ version, prefix }) => {
-    // min_bend_rad -> minBendRad
-    if (backendData[`${prefix}_min_bend_rad`] !== undefined) {
-      result[version].minBendRad = backendData[`${prefix}_min_bend_rad`];
-    }
-    // min_loop_length -> minLoopLength
-    if (backendData[`${prefix}_min_loop_length`] !== undefined) {
-      result[version].minLoopLength = backendData[`${prefix}_min_loop_length`];
-    }
-    // coil_od_calculated -> coilODCalculated
-    if (backendData[`${prefix}_coil_od_calculated`] !== undefined) {
-      result[version].coilODCalculated = backendData[`${prefix}_coil_od_calculated`];
-    }
-  });
-
-  if (backendData.referenceNumber) result.referenceNumber = backendData.referenceNumber;
-
-  if (backendData.passline_height !== undefined) result.passline = backendData.passline_height;
-  if (backendData.customer !== undefined) result.customer = backendData.customer;
-
-  // Ensure all expected frontend fields are present with defaults
-  result.passline = backendData.passline_height ?? '';
-  result.customer = backendData.customer ?? '';
-  result.feedDirection = backendData.feed_direction ?? '';
-  result.controlsLevel = backendData.controls_level ?? '';
-  result.typeOfLine = backendData.type_of_line ?? '';
-  result.feedControls = backendData.feed_controls ?? '';
-  result.reelBackplate = backendData.reel_backplate ?? '';
-  result.reelStyle = backendData.reel_style ?? '';
-  result.lightGauge = backendData.light_guage ?? false;
-  result.nonMarking = backendData.non_marking ?? false;
-  result.date = backendData.date ?? '';
-
-  // Ensure top-level coilWidthMax and coilWidthMin are set
-  result.coilWidthMax = backendData.coil_width_max === null || backendData.coil_width_max === undefined ? '' : backendData.coil_width_max;
-  result.coilWidthMin = backendData.coil_width_min === null || backendData.coil_width_min === undefined ? '' : backendData.coil_width_min;
-
-  return result;
+export function mapBackendToFrontendMaterialSpecsUniversal(backend: any) {
+  // Map versioned fields
+  const versioned = {
+    maxThick: mapBackendToFrontend(backend, MAX_THICK_MAPPING),
+    atFull: mapBackendToFrontend(backend, AT_FULL_MAPPING),
+    minThick: mapBackendToFrontend(backend, MIN_THICK_MAPPING),
+    atWidth: mapBackendToFrontend(backend, AT_WIDTH_MAPPING),
+  };
+  // Map top-level fields (Other Specifications)
+  const topLevel = mapBackendToFrontend(backend, MATERIAL_SPECS_MAPPING);
+    return {
+    ...versioned,
+    ...topLevel,
+  };
 }
 
 /**
@@ -218,7 +129,7 @@ export function mapFrontendToBackendMaterialSpecs(form: any): any {
   const backendData: any = {};
 
   // General fields
-  Object.entries(GENERAL_BACKEND_TO_FRONTEND).forEach(([backendKey, frontendKey]) => {
+  Object.entries(MATERIAL_SPECS_MAPPING).forEach(([backendKey, frontendKey]) => {
     if (form[frontendKey] !== undefined) {
       backendData[backendKey] = form[frontendKey];
     }
@@ -230,32 +141,31 @@ export function mapFrontendToBackendMaterialSpecs(form: any): any {
   }
 
   // Versioned fields
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Maximum Thick']).forEach(([backendKey, frontendKey]) => {
-    if (form.MaximumThick && form.MaximumThick[frontendKey] !== undefined) {
-      backendData[backendKey] = form.MaximumThick[frontendKey];
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Full']).forEach(([backendKey, frontendKey]) => {
-    if (form.MaxAtFull && form.MaxAtFull[frontendKey] !== undefined) {
-      backendData[backendKey] = form.MaxAtFull[frontendKey];
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Minimum Thick']).forEach(([backendKey, frontendKey]) => {
-    if (form.MinimumThick && form.MinimumThick[frontendKey] !== undefined) {
-      backendData[backendKey] = form.MinimumThick[frontendKey];
-    }
-  });
-  Object.entries(BACKEND_TO_FRONTEND_MAP['Max @ Width']).forEach(([backendKey, frontendKey]) => {
-    if (form.MaxAtWidth && form.MaxAtWidth[frontendKey] !== undefined) {
-      backendData[backendKey] = form.MaxAtWidth[frontendKey];
-    }
-  });
+  // These fields are not directly mapped from the form to backendData
+  // as they are handled by the universal mapping utility.
+  // The universal mapping utility will handle the versioned fields
+  // and their nested structures within the backendData object.
 
   // Shared fields
   if (form.MaximumThick && form.MaximumThick.coilWeight !== undefined) backendData.max_coil_weight = form.MaximumThick.coilWeight;
   if (form.MaximumThick && form.MaximumThick.maxFPM !== undefined) backendData.max_fpm = form.MaximumThick.maxFPM;
   if (form.MaximumThick && form.MaximumThick.coilOD !== undefined) backendData.max_coil_od = form.MaximumThick.coilOD;
-  if (form.MaximumThick && form.MaximumThick.coilID !== undefined) backendData.coil_id = form.MaximumThick.coilID;
+  if (form.MaximumThick && form.MaximumThick.coilID !== undefined) backendData.max_coil_id = form.MaximumThick.coilID;
+
+  if (form.MaxAtFull && form.MaxAtFull.coilWeight !== undefined) backendData.full_coil_weight = form.MaxAtFull.coilWeight;
+  if (form.MaxAtFull && form.MaxAtFull.maxFPM !== undefined) backendData.full_fpm = form.MaxAtFull.maxFPM;
+  if (form.MaxAtFull && form.MaxAtFull.coilOD !== undefined) backendData.full_coil_od = form.MaxAtFull.coilOD;
+  if (form.MaxAtFull && form.MaxAtFull.coilID !== undefined) backendData.full_coil_id = form.MaxAtFull.coilID;
+
+  if (form.MinimumThick && form.MinimumThick.coilWeight !== undefined) backendData.min_coil_weight = form.MinimumThick.coilWeight;
+  if (form.MinimumThick && form.MinimumThick.maxFPM !== undefined) backendData.min_fpm = form.MinimumThick.maxFPM;
+  if (form.MinimumThick && form.MinimumThick.coilOD !== undefined) backendData.min_coil_od = form.MinimumThick.coilOD;
+  if (form.MinimumThick && form.MinimumThick.coilID !== undefined) backendData.min_coil_id = form.MinimumThick.coilID;
+
+  if (form.MaxAtWidth && form.MaxAtWidth.coilWeight !== undefined) backendData.width_coil_weight = form.MaxAtWidth.coilWeight;
+  if (form.MaxAtWidth && form.MaxAtWidth.maxFPM !== undefined) backendData.width_fpm = form.MaxAtWidth.maxFPM;
+  if (form.MaxAtWidth && form.MaxAtWidth.coilOD !== undefined) backendData.width_coil_od = form.MaxAtWidth.coilOD;
+  if (form.MaxAtWidth && form.MaxAtWidth.coilID !== undefined) backendData.width_coil_id = form.MaxAtWidth.coilID;
 
   if (form.referenceNumber !== undefined) backendData.referenceNumber = form.referenceNumber;
 
@@ -331,34 +241,34 @@ export function mapMaterialSpecsToBackend(form: any): MaterialSpecsCreatePayload
   return {
     customer: form.customer,
     date: form.date,
-    // --- MaximumThick (matSpec1) ---
-    max_coil_width: form.matSpec1.width,
+    // --- maxThick (was matSpec1) ---
+    max_coil_width: form.maxThick.width,
     max_coil_weight: form.coilWeight,
-    max_material_thickness: form.matSpec1.thickness,
-    max_material_type: form.matSpec1.type,
-    max_yield_strength: form.matSpec1.yield,
-    max_tensile_strength: form.matSpec1.tensile,
-    // --- MaxAtFull (matSpec2) ---
-    full_coil_width: form.matSpec2.width,
+    max_material_thickness: form.maxThick.thickness,
+    max_material_type: form.maxThick.type,
+    max_yield_strength: form.maxThick.yield,
+    max_tensile_strength: form.maxThick.tensile,
+    // --- atFull (was matSpec2) ---
+    full_coil_width: form.atFull.width,
     full_coil_weight: form.coilWeight,
-    full_material_thickness: form.matSpec2.thickness,
-    full_material_type: form.matSpec2.type,
-    full_yield_strength: form.matSpec2.yield,
-    full_tensile_strength: form.matSpec2.tensile,
-    // --- MinimumThick (matSpec3) ---
-    min_coil_width: form.matSpec3.width,
+    full_material_thickness: form.atFull.thickness,
+    full_material_type: form.atFull.type,
+    full_yield_strength: form.atFull.yield,
+    full_tensile_strength: form.atFull.tensile,
+    // --- minThick (was matSpec3) ---
+    min_coil_width: form.minThick.width,
     min_coil_weight: form.coilWeight,
-    min_material_thickness: form.matSpec3.thickness,
-    min_material_type: form.matSpec3.type,
-    min_yield_strength: form.matSpec3.yield,
-    min_tensile_strength: form.matSpec3.tensile,
-    // --- MaxAtWidth (matSpec4) ---
-    width_coil_width: form.matSpec4.width,
+    min_material_thickness: form.minThick.thickness,
+    min_material_type: form.minThick.type,
+    min_yield_strength: form.minThick.yield,
+    min_tensile_strength: form.minThick.tensile,
+    // --- atWidth (was matSpec4) ---
+    width_coil_width: form.atWidth.width,
     width_coil_weight: form.coilWeight,
-    width_material_thickness: form.matSpec4.thickness,
-    width_material_type: form.matSpec4.type,
-    width_yield_strength: form.matSpec4.yield,
-    width_tensile_strength: form.matSpec4.tensile,
+    width_material_thickness: form.atWidth.thickness,
+    width_material_type: form.atWidth.type,
+    width_yield_strength: form.atWidth.yield,
+    width_tensile_strength: form.atWidth.tensile,
     // --- Shared fields ---
     coil_id: form.coilID,
     feed_direction: form.feedDirection,
@@ -374,4 +284,12 @@ export function mapMaterialSpecsToBackend(form: any): MaterialSpecsCreatePayload
   };
 }
 
-export { BACKEND_TO_FRONTEND_MAP, GENERAL_BACKEND_TO_FRONTEND }; 
+// --- MATERIAL TYPE MAPPING ---
+const MATERIAL_TYPE_LABEL_TO_VALUE: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map(opt => [opt.label, opt.value])
+);
+const MATERIAL_TYPE_VALUE_TO_LABEL: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map(opt => [opt.value, opt.label])
+);
+
+export { MATERIAL_TYPE_OPTIONS, MATERIAL_TYPE_LABEL_TO_VALUE, MATERIAL_TYPE_VALUE_TO_LABEL }; 

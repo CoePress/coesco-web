@@ -2,6 +2,21 @@ import { useState } from 'react';
 import { pythonInstance } from '@/utils';
 import { useGetRFQ } from './use-get-rfq';
 
+export interface RFQMaterialSpec {
+  materialType: string;
+  materialThickness: string;
+  coilWidth: string;
+  yieldStrength: string;
+  materialTensile: string;
+  // Extra fields for compatibility with MaterialSpecsVersion
+  coilID?: string;
+  coilOD?: string;
+  coilWeight?: string;
+  minBendRad?: string;
+  minLoopLength?: string;
+  coilODCalculated?: string;
+}
+
 export interface RFQFormData {
   referenceNumber: string;
   date: string;
@@ -20,7 +35,7 @@ export interface RFQFormData {
   daysPerWeek: string;
   shiftsPerDay: string;
   lineApplication: string;
-  lineType: string;
+  typeOfLine: string;
   pullThrough: string;
   coilWidthMax: string;
   coilWidthMin: string;
@@ -33,34 +48,10 @@ export interface RFQFormData {
   coilCarRequired: string;
   runOffBackplate: string;
   requireRewinding: string;
-  matSpec1: {
-    thickness: string;
-    width: string;
-    type: string;
-    yield: string;
-    tensile: string;
-  };
-  matSpec2: {
-    thickness: string;
-    width: string;
-    type: string;
-    yield: string;
-    tensile: string;
-  };
-  matSpec3: {
-    thickness: string;
-    width: string;
-    type: string;
-    yield: string;
-    tensile: string;
-  };
-  matSpec4: {
-    thickness: string;
-    width: string;
-    type: string;
-    yield: string;
-    tensile: string;
-  };
+  maxThick: RFQMaterialSpec;
+  atFull: RFQMaterialSpec;
+  minThick: RFQMaterialSpec;
+  atWidth: RFQMaterialSpec;
   cosmeticMaterial: string;
   feedEquipment: string;
   pressType: {
@@ -140,7 +131,7 @@ function mapToBackendRFQ(form: RFQFormData) {
     days_per_week_running: toInt(form.daysPerWeek),
     shifts_per_day: toInt(form.shiftsPerDay),
     line_application: form.lineApplication || undefined,
-    type_of_line: form.lineType || undefined,
+    type_of_line: form.typeOfLine || undefined,
     pull_thru: form.pullThrough || undefined,
     coil_width_max: toFloat(form.coilWidthMax),
     coil_width_min: toFloat(form.coilWidthMin),
@@ -152,26 +143,26 @@ function mapToBackendRFQ(form: RFQFormData) {
     run_off_backplate: ynToBool(form.runOffBackplate),
     req_rewinding: ynToBool(form.requireRewinding),
     // Material specs
-    max_material_thickness: toFloat(form.matSpec1.thickness),
-    max_material_width: toFloat(form.matSpec1.width),
-    max_material_type: form.matSpec1.type || undefined,
-    max_yield_strength: toFloat(form.matSpec1.yield),
-    max_tensile_strength: toFloat(form.matSpec1.tensile),
-    full_material_thickness: toFloat(form.matSpec2.thickness),
-    full_material_width: toFloat(form.matSpec2.width),
-    full_material_type: form.matSpec2.type || undefined,
-    full_yield_strength: toFloat(form.matSpec2.yield),
-    full_tensile_strength: toFloat(form.matSpec2.tensile),
-    min_material_thickness: toFloat(form.matSpec3.thickness),
-    min_material_width: toFloat(form.matSpec3.width),
-    min_material_type: form.matSpec3.type || undefined,
-    min_yield_strength: toFloat(form.matSpec3.yield),
-    min_tensile_strength: toFloat(form.matSpec3.tensile),
-    width_material_thickness: toFloat(form.matSpec4.thickness),
-    width_material_width: toFloat(form.matSpec4.width),
-    width_material_type: form.matSpec4.type || undefined,
-    width_yield_strength: toFloat(form.matSpec4.yield),
-    width_tensile_strength: toFloat(form.matSpec4.tensile),
+    max_material_thickness: toFloat(form.maxThick.materialThickness),
+    max_material_width: toFloat(form.maxThick.coilWidth),
+    max_material_type: form.maxThick.materialType || undefined,
+    max_yield_strength: toFloat(form.maxThick.yieldStrength),
+    max_tensile_strength: toFloat(form.maxThick.materialTensile),
+    full_material_thickness: toFloat(form.atFull.materialThickness),
+    full_material_width: toFloat(form.atFull.coilWidth),
+    full_material_type: form.atFull.materialType || undefined,
+    full_yield_strength: toFloat(form.atFull.yieldStrength),
+    full_tensile_strength: toFloat(form.atFull.materialTensile),
+    min_material_thickness: toFloat(form.minThick.materialThickness),
+    min_material_width: toFloat(form.minThick.coilWidth),
+    min_material_type: form.minThick.materialType || undefined,
+    min_yield_strength: toFloat(form.minThick.yieldStrength),
+    min_tensile_strength: toFloat(form.minThick.materialTensile),
+    width_material_thickness: toFloat(form.atWidth.materialThickness),
+    width_material_width: toFloat(form.atWidth.coilWidth),
+    width_material_type: form.atWidth.materialType || undefined,
+    width_yield_strength: toFloat(form.atWidth.yieldStrength),
+    width_tensile_strength: toFloat(form.atWidth.materialTensile),
     cosmetic_material: ynToBool(form.cosmeticMaterial),
     brand_of_feed_equipment: form.feedEquipment || undefined,
     gap_frame_press: form.pressType.gapFrame,

@@ -1,40 +1,42 @@
 // Centralized select options for reuse across the app
 
+import { Label } from "recharts";
+
 export const FEED_DIRECTION_OPTIONS = [
-  { value: "rightToLeft", label: "Right to Left" },
-  { value: "leftToRight", label: "Left to Right" },
+  { value: "Right to Left", label: "Right to Left" },
+  { value: "Left to Right", label: "Left to Right" },
 ];
 
 export const CONTROLS_LEVEL_OPTIONS = [
-  { value: "miniDriveSystem", label: "Mini-Drive System" },
-  { value: "relayMachine", label: "Relay Machine" },
-  { value: "syncMaster", label: "SyncMaster" },
-  { value: "ipIndexerBasic", label: "IP Indexer Basic" },
-  { value: "allenBradleyBasic", label: "Allen Bradley Basic" },
-  { value: "syncMasterPlus", label: "SyncMaster Plus" },
-  { value: "ipIndexerPlus", label: "IP Indexer Plus" },
-  { value: "allenBradleyPlus", label: "Allen Bradley Plus" },
-  { value: "fullyAutoamtic", label: "Fully Automatic" },
+  { value: "Mini-Drive System", label: "Mini-Drive System" },
+  { value: "Relay Machine", label: "Relay Machine" },
+  { value: "SyncMaster", label: "SyncMaster" },
+  { value: "IP Indexer Basic", label: "IP Indexer Basic" },
+  { value: "Allen Bradley Basic", label: "Allen Bradley Basic" },
+  { value: "SyncMaster Plus", label: "SyncMaster Plus" },
+  { value: "IP Indexer Plus", label: "IP Indexer Plus" },
+  { value: "Allen Bradley Plus", label: "Allen Bradley Plus" },
+  { value: "Fully Automatic", label: "Fully Automatic" },
 ];
 
 export const TYPE_OF_LINE_OPTIONS = [
-  { value: "compact", label: "Compact" },
-  { value: "compactCTL", label: "Compact CTL" },
-  { value: "conventional", label: "Conventional" },
-  { value: "conventionalCTL", label: "Conventional CTL" },
-  { value: "pullThrough", label: "Pull Through" },
-  { value: "pullThroughCompact", label: "Pull Through Compact" },
-  { value: "pullThroughCTL", label: "Pull Through CTL" },
-  { value: "feed", label: "Feed" },
-  { value: "feedPullThough", label: "Feed-Pull Through" },
-  { value: "feedPullThroughShear", label: "Feed-Pull Through-Shear" },
-  { value: "feedShear", label: "Feed-Shear" },
-  { value: "straightener", label: "Straightener" },
-  { value: "straightenerReelCombo", label: "Straightener-Reel Combination" },
-  { value: "reelMotorized", label: "Reel-Motorized" },
-  { value: "reelPullOff", label: "Reel-Pull Off" },
-  { value: "threadingTable", label: "Threading Table" },
-  { value: "other", label: "Other" },
+  { value: "Compact", label: "Compact" },
+  { value: "Compact CTL", label: "Compact CTL" },
+  { value: "Conventional", label: "Conventional" },
+  { value: "Conventional CTL", label: "Conventional CTL" },
+  { value: "Pull Through", label: "Pull Through" },
+  { value: "Pull Through Compact", label: "Pull Through Compact" },
+  { value: "Pull Through CTL", label: "Pull Through CTL" },
+  { value: "Feed", label: "Feed" },
+  { value: "Feed-Pull Through", label: "Feed-Pull Through" },
+  { value: "Feed-Pull Through-Shear", label: "Feed-Pull Through-Shear" },
+  { value: "Feed-Shear", label: "Feed-Shear" },
+  { value: "Straightener", label: "Straightener" },
+  { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+  { value: "Reel-Motorized", label: "Reel-Motorized" },
+  { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+  { value: "Threading Table", label: "Threading Table" },
+  { value: "Other", label: "Other" },
 ];
 
 export const PASSLINE_OPTIONS = [
@@ -103,32 +105,32 @@ export const PASSLINE_OPTIONS = [
 ];
 
 export const ROLL_TYPE_OPTIONS = [
-  { value: "7RollStrBackbend", label: "7 Roll Str. Backbend" },
-  { value: "9RollStrBackbend", label: "9 Roll Str. Backbend" },
-  { value: "11RollStrBackbend", label: "11 Roll Str. Backbend" },
+  { value: "7 Roll Str. Backbend", label: "7 Roll Str. Backbend" },
+  { value: "9 Roll Str. Backbend", label: "9 Roll Str. Backbend" },
+  { value: "11 Roll Str. Backbend", label: "11 Roll Str. Backbend" },
 ];
 
 export const REEL_BACKPLATE_OPTIONS = [
-  { value: "standardBackplate", label: "Standard Backplate" },
-  { value: "fullODBackplate", label: "Full OD Backplate" },
+  { value: "Standard Backplate", label: "Standard Backplate" },
+  { value: "Full OD Backplate", label: "Full OD Backplate" },
 ];
 
 export const REEL_STYLE_OPTIONS = [
-  { value: "singleEnded", label: "Single Ended" },
-  { value: "doubleEnded", label: "Double Ended" },
+  { value: "Single Ended", label: "Single Ended" },
+  { value: "Double Ended", label: "Double Ended" },
 ];
 
 export const MATERIAL_TYPE_OPTIONS = [
-  { value: "aluminum", label: "Aluminum" },
-  { value: "galvanized", label: "Galvanized" },
-  { value: "hsSteel", label: "HS Steel" },
-  { value: "hotRolledSteel", label: "Hot Rolled Steel" },
-  { value: "dualPhase", label: "Dual Phase" },
-  { value: "coldRolledSteel", label: "Cold Rolled Steel" },
-  { value: "sainlessSteel", label: "Stainless Steel" },
-  { value: "titanium", label: "Titanium" },
-  { value: "brass", label: "Brass" },
-  { value: "berylCopper", label: "Beryl Copper" },
+  { value: "Aluminum", label: "Aluminum" },
+  { value: "Galvanized", label: "Galvanized" },
+  { value: "HS Steel", label: "HS Steel" },
+  { value: "Hot Rolled Steel", label: "Hot Rolled Steel" },
+  { value: "Dual Phase", label: "Dual Phase" },
+  { value: "Cold Rolled Steel", label: "Cold Rolled Steel" },
+  { value: "Sainless Steel", label: "Stainless Steel" },
+  { value: "Titanium", label: "Titanium" },
+  { value: "Brass", label: "Brass" },
+  { value: "Beryl Copper", label: "Beryl Copper" },
 ];
 
 export const YES_NO_OPTIONS = [
@@ -143,4 +145,58 @@ export const REEL_MODEL_OPTIONS = [
   { value: "CPR-100", label: "CPR-100" },
   { value: "CPR-150", label: "CPR-150" },
   { value: "CPR-200", label: "CPR-200" },
+  { value: "CPR-300", label: "CPR-300" },
+  { value: "CPR-400", label: "CPR-400" },
+  { value: "CPR-500", label: "CPR-500" },
+  { value: "CPR-600", label: "CPR-600" },
+];
+
+export const REEL_WIDTTH_OPTIONS = [
+  { value: "24", Label: "24" },
+  { value: "30", Label: "30" },
+  { value: "36", Label: "36" },
+  { value: "42", Label: "42" },
+  { value: "48", Label: "48" },
+  { value: "54", Label: "54" },
+  { value: "60", Label: "60" },
+];
+
+export const BACKPLATE_DIAMETER_OPTIONS = [
+  { value: "27", Label: "27" },
+  { value: "72", Label: "72" },
+];
+
+export const HYDRAULIC_THREADING_DRIVE_OPTIONS = [
+  { value: "22 cu in (D-12689)", label: "22 cu in (D-12689)" },
+  { value: "38 cu in (D-13374)", label: "38 cu in (D-13374)" },
+  { value: "60 cu in (D-13374)", label: "60 cu in (D-13374)" },
+  { value: "60 cu in (D-13382)", label: "60 cu in (D-13382)" },
+];
+
+export const HOLD_DOWN_ASSY_OPTIONS = [
+  { value: "SD", label: "SD" },
+  { value: "SD_MOTORIZED", label: "SD_MOTORIZED" },
+  { value: "MD", label: "MD" },
+  { value: "HD_SINGLE", label: "HD_SINGLE" },
+  { value: "HD_DUAL", label: "HD_DUAL" },
+  { value: "XD", label: "XD" },
+  { value: "XXD", label: "XXD" },
+];
+
+export const HOLD_DOWN_CYLINDER_OPTIONS = [
+  { value: "hydraulic", label: "Hydraulic"},
+];
+
+export const BRAKE_MODEL_OPTIONS = [
+  { value: "Single Stage", label: "Single Stage" },
+  { value: "Double Stage", label: "Double Stage" },
+  { value: "Triple Stage", label: "Triple Stage" },
+  { value: "Failsafe - Single Stage", label: "Failsafe - Single Stage" },
+  { value: "Failsafe - Double Stage", label: "Failsafe - Double Stage" },
+];
+
+export const BRAKE_QUANTITY_OPTIONS = [
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
 ];

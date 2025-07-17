@@ -1,15 +1,19 @@
 import { useEffect, useState, useRef } from "react";
-import Input from "@/components/shared/input";
-import Select from "@/components/shared/select";
-import Checkbox from "@/components/shared/checkbox";
-import Text from "@/components/shared/text";
-import Tabs from "@/components/shared/tabs";
+import Input from "@/components/common/input";
+import Select from "@/components/common/select";
+import Checkbox from "@/components/common/checkbox";
+import Text from "@/components/common/text";
+import Tabs from "@/components/common/tabs";
 import { Button, Card } from "@/components";
 import { useCreateMaterialSpecs, calculateMaterialSpecs, calculateMaterialSpecsVariant } from "@/hooks/performance/use-create-material-specs";
 import { useGetMaterialSpecs } from "@/hooks/performance/use-get-material-specs";
 import { snakeToCamel } from "@/utils";
 import { usePerformanceSheet, PerformanceSheetState } from '@/contexts/performance.context';
-import { mapBackendToFrontendMaterialSpecs, mapFrontendToBackendMaterialSpecs } from '@/utils/material-specs-mapping';
+import { mapBackendToFrontendMaterialSpecsUniversal, mapFrontendToBackendMaterialSpecs } from '@/utils/material-specs-mapping';
+import { useGetTDDBHD } from '@/hooks/performance/use-get-tddbhd';
+import { mapBackendToFrontendTDDBHD } from './tddbhd';
+import { useGetReelDrive } from '@/hooks/performance/use-get-reel-drive';
+import { mapBackendToFrontendReelDrive } from './reel-drive';
 import {
   FEED_DIRECTION_OPTIONS,
   CONTROLS_LEVEL_OPTIONS,
@@ -60,10 +64,10 @@ const FIELD_LABELS: { [key: string]: string } = {
 };
 
 const versionKeyMap = {
-  'Maximum Thick': 'MaximumThick',
-  'Max @ Full': 'MaxAtFull',
-  'Minimum Thick': 'MinimumThick',
-  'Max @ Width': 'MaxAtWidth',
+  'Maximum Thick': 'maxThick',
+  'Max @ Full': 'atFull',
+  'Minimum Thick': 'minThick',
+  'Max @ Width': 'atWidth',
 } as const;
 
 function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState, currentVersion: 'Maximum Thick' | 'Max @ Full' | 'Minimum Thick' | 'Max @ Width' = 'Maximum Thick'): any {
@@ -93,31 +97,31 @@ function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState,
     case 'Maximum Thick':
       return {
         ...baseData,
-        max_coil_width: versionData.width || '',
+        max_coil_width: versionData.coilWidth || '',
         max_coil_weight: versionData.coilWeight || '',
-        max_material_thickness: versionData.thickness || '',
+        max_material_thickness: versionData.materialThickness || '',
         max_material_type: versionData.materialType || '',
         max_yield_strength: versionData.yieldStrength || '',
-        max_tensile_strength: versionData.tensileStrength || '',
+        max_tensile_strength: versionData.materialTensile || '',
         max_fpm: '', // Add FPM field for max version
         max_min_bend_rad: versionData.minBendRad || '',
         max_min_loop_length: versionData.minLoopLength || '',
         max_coil_od: versionData.coilOD || '',
         max_coil_od_calculated: versionData.coilODCalculated || '',
         // Backward compatibility aliases
-        coil_width_max: versionData.width ? Number(versionData.width) : undefined,
+        coil_width_max: versionData.coilWidth ? Number(versionData.coilWidth) : undefined,
         coil_weight_max: form.coilWeightMax ? Number(form.coilWeightMax) : undefined,
       };
     
     case 'Max @ Full':
       return {
         ...baseData,
-        full_coil_width: versionData.width || '',
+        full_coil_width: versionData.coilWidth || '',
         full_coil_weight: versionData.coilWeight || '',
-        full_material_thickness: versionData.thickness || '',
+        full_material_thickness: versionData.materialThickness || '',
         full_material_type: versionData.materialType || '',
         full_yield_strength: versionData.yieldStrength || '',
-        full_tensile_strength: versionData.tensileStrength || '',
+        full_tensile_strength: versionData.materialTensile || '',
         full_fpm: '', // Add FPM field for full version
         full_min_bend_rad: versionData.minBendRad || '',
         full_min_loop_length: versionData.minLoopLength || '',
@@ -128,12 +132,12 @@ function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState,
     case 'Minimum Thick':
       return {
         ...baseData,
-        min_coil_width: versionData.width || '',
+        min_coil_width: versionData.coilWidth || '',
         min_coil_weight: versionData.coilWeight || '',
-        min_material_thickness: versionData.thickness || '',
+        min_material_thickness: versionData.materialThickness || '',
         min_material_type: versionData.materialType || '',
         min_yield_strength: versionData.yieldStrength || '',
-        min_tensile_strength: versionData.tensileStrength || '',
+        min_tensile_strength: versionData.materialTensile || '',
         min_fpm: '', // Add FPM field for min version
         min_min_bend_rad: versionData.minBendRad || '',
         min_min_loop_length: versionData.minLoopLength || '',
@@ -144,12 +148,12 @@ function mapPerformanceSheetToMaterialSpecsFormData(form: PerformanceSheetState,
     case 'Max @ Width':
       return {
         ...baseData,
-        width_coil_width: versionData.width || '',
+        width_coil_width: versionData.coilWidth || '',
         width_coil_weight: versionData.coilWeight || '',
-        width_material_thickness: versionData.thickness || '',
+        width_material_thickness: versionData.materialThickness || '',
         width_material_type: versionData.materialType || '',
         width_yield_strength: versionData.yieldStrength || '',
-        width_tensile_strength: versionData.tensileStrength || '',
+        width_tensile_strength: versionData.materialTensile || '',
         width_fpm: '', // Add FPM field for width version
         width_min_bend_rad: versionData.minBendRad || '',
         width_min_loop_length: versionData.minLoopLength || '',
@@ -178,35 +182,53 @@ function hasAllRequiredFields(versionData: any) {
 }
 
 const MaterialSpecs = () => {
-  const { performanceSheet: form, setPerformanceSheet, updatePerformanceSheet } = usePerformanceSheet();
+  const { performanceSheet, updatePerformanceSheet, setPerformanceSheet } = usePerformanceSheet();
   const { isLoading, status, errors, createMaterialSpecs, updateMaterialSpecs } = useCreateMaterialSpecs();
   const { isLoading: isGetting, status: getStatus, fetchedMaterialSpecs, getMaterialSpecs } = useGetMaterialSpecs();
-  const [version, setVersion] = useState<'Maximum Thick' | 'Max @ Full' | 'Minimum Thick' | 'Max @ Width'>('Maximum Thick');
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const { getTDDBHD } = useGetTDDBHD();
+  const { getReelDrive } = useGetReelDrive();
 
   // Get coil width boundaries from RFQ form (as numbers)
-  const coilWidthMin = Number(form.coilWidthMin) || undefined;
-  const coilWidthMax = Number(form.coilWidthMax) || undefined;
+  const coilWidthMin = Number(performanceSheet.coilWidthMin) || undefined;
+  const coilWidthMax = Number(performanceSheet.coilWidthMax) || undefined;
 
   useEffect(() => {
     if (fetchedMaterialSpecs) {
-      // Map backend to frontend for known fields
-      const mapped = mapBackendToFrontendMaterialSpecs(fetchedMaterialSpecs);
-      // Mapped fields take precedence over snakeToCamel(fetchedMaterialSpecs)
-      const merged = { ...snakeToCamel(fetchedMaterialSpecs), ...mapped };
-      Object.keys(mapped).forEach((k) => {
-        if (typeof mapped[k] === 'object' && mapped[k] !== null) {
-          merged[k] = { ...((snakeToCamel((fetchedMaterialSpecs as any)[k]) || {})), ...mapped[k] };
-        }
-      });
-      // Always preserve the user's referenceNumber in the form state
-      merged.referenceNumber = form.referenceNumber || mapped.referenceNumber;
-      setPerformanceSheet(merged as PerformanceSheetState);
+      const mapped = mapBackendToFrontendMaterialSpecsUniversal(fetchedMaterialSpecs);
+      setPerformanceSheet((prev) => ({
+        ...prev,
+        ...mapped
+      }));
+      // Also fetch TDDBHD and Reel Drive and update context
+      const refNum = performanceSheet.referenceNumber || (mapped as any).referenceNumber;
+      if (refNum) {
+        console.log('Fetching TDDBHD with refNum:', refNum);
+        getTDDBHD(refNum).then((tddbhdData) => {
+          console.log('TDDBHD backend data:', tddbhdData);
+          if (tddbhdData) {
+            setPerformanceSheet(prev => ({
+              ...prev,
+              tddbhd: mapBackendToFrontendTDDBHD(tddbhdData, prev.tddbhd)
+            }));
+          }
+        });
+        console.log('Fetching Reel Drive with refNum:', refNum);
+        getReelDrive(refNum).then((reelDriveData) => {
+          console.log('Reel Drive backend data:', reelDriveData);
+          if (reelDriveData) {
+            setPerformanceSheet(prev => ({
+              ...prev,
+              reelDrive: mapBackendToFrontendReelDrive(reelDriveData, prev.reelDrive)
+            }));
+          }
+        });
+      }
     }
   }, [fetchedMaterialSpecs, setPerformanceSheet]);
 
-  const currentVersionKey = versionKeyMap[version];
-  const versionData = form[currentVersionKey as keyof typeof form] || {};
+  const currentVersionKey = versionKeyMap['Maximum Thick'];
+  const versionData = performanceSheet[currentVersionKey as keyof PerformanceSheetState] || {};
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -226,34 +248,42 @@ const MaterialSpecs = () => {
       return;
     }
     // Otherwise, update versioned fields
+    let updatedVersionData;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
+      updatedVersionData = {
+        ...performanceSheet[currentVersionKey],
+        [name]: checked
+      };
       updatePerformanceSheet({
-        [currentVersionKey]: {
-          ...form[currentVersionKey],
-          [name]: checked
-        }
+        [currentVersionKey]: updatedVersionData
       });
     } else if (type === 'number') {
+      updatedVersionData = {
+        ...performanceSheet[currentVersionKey],
+        [name]: value === '' ? undefined : parseFloat(value)
+      };
       updatePerformanceSheet({
-        [currentVersionKey]: {
-          ...form[currentVersionKey],
-          [name]: value === '' ? undefined : parseFloat(value)
-        }
+        [currentVersionKey]: updatedVersionData
       });
     } else {
+      updatedVersionData = {
+        ...performanceSheet[currentVersionKey],
+        [name]: value
+      };
       updatePerformanceSheet({
-        [currentVersionKey]: {
-          ...form[currentVersionKey],
-          [name]: value
-        }
+        [currentVersionKey]: updatedVersionData
       });
+    }
+    // Trigger calculation if all required fields are present
+    if (hasAllRequiredFields(updatedVersionData)) {
+      triggerCalculation(currentVersionKey, updatedVersionData);
     }
   };
 
   const triggerCalculation = async (versionKey: string, versionData: any) => {
-    let coilWeight = form.coilWeightMax !== undefined && form.coilWeightMax !== null && form.coilWeightMax !== ''
-      ? Number(form.coilWeightMax)
+    let coilWeight = performanceSheet.coilWeightMax !== undefined && performanceSheet.coilWeightMax !== null && performanceSheet.coilWeightMax !== ''
+      ? Number(performanceSheet.coilWeightMax)
       : (versionData.coilWeight !== undefined && versionData.coilWeight !== null && versionData.coilWeight !== ''
           ? Number(versionData.coilWeight)
           : 0);
@@ -286,7 +316,7 @@ const MaterialSpecs = () => {
       // Update only the calculated fields for this version
       updatePerformanceSheet({
         [versionKey as keyof PerformanceSheetState]: {
-          ...((form[versionKey as keyof PerformanceSheetState] as object) || {}),
+          ...((performanceSheet[versionKey as keyof PerformanceSheetState] as object) || {}),
           minBendRad: result['min_bend_rad'],
           minLoopLength: result['min_loop_length'],
           coilODCalculated: result['coil_od_calculated'],
@@ -303,7 +333,7 @@ const MaterialSpecs = () => {
     if (!REQUIRED_FIELDS.includes(name)) return;
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
-      const versionData = form[currentVersionKey as keyof PerformanceSheetState] || {};
+      const versionData = performanceSheet[currentVersionKey as keyof PerformanceSheetState] || {};
       if (hasAllRequiredFields(versionData)) {
         triggerCalculation(currentVersionKey, versionData);
       }
@@ -314,11 +344,11 @@ const MaterialSpecs = () => {
   const handleSendData = async () => {
     try {
       // Map the entire form to backend payload (all versions)
-      const mapped = mapFrontendToBackendMaterialSpecs(form);
+      const mapped = mapFrontendToBackendMaterialSpecs(performanceSheet);
       
       if (fetchedMaterialSpecs) {
         // Update existing specs (merge with existing data)
-        await updateMaterialSpecs(form.referenceNumber, mapped);
+        await updateMaterialSpecs(performanceSheet.referenceNumber, mapped);
       } else {
         // Create new specs
         await createMaterialSpecs(mapped);
@@ -330,22 +360,20 @@ const MaterialSpecs = () => {
 
   // Only fetch material specs, do not create
   const handleGet = async () => {
-    const data = await getMaterialSpecs(form.referenceNumber);
+    const data = await getMaterialSpecs(performanceSheet.referenceNumber);
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto text-sm p-6">
-      <Card className="mb-8 p-6">
+    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+      <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">Reference Information</Text>
         <div className="grid grid-cols-2 gap-6">
           <Input 
             label="Reference" 
             required
             name="referenceNumber" 
-            value={form.referenceNumber} 
-            onChange={e => {
-              updatePerformanceSheet({ referenceNumber: e.target.value });
-            }}
+            value={performanceSheet.referenceNumber}
+            onChange={e => updatePerformanceSheet({ referenceNumber: e.target.value })}
             error={errors.referenceNumber ? 'Required' : ''}
           />
           <div className="flex items-end gap-2">
@@ -354,7 +382,7 @@ const MaterialSpecs = () => {
               onClick={handleGet}
               disabled={isGetting}
             >
-              {isGetting ? 'Getting...' : 'Get Material Specs'}
+              {isGetting ? 'Getting...' : 'Get Data'}
             </Button>
             <Button 
               as="button" 
@@ -373,81 +401,49 @@ const MaterialSpecs = () => {
       </Card>
 
       {/* Customer and Date Card */}
-      <Card className="mb-8 p-6">
+      <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">Customer & Date</Text>
         <div className="grid grid-cols-2 gap-6">
           <Input
             label="Customer"
             name="customer"
-            value={form.customer || ''}
-            onChange={handleChange}
+            value={performanceSheet.customer}
+            onChange={e => updatePerformanceSheet({ customer: e.target.value })}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={form.date || ''}
-            onChange={handleChange}
+            value={performanceSheet.date}
+            onChange={e => updatePerformanceSheet({ date: e.target.value })}
           />
         </div>
       </Card>
 
-      <Card className="mb-8 p-6">
+      <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">Material Specifications</Text>
-        {/* Version Tabs (inside the card) */}
-        
-        {/* Active Version Badge (inside the card) */}
-        <Tabs activeTab={version} setActiveTab={tab => setVersion(tab as VersionKey)} tabs={VERSIONS.map(v => ({ label: v, value: v }))} />
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-            version === 'Maximum Thick' ? 'bg-blue-100 text-blue-800' :
-            version === 'Max @ Full' ? 'bg-green-100 text-green-800' :
-            version === 'Minimum Thick' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-purple-100 text-purple-800'}`}
-          >
-            {version} Version
-          </span>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MATERIAL_SPECS_FIELDS[version].map((field) => {
-            if (field === 'materialType') {
-              return (
-                <Select
-                  key={field}
-                  label={FIELD_LABELS[field] || field}
-                  name={field}
-                  value={(versionData as Record<string, any>)[field] ?? ''}
-                  onChange={handleChange}
-                  options={MATERIAL_TYPE_OPTIONS}
-                  error={(errors as Record<string, any>)[field] ? 'Required' : ''}
-                />
-              );
-            }
-            return (
-              <Input
-                key={field}
-                label={FIELD_LABELS[field] || field}
-                name={field}
-                type={field.toLowerCase().includes('thickness') || field.toLowerCase().includes('width') || field.toLowerCase().includes('coil') || field.toLowerCase().includes('weight') || field.toLowerCase().includes('strength') || field.toLowerCase().includes('fpm') || field.toLowerCase().includes('rad') || field.toLowerCase().includes('length') ? 'number' : 'text'}
-                value={(versionData as Record<string, any>)[field] ?? ''}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={(errors as Record<string, any>)[field] ? 'Required' : ''}
-                min={field === 'coilWidth' ? coilWidthMin : undefined}
-                max={field === 'coilWidth' ? coilWidthMax : undefined}
-              />
-            );
-          })}
+          <Input label="Coil Width (in)" name="maxThick.coilWidth" value={performanceSheet.maxThick.coilWidth} onChange={handleChange} type="number" min={coilWidthMin} max={coilWidthMax} />
+          <Input label="Coil Weight (Max)" name="maxThick.coilWeight" value={performanceSheet.maxThick.coilWeight} onChange={handleChange} type="number" />
+          <Input label="Material Thickness (in)" name="maxThick.materialThickness" value={performanceSheet.maxThick.materialThickness} onChange={handleChange} type="number" />
+          <Select label="Material Type" name="maxThick.materialType" value={performanceSheet.maxThick.materialType} onChange={handleChange} options={MATERIAL_TYPE_OPTIONS} />
+          <Input label="Yield Strength (psi)" name="maxThick.yieldStrength" value={performanceSheet.maxThick.yieldStrength} onChange={handleChange} type="number" />
+          <Input label="Material Tensile (psi)" name="maxThick.materialTensile" value={performanceSheet.maxThick.materialTensile} onChange={handleChange} type="number" />
+          <Input label="Coil I.D." name="maxThick.coilID" value={performanceSheet.maxThick.coilID} onChange={handleChange} type="number" />
+          <Input label="Coil O.D." name="maxThick.coilOD" value={performanceSheet.maxThick.coilOD} onChange={handleChange} type="number" />
+          <Input label="Min Bend Radius (in)" name="maxThick.minBendRad" value={performanceSheet.maxThick.minBendRad} onChange={handleChange} type="number" />
+          <Input label="Min Loop Length (ft)" name="maxThick.minLoopLength" value={performanceSheet.maxThick.minLoopLength} onChange={handleChange} type="number" />
+          <Input label="Coil O.D. Calculated" name="maxThick.coilODCalculated" value={performanceSheet.maxThick.coilODCalculated} onChange={handleChange} type="number" />
         </div>
       </Card>
 
-      <Card className="mb-8 p-6">
+      <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">Other Specifications</Text>
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
           <Select
             label="Select Feed Direction"
             name="feedDirection"
-            value={form.feedDirection ?? ''}
+            value={performanceSheet.feedDirection ?? ''}
             onChange={handleChange}
             options={FEED_DIRECTION_OPTIONS}
             error={errors.feedDirection ? 'Required' : ''}
@@ -455,7 +451,7 @@ const MaterialSpecs = () => {
           <Select
             label="Select Controls Level"
             name="controlsLevel"
-            value={form.controlsLevel ?? ''}
+            value={performanceSheet.controlsLevel ?? ''}
             onChange={handleChange}
             options={CONTROLS_LEVEL_OPTIONS}
             error={errors.controlsLevel ? 'Required' : ''}
@@ -463,7 +459,7 @@ const MaterialSpecs = () => {
           <Select
             label="Type of Line"
             name="typeOfLine"
-            value={form.typeOfLine ?? ''}
+            value={performanceSheet.typeOfLine ?? ''}
             onChange={handleChange}
             options={TYPE_OF_LINE_OPTIONS}
             error={errors.typeOfLine ? 'Required' : ''}
@@ -473,7 +469,7 @@ const MaterialSpecs = () => {
             label="Feed Controls"
             name="feedControls"
             type="text"
-            value={form.feedControls ?? ''}
+            value={performanceSheet.feedControls ?? ''}
             onChange={handleChange}
             error={errors.feedControls ? 'Required' : ''}
             disabled
@@ -482,7 +478,7 @@ const MaterialSpecs = () => {
           <Select
             label="Passline"
             name="passline"
-            value={form.passline ?? ''}
+            value={performanceSheet.passline ?? ''}
             onChange={handleChange}
             options={PASSLINE_OPTIONS}
             error={errors.passline ? 'Required' : ''}
@@ -491,7 +487,7 @@ const MaterialSpecs = () => {
           <Select
             label="Select Roll"
             name="typeOfRoll"
-            value={form.typeOfRoll ?? ''}
+            value={performanceSheet.typeOfRoll ?? ''}
             onChange={handleChange}
             options={ROLL_TYPE_OPTIONS}
             error={errors.typeOfRoll ? 'Required' : ''}
@@ -500,7 +496,7 @@ const MaterialSpecs = () => {
           <Select
             label="Reel Backplate"
             name="reelBackplate"
-            value={form.reelBackplate ?? ''}
+            value={performanceSheet.reelBackplate ?? ''}
             onChange={handleChange}
             options={REEL_BACKPLATE_OPTIONS}
             error={errors.reelBackplate ? 'Required' : ''}
@@ -509,7 +505,7 @@ const MaterialSpecs = () => {
           <Select
             label="Reel Style"
             name="reelStyle"
-            value={form.reelStyle ?? ''}
+            value={performanceSheet.reelStyle ?? ''}
             onChange={handleChange}
             options={REEL_STYLE_OPTIONS}
             error={errors.reelStyle ? 'Required' : ''}
@@ -518,13 +514,13 @@ const MaterialSpecs = () => {
           <Checkbox 
             label="Light Gauge Non-Marking" 
             name="lightGauge" 
-            checked={form.lightGauge} 
+            checked={performanceSheet.lightGauge} 
             onChange={handleChange}
           />
           <Checkbox 
             label="Non-Marking" 
             name="nonMarking" 
-            checked={form.nonMarking} 
+            checked={performanceSheet.nonMarking} 
             onChange={handleChange}
           />
         </div>

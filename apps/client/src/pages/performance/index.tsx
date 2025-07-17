@@ -1,20 +1,22 @@
 import { useState } from "react";
-import Tabs from "@/components/shared/tabs";
+import Tabs from "@/components/common/tabs";
 import { Card } from "@/components";
-import Text from "@/components/shared/text";
+import Text from "@/components/common/text";
 import RFQ from "./rfq";
 import MaterialSpecs from "./material-specs";
 import TDDBHD from "./tddbhd";
 import ReelDrive from "./reel-drive";
+import SummaryReport from './summary-report';
 
 const PERFORMANCE_TABS = [
   { label: "RFQ", value: "rfq" },
   { label: "Material Specs", value: "material-specs" },
   { label: "TDDBHD", value: "tddbhd" },
   { label: "Reel Drive", value: "reel-drive" },
+  { label: "Summary Report", value: "summary-report" },
 ];
 
-type PerformanceTabValue = "rfq" | "material-specs" | "tddbhd" | "reel-drive";
+type PerformanceTabValue = "rfq" | "material-specs" | "tddbhd" | "reel-drive" | "summary-report";
 
 const Performance = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
@@ -29,6 +31,8 @@ const Performance = () => {
         return <TDDBHD />;
       case "reel-drive":
         return <ReelDrive />;
+      case "summary-report":
+        return <SummaryReport />;
       default:
         return <RFQ />;
     }

@@ -16,11 +16,11 @@ import {
   Route,
   FileText,
   Wrench,
+  Computer,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
-import ReelDrive from "@/pages/performance/reel-drive";
 
 export type Module = {
   sequence: number;
@@ -47,6 +47,8 @@ const Employees = lazy(() => import("@/pages/admin/employees"));
 const RFQ = lazy(() => import("@/pages/performance/rfq"));
 const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
 const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
+const ReelDrive = lazy(() => import("@/pages/performance/reel-drive"));
+const SummaryReport = lazy(() => import("@/pages/performance/summary-report"))
 const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
 const Catalog = lazy(() => import("@/pages/sales/catalog"));
 const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
@@ -213,6 +215,12 @@ const performanceModule: Module = {
       label: "RFQ",
       icon: ScrollText,
       component: RFQ,
+    },
+    {
+      slug: "summary-report",
+      label: "Summary Report",
+      icon: Computer,
+      component: SummaryReport
     },
     {
       slug: "material-specs",
