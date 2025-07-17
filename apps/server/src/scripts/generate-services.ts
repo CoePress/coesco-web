@@ -15,12 +15,10 @@ async function getRelationships(models: any) {
         );
 
         if (guessedTarget) {
-          const icon = field.isRequired ? "🔗" : "🧷";
           relationships.push({
             model: model.name,
             field: field.name,
             target: guessedTarget,
-            icon,
           });
         }
       }
@@ -57,7 +55,7 @@ async function generateValidations(model: any) {
 }
 
 async function generateServiceFiles(models: any, relationships: any) {
-  const directory = path.resolve(__dirname, "../services/repo");
+  const directory = path.resolve(__dirname, "../services/repository");
   fs.mkdirSync(directory, { recursive: true });
 
   for (const model of models) {
@@ -101,7 +99,7 @@ ${validations}
 }
 
 async function generateIndexFile(models: any) {
-  const directory = path.resolve(__dirname, "../services/repo");
+  const directory = path.resolve(__dirname, "../services/repository");
   const indexFile = path.resolve(directory, "index.ts");
 
   const now = new Date();

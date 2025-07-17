@@ -9,7 +9,7 @@ import { config } from "@/config/config";
 import { MachineConnectionType, MachineState } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { TimeScale } from "@/types/enum.types";
-import { machineService } from "../repo";
+import { machineService } from "../repository";
 
 interface CachedMachineState {
   state: MachineState;

@@ -1,7 +1,7 @@
 import { BadRequestError } from "@/middleware/error.middleware";
 import { Company, Journey, JourneyStatus, Quote } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
-import { companyService, journeyService, quoteService } from "../repo";
+import { companyService, journeyService, quoteService } from "../repository";
 
 export class QuoteBuilderService {
   async createQuote(data: any) {

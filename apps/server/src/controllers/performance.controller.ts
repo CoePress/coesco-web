@@ -1,4 +1,4 @@
-import { performanceSheetService } from "@/services/repo";
+import { performanceSheetService } from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
 
 export class PerformanceController {

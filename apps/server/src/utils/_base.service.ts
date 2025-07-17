@@ -1,18 +1,28 @@
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { IQueryParams, IServiceResult } from "@/types/api.types";
+import { getEmployeeContext } from "@/utils/context";
 import { buildQuery } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
 
-export class BaseService<T> {
-  protected model: any;
-  protected entityName: string | undefined;
-  protected modelName: string | undefined;
+export abstract class BaseService<TEntity> {
+  protected abstract model: any;
+  protected abstract entityName: string;
+  protected abstract modelName: string;
+
+  private getModel(tx?: Prisma.TransactionClient) {
+    const model = tx ? (tx as any)[this.modelName] : this.model;
+    if (!model) {
+      throw new Error(`Model ${this.modelName} not initialized`);
+    }
+    return model;
+  }
 
   async getAll(
-    params?: IQueryParams<T>,
+    params?: IQueryParams<TEntity>,
     tx?: Prisma.TransactionClient
-  ): Promise<IServiceResult<T[]>> {
+  ): Promise<IServiceResult<TEntity[]>> {
     try {
+      const model = this.getModel(tx);
       const { where, orderBy, page, take, skip, select, include } = buildQuery(
         params || {},
         params?.searchFields?.map((field) => field.toString()) || []
@@ -32,8 +42,8 @@ export class BaseService<T> {
       }
 
       const [entities, total] = await Promise.all([
-        this.model.findMany(queryOptions),
-        this.model.count({ where }),
+        model.findMany(queryOptions),
+        model.count({ where }),
       ]);
 
       const totalPages = take ? Math.ceil(total / take) : 1;
@@ -61,8 +71,10 @@ export class BaseService<T> {
     tx?: Prisma.TransactionClient,
     include?: any,
     throwError: boolean = false
-  ): Promise<IServiceResult<T>> {
+  ): Promise<IServiceResult<TEntity>> {
     try {
+      const model = this.getModel(tx);
+
       const queryOptions: any = {
         where: { id },
       };
@@ -71,7 +83,7 @@ export class BaseService<T> {
         queryOptions.include = include;
       }
 
-      const entity = await this.model.findUnique(queryOptions);
+      const entity = await model.findUnique(queryOptions);
 
       if (!entity) {
         throw new NotFoundError(`${this.entityName} with id ${id} not found`);
@@ -87,17 +99,19 @@ export class BaseService<T> {
   }
 
   async create(
-    data: Omit<T, "id" | "createdAt" | "updatedAt"> | any,
+    data: Omit<TEntity, "id" | "createdAt" | "updatedAt"> | any,
     tx?: Prisma.TransactionClient,
     userId?: string
-  ): Promise<IServiceResult<T>> {
+  ): Promise<IServiceResult<TEntity>> {
     try {
+      const model = this.getModel(tx);
+
       const createData = {
         ...data,
         ...(userId ? { createdBy: userId, updatedBy: userId } : {}),
       };
 
-      const entity = await this.model.create({ data: createData });
+      const entity = await model.create({ data: createData });
 
       if (!entity) {
         throw new BadRequestError(`Failed to create ${this.entityName}`);
@@ -126,17 +140,20 @@ export class BaseService<T> {
 
   async update(
     id: string,
-    data: Partial<Omit<T, "id" | "createdAt" | "updatedAt">> | any,
+    data: Partial<Omit<TEntity, "id" | "createdAt" | "updatedAt">> | any,
     tx?: Prisma.TransactionClient,
     userId?: string
-  ): Promise<IServiceResult<T>> {
+  ): Promise<IServiceResult<TEntity>> {
     try {
-      const entity = await this.model.findUnique({ where: { id } });
+      const model = this.getModel(tx);
+
+      const entity = await model.findUnique({ where: { id } });
 
       if (!entity) {
         throw new NotFoundError(`${this.entityName} with id ${id} not found`);
       }
 
+      // Handle nested updates for relationships
       const updateData: any = {};
       const relationsToInclude: any = {};
 
@@ -158,7 +175,7 @@ export class BaseService<T> {
         }
       }
 
-      const updatedEntity = await this.model.update({
+      const updatedEntity = await model.update({
         where: { id },
         data: updateData,
         include:
@@ -196,15 +213,17 @@ export class BaseService<T> {
   async delete(
     id: string,
     tx?: Prisma.TransactionClient
-  ): Promise<IServiceResult<T>> {
+  ): Promise<IServiceResult<TEntity>> {
     try {
-      const entity = await this.model.findUnique({ where: { id } });
+      const model = this.getModel(tx);
+
+      const entity = await model.findUnique({ where: { id } });
 
       if (!entity) {
         throw new NotFoundError(`${this.entityName} with id ${id} not found`);
       }
 
-      const deletedEntity = await this.model.delete({ where: { id } });
+      const deletedEntity = await model.delete({ where: { id } });
       return { success: true, data: deletedEntity };
     } catch (error: any) {
       if (error instanceof NotFoundError) throw error;
@@ -223,7 +242,13 @@ export class BaseService<T> {
     }
   }
 
-  async audit(data: any) {}
+  async audit(oldData: any, newData: any) {
+    const employee = getEmployeeContext();
+    // get fields to watch
+    // get old data
+    // get new data
+    // create audit log
+  }
 
   protected async validate(data: any) {
     // implement in child classes
