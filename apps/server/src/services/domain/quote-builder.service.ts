@@ -1,7 +1,23 @@
 import { BadRequestError } from "@/middleware/error.middleware";
-import { Company, Journey, JourneyStatus, Quote } from "@prisma/client";
+import {
+  Company,
+  Journey,
+  JourneyStatus,
+  Quote,
+  QuoteItem,
+  QuoteStatus,
+} from "@prisma/client";
 import { prisma } from "@/utils/prisma";
-import { companyService, journeyService, quoteService } from "../repository";
+import {
+  companyService,
+  configurationService,
+  itemService,
+  journeyService,
+  quoteItemService,
+  quoteService,
+} from "../repository";
+import { Decimal } from "@prisma/client/runtime/library";
+import { getEmployeeContext } from "@/utils/context";
 
 export class QuoteBuilderService {
   async buildQuote(data: any) {
@@ -39,6 +55,23 @@ export class QuoteBuilderService {
         },
       };
     });
+  }
+
+  async getOverview(quoteId: string) {
+    const quote = await quoteService.getById(quoteId);
+    const quoteItems = await quoteItemService.getAll({
+      filter: {
+        quoteId: quoteId,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        quote: quote.data,
+        quoteItems: quoteItems.data,
+      },
+    };
   }
 
   async generateQuoteNumber(
@@ -94,9 +127,92 @@ export class QuoteBuilderService {
 
   async attachDealer(quoteId: string, dealerId: string) {}
 
-  async addItem(quoteId: string, itemId: string, quantity: number) {}
+  async addItem(
+    quoteId: string,
+    itemType: string,
+    itemId: string,
+    quantity: number = 1
+  ) {
+    const currentItems = await quoteItemService.getAll({
+      filter: {
+        quoteId: quoteId,
+      },
+    });
+    const item =
+      itemType === "item"
+        ? await itemService.getById(itemId)
+        : await configurationService.getById(itemId);
 
-  async removeItem(quoteItemId: string) {}
+    const existingItem = currentItems.data?.find(
+      (i: any) => i.itemId === itemId
+    );
+
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+      const unitPriceDecimal = new Decimal(existingItem.unitPrice);
+      const newTotalPrice = unitPriceDecimal.mul(newQuantity);
+
+      const updatedItem = await quoteItemService.update(existingItem.id, {
+        quantity: newQuantity,
+        totalPrice: newTotalPrice,
+      });
+
+      return {
+        success: true,
+        data: updatedItem.data,
+      };
+    }
+
+    const lineNumber = (currentItems.data?.length || 0) + 1;
+    const unitPrice =
+      itemType === "item"
+        ? ((item.data as any)?.unitPrice ?? 0)
+        : ((item.data as any)?.price ?? 0);
+    const unitPriceDecimal = new Decimal(unitPrice);
+    const totalPrice = unitPriceDecimal.mul(quantity);
+
+    const newQuoteItem = await quoteItemService.create({
+      quoteId: quoteId,
+      configurationId: itemType === "configuration" ? itemId : undefined,
+      itemId: itemType === "item" ? itemId : undefined,
+      lineNumber,
+      unitPrice: unitPriceDecimal,
+      quantity,
+      totalPrice,
+    });
+
+    return {
+      success: true,
+      data: newQuoteItem.data,
+    };
+  }
+
+  async removeItem(quoteItemId: string) {
+    const quoteItem = await quoteItemService.getById(quoteItemId);
+
+    const quoteId = quoteItem.data?.quoteId;
+    const currentItems = await quoteItemService.getAll({
+      filter: {
+        quoteId: quoteId,
+      },
+    });
+
+    await quoteItemService.delete(quoteItemId);
+
+    const remainingItems =
+      currentItems.data?.filter((item: any) => item.id !== quoteItemId) || [];
+
+    for (let i = 0; i < remainingItems.length; i++) {
+      await quoteItemService.update(remainingItems[i].id, {
+        lineNumber: i + 1,
+      });
+    }
+
+    return {
+      success: true,
+      data: null,
+    };
+  }
 
   async updateItem(quoteItemId: string) {}
 
@@ -151,9 +267,74 @@ export class QuoteBuilderService {
 
   async getLatestRevision(quoteId: string) {}
 
-  async approveQuote(quoteId: string) {}
+  async approve(quoteId: string) {
+    const quote = await quoteService.getById(quoteId);
 
-  async sendQuote(quoteId: string) {}
+    if (quote.data?.status !== QuoteStatus.DRAFT) {
+      throw new BadRequestError("Quote is not draft");
+    }
+
+    if (!quote.data.journeyId) {
+      throw new BadRequestError("Quote has no journey");
+    }
+
+    const quoteItems = await quoteItemService.getAll({
+      filter: {
+        quoteId: quoteId,
+      },
+    });
+
+    if (quoteItems.data.length === 0) {
+      throw new BadRequestError("Quote has no items");
+    }
+
+    const hasUnitPrice = quoteItems.data.some(
+      (item: any) => item.unitPrice === null
+    );
+
+    const hasQuantity = quoteItems.data.some(
+      (item: any) => item.quantity === null
+    );
+
+    if (hasUnitPrice || hasQuantity) {
+      throw new BadRequestError("Quote items have no unit price or quantity");
+    }
+
+    const { year, number } = await this.generateQuoteNumber(false);
+
+    const employee = getEmployeeContext();
+
+    const updatedQuote = await quoteService.update(quoteId, {
+      status: QuoteStatus.APPROVED,
+      approvedAt: new Date(),
+      approvedById: employee.id,
+      year,
+      number,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
+
+  async send(quoteId: string) {
+    // TODO: send email to customer
+    const quote = await quoteService.getById(quoteId);
+
+    if (quote.data?.status !== QuoteStatus.APPROVED) {
+      throw new BadRequestError("Quote is not approved");
+    }
+
+    const updatedQuote = await quoteService.update(quoteId, {
+      status: QuoteStatus.SENT,
+    });
+
+    return {
+      success: true,
+      data: updatedQuote.data,
+    };
+  }
 
   async downloadQuote(quoteId: string) {}
 
@@ -177,6 +358,96 @@ export class QuoteBuilderService {
         "Company name and journey ID cannot be provided together"
       );
     }
+  }
+
+  async updateItemLineNumber(quoteItemId: string, lineNumber: number) {
+    return await prisma.$transaction(async (tx) => {
+      const quoteItem = await quoteItemService.getById(quoteItemId, tx);
+
+      if (!quoteItem.data) {
+        throw new BadRequestError("Quote item not found");
+      }
+
+      if (lineNumber < 1) {
+        throw new BadRequestError("Line number must be at least 1");
+      }
+
+      const quoteItems = await quoteItemService.getAll({
+        filter: {
+          quoteId: quoteItem.data.quoteId,
+        },
+      });
+
+      if (!quoteItems.success || !quoteItems.data) {
+        throw new BadRequestError("Failed to retrieve quote items");
+      }
+
+      const allItems = (
+        quoteItems.data as (QuoteItem & { item?: any; configuration?: any })[]
+      ).filter((item) => item.id !== quoteItemId);
+      const totalItems = allItems.length + 1;
+
+      if (lineNumber > totalItems) {
+        lineNumber = totalItems;
+      }
+
+      const updatedQuoteItem = await quoteItemService.update(
+        quoteItemId,
+        {
+          lineNumber,
+        },
+        tx
+      );
+
+      if (!updatedQuoteItem.success || !updatedQuoteItem.data) {
+        throw new BadRequestError("Failed to update quote item");
+      }
+
+      const oldLineNumber = quoteItem.data.lineNumber;
+      const newLineNumber = lineNumber;
+
+      const itemsToReorder = allItems.map((item) => ({
+        ...item,
+        targetLineNumber: item.lineNumber,
+      }));
+
+      if (newLineNumber > oldLineNumber) {
+        for (const item of itemsToReorder) {
+          if (
+            item.lineNumber > oldLineNumber &&
+            item.lineNumber <= newLineNumber
+          ) {
+            item.targetLineNumber = item.lineNumber - 1;
+          }
+        }
+      } else if (newLineNumber < oldLineNumber) {
+        for (const item of itemsToReorder) {
+          if (
+            item.lineNumber >= newLineNumber &&
+            item.lineNumber < oldLineNumber
+          ) {
+            item.targetLineNumber = item.lineNumber + 1;
+          }
+        }
+      }
+
+      for (const item of itemsToReorder) {
+        if (item.targetLineNumber !== item.lineNumber) {
+          await quoteItemService.update(
+            item.id,
+            {
+              lineNumber: item.targetLineNumber,
+            },
+            tx
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data: updatedQuoteItem.data,
+      };
+    });
   }
 
   private async resolveCompany(

@@ -24,7 +24,7 @@ export class QuoteController extends BaseController<Quote> {
   ) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.getQuoteOverview(id);
+      const result = await quoteBuilderService.getOverview(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -74,7 +74,7 @@ export class QuoteController extends BaseController<Quote> {
   public async approveQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.approveQuote(id);
+      const result = await quoteBuilderService.approve(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -84,7 +84,7 @@ export class QuoteController extends BaseController<Quote> {
   public async sendQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await quoteBuilderService.sendQuote(id);
+      const result = await quoteBuilderService.send(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -105,23 +105,7 @@ export class QuoteController extends BaseController<Quote> {
     }
   }
 
-  public async addConfigurationToQuote(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const result = await quoteBuilderService.addConfiguration(
-        req.params.quoteId,
-        req.params.configurationId
-      );
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  public async updateQuoteItemLineNumber(
+  public async updateItemLineNumber(
     req: Request,
     res: Response,
     next: NextFunction
@@ -129,7 +113,7 @@ export class QuoteController extends BaseController<Quote> {
     try {
       const { itemId } = req.params;
       const { lineNumber } = req.body;
-      const result = await quoteBuilderService.updateQuoteItemLineNumber(
+      const result = await quoteBuilderService.updateItemLineNumber(
         itemId,
         lineNumber
       );
