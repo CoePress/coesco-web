@@ -1,5 +1,6 @@
 import { performanceSheetService } from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
+import { exec } from "child_process";
 
 export class PerformanceController {
   async getPerformanceSheets(req: Request, res: Response, next: NextFunction) {
@@ -43,9 +44,17 @@ export class PerformanceController {
       const { id } = req.params;
       const result = await performanceSheetService.update(id, req.body);
 
-      // TODO: process through python script
+      const data = JSON.stringify({ id, ...req.body, result });
+      const scriptOutput = await new Promise<string>((resolve) => {
+        exec(
+          `python src/scripts/performance-sheet.py '${data}'`,
+          (error, stdout, stderr) => {
+            resolve(stdout || stderr || "");
+          }
+        );
+      });
 
-      res.status(200).json(result);
+      res.status(200).json({ ...result, scriptOutput });
     } catch (error) {
       next(error);
     }
