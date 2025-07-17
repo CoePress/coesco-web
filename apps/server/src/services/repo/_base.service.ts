@@ -2,14 +2,8 @@ import { IQueryParams } from "@/types/api.types";
 
 export class BaseService<T> {
   protected model: any;
-  protected entityName: string;
-  protected modelName: string;
-
-  constructor(model: any, entityName: string, modelName: string) {
-    this.model = model;
-    this.entityName = entityName;
-    this.modelName = modelName;
-  }
+  protected entityName: string | undefined;
+  protected modelName: string | undefined;
 
   async getAll(params: IQueryParams<T>) {}
 
