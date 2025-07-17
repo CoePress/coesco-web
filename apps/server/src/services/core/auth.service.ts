@@ -162,10 +162,15 @@ export class AuthService {
       where: {
         id: decoded.userId,
       },
-      include: { employee: true },
     });
 
-    if (!user || !user.employee) {
+    const employee = await prisma.employee.findUnique({
+      where: {
+        userId: user?.id,
+      },
+    });
+
+    if (!user) {
       throw new UnauthorizedError("User not found");
     }
 
@@ -173,7 +178,7 @@ export class AuthService {
       token: accessToken,
       refreshToken: "",
       user,
-      employee: user.employee,
+      employee,
     };
   }
 

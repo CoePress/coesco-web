@@ -80,7 +80,7 @@ export interface IAuthResponse {
   token: string;
   refreshToken: string;
   user: User;
-  employee: Employee;
+  employee: Employee | null;
 }
 
 export interface IAuthTokens {
