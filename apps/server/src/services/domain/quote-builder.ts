@@ -1,7 +1,7 @@
 import { BadRequestError } from "@/middleware/error.middleware";
-import { companyService, journeyService, quoteService } from "..";
-import { Company, Journey, JourneyStatus } from "@prisma/client";
+import { Company, Journey, JourneyStatus, Quote } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
+import { companyService, journeyService, quoteService } from "../repo";
 
 export class QuoteBuilderService {
   async createQuote(data: any) {
@@ -41,7 +41,52 @@ export class QuoteBuilderService {
     });
   }
 
-  async generateQuoteNumber() {}
+  async generateQuoteNumber(
+    isDraft: boolean = true
+  ): Promise<{ year: number; number: string }> {
+    const currentYear = new Date().getFullYear();
+
+    if (isDraft) {
+      const lastDraft = await prisma.quote.findFirst({
+        where: {
+          year: currentYear,
+          number: { contains: "DRAFT" },
+        },
+        orderBy: { number: "desc" },
+      });
+
+      const nextSequence = lastDraft
+        ? parseInt(lastDraft.number.split("-").pop() || "0") + 1
+        : 1;
+
+      return {
+        year: currentYear,
+        number: `DRAFT-${nextSequence.toString().padStart(5, "0")}`,
+      };
+    } else {
+      const lastFinal = await prisma.quote.findFirst({
+        where: {
+          year: currentYear,
+          AND: [
+            { number: { not: { contains: "DRAFT" } } },
+            { number: { not: { contains: "REV" } } },
+          ],
+        },
+        orderBy: { number: "desc" },
+      });
+
+      const nextSequence = lastFinal
+        ? parseInt(lastFinal.number.split("-").pop() || "0") + 1
+        : 1;
+
+      return {
+        year: currentYear,
+        number: `${currentYear.toString().slice(-2)}-${nextSequence
+          .toString()
+          .padStart(5, "0")}`,
+      };
+    }
+  }
 
   async attachCustomer(quoteId: string, companyId: string) {
     const quote = await quoteService.getById(quoteId);
@@ -61,7 +106,46 @@ export class QuoteBuilderService {
 
   async createRevision(quoteId: string) {}
 
-  async generateRevisionNumber(quoteId: string) {}
+  async generateRevisionNumber(quote: Quote): Promise<string> {
+    const lastRevision = await prisma.quote.findFirst({
+      where: {
+        year: quote.year,
+        number: quote.number,
+      },
+      orderBy: { revision: "desc" },
+    });
+
+    if (!lastRevision) {
+      return "A";
+    }
+
+    const currentRevision = lastRevision.revision;
+
+    if (currentRevision.length === 1) {
+      const nextChar = String.fromCharCode(currentRevision.charCodeAt(0) + 1);
+      if (nextChar <= "Z") {
+        return nextChar;
+      }
+      return "AA";
+    }
+
+    if (currentRevision.length === 2) {
+      const firstChar = currentRevision[0];
+      const secondChar = currentRevision[1];
+
+      if (secondChar < "Z") {
+        return firstChar + String.fromCharCode(secondChar.charCodeAt(0) + 1);
+      }
+
+      if (firstChar < "Z") {
+        return String.fromCharCode(firstChar.charCodeAt(0) + 1) + "A";
+      }
+
+      throw new BadRequestError("Maximum revision limit reached (ZZ)");
+    }
+
+    throw new BadRequestError("Invalid revision format");
+  }
 
   async getRevisions(quoteId: string) {}
 
@@ -129,9 +213,15 @@ export class QuoteBuilderService {
     company?: Company,
     tx?: any
   ) {
+    const throwError = true;
     let journey: Journey | undefined;
     if (journeyId) {
-      const j = await journeyService.getById(journeyId, tx, undefined, true);
+      const j = await journeyService.getById(
+        journeyId,
+        tx,
+        undefined,
+        throwError
+      );
       journey = j.data;
     } else if (journeyName && company) {
       const j = await journeyService.create({

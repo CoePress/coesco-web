@@ -1,6 +1,6 @@
 import { createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import { emailService, employeeService } from "@/services";
+import { emailService, microsoftService } from "@/services";
 import { CronJob } from "cron";
 import { ISendEmailOptions } from "@/types/schema.types";
 
@@ -13,7 +13,7 @@ export class CronService {
       new CronJob(
         "0 0 * * *",
         this.wrapJob("sync-employees", async () => {
-          await employeeService.sync();
+          await microsoftService.sync();
         }),
         null,
         true,

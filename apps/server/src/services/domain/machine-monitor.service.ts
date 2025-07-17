@@ -1,12 +1,7 @@
 import { BadRequestError } from "@/middleware/error.middleware";
 import { createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import {
-  cacheService,
-  machineService,
-  machineStatusService,
-  socketService,
-} from "..";
+import { cacheService, machineStatusService, socketService } from "..";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import axios from "axios";
@@ -14,6 +9,7 @@ import { config } from "@/config/config";
 import { MachineConnectionType, MachineState } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { TimeScale } from "@/types/enum.types";
+import { machineService } from "../repo";
 
 interface CachedMachineState {
   state: MachineState;

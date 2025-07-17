@@ -4,10 +4,8 @@ import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { CronService } from "./core/cron.service";
 import { EmailService } from "./core/email.service";
-import { EmployeeService } from "./repository/employee.service";
 import { MachineMonitorService } from "./domain/machine-monitor.service";
 import { SocketService } from "./core/socket.service";
-import { QuoteService } from "./repository/quote.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
 import { ConfigService } from "./domain/config.service";
 import { SalesService } from "./domain/sales.service";
@@ -25,8 +23,6 @@ export const cacheService = new CacheService();
 export const cronService = new CronService();
 export const emailService = new EmailService();
 export const socketService = new SocketService();
-export const employeeService = new EmployeeService();
-export const quoteService = new QuoteService();
 export const quoteItemService = new QuoteItemService();
 export const salesService = new SalesService();
 export const quotingService = new QuotingService();
@@ -43,9 +39,6 @@ export const initializeServices = async () => {
   await machineMonitorService.initialize();
   logger.info("Machine data service initialized");
 
-  const employees = await employeeService.getAll();
-  if (employees.data.length === 0) {
-    await employeeService.sync();
-    logger.info("Employees synced");
-  }
+  await microsoftService.sync();
+  logger.info("Microsoft service initialized");
 };
