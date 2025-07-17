@@ -1,4 +1,4 @@
-import { configService } from "@/services";
+import { configBuilderService } from "@/services";
 import { NextFunction, Request, Response } from "express";
 
 export class ConfigController {
@@ -8,9 +8,10 @@ export class ConfigController {
     next: NextFunction
   ) {
     try {
-      const result = await configService.getOptionCategoriesByProductClass(
-        req.params.id
-      );
+      const result =
+        await configBuilderService.getOptionCategoriesByProductClass(
+          req.params.id
+        );
       res.status(200).json({
         success: true,
         data: result,
@@ -26,7 +27,7 @@ export class ConfigController {
     next: NextFunction
   ) {
     try {
-      const result = await configService.getOptionsByOptionCategory(
+      const result = await configBuilderService.getOptionsByOptionCategory(
         req.params.categoryId
       );
       res.status(200).json({
@@ -44,9 +45,10 @@ export class ConfigController {
     next: NextFunction
   ) {
     try {
-      const result = await configService.getAvailableOptionsGroupedByCategory(
-        req.params.id
-      );
+      const result =
+        await configBuilderService.getAvailableOptionsGroupedByCategory(
+          req.params.id
+        );
       res.status(200).json({
         success: true,
         data: result,
@@ -59,7 +61,7 @@ export class ConfigController {
   // Configurations
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.getConfigurations();
+      const result = await configBuilderService.getConfigurations();
       res.status(200).json({
         success: true,
         data: result,
@@ -71,7 +73,7 @@ export class ConfigController {
 
   async getConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.getConfiguration(req.params.id);
+      const result = await configBuilderService.getConfiguration(req.params.id);
       res.status(200).json({
         success: true,
         data: result,
@@ -83,7 +85,7 @@ export class ConfigController {
 
   async createConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.createConfiguration(req.body);
+      const result = await configBuilderService.createConfiguration(req.body);
       res.status(200).json({
         success: true,
         data: result,
@@ -100,7 +102,7 @@ export class ConfigController {
   // Product Classes
   async getProductClasses(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.getProductClasses();
+      const result = await configBuilderService.getProductClasses();
       res.status(200).json({
         success: true,
         data: result,
@@ -118,7 +120,9 @@ export class ConfigController {
     next: NextFunction
   ) {
     try {
-      const result = await configService.getProductClassOptions(req.params.id);
+      const result = await configBuilderService.getProductClassOptions(
+        req.params.id
+      );
       res.status(200).json({
         success: true,
         data: result,
@@ -148,7 +152,7 @@ export class ConfigController {
   // Options
   async getOptions(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.getOptions();
+      const result = await configBuilderService.getOptions();
       res.status(200).json({
         success: true,
         data: result,
@@ -169,7 +173,7 @@ export class ConfigController {
   // Option Rules
   async getOptionRules(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configService.getOptionRules();
+      const result = await configBuilderService.getOptionRules();
       res.status(200).json({
         success: true,
         data: result,

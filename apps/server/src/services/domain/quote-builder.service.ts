@@ -4,7 +4,7 @@ import { prisma } from "@/utils/prisma";
 import { companyService, journeyService, quoteService } from "../repository";
 
 export class QuoteBuilderService {
-  async createQuote(data: any) {
+  async buildQuote(data: any) {
     const { companyId, journeyId, companyName, journeyName } = data;
     // TODO: add this to cache to avoid conflicts
     await this.validateCreateQuoteInput(data);
@@ -203,7 +203,6 @@ export class QuoteBuilderService {
       }
       company = c.data;
     }
-
     return company;
   }
 
@@ -234,5 +233,6 @@ export class QuoteBuilderService {
       }
       journey = j.data;
     }
+    return journey;
   }
 }

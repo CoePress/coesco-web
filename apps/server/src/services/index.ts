@@ -6,27 +6,26 @@ import { CronService } from "./core/cron.service";
 import { EmailService } from "./core/email.service";
 import { MachineMonitorService } from "./domain/machine-monitor.service";
 import { SocketService } from "./core/socket.service";
-import { QuoteItemService } from "./repository/quote.-item.service";
-import { ConfigService } from "./domain/config.service";
 import { SalesService } from "./domain/sales.service";
-import { MachineStatusService } from "./repository/machine-status.service";
-import { QuotingService } from "./domain/quoting.service";
 import { SystemService } from "./core/system.service";
-import { MicrosoftService } from "./domain/microsoft";
+import { MicrosoftService } from "./domain/microsoft.service";
+import { QuoteBuilderService } from "./domain/quote-builder.service";
+import { ConfigBuilderService } from "./domain/config-builder.service";
 
-export const machineMonitorService = new MachineMonitorService();
-export const machineStatusService = new MachineStatusService();
-export const systemService = new SystemService();
-export const microsoftService = new MicrosoftService();
+// Core
 export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const cronService = new CronService();
 export const emailService = new EmailService();
 export const socketService = new SocketService();
-export const quoteItemService = new QuoteItemService();
+export const systemService = new SystemService();
+
+// Domain
+export const configBuilderService = new ConfigBuilderService();
+export const machineMonitorService = new MachineMonitorService();
+export const microsoftService = new MicrosoftService();
+export const quoteBuilderService = new QuoteBuilderService();
 export const salesService = new SalesService();
-export const quotingService = new QuotingService();
-export const configService = new ConfigService();
 
 export const initializeServices = async () => {
   socketService.setIo(io);

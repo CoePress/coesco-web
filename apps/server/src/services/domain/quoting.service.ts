@@ -14,7 +14,7 @@ import {
   journeyService,
   quoteItemService,
   quoteService,
-} from "..";
+} from "../repository";
 import { prisma } from "@/utils/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 

@@ -1,7 +1,7 @@
 import { BadRequestError } from "@/middleware/error.middleware";
-import { createDateRange } from "@/utils";
+import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
-import { cacheService, machineStatusService, socketService } from "..";
+import { cacheService, socketService } from "..";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import axios from "axios";
@@ -9,7 +9,7 @@ import { config } from "@/config/config";
 import { MachineConnectionType, MachineState } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { TimeScale } from "@/types/enum.types";
-import { machineService } from "../repository";
+import { machineService, machineStatusService } from "../repository";
 
 interface CachedMachineState {
   state: MachineState;
@@ -158,16 +158,24 @@ export class MachineMonitorService {
       dateRange.endDate
     );
 
+    const currentDateFilter = buildDateRangeFilter(
+      dateRange.startDate.toISOString(),
+      dateRange.endDate.toISOString()
+    );
+
+    const previousDateFilter = buildDateRangeFilter(
+      dateRange.previousStartDate.toISOString(),
+      dateRange.previousEndDate.toISOString()
+    );
+
     const [machines, states, previousStates] = await Promise.all([
       machineService.getAll(),
-      machineStatusService.getByDateRange({
-        startDate: dateRange.startDate.toISOString(),
-        endDate: dateRange.endDate.toISOString(),
+      machineStatusService.getAll({
+        filter: JSON.stringify(currentDateFilter),
         include: { machine: true },
       }),
-      machineStatusService.getByDateRange({
-        startDate: dateRange.previousStartDate.toISOString(),
-        endDate: dateRange.previousEndDate.toISOString(),
+      machineStatusService.getAll({
+        filter: JSON.stringify(previousDateFilter),
         include: { machine: true },
       }),
     ]);
@@ -176,7 +184,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
-    // hardcoded since we dont have active status
+    // TODO: add status field to machine and remove hardcoded subtraction
     const machineCount = machines.data.length - 2;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
     const dailyFleetTarget = dailyMachineTarget * machineCount;

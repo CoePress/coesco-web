@@ -1,4 +1,4 @@
-import { contactService } from "@/services";
+import { contactService } from "@/services/repository";
 import { BaseController } from "./_base.controller";
 import { Contact } from "@prisma/client";
 

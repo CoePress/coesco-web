@@ -1,7 +1,8 @@
-import { companyService, salesService } from "@/services";
+import { companyService } from "@/services/repository";
 import { BaseController } from "./_base.controller";
 import { Company } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
+import { salesService } from "@/services";
 
 export class CompanyController extends BaseController<Company> {
   protected service = companyService;

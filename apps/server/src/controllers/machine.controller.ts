@@ -1,7 +1,8 @@
 import { Machine } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { BaseController } from "./_base.controller";
-import { machineMonitorService, machineService } from "@/services";
+import { machineMonitorService } from "@/services";
+import { machineService } from "@/services/repository";
 
 export class MachineController extends BaseController<Machine> {
   protected service = machineService;

@@ -1,5 +1,5 @@
 import { prisma } from "@/utils/prisma";
-import { journeyService, companyService, contactService } from "..";
+import { journeyService, companyService, contactService } from "../repository";
 
 export class SalesService {
   async getJourneyOverview(journeyId: string) {
