@@ -7,44 +7,28 @@ import { EmailService } from "./core/email.service";
 import { EmployeeService } from "./repository/employee.service";
 import { MachineMonitorService } from "./domain/machine-monitor.service";
 import { SocketService } from "./core/socket.service";
-import { CompanyService } from "./repository/company.service";
-import { AddressService } from "./repository/address.service";
-import { ContactService } from "./repository/contact.service";
-import { JourneyService } from "./repository/journey.service";
 import { QuoteService } from "./repository/quote.service";
 import { QuoteItemService } from "./repository/quote.-item.service";
 import { ConfigService } from "./domain/config.service";
 import { SalesService } from "./domain/sales.service";
-import { ItemService } from "./repository/item.service";
-import { MachineService } from "./repository/machine.service";
 import { MachineStatusService } from "./repository/machine-status.service";
-import { UserService } from "./repository/user.service";
 import { QuotingService } from "./domain/quoting.service";
-import { ConfigurationService } from "./repository/configuration.service";
 import { SystemService } from "./core/system.service";
+import { MicrosoftService } from "./domain/microsoft";
 
-export const machineService = new MachineService();
 export const machineMonitorService = new MachineMonitorService();
 export const machineStatusService = new MachineStatusService();
 export const systemService = new SystemService();
-
+export const microsoftService = new MicrosoftService();
 export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const cronService = new CronService();
 export const emailService = new EmailService();
 export const socketService = new SocketService();
 export const employeeService = new EmployeeService();
-export const companyService = new CompanyService();
-export const addressService = new AddressService();
-export const contactService = new ContactService();
-export const journeyService = new JourneyService();
 export const quoteService = new QuoteService();
 export const quoteItemService = new QuoteItemService();
 export const salesService = new SalesService();
-export const itemService = new ItemService();
-export const userService = new UserService();
-export const configurationService = new ConfigurationService();
-
 export const quotingService = new QuotingService();
 export const configService = new ConfigService();
 

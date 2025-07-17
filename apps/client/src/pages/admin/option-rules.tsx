@@ -31,12 +31,11 @@ const OptionRules = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<OptionRuleRow | null>(null);
 
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
-    "/config/option-rules"
-  );
+  const { entities: optionRules, loading: optionRulesLoading } =
+    useGetEntities("/config/rules");
 
   const { entities: options, loading: optionsLoading } =
-    useGetEntities("/config/options");
+    useGetEntities("/options");
 
   const tableData: OptionRuleRow[] = (optionRules || [])
     .filter((rule) => rule !== null)

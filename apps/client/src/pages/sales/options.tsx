@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { PageHeader, Modal, Button, Tabs } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useGetOptionRules } from "@/hooks/config";
 
 interface RuleCondition {
   id: string;
@@ -64,7 +63,8 @@ const Options = () => {
     useGetEntities("/options");
   const { entities: productClasses, loading: productClassesLoading } =
     useGetEntities("/classes");
-  const { optionRules, loading: rulesLoading } = useGetOptionRules();
+  const { entities: optionRules, loading: rulesLoading } =
+    useGetEntities("/config/rules");
 
   const categories = (optionCategories || []).filter(
     (cat: any, index: number, self: any[]) =>

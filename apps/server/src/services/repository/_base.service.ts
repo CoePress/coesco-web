@@ -1,5 +1,6 @@
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { IQueryParams, IServiceResult } from "@/types/api.types";
+import { getEmployeeContext } from "@/utils/context";
 import { buildQuery } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -239,5 +240,17 @@ export abstract class BaseService<TEntity> {
         `Failed to delete ${this.entityName}: ${error.message}`
       );
     }
+  }
+
+  async audit(oldData: any, newData: any) {
+    const employee = getEmployeeContext();
+    // get fields to watch
+    // get old data
+    // get new data
+    // create audit log
+  }
+
+  protected async validate(data: any) {
+    // implement in child classes
   }
 }

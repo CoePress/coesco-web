@@ -13,8 +13,6 @@ export class OptionHeaderService extends BaseService<OptionHeader> {
   protected entityName = "OptionHeader";
   protected modelName = "optionHeader";
 
-  async getConfigurationsWithOptions(productClassId?: string) {}
-
   protected async validate(
     optionHeader: OptionHeaderAttributes
   ): Promise<void> {

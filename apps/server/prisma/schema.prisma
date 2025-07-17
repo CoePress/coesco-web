@@ -240,7 +240,7 @@ model Company {
   taxId         String?
   logoUrl       String?
   notes         String?
-  tags          String[] @default([])
+  tags          String[]
   status        CompanyStatus @default(ACTIVE)
   createdById   String?
   createdAt     DateTime      @default(now())
@@ -420,14 +420,14 @@ model PerformanceSheetLink {
   @@map("performance_sheet_links")
 }
 
-model FieldWatchList {
+model FieldsToWatch {
   id String @id @default(uuid())
   entityType String
-  field String
+  fields Json @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("field_watch_lists")
+  @@map("fields_to_watch")
 }
 
 model AuditLog {

@@ -12,7 +12,8 @@
     "kill:node": "taskkill /f /im node.exe 2>nul || echo No Node.js processes found",
     "copy": "copyfiles -u 1 \"src/assets/**/*\" dist",
     "build": "tsc && tsc-alias && npm run copy",
-    "start": "npm run build && node dist/server.js"
+    "start": "npm run build && node dist/server.js",
+    "generate": "ts-node -r tsconfig-paths/register src/scripts/generate-services.ts"
   },
   "keywords": [],
   "author": "",
@@ -49,6 +50,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@prisma/sdk": "^3.15.2",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.7.5",
     "@types/cookie-parser": "^1.4.8",

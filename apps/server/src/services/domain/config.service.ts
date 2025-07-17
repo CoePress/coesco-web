@@ -88,7 +88,7 @@ export class ConfigService {
     );
   }
 
-  async getOptionsByProductClass(productClassId: string) {
+  async getProductClassOptions(productClassId: string) {
     const optionDetails = await prisma.optionDetails.findMany({
       where: {
         productClassId,
@@ -354,4 +354,10 @@ export class ConfigService {
 
     return exists;
   }
+
+  async createConfiguration(configuration: any) {}
+
+  async getConfiguration(id: string) {}
+
+  async getOptions() {}
 }
