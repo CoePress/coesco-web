@@ -48,7 +48,7 @@ const RFQ = lazy(() => import("@/pages/performance/rfq"));
 const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
 const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
 const ReelDrive = lazy(() => import("@/pages/performance/reel-drive"));
-const SummaryReport = lazy(() => import("@/pages/performance/summary-report"))
+const SummaryReport = lazy(() => import("@/pages/performance/summary-report"));
 const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
 const Catalog = lazy(() => import("@/pages/sales/catalog"));
 const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
@@ -221,7 +221,7 @@ const performanceModule: Module = {
   slug: "performance",
   label: "Performance",
   icon: PcCase,
-  status: "active" as const,
+  status: "development" as const,
   pages: [
     {
       slug: null,
@@ -233,7 +233,7 @@ const performanceModule: Module = {
       slug: "summary-report",
       label: "Summary Report",
       icon: Computer,
-      component: SummaryReport
+      component: SummaryReport,
     },
     {
       slug: "material-specs",

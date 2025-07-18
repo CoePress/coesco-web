@@ -175,7 +175,6 @@ type LayoutProps = {
 };
 
 const Layout = ({ employee, children }: LayoutProps) => {
-  console.log("employee", employee);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
