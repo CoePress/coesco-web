@@ -11,272 +11,291 @@ import {
   Minus,
 } from "lucide-react";
 
+// Type definitions for schema and config
+
+type FieldType =
+  | "uuid"
+  | "string"
+  | "text"
+  | "integer"
+  | "decimal"
+  | "timestamp"
+  | "enum"
+  | "json";
+
+interface FieldDefinition {
+  type: FieldType;
+  required: boolean;
+  description: string;
+}
+
+interface TableDefinition {
+  name: string;
+  fields: Record<string, FieldDefinition>;
+}
+
+const tableSchema: Record<string, TableDefinition> = {
+  users: {
+    name: "Users",
+    fields: {
+      id: { type: "uuid", required: true, description: "Unique identifier" },
+      email: {
+        type: "string",
+        required: true,
+        description: "User email address",
+      },
+      first_name: {
+        type: "string",
+        required: false,
+        description: "First name",
+      },
+      last_name: {
+        type: "string",
+        required: false,
+        description: "Last name",
+      },
+      role: {
+        type: "enum",
+        required: true,
+        description: "User role (admin, user, viewer)",
+      },
+      status: {
+        type: "enum",
+        required: true,
+        description: "Account status (active, inactive, suspended)",
+      },
+      created_at: {
+        type: "timestamp",
+        required: true,
+        description: "Account creation date",
+      },
+      updated_at: {
+        type: "timestamp",
+        required: true,
+        description: "Last update timestamp",
+      },
+      last_login: {
+        type: "timestamp",
+        required: false,
+        description: "Last login timestamp",
+      },
+      password_hash: {
+        type: "string",
+        required: true,
+        description: "Encrypted password",
+      },
+      permissions: {
+        type: "json",
+        required: false,
+        description: "User permissions object",
+      },
+    },
+  },
+  customers: {
+    name: "Customers",
+    fields: {
+      id: { type: "uuid", required: true, description: "Unique identifier" },
+      company_name: {
+        type: "string",
+        required: true,
+        description: "Company name",
+      },
+      contact_email: {
+        type: "string",
+        required: true,
+        description: "Primary contact email",
+      },
+      contact_phone: {
+        type: "string",
+        required: false,
+        description: "Phone number",
+      },
+      billing_address: {
+        type: "text",
+        required: false,
+        description: "Billing address",
+      },
+      shipping_address: {
+        type: "text",
+        required: false,
+        description: "Shipping address",
+      },
+      credit_limit: {
+        type: "decimal",
+        required: false,
+        description: "Credit limit amount",
+      },
+      payment_terms: {
+        type: "enum",
+        required: false,
+        description: "Payment terms (net30, net60, etc.)",
+      },
+      status: {
+        type: "enum",
+        required: true,
+        description: "Customer status (active, inactive, suspended)",
+      },
+      created_at: {
+        type: "timestamp",
+        required: true,
+        description: "Record creation date",
+      },
+      updated_at: {
+        type: "timestamp",
+        required: true,
+        description: "Last update timestamp",
+      },
+    },
+  },
+  products: {
+    name: "Products",
+    fields: {
+      id: { type: "uuid", required: true, description: "Unique identifier" },
+      name: { type: "string", required: true, description: "Product name" },
+      description: {
+        type: "text",
+        required: false,
+        description: "Product description",
+      },
+      sku: {
+        type: "string",
+        required: true,
+        description: "Stock keeping unit",
+      },
+      price: {
+        type: "decimal",
+        required: true,
+        description: "Product price",
+      },
+      cost: {
+        type: "decimal",
+        required: false,
+        description: "Cost of goods sold",
+      },
+      category: {
+        type: "string",
+        required: false,
+        description: "Product category",
+      },
+      stock_quantity: {
+        type: "integer",
+        required: true,
+        description: "Current stock level",
+      },
+      reorder_point: {
+        type: "integer",
+        required: false,
+        description: "Reorder threshold",
+      },
+      status: {
+        type: "enum",
+        required: true,
+        description: "Product status (active, discontinued, draft)",
+      },
+      created_at: {
+        type: "timestamp",
+        required: true,
+        description: "Record creation date",
+      },
+      updated_at: {
+        type: "timestamp",
+        required: true,
+        description: "Last update timestamp",
+      },
+    },
+  },
+  orders: {
+    name: "Orders",
+    fields: {
+      id: { type: "uuid", required: true, description: "Unique identifier" },
+      customer_id: {
+        type: "uuid",
+        required: true,
+        description: "Customer reference",
+      },
+      order_number: {
+        type: "string",
+        required: true,
+        description: "Human-readable order number",
+      },
+      total_amount: {
+        type: "decimal",
+        required: true,
+        description: "Total order amount",
+      },
+      tax_amount: {
+        type: "decimal",
+        required: false,
+        description: "Tax amount",
+      },
+      shipping_amount: {
+        type: "decimal",
+        required: false,
+        description: "Shipping cost",
+      },
+      status: {
+        type: "enum",
+        required: true,
+        description:
+          "Order status (pending, processing, shipped, delivered, cancelled)",
+      },
+      payment_status: {
+        type: "enum",
+        required: true,
+        description: "Payment status (pending, paid, refunded, failed)",
+      },
+      shipping_address: {
+        type: "text",
+        required: false,
+        description: "Shipping address",
+      },
+      tracking_number: {
+        type: "string",
+        required: false,
+        description: "Shipping tracking number",
+      },
+      created_at: {
+        type: "timestamp",
+        required: true,
+        description: "Order creation date",
+      },
+      updated_at: {
+        type: "timestamp",
+        required: true,
+        description: "Last update timestamp",
+      },
+      shipped_at: {
+        type: "timestamp",
+        required: false,
+        description: "Shipping date",
+      },
+    },
+  },
+};
+
+const defaultWatchConfig: Record<string, string[]> = {
+  users: ["id", "email", "role", "status", "permissions"],
+  customers: ["id", "company_name", "contact_email", "credit_limit", "status"],
+  products: ["id", "name", "sku", "price", "stock_quantity", "status"],
+  orders: ["id", "customer_id", "total_amount", "status", "payment_status"],
+};
+
+const tableNames = Object.keys(tableSchema) as Array<keyof typeof tableSchema>;
+type TableName = (typeof tableNames)[number];
+
 const AuditConfiguration = () => {
-  // Mock database schema with fields
-  const tableSchema = {
-    users: {
-      name: "Users",
-      fields: {
-        id: { type: "uuid", required: true, description: "Unique identifier" },
-        email: {
-          type: "string",
-          required: true,
-          description: "User email address",
-        },
-        first_name: {
-          type: "string",
-          required: false,
-          description: "First name",
-        },
-        last_name: {
-          type: "string",
-          required: false,
-          description: "Last name",
-        },
-        role: {
-          type: "enum",
-          required: true,
-          description: "User role (admin, user, viewer)",
-        },
-        status: {
-          type: "enum",
-          required: true,
-          description: "Account status (active, inactive, suspended)",
-        },
-        created_at: {
-          type: "timestamp",
-          required: true,
-          description: "Account creation date",
-        },
-        updated_at: {
-          type: "timestamp",
-          required: true,
-          description: "Last update timestamp",
-        },
-        last_login: {
-          type: "timestamp",
-          required: false,
-          description: "Last login timestamp",
-        },
-        password_hash: {
-          type: "string",
-          required: true,
-          description: "Encrypted password",
-        },
-        permissions: {
-          type: "json",
-          required: false,
-          description: "User permissions object",
-        },
-      },
-    },
-    customers: {
-      name: "Customers",
-      fields: {
-        id: { type: "uuid", required: true, description: "Unique identifier" },
-        company_name: {
-          type: "string",
-          required: true,
-          description: "Company name",
-        },
-        contact_email: {
-          type: "string",
-          required: true,
-          description: "Primary contact email",
-        },
-        contact_phone: {
-          type: "string",
-          required: false,
-          description: "Phone number",
-        },
-        billing_address: {
-          type: "text",
-          required: false,
-          description: "Billing address",
-        },
-        shipping_address: {
-          type: "text",
-          required: false,
-          description: "Shipping address",
-        },
-        credit_limit: {
-          type: "decimal",
-          required: false,
-          description: "Credit limit amount",
-        },
-        payment_terms: {
-          type: "enum",
-          required: false,
-          description: "Payment terms (net30, net60, etc.)",
-        },
-        status: {
-          type: "enum",
-          required: true,
-          description: "Customer status (active, inactive, suspended)",
-        },
-        created_at: {
-          type: "timestamp",
-          required: true,
-          description: "Record creation date",
-        },
-        updated_at: {
-          type: "timestamp",
-          required: true,
-          description: "Last update timestamp",
-        },
-      },
-    },
-    products: {
-      name: "Products",
-      fields: {
-        id: { type: "uuid", required: true, description: "Unique identifier" },
-        name: { type: "string", required: true, description: "Product name" },
-        description: {
-          type: "text",
-          required: false,
-          description: "Product description",
-        },
-        sku: {
-          type: "string",
-          required: true,
-          description: "Stock keeping unit",
-        },
-        price: {
-          type: "decimal",
-          required: true,
-          description: "Product price",
-        },
-        cost: {
-          type: "decimal",
-          required: false,
-          description: "Cost of goods sold",
-        },
-        category: {
-          type: "string",
-          required: false,
-          description: "Product category",
-        },
-        stock_quantity: {
-          type: "integer",
-          required: true,
-          description: "Current stock level",
-        },
-        reorder_point: {
-          type: "integer",
-          required: false,
-          description: "Reorder threshold",
-        },
-        status: {
-          type: "enum",
-          required: true,
-          description: "Product status (active, discontinued, draft)",
-        },
-        created_at: {
-          type: "timestamp",
-          required: true,
-          description: "Record creation date",
-        },
-        updated_at: {
-          type: "timestamp",
-          required: true,
-          description: "Last update timestamp",
-        },
-      },
-    },
-    orders: {
-      name: "Orders",
-      fields: {
-        id: { type: "uuid", required: true, description: "Unique identifier" },
-        customer_id: {
-          type: "uuid",
-          required: true,
-          description: "Customer reference",
-        },
-        order_number: {
-          type: "string",
-          required: true,
-          description: "Human-readable order number",
-        },
-        total_amount: {
-          type: "decimal",
-          required: true,
-          description: "Total order amount",
-        },
-        tax_amount: {
-          type: "decimal",
-          required: false,
-          description: "Tax amount",
-        },
-        shipping_amount: {
-          type: "decimal",
-          required: false,
-          description: "Shipping cost",
-        },
-        status: {
-          type: "enum",
-          required: true,
-          description:
-            "Order status (pending, processing, shipped, delivered, cancelled)",
-        },
-        payment_status: {
-          type: "enum",
-          required: true,
-          description: "Payment status (pending, paid, refunded, failed)",
-        },
-        shipping_address: {
-          type: "text",
-          required: false,
-          description: "Shipping address",
-        },
-        tracking_number: {
-          type: "string",
-          required: false,
-          description: "Shipping tracking number",
-        },
-        created_at: {
-          type: "timestamp",
-          required: true,
-          description: "Order creation date",
-        },
-        updated_at: {
-          type: "timestamp",
-          required: true,
-          description: "Last update timestamp",
-        },
-        shipped_at: {
-          type: "timestamp",
-          required: false,
-          description: "Shipping date",
-        },
-      },
-    },
-  };
-
-  // Default watch configuration - typically critical fields are watched by default
-  const defaultWatchConfig = {
-    users: ["id", "email", "role", "status", "permissions"],
-    customers: [
-      "id",
-      "company_name",
-      "contact_email",
-      "credit_limit",
-      "status",
-    ],
-    products: ["id", "name", "sku", "price", "stock_quantity", "status"],
-    orders: ["id", "customer_id", "total_amount", "status", "payment_status"],
-  };
-
-  const [selectedTable, setSelectedTable] = useState("users");
-  const [watchConfig, setWatchConfig] = useState(defaultWatchConfig);
+  const [selectedTable, setSelectedTable] = useState<TableName>("users");
+  const [watchConfig, setWatchConfig] = useState<Record<TableName, string[]>>(
+    defaultWatchConfig as Record<TableName, string[]>
+  );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const toggleFieldWatch = (tableName, fieldName) => {
+  const toggleFieldWatch = (tableName: TableName, fieldName: string) => {
     setWatchConfig((prev) => {
       const currentFields = prev[tableName] || [];
       const newFields = currentFields.includes(fieldName)
         ? currentFields.filter((f) => f !== fieldName)
         : [...currentFields, fieldName];
-
       setHasUnsavedChanges(true);
       return {
         ...prev,
@@ -285,7 +304,7 @@ const AuditConfiguration = () => {
     });
   };
 
-  const getFieldTypeIcon = (type) => {
+  const getFieldTypeIcon = (type: FieldType) => {
     switch (type) {
       case "uuid":
         return (
@@ -318,48 +337,30 @@ const AuditConfiguration = () => {
     }
   };
 
-  const getWatchedFieldsCount = (tableName) => {
+  const getWatchedFieldsCount = (tableName: TableName) => {
     return watchConfig[tableName]?.length || 0;
   };
 
-  const getTotalFieldsCount = (tableName) => {
+  const getTotalFieldsCount = (tableName: TableName) => {
     return Object.keys(tableSchema[tableName]?.fields || {}).length;
   };
 
   const handleSaveConfiguration = () => {
-    // Mock save operation
     console.log("Saving configuration:", watchConfig);
     setHasUnsavedChanges(false);
-    // Show success message in real app
   };
 
   const handleResetToDefaults = () => {
-    setWatchConfig(defaultWatchConfig);
+    setWatchConfig(defaultWatchConfig as Record<TableName, string[]>);
     setHasUnsavedChanges(true);
   };
 
-  const isFieldWatched = (tableName, fieldName) => {
+  const isFieldWatched = (tableName: TableName, fieldName: string) => {
     return watchConfig[tableName]?.includes(fieldName) || false;
-  };
-
-  const getCriticalFields = (tableName) => {
-    // Fields that should typically always be watched
-    const criticalFields = {
-      users: ["id", "email", "role", "status"],
-      customers: ["id", "status", "credit_limit"],
-      products: ["id", "price", "status"],
-      orders: ["id", "total_amount", "status", "payment_status"],
-    };
-    return criticalFields[tableName] || [];
-  };
-
-  const isCriticalField = (tableName, fieldName) => {
-    return getCriticalFields(tableName).includes(fieldName);
   };
 
   return (
     <div className="w-full flex-1 flex flex-col">
-      {/* Page Header */}
       <div className="p-2 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -398,7 +399,6 @@ const AuditConfiguration = () => {
       </div>
 
       <div className="p-2 gap-2 flex flex-1 overflow-hidden">
-        {/* Table Selection Sidebar */}
         <div className="w-80 bg-foreground rounded border border-border flex flex-col">
           <div className="p-3 border-b border-border">
             <h2 className="text-sm font-medium text-text-muted">
@@ -407,14 +407,16 @@ const AuditConfiguration = () => {
           </div>
           <div className="flex-1 overflow-y-auto">
             {Object.entries(tableSchema).map(([tableName, tableInfo]) => {
-              const watchedCount = getWatchedFieldsCount(tableName);
-              const totalCount = getTotalFieldsCount(tableName);
-              const isSelected = selectedTable === tableName;
+              const watchedCount = getWatchedFieldsCount(
+                tableName as TableName
+              );
+              const totalCount = getTotalFieldsCount(tableName as TableName);
+              const isSelected = selectedTable === (tableName as TableName);
 
               return (
                 <div
                   key={tableName}
-                  onClick={() => setSelectedTable(tableName)}
+                  onClick={() => setSelectedTable(tableName as TableName)}
                   className={`p-3 border-b border-border cursor-pointer transition-colors ${
                     isSelected
                       ? "bg-primary/10 border-l-4 border-l-primary"
@@ -452,7 +454,6 @@ const AuditConfiguration = () => {
           </div>
         </div>
 
-        {/* Field Configuration */}
         <div className="flex-1 bg-foreground rounded border border-border flex flex-col">
           <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between">
@@ -471,7 +472,9 @@ const AuditConfiguration = () => {
                     size={14}
                     className="text-success"
                   />
-                  <span>{getWatchedFieldsCount(selectedTable)} watched</span>
+                  <span>
+                    {getWatchedFieldsCount(selectedTable as TableName)} watched
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <EyeOff
@@ -479,8 +482,8 @@ const AuditConfiguration = () => {
                     className="text-text-muted"
                   />
                   <span>
-                    {getTotalFieldsCount(selectedTable) -
-                      getWatchedFieldsCount(selectedTable)}{" "}
+                    {getTotalFieldsCount(selectedTable as TableName) -
+                      getWatchedFieldsCount(selectedTable as TableName)}{" "}
                     not watched
                   </span>
                 </div>
@@ -492,8 +495,11 @@ const AuditConfiguration = () => {
             <div className="p-3 space-y-2">
               {Object.entries(tableSchema[selectedTable]?.fields || {}).map(
                 ([fieldName, fieldInfo]) => {
-                  const isWatched = isFieldWatched(selectedTable, fieldName);
-
+                  const isWatched = isFieldWatched(
+                    selectedTable as TableName,
+                    fieldName
+                  );
+                  const typedFieldInfo = fieldInfo as FieldDefinition;
                   return (
                     <div
                       key={fieldName}
@@ -504,17 +510,17 @@ const AuditConfiguration = () => {
                       }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          {getFieldTypeIcon(fieldInfo.type)}
+                          {getFieldTypeIcon(typedFieldInfo.type)}
                           <div>
                             <h4 className="text-sm font-medium text-text-muted">
                               {fieldName}
                             </h4>
                             <p className="text-xs text-text-muted mt-1">
-                              {fieldInfo.description}
+                              {typedFieldInfo.description}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs text-text-muted bg-surface px-1 py-0.5 rounded">
-                                {fieldInfo.type}
+                                {typedFieldInfo.type}
                               </span>
                             </div>
                           </div>
@@ -523,7 +529,10 @@ const AuditConfiguration = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() =>
-                              toggleFieldWatch(selectedTable, fieldName)
+                              toggleFieldWatch(
+                                selectedTable as TableName,
+                                fieldName
+                              )
                             }
                             className={`px-3 py-1 text-xs rounded font-medium transition-colors flex items-center gap-1 ${
                               isWatched
@@ -553,7 +562,6 @@ const AuditConfiguration = () => {
         </div>
       </div>
 
-      {/* Unsaved Changes Warning */}
       {hasUnsavedChanges && (
         <div className="fixed bottom-4 right-4 bg-warning/10 border border-warning/20 rounded-lg p-3 flex items-center gap-2 text-warning">
           <AlertTriangle size={16} />
