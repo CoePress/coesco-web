@@ -12,9 +12,63 @@ import {
   Shield,
 } from "lucide-react";
 
+// Type definitions for audit logs
+
+type ActionType =
+  | "LOGIN"
+  | "LOGOUT"
+  | "FAILED_LOGIN"
+  | "PASSWORD_RESET"
+  | "VIEW_PAGE"
+  | "VIEW_REPORT"
+  | "DOWNLOAD_FILE"
+  | "SEARCH"
+  | "ACCESS_GRANTED"
+  | "ACCESS_DENIED"
+  | "ROLE_CHANGE"
+  | "INSERT"
+  | "UPDATE"
+  | "DELETE";
+
+interface UserActionLog {
+  id: number;
+  timestamp: string;
+  action: ActionType;
+  user: string;
+  ip?: string;
+  resource?: string;
+  details: string;
+}
+
+interface DataChangeLog {
+  id: number;
+  timestamp: string;
+  action: ActionType;
+  user: string;
+  table: string;
+  recordId: string;
+  field: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  details: string;
+}
+
+interface UserActions {
+  authentication: UserActionLog[];
+  navigation: UserActionLog[];
+  permissions: UserActionLog[];
+}
+
+interface DataChanges {
+  customers: DataChangeLog[];
+  products: DataChangeLog[];
+  orders: DataChangeLog[];
+}
+
+type AuditType = "user-actions" | "data-changes";
+
 const AuditLogs = () => {
-  // User Actions - What users did in the system
-  const userActions = {
+  const userActions: UserActions = {
     authentication: [
       {
         id: 1,
@@ -111,8 +165,7 @@ const AuditLogs = () => {
     ],
   };
 
-  // Data Changes - What changed in the system data
-  const dataChanges = {
+  const dataChanges: DataChanges = {
     customers: [
       {
         id: 1,
@@ -265,19 +318,20 @@ const AuditLogs = () => {
     ],
   };
 
-  const [auditType, setAuditType] = useState("user-actions");
-  const [selectedCategory, setSelectedCategory] = useState("authentication");
+  const [auditType, setAuditType] = useState<AuditType>("user-actions");
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>("authentication");
 
-  const getCurrentData = () => {
+  const getCurrentData = (): UserActions | DataChanges => {
     return auditType === "user-actions" ? userActions : dataChanges;
   };
 
-  const getCurrentCategories = () => {
+  const getCurrentCategories = (): string[] => {
     return Object.keys(getCurrentData());
   };
 
-  const getActionIcon = (action) => {
-    const icons = {
+  const getActionIcon = (action: ActionType) => {
+    const icons: Record<ActionType, React.ReactElement> = {
       LOGIN: (
         <User
           size={12}
@@ -364,7 +418,7 @@ const AuditLogs = () => {
       ),
     };
     return (
-      icons[action] || (
+      icons[action as keyof typeof icons] || (
         <Database
           size={12}
           className="text-text-muted"
@@ -373,8 +427,8 @@ const AuditLogs = () => {
     );
   };
 
-  const getActionColor = (action) => {
-    const colors = {
+  const getActionColor = (action: ActionType): string => {
+    const colors: Record<ActionType, string> = {
       LOGIN: "text-success bg-success/10",
       LOGOUT: "text-text-muted bg-surface",
       FAILED_LOGIN: "text-error bg-error/10",
@@ -390,7 +444,9 @@ const AuditLogs = () => {
       UPDATE: "text-info bg-info/10",
       DELETE: "text-error bg-error/10",
     };
-    return colors[action] || "text-text-muted bg-surface";
+    return (
+      colors[action as keyof typeof colors] || "text-text-muted bg-surface"
+    );
   };
 
   const renderUserActionTable = () => (
@@ -416,7 +472,9 @@ const AuditLogs = () => {
           </tr>
         </thead>
         <tbody>
-          {getCurrentData()[selectedCategory].map((log, index) => (
+          {(getCurrentData() as UserActions)[
+            selectedCategory as keyof UserActions
+          ].map((log: UserActionLog, index: number) => (
             <tr
               key={log.id}
               className={`border-b border-border hover:bg-surface/50 ${index % 2 === 0 ? "bg-background" : "bg-surface/20"}`}>
@@ -478,7 +536,9 @@ const AuditLogs = () => {
           </tr>
         </thead>
         <tbody>
-          {getCurrentData()[selectedCategory].map((log, index) => (
+          {(getCurrentData() as DataChanges)[
+            selectedCategory as keyof DataChanges
+          ].map((log: DataChangeLog, index: number) => (
             <tr
               key={log.id}
               className={`border-b border-border hover:bg-surface/50 ${index % 2 === 0 ? "bg-background" : "bg-surface/20"}`}>
@@ -515,7 +575,7 @@ const AuditLogs = () => {
     </div>
   );
 
-  const handleAuditTypeChange = (type) => {
+  const handleAuditTypeChange = (type: AuditType) => {
     setAuditType(type);
     const newCategories =
       type === "user-actions"
@@ -525,16 +585,23 @@ const AuditLogs = () => {
   };
 
   const getKPIStats = () => {
-    const currentData = getCurrentData()[selectedCategory];
+    const currentData = (getCurrentData() as any)[selectedCategory] as (
+      | UserActionLog
+      | DataChangeLog
+    )[];
     const totalEvents = currentData.length;
-    const uniqueUsers = new Set(currentData.map((log) => log.user)).size;
-    const recentEvents = currentData.filter((log) => {
-      const logDate = new Date(log.timestamp);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-      return logDate >= yesterday;
-    }).length;
+    const uniqueUsers = new Set(
+      currentData.map((log: UserActionLog | DataChangeLog) => log.user)
+    ).size;
+    const recentEvents = currentData.filter(
+      (log: UserActionLog | DataChangeLog) => {
+        const logDate = new Date(log.timestamp);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        return logDate >= yesterday;
+      }
+    ).length;
 
     return { totalEvents, uniqueUsers, recentEvents };
   };
@@ -543,7 +610,6 @@ const AuditLogs = () => {
 
   return (
     <div className="w-full flex-1 flex flex-col">
-      {/* Page Header */}
       <div className="p-2 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
@@ -568,7 +634,6 @@ const AuditLogs = () => {
       </div>
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
-        {/* Audit Type Selector */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1">
             <button
@@ -610,7 +675,6 @@ const AuditLogs = () => {
           </div>
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
           <div className="bg-foreground rounded border border-border p-3">
             <div className="flex items-center gap-2 text-primary mb-2">
@@ -646,7 +710,6 @@ const AuditLogs = () => {
           </div>
         </div>
 
-        {/* Audit Log Table */}
         <div className="bg-foreground rounded border border-border flex-1 flex flex-col overflow-hidden">
           <div className="p-3 border-b border-border flex items-center justify-between">
             <h2 className="text-sm font-medium text-text-muted capitalize">
