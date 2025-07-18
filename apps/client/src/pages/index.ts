@@ -20,7 +20,8 @@ export { default as SalesJourneys } from "./sales/journeys";
 export { default as SalesJourneyDetails } from "./sales/journey-details";
 export { default as SalesCatalog } from "./sales/catalog";
 export { default as SalesConfigBuilder } from "./sales/config-builder";
-export { default as Performance } from "./performance";
+export { default as PerformanceSheets } from "./performance/performance-sheets";
+export { default as PerformanceDetails } from "./performance/performance-details";
 
 // General
 export { default as Login } from "./general/login";

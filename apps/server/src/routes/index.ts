@@ -13,6 +13,7 @@ import itemRoutes from "./item.routes";
 import configurationRoutes from "./config-builder";
 import systemRoutes from "./system.routes";
 import performanceRoutes from "./performance.routes";
+import lockRoutes from "./lock.routes";
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use("/items", protect, itemRoutes);
 router.use("/configurations", protect, configurationRoutes);
 router.use("/system", systemRoutes);
 router.use("/performance", performanceRoutes);
+router.use("/lock", protect, lockRoutes);
 
 export default router;

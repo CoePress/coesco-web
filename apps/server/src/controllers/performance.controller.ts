@@ -10,7 +10,17 @@ export class PerformanceController {
   async getPerformanceSheets(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await performanceSheetService.getAll({});
-      res.status(200).json(result);
+
+      const sheetsWithoutData =
+        result.data?.map((sheet: any) => {
+          const { data, ...metadata } = sheet;
+          return metadata;
+        }) || [];
+
+      res.status(200).json({
+        ...result,
+        data: sheetsWithoutData,
+      });
     } catch (error) {
       next(error);
     }
@@ -36,10 +46,35 @@ export class PerformanceController {
         req.body.versionId
       );
 
-      // extract sections and their fields
-      // add sections and fields to the performance sheet with null values
+      if (!performanceVersion.success || !performanceVersion.data) {
+        throw new Error("Performance sheet version not found");
+      }
 
-      const result = await performanceSheetService.create(req.body);
+      const versionData = performanceVersion.data.sections as any[];
+
+      if (!versionData || !Array.isArray(versionData)) {
+        throw new Error("Invalid performance sheet version data structure");
+      }
+
+      const sectionsWithNullValues = versionData.reduce(
+        (acc: Record<string, Record<string, null>>, section: any) => {
+          acc[section.name] = (section.fields as any[]).reduce(
+            (fieldAcc: Record<string, null>, field: any) => {
+              fieldAcc[field.key] = null;
+              return fieldAcc;
+            },
+            {} as Record<string, null>
+          );
+
+          return acc;
+        },
+        {} as Record<string, Record<string, null>>
+      );
+
+      const result = await performanceSheetService.create({
+        ...req.body,
+        data: sectionsWithNullValues,
+      });
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -102,7 +137,16 @@ export class PerformanceController {
   ) {
     try {
       const result = await performanceSheetVersionService.getAll({});
-      res.status(200).json(result);
+
+      const versionsWithoutSections = result.data?.map((version: any) => {
+        const { sections, ...metadata } = version;
+        return metadata;
+      });
+
+      res.status(200).json({
+        ...result,
+        data: versionsWithoutSections,
+      });
     } catch (error) {
       next(error);
     }

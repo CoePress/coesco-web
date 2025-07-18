@@ -17,4 +17,15 @@ export class JourneyController extends BaseController<Journey> {
       next(error);
     }
   }
+
+  public async updateStage(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { stage } = req.body;
+      const result = await salesService.updateJourneyStage(id, stage);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

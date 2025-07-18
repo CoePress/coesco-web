@@ -82,4 +82,9 @@ export class SalesService {
       },
     };
   }
+
+  async updateJourneyStage(journeyId: string, stage: string) {
+    const journey = await journeyService.update(journeyId, { stage });
+    return journey;
+  }
 }

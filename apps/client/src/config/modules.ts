@@ -15,12 +15,12 @@ import {
   DollarSign,
   Route,
   FileText,
-  Wrench,
   Computer,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
 import { __dev__ } from "./env";
+import PerformanceDetails from "@/pages/performance/performance-details";
 
 export type Module = {
   sequence: number;
@@ -63,6 +63,9 @@ const AuditConfig = lazy(() => import("@/pages/admin/audit-config"));
 const Companies = lazy(() => import("@/pages/sales/companies"));
 const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
 const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
+const PerformanceSheets = lazy(
+  () => import("@/pages/performance/performance-sheets")
+);
 
 const salesModule: Module = {
   sequence: 1,
@@ -225,6 +228,20 @@ const performanceModule: Module = {
   pages: [
     {
       slug: null,
+      label: "Performance Sheets",
+      icon: FileText,
+      component: PerformanceSheets,
+      children: [
+        {
+          slug: ":id",
+          label: "Performance Details",
+          icon: FileText,
+          component: PerformanceDetails,
+        },
+      ],
+    },
+    {
+      slug: "rfq",
       label: "RFQ",
       icon: ScrollText,
       component: RFQ,

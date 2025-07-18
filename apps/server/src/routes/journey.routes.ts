@@ -12,5 +12,6 @@ router.post("/", journeyController.create);
 router.patch("/:id", journeyController.update);
 
 router.delete("/:id", journeyController.delete);
+router.patch("/:id/stage", journeyController.updateStage);
 
 export default router;

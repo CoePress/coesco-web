@@ -12,12 +12,14 @@ import { MicrosoftService } from "./domain/microsoft.service";
 import { QuoteBuilderService } from "./domain/quote-builder.service";
 import { ConfigBuilderService } from "./domain/config-builder.service";
 import { prisma } from "@/utils/prisma";
+import { LockingService } from "./core/locking.service";
 
 // Core
 export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const cronService = new CronService();
 export const emailService = new EmailService();
+export const lockingService = new LockingService();
 export const socketService = new SocketService();
 export const systemService = new SystemService();
 

@@ -12,6 +12,7 @@ import { MachineStatusController } from "./machine-status.controller";
 import { ConfigController } from "./config.controller";
 import { SystemController } from "./system.controller";
 import { PerformanceController } from "./performance.controller";
+import { LockController } from "./lock.controller";
 
 export const authController = new AuthController();
 export const emailController = new EmailController();
@@ -27,3 +28,4 @@ export const itemController = new ItemController();
 export const configController = new ConfigController();
 export const systemController = new SystemController();
 export const performanceController = new PerformanceController();
+export const lockController = new LockController();

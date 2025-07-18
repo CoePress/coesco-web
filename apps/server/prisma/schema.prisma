@@ -378,7 +378,7 @@ model QuoteItem {
 
   @@map("quote_items")
 }
-
+// PERFORMANCE SHEET MODELS
 model PerformanceSheetVersion {
   id String @id @default(uuid())
   sections Json @default("[]")
@@ -390,7 +390,6 @@ model PerformanceSheetVersion {
   @@map("performance_sheet_versions")
 }
 
-// PERFORMANCE SHEET MODELS
 model PerformanceSheet {
   id String @id @default(uuid())
   versionId String
@@ -410,7 +409,7 @@ model PerformanceSheet {
 model PerformanceSheetLink {
   id String @id @default(uuid())
   performanceSheetId String
-  entityType String
+  entityType String // Journey, Quote, Configuration, etc.
   entityId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

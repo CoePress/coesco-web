@@ -1,12 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import {
-  Design,
-  Login,
-  MainMenu,
-  NotFound,
-  Performance,
-  Sandbox,
-} from "./pages";
+import { Design, Login, MainMenu, NotFound, Sandbox } from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
@@ -54,7 +47,6 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
 const App = () => {
   const content = (
     <Routes>
-      {/* Public routes */}
       <Route
         path="/callback"
         element={<MicrosoftCallback />}
@@ -65,7 +57,6 @@ const App = () => {
           element={<Login />}
         />
       </Route>
-      {/* Protected routes without layout */}
       <Route element={<ProtectedRoute withLayout={false} />}>
         <Route
           path="/"
@@ -76,6 +67,7 @@ const App = () => {
           element={<NotFound />}
         />
       </Route>
+
       <Route
         element={
           <ProtectedRoute
@@ -94,15 +86,10 @@ const App = () => {
           ))}
       </Route>
 
-      {/* Protected routes with layout */}
       <Route element={<ProtectedRoute withLayout={true} />}>
         <Route
           path="/sandbox"
           element={<Sandbox />}
-        />
-        <Route
-          path="/performance"
-          element={<Performance />}
         />
         <Route
           path="/design"
