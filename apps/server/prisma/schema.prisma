@@ -381,7 +381,7 @@ model QuoteItem {
 
 model PerformanceSheetVersion {
   id String @id @default(uuid())
-  fields Json @default("{}")
+  sections Json @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

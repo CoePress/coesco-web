@@ -32,6 +32,13 @@ export class PerformanceController {
     next: NextFunction
   ) {
     try {
+      const performanceVersion = await performanceSheetVersionService.getById(
+        req.body.versionId
+      );
+
+      // extract sections and their fields
+      // add sections and fields to the performance sheet with null values
+
       const result = await performanceSheetService.create(req.body);
       res.status(200).json(result);
     } catch (error) {

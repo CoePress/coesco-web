@@ -12,6 +12,6 @@ export class PerformanceSheetVersionService extends BaseService<PerformanceSheet
 	protected modelName = "performanceSheetVersion";
 
 	protected async validate(entity: PerformanceSheetVersionAttributes): Promise<void> {
-		if (!entity.fields) throw new BadRequestError("fields is required");
+		if (!entity.sections) throw new BadRequestError("sections is required");
 	}
 }
