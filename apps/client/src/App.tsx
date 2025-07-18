@@ -10,6 +10,7 @@ import {
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
+import { PerformanceSheetProvider } from "@/contexts/performance.context";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -120,7 +121,11 @@ const App = () => {
     </Routes>
   );
 
-  return <SocketProvider listenTo={[]}>{content}</SocketProvider>;
+  return (
+    <PerformanceSheetProvider>
+      <SocketProvider listenTo={[]}>{content}</SocketProvider>
+    </PerformanceSheetProvider>
+  );
 };
 
 export default App;
