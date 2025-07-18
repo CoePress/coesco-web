@@ -232,7 +232,6 @@ export class LockingService {
       for (const key of lockKeys) {
         const lockInfo = await cacheService.get<LockInfo>(key);
         if (lockInfo) {
-          // Extract entityId from the key (remove the prefix)
           const entityId = key.replace(`${this.LOCK_KEY_PREFIX}`, "");
           locks.push({
             entityId,

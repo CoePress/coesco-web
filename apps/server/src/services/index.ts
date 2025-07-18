@@ -12,7 +12,7 @@ import { MicrosoftService } from "./domain/microsoft.service";
 import { QuoteBuilderService } from "./domain/quote-builder.service";
 import { ConfigBuilderService } from "./domain/config-builder.service";
 import { prisma } from "@/utils/prisma";
-import { LockingService } from "./core/locking.service";
+import { LockingService } from "./core/lock.service";
 
 // Core
 export const authService = new AuthService();
