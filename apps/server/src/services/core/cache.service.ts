@@ -67,6 +67,30 @@ export class CacheService {
     }
   }
 
+  async scanKeys(pattern: string): Promise<string[]> {
+    try {
+      const keys: string[] = [];
+      let cursor = 0;
+
+      do {
+        const result = await this.client.scan(
+          cursor,
+          "MATCH",
+          pattern,
+          "COUNT",
+          "100"
+        );
+        cursor = parseInt(result[0]);
+        keys.push(...result[1]);
+      } while (cursor !== 0);
+
+      return keys;
+    } catch (err) {
+      logger.error(`Redis scan error: ${err}`);
+      return [];
+    }
+  }
+
   async stop() {
     try {
       await this.client.quit();

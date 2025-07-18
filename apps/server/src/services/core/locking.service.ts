@@ -226,10 +226,22 @@ export class LockingService {
     Array<{ entityId: string; lockInfo: LockInfo }>
   > {
     try {
-      logger.warn(
-        "getAllLocks() called - this feature requires Redis SCAN implementation"
-      );
-      return [];
+      const lockKeys = await cacheService.scanKeys(`${this.LOCK_KEY_PREFIX}*`);
+      const locks: Array<{ entityId: string; lockInfo: LockInfo }> = [];
+
+      for (const key of lockKeys) {
+        const lockInfo = await cacheService.get<LockInfo>(key);
+        if (lockInfo) {
+          // Extract entityId from the key (remove the prefix)
+          const entityId = key.replace(`${this.LOCK_KEY_PREFIX}`, "");
+          locks.push({
+            entityId,
+            lockInfo,
+          });
+        }
+      }
+
+      return locks;
     } catch (error) {
       logger.error("Error getting all locks:", error);
       return [];

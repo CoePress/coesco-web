@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import { logger } from "@/utils/logger";
 import { lockingService } from "@/services";
+import { getEmployeeContext } from "@/utils/context";
 
 export class LockController {
   async acquireLock(req: Request, res: Response): Promise<void> {
     try {
-      const { entityType, entityId, userId, ttl, username } = req.body;
+      const { entityType, entityId, ttl, username } = req.body;
+
+      const employee = getEmployeeContext();
 
       if (!entityType || !entityId) {
         res.status(400).json({
@@ -18,7 +21,7 @@ export class LockController {
       const result = await lockingService.acquireLock(
         entityType,
         entityId,
-        userId,
+        employee.id,
         ttl || undefined,
         username
       );
@@ -133,12 +136,14 @@ export class LockController {
 
   async extendLock(req: Request, res: Response): Promise<void> {
     try {
-      const { entityType, entityId, userId, ttl } = req.body;
+      const { entityType, entityId, ttl } = req.body;
 
-      if (!entityType || !entityId || !userId) {
+      const employee = getEmployeeContext();
+
+      if (!entityType || !entityId) {
         res.status(400).json({
           success: false,
-          error: "entityType, entityId and userId are required",
+          error: "entityType and entityId are required",
         });
         return;
       }
@@ -146,7 +151,7 @@ export class LockController {
       const result = await lockingService.extendLock(
         entityType,
         entityId,
-        userId,
+        employee.id,
         ttl
       );
 
