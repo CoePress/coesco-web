@@ -58,13 +58,13 @@ const Options = () => {
     useState(false);
 
   const { entities: optionCategories, loading: categoriesLoading } =
-    useGetEntities("/categories");
+    useGetEntities("/configurations/categories");
   const { entities: options, loading: optionsLoading } =
-    useGetEntities("/options");
+    useGetEntities("/configurations/options");
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/classes");
+    useGetEntities("/configurations/classes");
   const { entities: optionRules, loading: rulesLoading } =
-    useGetEntities("/config/rules");
+    useGetEntities("/configurations/rules");
 
   const categories = (optionCategories || []).filter(
     (cat: any, index: number, self: any[]) =>

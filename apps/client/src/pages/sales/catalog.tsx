@@ -479,7 +479,7 @@ const Catalog = () => {
   const [selectedDetailItem, setSelectedDetailItem] = useState<any>(null);
 
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/classes");
+    useGetEntities("/configurations/classes");
   const { entities: configurations, loading: configurationsLoading } =
     useGetEntities("/configurations");
   const deepestSelectedClassId =
@@ -487,12 +487,12 @@ const Catalog = () => {
   const { entities: _productClassOptions, loading: optionsLoading } =
     useGetEntities(
       deepestSelectedClassId
-        ? `/classes/${deepestSelectedClassId}/options`
+        ? `/configurations/classes/${deepestSelectedClassId}/options`
         : ""
     );
 
   const { entities: optionCategories, loading: _optionCategoriesLoading } =
-    useGetEntities("/categories");
+    useGetEntities("/configurations/categories");
 
   const partsFilter = useMemo(() => ({ type: "parts" }), []);
   const servicesFilter = useMemo(() => ({ type: "services" }), []);

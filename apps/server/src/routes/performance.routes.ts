@@ -3,10 +3,22 @@ import { performanceController } from "@/controllers";
 
 const router = Router();
 
-router.get("/", performanceController.getPerformanceSheets);
-router.get("/:id", performanceController.getPerformanceSheet);
-router.post("/", performanceController.createPerformanceSheet);
-router.put("/:id", performanceController.updatePerformanceSheet);
-router.delete("/:id", performanceController.deletePerformanceSheet);
+router.get("/sheets", performanceController.getPerformanceSheets);
+router.get("/sheets/:id", performanceController.getPerformanceSheet);
+router.post("/sheets", performanceController.createPerformanceSheet);
+router.patch("/sheets/:id", performanceController.updatePerformanceSheet);
+router.delete("/sheets/:id", performanceController.deletePerformanceSheet);
+
+router.get("/versions", performanceController.getPerformanceSheetVersions);
+router.get("/versions/:id", performanceController.getPerformanceSheetVersion);
+router.post("/versions", performanceController.createPerformanceSheetVersion);
+router.patch(
+  "/versions/:id",
+  performanceController.updatePerformanceSheetVersion
+);
+router.delete(
+  "/versions/:id",
+  performanceController.deletePerformanceSheetVersion
+);
 
 export default router;

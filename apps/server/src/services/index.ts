@@ -11,6 +11,7 @@ import { SystemService } from "./core/system.service";
 import { MicrosoftService } from "./domain/microsoft.service";
 import { QuoteBuilderService } from "./domain/quote-builder.service";
 import { ConfigBuilderService } from "./domain/config-builder.service";
+import { prisma } from "@/utils/prisma";
 
 // Core
 export const authService = new AuthService();
@@ -38,6 +39,9 @@ export const initializeServices = async () => {
   await machineMonitorService.initialize();
   logger.info("Machine data service initialized");
 
-  await microsoftService.sync();
-  logger.info("Microsoft service initialized");
+  const employees = await prisma.employee.findMany();
+  if (employees.length === 0) {
+    await microsoftService.sync();
+    logger.info("Microsoft service initialized");
+  }
 };

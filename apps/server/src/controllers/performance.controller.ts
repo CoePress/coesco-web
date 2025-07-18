@@ -1,8 +1,12 @@
-import { performanceSheetService } from "@/services/repository";
+import {
+  performanceSheetService,
+  performanceSheetVersionService,
+} from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
-import { exec } from "child_process";
+import { spawn, spawnSync } from "child_process";
 
 export class PerformanceController {
+  // Performance Sheets
   async getPerformanceSheets(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await performanceSheetService.getAll({});
@@ -39,24 +43,33 @@ export class PerformanceController {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<void> {
     try {
       const { id } = req.params;
       const result = await performanceSheetService.update(id, req.body);
+      const updatedData = JSON.stringify(result.data);
 
-      const data = JSON.stringify({ id, ...req.body, result });
-      const scriptOutput = await new Promise<string>((resolve) => {
-        exec(
-          `python src/scripts/performance-sheet.py '${data}'`,
-          (error, stdout, stderr) => {
-            resolve(stdout || stderr || "");
-          }
-        );
+      const pyResult = spawnSync(
+        "python",
+        ["src/scripts/performance-sheet.py"],
+        {
+          input: updatedData,
+          encoding: "utf-8",
+        }
+      );
+
+      if (pyResult.error) throw pyResult.error;
+      if (pyResult.status !== 0)
+        throw new Error(pyResult.stderr || "Script error");
+
+      const parsed = JSON.parse(pyResult.stdout);
+
+      res.status(200).json({
+        ...result,
+        parsed,
       });
-
-      res.status(200).json({ ...result, scriptOutput });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -68,6 +81,75 @@ export class PerformanceController {
     try {
       const { id } = req.params;
       const result = await performanceSheetService.delete(id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Performance Sheet Versions
+  async getPerformanceSheetVersions(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const result = await performanceSheetVersionService.getAll({});
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPerformanceSheetVersion(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { id } = req.params;
+      const result = await performanceSheetVersionService.getById(id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createPerformanceSheetVersion(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const result = await performanceSheetVersionService.create(req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updatePerformanceSheetVersion(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { id } = req.params;
+      const result = await performanceSheetVersionService.update(id, req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deletePerformanceSheetVersion(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { id } = req.params;
+      const result = await performanceSheetVersionService.delete(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
