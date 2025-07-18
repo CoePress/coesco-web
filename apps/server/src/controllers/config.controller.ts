@@ -1,4 +1,5 @@
 import { configBuilderService } from "@/services";
+import { optionCategoryService } from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
 
 export class ConfigController {
@@ -139,15 +140,68 @@ export class ConfigController {
   async deleteProductClass(req: Request, res: Response, next: NextFunction) {}
 
   // Option Categories
-  async getOptionCategories(req: Request, res: Response, next: NextFunction) {}
+  async getOptionCategories(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await optionCategoryService.getAll();
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async getOptionCategory(req: Request, res: Response, next: NextFunction) {}
+  async getOptionCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await optionCategoryService.getById(req.params.id);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async createOptionCategory(req: Request, res: Response, next: NextFunction) {}
+  async createOptionCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await optionCategoryService.create(req.body);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async updateOptionCategory(req: Request, res: Response, next: NextFunction) {}
+  async updateOptionCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await optionCategoryService.update(
+        req.params.id,
+        req.body
+      );
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  async deleteOptionCategory(req: Request, res: Response, next: NextFunction) {}
+  async deleteOptionCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await optionCategoryService.delete(req.params.id);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   // Options
   async getOptions(req: Request, res: Response, next: NextFunction) {
