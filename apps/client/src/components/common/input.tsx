@@ -1,10 +1,11 @@
 import React from "react";
 
 type InputProps = {
-  type?: "text" | "password" | "email" | "number" | "search";
+  type?: "text" | "password" | "email" | "number" | "search" | "date";
   placeholder?: string;
-  value?: string;
+  value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   className?: string;
   disabled?: boolean;
   required?: boolean;
@@ -12,6 +13,9 @@ type InputProps = {
   name?: string;
   label?: string;
   error?: string;
+  readOnly?: boolean;
+  min?: number;
+  max?: number;
 };
 
 const Input = ({
@@ -19,6 +23,7 @@ const Input = ({
   placeholder = "",
   value,
   onChange,
+  onBlur,
   className = "",
   disabled = false,
   required = false,
@@ -26,6 +31,9 @@ const Input = ({
   name,
   label,
   error,
+  readOnly = false,
+  min,
+  max,
 }: InputProps) => {
   return (
     <div className="w-full">
@@ -42,10 +50,14 @@ const Input = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         disabled={disabled}
         required={required}
         id={id}
         name={name}
+        readOnly={readOnly}
+        min={min}
+        max={max}
         className={`
           w-full text-sm px-3 py-1.5 rounded
           border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent

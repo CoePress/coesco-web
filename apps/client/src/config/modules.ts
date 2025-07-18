@@ -7,9 +7,16 @@ import {
   Box,
   Shield,
   Clock,
+  PcCase,
+  ScrollText,
+  Boxes,
+  LandPlot,
+  CogIcon,
   DollarSign,
   Route,
   FileText,
+  Wrench,
+  Computer,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
@@ -37,6 +44,11 @@ const Machines = lazy(() => import("@/pages/production/machines"));
 const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
 const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
+const RFQ = lazy(() => import("@/pages/performance/rfq"));
+const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
+const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
+const ReelDrive = lazy(() => import("@/pages/performance/reel-drive"));
+const SummaryReport = lazy(() => import("@/pages/performance/summary-report"))
 const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
 const Catalog = lazy(() => import("@/pages/sales/catalog"));
 const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
@@ -204,7 +216,52 @@ const adminModule: Module = {
   ],
 };
 
-const modules: Module[] = [productionModule, salesModule, adminModule]
+const performanceModule: Module = {
+  sequence: 2,
+  slug: "performance",
+  label: "Performance",
+  icon: PcCase,
+  status: "active" as const,
+  pages: [
+    {
+      slug: null,
+      label: "RFQ",
+      icon: ScrollText,
+      component: RFQ,
+    },
+    {
+      slug: "summary-report",
+      label: "Summary Report",
+      icon: Computer,
+      component: SummaryReport
+    },
+    {
+      slug: "material-specs",
+      label: "Material Specs",
+      icon: Boxes,
+      component: MaterialSpecs,
+    },
+    {
+      slug: "tddbhd",
+      label: "TD/DB/HD Report",
+      icon: LandPlot,
+      component: TDDBHD,
+    },
+    {
+      slug: "reel-drive",
+      label: "Reel Drive",
+      icon: CogIcon,
+      component: ReelDrive,
+    },
+  ],
+};
+
+const modules: Module[] = [
+  productionModule,
+  salesModule,
+  adminModule,
+  performanceModule,
+]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")
