@@ -31,6 +31,8 @@ type PerformanceTabValue =
   | "reel-drive"
   | "summary-report";
 
+const LinksModal = () => {};
+
 const PerformanceDetails = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
   const [isLocked, setIsLocked] = useState(false);
@@ -114,6 +116,8 @@ const PerformanceDetails = () => {
       }
     );
   };
+
+  const handleChange = () => {};
 
   const getHeaderActions = () => {
     if (isEditing) {
@@ -219,7 +223,6 @@ const PerformanceDetails = () => {
         size="sm">
         {!addMode ? (
           <div>
-            {/* Styled like dashboard.tsx alarm/machine cards */}
             <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
               {links.map((link, idx) => (
                 <div

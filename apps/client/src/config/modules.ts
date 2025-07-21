@@ -7,15 +7,9 @@ import {
   Box,
   Shield,
   Clock,
-  PcCase,
-  ScrollText,
-  Boxes,
-  LandPlot,
-  CogIcon,
   DollarSign,
   Route,
   FileText,
-  Computer,
 } from "lucide-react";
 import { ComponentType, lazy } from "react";
 
@@ -42,13 +36,7 @@ export type Page = {
 const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
 const Machines = lazy(() => import("@/pages/production/machines"));
 const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
-const Settings = lazy(() => import("@/pages/admin/settings"));
 const Employees = lazy(() => import("@/pages/admin/employees"));
-const RFQ = lazy(() => import("@/pages/performance/rfq"));
-const MaterialSpecs = lazy(() => import("@/pages/performance/material-specs"));
-const TDDBHD = lazy(() => import("@/pages/performance/tddbhd"));
-const ReelDrive = lazy(() => import("@/pages/performance/reel-drive"));
-const SummaryReport = lazy(() => import("@/pages/performance/summary-report"));
 const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
 const Catalog = lazy(() => import("@/pages/sales/catalog"));
 const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
@@ -202,12 +190,6 @@ const adminModule: Module = {
   pages: [
     {
       slug: null,
-      label: "Settings",
-      icon: SettingsIcon,
-      component: Settings,
-    },
-    {
-      slug: "employees",
       label: "Employees",
       icon: UsersIcon,
       component: Employees,

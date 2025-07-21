@@ -1,6 +1,5 @@
 // Admin
 export { default as Employees } from "./admin/employees";
-export { default as Settings } from "./admin/settings";
 export { default as OptionRules } from "./admin/option-rules";
 
 // Production
