@@ -4,9 +4,12 @@ import { Link } from "react-router-dom";
 import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/common/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import Modal from "@/components/common/modal";
+import { useState } from "react";
 
 const PerformanceSheets = () => {
   const { entities: performanceSheets } = useGetEntities("/performance/sheets");
+  const [isModalOpen, setModalOpen] = useState(false);
 
   const columns: TableColumn<any>[] = [
     {
@@ -50,7 +53,7 @@ const PerformanceSheets = () => {
             label: "New Performance Sheet",
             icon: <Plus size={16} />,
             variant: "primary",
-            onClick: () => {},
+            onClick: () => setModalOpen(true),
           },
         ]}
       />
@@ -70,6 +73,13 @@ const PerformanceSheets = () => {
         idField="id"
         pagination
       />
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        title="New Performance Sheet"
+        size="sm">
+        <div className="py-4">Form goes here...</div>
+      </Modal>
     </div>
   );
 };

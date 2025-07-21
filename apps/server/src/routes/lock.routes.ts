@@ -3,19 +3,13 @@ import { lockController } from "@/controllers";
 
 const router = Router();
 
-router.post("/acquire", lockController.acquireLock.bind(lockController));
-router.post("/release", lockController.releaseLock.bind(lockController));
-router.post(
-  "/force-release",
-  lockController.forceReleaseLock.bind(lockController)
-);
-router.post("/extend", lockController.extendLock.bind(lockController));
-router.get("/status/:docId", lockController.getLockStatus.bind(lockController));
-router.get("/", lockController.getAllLocks.bind(lockController));
-router.get(
-  "/:recordType",
-  lockController.getAllLocksByRecordType.bind(lockController)
-);
-router.post("/clear-all", lockController.clearAllLocks.bind(lockController));
+router.post("/acquire", lockController.acquireLock);
+router.post("/release", lockController.releaseLock);
+router.post("/force-release", lockController.forceReleaseLock);
+router.post("/extend", lockController.extendLock);
+router.get("/status/:recordType/:recordId", lockController.getLockStatus);
+router.get("/", lockController.getAllLocks);
+router.get("/:recordType", lockController.getAllLocksByRecordType);
+router.post("/clear-all", lockController.clearAllLocks);
 
 export default router;

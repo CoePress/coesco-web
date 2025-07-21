@@ -378,10 +378,13 @@ model QuoteItem {
 
   @@map("quote_items")
 }
-// PERFORMANCE SHEET MODELS
+
 model PerformanceSheetVersion {
   id String @id @default(uuid())
   sections Json @default("[]")
+
+  createdBy String?
+  updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -393,24 +396,28 @@ model PerformanceSheetVersion {
 model PerformanceSheet {
   id String @id @default(uuid())
   versionId String
-  referenceNumber String
-  revisionNumber Int
+  name String?
   data Json @default("{}")
+
+  createdBy String?
+  updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   version PerformanceSheetVersion @relation(fields: [versionId], references: [id])
   links PerformanceSheetLink[]
 
-  @@unique([referenceNumber, revisionNumber])
   @@map("performance_sheets")
 }
 
 model PerformanceSheetLink {
   id String @id @default(uuid())
   performanceSheetId String
-  entityType String // Journey, Quote, Configuration, etc.
+  entityType String
   entityId String
+  
+  createdBy String?
+  updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -423,6 +430,9 @@ model FieldsToWatch {
   id String @id @default(uuid())
   entityType String
   fields Json @default("[]")
+  
+  createdBy String?
+  updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -454,8 +464,9 @@ model Machine {
   connectionHost  String?
   connectionPort  Int?
   connectionUrl   String?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   statuses MachineStatus[]
 
