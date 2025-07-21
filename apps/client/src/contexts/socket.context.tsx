@@ -5,7 +5,7 @@ import { io, Socket } from "socket.io-client";
 type SocketContextType = {
   isConnected: boolean;
   socket: Socket | null;
-  emit: (event: string, data: any) => void;
+  emit: (event: string, data: any, callback?: (...args: any[]) => void) => void;
   machineStates: any[];
 };
 
@@ -84,9 +84,17 @@ export const SocketProvider = ({ children, listenTo }: SocketProviderProps) => {
     };
   }, [listenTo]); // Only re-run when listenTo changes
 
-  const emit = (event: string, data: any) => {
+  const emit = (
+    event: string,
+    data: any,
+    callback?: (...args: any[]) => void
+  ) => {
     if (socketRef.current?.connected) {
-      socketRef.current.emit(event, data);
+      if (callback) {
+        socketRef.current.emit(event, data, callback);
+      } else {
+        socketRef.current.emit(event, data);
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Tabs from "@/components/common/tabs";
 import RFQ from "./rfq";
 import MaterialSpecs from "./material-specs";
@@ -6,9 +6,11 @@ import TDDBHD from "./tddbhd";
 import ReelDrive from "./reel-drive";
 import SummaryReport from "./summary-report";
 import PageHeader from "@/components/common/page-header";
-import { Save } from "lucide-react";
+import { Save, Lock } from "lucide-react";
 import { useGetEntity } from "@/hooks/_base/use-get-entity";
 import { useParams } from "react-router-dom";
+import { instance } from "@/utils";
+import { useSocket } from "@/contexts/socket.context";
 
 const PERFORMANCE_TABS = [
   { label: "RFQ", value: "rfq" },
@@ -27,15 +29,74 @@ type PerformanceTabValue =
 
 const PerformanceDetails = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
-
+  const [isLocked, setIsLocked] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [lockInfo, setLockInfo] = useState<any>(null);
   const { id: performanceSheetId } = useParams();
-
   const { entity: performanceSheet } = useGetEntity(
     `/performance/sheets`,
     performanceSheetId
   );
+  const { emit, isConnected } = useSocket();
 
-  console.log(performanceSheet);
+  useEffect(() => {
+    if (!performanceSheetId) return;
+
+    const fetchLockStatus = async () => {
+      try {
+        const { data } = await instance.get(
+          `/lock/status/performance-sheets/${performanceSheetId}`
+        );
+        setIsLocked(data?.isLocked ?? false);
+        setLockInfo(data?.lockInfo || null);
+      } catch (err) {
+        console.error("Failed to fetch lock status:", err);
+      }
+    };
+
+    fetchLockStatus();
+  }, [performanceSheetId]);
+
+  // Acquire lock on Edit
+  const handleEdit = () => {
+    if (!performanceSheetId || !isConnected) return;
+    emit(
+      "lock:acquire",
+      {
+        recordType: "performance-sheets",
+        recordId: performanceSheetId,
+        userId: "me", // TODO: Replace with actual user id from context/auth
+      },
+      (result: any) => {
+        if (result?.success) {
+          setIsEditing(true);
+          setIsLocked(false);
+          setLockInfo(result.lockInfo);
+        } else {
+          setIsLocked(true);
+          setIsEditing(false);
+        }
+      }
+    );
+  };
+
+  // Release lock on Save
+  const handleSave = () => {
+    if (!performanceSheetId || !isConnected) return;
+    emit(
+      "lock:release",
+      {
+        recordType: "performance-sheets",
+        recordId: performanceSheetId,
+        userId: "me", // TODO: Replace with actual user id from context/auth
+      },
+      (result: any) => {
+        setIsEditing(false);
+        setIsLocked(false);
+        setLockInfo(null);
+      }
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -62,10 +123,19 @@ const PerformanceDetails = () => {
         actions={[
           {
             type: "button",
-            label: "Save  ",
+            label: isEditing ? "Save" : isLocked ? "Locked" : "Save",
             icon: <Save size={16} />,
             variant: "primary",
-            onClick: () => {},
+            disabled: isLocked && !isEditing,
+            onClick: isEditing ? handleSave : () => {},
+          },
+          {
+            type: "button",
+            label: "Edit",
+            icon: <Lock size={16} />,
+            variant: "secondary",
+            disabled: isEditing || isLocked,
+            onClick: handleEdit,
           },
         ]}
       />

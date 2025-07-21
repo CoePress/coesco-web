@@ -1,15 +1,35 @@
-import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
+import { Plus, Filter, MoreHorizontal, ChevronDown, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { PageHeader, Table, PageSearch } from "@/components";
 import { TableColumn } from "@/components/common/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import Modal from "@/components/common/modal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { instance } from "@/utils";
 
 const PerformanceSheets = () => {
   const { entities: performanceSheets } = useGetEntities("/performance/sheets");
   const [isModalOpen, setModalOpen] = useState(false);
+  const [locks, setLocks] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const fetchLocks = async () => {
+      try {
+        const { data } = await instance.get(`/lock/performance-sheets`);
+        const lockMap: Record<string, any> = {};
+        (data.locks || []).forEach((lock: any) => {
+          if (lock.lockInfo && lock.lockInfo.recordId) {
+            lockMap[lock.lockInfo.recordId] = lock.lockInfo;
+          }
+        });
+        setLocks(lockMap);
+      } catch (err) {
+        setLocks({});
+      }
+    };
+    fetchLocks();
+  }, [performanceSheets]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -25,6 +45,18 @@ const PerformanceSheets = () => {
       header: "Revision Number",
       className: "hover:underline",
       render: (_, row) => row.revisionNumber,
+    },
+    {
+      key: "locked",
+      header: "",
+      render: (_, row) =>
+        locks[row.id] ? (
+          <Lock
+            size={16}
+            className="text-red-500"
+            aria-label="Locked"
+          />
+        ) : null,
     },
     {
       key: "actions",
