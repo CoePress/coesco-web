@@ -319,20 +319,12 @@ const Layout = ({ employee, children }: LayoutProps) => {
 
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
             {__dev__ && (
-              <>
-                <Link
-                  key="sandbox"
-                  to="/sandbox"
-                  className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-                  <Code size={18} />
-                </Link>
-                <Link
-                  key="performance"
-                  to="/performance"
-                  className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-                  <ChartLine size={18} />
-                </Link>
-              </>
+              <Link
+                key="sandbox"
+                to="/sandbox"
+                className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
+                <Code size={18} />
+              </Link>
             )}
 
             <button

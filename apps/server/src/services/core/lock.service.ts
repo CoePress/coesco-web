@@ -1,5 +1,6 @@
-import { cacheService } from "..";
+import { cacheService, systemService } from "..";
 import { logger } from "@/utils/logger";
+import { prisma } from "@/utils/prisma";
 
 export interface LockInfo {
   userId: string;
@@ -26,10 +27,37 @@ export class LockingService {
     username?: string
   ): Promise<LockResult> {
     try {
+      const entityTypes = await systemService.getEntityTypes();
+      const foundType = entityTypes.find(
+        (t) =>
+          t.tableName.replace(/_/g, "-") === entityType ||
+          t.tableName === entityType
+      );
+      if (!foundType) {
+        return {
+          success: false,
+          error: `Entity type '${entityType}' does not exist.`,
+        };
+      }
+      const modelName = foundType.modelName;
+      const prismaModel = (prisma as any)[
+        modelName.charAt(0).toLowerCase() + modelName.slice(1)
+      ];
+      if (!prismaModel) {
+        return {
+          success: false,
+          error: `Prisma model for entity type '${entityType}' does not exist.`,
+        };
+      }
+      const entity = await prismaModel.findUnique({ where: { id: entityId } });
+      if (!entity) {
+        return {
+          success: false,
+          error: `Entity of type '${entityType}' with ID '${entityId}' does not exist.`,
+        };
+      }
       const lockKey = this.getLockKey(entityType, entityId);
-
       const existingLock = await cacheService.get<LockInfo>(lockKey);
-
       if (existingLock) {
         if (existingLock.userId === userId) {
           const lockInfo: LockInfo = {
@@ -37,9 +65,7 @@ export class LockingService {
             timestamp: Date.now(),
             username: username || existingLock.username,
           };
-
           await cacheService.set(lockKey, lockInfo, ttl);
-
           return {
             success: true,
             lockInfo,
@@ -52,17 +78,13 @@ export class LockingService {
           };
         }
       }
-
       const lockInfo: LockInfo = {
         userId,
         timestamp: Date.now(),
         username,
       };
-
       await cacheService.set(lockKey, lockInfo, ttl);
-
       logger.info(`Lock acquired for document ${entityId} by user ${userId}`);
-
       return {
         success: true,
         lockInfo,
