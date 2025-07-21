@@ -11,6 +11,7 @@ import {
   Search,
   Shield,
 } from "lucide-react";
+import { PageHeader } from "@/components";
 
 // Type definitions for audit logs
 
@@ -610,28 +611,26 @@ const AuditLogs = () => {
 
   return (
     <div className="w-full flex-1 flex flex-col">
-      <div className="p-2 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-text-muted">
-              Audit Logs
-            </h1>
-            <p className="text-sm text-text-muted mt-1">
-              Monitor user actions and data changes across the system
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-2 text-sm bg-surface text-text-muted rounded border border-border hover:bg-surface/80 flex items-center gap-2">
-              <Calendar size={16} />
-              Date Range
-            </button>
-            <button className="px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center gap-2">
-              <RefreshCcw size={16} />
-              Refresh
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Audit Logs"
+        description="Monitor user actions and data changes across the system"
+        actions={[
+          {
+            type: "button",
+            label: "Date Range",
+            variant: "secondary-outline",
+            icon: <Calendar size={16} />,
+            onClick: () => {},
+          },
+          {
+            type: "button",
+            label: "Refresh",
+            variant: "secondary-outline",
+            icon: <RefreshCcw size={16} />,
+            onClick: () => {},
+          },
+        ]}
+      />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <div className="flex items-center gap-2 mb-2">
