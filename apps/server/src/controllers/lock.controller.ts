@@ -1,26 +1,29 @@
-import { Request, Response } from "express";
-import { logger } from "@/utils/logger";
+import { NextFunction, Request, Response } from "express";
 import { lockingService } from "@/services";
 import { getEmployeeContext } from "@/utils/context";
 
 export class LockController {
-  async acquireLock(req: Request, res: Response): Promise<void> {
+  async acquireLock(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { entityType, entityId, ttl, username } = req.body;
+      const { recordType, recordId, ttl, username } = req.body;
 
       const employee = getEmployeeContext();
 
-      if (!entityType || !entityId) {
+      if (!recordType || !recordId) {
         res.status(400).json({
           success: false,
-          error: "entityType and entityId are required",
+          error: "recordType and recordId are required",
         });
         return;
       }
 
       const result = await lockingService.acquireLock(
-        entityType,
-        entityId,
+        recordType,
+        recordId,
         employee.id,
         ttl || undefined,
         username
@@ -40,29 +43,29 @@ export class LockController {
         });
       }
     } catch (error) {
-      logger.error("Error in acquireLock controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async releaseLock(req: Request, res: Response): Promise<void> {
+  async releaseLock(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { entityType, entityId, userId } = req.body;
+      const { recordType, recordId, userId } = req.body;
 
-      if (!entityType || !entityId || !userId) {
+      if (!recordType || !recordId || !userId) {
         res.status(400).json({
           success: false,
-          error: "entityType, entityId and userId are required",
+          error: "recordType, recordId and userId are required",
         });
         return;
       }
 
       const result = await lockingService.releaseLock(
-        entityType,
-        entityId,
+        recordType,
+        recordId,
         userId
       );
 
@@ -79,22 +82,22 @@ export class LockController {
         });
       }
     } catch (error) {
-      logger.error("Error in releaseLock controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async forceReleaseLock(req: Request, res: Response): Promise<void> {
+  async forceReleaseLock(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { entityType, entityId, adminUserId } = req.body;
+      const { recordType, recordId, adminUserId } = req.body;
 
-      if (!entityType || !entityId || !adminUserId) {
+      if (!recordType || !recordId || !adminUserId) {
         res.status(400).json({
           success: false,
-          error: "entityType, entityId and adminUserId are required",
+          error: "recordType, recordId and adminUserId are required",
         });
         return;
       }
@@ -109,8 +112,8 @@ export class LockController {
       // }
 
       const result = await lockingService.forceReleaseLock(
-        entityType,
-        entityId,
+        recordType,
+        recordId,
         adminUserId
       );
 
@@ -126,31 +129,31 @@ export class LockController {
         });
       }
     } catch (error) {
-      logger.error("Error in forceReleaseLock controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async extendLock(req: Request, res: Response): Promise<void> {
+  async extendLock(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { entityType, entityId, ttl } = req.body;
+      const { recordType, recordId, ttl } = req.body;
 
       const employee = getEmployeeContext();
 
-      if (!entityType || !entityId) {
+      if (!recordType || !recordId) {
         res.status(400).json({
           success: false,
-          error: "entityType and entityId are required",
+          error: "recordType and recordId are required",
         });
         return;
       }
 
       const result = await lockingService.extendLock(
-        entityType,
-        entityId,
+        recordType,
+        recordId,
         employee.id,
         ttl
       );
@@ -169,28 +172,28 @@ export class LockController {
         });
       }
     } catch (error) {
-      logger.error("Error in extendLock controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async getLockStatus(req: Request, res: Response): Promise<void> {
+  async getLockStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { entityType, entityId } = req.params;
+      const { recordType, recordId } = req.params;
 
-      if (!entityType || !entityId) {
+      if (!recordType || !recordId) {
         res.status(400).json({
           success: false,
-          error: "entityType and entityId are required",
+          error: "recordType and recordId are required",
         });
         return;
       }
 
-      const lockInfo = await lockingService.getLockInfo(entityType, entityId);
-      const isLocked = await lockingService.isLocked(entityType, entityId);
+      const lockInfo = await lockingService.getLockInfo(recordType, recordId);
+      const isLocked = await lockingService.isLocked(recordType, recordId);
 
       res.status(200).json({
         success: true,
@@ -198,15 +201,15 @@ export class LockController {
         lockInfo: lockInfo || null,
       });
     } catch (error) {
-      logger.error("Error in getLockStatus controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async getAllLocks(req: Request, res: Response): Promise<void> {
+  async getAllLocks(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // TODO: Add admin role validation here
       // const { userId } = req.user;
@@ -226,15 +229,42 @@ export class LockController {
         locks,
       });
     } catch (error) {
-      logger.error("Error in getAllLocks controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 
-  async clearAllLocks(req: Request, res: Response): Promise<void> {
+  async getAllLocksByRecordType(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { recordType } = req.params;
+
+      if (!recordType) {
+        res.status(400).json({
+          success: false,
+          error: "recordType is required",
+        });
+        return;
+      }
+
+      const locks = await lockingService.getAllLocksByRecordType(recordType);
+
+      res.status(200).json({
+        success: true,
+        locks,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async clearAllLocks(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // TODO: Add admin role validation here
       // const { userId } = req.user;
@@ -254,11 +284,7 @@ export class LockController {
         message: "All locks cleared successfully",
       });
     } catch (error) {
-      logger.error("Error in clearAllLocks controller:", error);
-      res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
+      next(error);
     }
   }
 }

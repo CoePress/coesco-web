@@ -5,7 +5,8 @@ import { prisma } from "@/utils/prisma";
 export interface LockInfo {
   userId: string;
   timestamp: number;
-  username?: string;
+  recordType: string;
+  recordId: string;
 }
 
 export interface LockResult {
@@ -17,11 +18,10 @@ export interface LockResult {
 
 export class LockingService {
   private readonly DEFAULT_TTL = 300; // 5 minutes
-  private readonly LOCK_KEY_PREFIX = "doc-lock:";
-
+  private readonly LOCK_KEY_PREFIX = "lock:";
   async acquireLock(
-    entityType: string,
-    entityId: string,
+    recordType: string,
+    recordId: string,
     userId: string,
     ttl: number = this.DEFAULT_TTL,
     username?: string
@@ -30,13 +30,13 @@ export class LockingService {
       const entityTypes = await systemService.getEntityTypes();
       const foundType = entityTypes.find(
         (t) =>
-          t.tableName.replace(/_/g, "-") === entityType ||
-          t.tableName === entityType
+          t.tableName.replace(/_/g, "-") === recordType ||
+          t.tableName === recordType
       );
       if (!foundType) {
         return {
           success: false,
-          error: `Entity type '${entityType}' does not exist.`,
+          error: `Entity type '${recordType}' does not exist.`,
         };
       }
       const modelName = foundType.modelName;
@@ -46,24 +46,25 @@ export class LockingService {
       if (!prismaModel) {
         return {
           success: false,
-          error: `Prisma model for entity type '${entityType}' does not exist.`,
+          error: `Prisma model for entity type '${recordType}' does not exist.`,
         };
       }
-      const entity = await prismaModel.findUnique({ where: { id: entityId } });
+      const entity = await prismaModel.findUnique({ where: { id: recordId } });
       if (!entity) {
         return {
           success: false,
-          error: `Entity of type '${entityType}' with ID '${entityId}' does not exist.`,
+          error: `Entity of type '${recordType}' with ID '${recordId}' does not exist.`,
         };
       }
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
       if (existingLock) {
         if (existingLock.userId === userId) {
           const lockInfo: LockInfo = {
             userId,
             timestamp: Date.now(),
-            username: username || existingLock.username,
+            recordType,
+            recordId,
           };
           await cacheService.set(lockKey, lockInfo, ttl);
           return {
@@ -81,16 +82,17 @@ export class LockingService {
       const lockInfo: LockInfo = {
         userId,
         timestamp: Date.now(),
-        username,
+        recordType,
+        recordId,
       };
       await cacheService.set(lockKey, lockInfo, ttl);
-      logger.info(`Lock acquired for document ${entityId} by user ${userId}`);
+      logger.info(`Lock acquired for document ${recordId} by user ${userId}`);
       return {
         success: true,
         lockInfo,
       };
     } catch (error) {
-      logger.error(`Error acquiring lock for document ${entityId}:`, error);
+      logger.error(`Error acquiring lock for document ${recordId}:`, error);
       return {
         success: false,
         error: "Failed to acquire lock",
@@ -99,12 +101,12 @@ export class LockingService {
   }
 
   async releaseLock(
-    entityType: string,
-    entityId: string,
+    recordType: string,
+    recordId: string,
     userId: string
   ): Promise<LockResult> {
     try {
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
 
       if (!existingLock) {
@@ -123,13 +125,13 @@ export class LockingService {
 
       await cacheService.delete(lockKey);
 
-      logger.info(`Lock released for document ${entityId} by user ${userId}`);
+      logger.info(`Lock released for document ${recordId} by user ${userId}`);
 
       return {
         success: true,
       };
     } catch (error) {
-      logger.error(`Error releasing lock for document ${entityId}:`, error);
+      logger.error(`Error releasing lock for document ${recordId}:`, error);
       return {
         success: false,
         error: "Failed to release lock",
@@ -138,12 +140,12 @@ export class LockingService {
   }
 
   async forceReleaseLock(
-    entityType: string,
-    entityId: string,
+    recordType: string,
+    recordId: string,
     adminUserId: string
   ): Promise<LockResult> {
     try {
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
 
       if (!existingLock) {
@@ -155,7 +157,7 @@ export class LockingService {
       await cacheService.delete(lockKey);
 
       logger.info(
-        `Lock force-released for document ${entityId} by admin ${adminUserId} (was held by ${existingLock.userId})`
+        `Lock force-released for document ${recordId} by admin ${adminUserId} (was held by ${existingLock.userId})`
       );
 
       return {
@@ -163,7 +165,7 @@ export class LockingService {
       };
     } catch (error) {
       logger.error(
-        `Error force-releasing lock for document ${entityId}:`,
+        `Error force-releasing lock for document ${recordId}:`,
         error
       );
       return {
@@ -174,13 +176,13 @@ export class LockingService {
   }
 
   async extendLock(
-    entityType: string,
-    entityId: string,
+    recordType: string,
+    recordId: string,
     userId: string,
     ttl: number = this.DEFAULT_TTL
   ): Promise<LockResult> {
     try {
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
 
       if (!existingLock) {
@@ -210,7 +212,7 @@ export class LockingService {
         lockInfo: updatedLockInfo,
       };
     } catch (error) {
-      logger.error(`Error extending lock for document ${entityId}:`, error);
+      logger.error(`Error extending lock for document ${recordId}:`, error);
       return {
         success: false,
         error: "Failed to extend lock",
@@ -219,44 +221,41 @@ export class LockingService {
   }
 
   async getLockInfo(
-    entityType: string,
-    entityId: string
+    recordType: string,
+    recordId: string
   ): Promise<LockInfo | null> {
     try {
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       return await cacheService.get<LockInfo>(lockKey);
     } catch (error) {
-      logger.error(`Error getting lock info for document ${entityId}:`, error);
+      logger.error(`Error getting lock info for document ${recordId}:`, error);
       return null;
     }
   }
 
-  async isLocked(entityType: string, entityId: string): Promise<boolean> {
+  async isLocked(recordType: string, recordId: string): Promise<boolean> {
     try {
-      const lockKey = this.getLockKey(entityType, entityId);
+      const lockKey = this.getLockKey(recordType, recordId);
       return await cacheService.exists(lockKey);
     } catch (error) {
       logger.error(
-        `Error checking lock status for document ${entityId}:`,
+        `Error checking lock status for document ${recordId}:`,
         error
       );
       return false;
     }
   }
 
-  async getAllLocks(): Promise<
-    Array<{ entityId: string; lockInfo: LockInfo }>
-  > {
+  async getAllLocks(): Promise<Array<{ key: string; lockInfo: LockInfo }>> {
     try {
       const lockKeys = await cacheService.scanKeys(`${this.LOCK_KEY_PREFIX}*`);
-      const locks: Array<{ entityId: string; lockInfo: LockInfo }> = [];
+      const locks: Array<{ key: string; lockInfo: LockInfo }> = [];
 
       for (const key of lockKeys) {
         const lockInfo = await cacheService.get<LockInfo>(key);
         if (lockInfo) {
-          const entityId = key.replace(`${this.LOCK_KEY_PREFIX}`, "");
           locks.push({
-            entityId,
+            key,
             lockInfo,
           });
         }
@@ -265,6 +264,32 @@ export class LockingService {
       return locks;
     } catch (error) {
       logger.error("Error getting all locks:", error);
+      return [];
+    }
+  }
+
+  async getAllLocksByRecordType(
+    recordType: string
+  ): Promise<Array<{ key: string; lockInfo: LockInfo }>> {
+    try {
+      const lockKeys = await cacheService.scanKeys(
+        `${this.LOCK_KEY_PREFIX}${recordType}:*`
+      );
+      const locks: Array<{ key: string; lockInfo: LockInfo }> = [];
+
+      for (const key of lockKeys) {
+        const lockInfo = await cacheService.get<LockInfo>(key);
+        if (lockInfo) {
+          locks.push({ key, lockInfo });
+        }
+      }
+
+      return locks;
+    } catch (error) {
+      logger.error(
+        `Error getting all locks for record type ${recordType}:`,
+        error
+      );
       return [];
     }
   }
@@ -278,7 +303,7 @@ export class LockingService {
     }
   }
 
-  private getLockKey(entityType: string, entityId: string): string {
-    return `${this.LOCK_KEY_PREFIX}${entityType}:${entityId}`;
+  private getLockKey(recordType: string, recordId: string): string {
+    return `${this.LOCK_KEY_PREFIX}${recordType}:${recordId}`;
   }
 }

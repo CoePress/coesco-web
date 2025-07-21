@@ -11,7 +11,11 @@ router.post(
 );
 router.post("/extend", lockController.extendLock.bind(lockController));
 router.get("/status/:docId", lockController.getLockStatus.bind(lockController));
-router.get("/all", lockController.getAllLocks.bind(lockController));
+router.get("/", lockController.getAllLocks.bind(lockController));
+router.get(
+  "/:recordType",
+  lockController.getAllLocksByRecordType.bind(lockController)
+);
 router.post("/clear-all", lockController.clearAllLocks.bind(lockController));
 
 export default router;
