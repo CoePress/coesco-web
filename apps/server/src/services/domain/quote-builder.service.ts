@@ -25,6 +25,11 @@ export class QuoteBuilderService {
     // TODO: add this to cache to avoid conflicts
     await this.validateCreateQuoteInput(data);
     const quoteNumber = await this.generateQuoteNumber();
+    const quoteRevision = await this.generateRevisionNumber({
+      year: quoteNumber.year,
+      number: quoteNumber.number,
+    });
+    const employee = getEmployeeContext();
 
     await prisma.$transaction(async (tx) => {
       const company = await this.resolveCompany(companyId, companyName, tx);
@@ -35,12 +40,21 @@ export class QuoteBuilderService {
         tx
       );
 
-      const quote = await quoteService.create({
-        company: { connect: { id: company?.id } },
-        journey: { connect: { id: journey?.id } },
+      const createData: any = {
         year: quoteNumber.year,
         number: quoteNumber.number,
-      });
+        revision: quoteRevision,
+        status: QuoteStatus.DRAFT,
+        createdBy: { connect: { id: employee.id } },
+      };
+      if (company?.id) {
+        createData.company = { connect: { id: company.id } };
+      }
+      if (journey?.id) {
+        createData.journey = { connect: { id: journey.id } };
+      }
+
+      const quote = await quoteService.create(createData);
 
       if (!quote.success || !quote.data) {
         throw new BadRequestError("Failed to create quote");
@@ -222,16 +236,22 @@ export class QuoteBuilderService {
 
   async createRevision(quoteId: string) {}
 
-  async generateRevisionNumber(quote: Quote): Promise<string> {
+  async generateRevisionNumber({
+    year,
+    number,
+  }: {
+    year: number;
+    number: string;
+  }): Promise<string> {
     const lastRevision = await prisma.quote.findFirst({
       where: {
-        year: quote.year,
-        number: quote.number,
+        year,
+        number,
       },
       orderBy: { revision: "desc" },
     });
 
-    if (!lastRevision) {
+    if (!lastRevision || !lastRevision.revision) {
       return "A";
     }
 
