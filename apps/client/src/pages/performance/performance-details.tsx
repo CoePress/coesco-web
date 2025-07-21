@@ -11,6 +11,7 @@ import { useGetEntity } from "@/hooks/_base/use-get-entity";
 import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useSocket } from "@/contexts/socket.context";
+import { useAuth } from "@/contexts/auth.context";
 
 const PERFORMANCE_TABS = [
   { label: "RFQ", value: "rfq" },
@@ -38,6 +39,7 @@ const PerformanceDetails = () => {
     performanceSheetId
   );
   const { emit, isConnected } = useSocket();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!performanceSheetId) return;
@@ -57,7 +59,6 @@ const PerformanceDetails = () => {
     fetchLockStatus();
   }, [performanceSheetId]);
 
-  // Acquire lock on Edit
   const handleEdit = () => {
     if (!performanceSheetId || !isConnected) return;
     emit(
@@ -65,7 +66,7 @@ const PerformanceDetails = () => {
       {
         recordType: "performance-sheets",
         recordId: performanceSheetId,
-        userId: "me", // TODO: Replace with actual user id from context/auth
+        userId: user?.id,
       },
       (result: any) => {
         if (result?.success) {
@@ -80,7 +81,6 @@ const PerformanceDetails = () => {
     );
   };
 
-  // Release lock on Save
   const handleSave = () => {
     if (!performanceSheetId || !isConnected) return;
     emit(
@@ -88,7 +88,7 @@ const PerformanceDetails = () => {
       {
         recordType: "performance-sheets",
         recordId: performanceSheetId,
-        userId: "me", // TODO: Replace with actual user id from context/auth
+        userId: user?.id,
       },
       (result: any) => {
         setIsEditing(false);

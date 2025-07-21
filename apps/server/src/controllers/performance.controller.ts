@@ -1,4 +1,5 @@
 import {
+  performanceSheetLinkService,
   performanceSheetService,
   performanceSheetVersionService,
 } from "@/services/repository";
@@ -206,4 +207,57 @@ export class PerformanceController {
       next(error);
     }
   }
+
+  // Performance Sheet Links
+  async getPerformanceSheetLinks(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { performanceSheetId } = req.params;
+      const result = await performanceSheetLinkService.getAll({
+        filter: {
+          performanceSheetId: performanceSheetId,
+        },
+      });
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPerformanceSheetLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { performanceSheetLinkId } = req.params;
+      const result = await performanceSheetLinkService.getById(
+        performanceSheetLinkId
+      );
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createPerformanceSheetLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {}
+
+  async updatePerformanceSheetLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {}
+
+  async deletePerformanceSheetLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {}
 }
