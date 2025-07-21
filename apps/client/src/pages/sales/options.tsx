@@ -66,10 +66,12 @@ const Options = () => {
   const { entities: optionRules, loading: rulesLoading } =
     useGetEntities("/configurations/rules");
 
-  const categories = (optionCategories || []).filter(
-    (cat: any, index: number, self: any[]) =>
-      index === self.findIndex((c: any) => c.id === cat.id)
-  );
+  const categories = Array.isArray(optionCategories)
+    ? optionCategories.filter(
+        (cat: any, index: number, self: any[]) =>
+          index === self.findIndex((c: any) => c.id === cat.id)
+      )
+    : [];
   const allOptions = (options || []).filter(
     (opt: any, index: number, self: any[]) =>
       index === self.findIndex((o: any) => o.id === opt.id)

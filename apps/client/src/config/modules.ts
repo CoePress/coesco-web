@@ -148,6 +148,20 @@ const salesModule: Module = {
       icon: Box,
       component: Options,
     },
+    {
+      slug: "performance",
+      label: "Performance Sheets",
+      icon: FileText,
+      component: PerformanceSheets,
+      children: [
+        {
+          slug: ":id",
+          label: "Performance Details",
+          icon: FileText,
+          component: PerformanceDetails,
+        },
+      ],
+    },
   ],
 };
 
@@ -219,66 +233,7 @@ const adminModule: Module = {
   ],
 };
 
-const performanceModule: Module = {
-  sequence: 2,
-  slug: "performance",
-  label: "Performance",
-  icon: PcCase,
-  status: "development" as const,
-  pages: [
-    {
-      slug: null,
-      label: "Performance Sheets",
-      icon: FileText,
-      component: PerformanceSheets,
-      children: [
-        {
-          slug: ":id",
-          label: "Performance Details",
-          icon: FileText,
-          component: PerformanceDetails,
-        },
-      ],
-    },
-    {
-      slug: "rfq",
-      label: "RFQ",
-      icon: ScrollText,
-      component: RFQ,
-    },
-    {
-      slug: "summary-report",
-      label: "Summary Report",
-      icon: Computer,
-      component: SummaryReport,
-    },
-    {
-      slug: "material-specs",
-      label: "Material Specs",
-      icon: Boxes,
-      component: MaterialSpecs,
-    },
-    {
-      slug: "tddbhd",
-      label: "TD/DB/HD Report",
-      icon: LandPlot,
-      component: TDDBHD,
-    },
-    {
-      slug: "reel-drive",
-      label: "Reel Drive",
-      icon: CogIcon,
-      component: ReelDrive,
-    },
-  ],
-};
-
-const modules: Module[] = [
-  productionModule,
-  salesModule,
-  adminModule,
-  performanceModule,
-]
+const modules: Module[] = [productionModule, salesModule, adminModule]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")

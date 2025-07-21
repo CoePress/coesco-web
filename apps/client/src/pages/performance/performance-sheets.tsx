@@ -14,7 +14,7 @@ const PerformanceSheets = () => {
       header: "Reference Number",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/performance/${row.id}`}>{row.referenceNumber}</Link>
+        <Link to={`/sales/performance/${row.id}`}>{row.referenceNumber}</Link>
       ),
     },
     {

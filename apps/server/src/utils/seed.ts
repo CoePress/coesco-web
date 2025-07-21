@@ -6,8 +6,8 @@ import {
   MachineType,
   OptionRuleAction,
 } from "@prisma/client";
-import { employeeService } from "@/services";
 import { __dev__ } from "@/config/config";
+import { microsoftService } from "@/services";
 
 // Product Classes
 export const sampleProductClasses = [
@@ -1846,7 +1846,7 @@ const seedMachines = async () => {
 };
 
 const seed = async () => {
-  await employeeService.sync();
+  await microsoftService.sync();
   await seedMachines();
 
   if (__dev__) {
