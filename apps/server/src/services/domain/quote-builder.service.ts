@@ -31,7 +31,7 @@ export class QuoteBuilderService {
     });
     const employee = getEmployeeContext();
 
-    await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       const company = await this.resolveCompany(companyId, companyName, tx);
       const journey = await this.resolveJourney(
         journeyId,
