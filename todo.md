@@ -19,3 +19,4 @@
 - Should we separate machines, parts & services in quote-details?
 - What fields do we want displayed in quote-details items table?
 - Who can access the option rule-manager?
+- Should we swap reference number with name (default to "Untitled Performance Sheet")?

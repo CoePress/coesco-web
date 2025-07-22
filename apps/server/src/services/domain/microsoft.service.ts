@@ -21,38 +21,25 @@ export class MicrosoftService {
       const microsoftUsers = await this.getMicrosoftUsers();
       logger.info(`Found ${microsoftUsers.length} Microsoft users`);
 
+      let added = 0;
+      let updated = 0;
+
       for (const microsoftUser of microsoftUsers) {
         if (blacklistedEmails.includes(microsoftUser.mail)) {
-          logger.info(`Skipping blacklisted email: ${microsoftUser.mail}`);
           continue;
         }
 
         if (!microsoftUser.mail || !microsoftUser.id) {
-          logger.warn(
-            `Skipping user with missing required fields: ${
-              microsoftUser.mail || "no email"
-            }`
-          );
           continue;
         }
 
         if (!employeeEmailRegex.test(microsoftUser.mail)) {
-          logger.info(
-            `Skipping non-standard email format: ${microsoftUser.mail}`
-          );
           continue;
         }
-
-        logger.info(
-          `Processing user: ${microsoftUser.displayName} (${microsoftUser.mail})`
-        );
 
         const existingEmployee = await prisma.employee.findFirst({
           where: { email: microsoftUser.mail },
         });
-        logger.info(
-          `Existing employee found: ${existingEmployee ? "Yes" : "No"}`
-        );
 
         const isAdmin = microsoftUser.department === "MIS";
 
@@ -69,7 +56,6 @@ export class MicrosoftService {
             role: isAdmin ? UserRole.ADMIN : UserRole.USER,
           },
         });
-        logger.info(`User record ${existingEmployee ? "updated" : "created"}`);
 
         const employee = await prisma.employee.upsert({
           where: { email: microsoftUser.mail },
@@ -88,13 +74,18 @@ export class MicrosoftService {
             jobTitle: microsoftUser.jobTitle || "Employee",
           },
         });
-        logger.info(
-          `Employee ${existingEmployee ? "updated" : "created"}: ${employee.id}`
-        );
+
+        if (existingEmployee) {
+          updated++;
+        } else {
+          added++;
+        }
       }
 
-      logger.info("Sync completed successfully");
-      return true;
+      logger.info(
+        `Sync completed: ${added} added, ${updated} updated, ${microsoftUsers.length} total`
+      );
+      return { added, updated, total: microsoftUsers.length };
     } catch (error: any) {
       logger.error("Sync failed with error:", {
         message: error.message,
