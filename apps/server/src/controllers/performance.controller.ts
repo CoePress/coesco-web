@@ -5,6 +5,8 @@ import {
 } from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
 import { spawn, spawnSync } from "child_process";
+import { IQueryParams } from "@/types/api.types";
+import { PerformanceSheetLink } from "@prisma/client";
 
 export class PerformanceController {
   // Performance Sheets
@@ -215,12 +217,19 @@ export class PerformanceController {
     next: NextFunction
   ) {
     try {
-      const { performanceSheetId } = req.params;
-      const result = await performanceSheetLinkService.getAll({
-        filter: {
-          performanceSheetId: performanceSheetId,
-        },
-      });
+      const { page, limit, sort, order, search, filter, include } = req.query;
+
+      const params: IQueryParams<PerformanceSheetLink> = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : undefined,
+        sort: sort as string,
+        order: order as "asc" | "desc",
+        search: search as string,
+        filter: filter as Partial<PerformanceSheetLink>,
+        include: include ? JSON.parse(include as string) : undefined,
+      };
+
+      const result = await performanceSheetLinkService.getAll(params);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -247,7 +256,14 @@ export class PerformanceController {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {}
+  ) {
+    try {
+      const result = await performanceSheetLinkService.create(req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async updatePerformanceSheetLink(
     req: Request,

@@ -24,10 +24,7 @@ router.delete(
 );
 
 // Performance Sheet Links
-router.get(
-  "/links/sheet/:sheetId",
-  performanceController.getPerformanceSheetLinks
-);
+router.get("/links", performanceController.getPerformanceSheetLinks);
 router.get("/links/:id", performanceController.getPerformanceSheetLink);
 router.post("/links", performanceController.createPerformanceSheetLink);
 router.patch("/links/:id", performanceController.updatePerformanceSheetLink);
