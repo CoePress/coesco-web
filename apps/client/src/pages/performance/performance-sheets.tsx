@@ -45,11 +45,13 @@ const PerformanceSheets = () => {
 
   const columns: TableColumn<any>[] = [
     {
-      key: "referenceNumber",
-      header: "Reference Number",
+      key: "name",
+      header: "Name",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/performance/${row.id}`}>{row.referenceNumber}</Link>
+        <Link to={`/sales/performance/${row.id}`}>
+          {row.name ? row.name : "Untitled Performance Sheet"}
+        </Link>
       ),
     },
     {
@@ -127,7 +129,7 @@ const PerformanceSheets = () => {
           setNewLink({ entityType: "quote", entityId: "" });
         }}
         title="New Performance Sheet"
-        size="sm">
+        size="xs">
         <div className="py-4 flex flex-col gap-4">
           <Input
             label="Name"
@@ -136,89 +138,6 @@ const PerformanceSheets = () => {
             onChange={(e) => setName(e.target.value)}
             required
           />
-          <div>
-            <label className="block text-sm font-medium mb-2">Links</label>
-            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-2">
-              {links.length === 0 && (
-                <span className="text-xs text-muted-foreground">
-                  No links added.
-                </span>
-              )}
-              {links.map((link, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
-                  <span className="font-medium capitalize text-text-muted">
-                    {link.entityType}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    #{link.entityId}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {!addMode ? (
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => setAddMode(true)}
-                className="w-full">
-                Add Link
-              </Button>
-            ) : (
-              <form
-                className="flex flex-col gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (newLink.entityId) {
-                    setLinks([...links, newLink]);
-                    setAddMode(false);
-                    setNewLink({ entityType: "quote", entityId: "" });
-                  }
-                }}>
-                <Select
-                  label="Entity Type"
-                  name="entityType"
-                  value={newLink.entityType}
-                  onChange={(e) =>
-                    setNewLink({ ...newLink, entityType: e.target.value })
-                  }
-                  options={[
-                    { value: "quote", label: "Quote" },
-                    { value: "journey", label: "Journey" },
-                    { value: "contact", label: "Contact" },
-                    { value: "company", label: "Company" },
-                  ]}
-                />
-                <Input
-                  label="Entity ID"
-                  name="entityId"
-                  value={newLink.entityId}
-                  onChange={(e) =>
-                    setNewLink({ ...newLink, entityId: e.target.value })
-                  }
-                  required
-                />
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    variant="secondary-outline"
-                    size="md"
-                    onClick={() => {
-                      setAddMode(false);
-                      setNewLink({ entityType: "quote", entityId: "" });
-                    }}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    disabled={!newLink.entityId}>
-                    Save
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
         </div>
       </Modal>
     </div>

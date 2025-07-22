@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { RFQFormData } from '@/hooks/performance/use-create-rfq';
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { RFQFormData } from "@/hooks/performance/use-create-rfq";
 
 // RFQ variables (flat fields)
 export type PerformanceSheetState = RFQFormData & {
@@ -83,17 +83,17 @@ export type MaterialSpecsVersion = {
 
 // Initial state for a versioned material spec
 const initialMaterialSpecsVersion: MaterialSpecsVersion = {
-  materialType: '',
-  materialThickness: '',
-  coilWidth: '',
-  yieldStrength: '',
-  materialTensile: '',
-  coilID: '',
-  coilOD: '',
-  coilWeight: '',
-  minBendRad: '',
-  minLoopLength: '',
-  coilODCalculated: '',
+  materialType: "",
+  materialThickness: "",
+  coilWidth: "",
+  yieldStrength: "",
+  materialTensile: "",
+  coilID: "",
+  coilOD: "",
+  coilWeight: "",
+  minBendRad: "",
+  minLoopLength: "",
+  coilODCalculated: "",
 };
 
 export interface RollDetail {
@@ -294,7 +294,20 @@ export interface PerformanceData {
           forceRequired?: string;
           first?: RollDetail;
           middle?: RollDetail;
-          last?: RollDetail;
+          last?: {
+            height?: string;
+            forceRequired?: string;
+            numberOfYieldStrainsAtSurface?: string;
+            up?: {
+              resultingRadius?: string;
+              curvatureDifference?: string;
+              bendingMoment?: string;
+              bendingMomentRatio?: string;
+              springback?: string;
+              percentOfThicknessYielded?: string;
+              radiusAfterSpringback?: string;
+            };
+          };
         };
         yieldMet?: string;
         radius?: {
@@ -482,6 +495,7 @@ export interface PerformanceData {
     };
   };
   shear?: {
+    model?: string;
     strength?: string;
     blade?: {
       rakeOfBladePerFoot?: string;
@@ -553,38 +567,38 @@ export interface PerformanceData {
 // Initial state for the context
 const initialState: PerformanceSheetState = {
   // --- RFQ variables (from lines 14-100 in rfq.tsx) ---
-  referenceNumber: '',
-  date: '',
-  customer: '',
-  streetAddress: '',
-  city: '',
-  state: '',
-  zip: '',
-  country: '',
-  contactName: '',
-  position: '',
-  phone: '',
-  email: '',
-  dealerName: '',
-  dealerSalesman: '',
-  daysPerWeek: '',
-  shiftsPerDay: '',
-  lineApplication: 'Press Feed',
-  typeOfLine: 'Conventional',
-  pullThrough: 'No',
-  coilWidthMin: '',
-  coilWidthMax: '',
-  maxCoilOD: '',
-  coilID: '',
-  coilWeightMax: '',
-  coilHandlingMax: '',
+  referenceNumber: "",
+  date: "",
+  customer: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  zip: "",
+  country: "",
+  contactName: "",
+  position: "",
+  phone: "",
+  email: "",
+  dealerName: "",
+  dealerSalesman: "",
+  daysPerWeek: "",
+  shiftsPerDay: "",
+  lineApplication: "Press Feed",
+  typeOfLine: "Conventional",
+  pullThrough: "No",
+  coilWidthMin: "",
+  coilWidthMax: "",
+  maxCoilOD: "",
+  coilID: "",
+  coilWeightMax: "",
+  coilHandlingMax: "",
   slitEdge: false,
   millEdge: false,
-  coilCarRequired: 'No',
-  runOffBackplate: 'No',
-  requireRewinding: 'No',
-  cosmeticMaterial: 'No',
-  feedEquipment: '',
+  coilCarRequired: "No",
+  runOffBackplate: "No",
+  requireRewinding: "No",
+  cosmeticMaterial: "No",
+  feedEquipment: "",
   pressType: {
     gapFrame: false,
     hydraulic: false,
@@ -593,45 +607,45 @@ const initialState: PerformanceSheetState = {
     shearDie: false,
     straightSide: false,
     other: false,
-    otherText: '',
+    otherText: "",
   },
-  tonnage: '',
-  pressBedWidth: '',
-  pressBedLength: '',
-  pressStroke: '',
-  windowOpening: '',
-  maxSPM: '',
+  tonnage: "",
+  pressBedWidth: "",
+  pressBedLength: "",
+  pressStroke: "",
+  windowOpening: "",
+  maxSPM: "",
   dies: {
     transfer: false,
     progressive: false,
     blanking: false,
   },
-  avgFeedLen: '',
-  avgFeedSPM: '',
-  maxFeedLen: '',
-  maxFeedSPM: '',
-  minFeedLen: '',
-  minFeedSPM: '',
-  voltage: '',
-  spaceLength: '',
-  spaceWidth: '',
-  obstructions: '',
-  mountToPress: '',
-  adequateSupport: '',
-  requireCabinet: '',
-  needMountingPlates: '',
-  passlineHeight: '',
-  coilChangeConcern: '',
-  coilChangeTime: '',
-  downtimeReasons: '',
-  feedDirection: '',
-  coilLoading: '',
-  safetyRequirements: '',
-  decisionDate: '',
-  idealDelivery: '',
-  earliestDelivery: '',
-  latestDelivery: '',
-  specialConsiderations: '',
+  avgFeedLen: "",
+  avgFeedSPM: "",
+  maxFeedLen: "",
+  maxFeedSPM: "",
+  minFeedLen: "",
+  minFeedSPM: "",
+  voltage: "",
+  spaceLength: "",
+  spaceWidth: "",
+  obstructions: "",
+  mountToPress: "",
+  adequateSupport: "",
+  requireCabinet: "",
+  needMountingPlates: "",
+  passlineHeight: "",
+  coilChangeConcern: "",
+  coilChangeTime: "",
+  downtimeReasons: "",
+  feedDirection: "",
+  coilLoading: "",
+  safetyRequirements: "",
+  decisionDate: "",
+  idealDelivery: "",
+  earliestDelivery: "",
+  latestDelivery: "",
+  specialConsiderations: "",
   // --- Material Specs versioned fields ---
   maxThick: { ...initialMaterialSpecsVersion },
   atFull: { ...initialMaterialSpecsVersion },
@@ -639,130 +653,264 @@ const initialState: PerformanceSheetState = {
   atWidth: { ...initialMaterialSpecsVersion },
   // --- TDDBHD fields ---
   tddbhd: {
-    referenceNumber: '',
-    customer: '',
-    date: '',
+    referenceNumber: "",
+    customer: "",
+    date: "",
     reel: {
-      'Maximum Thick': {
-        model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: ''
+      "Maximum Thick": {
+        model: "",
+        width: "",
+        backplate: "",
+        materialType: "",
+        materialWidth: "",
+        thickness: "",
+        yieldStrength: "",
+        airPressure: "",
+        decelRate: "",
       },
-      'Max @ Full': {
-        model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: ''
+      "Max @ Full": {
+        model: "",
+        width: "",
+        backplate: "",
+        materialType: "",
+        materialWidth: "",
+        thickness: "",
+        yieldStrength: "",
+        airPressure: "",
+        decelRate: "",
       },
-      'Minimum Thick': {
-        model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: ''
+      "Minimum Thick": {
+        model: "",
+        width: "",
+        backplate: "",
+        materialType: "",
+        materialWidth: "",
+        thickness: "",
+        yieldStrength: "",
+        airPressure: "",
+        decelRate: "",
       },
-      'Max @ Width': {
-        model: '', width: '', backplate: '', materialType: '', materialWidth: '', thickness: '', yieldStrength: '', airPressure: '', decelRate: ''
+      "Max @ Width": {
+        model: "",
+        width: "",
+        backplate: "",
+        materialType: "",
+        materialWidth: "",
+        thickness: "",
+        yieldStrength: "",
+        airPressure: "",
+        decelRate: "",
       },
     },
     coil: {
-      'Maximum Thick': { weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: '' },
-      'Max @ Full': { weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: '' },
-      'Minimum Thick': { weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: '' },
-      'Max @ Width': { weight: '', od: '', dispReel: '', webTensionPsi: '', webTensionLbs: '' },
+      "Maximum Thick": {
+        weight: "",
+        od: "",
+        dispReel: "",
+        webTensionPsi: "",
+        webTensionLbs: "",
+      },
+      "Max @ Full": {
+        weight: "",
+        od: "",
+        dispReel: "",
+        webTensionPsi: "",
+        webTensionLbs: "",
+      },
+      "Minimum Thick": {
+        weight: "",
+        od: "",
+        dispReel: "",
+        webTensionPsi: "",
+        webTensionLbs: "",
+      },
+      "Max @ Width": {
+        weight: "",
+        od: "",
+        dispReel: "",
+        webTensionPsi: "",
+        webTensionLbs: "",
+      },
     },
     brake: {
-      'Maximum Thick': { padDiameter: '', cylinderBore: '', friction: '' },
-      'Max @ Full': { padDiameter: '', cylinderBore: '', friction: '' },
-      'Minimum Thick': { padDiameter: '', cylinderBore: '', friction: '' },
-      'Max @ Width': { padDiameter: '', cylinderBore: '', friction: '' },
+      "Maximum Thick": { padDiameter: "", cylinderBore: "", friction: "" },
+      "Max @ Full": { padDiameter: "", cylinderBore: "", friction: "" },
+      "Minimum Thick": { padDiameter: "", cylinderBore: "", friction: "" },
+      "Max @ Width": { padDiameter: "", cylinderBore: "", friction: "" },
     },
     threadingDrive: {
-      'Maximum Thick': { airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: '' },
-      'Max @ Full': { airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: '' },
-      'Minimum Thick': { airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: '' },
-      'Max @ Width': { airClutch: '', hydThreadingDrive: '', torqueAtMandrel: '', rewindTorque: '' },
+      "Maximum Thick": {
+        airClutch: "",
+        hydThreadingDrive: "",
+        torqueAtMandrel: "",
+        rewindTorque: "",
+      },
+      "Max @ Full": {
+        airClutch: "",
+        hydThreadingDrive: "",
+        torqueAtMandrel: "",
+        rewindTorque: "",
+      },
+      "Minimum Thick": {
+        airClutch: "",
+        hydThreadingDrive: "",
+        torqueAtMandrel: "",
+        rewindTorque: "",
+      },
+      "Max @ Width": {
+        airClutch: "",
+        hydThreadingDrive: "",
+        torqueAtMandrel: "",
+        rewindTorque: "",
+      },
     },
     holdDown: {
-      'Maximum Thick': { assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: '' },
-      'Max @ Full': { assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: '' },
-      'Minimum Thick': { assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: '' },
-      'Max @ Width': { assy: '', pressure: '', forceRequired: '', forceAvailable: '', minWidth: '' },
+      "Maximum Thick": {
+        assy: "",
+        pressure: "",
+        forceRequired: "",
+        forceAvailable: "",
+        minWidth: "",
+      },
+      "Max @ Full": {
+        assy: "",
+        pressure: "",
+        forceRequired: "",
+        forceAvailable: "",
+        minWidth: "",
+      },
+      "Minimum Thick": {
+        assy: "",
+        pressure: "",
+        forceRequired: "",
+        forceAvailable: "",
+        minWidth: "",
+      },
+      "Max @ Width": {
+        assy: "",
+        pressure: "",
+        forceRequired: "",
+        forceAvailable: "",
+        minWidth: "",
+      },
     },
     cylinder: {
-      'Maximum Thick': { type: '', pressure: '' },
-      'Max @ Full': { type: '', pressure: '' },
-      'Minimum Thick': { type: '', pressure: '' },
-      'Max @ Width': { type: '', pressure: '' },
+      "Maximum Thick": { type: "", pressure: "" },
+      "Max @ Full": { type: "", pressure: "" },
+      "Minimum Thick": { type: "", pressure: "" },
+      "Max @ Width": { type: "", pressure: "" },
     },
     dragBrake: {
-      'Maximum Thick': { model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: '' },
-      'Max @ Full': { model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: '' },
-      'Minimum Thick': { model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: '' },
-      'Max @ Width': { model: '', quantity: '', torqueRequired: '', failsafePSI: '', failsafeHoldingForce: '' },
+      "Maximum Thick": {
+        model: "",
+        quantity: "",
+        torqueRequired: "",
+        failsafePSI: "",
+        failsafeHoldingForce: "",
+      },
+      "Max @ Full": {
+        model: "",
+        quantity: "",
+        torqueRequired: "",
+        failsafePSI: "",
+        failsafeHoldingForce: "",
+      },
+      "Minimum Thick": {
+        model: "",
+        quantity: "",
+        torqueRequired: "",
+        failsafePSI: "",
+        failsafeHoldingForce: "",
+      },
+      "Max @ Width": {
+        model: "",
+        quantity: "",
+        torqueRequired: "",
+        failsafePSI: "",
+        failsafeHoldingForce: "",
+      },
     },
   },
   // --- Reel Drive fields ---
   reelDrive: {},
   // --- Material Specs top-level fields ---
-  controlsLevel: '',
-  feedControls: '',
-  passline: '',
-  typeOfRoll: '',
-  reelBackplate: '',
-  reelStyle: '',
+  controlsLevel: "",
+  feedControls: "",
+  passline: "",
+  typeOfRoll: "",
+  reelBackplate: "",
+  reelStyle: "",
   lightGauge: false,
   nonMarking: false,
   // --- FPM calculated fields for RFQ ---
-  avgFPM: '',
-  maxFPM: '',
-  minFPM: '',
+  avgFPM: "",
+  maxFPM: "",
+  minFPM: "",
   // --- Additional fields from summary image ---
-  straightenerModel: '',
-  straighteningRolls: '',
-  backupRolls: '',
-  payoff: '',
-  straightenerWidth: '',
-  feedRate: '',
-  acceleration: '',
-  horsepower: '',
-  application: '',
-  model: '',
-  machineWidth: '',
-  loopPit: '',
-  fullWidthRolls: '',
-  feedAngle1: '',
-  feedAngle2: '',
-  maximumVelocity: '',
-  acceleration2: '',
-  ratio: '',
-  reelModel: '',
-  reelWidth: '',
-  backplateDiameter: '',
-  reelMotorization: '',
-  singleOrDoubleEnded: '',
-  airClutch: '',
-  hydThreadingDrive: '',
-  holdDownAssy: '',
-  holdDownCylinder: '',
-  brakeModel: '',
-  brakeQuantity: '',
-  driveHorsepower: '',
-  speed: '',
-  accelRate: '',
-  regenReqd: '',
-  pullThruStraightenerRolls: '',
-  pullThruPinchRolls: '',
+  straightenerModel: "",
+  straighteningRolls: "",
+  backupRolls: "",
+  payoff: "",
+  straightenerWidth: "",
+  feedRate: "",
+  acceleration: "",
+  horsepower: "",
+  application: "",
+  model: "",
+  machineWidth: "",
+  loopPit: "",
+  fullWidthRolls: "",
+  feedAngle1: "",
+  feedAngle2: "",
+  maximumVelocity: "",
+  acceleration2: "",
+  ratio: "",
+  reelModel: "",
+  reelWidth: "",
+  backplateDiameter: "",
+  reelMotorization: "",
+  singleOrDoubleEnded: "",
+  airClutch: "",
+  hydThreadingDrive: "",
+  holdDownAssy: "",
+  holdDownCylinder: "",
+  brakeModel: "",
+  brakeQuantity: "",
+  driveHorsepower: "",
+  speed: "",
+  accelRate: "",
+  regenReqd: "",
+  pullThruStraightenerRolls: "",
+  pullThruPinchRolls: "",
 };
 
 interface PerformanceSheetContextType {
   performanceSheet: PerformanceSheetState;
-  setPerformanceSheet: React.Dispatch<React.SetStateAction<PerformanceSheetState>>;
+  setPerformanceSheet: React.Dispatch<
+    React.SetStateAction<PerformanceSheetState>
+  >;
   updatePerformanceSheet: (updates: Partial<PerformanceSheetState>) => void;
 }
 
-const PerformanceSheetContext = createContext<PerformanceSheetContextType | undefined>(undefined);
+const PerformanceSheetContext = createContext<
+  PerformanceSheetContextType | undefined
+>(undefined);
 
-export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) => {
-  const [performanceSheet, setPerformanceSheet] = useState<PerformanceSheetState>(initialState);
+export const PerformanceSheetProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  const [performanceSheet, setPerformanceSheet] =
+    useState<PerformanceSheetState>(initialState);
 
   const updatePerformanceSheet = (updates: Partial<PerformanceSheetState>) => {
     setPerformanceSheet((prev) => ({ ...prev, ...updates }));
   };
 
   return (
-    <PerformanceSheetContext.Provider value={{ performanceSheet, setPerformanceSheet, updatePerformanceSheet }}>
+    <PerformanceSheetContext.Provider
+      value={{ performanceSheet, setPerformanceSheet, updatePerformanceSheet }}>
       {children}
     </PerformanceSheetContext.Provider>
   );
@@ -770,8 +918,11 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
 
 export const usePerformanceSheet = () => {
   const ctx = useContext(PerformanceSheetContext);
-  if (!ctx) throw new Error('usePerformanceSheet must be used within a PerformanceSheetProvider');
+  if (!ctx)
+    throw new Error(
+      "usePerformanceSheet must be used within a PerformanceSheetProvider"
+    );
   return ctx;
 };
 
-export { initialState }; 
+export { initialState };

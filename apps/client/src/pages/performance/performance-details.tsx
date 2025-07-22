@@ -31,15 +31,12 @@ type PerformanceTabValue =
   | "reel-drive"
   | "summary-report";
 
-const LinksModal = () => {};
-
 const PerformanceDetails = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
   const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
-  const [entityType, setEntityType] = useState<string | undefined>();
   const [addMode, setAddMode] = useState(false);
   const [newLink, setNewLink] = useState<{
     entityType: string;
