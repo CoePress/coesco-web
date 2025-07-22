@@ -294,7 +294,20 @@ export interface PerformanceData {
           forceRequired?: string;
           first?: RollDetail;
           middle?: RollDetail;
-          last?: RollDetail;
+          last?: {
+            height?: string;
+            forceRequired?: string;
+            numberOfYieldStrainsAtSurface?: string;
+            up?: {
+              resultingRadius?: string;
+              curvatureDifference?: string;
+              bendingMoment?: string;
+              bendingMomentRatio?: string;
+              springback?: string;
+              percentOfThicknessYielded?: string;
+              radiusAfterSpringback?: string;
+            };
+          };
         };
         yieldMet?: string;
         radius?: {
@@ -482,6 +495,7 @@ export interface PerformanceData {
     };
   };
   shear?: {
+    model?: string;
     strength?: string;
     blade?: {
       rakeOfBladePerFoot?: string;
