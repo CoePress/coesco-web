@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Trash,
 } from "lucide-react";
-import { PageHeader, Modal, Button, Tabs } from "@/components";
+import { PageHeader, Modal, Button, Tabs, Loader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 interface RuleCondition {
@@ -59,12 +59,14 @@ const Options = () => {
 
   const { entities: optionCategories, loading: categoriesLoading } =
     useGetEntities("/configurations/categories");
-  const { entities: options, loading: optionsLoading } =
-    useGetEntities("/configurations/options");
+  const { entities: options, loading: optionsLoading } = useGetEntities(
+    "/configurations/options"
+  );
   const { entities: productClasses, loading: productClassesLoading } =
     useGetEntities("/configurations/classes");
-  const { entities: optionRules, loading: rulesLoading } =
-    useGetEntities("/configurations/rules");
+  const { entities: optionRules, loading: rulesLoading } = useGetEntities(
+    "/configurations/rules"
+  );
 
   const categories = Array.isArray(optionCategories)
     ? optionCategories.filter(
@@ -193,7 +195,7 @@ const Options = () => {
   ) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-text-muted">Loading...</div>
+        <Loader />
       </div>
     );
   }
