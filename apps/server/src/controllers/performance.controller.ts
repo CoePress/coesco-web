@@ -94,7 +94,7 @@ export class PerformanceController {
 
       const pyResult = spawnSync(
         "python",
-        ["src/scripts/performance-sheet.py"],
+        ["src/scripts/performance-sheet-src/main.py"],
         {
           input: updatedData,
           encoding: "utf-8",
