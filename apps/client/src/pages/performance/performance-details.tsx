@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
-import Tabs from "@/components/common/tabs";
-import RFQ from "./rfq";
-import MaterialSpecs from "./material-specs";
-import TDDBHD from "./tddbhd";
-import ReelDrive from "./reel-drive";
-import SummaryReport from "./summary-report";
-import PageHeader from "@/components/common/page-header";
-import { Save, Lock, Link } from "lucide-react";
-import { useGetEntity } from "@/hooks/_base/use-get-entity";
+import { Save, Lock, Link, Trash } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { instance } from "@/utils";
-import { useSocket } from "@/contexts/socket.context";
-import { useAuth } from "@/contexts/auth.context";
-import Modal from "@/components/common/modal";
+
 import { Select } from "@/components";
 import Button from "@/components/common/button";
+import Modal from "@/components/common/modal";
+import PageHeader from "@/components/common/page-header";
+import Tabs from "@/components/common/tabs";
+import { useAuth } from "@/contexts/auth.context";
+import { useSocket } from "@/contexts/socket.context";
+import { useGetEntity } from "@/hooks/_base/use-get-entity";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { instance } from "@/utils";
+import MaterialSpecs from "./material-specs";
+import ReelDrive from "./reel-drive";
+import RFQ from "./rfq";
+import SummaryReport from "./summary-report";
+import TDDBHD from "./tddbhd";
+import { useCreateEntity } from "@/hooks/_base/use-create-entity";
+import { useDeleteEntity } from "@/hooks/_base/use-delete-entity";
 
 type LinksModalProps = {
   isOpen: boolean;
@@ -30,16 +33,31 @@ const LinksModal = (props: LinksModalProps) => {
     recordId: "" as string | "",
   });
 
+  const { id: performanceSheetId } = useParams();
+  const linksEndpoint = "/performance/links";
+
   const saveDisabled = formData.recordType === "" || formData.recordId === "";
   const recordDisabled =
     formData.recordType === "" || formData.recordType === "";
 
   const {
-    entities: links,
-    loading,
-    error,
-    refresh,
-  } = useGetEntities("/performance/links");
+    entities: performanceLinks,
+    loading: performanceLinksLoading,
+    error: performanceLinksError,
+    refresh: refreshPerformanceLinks,
+  } = useGetEntities(linksEndpoint);
+
+  const {
+    createEntity: createPerformanceLink,
+    loading: createPerformanceLinkLoading,
+    error: createPerformanceLinkError,
+  } = useCreateEntity(linksEndpoint);
+
+  const {
+    deleteEntity: deletePerformanceLink,
+    loading: deletePerformanceLinkLoading,
+    error: deletePerformanceLinkError,
+  } = useDeleteEntity(linksEndpoint);
 
   const recordTypeUrlMap: Record<string, string> = {
     quote: "quotes",
@@ -59,6 +77,12 @@ const LinksModal = (props: LinksModalProps) => {
     refresh: refreshRecords,
   } = useGetEntities(recordUrl);
 
+  const loading =
+    performanceLinksLoading ||
+    createPerformanceLinkLoading ||
+    deletePerformanceLinkLoading ||
+    recordLoading;
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -69,20 +93,42 @@ const LinksModal = (props: LinksModalProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setMode("view");
-    refresh();
-  };
-
   const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setMode("view");
     setFormData({
       recordType: "",
       recordId: "",
     });
+  };
+
+  const handleCreateLink = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const result = await createPerformanceLink({
+      entityType: formData.recordType,
+      entityId: formData.recordId,
+      performanceSheetId,
+    });
+
+    if (result.success) {
+      setMode("view");
+      setFormData({
+        recordType: "",
+        recordId: "",
+      });
+      refreshPerformanceLinks();
+    }
+  };
+
+  const handleDeleteLink = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    console.log(e.target);
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    const result = await deletePerformanceLink(id);
+    if (result.success) {
+      refreshPerformanceLinks();
+    }
   };
 
   const generateRecordSelectLabel = () => {
@@ -97,8 +143,8 @@ const LinksModal = (props: LinksModalProps) => {
         return (
           <div>
             <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {links &&
-                links.map((link, idx) => (
+              {performanceLinks &&
+                performanceLinks.map((link, idx) => (
                   <div
                     onClick={() => setMode("record")}
                     key={idx}
@@ -107,8 +153,15 @@ const LinksModal = (props: LinksModalProps) => {
                       {link.entityType}
                     </span>
                     <span className="text-xs text-muted-foreground ml-2">
-                      #{link.entityId}
+                      {link.entityId}
                     </span>
+                    <Button
+                      data-id={link.id}
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteLink}>
+                      <Trash />
+                    </Button>
                   </div>
                 ))}
             </div>
@@ -123,9 +176,7 @@ const LinksModal = (props: LinksModalProps) => {
         );
       case "add":
         return (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-2">
+          <form className="flex flex-col gap-2">
             <Select
               label="Record Type"
               name="recordType"
@@ -149,7 +200,7 @@ const LinksModal = (props: LinksModalProps) => {
                 { value: "", label: generateRecordSelectLabel() },
                 ...(recordEntities || []).map((entity) => ({
                   value: entity.id,
-                  label: entity.name || `#${entity.id}`,
+                  label: entity.name || `${entity.id}`,
                 })),
               ]}
             />
@@ -163,7 +214,8 @@ const LinksModal = (props: LinksModalProps) => {
               <Button
                 variant="primary"
                 size="md"
-                disabled={saveDisabled}>
+                disabled={saveDisabled}
+                onClick={handleCreateLink}>
                 Save
               </Button>
             </div>
@@ -187,9 +239,6 @@ const LinksModal = (props: LinksModalProps) => {
         return <p>Invalid mode</p>;
     }
   };
-
-  // Remove the useEffect - not needed anymore
-  // The hook will automatically re-run when formData.recordType changes
 
   return (
     <Modal
