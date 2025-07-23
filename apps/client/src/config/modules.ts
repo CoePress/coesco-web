@@ -54,6 +54,7 @@ const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
 const PerformanceSheets = lazy(
   () => import("@/pages/performance/performance-sheets")
 );
+const DocumentDiff = lazy(() => import("@/pages/_test/document-diff"));
 
 const salesModule: Module = {
   sequence: 1,
@@ -211,6 +212,12 @@ const adminModule: Module = {
       label: "Audit Config",
       icon: FileText,
       component: AuditConfig,
+    },
+    {
+      slug: "diff",
+      label: "Document Diff",
+      icon: FileText,
+      component: DocumentDiff,
     },
   ],
 };
