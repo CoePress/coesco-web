@@ -21,7 +21,7 @@ export const useDeleteEntity = <T = any>(endpoint: string) => {
 
       if (response.data.success) {
         setSuccess(true);
-        return response.data.data;
+        return response.data;
       } else {
         setError(
           response.data.error || `Failed to delete entity at ${endpoint}`

@@ -29,16 +29,15 @@ const LinksModal = (props: LinksModalProps) => {
   const { isOpen, onClose } = props;
   const [mode, setMode] = useState<"view" | "add" | "record">("view");
   const [formData, setFormData] = useState({
-    recordType: "" as string | "",
-    recordId: "" as string | "",
+    recordType: "",
+    recordId: "",
   });
 
   const { id: performanceSheetId } = useParams();
   const linksEndpoint = "/performance/links";
 
   const saveDisabled = formData.recordType === "" || formData.recordId === "";
-  const recordDisabled =
-    formData.recordType === "" || formData.recordType === "";
+  const recordDisabled = formData.recordType === "";
 
   const {
     entities: performanceLinks,
@@ -50,13 +49,11 @@ const LinksModal = (props: LinksModalProps) => {
   const {
     createEntity: createPerformanceLink,
     loading: createPerformanceLinkLoading,
-    error: createPerformanceLinkError,
   } = useCreateEntity(linksEndpoint);
 
   const {
     deleteEntity: deletePerformanceLink,
     loading: deletePerformanceLinkLoading,
-    error: deletePerformanceLinkError,
   } = useDeleteEntity(linksEndpoint);
 
   const recordTypeUrlMap: Record<string, string> = {
@@ -70,10 +67,10 @@ const LinksModal = (props: LinksModalProps) => {
     formData.recordType && recordTypeUrlMap[formData.recordType]
       ? `/${recordTypeUrlMap[formData.recordType]}`
       : null;
+
   const {
     entities: recordEntities,
     loading: recordLoading,
-    error: recordError,
     refresh: refreshRecords,
   } = useGetEntities(recordUrl);
 
@@ -120,50 +117,59 @@ const LinksModal = (props: LinksModalProps) => {
     }
   };
 
-  const handleDeleteLink = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    console.log(e.target);
-    const id = e.currentTarget.dataset.id;
-    if (!id) return;
-    const result = await deletePerformanceLink(id);
-    if (result.success) {
+  const handleDeleteLink = async (linkId: string) => {
+    const result = await deletePerformanceLink(linkId);
+    if (result && result.success) {
       refreshPerformanceLinks();
     }
   };
 
   const generateRecordSelectLabel = () => {
-    if (formData.recordType === null || formData.recordType === "")
-      return "Select a record";
+    if (formData.recordType === "") return "Select a record";
     return `Select a ${formData.recordType}`;
   };
 
-  const renderView = (mode: string) => {
+  const renderView = () => {
     switch (mode) {
       case "view":
         return (
           <div>
-            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {performanceLinks &&
+            <div className="bg-foreground rounded border border-border flex flex-col gap-1 mb-4">
+              {loading ? null : performanceLinks &&
+                performanceLinks.length > 0 ? (
                 performanceLinks.map((link, idx) => (
                   <div
-                    onClick={() => setMode("record")}
                     key={idx}
-                    className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
-                    <span className="font-medium capitalize text-text-muted">
-                      {link.entityType}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {link.entityId}
-                    </span>
-                    <Button
-                      data-id={link.id}
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteLink}>
-                      <Trash />
-                    </Button>
+                    className="flex items-center p-2 justify-between rounded hover:bg-surface/80 transition text-sm border border-transparent">
+                    <div className="flex flex-col">
+                      <span className="font-medium capitalize text-text-muted">
+                        {link.entityType}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {link.entityId}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setMode("record")}>
+                        View
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteLink(link.id)}>
+                        <Trash />
+                      </Button>
+                    </div>
                   </div>
-                ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Not linked to any records.
+                </p>
+              )}
             </div>
             <Button
               variant="primary"
@@ -174,6 +180,7 @@ const LinksModal = (props: LinksModalProps) => {
             </Button>
           </div>
         );
+
       case "add":
         return (
           <form className="flex flex-col gap-2">
@@ -225,11 +232,11 @@ const LinksModal = (props: LinksModalProps) => {
         return (
           <div>
             Record Preview
-            <div className="flex">
+            <div className="flex mt-2">
               <Button
                 variant="secondary-outline"
                 size="md"
-                onClick={handleCancel}>
+                onClick={() => setMode("view")}>
                 Back
               </Button>
             </div>
@@ -246,7 +253,7 @@ const LinksModal = (props: LinksModalProps) => {
       onClose={onClose}
       title="Links"
       size="sm">
-      {renderView(mode)}
+      {renderView()}
     </Modal>
   );
 };
