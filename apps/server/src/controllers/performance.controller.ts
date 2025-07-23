@@ -242,10 +242,8 @@ export class PerformanceController {
     next: NextFunction
   ) {
     try {
-      const { performanceSheetLinkId } = req.params;
-      const result = await performanceSheetLinkService.getById(
-        performanceSheetLinkId
-      );
+      const { id } = req.params;
+      const result = await performanceSheetLinkService.getById(id);
       res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -269,11 +267,27 @@ export class PerformanceController {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {}
+  ) {
+    try {
+      const { id } = req.params;
+      const result = await performanceSheetLinkService.update(id, req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async deletePerformanceSheetLink(
     req: Request,
     res: Response,
     next: NextFunction
-  ) {}
+  ) {
+    try {
+      const { id } = req.params;
+      const result = await performanceSheetLinkService.delete(id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
