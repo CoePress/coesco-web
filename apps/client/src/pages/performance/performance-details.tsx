@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Save, Lock, Link, Trash } from "lucide-react";
 import { useParams } from "react-router-dom";
 
@@ -33,18 +33,22 @@ const LinksModal = (props: LinksModalProps) => {
     recordId: "",
   });
 
-  const { id: performanceSheetId } = useParams();
+  const { id } = useParams();
   const linksEndpoint = "/performance/links";
 
   const saveDisabled = formData.recordType === "" || formData.recordId === "";
   const recordDisabled = formData.recordType === "";
+
+  const filter = useMemo(() => ({ performanceSheetId: id }), []);
 
   const {
     entities: performanceLinks,
     loading: performanceLinksLoading,
     error: performanceLinksError,
     refresh: refreshPerformanceLinks,
-  } = useGetEntities(linksEndpoint);
+  } = useGetEntities(linksEndpoint, {
+    filter,
+  });
 
   const {
     createEntity: createPerformanceLink,
@@ -104,7 +108,7 @@ const LinksModal = (props: LinksModalProps) => {
     const result = await createPerformanceLink({
       entityType: formData.recordType,
       entityId: formData.recordId,
-      performanceSheetId,
+      id,
     });
 
     if (result.success) {
@@ -166,7 +170,7 @@ const LinksModal = (props: LinksModalProps) => {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground p-2">
                   Not linked to any records.
                 </p>
               )}
