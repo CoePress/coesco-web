@@ -45,39 +45,58 @@ export class PerformanceController {
     next: NextFunction
   ) {
     try {
-      const performanceVersion = await performanceSheetVersionService.getById(
-        req.body.versionId
-      );
+      let versionId = req.body.versionId;
 
-      if (!performanceVersion.success || !performanceVersion.data) {
-        throw new Error("Performance sheet version not found");
+      if (!versionId) {
+        const allVersions = await performanceSheetVersionService.getAll();
+        const latestVersion = allVersions.data?.[0];
+
+        if (!latestVersion) {
+          return res
+            .status(400)
+            .json({ message: "No available performance sheet version." });
+        }
+
+        versionId = latestVersion.id;
       }
 
-      const versionData = performanceVersion.data.sections as any[];
+      const versionResult =
+        await performanceSheetVersionService.getById(versionId);
 
-      if (!versionData || !Array.isArray(versionData)) {
-        throw new Error("Invalid performance sheet version data structure");
+      if (!versionResult.success || !versionResult.data) {
+        return res
+          .status(404)
+          .json({ message: "Performance sheet version not found." });
       }
 
-      const sectionsWithNullValues = versionData.reduce(
+      const sections = versionResult.data.sections as any[];
+
+      if (!Array.isArray(sections)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid version data format." });
+      }
+
+      const data = sections.reduce(
         (acc: Record<string, Record<string, null>>, section: any) => {
           acc[section.name] = (section.fields as any[]).reduce(
             (fieldAcc: Record<string, null>, field: any) => {
               fieldAcc[field.key] = null;
               return fieldAcc;
             },
-            {} as Record<string, null>
+            {}
           );
-
           return acc;
         },
-        {} as Record<string, Record<string, null>>
+        {}
       );
 
       const result = await performanceSheetService.create({
         ...req.body,
-        data: sectionsWithNullValues,
+        versionId,
+        data,
       });
+
       res.status(200).json(result);
     } catch (error) {
       next(error);

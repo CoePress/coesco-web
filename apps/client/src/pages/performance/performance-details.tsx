@@ -108,7 +108,7 @@ const LinksModal = (props: LinksModalProps) => {
     const result = await createPerformanceLink({
       entityType: formData.recordType,
       entityId: formData.recordId,
-      id,
+      performanceSheetId: id,
     });
 
     if (result.success) {
