@@ -340,6 +340,8 @@ export class MachineMonitorService {
               id: data.machineId,
             },
           },
+          createdById: "system",
+          updatedById: "system",
         },
       });
     });

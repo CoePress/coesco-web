@@ -310,7 +310,7 @@ export class ConfigBuilderService {
     };
   }
 
-  async saveConfiguration(configuration: any) {
+  async saveConfiguration(employeeId: string, configuration: any) {
     const newConfiguration = await prisma.configuration.create({
       data: {
         name: configuration.name,
@@ -323,6 +323,8 @@ export class ConfigBuilderService {
             id: configuration.productClassId,
           },
         },
+        createdById: employeeId,
+        updatedById: employeeId,
       },
     });
 
@@ -331,6 +333,8 @@ export class ConfigBuilderService {
         data: {
           configurationId: newConfiguration.id,
           optionId: option.optionId,
+          createdById: employeeId,
+          updatedById: employeeId,
         },
       });
     }

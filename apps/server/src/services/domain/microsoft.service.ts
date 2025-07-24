@@ -57,7 +57,7 @@ export class MicrosoftService {
           },
         });
 
-        const employee = await prisma.employee.upsert({
+        await prisma.employee.upsert({
           where: { email: microsoftUser.mail },
           create: {
             firstName: microsoftUser.givenName || "Unknown",
@@ -66,6 +66,8 @@ export class MicrosoftService {
             jobTitle: microsoftUser.jobTitle || "Employee",
             number: microsoftUser.mail.split("@")[0].toUpperCase(),
             userId: user.id,
+            createdById: "system",
+            updatedById: "system",
           },
           update: {
             firstName: microsoftUser.givenName || "Unknown",

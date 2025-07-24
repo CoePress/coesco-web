@@ -215,6 +215,8 @@ export class AuthService {
               role: UserRole.USER,
             },
           },
+          createdById: "system",
+          updatedById: "system",
         },
       });
     }

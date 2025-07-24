@@ -36,8 +36,11 @@ model Employee {
   hireDate    DateTime?
   jobTitle    String
   initials    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   user             User      @relation(fields: [userId], references: [id])
   journeys         Journey[] @relation("RsmJourneys")
@@ -47,20 +50,24 @@ model Employee {
   approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
 
   @@index([number])
+  @@index([createdById])
   @@map("employees")
 }
 
 // CONFIGURATION MODELS
 model ProductClass {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String    @id @default(uuid())
+  code        String    @unique
   name        String
   description String?
   parentId    String?
-  depth       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  depth       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children                     ProductClass[]               @relation("ProductClassHierarchy")
@@ -68,143 +75,188 @@ model ProductClass {
   configurations               Configuration[]
   productClassOptionCategories ProductClassOptionCategory[]
 
+  @@index([createdById])
   @@map("product_classes")
 }
 
 model OptionCategory {
-  id            String   @id @default(uuid())
-  name          String   @unique
+  id            String    @id @default(uuid())
+  name          String    @unique
   description   String?
-  allowMultiple Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  allowMultiple Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
 
   optionHeaders                OptionHeader[]
   productClassOptionCategories ProductClassOptionCategory[]
 
+  @@index([createdById])
   @@map("option_categories")
 }
 
 model ProductClassOptionCategory {
   productClassId   String
   optionCategoryId String
-  displayOrder     Int     @default(0)
-  isRequired       Boolean @default(false)
+  displayOrder     Int       @default(0)
+  isRequired       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
 
   productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
   optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
 
   @@id([productClassId, optionCategoryId])
+  @@index([createdById])
   @@map("product_class_option_categories")
 }
 
 model OptionHeader {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   categoryId  String
   name        String
-  code        String   @unique
+  code        String    @unique
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
-  category               OptionCategory          @relation(fields: [categoryId], references: [id])
-  optionDetails          OptionDetails[]
-  optionRuleTargets      OptionRuleTarget[]
-  optionRuleTriggers     OptionRuleTrigger[]
-  configurationOptions   ConfigurationOption[]
+  category             OptionCategory        @relation(fields: [categoryId], references: [id])
+  optionDetails        OptionDetails[]
+  optionRuleTargets    OptionRuleTarget[]
+  optionRuleTriggers   OptionRuleTrigger[]
+  configurationOptions ConfigurationOption[]
 
+  @@index([createdById])
   @@map("option_headers")
 }
 
 model OptionDetails {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   productClassId String
   optionHeaderId String
   price          Decimal
-  displayOrder   Int      @default(0)
-  isActive       Boolean  @default(true)
-  isDefault      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  displayOrder   Int       @default(0)
+  isActive       Boolean   @default(true)
+  isDefault      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
 
   productClass ProductClass @relation(fields: [productClassId], references: [id])
   optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
 
   @@unique([productClassId, optionHeaderId])
+  @@index([createdById])
   @@map("option_details")
 }
 
 model OptionRule {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String
   description String?
   action      OptionRuleAction
-  priority    Int      @default(0)
-  isActive    Boolean  @default(true)
+  priority    Int              @default(0)
+  isActive    Boolean          @default(true)
   condition   Json
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  targetOptions OptionRuleTarget[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  targetOptions  OptionRuleTarget[]
   triggerOptions OptionRuleTrigger[]
-  
+
+  @@index([createdById])
   @@map("option_rules")
 }
 
 model OptionRuleTarget {
-  ruleId   String
-  optionId String
+  ruleId      String
+  optionId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
-  rule   OptionRule @relation(fields: [ruleId], references: [id])
-  option OptionHeader     @relation(fields: [optionId], references: [id])
+  rule   OptionRule   @relation(fields: [ruleId], references: [id])
+  option OptionHeader @relation(fields: [optionId], references: [id])
 
   @@id([ruleId, optionId])
+  @@index([createdById])
   @@map("option_rule_targets")
 }
 
 model OptionRuleTrigger {
-  ruleId   String
-  optionId String
+  ruleId      String
+  optionId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
-  rule   OptionRule @relation(fields: [ruleId], references: [id])
-  option OptionHeader     @relation(fields: [optionId], references: [id])
+  rule   OptionRule   @relation(fields: [ruleId], references: [id])
+  option OptionHeader @relation(fields: [optionId], references: [id])
 
   @@id([ruleId, optionId])
+  @@index([createdById])
   @@map("option_rule_triggers")
 }
 
 model Configuration {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   productClassId String
   name           String
   description    String?
   isTemplate     Boolean
   isActive       Boolean
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
 
   productClass    ProductClass          @relation(fields: [productClassId], references: [id])
   selectedOptions ConfigurationOption[]
   quoteItems      QuoteItem[]
 
+  @@index([createdById])
   @@map("configurations")
 }
 
 model ConfigurationOption {
   configurationId String
   optionId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
   configuration Configuration @relation(fields: [configurationId], references: [id])
-  option        OptionHeader        @relation(fields: [optionId], references: [id])
+  option        OptionHeader  @relation(fields: [optionId], references: [id])
 
   @@id([configurationId, optionId])
+  @@index([createdById])
   @@map("configuration_options")
 }
 
 // CUSTOMER JOURNEY MODELS
 model Address {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   companyId    String
   addressLine1 String
   addressLine2 String?
@@ -212,14 +264,18 @@ model Address {
   state        String?
   zip          String?
   country      String?
-  isPrimary    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isPrimary    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
 
   company          Company   @relation(fields: [companyId], references: [id])
   customerJourneys Journey[] @relation("JourneyCustomerAddress")
   dealerJourneys   Journey[] @relation("JourneyDealerAddress")
 
+  @@index([createdById])
   @@map("addresses")
 }
 
@@ -242,9 +298,11 @@ model Company {
   notes         String?
   tags          String[]
   status        CompanyStatus @default(ACTIVE)
-  createdById   String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
 
   createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
   addresses        Address[]
@@ -252,25 +310,30 @@ model Company {
   customerJourneys Journey[] @relation("CustomerJourneys")
   dealerJourneys   Journey[] @relation("DealerJourneys")
 
+  @@index([createdById])
   @@map("companies")
 }
 
 model Contact {
-  id        String   @id @default(uuid())
-  companyId String
-  firstName String
-  lastName  String?
-  email     String?
-  phone     String?
-  title     String?
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  companyId   String
+  firstName   String
+  lastName    String?
+  email       String?
+  phone       String?
+  title       String?
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   company          Company   @relation(fields: [companyId], references: [id])
   customerJourneys Journey[] @relation("JourneyCustomerContact")
   dealerJourneys   Journey[] @relation("JourneyDealerContact")
 
+  @@index([createdById])
   @@map("contacts")
 }
 
@@ -291,9 +354,11 @@ model Journey {
   priority          JourneyPriority?
   confidence        Int?
   notes             String?
-  createdById       String
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  createdById       String
+  updatedById       String
 
   rsm             Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
   customer        Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
@@ -306,6 +371,7 @@ model Journey {
   interactions    JourneyInteraction[] @relation("JourneyInteractions")
   quotes          Quote[]              @relation("JourneyQuotes")
 
+  @@index([createdById])
   @@map("journeys")
 }
 
@@ -315,26 +381,33 @@ model JourneyInteraction {
   interactionType JourneyInteractionType
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
   journey Journey @relation("JourneyInteractions", fields: [journeyId], references: [id])
 
+  @@index([createdById])
   @@map("journey_interactions")
 }
 
 // QUOTE MODELS
 model Item {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
-  unitPrice   Float    @default(0)
+  unitPrice   Float     @default(0)
   type        String
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
   createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedById String
 
   quoteItems QuoteItem[]
 
+  @@index([createdById])
   @@map("items")
 }
 
@@ -345,11 +418,13 @@ model Quote {
   number       String
   revision     String
   status       QuoteStatus
-  createdById  String
-  approvedById String?
-  approvedAt   DateTime?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  approvedAt   DateTime?
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
+  approvedById String?
 
   journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
   createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
@@ -357,11 +432,13 @@ model Quote {
   items      QuoteItem[] @relation("QuoteItems")
 
   @@unique([number, revision])
+  @@index([createdById])
+  @@index([approvedById])
   @@map("quotes")
 }
 
 model QuoteItem {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   quoteId         String
   configurationId String?
   itemId          String?
@@ -369,87 +446,102 @@ model QuoteItem {
   unitPrice       Decimal
   totalPrice      Decimal
   lineNumber      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
   quote         Quote          @relation("QuoteItems", fields: [quoteId], references: [id])
   configuration Configuration? @relation(fields: [configurationId], references: [id])
   item          Item?          @relation(fields: [itemId], references: [id])
 
+  @@index([createdById])
   @@map("quote_items")
 }
 
 model PerformanceSheetVersion {
-  id String @id @default(uuid())
-  sections Json @default("[]")
-
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  sections    Json      @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   performanceSheets PerformanceSheet[]
 
+  @@index([createdById])
   @@map("performance_sheet_versions")
 }
 
 model PerformanceSheet {
-  id String @id @default(uuid())
-  versionId String
-  name String?
-  data Json @default("{}")
-
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  versionId   String
+  name        String?
+  data        Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   version PerformanceSheetVersion @relation(fields: [versionId], references: [id])
-  links PerformanceSheetLink[]
+  links   PerformanceSheetLink[]
 
+  @@index([createdById])
   @@map("performance_sheets")
 }
 
 model PerformanceSheetLink {
-  id String @id @default(uuid())
+  id                 String    @id @default(uuid())
   performanceSheetId String
-  entityType String
-  entityId String
-  
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  entityType         String
+  entityId           String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  createdById        String
+  updatedById        String
 
   performanceSheet PerformanceSheet @relation(fields: [performanceSheetId], references: [id])
 
+  @@index([createdById])
   @@map("performance_sheet_links")
 }
 
 model FieldsToWatch {
-  id String @id @default(uuid())
-  entityType String
-  fields Json @default("[]")
-  
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  entityType  String
+  fields      Json      @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
+  @@index([createdById])
   @@map("fields_to_watch")
 }
 
 model AuditLog {
-  id String @id @default(uuid())
+  id         String      @id @default(cuid())
+  action     AuditAction
   entityType String
-  entityId String
-  action String
-  oldData Json @default("{}")
-  newData Json @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  entityId   String
+  changedBy  String
+  changes    Json
+  createdAt  DateTime    @default(now())
 
   @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SOFT_DELETE
+  RESTORE
 }
 
 // MACHINE MODELS
@@ -464,12 +556,15 @@ model Machine {
   connectionHost  String?
   connectionPort  Int?
   connectionUrl   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
   statuses MachineStatus[]
 
+  @@index([createdById])
   @@map("machines")
 }
 
@@ -489,10 +584,28 @@ model MachineStatus {
   duration     Int
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
 
   machine Machine @relation(fields: [machineId], references: [id])
 
+  @@index([createdById])
   @@map("machine_statuses")
+}
+
+model Draft {
+  id          String   @id @default(uuid())
+  entityType  String
+  entityId    String?
+  data        Json
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([createdById])
+  @@map("drafts")
 }
 
 // ENUMS
