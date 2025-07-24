@@ -583,14 +583,9 @@ model MachineStatus {
   endTime      DateTime?
   duration     Int
   createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  deletedAt    DateTime?
-  createdById  String
-  updatedById  String
 
   machine Machine @relation(fields: [machineId], references: [id])
 
-  @@index([createdById])
   @@map("machine_statuses")
 }
 

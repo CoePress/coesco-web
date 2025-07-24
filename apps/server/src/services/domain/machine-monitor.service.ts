@@ -45,7 +45,6 @@ interface MachineStateData {
   endTime: Date | null;
   duration: number;
   createdAt: Date;
-  updatedAt: Date;
   machine?: {
     type: string;
   };
@@ -340,8 +339,6 @@ export class MachineMonitorService {
               id: data.machineId,
             },
           },
-          createdById: "system",
-          updatedById: "system",
         },
       });
     });

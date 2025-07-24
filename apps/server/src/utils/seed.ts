@@ -1368,6 +1368,38 @@ export const sampleConfigurations = [
 
 const seedSampleData = async () => {
   try {
+    // scripts/000_create_system_employee.ts  (run once, before any other seed)
+    await prisma.$transaction(async (tx) => {
+      // 1. user row
+      await tx.user.upsert({
+        where: { id: "system-user" },
+        create: {
+          id: "system-user",
+          username: "system",
+          role: "ADMIN",
+          isActive: true,
+        },
+        update: {}, // nothing to update
+      });
+
+      // 2. employee row => **id is literally "system"**
+      await tx.employee.upsert({
+        where: { id: "system" },
+        create: {
+          id: "system",
+          userId: "system-user",
+          number: "SYS",
+          firstName: "System",
+          lastName: "Account",
+          jobTitle: "Seeder",
+          // the audit columns can point to itself
+          createdById: "system",
+          updatedById: "system",
+        },
+        update: {}, // no‑op
+      });
+    });
+
     // Get the first employee to use as createdBy
     const firstEmployee = await prisma.employee.findFirst();
     if (!firstEmployee) {
@@ -1388,7 +1420,8 @@ const seedSampleData = async () => {
             ...company,
             industry: company.industry as any,
             status: company.status as any,
-            createdById: firstEmployee.id,
+            createdById: "system",
+            updatedById: "system",
           },
         });
         createdCompanies.set(company.name, created.id);
@@ -1422,7 +1455,8 @@ const seedSampleData = async () => {
               confidence: journey.confidence,
               notes: journey.notes,
               startDate: journey.startDate,
-              createdById: firstEmployee.id,
+              createdById: "system",
+              updatedById: "system",
             },
           });
           logger.info(
@@ -1451,7 +1485,12 @@ const seedSampleData = async () => {
         }
 
         const created = await prisma.productClass.create({
-          data: { ...productClass, parentId },
+          data: {
+            ...productClass,
+            parentId,
+            createdById: "system",
+            updatedById: "system",
+          },
         });
         createdProductClasses.set(productClass.code, created.id);
         logger.info(`Product class ${productClass.code} created`);
@@ -1468,7 +1507,13 @@ const seedSampleData = async () => {
       });
 
       if (!existing) {
-        const created = await prisma.optionCategory.create({ data: category });
+        const created = await prisma.optionCategory.create({
+          data: {
+            ...category,
+            createdById: "system",
+            updatedById: "system",
+          },
+        });
         createdCategories.set(category.name, created.id);
         logger.info(`Option category ${category.name} created`);
       } else {
@@ -1504,6 +1549,8 @@ const seedSampleData = async () => {
                 optionCategoryId: category.id,
                 displayOrder: mapping.displayOrder,
                 isRequired: mapping.isRequired,
+                createdById: "system",
+                updatedById: "system",
               },
             });
             logger.info(
@@ -1529,7 +1576,12 @@ const seedSampleData = async () => {
         if (category) {
           const { categoryName, ...optionData } = optionHeader;
           const created = await prisma.optionHeader.create({
-            data: { ...optionData, categoryId: category.id },
+            data: {
+              ...optionData,
+              categoryId: category.id,
+              createdById: "system",
+              updatedById: "system",
+            },
           });
           createdOptionHeaders.set(optionHeader.code, created.id);
           logger.info(`Option header ${optionHeader.code} created`);
@@ -1568,6 +1620,8 @@ const seedSampleData = async () => {
               displayOrder: optionDetail.displayOrder,
               isActive: true,
               isDefault: optionDetail.isDefault,
+              createdById: "system",
+              updatedById: "system",
             },
           });
           logger.info(
@@ -1610,6 +1664,8 @@ const seedSampleData = async () => {
             priority: rule.priority,
             isActive: rule.isActive,
             condition: condition,
+            createdById: "system",
+            updatedById: "system",
           },
         });
         createdRules.set(rule.name, created.id);
@@ -1641,6 +1697,8 @@ const seedSampleData = async () => {
             data: {
               ruleId: ruleId,
               optionId: optionHeader.id,
+              createdById: "system",
+              updatedById: "system",
             },
           });
           logger.info(
@@ -1672,6 +1730,8 @@ const seedSampleData = async () => {
             data: {
               ruleId: ruleId,
               optionId: optionHeader.id,
+              createdById: "system",
+              updatedById: "system",
             },
           });
           logger.info(
@@ -1692,7 +1752,8 @@ const seedSampleData = async () => {
           await prisma.item.create({
             data: {
               ...item,
-              createdById: firstEmployee.id,
+              createdById: "system",
+              updatedById: "system",
             },
           });
           logger.info(`Item "${item.name}" created`);
@@ -1722,6 +1783,8 @@ const seedSampleData = async () => {
             data: {
               ...configData,
               productClassId: productClass.id,
+              createdById: "system",
+              updatedById: "system",
             },
           });
 
@@ -1736,6 +1799,8 @@ const seedSampleData = async () => {
                 data: {
                   configurationId: createdConfig.id,
                   optionId: optionHeader.id,
+                  createdById: "system",
+                  updatedById: "system",
                 },
               });
             }
@@ -1835,7 +1900,11 @@ const seedMachines = async () => {
 
       if (!existing) {
         await prisma.machine.create({
-          data: machine,
+          data: {
+            ...machine,
+            createdById: "system",
+            updatedById: "system",
+          },
         });
         logger.info(`Machine ${machine.slug} created`);
       }

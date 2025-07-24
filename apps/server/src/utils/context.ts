@@ -13,8 +13,14 @@ export const contextStorage = new AsyncLocalStorage<EmployeeContext>();
 
 export const getEmployeeContext = () => {
   const context = contextStorage.getStore();
-  if (!context) {
-    throw new Error("Employee context not found");
-  }
-  return context;
+  if (context) return context;
+
+  return {
+    id: "system",
+    firstName: "System",
+    lastName: "Account",
+    email: "system@localhost",
+    jobTitle: "Seeder",
+    number: "SYS",
+  };
 };
