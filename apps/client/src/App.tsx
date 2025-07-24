@@ -1,9 +1,11 @@
 import { Routes, Route } from "react-router-dom";
-import { Design, Login, MainMenu, NotFound, Sandbox } from "./pages";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
 import { PerformanceSheetProvider } from "@/contexts/performance.context";
+import MainMenu from "./pages/general/main-menu";
+import NotFound from "./pages/general/not-found";
+import Login from "./pages/general/login";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -87,14 +89,6 @@ const App = () => {
       </Route>
 
       <Route element={<ProtectedRoute withLayout={true} />}>
-        <Route
-          path="/sandbox"
-          element={<Sandbox />}
-        />
-        <Route
-          path="/design"
-          element={<Design />}
-        />
         {modules
           .filter((module) => module.slug !== "admin")
           .map((module) => (

@@ -404,10 +404,11 @@ const ConfigBuilder = () => {
   >({});
 
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/config/classes");
+    useGetEntities("/configurations/classes");
 
-  const { entities: optionRules, loading: optionRulesLoading } =
-    useGetEntities("/config/rules");
+  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
+    "/configurations/rules"
+  );
 
   const selectedProductClass =
     productClassSelections.length > 0
@@ -418,7 +419,7 @@ const ConfigBuilder = () => {
   const { entities: availableOptions, loading: availableOptionsLoading } =
     useGetEntities(
       effectiveProductClassId
-        ? `/config/classes/${effectiveProductClassId}/options`
+        ? `/configurations/classes/${effectiveProductClassId}/options`
         : null
     );
 

@@ -2,7 +2,6 @@ import {
   LucideIcon,
   UsersIcon,
   BarChart,
-  SettingsIcon,
   Factory,
   Box,
   Shield,
@@ -10,11 +9,39 @@ import {
   DollarSign,
   Route,
   FileText,
+  Code,
+  PaintBucket,
+  MessageCircle,
+  Map,
 } from "lucide-react";
-import { ComponentType, lazy } from "react";
+import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
 import PerformanceDetails from "@/pages/performance/performance-details";
+import Sandbox from "@/pages/_sandbox/sandbox";
+import SalesDashboard from "@/pages/sales/dashboard";
+import FormMerge from "@/pages/_sandbox/form-merge";
+import Design from "@/pages/_sandbox/design";
+import ChatPLK from "@/pages/_sandbox/chat-plk";
+import WarehouseMap from "@/pages/_sandbox/warehouse-map";
+import Pipeline from "@/pages/sales/pipeline";
+import Companies from "@/pages/sales/companies";
+import CompanyDetails from "@/pages/sales/company-details";
+import Journeys from "@/pages/sales/journeys";
+import JourneyDetailsPage from "@/pages/sales/journey-details";
+import Quotes from "@/pages/sales/quotes";
+import QuoteDetails from "@/pages/sales/quote-details";
+import Catalog from "@/pages/sales/catalog";
+import Options from "@/pages/sales/options";
+import PerformanceSheets from "@/pages/performance/performance-sheets";
+import ProductionDashboard from "@/pages/production/dashboard";
+import Machines from "@/pages/production/machines";
+import MachineHistory from "@/pages/production/machine-history";
+import Employees from "@/pages/admin/employees";
+import OptionRules from "@/pages/admin/option-rules";
+import AuditLogs from "@/pages/admin/audit-logs";
+import AuditConfiguration from "@/pages/admin/audit-config";
+import ConfigBuilder from "@/pages/sales/config-builder";
 
 export type Module = {
   sequence: number;
@@ -32,29 +59,6 @@ export type Page = {
   component: ComponentType;
   children?: Page[];
 };
-
-const ProductionDashboard = lazy(() => import("@/pages/production/dashboard"));
-const Machines = lazy(() => import("@/pages/production/machines"));
-const MachineHistory = lazy(() => import("@/pages/production/machine-history"));
-const Employees = lazy(() => import("@/pages/admin/employees"));
-const SalesDashboard = lazy(() => import("@/pages/sales/dashboard"));
-const Catalog = lazy(() => import("@/pages/sales/catalog"));
-const MachineBuilder = lazy(() => import("@/pages/sales/config-builder"));
-const Quotes = lazy(() => import("@/pages/sales/quotes"));
-const QuoteDetails = lazy(() => import("@/pages/sales/quote-details"));
-const Journeys = lazy(() => import("@/pages/sales/journeys"));
-const JourneyDetails = lazy(() => import("@/pages/sales/journey-details"));
-const OptionRules = lazy(() => import("@/pages/admin/option-rules"));
-const Options = lazy(() => import("@/pages/sales/options"));
-const AuditLogs = lazy(() => import("@/pages/admin/audit-logs"));
-const AuditConfig = lazy(() => import("@/pages/admin/audit-config"));
-const Companies = lazy(() => import("@/pages/sales/companies"));
-const CompanyDetails = lazy(() => import("@/pages/sales/company-details"));
-const Pipeline = lazy(() => import("@/pages/sales/pipeline"));
-const PerformanceSheets = lazy(
-  () => import("@/pages/performance/performance-sheets")
-);
-const DocumentDiff = lazy(() => import("@/pages/_test/document-diff"));
 
 const salesModule: Module = {
   sequence: 1,
@@ -99,7 +103,7 @@ const salesModule: Module = {
           slug: ":id",
           label: "Journey",
           icon: Route,
-          component: JourneyDetails,
+          component: JourneyDetailsPage,
         },
       ],
     },
@@ -127,7 +131,7 @@ const salesModule: Module = {
           slug: "builder",
           label: "Builder",
           icon: Box,
-          component: MachineBuilder,
+          component: ConfigBuilder,
         },
       ],
     },
@@ -211,18 +215,57 @@ const adminModule: Module = {
       slug: "audit-config",
       label: "Audit Config",
       icon: FileText,
-      component: AuditConfig,
+      component: AuditConfiguration,
     },
     {
-      slug: "diff",
-      label: "Document Diff",
+      slug: "form-merge",
+      label: "Form Merge",
       icon: FileText,
-      component: DocumentDiff,
+      component: FormMerge,
     },
   ],
 };
 
-const modules: Module[] = [productionModule, salesModule, adminModule]
+const sandboxModule: Module = {
+  sequence: 4,
+  slug: "sandbox",
+  label: "Sandbox",
+  icon: Code,
+  status: "development" as const,
+  pages: [
+    {
+      slug: null,
+      label: "Sandbox",
+      icon: Code,
+      component: Sandbox,
+    },
+    {
+      slug: "design-elements",
+      label: "Design Elements",
+      icon: PaintBucket,
+      component: Design,
+    },
+    {
+      slug: "chat-plk",
+      label: "Chat PLK",
+      icon: MessageCircle,
+      component: ChatPLK,
+    },
+    {
+      slug: "warehouse-map",
+      label: "Warehouse Map",
+      icon: Map,
+      component: WarehouseMap,
+    },
+  ],
+};
+
+const modules: Module[] = [
+  productionModule,
+  salesModule,
+  adminModule,
+  sandboxModule,
+]
   .filter(
     (module) =>
       module.status === "active" || (__dev__ && module.status === "development")

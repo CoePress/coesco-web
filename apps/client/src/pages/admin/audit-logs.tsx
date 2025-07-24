@@ -633,7 +633,7 @@ const AuditLogs = () => {
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <button
               onClick={() => handleAuditTypeChange("user-actions")}
@@ -674,7 +674,7 @@ const AuditLogs = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div className="bg-foreground rounded border border-border p-3">
             <div className="flex items-center gap-2 text-primary mb-2">
               <Database size={16} />

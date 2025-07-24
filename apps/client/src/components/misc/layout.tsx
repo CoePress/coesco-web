@@ -1,14 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  X,
-  Home,
-  Sun,
-  Moon,
-  Code,
-  ChevronsRight,
-  ChartLine,
-} from "lucide-react";
+import { X, Home, Sun, Moon, ChevronsRight } from "lucide-react";
 
 import modules from "@/config/modules";
 import CommandBar from "./command-bar";
@@ -318,15 +310,6 @@ const Layout = ({ employee, children }: LayoutProps) => {
           </div>
 
           <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-            {__dev__ && (
-              <Link
-                key="sandbox"
-                to="/sandbox"
-                className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-                <Code size={18} />
-              </Link>
-            )}
-
             <button
               onClick={toggleTheme}
               className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">

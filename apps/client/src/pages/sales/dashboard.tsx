@@ -94,7 +94,7 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
   );
 };
 
-const Dashboard = () => {
+const SalesDashboard = () => {
   const pageTitle = "Sales Dashboard";
   const pageDescription = "Track your sales performance and metrics";
 
@@ -337,8 +337,8 @@ const Dashboard = () => {
                           task.priority === "high"
                             ? "bg-error"
                             : task.priority === "medium"
-                            ? "bg-warning"
-                            : "bg-success"
+                              ? "bg-warning"
+                              : "bg-success"
                         }`}
                       />
                       <span className="text-sm font-medium text-text-muted">
@@ -445,4 +445,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default SalesDashboard;

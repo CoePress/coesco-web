@@ -347,7 +347,7 @@ const capitalizeFirst = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() + "s";
 };
 
-const Dashboard = () => {
+const ProductionDashboard = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
     if (!param) return fallback;
     const [year, month, day] = param.split("-").map(Number);
@@ -1022,4 +1022,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default ProductionDashboard;

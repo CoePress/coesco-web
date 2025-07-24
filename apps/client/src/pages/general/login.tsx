@@ -43,7 +43,7 @@ const BackgroundImage = () => {
   );
 };
 
-const LoginPage = () => {
+const Login = () => {
   const { login, loading: loginLoading, error: loginError } = useLogin();
   const { user } = useContext(AuthContext)!;
   const navigate = useNavigate();
@@ -213,4 +213,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Login;
