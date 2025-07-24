@@ -29,7 +29,7 @@ router.use("/quotes", protect, quoteRoutes);
 router.use("/items", protect, itemRoutes);
 router.use("/configurations", protect, configurationRoutes);
 router.use("/system", systemRoutes);
-router.use("/performance", performanceRoutes);
+router.use("/performance", protect, performanceRoutes);
 router.use("/lock", protect, lockRoutes);
 
 export default router;

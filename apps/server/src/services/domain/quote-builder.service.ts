@@ -29,7 +29,6 @@ export class QuoteBuilderService {
       year: quoteNumber.year,
       number: quoteNumber.number,
     });
-    const employee = getEmployeeContext();
 
     return await prisma.$transaction(async (tx) => {
       const company = await this.resolveCompany(companyId, companyName, tx);
@@ -45,7 +44,6 @@ export class QuoteBuilderService {
         number: quoteNumber.number,
         revision: quoteRevision,
         status: QuoteStatus.DRAFT,
-        createdBy: { connect: { id: employee.id } },
       };
       if (company?.id) {
         createData.company = { connect: { id: company.id } };

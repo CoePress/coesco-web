@@ -1,5 +1,6 @@
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { IQueryParams, IServiceResult } from "@/types/api.types";
+import { getEmployeeContext } from "@/utils/context";
 import { buildQuery } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -88,16 +89,17 @@ export class BaseService<T> {
 
   async create(
     data: Omit<T, "id" | "createdAt" | "updatedAt"> | any,
-    tx?: Prisma.TransactionClient,
-    userId?: string
+    tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<T>> {
     try {
-      const createData = {
+      const employee = getEmployeeContext();
+      const payload = {
         ...data,
-        ...(userId ? { createdBy: userId, updatedBy: userId } : {}),
+        createdById: employee.id,
+        updatedById: employee.id,
       };
 
-      const entity = await this.model.create({ data: createData });
+      const entity = await this.model.create({ data: payload });
 
       if (!entity) {
         throw new BadRequestError(`Failed to create ${this.entityName}`);
