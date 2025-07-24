@@ -3,11 +3,32 @@ import { IQueryParams, IServiceResult } from "@/types/api.types";
 import { getEmployeeContext } from "@/utils/context";
 import { buildQuery } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
+import { prisma } from "@/utils/prisma";
 
 export class BaseService<T> {
   protected model: any;
   protected entityName: string | undefined;
   protected modelName: string | undefined;
+
+  private static fieldCache = new Map<string, string[]>();
+
+  private async ensureFields(): Promise<string[]> {
+    if (!this.modelName) return [];
+
+    const cached = BaseService.fieldCache.get(this.modelName);
+    if (cached) return cached;
+
+    const rows = await prisma.$queryRaw<
+      Array<{ column_name: string }>
+    >`SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = ${this.modelName.toLowerCase()}
+         AND table_schema = 'public'`;
+
+    const cols = rows.map((r) => r.column_name);
+    BaseService.fieldCache.set(this.modelName, cols);
+    return cols;
+  }
 
   async getAll(
     params?: IQueryParams<T>,
@@ -92,12 +113,12 @@ export class BaseService<T> {
     tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<T>> {
     try {
+      const cols = await this.ensureFields();
       const employee = getEmployeeContext();
-      const payload = {
-        ...data,
-        createdById: employee.id,
-        updatedById: employee.id,
-      };
+
+      const payload: any = { ...data };
+      if (cols.includes("createdById")) payload.createdById = employee.id;
+      if (cols.includes("updatedById")) payload.updatedById = employee.id;
 
       const entity = await this.model.create({ data: payload });
 
