@@ -56,7 +56,7 @@ const Button = ({
   };
 
   const baseStyles =
-    "border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300";
+    "border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max";
 
   const finalStyles = `${baseStyles} ${
     variantStyles[disabled ? "disabled" : variant]

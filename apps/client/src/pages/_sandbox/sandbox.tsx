@@ -96,7 +96,7 @@ const Sandbox = () => {
   }, []);
 
   const notifyMe = () => {
-    notify({    
+    notify({
       title: "Hello",
       body: "World",
     });

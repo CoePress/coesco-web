@@ -1,8 +1,9 @@
-import { Plus, MoreHorizontal, Import, Filter } from "lucide-react";
+import { Plus, MoreHorizontal, List, Grid } from "lucide-react";
 import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
-import { Button, Modal, PageHeader, Loader } from "@/components";
+import { Button, Modal, Loader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import PageHeader from "@/components/common/page-head";
 import { useNavigate } from "react-router-dom";
 
 const TreeNode = ({ node }: { node: any }) => {
@@ -46,7 +47,7 @@ const QuoteModal = ({
   isOpen: boolean;
   onClose: () => void;
   item: any;
-  itemType: "configs" | "parts" | "services";
+  itemType: string;
   quotes: any[];
   quotesLoading: boolean;
 }) => {
@@ -169,7 +170,7 @@ const DetailModal = ({
   isOpen: boolean;
   onClose: () => void;
   item: any;
-  itemType: "configs" | "parts" | "services";
+  itemType: string;
   productClasses: any[];
   optionCategories: any[];
 }) => {
@@ -460,23 +461,38 @@ const DetailModal = ({
 };
 
 const Catalog = () => {
-  const [viewMode] = useState<"grid" | "list">("grid");
-  const [filterType, setFilterType] = useState<
-    "configs" | "parts" | "services"
-  >("configs");
   const [selections, _setSelections] = useState<string[]>([]);
-  const [categoryFilters, _setCategoryFilters] = useState<{
-    [key: string]: string;
-  }>({});
-  const [partCategoryFilter, _setPartCategoryFilter] = useState("");
-  const [serviceCategoryFilter, _setServiceCategoryFilter] = useState("");
-  const [stockFilter, _setStockFilter] = useState<
-    "all" | "in-stock" | "out-of-stock"
-  >("all");
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedDetailItem, setSelectedDetailItem] = useState<any>(null);
+  const [itemType, setItemType] = useState("parts");
+  const [view, setView] = useState("grid");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("");
+  const [selectedItem, setSelectedItem] = useState<any | null>();
+  const [filters, setFilters] = useState({
+    machines: {},
+    parts: {},
+    services: {},
+  });
+
+  const navigate = useNavigate();
+
+  const pageTitle = "Coe Catalog";
+  const pageDescription = "Complete list of equipment, parts, and services";
+
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button
+          onClick={() => setView(view === "list" ? "grid" : "list")}
+          variant="secondary-outline">
+          {view === "list" ? <List size={20} /> : <Grid size={20} />}
+        </Button>
+        <Button onClick={() => navigate("/sales/catalog/builder")}>
+          <Plus size={20} />
+          Create New
+        </Button>
+      </div>
+    );
+  };
 
   const { entities: productClasses, loading: productClassesLoading } =
     useGetEntities("/configurations/classes");
@@ -494,86 +510,47 @@ const Catalog = () => {
   const { entities: optionCategories, loading: _optionCategoriesLoading } =
     useGetEntities("/configurations/categories");
 
-  const partsFilter = useMemo(() => ({ type: "parts" }), []);
-  const servicesFilter = useMemo(() => ({ type: "services" }), []);
-  const quotesFilter = useMemo(
+  const quoteParams = useMemo(
     () => ({ include: ["journey", "journey.customer"] }),
     []
   );
 
-  const { entities: parts, loading: partsLoading } = useGetEntities("/items", {
-    filter: partsFilter,
-  });
+  const params = useMemo(
+    () => ({
+      filter: {
+        type: itemType,
+      },
+    }),
+    [itemType]
+  );
 
-  const { entities: services, loading: servicesLoading } = useGetEntities(
+  const { entities: items, loading: itemsLoading } = useGetEntities(
     "/items",
-    {
-      filter: servicesFilter,
-    }
+    params
   );
 
   const { entities: quotes, loading: quotesLoading } = useGetEntities(
     "/quotes",
-    quotesFilter
+    quoteParams
   );
 
-  // const { optionRules } = useGetOptionRules();
+  const handleAddToQuote = (item: any) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+    setModalMode("add");
+  };
 
-  const navigate = useNavigate();
+  const handleDetails = (item: any) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+    setModalMode("add");
+  };
 
-  // const getDisabledOptionsForProductClass = (
-  //   productClassId: string
-  // ): string[] => {
-  //   if (!optionRules || !productClassId || !productClassOptions) return [];
-
-  //   const disabledOptions = new Set<string>();
-
-  //   const availableOptions = new Set<string>();
-  //   productClassOptions.forEach((category: any) => {
-  //     category.options?.forEach((option: any) => {
-  //       availableOptions.add(option.id);
-  //     });
-  //   });
-
-  //   optionRules.forEach((rule) => {
-  //     if (rule.action === "DISABLE") {
-  //       const hasTriggerOption = rule.triggerOptions.some(
-  //         (triggerOption: any) => {
-  //           return availableOptions.has(triggerOption.id);
-  //         }
-  //       );
-
-  //       const hasTargetOption = rule.targetOptions.some((targetOption: any) => {
-  //         return availableOptions.has(targetOption.id);
-  //       });
-
-  //       if (hasTriggerOption && hasTargetOption) {
-  //         rule.targetOptions.forEach((targetOption: any) => {
-  //           if (availableOptions.has(targetOption.id)) {
-  //             disabledOptions.add(targetOption.id);
-  //           }
-  //         });
-  //       }
-  //     }
-  //   });
-
-  //   return Array.from(disabledOptions);
-  // };
-
-  // const getValidCategoryFiltersForProductClass = (productClassId: string) => {
-  //   if (!productClassId) return {};
-
-  //   const disabledOptions = getDisabledOptionsForProductClass(productClassId);
-  //   const validFilters: { [key: string]: string } = {};
-
-  //   Object.entries(categoryFilters).forEach(([categoryId, optionId]) => {
-  //     if (!disabledOptions.includes(optionId)) {
-  //       validFilters[categoryId] = optionId;
-  //     }
-  //   });
-
-  //   return validFilters;
-  // };
+  const handleModalClose = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+    setModalMode("");
+  };
 
   const getFilteredByProductClass = () => {
     if (!configurations) return [];
@@ -595,90 +572,23 @@ const Catalog = () => {
     });
   };
 
-  const getVisibleConfigurations = () => {
-    const productClassFiltered = getFilteredByProductClass();
-
-    if (Object.keys(categoryFilters).length === 0) {
-      return productClassFiltered;
-    }
-
-    return productClassFiltered.filter((config) => {
-      return Object.entries(categoryFilters).every(([categoryId, optionId]) => {
-        const categoryOptions = optionCategories?.filter(
-          (opt: any) => opt.categoryId === categoryId
-        );
-        const configOptionIds = config.selectedOptions.map(
-          (opt: any) => opt.optionId
-        );
-
-        return categoryOptions?.some(
-          (opt: any) => opt.id === optionId && configOptionIds.includes(opt.id)
-        );
-      });
-    });
-  };
-
-  const getVisibleParts = () => {
-    if (!parts) return [];
-
-    let filtered = parts;
-
-    if (partCategoryFilter) {
-      filtered = filtered.filter(
-        (part: any) => part.category === partCategoryFilter
+  const ItemCard = (item: any, itemType: string) => {
+    let productClass;
+    if (itemType === "machines") {
+      productClass = productClasses?.find(
+        (pc) => pc.id === item.productClassId
       );
     }
-
-    if (stockFilter === "in-stock") {
-      filtered = filtered.filter((part: any) => part.isActive);
-    } else if (stockFilter === "out-of-stock") {
-      filtered = filtered.filter((part: any) => !part.isActive);
-    }
-
-    return filtered;
-  };
-
-  const getVisibleServices = () => {
-    if (!services) return [];
-
-    let filtered = services;
-
-    if (serviceCategoryFilter) {
-      filtered = filtered.filter(
-        (service: any) => service.category === serviceCategoryFilter
-      );
-    }
-
-    return filtered.filter((service: any) => service.isActive !== false);
-  };
-
-  const getVisibleItems = () => {
-    if (filterType === "configs") {
-      return getVisibleConfigurations();
-    } else if (filterType === "parts") {
-      return getVisibleParts();
-    } else {
-      return getVisibleServices();
-    }
-  };
-
-  const pageTitle = "Coe Catalog";
-  const pageDescription = "Complete list of equipment, parts, and services";
-
-  const renderConfigCard = (config: any) => {
-    const productClass = productClasses?.find(
-      (pc) => pc.id === config.productClassId
-    );
 
     return (
       <div
-        key={config.id}
+        key={item.id}
         className="bg-foreground rounded border hover:shadow-md transition-shadow">
         <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
-          {config.image ? (
+          {item.image ? (
             <img
-              src={config.image}
-              alt={config.name}
+              src={item.image}
+              alt={item.name}
               className="w-full h-48 object-cover rounded-t-lg"
             />
           ) : (
@@ -689,10 +599,10 @@ const Catalog = () => {
           <div className="flex justify-between items-start">
             <div className="overflow-hidden w-full">
               <h3 className="text-lg font-medium text-text-muted">
-                {config.name}
+                {item.name}
               </h3>
               <p className="text-sm text-text-muted mt-1 truncate">
-                {config.description || "No description available"}
+                {item.description || "No description available"}
               </p>
               {productClass && (
                 <p className="text-xs text-text-muted mt-2">
@@ -701,11 +611,8 @@ const Catalog = () => {
               )}
             </div>
             <button
-              className="text-text-muted hover:text-text"
-              onClick={() => {
-                setSelectedDetailItem(config);
-                setIsDetailModalOpen(true);
-              }}>
+              className="text-text-muted hover:text-text cursor-pointer"
+              onClick={() => handleDetails(item)}>
               <MoreHorizontal size={20} />
             </button>
           </div>
@@ -713,17 +620,14 @@ const Catalog = () => {
           <div className="mt-4 pt-4 border-t flex justify-between items-center">
             <div>
               <div className="text-xs text-text-muted">
-                {config.isTemplate ? "Starting from" : "Price"}
+                {item.isTemplate ? "Starting from" : "Price"}
               </div>
               <div className="text-lg font-semibold text-text-muted">
-                {formatCurrency(config.pricing?.totalPrice || 0, false)}
+                {formatCurrency(item.pricing?.totalPrice || 0, false)}
               </div>
             </div>
             <Button
-              onClick={() => {
-                setSelectedItem(config);
-                setIsQuoteModalOpen(true);
-              }}
+              onClick={() => handleAddToQuote(item)}
               variant="primary">
               Add to Quote
             </Button>
@@ -733,130 +637,48 @@ const Catalog = () => {
     );
   };
 
-  const renderPartCard = (part: any) => (
-    <div
-      key={part.id}
-      className="bg-foreground rounded border hover:shadow-md transition-shadow p-2">
-      <div className="flex justify-between items-start">
-        <div className="overflow-hidden w-full">
-          <h3 className="text-lg font-medium text-text-muted">{part.name}</h3>
-          <p className="text-sm text-text-muted mt-1 truncate">
-            {part.description}
-          </p>
-          <p className="text-xs text-text-muted mt-2">Type: {part.type}</p>
-        </div>
-        <button
-          className="text-text-muted hover:text-text"
-          onClick={() => {
-            setSelectedDetailItem(part);
-            setIsDetailModalOpen(true);
-          }}>
-          <MoreHorizontal size={20} />
-        </button>
-      </div>
-
-      <div className="mt-4 pt-4 border-t flex justify-between items-center">
-        <div>
-          <div className="text-xs text-text-muted">Price</div>
-          <div className="text-lg font-semibold text-text-muted">
-            {formatCurrency(part.unitPrice, false)}
-          </div>
-        </div>
-        <Button
-          onClick={() => {
-            setSelectedItem(part);
-            setIsQuoteModalOpen(true);
-          }}
-          variant="primary"
-          disabled={!part.isActive}>
-          Add to Quote
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderServiceCard = (service: any) => (
-    <div
-      key={service.id}
-      className="bg-foreground rounded border hover:shadow-md transition-shadow p-2">
-      <div className="flex justify-between items-start">
-        <div className="overflow-hidden w-full">
-          <h3 className="text-lg font-medium text-text-muted">
-            {service.name}
-          </h3>
-          <p className="text-sm text-text-muted mt-1 truncate">
-            {service.description}
-          </p>
-          <p className="text-xs text-text-muted mt-2">
-            Service Type: {service.type}
-          </p>
-        </div>
-        <button
-          className="text-text-muted hover:text-text"
-          onClick={() => {
-            setSelectedDetailItem(service);
-            setIsDetailModalOpen(true);
-          }}>
-          <MoreHorizontal size={20} />
-        </button>
-      </div>
-
-      <div className="mt-4 pt-4 border-t flex justify-between items-center">
-        <div>
-          <div className="text-xs text-text-muted">Price</div>
-          <div className="text-lg font-semibold text-text-muted">
-            {formatCurrency(service.unitPrice, false)}
-          </div>
-        </div>
-        <Button
-          onClick={() => {
-            setSelectedItem(service);
-            setIsQuoteModalOpen(true);
-          }}
-          variant="primary">
-          Add to Quote
-        </Button>
-      </div>
-    </div>
-  );
+  const getFilteredItems = () => {
+    return items;
+  };
 
   const renderContent = () => {
     const isLoading =
-      (filterType === "configs" &&
+      (itemType === "configs" &&
         (productClassesLoading || configurationsLoading || optionsLoading)) ||
-      (filterType === "parts" && partsLoading) ||
-      (filterType === "services" && servicesLoading);
+      (itemType === "parts" && itemsLoading) ||
+      (itemType === "services" && itemsLoading);
 
     if (isLoading) {
       return (
         <div className="col-span-full flex items-center justify-center p-8 bg-foreground rounded border">
           <div className="flex flex-col items-center gap-2">
             <Loader size="lg" />
-            <p className="text-text-muted">Loading {filterType}...</p>
+            <p className="text-text-muted">Loading {itemType}...</p>
           </div>
         </div>
       );
     }
 
-    const items = getVisibleItems();
+    const items = getFilteredItems();
 
     if (items.length === 0) {
       return (
         <div className="col-span-full text-center p-8 bg-foreground rounded border">
           <p className="text-text-muted">
-            No {filterType} match your current filters
+            No {itemType} match your current filters
           </p>
         </div>
       );
     }
 
-    if (filterType === "configs") {
-      return items.map(renderConfigCard);
-    } else if (filterType === "parts") {
-      return items.map(renderPartCard);
-    } else {
-      return items.map(renderServiceCard);
-    }
+    return items.map((item) => {
+      return (
+        <ItemCard
+          item={item}
+          itemType={itemType}
+        />
+      );
+    });
   };
 
   return (
@@ -864,92 +686,67 @@ const Catalog = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "Filter",
-            variant: "secondary-outline",
-            icon: <Filter size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Import",
-            variant: "secondary-outline",
-            icon: <Import size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Create New",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: () => {
-              navigate("/sales/catalog/builder");
-            },
-          },
-        ]}
+        actions={<Actions />}
       />
 
+      {/* TODO: make this a component */}
       <div className="p-2">
-        {/* Tabs */}
         <div className="mb-2">
           <div className="inline-flex gap-1 bg-surface rounded-lg p-1">
             <button
               className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                filterType === "configs"
+                itemType === "machines"
                   ? "bg-primary text-background"
                   : "text-text-muted hover:bg-foreground"
               }`}
-              onClick={() => setFilterType("configs")}>
+              onClick={() => setItemType("machines")}>
               Machines
             </button>
             <button
               className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                filterType === "parts"
+                itemType === "parts"
                   ? "bg-primary text-background"
                   : "text-text-muted hover:bg-foreground"
               }`}
-              onClick={() => setFilterType("parts")}>
+              onClick={() => setItemType("parts")}>
               Parts
             </button>
             <button
               className={`px-4 py-2 text-sm font-medium transition-colors rounded cursor-pointer ${
-                filterType === "services"
+                itemType === "services"
                   ? "bg-primary text-background"
                   : "text-text-muted hover:bg-foreground"
               }`}
-              onClick={() => setFilterType("services")}>
+              onClick={() => setItemType("services")}>
               Services
             </button>
           </div>
         </div>
 
-        {/* Content */}
         <div
           className={
-            viewMode === "grid"
+            view === "grid"
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2"
-              : "space-y-4"
+              : "flex flex-col gap-2"
           }>
           {renderContent()}
         </div>
       </div>
 
       <QuoteModal
-        isOpen={isQuoteModalOpen}
-        onClose={() => setIsQuoteModalOpen(false)}
+        isOpen={modalOpen && modalMode === "add"}
+        onClose={handleModalClose}
         item={selectedItem}
-        itemType={filterType}
+        itemType={itemType}
         quotes={quotes || []}
         quotesLoading={quotesLoading}
       />
 
       <DetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        item={selectedDetailItem}
-        itemType={filterType}
+        isOpen={modalOpen && modalMode === "details"}
+        onClose={handleModalClose}
+        item={selectedItem}
+        itemType={itemType}
         productClasses={productClasses || []}
         optionCategories={optionCategories || []}
       />
