@@ -15,29 +15,18 @@ import {
   FEED_DIRECTION_OPTIONS,
 } from "@/utils/select-options";
 import { usePerformanceSheet } from "@/contexts/performance.context";
-import { mapBackendToFrontendRFQ } from "@/utils/rfq-mapping";
-import { PerformanceSheetState } from "@/contexts/performance.context";
+import { 
+  mapBackendToRFQ,
+  mapBackendToTDDBHD,
+  mapBackendToReelDrive 
+} from "@/utils/universal-mapping";
 import { useGetTDDBHD } from "@/hooks/performance/use-get-tddbhd";
-import { mapBackendToFrontendTDDBHD } from "./tddbhd";
 import { useGetReelDrive } from "@/hooks/performance/use-get-reel-drive";
-import { mapBackendToFrontendReelDrive } from "./reel-drive";
-
-// Helper to safely access versioned fields by key
-const getVersioned = (
-  ps: PerformanceSheetState,
-  key: "maxThick" | "atFull" | "minThick" | "atWidth"
-) => ps[key];
 
 const RFQ = () => {
-  const { performanceSheet, updatePerformanceSheet, setPerformanceSheet } =
-    usePerformanceSheet();
-  const { isLoading, status, errors, createRFQ } = useCreateRFQ();
-  const {
-    isLoading: isGetting,
-    status: getStatus,
-    fetchedRFQ,
-    getRFQ,
-  } = useGetRFQ();
+  const { performanceData, updatePerformanceData } = usePerformanceSheet();
+  const { errors } = useCreateRFQ();
+  const { fetchedRFQ } = useGetRFQ();
   const { getTDDBHD } = useGetTDDBHD();
   const { getReelDrive } = useGetReelDrive();
 
@@ -47,222 +36,202 @@ const RFQ = () => {
         typeof fetchedRFQ === "object" && "rfq" in fetchedRFQ && fetchedRFQ.rfq
           ? (fetchedRFQ as any).rfq
           : fetchedRFQ;
-      const mapped = mapBackendToFrontendRFQ(data);
-      setPerformanceSheet((prev) => ({
-        ...prev,
-        ...mapped,
-      }));
-      // Also fetch TDDBHD and Reel Drive and update context
-      const refNum =
-        performanceSheet.referenceNumber || (mapped as any).referenceNumber;
+      
+      // Map backend RFQ data to new nested structure using universal mapping
+      const mappedData = mapBackendToRFQ(data, performanceData);
+      updatePerformanceData(mappedData);
+      
+      // Fetch related data
+      const refNum = mappedData.referenceNumber || performanceData.referenceNumber;
       if (refNum) {
-        console.log("Fetching TDDBHD with refNum:", refNum);
         getTDDBHD(refNum).then((tddbhdData) => {
-          console.log("TDDBHD backend data:", tddbhdData);
           if (tddbhdData) {
-            setPerformanceSheet((prev) => ({
-              ...prev,
-              tddbhd: mapBackendToFrontendTDDBHD(tddbhdData, prev.tddbhd),
-            }));
+            // Map TDDBHD data to nested structure using universal mapping
+            const tddbhdMappedData = mapBackendToTDDBHD(tddbhdData, performanceData);
+            updatePerformanceData(tddbhdMappedData);
+            console.log("TDDBHD data mapped:", tddbhdMappedData);
           }
         });
-        console.log("Fetching Reel Drive with refNum:", refNum);
+        
         getReelDrive(refNum).then((reelDriveData) => {
-          console.log("Reel Drive backend data:", reelDriveData);
           if (reelDriveData) {
-            setPerformanceSheet((prev) => ({
-              ...prev,
-              reelDrive: mapBackendToFrontendReelDrive(
-                reelDriveData,
-                prev.reelDrive
-              ),
-            }));
+            // Map Reel Drive data to nested structure using universal mapping
+            const reelDriveMappedData = mapBackendToReelDrive(reelDriveData, performanceData);
+            updatePerformanceData(reelDriveMappedData);
+            console.log("Reel Drive data mapped:", reelDriveMappedData);
           }
         });
       }
-      // After setting, attempt backend calculations for each versioned spec
-      const versions = ["maxThick", "atFull", "minThick", "atWidth"] as const;
-      versions.forEach((versionKey) => {
-        const versionData = mapped[versionKey];
-        if (versionData && hasAllRequiredFieldsRFQ(versionData)) {
-          triggerCalculationRFQ(versionKey, versionData);
-        }
-      });
     }
-  }, [fetchedRFQ, setPerformanceSheet]);
+  }, [fetchedRFQ, updatePerformanceData, getTDDBHD, getReelDrive]);
 
-  // Helper: check if all required fields are present for calculation (RFQ context)
-  function hasAllRequiredFieldsRFQ(versionData: any) {
+  // Helper: check if all required fields are present for calculation
+  function hasAllRequiredFieldsRFQ() {
+    const material = performanceData.material;
+    const coil = performanceData.coil;
+    
     return (
-      versionData.coilWeight &&
-      versionData.coilID &&
-      versionData.materialType &&
-      versionData.materialThickness &&
-      versionData.yieldStrength &&
-      versionData.coilWidth
+      material?.materialType &&
+      material?.materialThickness &&
+      material?.maxYieldStrength &&
+      material?.coilWidth &&
+      coil?.maxCoilWeight &&
+      coil?.coilID
     );
   }
 
-  // Helper: trigger backend calculation for a version (RFQ context)
-  async function triggerCalculationRFQ(versionKey: string, versionData: any) {
-    const coilWeight =
-      versionData.coilWeight !== undefined &&
-      versionData.coilWeight !== null &&
-      versionData.coilWeight !== ""
-        ? Number(versionData.coilWeight)
-        : 0;
+  // Helper: trigger backend calculation
+  async function triggerCalculationRFQ() {
+    if (!hasAllRequiredFieldsRFQ()) return;
+
+    const material = performanceData.material;
+    const coil = performanceData.coil;
+
     const payload = {
-      material_type:
-        typeof versionData.materialType === "string"
-          ? versionData.materialType
-          : "",
-      material_thickness: Number(versionData.materialThickness ?? 0),
-      yield_strength: Number(versionData.yieldStrength ?? 0),
-      material_width: Number(versionData.coilWidth ?? 0),
-      coil_weight_max: coilWeight,
-      coil_id: Number(versionData.coilID ?? 0),
+      material_type: material?.materialType || "",
+      material_thickness: Number(material?.materialThickness || 0),
+      yield_strength: Number(material?.maxYieldStrength || 0),
+      material_width: Number(material?.coilWidth || 0),
+      coil_weight_max: Number(coil?.maxCoilWeight || 0),
+      coil_id: Number(coil?.coilID || 0),
     };
-    const allValid =
-      typeof payload.material_type === "string" &&
-      payload.material_type.trim() !== "" &&
-      typeof payload.material_thickness === "number" &&
-      !isNaN(payload.material_thickness) &&
-      payload.material_thickness > 0 &&
-      typeof payload.yield_strength === "number" &&
-      !isNaN(payload.yield_strength) &&
-      payload.yield_strength > 0 &&
-      typeof payload.material_width === "number" &&
-      !isNaN(payload.material_width) &&
-      payload.material_width > 0 &&
-      typeof payload.coil_weight_max === "number" &&
-      !isNaN(payload.coil_weight_max) &&
-      payload.coil_weight_max > 0 &&
-      typeof payload.coil_id === "number" &&
-      !isNaN(payload.coil_id) &&
-      payload.coil_id > 0;
-    if (!allValid) return;
+
     try {
-      // Use the same calculation endpoint as Material Specs
       const result = await pythonInstance.post(
         "/material_specs/calculate_variant",
         payload
       );
-      setPerformanceSheet((prev) => ({
-        ...prev,
-        [versionKey]: {
-          ...(getVersioned(prev, versionKey as any) || {}),
-          minBendRad: result.data["min_bend_rad"],
+      
+      updatePerformanceData({
+        material: {
+          ...material,
+          minBendRadius: result.data["min_bend_rad"],
           minLoopLength: result.data["min_loop_length"],
-          coilODCalculated: result.data["coil_od_calculated"],
+          calculatedCoilOD: result.data["coil_od_calculated"],
         },
-      }));
+      });
     } catch (e) {
-      // Optionally handle error
+      console.error("Calculation error:", e);
     }
   }
 
   const fetchFPM = async (
     feed_length: string,
     spm: string,
-    key: "avgFPM" | "maxFPM" | "minFPM"
+    key: "average" | "max" | "min"
   ) => {
     const length = parseFloat(feed_length);
     const spmVal = parseFloat(spm);
-    if (!length || !spmVal) {
-      updatePerformanceSheet({ [key]: "" });
-      return;
-    }
+    if (!length || !spmVal) return;
+    
     try {
       const res = await pythonInstance.post("/rfq/calculate_fpm", {
         feed_length: length,
         spm: spmVal,
       });
-      updatePerformanceSheet({ [key]: res.data.fpm?.toString() ?? "" });
-    } catch {
-      updatePerformanceSheet({ [key]: "" });
+      
+      const fpmValue = res.data.fpm?.toString() ?? "";
+      
+      updatePerformanceData({
+        feed: {
+          ...performanceData.feed,
+          [key]: {
+            ...performanceData.feed?.[key],
+            fpm: fpmValue,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("FPM calculation error:", error);
     }
   };
 
   useEffect(() => {
-    fetchFPM(
-      performanceSheet.avgFeedLen,
-      performanceSheet.avgFeedSPM,
-      "avgFPM"
-    );
-  }, [performanceSheet.avgFeedLen, performanceSheet.avgFeedSPM]);
+    const avgLength = performanceData.feed?.average?.length;
+    const avgSPM = performanceData.feed?.average?.spm;
+    if (avgLength && avgSPM) {
+      fetchFPM(avgLength.toString(), avgSPM.toString(), "average");
+    }
+  }, [performanceData.feed?.average?.length, performanceData.feed?.average?.spm]);
+
   useEffect(() => {
-    fetchFPM(
-      performanceSheet.maxFeedLen,
-      performanceSheet.maxFeedSPM,
-      "maxFPM"
-    );
-  }, [performanceSheet.maxFeedLen, performanceSheet.maxFeedSPM]);
+    const maxLength = performanceData.feed?.max?.length;
+    const maxSPM = performanceData.feed?.max?.spm;
+    if (maxLength && maxSPM) {
+      fetchFPM(maxLength.toString(), maxSPM.toString(), "max");
+    }
+  }, [performanceData.feed?.max?.length, performanceData.feed?.max?.spm]);
+
   useEffect(() => {
-    fetchFPM(
-      performanceSheet.minFeedLen,
-      performanceSheet.minFeedSPM,
-      "minFPM"
-    );
-  }, [performanceSheet.minFeedLen, performanceSheet.minFeedSPM]);
+    const minLength = performanceData.feed?.min?.length;
+    const minSPM = performanceData.feed?.min?.spm;
+    if (minLength && minSPM) {
+      fetchFPM(minLength.toString(), minSPM.toString(), "min");
+    }
+  }, [performanceData.feed?.min?.length, performanceData.feed?.min?.spm]);
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
-    if (name.includes("pressType.")) {
-      updatePerformanceSheet({
-        pressType: {
-          ...performanceSheet.pressType,
-          [name.split(".")[1]]: type === "checkbox" ? checked : value,
-        },
-      });
-    } else if (name.includes("dies.")) {
-      updatePerformanceSheet({
-        dies: {
-          ...performanceSheet.dies,
-          [name.split(".")[1]]: checked,
-        },
-      });
-    } else if (name.startsWith("maxThick")) {
-      const [spec, field] = name.split(".");
-      if (
-        spec === "maxThick" ||
-        spec === "atFull" ||
-        spec === "minThick" ||
-        spec === "atWidth"
-      ) {
-        updatePerformanceSheet({
-          [spec]: {
-            ...performanceSheet[
-              spec as "maxThick" | "atFull" | "minThick" | "atWidth"
-            ],
-            [field]: value,
-          },
-        });
+    const actualValue = type === "checkbox" ? checked : value;
+
+    // Handle nested field updates based on field name pattern
+    if (name.includes(".")) {
+      const parts = name.split(".");
+      const [section, ...rest] = parts;
+      
+      // Build the nested update object
+      let updateObj: any = {};
+      let current = updateObj;
+      
+      // Navigate to the correct nested level
+      const sectionData = performanceData[section as keyof typeof performanceData];
+      current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
+      current = current[section];
+      
+      // Handle deeper nesting
+      for (let i = 0; i < rest.length - 1; i++) {
+        current[rest[i]] = { ...current[rest[i]] };
+        current = current[rest[i]];
       }
+      
+      // Set the final value
+      current[rest[rest.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+      
+      updatePerformanceData(updateObj);
     } else {
-      updatePerformanceSheet({
-        [name]: type === "checkbox" ? checked : value,
+      // Handle top-level fields
+      updatePerformanceData({
+        [name]: actualValue,
       });
     }
-  };
 
-  const handleGet = async () => {
-    await getRFQ(performanceSheet.referenceNumber);
+    // Trigger calculation if needed
+    setTimeout(() => {
+      if (hasAllRequiredFieldsRFQ()) {
+        triggerCalculationRFQ();
+      }
+    }, 500);
   };
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Basic Information
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input
+            label="Reference Number"
+            name="referenceNumber"
+            value={performanceData.referenceNumber || ""}
+            onChange={handleChange}
+            error={errors.referenceNumber ? "Required" : ""}
+          />
+          <Input
             label="Date"
             type="date"
-            name="date"
-            value={performanceSheet.date}
+            name="dates.date"
+            value={performanceData.dates?.date || ""}
             onChange={handleChange}
             error={errors.date ? "Required" : ""}
           />
@@ -272,74 +241,74 @@ const RFQ = () => {
           <Input
             label="Company Name"
             name="customer"
-            value={performanceSheet.customer}
+            value={performanceData.customer || ""}
             onChange={handleChange}
             error={errors.customer ? "Required" : ""}
           />
           <Input
             label="State/Province"
-            name="state"
-            value={performanceSheet.state}
+            name="customerInfo.state"
+            value={performanceData.customerInfo?.state || ""}
             onChange={handleChange}
           />
           <Input
             label="Street Address"
-            name="streetAddress"
-            value={performanceSheet.streetAddress}
+            name="customerInfo.streetAddress"
+            value={performanceData.customerInfo?.streetAddress || ""}
             onChange={handleChange}
           />
           <Input
             label="ZIP/Postal Code"
-            name="zip"
-            value={performanceSheet.zip}
+            name="customerInfo.zip"
+            value={performanceData.customerInfo?.zip || ""}
             onChange={handleChange}
           />
           <Input
             label="City"
-            name="city"
-            value={performanceSheet.city}
+            name="customerInfo.city"
+            value={performanceData.customerInfo?.city || ""}
             onChange={handleChange}
           />
           <Input
             label="Country"
-            name="country"
-            value={performanceSheet.country}
+            name="customerInfo.country"
+            value={performanceData.customerInfo?.country || ""}
             onChange={handleChange}
           />
           <Input
             label="Contact Name"
-            name="contactName"
-            value={performanceSheet.contactName}
+            name="customerInfo.contactName"
+            value={performanceData.customerInfo?.contactName || ""}
             onChange={handleChange}
           />
           <Input
             label="Position"
-            name="position"
-            value={performanceSheet.position}
+            name="customerInfo.position"
+            value={performanceData.customerInfo?.position || ""}
             onChange={handleChange}
           />
           <Input
             label="Phone"
-            name="phone"
-            value={performanceSheet.phone}
+            name="customerInfo.phoneNumber"
+            value={performanceData.customerInfo?.phoneNumber || ""}
             onChange={handleChange}
           />
           <Input
             label="Email"
-            name="email"
-            value={performanceSheet.email}
+            name="customerInfo.email"
+            value={performanceData.customerInfo?.email || ""}
             onChange={handleChange}
           />
           <Input
             label="Dealer Name"
-            name="dealerName"
-            value={performanceSheet.dealerName}
+            name="customerInfo.dealerName"
+            value={performanceData.customerInfo?.dealerName || ""}
             onChange={handleChange}
           />
           <Input
             label="Dealer Salesman"
-            name="dealerSalesman"
-            value={performanceSheet.dealerSalesman}
+            name="customerInfo.dealerSalesman"
+            value={performanceData.customerInfo?.dealerSalesman || ""}
             onChange={handleChange}
           />
         </div>
@@ -347,20 +316,20 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="How many days/week is the company running?"
-            name="daysPerWeek"
-            value={performanceSheet.daysPerWeek}
+            name="customerInfo.daysPerWeek"
+            value={performanceData.customerInfo?.daysPerWeek || ""}
             onChange={handleChange}
           />
           <Input
             label="How many shifts/day is the company running?"
-            name="shiftsPerDay"
-            value={performanceSheet.shiftsPerDay}
+            name="customerInfo.shiftsPerDay"
+            value={performanceData.customerInfo?.shiftsPerDay || ""}
             onChange={handleChange}
           />
           <Select
             label="Line Application"
-            name="lineApplication"
-            value={performanceSheet.lineApplication}
+            name="feed.application"
+            value={performanceData.feed?.application || ""}
             onChange={handleChange}
             options={[
               { value: "pressFeed", label: "Press Feed" },
@@ -370,15 +339,15 @@ const RFQ = () => {
           />
           <Select
             label="Type of Line"
-            name="typeOfLine"
-            value={performanceSheet.typeOfLine}
+            name="feed.typeOfLine"
+            value={performanceData.feed?.typeOfLine || ""}
             onChange={handleChange}
             options={TYPE_OF_LINE_OPTIONS}
           />
           <Select
             label="Pull Through"
-            name="pullThrough"
-            value={performanceSheet.pullThrough}
+            name="feed.pullThru.isPullThru"
+            value={performanceData.feed?.pullThru?.isPullThru || ""}
             onChange={handleChange}
             options={YES_NO_OPTIONS}
             error={errors.pullThrough ? "Required" : ""}
@@ -387,48 +356,46 @@ const RFQ = () => {
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Coil Specifications
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Input
             label="Max Coil Width (in)"
-            name="coilWidthMax"
-            value={performanceSheet.coilWidthMax}
+            name="coil.maxCoilWidth"
+            value={performanceData.coil?.maxCoilWidth || ""}
             onChange={handleChange}
             type="number"
             error={errors.coilWidthMax ? "Required" : ""}
           />
           <Input
             label="Min Coil Width (in)"
-            name="coilWidthMin"
-            value={performanceSheet.coilWidthMin}
+            name="coil.minCoilWidth"
+            value={performanceData.coil?.minCoilWidth || ""}
             onChange={handleChange}
             type="number"
             error={errors.coilWidthMin ? "Required" : ""}
           />
           <Input
             label="Max Coil O.D. (in)"
-            name="maxCoilOD"
-            value={performanceSheet.maxCoilOD}
+            name="coil.maxCoilOD"
+            value={performanceData.coil?.maxCoilOD || ""}
             onChange={handleChange}
             type="number"
             error={errors.maxCoilOD ? "Required" : ""}
           />
           <Input
             label="Coil I.D. (in)"
-            name="coilID"
-            value={performanceSheet.coilID}
+            name="coil.coilID"
+            value={performanceData.coil?.coilID || ""}
             onChange={handleChange}
             type="number"
             error={errors.coilID ? "Required" : ""}
           />
           <Input
             label="Max Coil Weight (lbs)"
-            name="coilWeightMax"
-            value={performanceSheet.coilWeightMax}
+            name="coil.maxCoilWeight"
+            value={performanceData.coil?.maxCoilWeight || ""}
             onChange={handleChange}
             type="number"
             error={errors.coilWeightMax ? "Required" : ""}
@@ -436,8 +403,8 @@ const RFQ = () => {
           <Input
             label="Max Coil Handling Capacity (lbs)"
             type="number"
-            name="coilHandlingMax"
-            value={performanceSheet.coilHandlingMax}
+            name="coil.maxCoilHandlingCap"
+            value={performanceData.coil?.maxCoilHandlingCap || ""}
             onChange={handleChange}
           />
         </div>
@@ -446,15 +413,15 @@ const RFQ = () => {
           <div className="flex flex-wrap gap-6">
             <Checkbox
               label="Slit Edge"
-              name="slitEdge"
-              checked={performanceSheet.slitEdge}
+              name="coil.slitEdge"
+              checked={performanceData.coil?.slitEdge === "true"}
               onChange={handleChange}
               error={errors.slitEdge ? "At least one required" : ""}
             />
             <Checkbox
               label="Mill Edge"
-              name="millEdge"
-              checked={performanceSheet.millEdge}
+              name="coil.millEdge"
+              checked={performanceData.coil?.millEdge === "true"}
               onChange={handleChange}
             />
           </div>
@@ -463,22 +430,22 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Will a coil car be required?"
-            name="coilCarRequired"
-            value={performanceSheet.coilCarRequired}
+            name="coil.requireCoilCar"
+            value={performanceData.coil?.requireCoilCar || ""}
             onChange={handleChange}
             options={YES_NO_OPTIONS}
           />
           <Select
             label="Will you be running off the Backplate?"
-            name="runOffBackplate"
-            value={performanceSheet.runOffBackplate}
+            name="coil.runningOffBackplate"
+            value={performanceData.coil?.runningOffBackplate || ""}
             onChange={handleChange}
             options={YES_NO_OPTIONS}
           />
           <Select
             label="Are you running partial coils, i.e. will you require rewinding?"
-            name="requireRewinding"
-            value={performanceSheet.requireRewinding}
+            name="coil.requireRewinding"
+            value={performanceData.coil?.requireRewinding || ""}
             onChange={handleChange}
             options={YES_NO_OPTIONS}
           />
@@ -486,57 +453,56 @@ const RFQ = () => {
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Material Specifications
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
           <Input
             label="Highest Yield/most challenging Mat Spec (thick)"
-            name="maxThick.materialThickness"
-            value={performanceSheet.maxThick.materialThickness}
+            name="material.materialThickness"
+            value={performanceData.material?.materialThickness || ""}
             onChange={handleChange}
             type="number"
-            error={errors["maxThick.materialThickness"] ? "Required" : ""}
+            error={errors["material.materialThickness"] ? "Required" : ""}
           />
           <Input
             label="at Width (in)"
-            name="maxThick.coilWidth"
-            value={performanceSheet.maxThick.coilWidth}
+            name="material.coilWidth"
+            value={performanceData.material?.coilWidth || ""}
             onChange={handleChange}
             type="number"
-            error={errors["maxThick.coilWidth"] ? "Required" : ""}
+            error={errors["material.coilWidth"] ? "Required" : ""}
           />
           <Select
             label="Material Type"
-            name="maxThick.materialType"
-            value={performanceSheet.maxThick.materialType}
+            name="material.materialType"
+            value={performanceData.material?.materialType || ""}
             onChange={handleChange}
             options={MATERIAL_TYPE_OPTIONS}
+            error={errors["material.materialType"] ? "Required" : ""}
           />
           <Input
             label="Max Yield Strength (PSI)"
-            name="maxThick.yieldStrength"
-            value={performanceSheet.maxThick.yieldStrength}
+            name="material.maxYieldStrength"
+            value={performanceData.material?.maxYieldStrength || ""}
             onChange={handleChange}
             type="number"
-            error={errors["maxThick.yieldStrength"] ? "Required" : ""}
+            error={errors["material.maxYieldStrength"] ? "Required" : ""}
           />
           <Input
             label="Max Tensile Strength (PSI)"
-            name="maxThick.materialTensile"
-            value={performanceSheet.maxThick.materialTensile}
+            name="material.maxTensileStrength"
+            value={performanceData.material?.maxTensileStrength || ""}
             onChange={handleChange}
             type="number"
-            error={errors["maxThick.materialTensile"] ? "Required" : ""}
+            error={errors["material.maxTensileStrength"] ? "Required" : ""}
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Select
             label="Does the surface finish matter? Are they running a cosmetic material?"
-            name="cosmeticMaterial"
-            value={performanceSheet.cosmeticMaterial}
+            name="runningCosmeticMaterial"
+            value={performanceData.runningCosmeticMaterial || ""}
             onChange={handleChange}
             options={[
               { value: "No", label: "No" },
@@ -546,140 +512,133 @@ const RFQ = () => {
           />
           <Input
             label="Current brand of feed equipment"
-            name="feedEquipment"
-            value={performanceSheet.feedEquipment}
+            name="brandOfFeed"
+            value={performanceData.brandOfFeed || ""}
             onChange={handleChange}
           />
         </div>
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Type of Press
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Checkbox
             label="Gap Frame Press"
-            name="pressType.gapFrame"
-            checked={performanceSheet.pressType.gapFrame}
+            name="press.gapFramePress"
+            checked={performanceData.press?.gapFramePress === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Hydraulic Press"
-            name="pressType.hydraulic"
-            checked={performanceSheet.pressType.hydraulic}
+            name="press.hydraulicPress"
+            checked={performanceData.press?.hydraulicPress === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="OBI"
-            name="pressType.obi"
-            checked={performanceSheet.pressType.obi}
+            name="press.obi"
+            checked={performanceData.press?.obi === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Servo Press"
-            name="pressType.servo"
-            checked={performanceSheet.pressType.servo}
+            name="press.servoPress"
+            checked={performanceData.press?.servoPress === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Shear Die Application"
-            name="pressType.shearDie"
-            checked={performanceSheet.pressType.shearDie}
+            name="press.shearDieApplication"
+            checked={performanceData.press?.shearDieApplication === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Straight Side Press"
-            name="pressType.straightSide"
-            checked={performanceSheet.pressType.straightSide}
+            name="press.straightSidePress"
+            checked={performanceData.press?.straightSidePress === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Other"
-            name="pressType.other"
-            checked={performanceSheet.pressType.other}
+            name="press.other"
+            checked={performanceData.press?.other === "true"}
             onChange={handleChange}
           />
-
-          {performanceSheet.pressType.other && (
-            <Input
-              label="Other..."
-              name="pressType.otherText"
-              value={performanceSheet.pressType.otherText}
-              onChange={handleChange}
-            />
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Input
             label="Tonnage of Press"
-            name="tonnage"
-            value={performanceSheet.tonnage}
+            name="press.tonnageOfPress"
+            value={performanceData.press?.tonnageOfPress || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Press Bed Area: Width (in)"
-            name="pressBedWidth"
-            value={performanceSheet.pressBedWidth}
+            name="press.bedWidth"
+            value={performanceData.press?.bedWidth || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Length (in)"
-            name="pressBedLength"
-            value={performanceSheet.pressBedLength}
+            name="press.bedLength"
+            value={performanceData.press?.bedLength || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Press Stroke Length (in)"
-            name="pressStroke"
-            value={performanceSheet.pressStroke}
+            name="press.strokeLength"
+            value={performanceData.press?.strokeLength || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Window Opening Size of Press (in)"
-            name="windowOpening"
-            value={performanceSheet.windowOpening}
+            name="press.windowSize"
+            value={performanceData.press?.windowSize || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Press Max SPM"
-            name="maxSPM"
-            value={performanceSheet.maxSPM}
+            name="press.maxSPM"
+            value={performanceData.press?.maxSPM || ""}
             onChange={handleChange}
+            type="number"
             error={errors.maxSPM ? "Required" : ""}
           />
         </div>
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Type of Dies
         </Text>
         <div className="mb-6">
           <div className="flex flex-wrap gap-6">
             <Checkbox
               label="Transfer Dies"
-              name="dies.transfer"
-              checked={performanceSheet.dies.transfer}
+              name="dies.transferDies"
+              checked={performanceData.dies?.transferDies === "true"}
               onChange={handleChange}
             />
             <Checkbox
               label="Progressive Dies"
-              name="dies.progressive"
-              checked={performanceSheet.dies.progressive}
+              name="dies.progressiveDies"
+              checked={performanceData.dies?.progressiveDies === "true"}
               onChange={handleChange}
               required
               error={errors.dies ? "At least one required" : ""}
             />
             <Checkbox
               label="Blanking Dies"
-              name="dies.blanking"
-              checked={performanceSheet.dies.blanking}
+              name="dies.blankingDies"
+              checked={performanceData.dies?.blankingDies === "true"}
               onChange={handleChange}
             />
           </div>
@@ -688,64 +647,70 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Input
             label="Average feed length"
-            name="avgFeedLen"
-            value={performanceSheet.avgFeedLen}
+            name="feed.average.length"
+            value={performanceData.feed?.average?.length || ""}
             onChange={handleChange}
+            type="number"
             error={errors.avgFeedLen ? "Required" : ""}
           />
           <Input
             label="at (SPM)"
-            name="avgFeedSPM"
-            value={performanceSheet.avgFeedSPM}
+            name="feed.average.spm"
+            value={performanceData.feed?.average?.spm || ""}
             onChange={handleChange}
+            type="number"
             error={errors.avgFeedSPM ? "Required" : ""}
           />
           <Input
             label="Feed Speed (FPM)"
-            name="avgFPM"
-            value={performanceSheet.avgFPM}
+            name="feed.average.fpm"
+            value={performanceData.feed?.average?.fpm || ""}
             readOnly
             disabled
           />
           <Input
             label="Maximum feed length"
-            name="maxFeedLen"
-            value={performanceSheet.maxFeedLen}
+            name="feed.max.length"
+            value={performanceData.feed?.max?.length || ""}
             onChange={handleChange}
+            type="number"
             error={errors.maxFeedLen ? "Required" : ""}
           />
           <Input
             label="at (SPM)"
-            name="maxFeedSPM"
-            value={performanceSheet.maxFeedSPM}
+            name="feed.max.spm"
+            value={performanceData.feed?.max?.spm || ""}
             onChange={handleChange}
+            type="number"
             error={errors.maxFeedSPM ? "Required" : ""}
           />
           <Input
             label="Feed Speed (FPM)"
-            name="maxFPM"
-            value={performanceSheet.maxFPM}
+            name="feed.max.fpm"
+            value={performanceData.feed?.max?.fpm || ""}
             readOnly
             disabled
           />
           <Input
             label="Minimum feed length"
-            name="minFeedLen"
-            value={performanceSheet.minFeedLen}
+            name="feed.min.length"
+            value={performanceData.feed?.min?.length || ""}
             onChange={handleChange}
+            type="number"
             error={errors.minFeedLen ? "Required" : ""}
           />
           <Input
             label="at (SPM)"
-            name="minFeedSPM"
-            value={performanceSheet.minFeedSPM}
+            name="feed.min.spm"
+            value={performanceData.feed?.min?.spm || ""}
             onChange={handleChange}
+            type="number"
             error={errors.minFeedSPM ? "Required" : ""}
           />
           <Input
             label="Feed Speed (FPM)"
-            name="minFPM"
-            value={performanceSheet.minFPM}
+            name="feed.min.fpm"
+            value={performanceData.feed?.min?.fpm || ""}
             readOnly
             disabled
           />
@@ -754,32 +719,33 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Voltage Required (VAC)"
-            name="voltage"
-            value={performanceSheet.voltage}
+            name="voltageRequired"
+            value={performanceData.voltageRequired || ""}
             onChange={handleChange}
+            type="number"
             error={errors.voltage ? "Required" : ""}
           />
         </div>
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Space & Mounting
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input
             label="Space allotment Length (ft)"
-            name="spaceLength"
-            value={performanceSheet.spaceLength}
+            name="equipmentSpaceLength"
+            value={performanceData.equipmentSpaceLength || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Width (ft)"
-            name="spaceWidth"
-            value={performanceSheet.spaceWidth}
+            name="equipmentSpaceWidth"
+            value={performanceData.equipmentSpaceWidth || ""}
             onChange={handleChange}
+            type="number"
           />
         </div>
 
@@ -787,72 +753,68 @@ const RFQ = () => {
           <Input
             label="Are there any walls or columns obstructing the equipment's location?"
             name="obstructions"
-            value={performanceSheet.obstructions}
+            value={performanceData.obstructions || ""}
             onChange={handleChange}
           />
           <Input
             label="Can the feeder be mounted to the press?"
-            name="mountToPress"
-            value={performanceSheet.mountToPress}
+            name="mount.feederMountedToPress"
+            value={performanceData.mount?.feederMountedToPress || ""}
             onChange={handleChange}
           />
           <Input
             label="If 'YES', we must verify there is adequate structural support to mount to. Is there adequate support?"
-            name="adequateSupport"
-            value={performanceSheet.adequateSupport}
+            name="mount.adequateSupport"
+            value={performanceData.mount?.adequateSupport || ""}
             onChange={handleChange}
           />
           <Input
             label="If 'No', it will require a cabinet. Will you need custom mounting plate(s)?"
-            name="needMountingPlates"
-            value={performanceSheet.needMountingPlates}
+            name="mount.customMounting"
+            value={performanceData.mount?.customMounting || ""}
             onChange={handleChange}
           />
           <Input
             label="Passline Height (in):"
-            name="passlineHeight"
-            value={performanceSheet.passlineHeight}
+            name="feed.passline"
+            value={performanceData.feed?.passline || ""}
             onChange={handleChange}
+            type="number"
           />
           <Input
             label="Will there be a loop pit?"
             name="loopPit"
-            value={performanceSheet.loopPit}
+            value={performanceData.loopPit || ""}
             onChange={handleChange}
           />
           <Input
             label="Is coil change time a concern?"
-            name="coilChangeConcern"
-            value={performanceSheet.coilChangeConcern}
+            name="coil.changeTimeConcern"
+            value={performanceData.coil?.changeTimeConcern || ""}
             onChange={handleChange}
           />
           <Input
             label="If so, what is your coil change time goal? (min)"
-            name="coilChangeTime"
-            value={performanceSheet.coilChangeTime}
+            name="coil.timeChangeGoal"
+            value={performanceData.coil?.timeChangeGoal || ""}
             onChange={handleChange}
-          />
-          <Input
-            label="What are reasons you experience unplanned downtime?"
-            name="downtimeReasons"
-            value={performanceSheet.downtimeReasons}
-            onChange={handleChange}
+            type="number"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Select
             label="Feed Direction"
-            name="feedDirection"
-            value={performanceSheet.feedDirection}
+            name="feed.direction"
+            value={performanceData.feed?.direction || ""}
             onChange={handleChange}
             options={FEED_DIRECTION_OPTIONS}
             error={errors.feedDirection ? "Required" : ""}
           />
           <Input
             label="Coil Loading"
-            name="coilLoading"
-            value={performanceSheet.coilLoading}
+            name="coil.loading"
+            value={performanceData.coil?.loading || ""}
             onChange={handleChange}
             error={errors.coilLoading ? "Required" : ""}
           />
@@ -861,46 +823,44 @@ const RFQ = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Will your line require guarding or special safety requirements?"
-            name="safetyRequirements"
-            value={performanceSheet.safetyRequirements}
+            name="requireGuarding"
+            value={performanceData.requireGuarding || ""}
             onChange={handleChange}
           />
         </div>
       </Card>
 
       <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
+        <Text as="h3" className="mb-4 text-lg font-medium">
           Timeline & Delivery
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input
             label="When will decision be made on project?"
-            name="decisionDate"
+            name="dates.decisionDate"
             type="date"
-            value={performanceSheet.decisionDate}
+            value={performanceData.dates?.decisionDate || ""}
             onChange={handleChange}
           />
           <Input
             label="Ideal Delivery Date"
-            name="idealDelivery"
+            name="dates.idealDeliveryDate"
             type="date"
-            value={performanceSheet.idealDelivery}
+            value={performanceData.dates?.idealDeliveryDate || ""}
             onChange={handleChange}
           />
           <Input
             label="Earliest date customer can accept delivery"
-            name="earliestDelivery"
+            name="dates.earliestDeliveryDate"
             type="date"
-            value={performanceSheet.earliestDelivery}
+            value={performanceData.dates?.earliestDeliveryDate || ""}
             onChange={handleChange}
           />
           <Input
             label="Latest date customer can accept delivery"
-            name="latestDelivery"
+            name="dates.latestDeliveryDate"
             type="date"
-            value={performanceSheet.latestDelivery}
+            value={performanceData.dates?.latestDeliveryDate || ""}
             onChange={handleChange}
           />
         </div>
@@ -909,12 +869,21 @@ const RFQ = () => {
           <Textarea
             label="Special Considerations"
             name="specialConsiderations"
-            value={performanceSheet.specialConsiderations}
+            value={performanceData.specialConsiderations || ""}
             onChange={handleChange}
             rows={3}
           />
         </div>
       </Card>
+
+      {/* Error Display */}
+      {errors && Object.keys(errors).length > 0 && (
+        <div className="text-center text-xs text-red-500 mt-2">
+          {Object.entries(errors).map(([key, value]) => (
+            <div key={key}>{key}: {Array.isArray(value) ? value.join(', ') : value}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -21,6 +21,103 @@ class RFQState:
 
 rfq_state = RFQState()
 
+### CENTRALIZED DEFAULT VALUES ###
+DEFAULTS = {
+    # RFQ defaults
+    'rfq': {
+        'feed_length': 0.0,
+        'spm': 0.0,
+    },
+    
+    # Material specs defaults
+    'material': {
+        'material_type': 'COLD ROLLED STEEL',
+        'material_thickness': 0.1,
+        'yield_strength': 100000.0,
+        'coil_width': 12.0,
+        'coil_weight': 10000.0,
+        'coil_id': 20.0,
+        'max_coil_od': 72.0,
+        'max_coil_weight': 10000.0,
+        'max_coil_width': 24.0,
+    },
+    
+    # Feed defaults
+    'feed': {
+        'direction': 'left_to_right',
+        'controls_level': 'SyncMaster',
+        'type_of_line': 'Conventional',
+        'controls': 'Sigma 5 Feed',
+        'passline': 55.0,
+        'light_gauge_non_marking': False,
+        'non_marking': False,
+        'model': 'CPRF-S3',
+        'machine_width': 24,
+        'loop_pit': 'no',
+        'application': 'press feed',
+        'average_fpm': 80.0,
+        'maximum_velocity': 100.0,
+        'acceleration_rate': 100.0,
+        'chart_min_length': 4.0,
+        'length_increment': 4.0,
+        'feed_angle_1': 0.0,
+        'feed_angle_2': 0.0,
+        'pull_thru': False,
+        'straightener_rolls': 7,
+        'pinch_rolls': 0,
+    },
+    
+    # Reel defaults
+    'reel': {
+        'model': 'CPR-040',
+        'horsepower': 3.0,
+        'width': 24.0,
+        'backplate_diameter': 27.0,
+        'style': 'Single Ended',
+        'required_decel_rate': 1.0,
+        'coefficient_of_friction': 0.6,
+        'air_pressure_available': 80.0,
+        'drag_brake_quantity': 1,
+        'drag_brake_model': 'Single Stage',
+        'holddown_cylinder': 'Hydraulic',
+        'holddown_assy': 'SD',
+        'threading_drive_hyd': '22 cu in (D-12689)',
+        'threading_drive_air_clutch': 'Yes',
+    },
+    
+    # Straightener defaults
+    'straightener': {
+        'model': 'CPPS-250',
+        'width': 24.0,
+        'horsepower': 20.0,
+        'feed_rate': 80.0,
+        'auto_brake_compensation': 'Yes',
+        'acceleration': 1.0,
+        'number_of_rolls': 7,
+    },
+    
+    # Press defaults
+    'press': {
+        'bed_length': 48,
+    },
+    
+    # Shear defaults
+    'shear': {
+        'model': 'single_rake',
+        'strength': 0.0,
+        'rake_of_blade_per_foot': 0.5,
+        'overlap': 0.06,
+        'blade_opening': 0.75,
+        'percent_of_penetration': 38.0,
+        'bore_size': 9.0,
+        'rod_diameter': 6.0,
+        'stroke': 2.0,
+        'hydraulic_pressure': 80.0,
+        'time_for_downward_stroke': 0.5,
+        'dwell_time': 1.0,
+    },
+}
+
 ### LOOKUPS
 FPM_BUFFER = 1.2
 BACKBEND_MIN = 0.4

@@ -4,6 +4,10 @@ import RFQ from "./rfq";
 import MaterialSpecs from "./material-specs";
 import TDDBHD from "./tddbhd";
 import ReelDrive from "./reel-drive";
+import StrUtility from "./str-utility";
+import RollStrBackbend from "./roll-str-backbend";
+import Feed from "./feed";
+import Shear from "./shear";
 import SummaryReport from "./summary-report";
 import PageHeader from "@/components/common/page-header";
 import { Save, Lock, Link } from "lucide-react";
@@ -21,6 +25,10 @@ const PERFORMANCE_TABS = [
   { label: "Material Specs", value: "material-specs" },
   { label: "TDDBHD", value: "tddbhd" },
   { label: "Reel Drive", value: "reel-drive" },
+  { label: "Str Utility", value: "str-utility" },
+  { label: "Roll Str Backbend", value: "roll-str-backbend" },
+  { label: "Feed", value: "feed" },
+  { label: "Shear", value: "shear" },
   { label: "Summary Report", value: "summary-report" },
 ];
 
@@ -29,6 +37,10 @@ type PerformanceTabValue =
   | "material-specs"
   | "tddbhd"
   | "reel-drive"
+  | "str-utility"
+  | "roll-str-backbend"
+  | "feed"
+  | "shear"
   | "summary-report";
 
 const PerformanceDetails = () => {
@@ -186,6 +198,14 @@ const PerformanceDetails = () => {
         return <TDDBHD />;
       case "reel-drive":
         return <ReelDrive />;
+      case "str-utility":
+        return <StrUtility />;
+      case "roll-str-backbend":
+        return <RollStrBackbend />;
+      case "feed":
+        return <Feed />;
+      case "shear":
+        return <Shear />;
       case "summary-report":
         return <SummaryReport />;
       default:
