@@ -1,20 +1,14 @@
-import { Plus, Filter, ChevronDown } from "lucide-react";
+import { Filter, ChevronDown, PlusCircleIcon } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import {
-  Button,
-  Modal,
-  PageHeader,
-  PageSearch,
-  StatusBadge,
-  Table,
-} from "@/components";
+import { Button, Modal, PageSearch, StatusBadge, Table } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/common/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
 import AdvancedDropdown from "@/components/common/advanced-dropdown";
+import PageHeader from "@/components/common/page-head";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,20 +105,22 @@ const Quotes = () => {
   const pageTitle = "Quotes";
   const pageDescription = `${quotes?.length} total quotes`;
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={toggleModal}>
+          <PlusCircleIcon size={20} /> Create New
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "New Quote",
-            icon: <Plus size={16} />,
-            variant: "primary",
-            onClick: toggleModal,
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <PageSearch

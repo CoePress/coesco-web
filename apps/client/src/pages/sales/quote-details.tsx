@@ -15,7 +15,6 @@ import {
   Card,
   Loader,
   Modal,
-  PageHeader,
   PageSearch,
   Table,
   Tabs,
@@ -31,6 +30,7 @@ import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useUpdateLineNumber } from "@/hooks/sales/use-update-linenumber";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import PageHeader from "@/components/common/page-head";
 
 const QuoteDetails = () => {
   const navigate = useNavigate();
@@ -218,52 +218,55 @@ const QuoteDetails = () => {
       )
   )} • ${quoteOverview?.quote?.status}`;
 
-  const renderQuoteActions = () => {
+  const Actions = () => {
     const actions = [];
 
-    // Add preview button only if there are quote items
     if (quoteItems.length > 0) {
-      actions.push({
-        type: "button",
-        label: "Preview",
-        variant: "secondary-outline",
-        icon: <Eye size={16} />,
-        onClick: () => setIsPreviewModalOpen(true),
-      });
+      actions.push(
+        <Button
+          key="preview"
+          variant="secondary-outline"
+          onClick={() => setIsPreviewModalOpen(true)}>
+          <Eye size={16} /> Preview
+        </Button>
+      );
     }
 
     switch (quoteOverview?.quote?.status) {
       case "DRAFT":
-        actions.push({
-          type: "button",
-          label: "Approve Quote",
-          variant: "primary",
-          icon: <CheckCircle size={16} />,
-          disabled: quoteItems.length === 0,
-          onClick: () => setIsApprovalModalOpen(true),
-        });
+        actions.push(
+          <Button
+            key="approve"
+            variant="primary"
+            disabled={quoteItems.length === 0}
+            onClick={() => setIsApprovalModalOpen(true)}>
+            <CheckCircle size={16} /> Approve Quote
+          </Button>
+        );
         break;
       case "APPROVED":
-        actions.push({
-          type: "button",
-          label: "Send Quote",
-          variant: "primary",
-          icon: <Send size={16} />,
-          onClick: () => setIsSendConfirmationOpen(true),
-        });
+        actions.push(
+          <Button
+            key="send"
+            variant="primary"
+            onClick={() => setIsSendConfirmationOpen(true)}>
+            <Send size={16} /> Send Quote
+          </Button>
+        );
         break;
       case "SENT":
-        actions.push({
-          type: "button",
-          label: "Create Revision",
-          variant: "primary",
-          icon: <Plus size={16} />,
-          onClick: () => setIsRevisionConfirmationOpen(true),
-        });
+        actions.push(
+          <Button
+            key="revise"
+            variant="primary"
+            onClick={() => setIsRevisionConfirmationOpen(true)}>
+            <Plus size={16} /> Create Revision
+          </Button>
+        );
         break;
     }
 
-    return actions;
+    return <div className="flex gap-2">{actions}</div>;
   };
 
   return (
@@ -271,9 +274,8 @@ const QuoteDetails = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        backButton
-        onBack={() => navigate("/sales/quotes")}
-        actions={renderQuoteActions() as any}
+        actions={<Actions />}
+        goBack
       />
 
       <div className="mx-auto p-2">

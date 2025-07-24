@@ -1,4 +1,4 @@
-import { Plus, MoreHorizontal, List, Grid } from "lucide-react";
+import { MoreHorizontal, List, Grid, PlusCircleIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, Loader } from "@/components";
@@ -487,7 +487,7 @@ const Catalog = () => {
           {view === "list" ? <List size={20} /> : <Grid size={20} />}
         </Button>
         <Button onClick={() => navigate("/sales/catalog/builder")}>
-          <Plus size={20} />
+          <PlusCircleIcon size={20} />
           Create New
         </Button>
       </div>
@@ -638,7 +638,7 @@ const Catalog = () => {
   };
 
   const getFilteredItems = () => {
-    return items;
+    return items || [];
   };
 
   const renderContent = () => {

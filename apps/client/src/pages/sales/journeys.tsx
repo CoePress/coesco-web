@@ -1,10 +1,16 @@
-import { Plus, Filter, MoreHorizontal, ChevronDown } from "lucide-react";
+import {
+  Filter,
+  MoreHorizontal,
+  ChevronDown,
+  PlusCircleIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { PageHeader, Table, PageSearch } from "@/components";
+import { Table, PageSearch, Button } from "@/components";
 import { TableColumn } from "@/components/common/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import PageHeader from "@/components/common/page-head";
 
 const Journeys = () => {
   const [selectedRows] = useState<(string | number)[]>([]);
@@ -34,20 +40,22 @@ const Journeys = () => {
   const pageTitle = "Journeys";
   const pageDescription = journeys ? `${journeys?.length} total journeys` : "";
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={() => {}}>
+          <PlusCircleIcon size={20} /> Create New
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "New Journey",
-            icon: <Plus size={16} />,
-            variant: "primary",
-            onClick: () => {},
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <PageSearch

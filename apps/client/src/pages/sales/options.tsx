@@ -11,8 +11,9 @@ import {
   ChevronRight,
   Trash,
 } from "lucide-react";
-import { PageHeader, Modal, Button, Tabs, Loader } from "@/components";
+import { Modal, Button, Tabs, Loader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import PageHeader from "@/components/common/page-head";
 
 interface RuleCondition {
   id: string;
@@ -200,46 +201,46 @@ const Options = () => {
     );
   }
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        {isEditing ? (
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleCancelEdit}>
+              <XCircle size={16} /> Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSaveRule}>
+              <CheckCircle size={16} /> Save Rule
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="secondary-outline"
+              onClick={() => setIsCategoryOptionModalOpen(true)}>
+              <Plus size={16} /> Categories & Options
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateRule}>
+              <Plus size={16} /> Create Rule
+            </Button>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
       <PageHeader
         title="Option Rules"
         description={`${rules.length} rules · ${filteredRules.length} filtered`}
-        actions={
-          isEditing
-            ? [
-                {
-                  type: "button",
-                  label: "Cancel",
-                  variant: "secondary",
-                  icon: <XCircle size={16} />,
-                  onClick: handleCancelEdit,
-                },
-                {
-                  type: "button",
-                  label: "Save Rule",
-                  variant: "primary",
-                  icon: <CheckCircle size={16} />,
-                  onClick: handleSaveRule,
-                },
-              ]
-            : [
-                {
-                  type: "button",
-                  label: "Categories & Options",
-                  variant: "secondary-outline",
-                  icon: <Plus size={16} />,
-                  onClick: () => setIsCategoryOptionModalOpen(true),
-                },
-                {
-                  type: "button",
-                  label: "Create Rule",
-                  variant: "primary",
-                  icon: <Plus size={16} />,
-                  onClick: handleCreateRule,
-                },
-              ]
-        }
+        actions={<Actions />}
       />
 
       <div className="flex flex-1 min-h-0">

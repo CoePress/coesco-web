@@ -1,14 +1,21 @@
-import { ChevronDown, Filter, Lock, MoreHorizontal, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Filter,
+  Lock,
+  MoreHorizontal,
+  PlusCircleIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { PageHeader, PageSearch, Table, Button } from "@/components";
+import { PageSearch, Table, Button } from "@/components";
 import Input from "@/components/common/input";
 import Modal from "@/components/common/modal";
 import { TableColumn } from "@/components/common/table";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { instance } from "@/utils";
+import PageHeader from "@/components/common/page-head";
 
 const PerformanceSheets = () => {
   const [isModalOpen, setModalOpen] = useState(false);
@@ -106,20 +113,25 @@ const PerformanceSheets = () => {
     fetchLocks();
   }, [performanceSheets]);
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button
+          onClick={() => {
+            setModalOpen(true);
+          }}>
+          <PlusCircleIcon size={20} /> Create New
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "New Performance Sheet",
-            icon: <Plus size={16} />,
-            variant: "primary",
-            onClick: () => setModalOpen(true),
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <PageSearch

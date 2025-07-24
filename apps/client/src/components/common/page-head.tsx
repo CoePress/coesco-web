@@ -19,7 +19,7 @@ const PageHeader = ({ title, description, actions, goBack = false }: Props) => {
           {goBack && (
             <button
               onClick={() => navigate(-1)}
-              className="leading-none text-xs text-text-muted underline cursor-pointer">
+              className="leading-none text-xs text-text-muted cursor-pointer hover:underline">
               Go Back
             </button>
           )}

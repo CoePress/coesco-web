@@ -7,6 +7,7 @@ import {
   Filter,
   List,
   RefreshCcw,
+  FilterIcon,
 } from "lucide-react";
 import {
   BarChart,
@@ -21,8 +22,9 @@ import {
   Cell,
 } from "recharts";
 
-import { Button, PageHeader } from "@/components";
+import { Button } from "@/components";
 import { formatCurrency, openPopup } from "@/utils";
+import PageHeader from "@/components/common/page-head";
 
 const mockData = [
   { month: "Jan", sales: 65000, quotes: 85000, conversion: 76, deals: 42 },
@@ -98,6 +100,16 @@ const SalesDashboard = () => {
   const pageTitle = "Sales Dashboard";
   const pageDescription = "Track your sales performance and metrics";
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button>
+          <RefreshCcw size={20} /> Refresh
+        </Button>
+      </div>
+    );
+  };
+
   const kpis = [
     {
       title: "Monthly Revenue",
@@ -148,22 +160,7 @@ const SalesDashboard = () => {
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "Filter",
-            icon: <Filter size={16} />,
-            variant: "secondary-outline",
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Refresh",
-            icon: <RefreshCcw size={16} />,
-            variant: "primary",
-            onClick: () => {},
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">
