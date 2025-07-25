@@ -13,7 +13,7 @@ export class GenericService<T> {
   private _columns?: string[];
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
-    const searchFields = this.getDefaultSearchFields();
+    const searchFields = this.getSearchFields();
     const { query, finalWhere, page, take } = await this.buildQueryParams(
       params,
       searchFields
@@ -58,10 +58,12 @@ export class GenericService<T> {
 
   async create(data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
+    return meta;
   }
 
   async update(id: string, data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "update", timestamps: true });
+    return meta;
   }
 
   async delete(id: string, tx?: Prisma.TransactionClient) {
@@ -70,9 +72,14 @@ export class GenericService<T> {
       timestamps: true,
       softDelete: true,
     });
+    return meta;
   }
 
-  async validate() {}
+  protected validate() {}
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [];
+  }
 
   private async getColumns(): Promise<string[]> {
     if (this._columns) return this._columns;
@@ -163,12 +170,5 @@ export class GenericService<T> {
     else if (include) query.include = include;
 
     return { query, finalWhere, page, take };
-  }
-
-  protected getDefaultSearchFields(): (
-    | string
-    | { field: string; weight: number }
-  )[] {
-    return [];
   }
 }

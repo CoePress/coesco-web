@@ -564,6 +564,7 @@ model Machine {
   deletedAt       DateTime?
   createdById     String
   updatedById     String
+  deletedById     String?
 
   statuses MachineStatus[]
 

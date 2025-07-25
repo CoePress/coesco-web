@@ -11,7 +11,7 @@ export class ExampleService extends GenericService<Machine> {
     this.modelName = "machine";
   }
 
-  protected override getDefaultSearchFields(): Array<{
+  protected override getSearchFields(): Array<{
     field: keyof Machine;
     weight: number;
   }> {
@@ -20,4 +20,6 @@ export class ExampleService extends GenericService<Machine> {
       { field: "slug", weight: 8 },
     ];
   }
+
+  protected override validate() {}
 }

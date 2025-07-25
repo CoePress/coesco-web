@@ -48,13 +48,4 @@ export class ExampleController {
       next(err);
     }
   }
-
-  async validate(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await exampleService.validate();
-      res.status(200).json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
 }
