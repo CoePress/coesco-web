@@ -10,7 +10,7 @@ export class GenericService<T> {
   protected model: any;
   protected entityName?: string;
   protected modelName?: string;
-  private _columns?: string[];
+  protected _columns?: string[];
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const searchFields = this.getSearchFields();
@@ -130,7 +130,29 @@ export class GenericService<T> {
       timestamps: true,
       softDelete: true,
     });
-    return meta;
+
+    const execute = async (client: Prisma.TransactionClient) => {
+      const model = (client as any)[this.modelName!];
+
+      const scope = await this.getScope();
+      const where = { AND: [{ id }, scope ?? {}] };
+      const before = await model.findFirst({ where });
+
+      if (!before) {
+        throw new Error(`Cannot delete: ${this.modelName} ${id} not found`);
+      }
+
+      const deleted = await model.update({
+        where: { id },
+        data: meta,
+      });
+
+      await this.log("DELETE", before, deleted, client);
+      return deleted;
+    };
+
+    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+    return { success: true };
   }
 
   // Private Methods
