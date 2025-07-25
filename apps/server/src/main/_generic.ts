@@ -151,7 +151,11 @@ export class GenericService<T> {
       return deleted;
     };
 
-    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+    if (tx) {
+      await execute(tx);
+    } else {
+      await prisma.$transaction(execute);
+    }
     return { success: true };
   }
 
