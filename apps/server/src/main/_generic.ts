@@ -60,28 +60,41 @@ export class GenericService<T> {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
-    if (tx) {
-      const model = (tx as any)[this.modelName!];
-      const created = await model.create({ data: payload });
-      await this.log("CREATE", undefined, created, tx);
-      return { success: true, data: created };
-    }
-
-    const result = await prisma.$transaction(async (client) => {
+    const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
       const created = await model.create({ data: payload });
       await this.log("CREATE", undefined, created, client);
       return created;
-    });
+    };
 
+    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
     return { success: true, data: result };
   }
 
   async update(id: string, data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "update", timestamps: true });
-    this.validate(data);
+    const payload = { ...data, ...meta };
 
-    return meta;
+    this.validate({ id, ...data });
+
+    const execute = async (client: Prisma.TransactionClient) => {
+      const model = (client as any)[this.modelName!];
+
+      const before = await model.findUnique({ where: { id } });
+      if (!before)
+        throw new Error(`Cannot update: ${this.modelName} ${id} not found`);
+
+      const updated = await model.update({
+        where: { id },
+        data: payload,
+      });
+
+      await this.log("UPDATE", before, updated, client);
+      return updated;
+    };
+
+    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+    return { success: true, data: result };
   }
 
   async delete(id: string, tx?: Prisma.TransactionClient) {
