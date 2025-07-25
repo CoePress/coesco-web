@@ -4,50 +4,24 @@ import { Prisma } from "@prisma/client";
 import { buildQuery, prisma } from "@/utils/prisma";
 import { IQueryParams } from "@/types/api.types";
 
-const BASE_META_FIELDS = [
-  "createdById",
-  "updatedById",
-  "deletedById",
-  "createdAt",
-  "updatedAt",
-  "deletedAt",
-];
-
 const columnCache = new Map<string, string[]>();
 
 export class GenericService<T> {
   protected model: any;
   protected entityName?: string;
   protected modelName?: string;
+  private _columns?: string[];
 
   async test() {
     const ctx = getRequestContext();
     const columns = await this.getColumns();
-    const scope = await this.getScope();
+    const scope = await this.getScope(columns);
     return { ctx, columns, scope };
   }
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
-    const { where, orderBy, page, take, skip, select, include } = buildQuery(
-      params ?? {},
-      params?.searchFields?.map(String) ?? []
-    );
-
-    const scope = await this.getScope();
-
-    const finalWhere = {
-      AND: [where ?? {}, scope ?? {}],
-    };
-
-    const query: any = {
-      where: finalWhere,
-      orderBy,
-      take,
-      skip,
-    };
-
-    if (select) query.select = select;
-    else if (include) query.include = include;
+    const { query, finalWhere, page, take } =
+      await this.buildQueryParams(params);
 
     const [items, total] = await Promise.all([
       this.model.findMany(query),
@@ -103,10 +77,12 @@ export class GenericService<T> {
   async validate() {}
 
   private async getColumns(): Promise<string[]> {
+    if (this._columns) return this._columns;
     if (!this.modelName) return [];
 
     if (columnCache.has(this.modelName)) {
-      return columnCache.get(this.modelName)!;
+      this._columns = columnCache.get(this.modelName)!;
+      return this._columns;
     }
 
     const tables = deriveTableNames(this.modelName);
@@ -119,15 +95,18 @@ export class GenericService<T> {
 
     const cols = rows.map((r) => r.column_name);
     columnCache.set(this.modelName, cols);
+    this._columns = cols;
     return cols;
   }
 
-  private async getScope(): Promise<Record<string, any> | undefined> {
+  private async getScope(
+    columns?: string[]
+  ): Promise<Record<string, any> | undefined> {
     const ctx = getRequestContext();
-    const columns = await this.getColumns();
+    const cols = columns ?? (await this.getColumns());
 
-    if (!columns.includes("ownerId")) {
-      return undefined; // no scoping needed
+    if (!cols.includes("ownerId")) {
+      return undefined;
     }
 
     return {
@@ -165,5 +144,36 @@ export class GenericService<T> {
     }
 
     return meta;
+  }
+
+  private async buildQueryParams(params?: IQueryParams<T>): Promise<any> {
+    const { where, orderBy, page, take, skip, select, include } = buildQuery(
+      params ?? {},
+      params?.searchFields?.map(String) ?? []
+    );
+
+    const columns = await this.getColumns();
+    const scope = await this.getScope(columns);
+
+    const finalWhere = {
+      AND: [where ?? {}, scope ?? {}],
+    };
+
+    const query: any = {
+      where: finalWhere,
+      orderBy,
+      take,
+      skip,
+    };
+
+    if (select) query.select = select;
+    else if (include) query.include = include;
+
+    return {
+      query,
+      finalWhere,
+      page,
+      take,
+    };
   }
 }
