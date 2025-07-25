@@ -99,8 +99,17 @@ export class GenericService<T> {
       const scope = await this.getScope();
       const where = { AND: [{ id }, scope ?? {}] };
       const before = await model.findFirst({ where });
-      if (!before)
+
+      if (!before) {
         throw new Error(`Cannot update: ${this.modelName} ${id} not found`);
+      }
+
+      const diff = getObjectDiff(before, { ...before, ...payload });
+      delete diff.updatedAt;
+
+      if (Object.keys(diff).length === 0) {
+        throw new Error(`${this.modelName} ${id} update made no changes`);
+      }
 
       const updated = await model.update({
         where: { id },
