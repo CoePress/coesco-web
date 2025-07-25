@@ -9,7 +9,7 @@ import { SocketService } from "./core/socket.service";
 import { SalesService } from "./domain/sales.service";
 import { SystemService } from "./core/system.service";
 import { MicrosoftService } from "./domain/microsoft.service";
-import { QuoteBuilderService } from "./domain/quote-builder.service";
+// import { QuoteBuilderService } from "./domain/quote-builder.service";
 import { ConfigBuilderService } from "./domain/config-builder.service";
 import { prisma } from "@/utils/prisma";
 import { LockingService } from "./core/lock.service";
@@ -27,7 +27,7 @@ export const systemService = new SystemService();
 export const configBuilderService = new ConfigBuilderService();
 export const machineMonitorService = new MachineMonitorService();
 export const microsoftService = new MicrosoftService();
-export const quoteBuilderService = new QuoteBuilderService();
+// export const quoteBuilderService = new QuoteBuilderService();
 export const salesService = new SalesService();
 
 export const initializeServices = async () => {

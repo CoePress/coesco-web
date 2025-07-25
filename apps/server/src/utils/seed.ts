@@ -8,6 +8,11 @@ import {
 } from "@prisma/client";
 import { __dev__ } from "@/config/config";
 import { microsoftService } from "@/services";
+import { contextStorage, SYSTEM_CONTEXT } from "@/main/context";
+
+contextStorage.enterWith(SYSTEM_CONTEXT);
+
+// TODO: Move sample & seed data into a json file
 
 // Product Classes
 export const sampleProductClasses = [

@@ -1,34 +1,51 @@
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
 import { IQueryParams, IServiceResult } from "@/types/api.types";
+import { deriveTableNames } from "@/utils";
 import { getEmployeeContext } from "@/utils/context";
-import { buildQuery } from "@/utils/prisma";
+import { buildQuery, prisma } from "@/utils/prisma";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/utils/prisma";
+
+const columnCache = new Map<string, string[]>();
 
 export class BaseService<T> {
   protected model: any;
-  protected entityName: string | undefined;
-  protected modelName: string | undefined;
+  protected entityName?: string;
+  protected modelName?: string;
 
-  private static fieldCache = new Map<string, string[]>();
-
-  private async ensureFields(): Promise<string[]> {
+  private async getColumns(): Promise<string[]> {
     if (!this.modelName) return [];
 
-    const cached = BaseService.fieldCache.get(this.modelName);
-    if (cached) return cached;
+    if (columnCache.has(this.modelName)) {
+      return columnCache.get(this.modelName)!;
+    }
 
-    const rows = await prisma.$queryRaw<
-      Array<{ column_name: string }>
-    >`SELECT column_name
-       FROM information_schema.columns
-       WHERE table_name = ${this.modelName.toLowerCase()}
-         AND table_schema = 'public'`;
+    const tables = deriveTableNames(this.modelName);
+    const rows = await prisma.$queryRaw<Array<{ column_name: string }>>`
+      SELECT column_name
+      FROM   information_schema.columns
+      WHERE  table_schema = 'public'
+        AND  table_name   IN (${Prisma.join(tables)})
+    `;
 
     const cols = rows.map((r) => r.column_name);
-    BaseService.fieldCache.set(this.modelName, cols);
+    columnCache.set(this.modelName, cols);
     return cols;
   }
+
+  private async withAuditCols(payload: any) {
+    const cols = await this.getColumns();
+    const employee = getEmployeeContext();
+
+    if (cols.includes("createdById") && !payload.createdById) {
+      payload.createdById = employee.id;
+    }
+    if (cols.includes("updatedById") && !payload.updatedById) {
+      payload.updatedById = employee.id;
+    }
+    return payload;
+  }
+
+  /* ------------------------------------------------------------------ CRUD */
 
   async getAll(
     params?: IQueryParams<T>,
@@ -36,44 +53,33 @@ export class BaseService<T> {
   ): Promise<IServiceResult<T[]>> {
     try {
       const { where, orderBy, page, take, skip, select, include } = buildQuery(
-        params || {},
-        params?.searchFields?.map((field) => field.toString()) || []
+        params ?? {},
+        params?.searchFields?.map(String) ?? []
       );
 
-      const queryOptions: any = {
-        where,
-        orderBy,
-        take,
-        skip,
-      };
+      const query = { where, orderBy, take, skip } as any;
+      if (select) query.select = select;
+      else if (include) query.include = include;
 
-      if (select) {
-        queryOptions.select = select;
-      } else if (include) {
-        queryOptions.include = include;
-      }
-
-      const [entities, total] = await Promise.all([
-        this.model.findMany(queryOptions),
-        this.model.count({ where }),
+      const [items, total] = await Promise.all([
+        (tx ?? this.model).findMany(query),
+        (tx ?? this.model).count({ where }),
       ]);
-
-      const totalPages = take ? Math.ceil(total / take) : 1;
 
       return {
         success: true,
-        data: entities,
+        data: items,
         meta: {
           page,
           limit: take,
           total,
-          totalPages,
+          totalPages: take ? Math.ceil(total / (take || 1)) : 1,
         },
       };
-    } catch (error: any) {
-      console.error(`Error in ${this.entityName}.getAll:`, error);
+    } catch (err: any) {
+      console.error(`Error in ${this.entityName}.getAll:`, err);
       throw new BadRequestError(
-        `Failed to fetch ${this.entityName} list: ${error.message}`
+        `Failed to fetch ${this.entityName} list: ${err.message}`
       );
     }
   }
@@ -82,67 +88,39 @@ export class BaseService<T> {
     id: string,
     tx?: Prisma.TransactionClient,
     include?: any,
-    throwError: boolean = false
+    throwError = false
   ): Promise<IServiceResult<T>> {
     try {
-      const queryOptions: any = {
-        where: { id },
-      };
+      const query = { where: { id }, ...(include ? { include } : {}) } as any;
+      const entity = await (tx ?? this.model).findUnique(query);
 
-      if (include) {
-        queryOptions.include = include;
-      }
-
-      const entity = await this.model.findUnique(queryOptions);
-
-      if (!entity) {
+      if (!entity)
         throw new NotFoundError(`${this.entityName} with id ${id} not found`);
-      }
-
       return { success: true, data: entity };
-    } catch (error: any) {
-      if (throwError) {
-        throw error;
-      }
+    } catch (err: any) {
+      if (throwError) throw err;
       return { success: false, data: null as any };
     }
   }
 
   async create(
-    data: Omit<T, "id" | "createdAt" | "updatedAt"> | any,
+    data: Omit<T, "id" | "createdAt" | "updatedAt"> & Record<string, any>,
     tx?: Prisma.TransactionClient
   ): Promise<IServiceResult<T>> {
     try {
-      const cols = await this.ensureFields();
-      const employee = getEmployeeContext();
-
-      const payload: any = { ...data };
-      if (cols.includes("createdById")) payload.createdById = employee.id;
-      if (cols.includes("updatedById")) payload.updatedById = employee.id;
-
-      const entity = await this.model.create({ data: payload });
-
-      if (!entity) {
-        throw new BadRequestError(`Failed to create ${this.entityName}`);
-      }
-
+      const payload = await this.withAuditCols({ ...data });
+      const entity = await (tx ?? this.model).create({ data: payload });
       return { success: true, data: entity };
-    } catch (error: any) {
-      console.error(`Error in ${this.entityName}.create:`, error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") {
-          throw new BadRequestError(
-            `A ${this.entityName} with this data already exists`
-          );
-        }
-        if (error.code === "P2003") {
-          throw new BadRequestError(
-            `Invalid reference in ${this.entityName} creation`
-          );
-        }
+    } catch (err: any) {
+      console.error(`Error in ${this.entityName}.create:`, err);
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2002")
+          throw new BadRequestError(`Duplicate ${this.entityName}`);
+        if (err.code === "P2003")
+          throw new BadRequestError(`Invalid reference on ${this.entityName}`);
       }
       throw new BadRequestError(
-        `Failed to create ${this.entityName}: ${error.message}`
+        `Failed to create ${this.entityName}: ${err.message}`
       );
     }
   }

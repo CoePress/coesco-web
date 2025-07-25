@@ -437,11 +437,7 @@ export class MachineMonitorService {
               startTime: new Date(),
               endTime: null,
               duration: 0,
-              machine: {
-                connect: {
-                  id: machine.id,
-                },
-              },
+              machineId: machine.id,
             });
           } catch (error) {
             logger.error(
@@ -519,11 +515,7 @@ export class MachineMonitorService {
               startTime: new Date(),
               endTime: null,
               duration: 0,
-              machine: {
-                connect: {
-                  id: machine.id,
-                },
-              },
+              machineId: machine.id,
             });
           } catch (error) {
             logger.error(

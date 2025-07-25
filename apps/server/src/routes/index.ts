@@ -8,16 +8,21 @@ import companyRoutes from "./company.routes";
 import addressRoutes from "./address.routes";
 import contactRoutes from "./contact.router";
 import journeyRoutes from "./journey.routes";
-import quoteRoutes from "./quote.routes";
+// import quoteRoutes from "./quote.routes";
 import itemRoutes from "./item.routes";
 import configurationRoutes from "./config-builder";
 import systemRoutes from "./system.routes";
 import performanceRoutes from "./performance.routes";
 import lockRoutes from "./lock.routes";
+import { ExampleController } from "@/controllers/exmaple";
+
+const exampleController = new ExampleController();
 
 const router = Router();
 
 router.use("/auth", authRoutes);
+router.use("/system", systemRoutes);
+
 router.use("/email", protect, emailRoutes);
 router.use("/machines", protect, machineRoutes);
 router.use("/employees", protect, employeeRoutes);
@@ -25,11 +30,18 @@ router.use("/companies", protect, companyRoutes);
 router.use("/addresses", protect, addressRoutes);
 router.use("/contacts", protect, contactRoutes);
 router.use("/journeys", protect, journeyRoutes);
-router.use("/quotes", protect, quoteRoutes);
+// router.use("/quotes", protect, quoteRoutes);
 router.use("/items", protect, itemRoutes);
 router.use("/configurations", protect, configurationRoutes);
-router.use("/system", systemRoutes);
 router.use("/performance", protect, performanceRoutes);
 router.use("/lock", protect, lockRoutes);
+
+router.get("/example", exampleController.getAll);
+router.get("/example/:id", exampleController.getById);
+router.post("/example/search", exampleController.search);
+router.post("/example", exampleController.create);
+router.put("/example/:id", exampleController.update);
+router.delete("/example/:id", exampleController.delete);
+router.get("/example/validate", exampleController.validate);
 
 export default router;

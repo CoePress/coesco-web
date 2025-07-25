@@ -48,6 +48,7 @@ model Employee {
   createdJourneys  Journey[] @relation("JourneyCreatedBy")
   createdQuotes    Quote[]   @relation("QuoteCreatedBy")
   approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
+  ownedQuotes      Quote[]   @relation("QuoteOwnedBy")
 
   @@index([number])
   @@index([createdById])
@@ -418,6 +419,7 @@ model Quote {
   number       String
   revision     String
   status       QuoteStatus
+  ownerId      String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   approvedAt   DateTime?
@@ -427,6 +429,7 @@ model Quote {
   approvedById String?
 
   journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  owner      Employee?   @relation("QuoteOwnedBy", fields: [ownerId], references: [id])
   createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
   approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
   items      QuoteItem[] @relation("QuoteItems")
