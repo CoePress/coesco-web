@@ -96,7 +96,9 @@ export class GenericService<T> {
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
 
-      const before = await model.findUnique({ where: { id } });
+      const scope = await this.getScope();
+      const where = { AND: [{ id }, scope ?? {}] };
+      const before = await model.findFirst({ where });
       if (!before)
         throw new Error(`Cannot update: ${this.modelName} ${id} not found`);
 
@@ -152,9 +154,17 @@ export class GenericService<T> {
     const ctx = getRequestContext();
     const cols = columns ?? (await this.getColumns());
 
-    if (!cols.includes("ownerId")) return;
+    const scope: Record<string, any>[] = [];
 
-    return { OR: [{ ownerId: null }, { ownerId: ctx.employeeId }] };
+    if (cols.includes("ownerId")) {
+      scope.push({ OR: [{ ownerId: null }, { ownerId: ctx.employeeId }] });
+    }
+
+    if (cols.includes("deletedAt")) {
+      scope.push({ deletedAt: null });
+    }
+
+    return scope.length ? { AND: scope } : undefined;
   }
 
   private async getMetaFields(opts: {
