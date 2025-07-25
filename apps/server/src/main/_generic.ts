@@ -12,13 +12,6 @@ export class GenericService<T> {
   protected modelName?: string;
   private _columns?: string[];
 
-  async test() {
-    const ctx = getRequestContext();
-    const columns = await this.getColumns();
-    const scope = await this.getScope(columns);
-    return { ctx, columns, scope };
-  }
-
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const { query, finalWhere, page, take } =
       await this.buildQueryParams(params);
@@ -44,12 +37,18 @@ export class GenericService<T> {
 
   async getById(id: string, tx?: Prisma.TransactionClient) {
     const scope = await this.getScope();
-    return { scope };
-  }
+    const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
 
-  async search(term: string, tx?: Prisma.TransactionClient) {
-    const scope = await this.getScope();
-    return { scope };
+    const item = await model.findFirst({
+      where: {
+        AND: [{ id }, scope ?? {}],
+      },
+    });
+
+    return {
+      success: true,
+      data: item,
+    };
   }
 
   async create(data: any, tx?: Prisma.TransactionClient) {

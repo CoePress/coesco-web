@@ -22,15 +22,6 @@ export class ExampleController {
     }
   }
 
-  async search(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await exampleService.search(req.body);
-      res.status(200).json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
-
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await exampleService.create(req.body);
