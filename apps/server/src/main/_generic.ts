@@ -13,12 +13,17 @@ export class GenericService<T> {
   private _columns?: string[];
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
-    const { query, finalWhere, page, take } =
-      await this.buildQueryParams(params);
+    const searchFields = this.getDefaultSearchFields();
+    const { query, finalWhere, page, take } = await this.buildQueryParams(
+      params,
+      searchFields
+    );
+
+    const client = tx ?? this.model;
 
     const [items, total] = await Promise.all([
-      this.model.findMany(query),
-      this.model.count({ where: finalWhere }),
+      client.findMany(query),
+      client.count({ where: finalWhere }),
     ]);
 
     const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
@@ -52,17 +57,11 @@ export class GenericService<T> {
   }
 
   async create(data: any, tx?: Prisma.TransactionClient) {
-    const meta = await this.getMetaFields({
-      for: "create",
-      timestamps: true,
-    });
+    const meta = await this.getMetaFields({ for: "create", timestamps: true });
   }
 
   async update(id: string, data: any, tx?: Prisma.TransactionClient) {
-    const meta = await this.getMetaFields({
-      for: "update",
-      timestamps: true,
-    });
+    const meta = await this.getMetaFields({ for: "update", timestamps: true });
   }
 
   async delete(id: string, tx?: Prisma.TransactionClient) {
@@ -87,9 +86,9 @@ export class GenericService<T> {
     const tables = deriveTableNames(this.modelName);
     const rows = await prisma.$queryRaw<Array<{ column_name: string }>>`
       SELECT column_name
-      FROM   information_schema.columns
-      WHERE  table_schema = 'public'
-        AND  table_name   IN (${Prisma.join(tables)})
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name IN (${Prisma.join(tables)})
     `;
 
     const cols = rows.map((r) => r.column_name);
@@ -104,13 +103,9 @@ export class GenericService<T> {
     const ctx = getRequestContext();
     const cols = columns ?? (await this.getColumns());
 
-    if (!cols.includes("ownerId")) {
-      return undefined;
-    }
+    if (!cols.includes("ownerId")) return;
 
-    return {
-      OR: [{ ownerId: null }, { ownerId: ctx.employeeId }],
-    };
+    return { OR: [{ ownerId: null }, { ownerId: ctx.employeeId }] };
   }
 
   private async getMetaFields(opts: {
@@ -121,7 +116,6 @@ export class GenericService<T> {
     const ctx = getRequestContext();
     const columns = await this.getColumns();
     const meta: Record<string, any> = {};
-
     const now = new Date();
 
     if (opts.for === "create") {
@@ -145,18 +139,18 @@ export class GenericService<T> {
     return meta;
   }
 
-  private async buildQueryParams(params?: IQueryParams<T>): Promise<any> {
+  private async buildQueryParams(
+    params?: IQueryParams<T>,
+    searchFields?: (string | { field: string; weight: number })[]
+  ): Promise<any> {
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
       params ?? {},
-      params?.searchFields?.map(String) ?? []
+      searchFields
     );
-
     const columns = await this.getColumns();
     const scope = await this.getScope(columns);
 
-    const finalWhere = {
-      AND: [where ?? {}, scope ?? {}],
-    };
+    const finalWhere = { AND: [where ?? {}, scope ?? {}] };
 
     const query: any = {
       where: finalWhere,
@@ -168,11 +162,13 @@ export class GenericService<T> {
     if (select) query.select = select;
     else if (include) query.include = include;
 
-    return {
-      query,
-      finalWhere,
-      page,
-      take,
-    };
+    return { query, finalWhere, page, take };
+  }
+
+  protected getDefaultSearchFields(): (
+    | string
+    | { field: string; weight: number }
+  )[] {
+    return [];
   }
 }
