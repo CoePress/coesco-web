@@ -528,14 +528,18 @@ model FieldsToWatch {
 }
 
 model AuditLog {
-  id         String      @id @default(cuid())
-  action     AuditAction
-  entityType String
-  entityId   String
-  changedBy  String
-  changes    Json
-  createdAt  DateTime    @default(now())
+  id        String      @id @default(uuid())
+  action    AuditAction
+  model     String
+  recordId  String
+  changedBy String
+  diff      Json
+  createdAt DateTime    @default(now())
 
+  @@index([model])
+  @@index([recordId])
+  @@index([changedBy])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 

@@ -1,4 +1,4 @@
-import { deriveTableNames } from "@/utils";
+import { deriveTableNames, getObjectDiff } from "@/utils";
 import { getRequestContext } from "./context";
 import { Prisma } from "@prisma/client";
 import { buildQuery, prisma } from "@/utils/prisma";
@@ -58,11 +58,29 @@ export class GenericService<T> {
 
   async create(data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
-    return meta;
+    const payload = { ...data, ...meta };
+
+    if (tx) {
+      const model = (tx as any)[this.modelName!];
+      const created = await model.create({ data: payload });
+      await this.log("CREATE", undefined, created, tx);
+      return { success: true, data: created };
+    }
+
+    const result = await prisma.$transaction(async (client) => {
+      const model = (client as any)[this.modelName!];
+      const created = await model.create({ data: payload });
+      await this.log("CREATE", undefined, created, client);
+      return created;
+    });
+
+    return { success: true, data: result };
   }
 
   async update(id: string, data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "update", timestamps: true });
+    this.validate(data);
+
     return meta;
   }
 
@@ -73,12 +91,6 @@ export class GenericService<T> {
       softDelete: true,
     });
     return meta;
-  }
-
-  protected validate() {}
-
-  protected getSearchFields(): (string | { field: string; weight: number })[] {
-    return [];
   }
 
   private async getColumns(): Promise<string[]> {
@@ -170,5 +182,42 @@ export class GenericService<T> {
     else if (include) query.include = include;
 
     return { query, finalWhere, page, take };
+  }
+
+  private async log(
+    action: "CREATE" | "UPDATE" | "DELETE",
+    before?: Record<string, any>,
+    after?: Record<string, any>,
+    tx?: Prisma.TransactionClient
+  ) {
+    if (this.modelName === "auditLog") return;
+
+    const ctx = getRequestContext();
+    const auditModel = tx?.auditLog ?? prisma.auditLog;
+
+    const recordId = after?.id ?? before?.id;
+    if (!recordId) return;
+
+    const diff = getObjectDiff(before, after);
+    if (Object.keys(diff).length === 0) return;
+
+    await auditModel.create({
+      data: {
+        model: this.modelName!,
+        recordId,
+        action,
+        changedBy: ctx.employeeId ?? "system",
+        diff,
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  protected validate(data: any) {
+    return;
+  }
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [];
   }
 }

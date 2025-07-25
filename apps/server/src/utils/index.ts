@@ -289,3 +289,19 @@ export const deriveTableNames = (modelName: string): string[] => {
 
   return plural === snake ? [snake] : [snake, plural];
 };
+
+export const getObjectDiff = (
+  before: Record<string, any> = {},
+  after: Record<string, any> = {}
+): Record<string, { before: any; after: any }> => {
+  const diff: Record<string, { before: any; after: any }> = {};
+
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
+    if (before?.[key] !== after?.[key]) {
+      diff[key] = { before: before?.[key], after: after?.[key] };
+    }
+  }
+
+  return diff;
+};
