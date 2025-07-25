@@ -18,9 +18,6 @@ export class ExampleService extends GenericService<Machine> {
     return [
       { field: "name", weight: 10 },
       { field: "slug", weight: 8 },
-      { field: "type", weight: 6 },
-      { field: "controllerModel", weight: 5 },
-      { field: "connectionHost", weight: 3 },
     ];
   }
 }
