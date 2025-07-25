@@ -48,4 +48,13 @@ export class ExampleController {
       next(err);
     }
   }
+
+  async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await exampleService.getHistory(req.params.id);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }

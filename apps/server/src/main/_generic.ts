@@ -56,6 +56,22 @@ export class GenericService<T> {
     };
   }
 
+  async getHistory(id: string) {
+    if (!this.modelName) throw new Error("Missing model name");
+
+    const entries = await prisma.auditLog.findMany({
+      where: { model: this.modelName, recordId: id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return entries.map((entry) => ({
+      action: entry.action,
+      actor: { id: entry.changedBy },
+      timestamp: entry.createdAt,
+      diff: entry.diff as Record<string, { before: any; after: any }>,
+    }));
+  }
+
   async create(data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
@@ -106,6 +122,7 @@ export class GenericService<T> {
     return meta;
   }
 
+  // Private Methods
   private async getColumns(): Promise<string[]> {
     if (this._columns) return this._columns;
     if (!this.modelName) return [];
@@ -226,6 +243,7 @@ export class GenericService<T> {
     });
   }
 
+  // Protected Methods
   protected validate(data: any) {
     return;
   }

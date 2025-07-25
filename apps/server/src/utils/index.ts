@@ -295,13 +295,25 @@ export const getObjectDiff = (
   after: Record<string, any> = {}
 ): Record<string, { before: any; after: any }> => {
   const diff: Record<string, { before: any; after: any }> = {};
-
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+
   for (const key of keys) {
-    if (before?.[key] !== after?.[key]) {
+    const a = normalizeValue(before?.[key]);
+    const b = normalizeValue(after?.[key]);
+
+    if (!isEqual(a, b)) {
       diff[key] = { before: before?.[key], after: after?.[key] };
     }
   }
 
   return diff;
+};
+
+const normalizeValue = (value: any) => {
+  if (value instanceof Date) return value.toISOString();
+  return value;
+};
+
+const isEqual = (a: any, b: any): boolean => {
+  return JSON.stringify(a) === JSON.stringify(b);
 };
