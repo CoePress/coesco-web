@@ -236,18 +236,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
   const extractDirectionArray = () => {
     const result: string[] = [];
     
-    rollerKeys.forEach((key, index) => {
-      let rollerData;
+    rollerKeys.forEach((key) => {
       if (key === "middle" && rollerKeys.filter(k => k === "middle").length > 1) {
-        const middleIndex = rollerKeys.slice(0, index + 1).filter(k => k === "middle").length - 1;
-        rollerData = Array.isArray(rollers.middle) ? rollers.middle[middleIndex] : undefined;
       } else {
         if (key === "first" || key === "last") {
-          rollerData = rollers[key as "first" | "last"];
         } else if (key === "middle") {
-          rollerData = rollers.middle;
         } else {
-          rollerData = undefined;
         }
       }
       
@@ -488,7 +482,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
                 ))}
               </tr>
               <tr className="bg-gray-100">
-                {rollerColumns.map((column, index) => (
+                {rollerColumns.map((_column, index) => (
                   index === rollerColumns.length - 1 ? (
                     // Last roller only has "up"
                     <th key={`${index}-up`} className="border border-gray-300 p-1 text-center text-xs font-medium">
