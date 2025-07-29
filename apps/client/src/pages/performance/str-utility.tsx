@@ -2,32 +2,27 @@ import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
-import { usePerformanceSheet } from "@/contexts/performance.context";
+import { PerformanceData } from "@/contexts/performance.context";
+import { 
+    STR_MODEL_OPTIONS,
+    STR_WIDTH_OPTIONS,
+    PAYOFF_OPTIONS,
+    MATERIAL_TYPE_OPTIONS,
+    YES_NO_OPTIONS,
+    STR_HORSEPOWER_OPTIONS,
+    STR_FEED_RATE_OPTIONS,
+ } from "@/utils/select-options";
 
-const STR_UTILITY_PAYOFF_OPTIONS = [
-  { value: "TOP", label: "TOP" },
-  { value: "BOTTOM", label: "BOTTOM" },
-  { value: "LEFT", label: "LEFT" },
-  { value: "RIGHT", label: "RIGHT" },
-];
+export interface StrUtilityProps {
+  data: PerformanceData;
+  isEditing: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+}
 
-const STR_UTILITY_MATERIAL_OPTIONS = [
-  { value: "Cold Rolled Steel", label: "Cold Rolled Steel" },
-  { value: "Hot Rolled Steel", label: "Hot Rolled Steel" },
-  { value: "Stainless Steel", label: "Stainless Steel" },
-  { value: "Aluminum", label: "Aluminum" },
-  { value: "Other", label: "Other" },
-];
-
-const AUTO_BRAKE_COMPENSATION_OPTIONS = [
-  { value: "YES", label: "YES" },
-  { value: "NO", label: "NO" },
-];
-
-const StrUtility = () => {
-  const { performanceData, updatePerformanceData } = usePerformanceSheet();
-
+const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!isEditing) return;
+
     const { name, value } = e.target;
 
     // Handle nested field updates based on field name pattern
@@ -40,7 +35,7 @@ const StrUtility = () => {
       let current = updateObj;
       
       // Navigate to the correct nested level
-      const sectionData = performanceData[section as keyof typeof performanceData];
+      const sectionData = data[section as keyof typeof data];
       current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
       current = current[section];
       
@@ -53,7 +48,7 @@ const StrUtility = () => {
       // Set the final value
       current[rest[rest.length - 1]] = value;
       
-      updatePerformanceData(updateObj);
+      onChange(updateObj);
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -62,7 +57,7 @@ const StrUtility = () => {
         },
         date: {
           dates: {
-            ...performanceData.dates,
+            ...data.dates,
             date: value,
           },
         },
@@ -72,38 +67,38 @@ const StrUtility = () => {
       };
 
       if (fieldMappings[name]) {
-        updatePerformanceData(fieldMappings[name]);
+        onChange(fieldMappings[name]);
       }
     }
   };
 
   // Calculate status indicators
   const getJackForceStatus = () => {
-    const required = Number(performanceData.straightener?.required?.force || 0);
-    const available = Number(performanceData.straightener?.jackForceAvailable || 0);
+    const required = Number(data.straightener?.required?.force || 0);
+    const available = Number(data.straightener?.jackForceAvailable || 0);
     return required <= available ? "JACK FORCE OK" : "JACK FORCE INSUFFICIENT";
   };
 
   const getPinchGearStatus = () => {
-    const requiredTorque = Number(performanceData.straightener?.rolls?.pinch?.requiredGearTorque || 0);
-    const ratedTorque = Number(performanceData.straightener?.rolls?.pinch?.ratedTorque || 0);
+    const requiredTorque = Number(data.straightener?.rolls?.pinch?.requiredGearTorque || 0);
+    const ratedTorque = Number(data.straightener?.rolls?.pinch?.ratedTorque || 0);
     return requiredTorque <= ratedTorque ? "PINCH GEAR OK" : "PINCH GEAR INSUFFICIENT";
   };
 
   const getStrGearStatus = () => {
-    const requiredTorque = Number(performanceData.straightener?.rolls?.straightener?.requiredGearTorque || 0);
-    const ratedTorque = Number(performanceData.straightener?.rolls?.straightener?.ratedTorque || 0);
+    const requiredTorque = Number(data.straightener?.rolls?.straightener?.requiredGearTorque || 0);
+    const ratedTorque = Number(data.straightener?.rolls?.straightener?.ratedTorque || 0);
     return requiredTorque <= ratedTorque ? "STR GEAR OK" : "STR GEAR INSUFFICIENT";
   };
 
   const getHpStatus = () => {
-    const required = Number(performanceData.straightener?.required?.horsepower || 0);
-    const available = Number(performanceData.straightener?.horsepower || 0);
+    const required = Number(data.straightener?.required?.horsepower || 0);
+    const available = Number(data.straightener?.horsepower || 0);
     return required <= available ? "HP SUFFICIENT" : "HP INSUFFICIENT";
   };
 
   const getFpmStatus = () => {
-    const feedRate = Number(performanceData.straightener?.feedRate || 0);
+    const feedRate = Number(data.straightener?.feedRate || 0);
     return feedRate > 0 ? "FPM SUFFICIENT" : "FPM INSUFFICIENT";
   };
 
@@ -118,14 +113,14 @@ const StrUtility = () => {
           <Input
             label="Customer"
             name="customer"
-            value={performanceData.customer || ""}
+            value={data.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={performanceData.dates?.date || ""}
+            value={data.dates?.date || ""}
             onChange={handleChange}
           />
         </div>
@@ -140,28 +135,29 @@ const StrUtility = () => {
           <Select
             label="Payoff"
             name="straightener.payoff"
-            value={performanceData.straightener?.payoff || ""}
+            value={data.straightener?.payoff || ""}
             onChange={handleChange}
-            options={STR_UTILITY_PAYOFF_OPTIONS}
+            options={PAYOFF_OPTIONS}
           />
-          <Input
+          <Select
             label="Str. Model"
             name="straightener.model"
-            value={performanceData.straightener?.model || ""}
+            value={data.straightener?.model || ""}
             onChange={handleChange}
+            options={STR_MODEL_OPTIONS}
           />
-          <Input
+          <Select
             label="Str. Width (in.)"
             name="straightener.width"
-            type="number"
-            value={performanceData.straightener?.width || ""}
+            value={String(data.straightener?.width ?? "")}
             onChange={handleChange}
+            options={STR_WIDTH_OPTIONS}
           />
           <Input
             label="No. of Str. Rolls"
             name="straightener.rolls.numberOfRolls"
             type="number"
-            value={performanceData.straightener?.rolls?.numberOfRolls || ""}
+            value={data.straightener?.rolls?.numberOfRolls || ""}
             onChange={handleChange}
           />
         </div>
@@ -177,43 +173,43 @@ const StrUtility = () => {
             label="Coil Wt. Capacity (lbs)"
             name="straightener.actualCoilWeight"
             type="number"
-            value={performanceData.straightener?.actualCoilWeight || ""}
+            value={data.straightener?.actualCoilWeight || ""}
             onChange={handleChange}
           />
           <Input
             label="Coil ID. (in)"
             name="coil.coilID"
             type="number"
-            value={performanceData.coil?.coilID || ""}
+            value={data.coil?.coilID || ""}
             onChange={handleChange}
           />
           <Input
             label="Coil Width (in)"
             name="material.coilWidth"
             type="number"
-            value={performanceData.material?.coilWidth || ""}
+            value={data.material?.coilWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Thickness (in)"
             name="material.materialThickness"
             type="number"
-            value={performanceData.material?.materialThickness || ""}
+            value={data.material?.materialThickness || ""}
             onChange={handleChange}
           />
           <Input
             label="Yield Strength (psi)"
             name="material.maxYieldStrength"
             type="number"
-            value={performanceData.material?.maxYieldStrength || ""}
+            value={data.material?.maxYieldStrength || ""}
             onChange={handleChange}
           />
           <Select
             label="Material"
             name="material.materialType"
-            value={performanceData.material?.materialType || ""}
+            value={data.material?.materialType || ""}
             onChange={handleChange}
-            options={STR_UTILITY_MATERIAL_OPTIONS}
+            options={MATERIAL_TYPE_OPTIONS}
           />
         </div>
       </Card>
@@ -224,33 +220,33 @@ const StrUtility = () => {
           Operating Parameters
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Input
+          <Select
             label="Horse Power (HP)"
             name="straightener.horsepower"
-            type="number"
-            value={performanceData.straightener?.horsepower || ""}
+            value={String(data.straightener?.horsepower ?? "")}
             onChange={handleChange}
+            options={STR_HORSEPOWER_OPTIONS}
           />
           <Input
             label="Acceleration (ft/sec²)"
             name="straightener.acceleration"
             type="number"
-            value={performanceData.straightener?.acceleration || ""}
+            value={data.straightener?.acceleration || ""}
             onChange={handleChange}
           />
-          <Input
+          <Select
             label="Feed Rate (ft/min)"
             name="straightener.feedRate"
-            type="number"
-            value={performanceData.straightener?.feedRate || ""}
+            value={String(data.straightener?.feedRate ?? "")}
             onChange={handleChange}
+            options={STR_FEED_RATE_OPTIONS}
           />
           <Select
             label="Auto. Brake Compen."
             name="straightener.autoBrakeCompensation"
-            value={performanceData.straightener?.autoBrakeCompensation || ""}
+            value={data.straightener?.autoBrakeCompensation || ""}
             onChange={handleChange}
-            options={AUTO_BRAKE_COMPENSATION_OPTIONS}
+            options={YES_NO_OPTIONS}
           />
         </div>
       </Card>
@@ -265,42 +261,42 @@ const StrUtility = () => {
             label="Str. Roll Dia. (in)"
             name="straightener.rolls.straightener.diameter"
             type="number"
-            value={performanceData.straightener?.rolls?.straightener?.diameter || ""}
+            value={data.straightener?.rolls?.straightener?.diameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Pinch Roll Dia. (in)"
             name="straightener.rolls.pinch.diameter"
             type="number"
-            value={performanceData.straightener?.rolls?.pinch?.diameter || ""}
+            value={data.straightener?.rolls?.pinch?.diameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Center Dist. (in)"
             name="straightener.centerDistance"
             type="number"
-            value={performanceData.straightener?.centerDistance || ""}
+            value={data.straightener?.centerDistance || ""}
             onChange={handleChange}
           />
           <Input
             label="Jack Force Avail. (lbs)"
             name="straightener.jackForceAvailable"
             type="number"
-            value={performanceData.straightener?.jackForceAvailable || ""}
+            value={data.straightener?.jackForceAvailable || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roll Depth (in)"
             name="straightener.rolls.depth.withoutMaterial"
             type="number"
-            value={performanceData.straightener?.rolls?.depth?.withoutMaterial || ""}
+            value={data.straightener?.rolls?.depth?.withoutMaterial || ""}
             onChange={handleChange}
           />
           <Input
             label="Modulus (psi)"
             name="straightener.modulus"
             type="number"
-            value={performanceData.straightener?.modulus || ""}
+            value={data.straightener?.modulus || ""}
             onChange={handleChange}
           />
         </div>
@@ -321,14 +317,14 @@ const StrUtility = () => {
                 label="# teeth"
                 name="straightener.gear.pinchRoll.numberOfTeeth"
                 type="number"
-                value={performanceData.straightener?.gear?.pinchRoll?.numberOfTeeth || ""}
+                value={data.straightener?.gear?.pinchRoll?.numberOfTeeth || ""}
                 onChange={handleChange}
               />
               <Input
                 label="DP"
                 name="straightener.gear.pinchRoll.dp"
                 type="number"
-                value={performanceData.straightener?.gear?.pinchRoll?.dp || ""}
+                value={data.straightener?.gear?.pinchRoll?.dp || ""}
                 onChange={handleChange}
               />
             </div>
@@ -342,14 +338,14 @@ const StrUtility = () => {
                 label="# teeth"
                 name="straightener.gear.straightenerRoll.numberOfTeeth"
                 type="number"
-                value={performanceData.straightener?.gear?.straightenerRoll?.numberOfTeeth || ""}
+                value={data.straightener?.gear?.straightenerRoll?.numberOfTeeth || ""}
                 onChange={handleChange}
               />
               <Input
                 label="DP"
                 name="straightener.gear.straightenerRoll.dp"
                 type="number"
-                value={performanceData.straightener?.gear?.straightenerRoll?.dp || ""}
+                value={data.straightener?.gear?.straightenerRoll?.dp || ""}
                 onChange={handleChange}
               />
             </div>
@@ -360,14 +356,14 @@ const StrUtility = () => {
             label="Face Width (in)"
             name="straightener.gear.faceWidth"
             type="number"
-            value={performanceData.straightener?.gear?.faceWidth || ""}
+            value={data.straightener?.gear?.faceWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Cont. Angle (degree)"
             name="straightener.gear.contAngle"
             type="number"
-            value={performanceData.straightener?.gear?.contAngle || ""}
+            value={data.straightener?.gear?.contAngle || ""}
             onChange={handleChange}
           />
         </div>
@@ -385,14 +381,14 @@ const StrUtility = () => {
               <Input
                 label="Required Force (lbs)"
                 name="straightener.required.force"
-                value={performanceData.straightener?.required?.force || ""}
+                value={data.straightener?.required?.force || ""}
                 readOnly
                 className="bg-green-100"
               />
               <Input
                 label="Rated Force (lbs)"
                 name="straightener.required.ratedForce"
-                value={performanceData.straightener?.required?.ratedForce || ""}
+                value={data.straightener?.required?.ratedForce || ""}
                 readOnly
               />
             </div>
@@ -400,14 +396,14 @@ const StrUtility = () => {
               <Input
                 label="Pinch Roll Req. Torque"
                 name="straightener.rolls.pinch.requiredGearTorque"
-                value={performanceData.straightener?.rolls?.pinch?.requiredGearTorque || ""}
+                value={data.straightener?.rolls?.pinch?.requiredGearTorque || ""}
                 readOnly
                 className="bg-green-100"
               />
               <Input
                 label="Pinch Roll Rated Torque"
                 name="straightener.rolls.pinch.ratedTorque"
-                value={performanceData.straightener?.rolls?.pinch?.ratedTorque || ""}
+                value={data.straightener?.rolls?.pinch?.ratedTorque || ""}
                 readOnly
               />
             </div>
@@ -415,14 +411,14 @@ const StrUtility = () => {
               <Input
                 label="Str. Roll Req. Torque"
                 name="straightener.rolls.straightener.requiredGearTorque"
-                value={performanceData.straightener?.rolls?.straightener?.requiredGearTorque || ""}
+                value={data.straightener?.rolls?.straightener?.requiredGearTorque || ""}
                 readOnly
                 className="bg-green-100"
               />
               <Input
                 label="Str. Roll Rated Torque"
                 name="straightener.rolls.straightener.ratedTorque"
-                value={performanceData.straightener?.rolls?.straightener?.ratedTorque || ""}
+                value={data.straightener?.rolls?.straightener?.ratedTorque || ""}
                 readOnly
               />
             </div>
@@ -430,7 +426,7 @@ const StrUtility = () => {
               <Input
                 label="Horse Power Required (HP)"
                 name="straightener.required.horsepower"
-                value={performanceData.straightener?.required?.horsepower || ""}
+                value={data.straightener?.required?.horsepower || ""}
                 readOnly
                 className="bg-green-100"
               />
@@ -448,13 +444,13 @@ const StrUtility = () => {
               <Input
                 label="Actual Coil Wt. (lbs)"
                 name="straightener.actualCoilWeight"
-                value={performanceData.straightener?.actualCoilWeight || ""}
+                value={data.straightener?.actualCoilWeight || ""}
                 readOnly
               />
               <Input
                 label="Coil OD. (in)"
                 name="straightener.coilOD"
-                value={performanceData.straightener?.coilOD || ""}
+                value={data.straightener?.coilOD || ""}
                 readOnly
               />
             </div>
@@ -462,19 +458,19 @@ const StrUtility = () => {
               <Input
                 label="Str. Torque (in lbs)"
                 name="straightener.torque.straightener"
-                value={performanceData.straightener?.torque?.straightener || ""}
+                value={data.straightener?.torque?.straightener || ""}
                 readOnly
               />
               <Input
                 label="Accel. Torque (in lbs)"
                 name="straightener.torque.acceleration"
-                value={performanceData.straightener?.torque?.acceleration || ""}
+                value={data.straightener?.torque?.acceleration || ""}
                 readOnly
               />
               <Input
                 label="Brake Torque (in lbs)"
                 name="straightener.torque.brake"
-                value={performanceData.straightener?.torque?.brake || ""}
+                value={data.straightener?.torque?.brake || ""}
                 readOnly
               />
             </div>

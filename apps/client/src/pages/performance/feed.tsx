@@ -1,32 +1,33 @@
 import { useState, useEffect } from "react";
-import { usePerformanceSheet } from "@/contexts/performance.context";
+import { PerformanceData } from "@/contexts/performance.context";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
+import {
+  FEED_MODEL_OPTIONS,
+  MACHINE_WIDTH_OPTIONS,
+  YES_NO_OPTIONS,
+  SIGMA_5_FEED_MODEL_OPTIONS,
+  SIGMA_5_PULLTHRU_FEED_MODEL_OPTIONS,
+  ALLEN_BRADLEY_FEED_MODEL_OPTIONS,
+} from "@/utils/select-options";
 
-const FEED_TYPE_OPTIONS = [
-  { value: "sigma-v", label: "Sigma V Feed" },
-  { value: "sigma-v-straightener", label: "Sigma V Feed with Straightener" },
-  { value: "allen-bradley", label: "Allen Bradley Feed" },
-];
+export interface FeedProps {
+  data: PerformanceData;
+  isEditing?: boolean;
+  onChange?: (data: PerformanceData) => void;
+}
 
-const LOOP_PIT_OPTIONS = [
-  { value: "Y", label: "Yes" },
-  { value: "N", label: "No" },
-];
-
-const Feed = () => {
-  const { performanceData, updatePerformanceData } = usePerformanceSheet();
-  
+const Feed: React.FC<FeedProps> = ({ data, isEditing, onChange }) => {  
   // Determine feed type based on current data or default
   const getFeedType = () => {
     // Fix: Convert string to boolean for comparison
-    const isPullThruBool = performanceData.feed?.pullThru?.isPullThru === "true";
+    const isPullThruBool = data.feed?.pullThru?.isPullThru === "true";
     if (isPullThruBool) {
       return "sigma-v-straightener";
     }
-    if (performanceData.feed?.model?.includes("CPRF")) {
+    if (data.feed?.model?.includes("CPRF")) {
       return "sigma-v";
     }
     return "sigma-v"; // default
@@ -36,9 +37,11 @@ const Feed = () => {
 
   useEffect(() => {
     setFeedType(getFeedType());
-  }, [performanceData.feed?.model, performanceData.feed?.pullThru?.isPullThru]);
+  }, [data.feed?.model, data.feed?.pullThru?.isPullThru]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!isEditing) return;
+    
     const { name, value } = e.target;
 
     if (name.includes(".")) {
@@ -48,7 +51,7 @@ const Feed = () => {
       let updateObj: any = {};
       let current = updateObj;
       
-      const sectionData = performanceData[section as keyof typeof performanceData];
+      const sectionData = data[section as keyof typeof data];
       current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
       current = current[section];
       
@@ -59,9 +62,16 @@ const Feed = () => {
       }
       
       current[rest[rest.length - 1]] = value;
-      updatePerformanceData(updateObj);
+      if (onChange) {
+        onChange(updateObj);
+      }
     } else {
-      updatePerformanceData({ [name]: value });
+      if (onChange) {
+        onChange({
+          [name]: value,
+          referenceNumber: ""
+        });
+      }
     }
   };
 
@@ -72,9 +82,9 @@ const Feed = () => {
     // Update relevant fields based on feed type
     const updates: any = {
       feed: {
-        ...performanceData.feed,
+        ...data.feed,
         pullThru: {
-          ...performanceData.feed?.pullThru,
+          ...data.feed?.pullThru,
           isPullThru: newFeedType === "sigma-v-straightener" ? "true" : "false",
         }
       }
@@ -84,7 +94,9 @@ const Feed = () => {
       updates.feed.model = "CPRF-S5";
     }
 
-    updatePerformanceData(updates);
+    if (onChange) {
+      onChange(updates);
+    }
   };
 
   const renderSigmaVFields = () => (
@@ -94,14 +106,14 @@ const Feed = () => {
           label="Motor"
           name="feed.motor"
           type="text"
-          value={performanceData.feed?.motor || ""}
+          value={data.feed?.motor || ""}
           onChange={handleChange}
         />
         <Input
           label="AMP"
           name="feed.amp"
           type="text"
-          value={performanceData.feed?.amp || ""}
+          value={data.feed?.amp || ""}
           onChange={handleChange}
         />
       </div>
@@ -111,28 +123,28 @@ const Feed = () => {
           label="STR Max Speed (ft/min)"
           name="feed.maximumVelocity"
           type="number"
-          value={performanceData.feed?.maximumVelocity || ""}
+          value={data.feed?.maximumVelocity || ""}
           onChange={handleChange}
         />
         <Input
           label="Friction in Die (lbs)"
           name="feed.frictionInDie"
           type="number"
-          value={performanceData.feed?.frictionInDie || ""}
+          value={data.feed?.frictionInDie || ""}
           onChange={handleChange}
         />
         <Input
           label="Acceleration Rate (ft/sec²)"
           name="feed.accelerationRate"
           type="number"
-          value={performanceData.feed?.accelerationRate || ""}
+          value={data.feed?.accelerationRate || ""}
           onChange={handleChange}
         />
         <Input
           label="Default Accel (ft/sec²)"
           name="feed.defaultAcceleration"
           type="number"
-          value={performanceData.feed?.defaultAcceleration || ""}
+          value={data.feed?.defaultAcceleration || ""}
           onChange={handleChange}
         />
       </div>
@@ -143,7 +155,7 @@ const Feed = () => {
           name="feed.maxMotorRPM"
           type="number"
           // Fix: Use safe property access with fallback
-          value={(performanceData.feed as any)?.maxMotorRPM || ""}
+          value={(data.feed as any)?.maxMotorRPM || ""}
           onChange={handleChange}
         />
         <Input
@@ -151,7 +163,7 @@ const Feed = () => {
           name="feed.motorInertia"
           type="number"
           // Fix: Use safe property access with fallback
-          value={(performanceData.feed as any)?.motorInertia || ""}
+          value={(data.feed as any)?.motorInertia || ""}
           onChange={handleChange}
         />
         <Input
@@ -159,7 +171,7 @@ const Feed = () => {
           name="feed.maxVelocity"
           type="number"
           // Fix: Use safe property access with fallback
-          value={(performanceData.feed as any)?.maxVelocity || ""}
+          value={(data.feed as any)?.maxVelocity || ""}
           onChange={handleChange}
         />
         <Input
@@ -167,7 +179,7 @@ const Feed = () => {
           name="feed.settleTime"
           type="number"
           // Fix: Use safe property access with fallback
-          value={(performanceData.feed as any)?.settleTime || ""}
+          value={(data.feed as any)?.settleTime || ""}
           onChange={handleChange}
         />
       </div>
@@ -177,28 +189,28 @@ const Feed = () => {
           label="Chart Minimum Length (in)"
           name="feed.chartMinLength"
           type="number"
-          value={performanceData.feed?.chartMinLength || ""}
+          value={data.feed?.chartMinLength || ""}
           onChange={handleChange}
         />
         <Input
           label="Length Increment (in)"
           name="feed.lengthIncrement"
           type="number"
-          value={performanceData.feed?.lengthIncrement || ""}
+          value={data.feed?.lengthIncrement || ""}
           onChange={handleChange}
         />
         <Input
           label="Feed Angle 1 (Deg)"
           name="feed.feedAngle1"
           type="number"
-          value={performanceData.feed?.feedAngle1 || ""}
+          value={data.feed?.feedAngle1 || ""}
           onChange={handleChange}
         />
         <Input
           label="Feed Angle 2 (Deg)"
           name="feed.feedAngle2"
           type="number"
-          value={performanceData.feed?.feedAngle2 || ""}
+          value={data.feed?.feedAngle2 || ""}
           onChange={handleChange}
         />
       </div>
@@ -208,14 +220,14 @@ const Feed = () => {
           label="Ratio"
           name="feed.ratio"
           type="number"
-          value={performanceData.feed?.ratio || ""}
+          value={data.feed?.ratio || ""}
           onChange={handleChange}
         />
         <Input
           label="ReGen (Watts)"
           name="feed.regen"
           type="number"
-          value={performanceData.feed?.regen || ""}
+          value={data.feed?.regen || ""}
           onChange={handleChange}
         />
       </div>
@@ -234,14 +246,14 @@ const Feed = () => {
             label="Straightening Rolls"
             name="feed.pullThru.straightenerRolls"
             type="number"
-            value={performanceData.feed?.pullThru?.straightenerRolls || ""}
+            value={data.feed?.pullThru?.straightenerRolls || ""}
             onChange={handleChange}
           />
           <Input
             label="Str. Pinch Rolls"
             name="feed.pullThru.pinchRolls"
             type="number"
-            value={performanceData.feed?.pullThru?.pinchRolls || ""}
+            value={data.feed?.pullThru?.pinchRolls || ""}
             onChange={handleChange}
           />
           <Input
@@ -249,7 +261,7 @@ const Feed = () => {
             name="straightener.payoffMaxSpeed"
             type="number"
             // Fix: Use safe property access with fallback
-            value={(performanceData.straightener as any)?.payoffMaxSpeed || ""}
+            value={(data.straightener as any)?.payoffMaxSpeed || ""}
             onChange={handleChange}
           />
         </div>
@@ -264,14 +276,14 @@ const Feed = () => {
           label="Motor"
           name="feed.motor"
           type="text"
-          value={performanceData.feed?.motor || ""}
+          value={data.feed?.motor || ""}
           onChange={handleChange}
         />
         <Input
           label="AMP"
           name="feed.amp"
           type="text"
-          value={performanceData.feed?.amp || ""}
+          value={data.feed?.amp || ""}
           onChange={handleChange}
         />
       </div>
@@ -281,28 +293,28 @@ const Feed = () => {
           label="STR Speed (ft/min)"
           name="feed.maximumVelocity"
           type="number"
-          value={performanceData.feed?.maximumVelocity || ""}
+          value={data.feed?.maximumVelocity || ""}
           onChange={handleChange}
         />
         <Input
           label="Friction @ DIE (lbs)"
           name="feed.frictionInDie"
           type="number"
-          value={performanceData.feed?.frictionInDie || ""}
+          value={data.feed?.frictionInDie || ""}
           onChange={handleChange}
         />
         <Input
           label="Acceleration Rate (ft/sec²)"
           name="feed.accelerationRate"
           type="number"
-          value={performanceData.feed?.accelerationRate || ""}
+          value={data.feed?.accelerationRate || ""}
           onChange={handleChange}
         />
         <Input
           label="Default Accel (ft/sec²)"
           name="feed.defaultAcceleration"
           type="number"
-          value={performanceData.feed?.defaultAcceleration || ""}
+          value={data.feed?.defaultAcceleration || ""}
           onChange={handleChange}
         />
       </div>
@@ -316,8 +328,8 @@ const Feed = () => {
   );
 
   const renderFeedLengthTable = () => (
-    <Card>
-      <Text as="h4" className="text-lg font-semibold mb-4">Feed Length & Speed Settings</Text>
+    <Card className="mb-0 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Feed Length & Speed Settings</Text>
       
       <div className="grid grid-cols-3 gap-6">
         <div>
@@ -327,21 +339,21 @@ const Feed = () => {
               label="Length"
               name="feed.average.length"
               type="number"
-              value={performanceData.feed?.average?.length || ""}
+              value={data.feed?.average?.length || ""}
               onChange={handleChange}
             />
             <Input
               label="SPM"
               name="feed.average.spm"
               type="number"
-              value={performanceData.feed?.average?.spm || ""}
+              value={data.feed?.average?.spm || ""}
               onChange={handleChange}
             />
             <Input
               label="FPM"
               name="feed.average.fpm"
               type="number"
-              value={performanceData.feed?.average?.fpm || ""}
+              value={data.feed?.average?.fpm || ""}
               onChange={handleChange}
               disabled
             />
@@ -355,21 +367,21 @@ const Feed = () => {
               label="Length"
               name="feed.max.length"
               type="number"
-              value={performanceData.feed?.max?.length || ""}
+              value={data.feed?.max?.length || ""}
               onChange={handleChange}
             />
             <Input
               label="SPM"
               name="feed.max.spm"
               type="number"
-              value={performanceData.feed?.max?.spm || ""}
+              value={data.feed?.max?.spm || ""}
               onChange={handleChange}
             />
             <Input
               label="FPM"
               name="feed.max.fpm"
               type="number"
-              value={performanceData.feed?.max?.fpm || ""}
+              value={data.feed?.max?.fpm || ""}
               onChange={handleChange}
               disabled
             />
@@ -383,21 +395,21 @@ const Feed = () => {
               label="Length"
               name="feed.min.length"
               type="number"
-              value={performanceData.feed?.min?.length || ""}
+              value={data.feed?.min?.length || ""}
               onChange={handleChange}
             />
             <Input
               label="SPM"
               name="feed.min.spm"
               type="number"
-              value={performanceData.feed?.min?.spm || ""}
+              value={data.feed?.min?.spm || ""}
               onChange={handleChange}
             />
             <Input
               label="FPM"
               name="feed.min.fpm"
               type="number"
-              value={performanceData.feed?.min?.fpm || ""}
+              value={data.feed?.min?.fpm || ""}
               onChange={handleChange}
               disabled
             />
@@ -409,8 +421,8 @@ const Feed = () => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      <Card>
-        <Text as="h3" className="text-xl font-semibold mb-4">Feed Configuration</Text>
+      <Card className="mb-0 p-4">
+        <Text as="h3" className="mb-4 text-lg font-medium">Feed Configuration</Text>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Select
@@ -418,63 +430,73 @@ const Feed = () => {
             name="feedType"
             value={feedType}
             onChange={handleFeedTypeChange}
-            options={FEED_TYPE_OPTIONS}
+            options={FEED_MODEL_OPTIONS}
           />
           <Input
             label="Application"
             name="feed.application"
             type="text"
-            value={performanceData.feed?.application || ""}
+            value={data.feed?.application || ""}
             onChange={handleChange}
           />
-          <Input
+          <Select
             label="Model"
             name="feed.model"
-            type="text"
-            value={performanceData.feed?.model || ""}
+            value={data.feed?.model || ""}
             onChange={handleChange}
+            options={
+              feedType === "Sigma 5"
+                ? SIGMA_5_FEED_MODEL_OPTIONS
+                : feedType === "sigma-v-straightener"
+                  ? SIGMA_5_PULLTHRU_FEED_MODEL_OPTIONS
+                  : feedType === "allen-bradley"
+                    ? ALLEN_BRADLEY_FEED_MODEL_OPTIONS
+                    : FEED_MODEL_OPTIONS
+            }
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Input
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Select
             label="Machine Width"
             name="feed.machineWidth"
-            type="number"
-            value={performanceData.feed?.machineWidth || ""}
+            value={data.feed?.machineWidth !== undefined ? String(data.feed?.machineWidth) : ""}
             onChange={handleChange}
+            options={MACHINE_WIDTH_OPTIONS}
           />
           <Select
             label="Loop Pit"
             name="feed.loopPit"
-            value={performanceData.feed?.loopPit || ""}
+            value={data.feed?.loopPit || ""}
             onChange={handleChange}
-            options={LOOP_PIT_OPTIONS}
+            options={YES_NO_OPTIONS}
           />
           <Select
             label="Full Width Rolls"
             name="feed.fullWidthRolls"
-            value={performanceData.feed?.fullWidthRolls || ""}
+            value={data.feed?.fullWidthRolls || ""}
             onChange={handleChange}
-            options={LOOP_PIT_OPTIONS}
+            options={YES_NO_OPTIONS}
           />
         </div>
+      </Card>
 
+      <Card className="mb-0 p-4">
         <div className="mb-6">
-          <Text as="h4" className="text-lg font-semibold mb-4">Material Information</Text>
+          <Text as="h4" className="mb-4 text-lg font-medium">Material Information</Text>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Input
               label="Width"
               name="material.coilWidth"
               type="number"
-              value={performanceData.material?.coilWidth || ""}
+              value={data.material?.coilWidth || ""}
               onChange={handleChange}
             />
             <Input
               label="Thickness"
               name="material.materialThickness"
               type="number"
-              value={performanceData.material?.materialThickness || ""}
+              value={data.material?.materialThickness || ""}
               onChange={handleChange}
             />
             <Input
@@ -482,14 +504,14 @@ const Feed = () => {
               name="feed.pressBedLength"
               type="number"
               // Fix: Use safe property access with fallback
-              value={(performanceData.feed as any)?.pressBedLength || ""}
+              value={(data.feed as any)?.pressBedLength || ""}
               onChange={handleChange}
             />
             <Input
               label="Density"
               name="material.materialDensity"
               type="number"
-              value={performanceData.material?.materialDensity || ""}
+              value={data.material?.materialDensity || ""}
               onChange={handleChange}
             />
             <Input
@@ -497,7 +519,7 @@ const Feed = () => {
               name="feed.materialInLoop"
               type="number"
               // Fix: Use safe property access with fallback
-              value={(performanceData.feed as any)?.materialInLoop || ""}
+              value={(data.feed as any)?.materialInLoop || ""}
               onChange={handleChange}
             />
           </div>
@@ -511,27 +533,27 @@ const Feed = () => {
       {renderFeedLengthTable()}
 
       {/* Performance Results Table - Similar to Excel output */}
-      <Card>
-        <Text as="h4" className="text-lg font-semibold mb-4">Performance Results</Text>
+      <Card className="mb-0 p-4">
+        <Text as="h4" className="mb-4 text-lg font-medium">Performance Results</Text>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-border">
             <thead>
               <tr className="bg-muted">
-                <th className="border border-border p-2">Length</th>
-                <th className="border border-border p-2">SPM @ 180°</th>
-                <th className="border border-border p-2">FPM</th>
-                <th className="border border-border p-2">SPM @ 240°</th>
-                <th className="border border-border p-2">FPM</th>
+                <th className="border border-border p-2 text-white">Length</th>
+                <th className="border border-border p-2 text-white">SPM @ 180°</th>
+                <th className="border border-border p-2 text-white">FPM</th>
+                <th className="border border-border p-2 text-white">SPM @ 240°</th>
+                <th className="border border-border p-2 text-white">FPM</th>
               </tr>
             </thead>
             <tbody>
               {[4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60].map((length) => (
                 <tr key={length}>
-                  <td className="border border-border p-2 text-center">{length}</td>
-                  <td className="border border-border p-2 text-center">#N/A</td>
-                  <td className="border border-border p-2 text-center">#N/A</td>
-                  <td className="border border-border p-2 text-center">#N/A</td>
-                  <td className="border border-border p-2 text-center">#N/A</td>
+                  <td className="border border-border p-2 text-center text-white">{length}</td>
+                  <td className="border border-border p-2 text-center text-white">#N/A</td>
+                  <td className="border border-border p-2 text-center text-white">#N/A</td>
+                  <td className="border border-border p-2 text-center text-white">#N/A</td>
+                  <td className="border border-border p-2 text-center text-white">#N/A</td>
                 </tr>
               ))}
             </tbody>

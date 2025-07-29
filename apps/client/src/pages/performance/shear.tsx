@@ -4,28 +4,35 @@ import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
 import Button from "@/components/common/button";
-import { usePerformanceSheet } from "@/contexts/performance.context";
+import { PerformanceData } from "@/contexts/performance.context";
 
 const SHEAR_TYPE_OPTIONS = [
   { value: "single-rake", label: "Single Rake" },
   { value: "bow-tie", label: "Bow Tie" },
 ];
 
-const Shear = () => {
-  const { performanceData, updatePerformanceData } = usePerformanceSheet();
+export interface ShearProps {
+  data: PerformanceData;
+  isEditing: boolean;
+  onChange: (updates: Partial<PerformanceData>) => void;
+}
+
+const Shear: React.FC<ShearProps> = ({ data, isEditing, onChange }) => {
   
   // Determine shear type based on current data or default
   const getShearType = () => {
-    return performanceData.shear?.model || "single-rake";
+    return data.shear?.model || "single-rake";
   };
 
   const [shearType, setShearType] = useState<string>(getShearType());
 
   useEffect(() => {
     setShearType(getShearType());
-  }, [performanceData.shear?.model]);
+  }, [data.shear?.model]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!isEditing) return;
+    
     const { name, value, type } = e.target;
     const actualValue = type === "number" ? (value === "" ? "" : Number(value)) : value;
 
@@ -39,7 +46,7 @@ const Shear = () => {
       let current = updateObj;
       
       // Navigate to the correct nested level
-      const sectionData = performanceData[section as keyof typeof performanceData];
+      const sectionData = data[section as keyof typeof data];
       current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
       current = current[section];
       
@@ -52,7 +59,7 @@ const Shear = () => {
       // Set the final value
       current[rest[rest.length - 1]] = actualValue;
       
-      updatePerformanceData(updateObj);
+      onChange(updateObj);
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -61,7 +68,7 @@ const Shear = () => {
         },
         date: {
           dates: {
-            ...performanceData.dates,
+            ...data.dates,
             date: value,
           },
         },
@@ -71,7 +78,7 @@ const Shear = () => {
       };
 
       if (fieldMappings[name]) {
-        updatePerformanceData(fieldMappings[name]);
+        onChange(fieldMappings[name]);
       }
     }
   };
@@ -81,9 +88,9 @@ const Shear = () => {
     setShearType(newType);
     
     // Update the shear.type value
-    updatePerformanceData({
+    onChange({
       shear: {
-        ...performanceData.shear,
+        ...data.shear,
         model: newType,
       },
     });
@@ -93,12 +100,12 @@ const Shear = () => {
     // Trigger calculation logic here
     console.log("Calculate pressed for", shearType, "shear configuration");
     // In a real implementation, this would trigger backend calculations
-    // and update the performanceData with new shear calculation results
+    // and update the data with new shear calculation results
   };
 
-  // Get shear data from performanceData
-  const shearData = performanceData.shear || {};
-  const materialData = performanceData.material || {};
+  // Get shear data from data
+  const shearData = data.shear || {};
+  const materialData = data.material || {};
 
   // Calculate derived values
   const calculateDerivedValues = () => {
@@ -182,24 +189,18 @@ const Shear = () => {
         <Text as="h3" className="mb-4 text-lg font-medium">
           Shear Design - {shearType === "single-rake" ? "Single Rake" : "Bow Tie"}
         </Text>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
             label="Customer"
             name="customer"
-            value={performanceData.customer || ""}
+            value={data.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={performanceData.dates?.date || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Reference"
-            name="referenceNumber"
-            value={performanceData.referenceNumber || ""}
+            value={data.dates?.date || ""}
             onChange={handleChange}
           />
           <Select
@@ -214,19 +215,13 @@ const Shear = () => {
 
       {/* User Defined Variables */}
       <Card className="mb-0 p-4">
-        <div className="flex justify-between items-center mb-4">
-          <Text as="h3" className="text-lg font-medium">
-            User Defined Variables
-          </Text>
+        {/* Material Specifications */}
+        <div className="mb-6">
+          <Text as="h4" className="mb-3 text-md font-medium">Material Specifications</Text>
           <div className="text-right">
             <Text className="text-sm">Material Type: {materialData.materialType || "MCRS"}</Text>
             <Text className="text-sm">{materialData.maxYieldStrength || "40,000"} psi yield</Text>
           </div>
-        </div>
-
-        {/* Material Specifications */}
-        <div className="mb-6">
-          <Text as="h4" className="mb-3 text-md font-medium">Material Specifications</Text>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               label="Max. Material Thickness (in)"
@@ -293,7 +288,7 @@ const Shear = () => {
             </div>
             <div className="space-y-2">
               <Text as="h4" className="text-sm font-medium">Calculated Variables</Text>
-              <div className="bg-gray-50 p-3 rounded space-y-1">
+              <div className="p-3 rounded space-y-1">
                 <Text className="text-sm">Angle of blade: {calculatedValues.angleOfBlade.toFixed(5)}</Text>
                 <Text className="text-sm">Length of initial cut: {calculatedValues.lengthOfInitialCut.toFixed(5)}</Text>
                 <Text className="text-sm">Area of cut: {calculatedValues.areaOfCut.toFixed(5)}</Text>
@@ -330,7 +325,7 @@ const Shear = () => {
               />
             </div>
             <div className="space-y-2">
-              <div className="bg-gray-50 p-3 rounded space-y-1">
+              <div className="p-3 rounded space-y-1">
                 <Text className="text-sm">Minimum stroke for blade: {calculatedValues.minimumStrokeForBlade.toFixed(5)}</Text>
                 <Text className="text-sm">Min.stroke required for desired opening: {calculatedValues.minStrokeForDesiredOpening.toFixed(5)}</Text>
                 <Text className="text-sm">Actual opening above max. mat'l: {calculatedValues.actualOpeningAboveMaxMaterial.toFixed(5)}</Text>
@@ -350,7 +345,7 @@ const Shear = () => {
               value={shearData.hydraulic?.pressure || ""}
               onChange={handleChange}
             />
-            <div className="bg-gray-50 p-3 rounded space-y-1">
+            <div className="p-3 rounded space-y-1">
               <Text className="text-sm">Cylinder Area: {calculatedValues.cylinderArea.toFixed(5)}</Text>
               <Text className="text-sm">Cylinder Volume: {calculatedValues.cylinderVolume.toFixed(5)}</Text>
               <Text className="text-sm">Fluid Velocity (ft/sec): {calculatedValues.fluidVelocity.toFixed(5)}</Text>

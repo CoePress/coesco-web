@@ -4,7 +4,7 @@ import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
 import Button from "@/components/common/button";
-import { usePerformanceSheet } from "@/contexts/performance.context";
+import { PerformanceData } from "@/contexts/performance.context";
 import {
   MATERIAL_TYPE_OPTIONS,
   ROLL_TYPE_OPTIONS,
@@ -16,12 +16,16 @@ const ROLL_CONFIGURATION_OPTIONS = [
   { value: "11", label: "11 Roll" },
 ];
 
-const RollStrBackbend = () => {
-  const { performanceData, updatePerformanceData } = usePerformanceSheet();
-  
+export interface RollStrBackbendProps {
+  data: PerformanceData;
+  isEditing?: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | Partial<PerformanceData>) => void;
+}
+
+const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onChange }) => {
   // Determine roll configuration from straightener.rolls.numberOfRolls
   const getRollConfiguration = () => {
-    const straightenerRolls = performanceData.straightener?.rolls?.numberOfRolls;
+    const straightenerRolls = data.straightener?.rolls?.numberOfRolls;
     const rollsString = String(straightenerRolls);
     
     if (rollsString === "7" || rollsString === "9" || rollsString === "11") {
@@ -32,15 +36,17 @@ const RollStrBackbend = () => {
 
   const [rollConfiguration, setRollConfiguration] = useState<string>(getRollConfiguration());
 
-  // Update rollConfiguration when performanceData changes
+  // Update rollConfiguration when data changes
   useEffect(() => {
     const newRollConfig = getRollConfiguration();
     if (newRollConfig !== rollConfiguration) {
       setRollConfiguration(newRollConfig);
     }
-  }, [performanceData.straightener?.rolls?.numberOfRolls]);
+  }, [data.straightener?.rolls?.numberOfRolls]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!isEditing) return;
+    
     const { name, value, type } = e.target;
     const actualValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
 
@@ -54,7 +60,7 @@ const RollStrBackbend = () => {
       let current = updateObj;
       
       // Navigate to the correct nested level
-      const sectionData = performanceData[section as keyof typeof performanceData];
+      const sectionData = data[section as keyof typeof data];
       current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
       current = current[section];
       
@@ -67,7 +73,9 @@ const RollStrBackbend = () => {
       // Set the final value
       current[rest[rest.length - 1]] = actualValue;
       
-      updatePerformanceData(updateObj);
+      if (onChange) {
+        onChange(updateObj);
+      }
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -76,7 +84,7 @@ const RollStrBackbend = () => {
         },
         date: {
           dates: {
-            ...performanceData.dates,
+            ...data.dates,
             date: value,
           },
         },
@@ -85,8 +93,10 @@ const RollStrBackbend = () => {
         },
       };
 
-      if (fieldMappings[name]) {
-        updatePerformanceData(fieldMappings[name]);
+      if (fieldMappings[name] && onChange) {
+        onChange(fieldMappings[name]);
+      } else if (onChange) {
+        onChange(e);
       }
     }
   };
@@ -96,22 +106,24 @@ const RollStrBackbend = () => {
     setRollConfiguration(newConfig);
     
     // Update the straightener.rolls.numberOfRolls value
-    updatePerformanceData({
-      straightener: {
-        ...performanceData.straightener,
-        rolls: {
-          ...performanceData.straightener?.rolls,
-          numberOfRolls: Number(newConfig),
+    if (onChange) {
+      onChange({
+        straightener: {
+          ...data.straightener,
+          rolls: {
+            ...data.straightener?.rolls,
+            numberOfRolls: Number(newConfig),
+          },
         },
-      },
-    });
+      });
+    }
   };
 
   const handleCalculate = () => {
     // Trigger calculation logic here
     console.log("Calculate pressed for", rollConfiguration, "roll configuration");
     // In a real implementation, this would trigger backend calculations
-    // and update the performanceData with new backbend calculation results
+    // and update the data with new backbend calculation results
   };
 
   // Get roller columns based on configuration
@@ -145,8 +157,8 @@ const RollStrBackbend = () => {
 
   const rollerColumns = getRollerColumns();
 
-  // Get calculation data from performanceData.straightener.rolls.backbend
-  const backbendData = performanceData.straightener?.rolls?.backbend || {};
+  // Get calculation data from data.straightener.rolls.backbend
+  const backbendData = data.straightener?.rolls?.backbend || {};
   
   // Helper function to get roller data based on configuration
   const getRollerData = () => {
@@ -259,7 +271,6 @@ const RollStrBackbend = () => {
     oneOverRy: 0,
     my: backbendData.bendingMomentToYieldSkin || 0,
     rollHeight: extractRollerArray('height'),
-    engagement: extractRollerArray('height'), // Assuming engagement is same as height
     resultingRadius: extractUpDownArray('resultingRadius'),
     directionOfBend: extractDirectionArray(),
     oneRMinusOneRi: extractUpDownArray('curvatureDifference'),
@@ -289,14 +300,14 @@ const RollStrBackbend = () => {
           <Input
             label="Customer"
             name="customer"
-            value={performanceData.customer || ""}
+            value={data.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={performanceData.dates?.date || ""}
+            value={data.dates?.date || ""}
             onChange={handleChange}
           />
           <Select
@@ -319,40 +330,40 @@ const RollStrBackbend = () => {
             label="Coil Width (in)"
             name="material.coilWidth"
             type="number"
-            value={performanceData.material?.coilWidth || ""}
+            value={data.material?.coilWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Material Thickness (in)"
             name="material.materialThickness"
             type="number"
-            value={performanceData.material?.materialThickness || ""}
+            value={data.material?.materialThickness || ""}
             onChange={handleChange}
           />
           <Input
             label="Yield Strength (psi)"
             name="material.maxYieldStrength"
             type="number"
-            value={performanceData.material?.maxYieldStrength || ""}
+            value={data.material?.maxYieldStrength || ""}
             onChange={handleChange}
           />
           <Select
             label="Material Type"
             name="material.materialType"
-            value={performanceData.material?.materialType || ""}
+            value={data.material?.materialType || ""}
             onChange={handleChange}
             options={MATERIAL_TYPE_OPTIONS}
           />
           <Input
             label="Straightener Model"
             name="straightener.model"
-            value={performanceData.straightener?.model || ""}
+            value={data.straightener?.model || ""}
             onChange={handleChange}
           />
           <Select
             label="Roll Type"
             name="straightener.rolls.typeOfRoll"
-            value={performanceData.straightener?.rolls?.typeOfRoll || ""}
+            value={data.straightener?.rolls?.typeOfRoll || ""}
             onChange={handleChange}
             options={ROLL_TYPE_OPTIONS}
           />
@@ -369,42 +380,42 @@ const RollStrBackbend = () => {
             label="Roll Dia. (in)"
             name="straightener.rollDiameter"
             type="number"
-            value={performanceData.straightener?.rollDiameter || ""}
+            value={data.straightener?.rollDiameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Center Distance (in)"
             name="straightener.centerDistance"
             type="number"
-            value={performanceData.straightener?.centerDistance || ""}
+            value={data.straightener?.centerDistance || ""}
             onChange={handleChange}
           />
           <Input
             label="Modulus (psi)"
             name="straightener.modulus"
             type="number"
-            value={performanceData.straightener?.modulus || ""}
+            value={data.straightener?.modulus || ""}
             onChange={handleChange}
           />
           <Input
             label="Jack Force Available (lb)"
             name="straightener.jackForceAvailable"
             type="number"
-            value={performanceData.straightener?.jackForceAvailable || ""}
+            value={data.straightener?.jackForceAvailable || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roller Depth W/Out Material (in)"
             name="straightener.rolls.depth.withoutMaterial"
             type="number"
-            value={performanceData.straightener?.rolls?.depth?.withoutMaterial || ""}
+            value={data.straightener?.rolls?.depth?.withoutMaterial || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roller Depth W/ Material (in)"
             name="straightener.rolls.depth.withMaterial"
             type="number"
-            value={performanceData.straightener?.rolls?.depth?.withMaterial || ""}
+            value={data.straightener?.rolls?.depth?.withMaterial || ""}
             onChange={handleChange}
           />
         </div>
@@ -460,7 +471,7 @@ const RollStrBackbend = () => {
         </div>
       </Card>
 
-      {/* Roller Analysis Table */}
+            {/* Roller Analysis Table */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
           Roller Analysis
@@ -469,173 +480,258 @@ const RollStrBackbend = () => {
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border border-gray-300 p-2 text-left text-sm font-medium">Parameter</th>
+                <th className="border border-gray-300 p-2 text-left text-sm font-medium" rowSpan={2}>Parameter</th>
                 {rollerColumns.map((column, index) => (
-                  <th key={index} className="border border-gray-300 p-2 text-center text-sm font-medium">
+                  <th key={index} className="border border-gray-300 p-2 text-center text-sm font-medium" colSpan={index === rollerColumns.length - 1 ? 1 : 2}>
                     {column.label}
                   </th>
+                ))}
+              </tr>
+              <tr className="bg-gray-100">
+                {rollerColumns.map((column, index) => (
+                  index === rollerColumns.length - 1 ? (
+                    // Last roller only has "up"
+                    <th key={`${index}-up`} className="border border-gray-300 p-1 text-center text-xs font-medium">
+                      UP
+                    </th>
+                  ) : (
+                    // All other rollers have both "up" and "down"
+                    <>
+                      <th key={`${index}-up`} className="border border-gray-300 p-1 text-center text-xs font-medium">
+                        UP
+                      </th>
+                      <th key={`${index}-down`} className="border border-gray-300 p-1 text-center text-xs font-medium">
+                        DOWN
+                      </th>
+                    </>
+                  )
                 ))}
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">ENGAGEMENT</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">ROLL HEIGHT</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.engagement[column.index]?.toFixed(3) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    // Last roller only shows one value
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.rollHeight[column.index]?.toFixed(3) || "-"}
+                    </td>
+                  ) : (
+                    // Other rollers show value in UP column, empty in DOWN column
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.rollHeight[column.index]?.toFixed(3) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        -
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">RESULTING RADIUS</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">RESULTING RADIUS</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.resultingRadius[column.index * 2]?.toFixed(2) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    // Last roller only shows up value
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.resultingRadius[column.index * 2]?.toFixed(2) || "-"}
+                    </td>
+                  ) : (
+                    // Other rollers show both up and down
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.resultingRadius[column.index * 2]?.toFixed(2) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.resultingRadius[column.index * 2 + 1]?.toFixed(2) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">DIRECTION OF BEND</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.resultingRadius[column.index * 2 + 1]?.toFixed(2) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    // Last roller only shows up direction
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.directionOfBend[column.index * 2] || "-"}
+                    </td>
+                  ) : (
+                    // Other rollers show both up and down directions
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.directionOfBend[column.index * 2] || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.directionOfBend[column.index * 2 + 1] || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">DIRECTION OF BEND</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">1/R-1/Ri</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.directionOfBend[column.index * 2] || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.oneRMinusOneRi[column.index * 2]?.toFixed(4) || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.oneRMinusOneRi[column.index * 2]?.toFixed(4) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.oneRMinusOneRi[column.index * 2 + 1]?.toFixed(4) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">Mb</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.directionOfBend[column.index * 2 + 1] || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.mb[column.index * 2]?.toFixed(2) || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.mb[column.index * 2]?.toFixed(2) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.mb[column.index * 2 + 1]?.toFixed(2) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">1/R-1/Ri</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">Mb/My</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.oneRMinusOneRi[column.index * 2]?.toFixed(4) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.mbOverMy[column.index * 2]?.toFixed(4) || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.mbOverMy[column.index * 2]?.toFixed(4) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.mbOverMy[column.index * 2 + 1]?.toFixed(4) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">FORCE REQUIRED</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.oneRMinusOneRi[column.index * 2 + 1]?.toFixed(4) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.forceRequired[column.index]?.toFixed(2) || "-"}
+                    </td>
+                  ) : (
+                    // Show force required only in UP column, empty in DOWN column
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.forceRequired[column.index]?.toFixed(2) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        -
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">Mb</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">SPRINGBACK</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.mb[column.index * 2]?.toFixed(2) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.springback[column.index * 2]?.toFixed(4) || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.springback[column.index * 2]?.toFixed(4) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.springback[column.index * 2 + 1]?.toFixed(4) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">% OF MAT'L THK. YIELDED</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.mb[column.index * 2 + 1]?.toFixed(2) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">Mb/My</td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.mbOverMy[column.index * 2]?.toFixed(4) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.mbOverMy[column.index * 2 + 1]?.toFixed(4) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">FORCE REQUIRED</td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.forceRequired[column.index]?.toFixed(2) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">SPRINGBACK</td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.springback[column.index * 2]?.toFixed(4) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.springback[column.index * 2 + 1]?.toFixed(4) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">% OF MAT'L THK. YIELDED</td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className={`border border-gray-300 p-2 text-center text-sm font-semibold ${
-                    calculationData.percentYielded[column.index * 2] >= 70 ? 'bg-green-400' : ''
-                  }`}>
-                    {calculationData.percentYielded[column.index * 2] ? `${calculationData.percentYielded[column.index * 2]}%` : "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className={`border border-gray-300 p-2 text-center text-sm font-semibold ${
-                    calculationData.percentYielded[column.index * 2 + 1] >= 70 ? 'bg-green-400' : ''
-                  }`}>
-                    {calculationData.percentYielded[column.index * 2 + 1] ? `${calculationData.percentYielded[column.index * 2 + 1]}%` : "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
+                      calculationData.percentYielded[column.index * 2] >= 70 ? 'bg-green-400' : ''
+                    }`}>
+                      {calculationData.percentYielded[column.index * 2] ? `${calculationData.percentYielded[column.index * 2]}%` : "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
+                        calculationData.percentYielded[column.index * 2] >= 70 ? 'bg-green-400' : ''
+                      }`}>
+                        {calculationData.percentYielded[column.index * 2] ? `${calculationData.percentYielded[column.index * 2]}%` : "-"}
+                      </td>
+                      <td key={`${index}-down`} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
+                        calculationData.percentYielded[column.index * 2 + 1] >= 70 ? 'bg-green-400' : ''
+                      }`}>
+                        {calculationData.percentYielded[column.index * 2 + 1] ? `${calculationData.percentYielded[column.index * 2 + 1]}%` : "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
               {rollConfiguration === "7" && calculationData.yieldStrains?.length > 0 && (
-                <>
-                  <tr>
-                    <td className="border border-gray-300 p-2 text-sm font-medium"># OF YIELD STRAINS AT SURFACE</td>
-                    {rollerColumns.map((column, index) => (
-                      <td key={index} className="border border-gray-300 p-2 text-center text-sm">
+                <tr>
+                  <td className="border border-gray-300 p-2 text-sm font-medium text-white"># OF YIELD STRAINS AT SURFACE</td>
+                  {rollerColumns.map((column, index) => (
+                    index === rollerColumns.length - 1 ? (
+                      <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
                         {calculationData.yieldStrains[column.index]?.toFixed(2) || "-"}
                       </td>
-                    ))}
-                  </tr>
-                </>
+                    ) : (
+                      // Show yield strains only in UP column, empty in DOWN column
+                      <>
+                        <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                          {calculationData.yieldStrains[column.index]?.toFixed(2) || "-"}
+                        </td>
+                        <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                          -
+                        </td>
+                      </>
+                    )
+                  ))}
+                </tr>
               )}
               <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium">RADIUS AFTER SPRINGBACK</td>
+                <td className="border border-gray-300 p-2 text-sm font-medium text-white">RADIUS AFTER SPRINGBACK</td>
                 {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.radiusAfterSpringback[column.index * 2]?.toFixed(2) || "-"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium"></td>
-                {rollerColumns.map((column, index) => (
-                  <td key={index} className="border border-gray-300 p-2 text-center text-sm">
-                    {calculationData.radiusAfterSpringback[column.index * 2 + 1]?.toFixed(2) || "-"}
-                  </td>
+                  index === rollerColumns.length - 1 ? (
+                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
+                      {calculationData.radiusAfterSpringback[column.index * 2]?.toFixed(2) || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.radiusAfterSpringback[column.index * 2]?.toFixed(2) || "-"}
+                      </td>
+                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
+                        {calculationData.radiusAfterSpringback[column.index * 2 + 1]?.toFixed(2) || "-"}
+                      </td>
+                    </>
+                  )
                 ))}
               </tr>
             </tbody>
@@ -650,26 +746,26 @@ const RollStrBackbend = () => {
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerDepthRequired <= (performanceData.straightener?.rolls?.depth?.withoutMaterial || 0) 
+            calculationData.rollerDepthRequired <= (data.straightener?.rolls?.depth?.withoutMaterial || 0) 
               ? 'bg-green-100 text-green-800' 
               : 'bg-red-100 text-red-800'
           }`}>
             <Text className="text-sm">ROLLER DEPTH REQ'D:</Text>
             <Text className="text-lg font-bold">
               {calculationData.rollerDepthRequired?.toFixed(4) || "0.0000"} {
-                calculationData.rollerDepthRequired <= (performanceData.straightener?.rolls?.depth?.withoutMaterial || 0) ? "OK" : "NOT OK"
+                calculationData.rollerDepthRequired <= (data.straightener?.rolls?.depth?.withoutMaterial || 0) ? "OK" : "NOT OK"
               }
             </Text>
           </div>
           <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerForceRequired <= (performanceData.straightener?.jackForceAvailable || 0)
+            calculationData.rollerForceRequired <= (data.straightener?.jackForceAvailable || 0)
               ? 'bg-green-100 text-green-800' 
               : 'bg-red-100 text-red-800'
           }`}>
             <Text className="text-sm">ROLLER FORCE REQ'D:</Text>
             <Text className="text-lg font-bold">
               {calculationData.rollerForceRequired?.toFixed(2) || "0.00"} {
-                calculationData.rollerForceRequired <= (performanceData.straightener?.jackForceAvailable || 0) ? "OK" : "NOT OK"
+                calculationData.rollerForceRequired <= (data.straightener?.jackForceAvailable || 0) ? "OK" : "NOT OK"
               }
             </Text>
           </div>

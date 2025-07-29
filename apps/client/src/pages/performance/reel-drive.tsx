@@ -1,74 +1,31 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Text from "@/components/common/text";
-import { useCreateReelDrive } from "@/hooks/performance/use-create-reel-drive";
-import { useGetReelDrive } from "@/hooks/performance/use-get-reel-drive";
-import { usePerformanceSheet } from "@/contexts/performance.context";
+import Select from "@/components/common/select";
+import { PerformanceData } from "@/contexts/performance.context";
 import { 
-  mapBackendToReelDrive,
-  mapBackendToRFQ,
-  mapBackendToTDDBHD 
-} from "@/utils/universal-mapping";
-import { useGetRFQ } from "@/hooks/performance/use-get-rfq";
-import { useGetTDDBHD } from "@/hooks/performance/use-get-tddbhd";
+  REEL_MODEL_OPTIONS,
+  REEL_HORSEPOWER_OPTIONS,
+ } from "@/utils/select-options";
 
-const ReelDrive = () => {
-  const { 
-    performanceData, 
-    updatePerformanceData,
-  } = usePerformanceSheet();
-  const {
-    status: backendStatus,
-  } = useCreateReelDrive();
-  const {
-    status: getBackendStatus,
-    fetchedReelDrive,
-  } = useGetReelDrive();
-  const { getRFQ } = useGetRFQ();
-  const { getTDDBHD } = useGetTDDBHD();
-  const [status] = useState("");
+export interface ReelDriveProps {
+  data: PerformanceData;
+  isEditing: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+}
+
+const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing, onChange }) => {
 
   useEffect(() => {
-    if (fetchedReelDrive) {
-      const data =
-        typeof fetchedReelDrive === "object" && "reel_drive" in fetchedReelDrive && fetchedReelDrive.reel_drive
-          ? (fetchedReelDrive as any).reel_drive
-          : fetchedReelDrive;
-      
-      // Map backend Reel Drive data to new nested structure using universal mapping
-      const mappedData = mapBackendToReelDrive(data, performanceData);
-      updatePerformanceData(mappedData);
-      
-      // Fetch related data
-      const refNum = mappedData.referenceNumber || performanceData.referenceNumber;
-      if (refNum) {
-        console.log("Fetching RFQ with refNum:", refNum);
-        getRFQ(refNum).then((rfqData) => {
-          console.log("RFQ backend data:", rfqData);
-          if (rfqData) {
-            // Map RFQ data to nested structure using universal mapping
-            const rfqMappedData = mapBackendToRFQ(rfqData, performanceData);
-            updatePerformanceData(rfqMappedData);
-            console.log("RFQ data mapped:", rfqMappedData);
-          }
-        });
+    
+  }, [onChange]);
 
-        console.log("Fetching TDDBHD with refNum:", refNum);
-        getTDDBHD(refNum).then((tddbhdData) => {
-          console.log("TDDBHD backend data:", tddbhdData);
-          if (tddbhdData) {
-            // Map TDDBHD data to nested structure using universal mapping
-            const tddbhdMappedData = mapBackendToTDDBHD(tddbhdData, performanceData);
-            updatePerformanceData(tddbhdMappedData);
-            console.log("TDDBHD data mapped:", tddbhdMappedData);
-          }
-        });
-      }
-    }
-  }, [fetchedReelDrive, updatePerformanceData, getRFQ, getTDDBHD]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    if (!isEditing) return;
+    
     const { name, value } = e.target;
 
     // Handle nested field updates based on field name pattern
@@ -81,7 +38,7 @@ const ReelDrive = () => {
       let current = updateObj;
       
       // Navigate to the correct nested level
-      const sectionData = performanceData[section as keyof typeof performanceData];
+      const sectionData = data[section as keyof typeof data];
       current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
       current = current[section];
       
@@ -94,7 +51,7 @@ const ReelDrive = () => {
       // Set the final value
       current[rest[rest.length - 1]] = value;
       
-      updatePerformanceData(updateObj);
+      onChange(updateObj);
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -103,50 +60,50 @@ const ReelDrive = () => {
         },
         date: {
           dates: {
-            ...performanceData.dates,
+            ...data.dates,
             date: value,
           },
         },
         reelModel: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             model: value,
           },
         },
         hp: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             horsepower: value,
           },
         },
         reelSize: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             width: value,
           },
         },
         reelMaxWidth: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             width: value,
           },
         },
         reelBrgDist: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             bearing: {
-              ...performanceData.reel?.bearing,
+              ...data.reel?.bearing,
               distance: value,
             },
           },
         },
         reelFBrgDia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             bearing: {
-              ...performanceData.reel?.bearing,
+              ...data.reel?.bearing,
               diameter: {
-                ...performanceData.reel?.bearing?.diameter,
+                ...data.reel?.bearing?.diameter,
                 front: value,
               },
             },
@@ -154,11 +111,11 @@ const ReelDrive = () => {
         },
         reelRBrgDia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             bearing: {
-              ...performanceData.reel?.bearing,
+              ...data.reel?.bearing,
               diameter: {
-                ...performanceData.reel?.bearing?.diameter,
+                ...data.reel?.bearing?.diameter,
                 rear: value,
               },
             },
@@ -166,308 +123,308 @@ const ReelDrive = () => {
         },
         mandrelDiameter: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               diameter: value,
             },
           },
         },
         mandrelLength: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               length: value,
             },
           },
         },
         mandrelMaxRPM: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               maxRPM: value,
             },
           },
         },
         mandrelRPMFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               RpmFull: value,
             },
           },
         },
         mandrelWeight: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               weight: value,
             },
           },
         },
         mandrelInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               inertia: value,
             },
           },
         },
         mandrelReflInert: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             mandrel: {
-              ...performanceData.reel?.mandrel,
+              ...data.reel?.mandrel,
               reflInertia: value,
             },
           },
         },
         backplateDiameter: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             backplate: {
-              ...performanceData.reel?.backplate,
+              ...data.reel?.backplate,
               diameter: value,
             },
           },
         },
         backplateThickness: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             backplate: {
-              ...performanceData.reel?.backplate,
+              ...data.reel?.backplate,
               thickness: value,
             },
           },
         },
         backplateWeight: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             backplate: {
-              ...performanceData.reel?.backplate,
+              ...data.reel?.backplate,
               weight: value,
             },
           },
         },
         backplateInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             backplate: {
-              ...performanceData.reel?.backplate,
+              ...data.reel?.backplate,
               inertia: value,
             },
           },
         },
         backplateReflInert: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             backplate: {
-              ...performanceData.reel?.backplate,
+              ...data.reel?.backplate,
               reflInertia: value,
             },
           },
         },
         coilDensity: {
           coil: {
-            ...performanceData.coil,
+            ...data.coil,
             density: value,
           },
         },
         coilOD: {
           coil: {
-            ...performanceData.coil,
+            ...data.coil,
             maxCoilOD: value,
           },
         },
         coilID: {
           coil: {
-            ...performanceData.coil,
+            ...data.coil,
             coilID: value,
           },
         },
         coilWidth: {
           material: {
-            ...performanceData.material,
+            ...data.material,
             coilWidth: value,
           },
         },
         coilWeight: {
           coil: {
-            ...performanceData.coil,
+            ...data.coil,
             maxCoilWeight: value,
           },
         },
         coilInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             // Coil inertia would be calculated field
           },
         },
         coilReflInert: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             // Coil reflected inertia would be calculated field
           },
         },
         reducerRatio: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               ratio: value,
             },
           },
         },
         reducerEfficiency: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               efficiency: value,
             },
           },
         },
         reducerDriving: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               driving: value,
             },
           },
         },
         reducerBackdriving: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               backdriving: value,
             },
           },
         },
         reducerInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               inertia: value,
             },
           },
         },
         reducerReflInert: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             reducer: {
-              ...performanceData.reel?.reducer,
+              ...data.reel?.reducer,
               reflInertia: value,
             },
           },
         },
         chainRatio: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               ratio: value,
             },
           },
         },
         chainSprktOD: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               sprktOD: value,
             },
           },
         },
         chainSprktThk: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               sprktThickness: value,
             },
           },
         },
         chainWeight: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               weight: value,
             },
           },
         },
         chainInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               inertia: value,
             },
           },
         },
         chainReflInert: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             chain: {
-              ...performanceData.reel?.chain,
+              ...data.reel?.chain,
               reflInertia: value,
             },
           },
         },
         totalRatio: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             ratio: value,
           },
         },
         totalReflInertiaEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             totalReflInertia: {
-              ...performanceData.reel?.totalReflInertia,
+              ...data.reel?.totalReflInertia,
               empty: value,
             },
           },
         },
         totalReflInertiaFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             totalReflInertia: {
-              ...performanceData.reel?.totalReflInertia,
+              ...data.reel?.totalReflInertia,
               full: value,
             },
           },
         },
         motorHP: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             horsepower: value,
           },
         },
         motorInertia: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             motor: {
-              ...performanceData.reel?.motor,
+              ...data.reel?.motor,
               inertia: value,
             },
           },
         },
         motorBaseRPM: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             motor: {
-              ...performanceData.reel?.motor,
+              ...data.reel?.motor,
               rpm: {
-                ...performanceData.reel?.motor?.rpm,
+                ...data.reel?.motor?.rpm,
                 base: value,
               },
             },
@@ -475,11 +432,11 @@ const ReelDrive = () => {
         },
         motorRPMFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             motor: {
-              ...performanceData.reel?.motor,
+              ...data.reel?.motor,
               rpm: {
-                ...performanceData.reel?.motor?.rpm,
+                ...data.reel?.motor?.rpm,
                 full: value,
               },
             },
@@ -487,13 +444,13 @@ const ReelDrive = () => {
         },
         frictionRBrgMand: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 mandrel: {
-                  ...performanceData.reel?.friction?.bearing?.mandrel,
+                  ...data.reel?.friction?.bearing?.mandrel,
                   rear: value,
                 },
               },
@@ -502,13 +459,13 @@ const ReelDrive = () => {
         },
         frictionFBrgMand: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 mandrel: {
-                  ...performanceData.reel?.friction?.bearing?.mandrel,
+                  ...data.reel?.friction?.bearing?.mandrel,
                   front: value,
                 },
               },
@@ -517,13 +474,13 @@ const ReelDrive = () => {
         },
         frictionFBrgCoil: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 coil: {
-                  ...performanceData.reel?.friction?.bearing?.coil,
+                  ...data.reel?.friction?.bearing?.coil,
                   front: value,
                 },
               },
@@ -532,13 +489,13 @@ const ReelDrive = () => {
         },
         frictionTotalEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 total: {
-                  ...performanceData.reel?.friction?.bearing?.total,
+                  ...data.reel?.friction?.bearing?.total,
                   empty: value,
                 },
               },
@@ -547,13 +504,13 @@ const ReelDrive = () => {
         },
         frictionTotalFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 total: {
-                  ...performanceData.reel?.friction?.bearing?.total,
+                  ...data.reel?.friction?.bearing?.total,
                   full: value,
                 },
               },
@@ -562,13 +519,13 @@ const ReelDrive = () => {
         },
         frictionReflEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 refl: {
-                  ...performanceData.reel?.friction?.bearing?.refl,
+                  ...data.reel?.friction?.bearing?.refl,
                   empty: value,
                 },
               },
@@ -577,13 +534,13 @@ const ReelDrive = () => {
         },
         frictionReflFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             friction: {
-              ...performanceData.reel?.friction,
+              ...data.reel?.friction,
               bearing: {
-                ...performanceData.reel?.friction?.bearing,
+                ...data.reel?.friction?.bearing,
                 refl: {
-                  ...performanceData.reel?.friction?.bearing?.refl,
+                  ...data.reel?.friction?.bearing?.refl,
                   full: value,
                 },
               },
@@ -592,32 +549,32 @@ const ReelDrive = () => {
         },
         speed: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             speed: value,
           },
         },
         accelRate: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             motorization: {
-              ...performanceData.reel?.motorization,
+              ...data.reel?.motorization,
               accelRate: value,
             },
           },
         },
         accelTime: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             accelerationTime: value,
           },
         },
         torqueEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               empty: {
-                ...performanceData.reel?.torque?.empty,
+                ...data.reel?.torque?.empty,
                 torque: value,
               },
             },
@@ -625,11 +582,11 @@ const ReelDrive = () => {
         },
         torqueFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               full: {
-                ...performanceData.reel?.torque?.full,
+                ...data.reel?.torque?.full,
                 torque: value,
               },
             },
@@ -637,11 +594,11 @@ const ReelDrive = () => {
         },
         hpReqdEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               empty: {
-                ...performanceData.reel?.torque?.empty,
+                ...data.reel?.torque?.empty,
                 horsepowerRequired: value,
               },
             },
@@ -649,11 +606,11 @@ const ReelDrive = () => {
         },
         hpReqdFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               full: {
-                ...performanceData.reel?.torque?.full,
+                ...data.reel?.torque?.full,
                 horsepowerRequired: value,
               },
             },
@@ -661,11 +618,11 @@ const ReelDrive = () => {
         },
         regenEmpty: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               empty: {
-                ...performanceData.reel?.torque?.empty,
+                ...data.reel?.torque?.empty,
                 regen: value,
               },
             },
@@ -673,11 +630,11 @@ const ReelDrive = () => {
         },
         regenFull: {
           reel: {
-            ...performanceData.reel,
+            ...data.reel,
             torque: {
-              ...performanceData.reel?.torque,
+              ...data.reel?.torque,
               full: {
-                ...performanceData.reel?.torque?.full,
+                ...data.reel?.torque?.full,
                 regen: value,
               },
             },
@@ -685,12 +642,12 @@ const ReelDrive = () => {
         },
         usePulloff: {
           // This might be a note field - could add to specialConsiderations
-          specialConsiderations: (performanceData.specialConsiderations || "") + (value ? `\nUSE PULLOFF: ${value}` : ""),
+          specialConsiderations: (data.specialConsiderations || "") + (value ? `\nUSE PULLOFF: ${value}` : ""),
         },
       };
 
       if (fieldMappings[name]) {
-        updatePerformanceData(fieldMappings[name]);
+        onChange(fieldMappings[name]);
       }
     }
   };
@@ -708,14 +665,14 @@ const ReelDrive = () => {
           <Input
             label="Customer"
             name="customer"
-            value={performanceData.customer || ""}
+            value={data.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={performanceData.dates?.date || ""}
+            value={data.dates?.date || ""}
             onChange={handleChange}
           />
         </div>
@@ -727,17 +684,27 @@ const ReelDrive = () => {
           Model & HP
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Input
+          <Select
             label="Reel Model"
-            name="reelModel"
-            value={performanceData.reel?.model || ""}
+            name="reel.model"
+            value={data.reel?.model !== undefined 
+                && data.reel?.model !== null ? String(data.reel.model) : ""}
             onChange={handleChange}
+            options={REEL_MODEL_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: opt.label,
+            }))}
           />
-          <Input
+          <Select
             label="HP"
             name="hp"
-            value={performanceData.reel?.horsepower || ""}
+            value={data.reel?.horsepower !== undefined
+                && data.reel?.horsepower !== null ? String(data.reel.horsepower) : ""}
             onChange={handleChange}
+            options={REEL_HORSEPOWER_OPTIONS.map((opt) => ({
+              value: String(opt.value),
+              label: opt.label,
+            }))}
           />
         </div>
       </Card>
@@ -754,35 +721,35 @@ const ReelDrive = () => {
               id="reelSize"
               name="reelSize"
               label="SIZE"
-              value={performanceData.reel?.width || ""}
+              value={data.reel?.width || ""}
               onChange={handleChange}
             />
             <Input
               id="reelMaxWidth"
               name="reelMaxWidth"
               label="MAX WIDTH"
-              value={performanceData.reel?.width || ""}
+              value={data.reel?.width || ""}
               onChange={handleChange}
             />
             <Input
               id="reelBrgDist"
               name="reelBrgDist"
               label="BRG. DIST."
-              value={performanceData.reel?.bearing?.distance || ""}
+              value={data.reel?.bearing?.distance || ""}
               onChange={handleChange}
             />
             <Input
               id="reelFBrgDia"
               name="reelFBrgDia"
               label="F. BRG. DIA."
-              value={performanceData.reel?.bearing?.diameter?.front || ""}
+              value={data.reel?.bearing?.diameter?.front || ""}
               onChange={handleChange}
             />
             <Input
               id="reelRBrgDia"
               name="reelRBrgDia"
               label="R. BRG. DIA."
-              value={performanceData.reel?.bearing?.diameter?.rear || ""}
+              value={data.reel?.bearing?.diameter?.rear || ""}
               onChange={handleChange}
             />
           </div>
@@ -799,49 +766,49 @@ const ReelDrive = () => {
               id="mandrelDiameter"
               name="mandrelDiameter"
               label="DIAMETER"
-              value={performanceData.reel?.mandrel?.diameter || ""}
+              value={data.reel?.mandrel?.diameter || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelLength"
               name="mandrelLength"
               label="LENGTH"
-              value={performanceData.reel?.mandrel?.length || ""}
+              value={data.reel?.mandrel?.length || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelMaxRPM"
               name="mandrelMaxRPM"
               label="MAX RPM"
-              value={performanceData.reel?.mandrel?.maxRPM || ""}
+              value={data.reel?.mandrel?.maxRPM || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelRPMFull"
               name="mandrelRPMFull"
               label="RPM FULL"
-              value={performanceData.reel?.mandrel?.RpmFull || ""}
+              value={data.reel?.mandrel?.RpmFull || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelWeight"
               name="mandrelWeight"
               label="WEIGHT"
-              value={performanceData.reel?.mandrel?.weight || ""}
+              value={data.reel?.mandrel?.weight || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelInertia"
               name="mandrelInertia"
               label="INERTIA"
-              value={performanceData.reel?.mandrel?.inertia || ""}
+              value={data.reel?.mandrel?.inertia || ""}
               onChange={handleChange}
             />
             <Input
               id="mandrelReflInert"
               name="mandrelReflInert"
               label="REFL. INERT."
-              value={performanceData.reel?.mandrel?.reflInertia || ""}
+              value={data.reel?.mandrel?.reflInertia || ""}
               onChange={handleChange}
             />
           </div>
@@ -858,35 +825,35 @@ const ReelDrive = () => {
               id="backplateDiameter"
               name="backplateDiameter"
               label="DIAMETER"
-              value={performanceData.reel?.backplate?.diameter || ""}
+              value={data.reel?.backplate?.diameter || ""}
               onChange={handleChange}
             />
             <Input
               id="backplateThickness"
               name="backplateThickness"
               label="THICKNESS"
-              value={performanceData.reel?.backplate?.thickness || ""}
+              value={data.reel?.backplate?.thickness || ""}
               onChange={handleChange}
             />
             <Input
               id="backplateWeight"
               name="backplateWeight"
               label="WEIGHT"
-              value={performanceData.reel?.backplate?.weight || ""}
+              value={data.reel?.backplate?.weight || ""}
               onChange={handleChange}
             />
             <Input
               id="backplateInertia"
               name="backplateInertia"
               label="INERTIA"
-              value={performanceData.reel?.backplate?.inertia || ""}
+              value={data.reel?.backplate?.inertia || ""}
               onChange={handleChange}
             />
             <Input
               id="backplateReflInert"
               name="backplateReflInert"
               label="REFL. INERT."
-              value={performanceData.reel?.backplate?.reflInertia || ""}
+              value={data.reel?.backplate?.reflInertia || ""}
               onChange={handleChange}
             />
           </div>
@@ -903,35 +870,35 @@ const ReelDrive = () => {
               id="coilDensity"
               name="coilDensity"
               label="DENSITY"
-              value={performanceData.coil?.density || ""}
+              value={data.coil?.density || ""}
               onChange={handleChange}
             />
             <Input
               id="coilOD"
               name="coilOD"
               label="O.D."
-              value={performanceData.coil?.maxCoilOD || ""}
+              value={data.coil?.maxCoilOD || ""}
               onChange={handleChange}
             />
             <Input
               id="coilID"
               name="coilID"
               label="I.D."
-              value={performanceData.coil?.coilID || ""}
+              value={data.coil?.coilID || ""}
               onChange={handleChange}
             />
             <Input
               id="coilWidth"
               name="coilWidth"
               label="WIDTH"
-              value={performanceData.material?.coilWidth || ""}
+              value={data.material?.coilWidth || ""}
               onChange={handleChange}
             />
             <Input
               id="coilWeight"
               name="coilWeight"
               label="WEIGHT"
-              value={performanceData.coil?.maxCoilWeight || ""}
+              value={data.coil?.maxCoilWeight || ""}
               onChange={handleChange}
             />
             <Input
@@ -964,42 +931,42 @@ const ReelDrive = () => {
               id="reducerRatio"
               name="reducerRatio"
               label="RATIO"
-              value={performanceData.reel?.reducer?.ratio || ""}
+              value={data.reel?.reducer?.ratio || ""}
               onChange={handleChange}
             />
             <Input
               id="reducerEfficiency"
               name="reducerEfficiency"
               label="EFFICIENCY"
-              value={performanceData.reel?.reducer?.efficiency || ""}
+              value={data.reel?.reducer?.efficiency || ""}
               onChange={handleChange}
             />
             <Input
               id="reducerDriving"
               name="reducerDriving"
               label="DRIVING"
-              value={performanceData.reel?.reducer?.driving || ""}
+              value={data.reel?.reducer?.driving || ""}
               onChange={handleChange}
             />
             <Input
               id="reducerBackdriving"
               name="reducerBackdriving"
               label="BACKDRIVING"
-              value={performanceData.reel?.reducer?.backdriving || ""}
+              value={data.reel?.reducer?.backdriving || ""}
               onChange={handleChange}
             />
             <Input
               id="reducerInertia"
               name="reducerInertia"
               label="INERTIA"
-              value={performanceData.reel?.reducer?.inertia || ""}
+              value={data.reel?.reducer?.inertia || ""}
               onChange={handleChange}
             />
             <Input
               id="reducerReflInert"
               name="reducerReflInert"
               label="REFL. INERT."
-              value={performanceData.reel?.reducer?.reflInertia || ""}
+              value={data.reel?.reducer?.reflInertia || ""}
               onChange={handleChange}
             />
           </div>
@@ -1016,42 +983,42 @@ const ReelDrive = () => {
               id="chainRatio"
               name="chainRatio"
               label="RATIO"
-              value={performanceData.reel?.chain?.ratio || ""}
+              value={data.reel?.chain?.ratio || ""}
               onChange={handleChange}
             />
             <Input
               id="chainSprktOD"
               name="chainSprktOD"
               label="SPRK. O.D."
-              value={performanceData.reel?.chain?.sprktOD || ""}
+              value={data.reel?.chain?.sprktOD || ""}
               onChange={handleChange}
             />
             <Input
               id="chainSprktThk"
               name="chainSprktThk"
               label="SPRK. THK."
-              value={performanceData.reel?.chain?.sprktThickness || ""}
+              value={data.reel?.chain?.sprktThickness || ""}
               onChange={handleChange}
             />
             <Input
               id="chainWeight"
               name="chainWeight"
               label="WEIGHT"
-              value={performanceData.reel?.chain?.weight || ""}
+              value={data.reel?.chain?.weight || ""}
               onChange={handleChange}
             />
             <Input
               id="chainInertia"
               name="chainInertia"
               label="INERTIA"
-              value={performanceData.reel?.chain?.inertia || ""}
+              value={data.reel?.chain?.inertia || ""}
               onChange={handleChange}
             />
             <Input
               id="chainReflInert"
               name="chainReflInert"
               label="REFL. INERT."
-              value={performanceData.reel?.chain?.reflInertia || ""}
+              value={data.reel?.chain?.reflInertia || ""}
               onChange={handleChange}
             />
           </div>
@@ -1068,21 +1035,21 @@ const ReelDrive = () => {
               id="totalRatio"
               name="totalRatio"
               label="RATIO"
-              value={performanceData.reel?.ratio || ""}
+              value={data.reel?.ratio || ""}
               onChange={handleChange}
             />
             <Input
               id="totalReflInertiaEmpty"
               name="totalReflInertiaEmpty"
               label="TOTAL REFL. INERTIA EMPTY"
-              value={performanceData.reel?.totalReflInertia?.empty || ""}
+              value={data.reel?.totalReflInertia?.empty || ""}
               onChange={handleChange}
             />
             <Input
               id="totalReflInertiaFull"
               name="totalReflInertiaFull"
               label="TOTAL REFL. INERTIA FULL"
-              value={performanceData.reel?.totalReflInertia?.full || ""}
+              value={data.reel?.totalReflInertia?.full || ""}
               onChange={handleChange}
             />
           </div>
@@ -1099,28 +1066,28 @@ const ReelDrive = () => {
               id="motorHP"
               name="motorHP"
               label="HP"
-              value={performanceData.reel?.horsepower || ""}
+              value={data.reel?.horsepower || ""}
               onChange={handleChange}
             />
             <Input
               id="motorInertia"
               name="motorInertia"
               label="INERTIA"
-              value={performanceData.reel?.motor?.inertia || ""}
+              value={data.reel?.motor?.inertia || ""}
               onChange={handleChange}
             />
             <Input
               id="motorBaseRPM"
               name="motorBaseRPM"
               label="BASE RPM"
-              value={performanceData.reel?.motor?.rpm?.base || ""}
+              value={data.reel?.motor?.rpm?.base || ""}
               onChange={handleChange}
             />
             <Input
               id="motorRPMFull"
               name="motorRPMFull"
               label="RPM FULL"
-              value={performanceData.reel?.motor?.rpm?.full || ""}
+              value={data.reel?.motor?.rpm?.full || ""}
               onChange={handleChange}
             />
           </div>
@@ -1137,49 +1104,49 @@ const ReelDrive = () => {
               id="frictionRBrgMand"
               name="frictionRBrgMand"
               label="R. BRG. MAND."
-              value={performanceData.reel?.friction?.bearing?.mandrel?.rear || ""}
+              value={data.reel?.friction?.bearing?.mandrel?.rear || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionFBrgMand"
               name="frictionFBrgMand"
               label="F. BRG. MAND."
-              value={performanceData.reel?.friction?.bearing?.mandrel?.front || ""}
+              value={data.reel?.friction?.bearing?.mandrel?.front || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionFBrgCoil"
               name="frictionFBrgCoil"
               label="F. BRG. COIL"
-              value={performanceData.reel?.friction?.bearing?.coil?.front || ""}
+              value={data.reel?.friction?.bearing?.coil?.front || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionTotalEmpty"
               name="frictionTotalEmpty"
               label="TOTAL EMPTY"
-              value={performanceData.reel?.friction?.bearing?.total?.empty || ""}
+              value={data.reel?.friction?.bearing?.total?.empty || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionTotalFull"
               name="frictionTotalFull"
               label="TOTAL FULL"
-              value={performanceData.reel?.friction?.bearing?.total?.full || ""}
+              value={data.reel?.friction?.bearing?.total?.full || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionReflEmpty"
               name="frictionReflEmpty"
               label="REFL. EMPTY"
-              value={performanceData.reel?.friction?.bearing?.refl?.empty || ""}
+              value={data.reel?.friction?.bearing?.refl?.empty || ""}
               onChange={handleChange}
             />
             <Input
               id="frictionReflFull"
               name="frictionReflFull"
               label="REFL. FULL"
-              value={performanceData.reel?.friction?.bearing?.refl?.full || ""}
+              value={data.reel?.friction?.bearing?.refl?.full || ""}
               onChange={handleChange}
             />
           </div>
@@ -1196,21 +1163,21 @@ const ReelDrive = () => {
               id="speed"
               name="speed"
               label="SPEED"
-              value={performanceData.reel?.speed || ""}
+              value={data.reel?.speed || ""}
               onChange={handleChange}
             />
             <Input
               id="accelRate"
               name="accelRate"
               label="ACCEL RATE"
-              value={performanceData.reel?.motorization?.accelRate || ""}
+              value={data.reel?.motorization?.accelRate || ""}
               onChange={handleChange}
             />
             <Input
               id="accelTime"
               name="accelTime"
               label="ACCEL TIME"
-              value={performanceData.reel?.accelerationTime || ""}
+              value={data.reel?.accelerationTime || ""}
               onChange={handleChange}
             />
           </div>
@@ -1227,14 +1194,14 @@ const ReelDrive = () => {
               id="torqueEmpty"
               name="torqueEmpty"
               label="EMPTY"
-              value={performanceData.reel?.torque?.empty?.torque || ""}
+              value={data.reel?.torque?.empty?.torque || ""}
               onChange={handleChange}
             />
             <Input
               id="torqueFull"
               name="torqueFull"
               label="FULL"
-              value={performanceData.reel?.torque?.full?.torque || ""}
+              value={data.reel?.torque?.full?.torque || ""}
               onChange={handleChange}
             />
           </div>
@@ -1251,14 +1218,14 @@ const ReelDrive = () => {
               id="hpReqdEmpty"
               name="hpReqdEmpty"
               label="EMPTY"
-              value={performanceData.reel?.torque?.empty?.horsepowerRequired || ""}
+              value={data.reel?.torque?.empty?.horsepowerRequired || ""}
               onChange={handleChange}
             />
             <Input
               id="hpReqdFull"
               name="hpReqdFull"
               label="FULL"
-              value={performanceData.reel?.torque?.full?.horsepowerRequired || ""}
+              value={data.reel?.torque?.full?.horsepowerRequired || ""}
               onChange={handleChange}
             />
             <div className="flex items-center">
@@ -1281,14 +1248,14 @@ const ReelDrive = () => {
               id="regenEmpty"
               name="regenEmpty"
               label="EMPTY"
-              value={performanceData.reel?.torque?.empty?.regen || ""}
+              value={data.reel?.torque?.empty?.regen || ""}
               onChange={handleChange}
             />
             <Input
               id="regenFull"
               name="regenFull"
               label="FULL"
-              value={performanceData.reel?.torque?.full?.regen || ""}
+              value={data.reel?.torque?.full?.regen || ""}
               onChange={handleChange}
             />
             <div className="flex items-center">
@@ -1319,16 +1286,6 @@ const ReelDrive = () => {
       </div>
       {status && (
         <div className="text-center text-xs text-primary mt-2">{status}</div>
-      )}
-      {backendStatus && (
-        <div className="text-center text-xs text-primary mt-2">
-          {backendStatus}
-        </div>
-      )}
-      {getBackendStatus && (
-        <div className="text-center text-xs text-primary mt-2">
-          {getBackendStatus}
-        </div>
       )}
     </div>
   );

@@ -16,6 +16,7 @@ import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useSocket } from "@/contexts/socket.context";
 import { useAuth } from "@/contexts/auth.context";
+import { usePerformanceSheet } from "@/contexts/performance.context";
 import Modal from "@/components/common/modal";
 import { Select } from "@/components";
 import Button from "@/components/common/button";
@@ -66,6 +67,7 @@ const PerformanceDetails = () => {
     `/performance/sheets`,
     performanceSheetId
   );
+  const { performanceData, updatePerformanceData } = usePerformanceSheet();
   const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
@@ -189,9 +191,15 @@ const PerformanceDetails = () => {
   };
 
   const renderTabContent = () => {
+    const commonProps = {
+      data: performanceData,
+      isEditing,
+      onChange: updatePerformanceData
+    };
+
     switch (activeTab) {
       case "rfq":
-        return <RFQ />;
+        return <RFQ {...commonProps} />;
       case "material-specs":
         return <MaterialSpecs />;
       case "tddbhd":
@@ -209,7 +217,7 @@ const PerformanceDetails = () => {
       case "summary-report":
         return <SummaryReport />;
       default:
-        return <RFQ />;
+        return <RFQ {...commonProps}/>;
     }
   };
 

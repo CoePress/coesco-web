@@ -2,9 +2,36 @@
 
 import { Label } from "recharts";
 
+export const DAYS_PER_WEEK_OPTIONS = [
+  { value: "1", label: "1 Day" },
+  { value: "2", label: "2 Days" },
+  { value: "3", label: "3 Days" },
+  { value: "4", label: "4 Days" },
+  { value: "5", label: "5 Days" },
+  { value: "6", label: "6 Days" },
+  { value: "7", label: "7 Days" },
+];
+
+export const SHIFTS_PER_DAY_OPTIONS = [
+  { value: "1", label: "1 Shift" },
+  { value: "2", label: "2 Shifts" },
+  { value: "3", label: "3 Shifts" },
+];
+
+export const LINE_APPLICATION_OPTIONS = [
+  { value: "Press Feed", label: "Press Feed" },
+  { value: "Cut to Length", label: "Cut to Length" },
+  { value: "Standalone", label: "Standalone" },
+];
+
 export const FEED_DIRECTION_OPTIONS = [
   { value: "Right to Left", label: "Right to Left" },
   { value: "Left to Right", label: "Left to Right" },
+];
+
+export const COIL_LOADING_OPTIONS = [
+  { value: "Operator Side", label: "Operator Side" },
+  { value: "Non-Operator Side", label: "Non-Operator Side" },
 ];
 
 export const CONTROLS_LEVEL_OPTIONS = [
@@ -17,6 +44,11 @@ export const CONTROLS_LEVEL_OPTIONS = [
   { value: "IP Indexer Plus", label: "IP Indexer Plus" },
   { value: "Allen Bradley Plus", label: "Allen Bradley Plus" },
   { value: "Fully Automatic", label: "Fully Automatic" },
+];
+
+export const RFQ_TYPE_OF_LINE_OPTIONS = [
+  { value: "Compact", label: "Compact" },
+  { value: "Conventional", label: "Conventional" },
 ];
 
 export const TYPE_OF_LINE_OPTIONS = [
@@ -120,6 +152,11 @@ export const REEL_STYLE_OPTIONS = [
   { value: "Double Ended", label: "Double Ended" },
 ];
 
+export const REEL_HORSEPOWER_OPTIONS = [
+  { value: 3, label: "3 HP" },
+  { value: 5, label: "5 HP" },
+];
+
 export const MATERIAL_TYPE_OPTIONS = [
   { value: "Aluminum", label: "Aluminum" },
   { value: "Galvanized", label: "Galvanized" },
@@ -199,4 +236,116 @@ export const BRAKE_QUANTITY_OPTIONS = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
+];
+
+export const PAYOFF_OPTIONS = [
+  { value: "TOP", label: "TOP" },
+  { value: "BOTTOM", label: "BOTTOM" },
+];
+
+export const STR_MODEL_OPTIONS = [
+  { value: "CPPS-250", label: "CPPS-250" },
+  { value: "CPPS-306", label: "CPPS-306" },
+  { value: "CPPS-350", label: "CPPS-350" },
+  { value: "CPPS-406", label: "CPPS-406" },
+  { value: "CPPS-507", label: "CPPS-507" },
+  { value: "SPGPS-810", label: "SPGPS-810" },
+];
+
+export const STR_WIDTH_OPTIONS = [
+  { value: "24", label: "24\"" },
+  { value: "30", label: "30\"" },
+  { value: "36", label: "36\"" },
+  { value: "42", label: "42\"" },
+  { value: "48", label: "48\"" },
+  { value: "54", label: "54\"" },
+  { value: "60", label: "60\"" },
+  { value: "66", label: "66\"" },
+  { value: "72", label: "72\"" },
+];
+
+export const STR_HORSEPOWER_OPTIONS = [
+  { value: "20", label: "20 HP" },
+  { value: "25", label: "25 HP" },
+  { value: "30", label: "30 HP" },
+  { value: "40", label: "40 HP" },
+  { value: "50", label: "50 HP" },
+];
+
+export const STR_FEED_RATE_OPTIONS = [
+  { value: "80", label: "80 FPM" },
+  { value: "100", label: "100 FPM" },
+  { value: "120", label: "120 FPM" },
+  { value: "140", label: "140 FPM" },
+  { value: "160", label: "160 FPM" },
+  { value: "200", label: "200 FPM" },
+];
+
+export const FEED_MODEL_OPTIONS = [
+  { value: "sigma-v-feed", label: "Sigma 5 Feed" },
+  { value: "sigma-v-straightener", label: "Sigma 5 Feed Pull Thru" },
+  { value: "allen-bradley", label: "Allen Bradley" },
+];
+
+export const SIGMA_5_FEED_MODEL_OPTIONS = [
+  { value: "CPRF-S1", label: "CPRF-S1" },
+  { value: "CPRF-S1 PLUS", label: "CPRF-S1 PLUS" },
+  { value: "CPRF-S2", label: "CPRF-S2" },
+  { value: "CPRF-S2 PLUS", label: "CPRF-S2 PLUS" },
+  { value: "CPRF-S3", label: "CPRF-S3" },
+  { value: "CPRF-S3 PLUS", label: "CPRF-S3 PLUS" },
+  { value: "CPRF-S4", label: "CPRF-S4" },
+  { value: "CPRF-S4 PLUS", label: "CPRF-S4 PLUS" },
+  { value: "CPRF-S5", label: "CPRF-S5" },
+  { value: "CPRF-6", label: "CPRF-6" },
+  { value: "CPRF-7", label: "CPRF-7" },
+  { value: "CPRF-8", label: "CPRF-8" },
+];
+
+export const SIGMA_5_PULLTHRU_FEED_MODEL_OPTIONS = [
+  { value: "CPRF-S1 ES", label: "CPRF-S1 ES" },
+  { value: "CPRF-S1 ES PLUS", label: "CPRF-S1 ES PLUS" },
+  { value: "CPRF-S2 ES", label: "CPRF-S2 ES" },
+  { value: "CPRF-S2 ES PLUS", label: "CPRF-S2 ES PLUS" },
+  { value: "CPRF-S3 ES", label: "CPRF-S3 ES" },
+  { value: "CPRF-S3 RS", label: "CPRF-S3 RS" },
+  { value: "CPRF-S3 RS PLUS", label: "CPRF-S3 RS PLUS" },
+  { value: "CPRF-S4 HS", label: "CPRF-S4 HS" },
+  { value: "CPRF-S4 HS PLUS", label: "CPRF-S4 HS PLUS" },
+  { value: "CPRF-S4 RS", label: "CPRF-S4 RS" },
+  { value: "CPRF-S4 RS PLUS", label: "CPRF-S4 RS PLUS" },
+  { value: "CPRF-S5-350", label: "CPRF-S5-350" },
+  { value: "CPRF-S6-350", label: "CPRF-S6-350" },
+  { value: "CPRF-S6-500", label: "CPRF-S6-500" },
+  { value: "CPRF-S7-350", label: "CPRF-S7-350" },
+  { value: "CPRF-S7-500", label: "CPRF-S7-500" },
+  { value: "CPRF-S8-500", label: "CPRF-S8-500" },
+];
+
+export const ALLEN_BRADLEY_FEED_MODEL_OPTIONS = [
+  { value: "CPRF-S1 MPL", label: "CPRF-S1 MPL" },
+  { value: "CPRF-S2 MPL", label: "CPRF-S2 MPL" },
+  { value: "CPRF-S3 MPL", label: "CPRF-S3 MPL" },
+  { value: "CPRF-S3 MPM", label: "CPRF-S3 MPM" },
+  { value: "CPRF-S4 MPL", label: "CPRF-S4 MPL" },
+  { value: "CPRF-S5 MPL", label: "CPRF-S5 MPL" },
+  { value: "CPRF-S6 MPL", label: "CPRF-S6 MPL" },
+  { value: "CPRF-S7 MPL", label: "CPRF-S7 MPL" },
+  { value: "CPRF-S8 MPL", label: "CPRF-S8 MPL" },
+];
+
+export const MACHINE_WIDTH_OPTIONS = [
+  { value: "18", label: "18" },
+  { value: "24", label: "24" },
+  { value: "30", label: "30" },
+  { value: "36", label: "36" },
+  { value: "42", label: "42" },
+  { value: "48", label: "48" },
+  { value: "54", label: "54" },
+  { value: "60", label: "60" },
+];
+
+export const STRAIGHTENER_ROLLS_OPTIONS = [
+  { value: "5", label: "5 Rolls" },
+  { value: "7", label: "7 Rolls" },
 ];
