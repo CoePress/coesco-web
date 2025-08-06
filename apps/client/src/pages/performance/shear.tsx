@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
 import Button from "@/components/common/button";
 import { PerformanceData } from "@/contexts/performance.context";
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useParams } from "react-router-dom";
+import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 const SHEAR_TYPE_OPTIONS = [
   { value: "single-rake", label: "Single Rake" },
@@ -17,90 +20,286 @@ export interface ShearProps {
 }
 
 const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
+  const endpoint = `/performance/sheets`;
+  const { loading, error } = useGetEntity(endpoint);
+  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const { id: performanceSheetId } = useParams();
+  
+  // Local state for immediate UI updates
+  const [localData, setLocalData] = useState<PerformanceData>(data);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with parent data on initial load
+  useEffect(() => {
+    if (!localData.referenceNumber && data.referenceNumber) {
+      console.log('Initial data load, syncing all data');
+      setLocalData(data);
+    }
+  }, [data, localData.referenceNumber]);
   
   // Determine shear type based on current data or default
   const getShearType = () => {
-    return data.shear?.model || "single-rake";
+    return localData.shear?.model || "single-rake";
   };
 
   const [shearType, setShearType] = useState<string>(getShearType());
 
   useEffect(() => {
     setShearType(getShearType());
-  }, [data.shear?.model]);
+  }, [localData.shear?.model]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!isEditing) return;
     
     const { name, value, type } = e.target;
-    const actualValue = type === "number" ? (value === "" ? "" : Number(value)) : value;
+    const actualValue = value;
 
-    // Handle nested field updates based on field name pattern
-    if (name.includes(".")) {
-      const parts = name.split(".");
-      const [section, ...rest] = parts;
-      
-      // Build the nested update object
-      let updateObj: any = {};
-      let current = updateObj;
-      
-      // Navigate to the correct nested level
-      const sectionData = data[section as keyof typeof data];
-      current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
-      current = current[section];
-      
-      // Handle deeper nesting
-      for (let i = 0; i < rest.length - 1; i++) {
-        current[rest[i]] = { ...current[rest[i]] };
-        current = current[rest[i]];
-      }
-      
-      // Set the final value
-      current[rest[rest.length - 1]] = actualValue;
-      
-      /////////////////////////////////
-    } else {
-      // Handle legacy field names that map to nested structure
-      const fieldMappings: { [key: string]: any } = {
-        customer: {
-          customer: value,
-        },
-        date: {
-          dates: {
-            ...data.dates,
-            date: value,
-          },
-        },
-        referenceNumber: {
-          referenceNumber: value,
-        },
-      };
+    console.log(`Field changed: ${name}, Value: ${actualValue}`);
 
-      if (fieldMappings[name]) {
-        /////////////////////////////////
+    // Update local state immediately for responsive UI
+    setLocalData(prevData => {
+      const updatedData = JSON.parse(JSON.stringify(prevData));
+
+      if (name.includes(".")) {
+        // Handle nested field updates
+        const parts = name.split(".");
+        let current = updatedData;
+        
+        // Navigate to the parent object
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        
+        // Set the final value
+        current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+      } else {
+        // Handle legacy field names that map to nested structure
+        const fieldMappings: { [key: string]: any } = {
+          customer: { path: "customer", value: value },
+          date: { path: "dates.date", value: value },
+          referenceNumber: { path: "referenceNumber", value: value },
+        };
+
+        if (fieldMappings[name]) {
+          const mapping = fieldMappings[name];
+          const parts = mapping.path.split(".");
+          let current = updatedData;
+          
+          // Navigate to the parent object
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          // Set the final value
+          current[parts[parts.length - 1]] = mapping.value;
+        } else {
+          // Handle top-level fields
+          updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+        }
       }
+
+      return updatedData;
+    });
+
+    // Debounce backend updates to avoid excessive API calls
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
+
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (!performanceSheetId) {
+          throw new Error("Performance Sheet ID is missing.");
+        }
+
+        // Create updated data for backend
+        const updatedData = JSON.parse(JSON.stringify(localData));
+        
+        // Apply the current change to the data being sent
+        if (name.includes(".")) {
+          const parts = name.split(".");
+          let current = updatedData;
+          
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+        } else {
+          // Handle legacy field mappings
+          const fieldMappings: { [key: string]: any } = {
+            customer: { path: "customer", value: value },
+            date: { path: "dates.date", value: value },
+            referenceNumber: { path: "referenceNumber", value: value },
+          };
+
+          if (fieldMappings[name]) {
+            const mapping = fieldMappings[name];
+            const parts = mapping.path.split(".");
+            let current = updatedData;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              if (!current[parts[i]]) {
+                current[parts[i]] = {};
+              }
+              current = current[parts[i]];
+            }
+            
+            current[parts[parts.length - 1]] = mapping.value;
+          } else {
+            updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+          }
+        }
+
+        console.log("Updating with complete data structure:", updatedData);
+
+        // Send to backend (this will also trigger calculations)
+        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        
+        console.log("Backend response:", response);
+        
+        // Handle calculated values directly from the backend response
+        if (response && response.data && response.data.shear) {
+          console.log("Updating calculated shear values from backend response");
+          
+          setLocalData(prevData => ({
+            ...prevData,
+            shear: {
+              ...prevData.shear,
+              // Update calculated fields from response
+              calculations: {
+                ...prevData.shear,
+                angleOfBlade: response.data.shear.calculations?.angleOfBlade || prevData.shear?.blade?.angleOfBlade,
+                lengthOfInitialCut: response.data.shear.calculations?.lengthOfInitialCut || prevData.shear?.blade?.initialCut?.length,
+                areaOfCut: response.data.shear.calculations?.areaOfCut || prevData.shear?.blade?.initialCut?.area,
+                shearStrength: response.data.shear.calculations?.shearStrength || prevData.shear?.strength,
+                minimumStrokeForBlade: response.data.shear.calculations?.minimumStrokeForBlade || prevData.shear?.cylinder?.minStroke?.forBlade,
+                minStrokeForDesiredOpening: response.data.shear.calculations?.minStrokeForDesiredOpening || prevData.shear?.cylinder?.minStroke?.requiredForOpening,
+                actualOpeningAboveMaxMaterial: response.data.shear.calculations?.actualOpeningAboveMaxMaterial || prevData.shear?.cylinder?.actualOpeningAboveMaxMaterial,
+                cylinderArea: response.data.shear.calculations?.cylinderArea || prevData.shear?.hydraulic?.cylinder?.area,
+                cylinderVolume: response.data.shear.calculations?.cylinderVolume || prevData.shear?.hydraulic?.cylinder?.volume,
+                fluidVelocity: response.data.shear.calculations?.fluidVelocity || prevData.shear?.hydraulic?.fluidVelocity,
+                forcePerCylinder: response.data.shear.calculations?.forcePerCylinder || prevData.shear?.conclusions?.force?.perCylinder,
+                totalForceApplied: response.data.shear.calculations?.totalForceApplied || prevData.shear?.conclusions?.force?.totalApplied,
+                forceReqToShear: response.data.shear.calculations?.forceReqToShear || prevData.shear?.conclusions?.force?.requiredToShear,
+                totalForceAppliedTons: response.data.shear.calculations?.totalForceAppliedTons || prevData.shear?.conclusions?.force?.totalApplied?.tons,
+                safetyFactor: response.data.shear.calculations?.safetyFactor || prevData.shear?.conclusions?.safetyFactor,
+                strokesPerMinute: response.data.shear.calculations?.strokesPerMinute || prevData.shear?.conclusions?.perMinute?.shearStrokes,
+                instantaneousGPM: response.data.shear.calculations?.instantaneousGPM || prevData.shear?.conclusions?.perMinute?.gallons?.instantaneous,
+                averagedGPM: response.data.shear.calculations?.averagedGPM || prevData.shear?.conclusions?.perMinute?.gallons?.averaged,
+                partsPerMinute: response.data.shear.calculations?.partsPerMinute || prevData.shear?.conclusions?.perMinute?.parts,
+                partsPerHour: response.data.shear.calculations?.partsPerHour || prevData.shear?.conclusions?.perHour?.parts,
+              }
+            }
+          }));
+          
+          console.log("Updated calculated shear values:", {
+            angleOfBlade: response.data.shear.calculations?.angleOfBlade,
+            lengthOfInitialCut: response.data.shear.calculations?.lengthOfInitialCut,
+            areaOfCut: response.data.shear.calculations?.areaOfCut,
+            safetyFactor: response.data.shear.calculations?.safetyFactor,
+            strokesPerMinute: response.data.shear.calculations?.strokesPerMinute,
+          });
+        }
+
+      } catch (error) {
+        console.error('Error updating field:', error);
+        setLocalData(data);
+      }
+    }, 500);
   };
 
-  const handleShearTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleShearTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value;
     setShearType(newType);
     
-    //////////////////////////////
+    if (!isEditing) return;
+    
+    // Update local state immediately
+    setLocalData(prevData => {
+      const updatedData = JSON.parse(JSON.stringify(prevData));
+      
+      if (!updatedData.shear) updatedData.shear = {};
+      updatedData.shear.model = newType;
+
+      return updatedData;
+    });
+
+    // Trigger backend update
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (!performanceSheetId) {
+          throw new Error("Performance Sheet ID is missing.");
+        }
+        
+        const response = await updateEntity(performanceSheetId, { data: localData });
+        console.log("Shear type updated:", response);
+      } catch (error) {
+        console.error('Error updating shear type:', error);
+      }
+    }, 500);
   };
 
-  const handleCalculate = () => {
-    // Trigger calculation logic here
+  const handleCalculate = async () => {
+    if (!isEditing) return;
+    
     console.log("Calculate pressed for", shearType, "shear configuration");
-    // In a real implementation, this would trigger backend calculations
-    // and update the data with new shear calculation results
+    
+    try {
+      if (!performanceSheetId) {
+        throw new Error("Performance Sheet ID is missing.");
+      }
+
+      // Trigger shear calculation on the backend
+      const response = await updateEntity(performanceSheetId, { 
+        data: localData,
+        triggerShearCalculation: true 
+      });
+      
+      console.log("Shear calculation triggered:", response);
+      
+      // The response should contain updated shear calculations
+      if (response && response.data && response.data.shear?.calculations) {
+        setLocalData(prevData => ({
+          ...prevData,
+          shear: {
+            ...prevData.shear,
+            calculations: response.data.shear.calculations
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error triggering shear calculation:', error);
+    }
   };
 
-  // Get shear data from data
-  const shearData = data.shear || {};
-  const materialData = data.material || {};
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  // Calculate derived values
+  // Get shear data from localData
+  const shearData = localData.shear || {};
+  const materialData = localData.material || {};
+
+  // Calculate derived values from local data
   const calculateDerivedValues = () => {
     const materialThickness = Number(materialData.materialThickness) || 0;
     const coilWidth = Number(materialData.coilWidth) || 0;
@@ -116,7 +315,37 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     const downwardStrokeTime = Number(shearData.time?.forDownwardStroke) || 0;
     const dwellTime = Number(shearData.time?.dwellTime) || 0;
 
-    // Calculated Variables
+    // Use calculated values from backend if available, otherwise calculate locally
+    const conclusions = shearData.conclusions || {};
+    
+    // If we have backend calculations, use them; otherwise calculate locally for display
+    if (conclusions !== undefined) {
+      // Use backend calculated values
+      return {
+        angleOfBlade: shearData.blade?.angleOfBlade,
+        lengthOfInitialCut: shearData?.blade?.initialCut?.length,
+        areaOfCut: shearData?.blade?.initialCut?.area,
+        shearStrength: shearData?.strength,
+        minimumStrokeForBlade: shearData?.cylinder?.minStroke?.forBlade,
+        minStrokeForDesiredOpening: shearData?.cylinder?.minStroke?.requiredForOpening,
+        actualOpeningAboveMaxMaterial: shearData?.cylinder?.actualOpeningAboveMaxMaterial,
+        cylinderArea: shearData?.hydraulic?.cylinder?.area,
+        cylinderVolume: shearData?.hydraulic?.cylinder?.volume,
+        fluidVelocity: shearData?.hydraulic?.fluidVelocity,
+        forcePerCylinder: shearData?.conclusions?.force?.perCylinder,
+        totalForceApplied: shearData?.conclusions?.force?.totalApplied,
+        forceReqToShear: shearData?.conclusions?.force?.requiredToShear,
+        totalForceAppliedTons: shearData?.conclusions?.force?.totalApplied?.tons,
+        safetyFactor: shearData?.conclusions?.safetyFactor,
+        strokesPerMinute: shearData?.conclusions?.perMinute?.shearStrokes,
+        instantaneousGPM: shearData?.conclusions?.perMinute?.gallons?.instantaneous,
+        averagedGPM: shearData?.conclusions?.perMinute?.gallons?.averaged,
+        partsPerMinute: shearData?.conclusions?.perMinute?.parts,
+        partsPerHour: shearData?.conclusions?.perHour?.parts,
+      };
+    }
+
+    // Local calculations for immediate feedback
     const angleOfBlade = rakeOfBlade * 12 * Math.PI / 180; // Convert to radians, then to display value
     const lengthOfInitialCut = coilWidth / Math.cos(rakeOfBlade * Math.PI / 180);
     const areaOfCut = materialThickness * lengthOfInitialCut;
@@ -177,6 +406,27 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
+      {/* Show loading indicator when calculations are running */}
+      {(loading || updateLoading) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <span className="text-blue-800">
+              {updateLoading ? "Saving changes..." : "Loading..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Show error if calculation fails */}
+      {(error || updateError) && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+          <span className="text-red-800">
+            Error: {error || updateError}
+          </span>
+        </div>
+      )}
+
       {/* Header Information */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
@@ -186,14 +436,14 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           <Input
             label="Customer"
             name="customer"
-            value={data.customer || ""}
+            value={localData.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={data.dates?.date || ""}
+            value={localData.dates?.date || ""}
             onChange={handleChange}
           />
           <Select
@@ -232,7 +482,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
             />
             <Input
               label="Material Tensile (psi)"
-              name="material.materialTensile"
+              name="material.maxTensileStrength"
               type="number"
               value={materialData.maxTensileStrength || ""}
               onChange={handleChange}
@@ -240,7 +490,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           </div>
           <div className="mt-2">
             <Text className="text-sm text-gray-600">
-              Shear Strength (psi) (70-80% of tensile): {calculatedValues.shearStrength.toFixed(0)}
+              Shear Strength (psi) (70-80% of tensile): {(calculatedValues.shearStrength ?? 0).toFixed(0)}
             </Text>
           </div>
         </div>
@@ -252,28 +502,28 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
             <div className="space-y-4">
               <Input
                 label="Rake of blade per foot"
-                name="shear.rakeOfBlade"
+                name="shear.blade.rakeOfBladePerFoot"
                 type="number"
                 value={shearData.blade?.rakeOfBladePerFoot || ""}
                 onChange={handleChange}
               />
               <Input
                 label="Distance blade travels past cut (overlap)"
-                name="shear.overlap"
+                name="shear.blade.overlap"
                 type="number"
                 value={shearData.blade?.overlap || ""}
                 onChange={handleChange}
               />
               <Input
                 label="Desired blade opening"
-                name="shear.bladeOpening"
+                name="shear.blade.bladeOpening"
                 type="number"
                 value={shearData.blade?.bladeOpening || ""}
                 onChange={handleChange}
               />
               <Input
                 label="% of penetration (equal to elongation) (38% std)"
-                name="shear.penetration"
+                name="shear.blade.percentOfPenetration"
                 type="number"
                 value={shearData.blade?.percentOfPenetration || "38"}
                 onChange={handleChange}
@@ -281,10 +531,10 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
             </div>
             <div className="space-y-2">
               <Text as="h4" className="text-sm font-medium">Calculated Variables</Text>
-              <div className="p-3 rounded space-y-1">
-                <Text className="text-sm">Angle of blade: {calculatedValues.angleOfBlade.toFixed(5)}</Text>
-                <Text className="text-sm">Length of initial cut: {calculatedValues.lengthOfInitialCut.toFixed(5)}</Text>
-                <Text className="text-sm">Area of cut: {calculatedValues.areaOfCut.toFixed(5)}</Text>
+              <div className="p-3 bg-gray-50 rounded space-y-1">
+                <Text className="text-sm">Angle of blade: {(calculatedValues.angleOfBlade ?? 0).toFixed(5)}</Text>
+                <Text className="text-sm">Length of initial cut: {(calculatedValues.lengthOfInitialCut ?? 0).toFixed(5)}</Text>
+                <Text className="text-sm">Area of cut: {(calculatedValues.areaOfCut ?? 0).toFixed(5)}</Text>
               </div>
             </div>
           </div>
@@ -297,31 +547,31 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
             <div className="space-y-4">
               <Input
                 label="Bore Size"
-                name="shear.boreSize"
+                name="shear.cylinder.boreSize"
                 type="number"
                 value={shearData.cylinder?.boreSize || ""}
                 onChange={handleChange}
               />
               <Input
                 label="Rod Dia."
-                name="shear.rodDia"
+                name="shear.cylinder.rodDiameter"
                 type="number"
                 value={shearData.cylinder?.rodDiameter || ""}
                 onChange={handleChange}
               />
               <Input
                 label="Stroke"
-                name="shear.stroke"
+                name="shear.cylinder.stroke"
                 type="number"
                 value={shearData.cylinder?.stroke || ""}
                 onChange={handleChange}
               />
             </div>
             <div className="space-y-2">
-              <div className="p-3 rounded space-y-1">
-                <Text className="text-sm">Minimum stroke for blade: {calculatedValues.minimumStrokeForBlade.toFixed(5)}</Text>
-                <Text className="text-sm">Min.stroke required for desired opening: {calculatedValues.minStrokeForDesiredOpening.toFixed(5)}</Text>
-                <Text className="text-sm">Actual opening above max. mat'l: {calculatedValues.actualOpeningAboveMaxMaterial.toFixed(5)}</Text>
+              <div className="p-3 bg-gray-50 rounded space-y-1">
+                <Text className="text-sm">Minimum stroke for blade: {(calculatedValues.minimumStrokeForBlade ?? 0).toFixed(5)}</Text>
+                <Text className="text-sm">Min.stroke required for desired opening: {(calculatedValues.minStrokeForDesiredOpening ?? 0).toFixed(5)}</Text>
+                <Text className="text-sm">Actual opening above max. mat'l: {(calculatedValues.actualOpeningAboveMaxMaterial ?? 0).toFixed(5)}</Text>
               </div>
             </div>
           </div>
@@ -333,15 +583,15 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Pressure"
-              name="shear.pressure"
+              name="shear.hydraulic.pressure"
               type="number"
               value={shearData.hydraulic?.pressure || ""}
               onChange={handleChange}
             />
-            <div className="p-3 rounded space-y-1">
-              <Text className="text-sm">Cylinder Area: {calculatedValues.cylinderArea.toFixed(5)}</Text>
-              <Text className="text-sm">Cylinder Volume: {calculatedValues.cylinderVolume.toFixed(5)}</Text>
-              <Text className="text-sm">Fluid Velocity (ft/sec): {calculatedValues.fluidVelocity.toFixed(5)}</Text>
+            <div className="p-3 bg-gray-50 rounded space-y-1">
+              <Text className="text-sm">Cylinder Area: {(calculatedValues.cylinderArea ?? 0).toFixed(5)}</Text>
+              <Text className="text-sm">Cylinder Volume: {(calculatedValues.cylinderVolume ?? 0).toFixed(5)}</Text>
+              <Text className="text-sm">Fluid Velocity (ft/sec): {(calculatedValues.fluidVelocity ?? 0).toFixed(5)}</Text>
             </div>
           </div>
         </div>
@@ -352,14 +602,14 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Time in seconds for (1) downward stroke"
-              name="shear.downwardStrokeTime"
+              name="shear.time.forDownwardStroke"
               type="number"
               value={shearData.time?.forDownwardStroke || ""}
               onChange={handleChange}
             />
             <Input
               label="Dwell time for feed"
-              name="shear.dwellTime"
+              name="shear.time.dwellTime"
               type="number"
               value={shearData.time?.dwellTime || ""}
               onChange={handleChange}
@@ -391,45 +641,77 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Text className="font-medium">Force per cyl. (double rod, plumbed in series)</Text>
-                <Text>{calculatedValues.forcePerCylinder.toFixed(2)}</Text>
+                <Text>{(calculatedValues.forcePerCylinder ?? 0).toFixed(2)}</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Total Force Applied (lbs)</Text>
-                <Text>{calculatedValues.totalForceApplied.toFixed(2)}</Text>
+                <Text>{
+                  typeof calculatedValues.totalForceApplied === "number"
+                    ? calculatedValues.totalForceApplied.toFixed(2)
+                    : (calculatedValues.totalForceApplied?.lbs ?? 0).toFixed(2)
+                }</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Force req'd to shear (lbs)</Text>
-                <Text>{calculatedValues.forceReqToShear.toFixed(2)} {calculatedValues.forceReqToShear <= calculatedValues.totalForceApplied ? "OK" : ""}</Text>
+                <Text className={
+                  typeof calculatedValues.forceReqToShear === "number" &&
+                  (
+                    typeof calculatedValues.totalForceApplied === "number"
+                      ? calculatedValues.forceReqToShear <= calculatedValues.totalForceApplied
+                      : typeof calculatedValues.totalForceApplied?.lbs === "number"
+                        ? calculatedValues.forceReqToShear <= calculatedValues.totalForceApplied.lbs
+                        : false
+                  )
+                    ? "text-green-600 font-semibold"
+                    : "text-red-600 font-semibold"
+                }>
+                  {typeof calculatedValues.forceReqToShear === "number"
+                    ? calculatedValues.forceReqToShear.toFixed(2)
+                    : "#DIV/0!"}
+                  {" "}
+                  {typeof calculatedValues.forceReqToShear === "number" &&
+                  (
+                    typeof calculatedValues.totalForceApplied === "number"
+                      ? calculatedValues.forceReqToShear <= calculatedValues.totalForceApplied
+                      : typeof calculatedValues.totalForceApplied?.lbs === "number"
+                        ? calculatedValues.forceReqToShear <= calculatedValues.totalForceApplied.lbs
+                        : false
+                  )
+                    ? "OK"
+                    : "NOT OK"}
+                </Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Total Force Applied (tons)</Text>
-                <Text>{calculatedValues.totalForceAppliedTons.toFixed(2)}</Text>
+                <Text>{(calculatedValues.totalForceAppliedTons ?? 0).toFixed(2)}</Text>
               </div>
               <div className="flex justify-between">
-                <Text className="font-medium">Safety Factor (Must be `&gt;` 1.00)</Text>
-                <Text>{calculatedValues.safetyFactor > 0 ? calculatedValues.safetyFactor.toFixed(2) : "#DIV/0!"}</Text>
+                <Text className="font-medium">Safety Factor (Must be {'>'} 1.00)</Text>
+                <Text className={(calculatedValues.safetyFactor ?? 0) > 1 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                  {(calculatedValues.safetyFactor ?? 0) > 0 ? (calculatedValues.safetyFactor ?? 0).toFixed(2) : "#DIV/0!"}
+                </Text>
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Text className="font-medium">Instantaneous Gallons per minute req'd</Text>
-                <Text>{calculatedValues.instantaneousGPM.toFixed(2)}</Text>
+                <Text>{(calculatedValues.instantaneousGPM ?? 0).toFixed(2)}</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Averaged Gallons per minute req'd</Text>
-                <Text>{calculatedValues.averagedGPM.toFixed(2)}</Text>
+                <Text>{(calculatedValues.averagedGPM ?? 0).toFixed(2)}</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Shear strokes per minute</Text>
-                <Text>{calculatedValues.strokesPerMinute.toFixed(0)}</Text>
+                <Text>{(calculatedValues.strokesPerMinute ?? 0).toFixed(0)}</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Parts per minute</Text>
-                <Text>{calculatedValues.partsPerMinute.toFixed(0)}</Text>
+                <Text>{(calculatedValues.partsPerMinute ?? 0).toFixed(0)}</Text>
               </div>
               <div className="flex justify-between">
                 <Text className="font-medium">Parts per hour</Text>
-                <Text>{calculatedValues.partsPerHour.toFixed(0)}</Text>
+                <Text>{(calculatedValues.partsPerHour ?? 0).toFixed(0)}</Text>
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import React, {
 } from "react";
 import { useParams } from "react-router-dom";
 import { mapCalculationResultsToPerformanceData } from "@/utils/universal-mapping";
-import { useUpdatePerformanceSheet } from "@/hooks/performance/use-update-perf-sheet";
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 
 // Versioned material specs fields for each version
 export type MaterialSpecsVersion = {
@@ -480,6 +480,9 @@ export interface PerformanceData {
           averaged?: number;
         };
         shearStrokes?: number;
+        parts?: number;
+      };
+      perHour?: {
         parts?: number;
       };
     };
@@ -979,6 +982,9 @@ const initialPerformanceData: PerformanceData = {
         shearStrokes: 0,
         parts: 0,
       },
+      perHour: {
+        parts: 0,
+      }
     },
   },
   voltageRequired: 0,
@@ -1012,6 +1018,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   const [performanceData, setPerformanceData] = useState<PerformanceData>(initialPerformanceData);
   const performanceDataRef = useRef(performanceData);
   const { id: performanceSheetId } = useParams();
+  const endpoint = `/performance/${performanceSheetId}`;
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -1019,7 +1026,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   }, [performanceData]);
   
   // Use the performance-specific hook
-  const { updateSheet, loading, error } = useUpdatePerformanceSheet();
+  const { loading, error } = useUpdateEntity(endpoint);
 
   const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = false) => {
     // Always update local state first for immediate UI feedback
@@ -1027,33 +1034,8 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
     setPerformanceData(updatedData);
     
     console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
-
-    // Only call backend if explicitly requested (for calculations or saves)
-    if (shouldSave && performanceSheetId) {
-      try {
-        const result = await updateSheet(performanceSheetId, updatedData);
-        
-        // Map the calculation results back to performance data structure
-        if (result && result.data) {
-          console.log("Calculation Results:", result.data, "for Data:", updatedData);
-          const mappedResults = mapCalculationResultsToPerformanceData(result.data, updatedData);
-          
-          // Only update calculated fields, preserve user input
-          setPerformanceData(prevData => ({
-            ...prevData,
-            ...mappedResults
-          }));
-        }
-        
-        return result;
-      } catch (error) {
-        console.error('Error updating performance data:', error);
-        throw error;
-      }
-    }
-    
     return updatedData;
-  }, [performanceSheetId, updateSheet]);
+  }, [performanceSheetId]);
 
   return (
     <PerformanceSheetContext.Provider
