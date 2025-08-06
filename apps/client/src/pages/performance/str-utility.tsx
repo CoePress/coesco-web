@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
@@ -12,98 +13,267 @@ import {
     STR_HORSEPOWER_OPTIONS,
     STR_FEED_RATE_OPTIONS,
  } from "@/utils/select-options";
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useParams } from "react-router-dom";
+import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 export interface StrUtilityProps {
   data: PerformanceData;
   isEditing: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
 }
 
-const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
+  const endpoint = `/performance/sheets`;
+  const { loading, error } = useGetEntity(endpoint);
+  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const { id: performanceSheetId } = useParams();
+  
+  // Local state for immediate UI updates
+  const [localData, setLocalData] = useState<PerformanceData>(data);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with parent data on initial load
+  useEffect(() => {
+    if (!localData.referenceNumber && data.referenceNumber) {
+      console.log('Initial data load, syncing all data');
+      setLocalData(data);
+    }
+  }, [data, localData.referenceNumber]);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!isEditing) return;
 
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const actualValue = value;
 
-    // Handle nested field updates based on field name pattern
-    if (name.includes(".")) {
-      const parts = name.split(".");
-      const [section, ...rest] = parts;
-      
-      // Build the nested update object
-      let updateObj: any = {};
-      let current = updateObj;
-      
-      // Navigate to the correct nested level
-      const sectionData = data[section as keyof typeof data];
-      current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
-      current = current[section];
-      
-      // Handle deeper nesting
-      for (let i = 0; i < rest.length - 1; i++) {
-        current[rest[i]] = { ...current[rest[i]] };
-        current = current[rest[i]];
-      }
-      
-      // Set the final value
-      current[rest[rest.length - 1]] = value;
-      
-      onChange(updateObj);
-    } else {
-      // Handle legacy field names that map to nested structure
-      const fieldMappings: { [key: string]: any } = {
-        customer: {
-          customer: value,
-        },
-        date: {
-          dates: {
-            ...data.dates,
-            date: value,
-          },
-        },
-        referenceNumber: {
-          referenceNumber: value,
-        },
-      };
+    console.log(`Field changed: ${name}, Value: ${actualValue}`);
 
-      if (fieldMappings[name]) {
-        onChange(fieldMappings[name]);
+    // Update local state immediately for responsive UI
+    setLocalData(prevData => {
+      const updatedData = JSON.parse(JSON.stringify(prevData));
+
+      if (name.includes(".")) {
+        // Handle nested field updates
+        const parts = name.split(".");
+        let current = updatedData;
+        
+        // Navigate to the parent object
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        
+        // Set the final value
+        current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+      } else {
+        // Handle legacy field names that map to nested structure
+        const fieldMappings: { [key: string]: any } = {
+          customer: { path: "customer", value: value },
+          date: { path: "dates.date", value: value },
+        };
+
+        if (fieldMappings[name]) {
+          const mapping = fieldMappings[name];
+          const parts = mapping.path.split(".");
+          let current = updatedData;
+          
+          // Navigate to the parent object
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          // Set the final value
+          current[parts[parts.length - 1]] = mapping.value;
+        } else {
+          // Handle top-level fields
+          updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+        }
       }
+
+      return updatedData;
+    });
+
+    // Debounce backend updates to avoid excessive API calls
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
+
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (!performanceSheetId) {
+          throw new Error("Performance Sheet ID is missing.");
+        }
+
+        // Create updated data for backend
+        const updatedData = JSON.parse(JSON.stringify(localData));
+        
+        // Apply the current change to the data being sent
+        if (name.includes(".")) {
+          const parts = name.split(".");
+          let current = updatedData;
+          
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+        } else {
+          // Handle legacy field mappings
+          const fieldMappings: { [key: string]: any } = {
+            customer: { path: "customer", value: value },
+            date: { path: "dates.date", value: value },
+          };
+
+          if (fieldMappings[name]) {
+            const mapping = fieldMappings[name];
+            const parts = mapping.path.split(".");
+            let current = updatedData;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              if (!current[parts[i]]) {
+                current[parts[i]] = {};
+              }
+              current = current[parts[i]];
+            }
+            
+            current[parts[parts.length - 1]] = mapping.value;
+          } else {
+            updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+          }
+        }
+
+        console.log("Updating with complete data structure:", updatedData);
+
+        // Send to backend (this will also trigger calculations)
+        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        
+        console.log("Backend response:", response);
+        
+        // Handle calculated values directly from the backend response
+        if (response && response.data && response.data.straightener) {
+          console.log("Updating calculated straightener values from backend response");
+          
+          setLocalData(prevData => ({
+            ...prevData,
+            straightener: {
+              ...prevData.straightener,
+              // Update calculated fields from response
+              required: {
+                ...prevData.straightener?.required,
+                force: response.data.straightener.required?.force || prevData.straightener?.required?.force,
+                ratedForce: response.data.straightener.required?.ratedForce || prevData.straightener?.required?.ratedForce,
+                horsepower: response.data.straightener.required?.horsepower || prevData.straightener?.required?.horsepower,
+              },
+              rolls: {
+                ...prevData.straightener?.rolls,
+                pinch: {
+                  ...prevData.straightener?.rolls?.pinch,
+                  requiredGearTorque: response.data.straightener.rolls?.pinch?.requiredGearTorque || prevData.straightener?.rolls?.pinch?.requiredGearTorque,
+                  ratedTorque: response.data.straightener.rolls?.pinch?.ratedTorque || prevData.straightener?.rolls?.pinch?.ratedTorque,
+                },
+                straightener: {
+                  ...prevData.straightener?.rolls?.straightener,
+                  requiredGearTorque: response.data.straightener.rolls?.straightener?.requiredGearTorque || prevData.straightener?.rolls?.straightener?.requiredGearTorque,
+                  ratedTorque: response.data.straightener.rolls?.straightener?.ratedTorque || prevData.straightener?.rolls?.straightener?.ratedTorque,
+                }
+              },
+              actualCoilWeight: response.data.straightener.actualCoilWeight || prevData.straightener?.actualCoilWeight,
+              coilOD: response.data.straightener.coilOD || prevData.straightener?.coilOD,
+              torque: {
+                ...prevData.straightener?.torque,
+                straightener: response.data.straightener.torque?.straightener || prevData.straightener?.torque?.straightener,
+                acceleration: response.data.straightener.torque?.acceleration || prevData.straightener?.torque?.acceleration,
+                brake: response.data.straightener.torque?.brake || prevData.straightener?.torque?.brake,
+              }
+            }
+          }));
+          
+          console.log("Updated calculated straightener values:", {
+            requiredForce: response.data.straightener.required?.force,
+            ratedForce: response.data.straightener.required?.ratedForce,
+            requiredHP: response.data.straightener.required?.horsepower,
+            pinchTorque: response.data.straightener.rolls?.pinch?.requiredGearTorque,
+            strTorque: response.data.straightener.rolls?.straightener?.requiredGearTorque,
+          });
+        }
+
+      } catch (error) {
+        console.error('Error updating field:', error);
+        setLocalData(data);
+      }
+    }, 500);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Calculate status indicators
   const getJackForceStatus = () => {
-    const required = Number(data.straightener?.required?.force || 0);
-    const available = Number(data.straightener?.jackForceAvailable || 0);
+    const required = Number(localData.straightener?.required?.force || 0);
+    const available = Number(localData.straightener?.jackForceAvailable || 0);
     return required <= available ? "JACK FORCE OK" : "JACK FORCE INSUFFICIENT";
   };
 
   const getPinchGearStatus = () => {
-    const requiredTorque = Number(data.straightener?.rolls?.pinch?.requiredGearTorque || 0);
-    const ratedTorque = Number(data.straightener?.rolls?.pinch?.ratedTorque || 0);
+    const requiredTorque = Number(localData.straightener?.rolls?.pinch?.requiredGearTorque || 0);
+    const ratedTorque = Number(localData.straightener?.rolls?.pinch?.ratedTorque || 0);
     return requiredTorque <= ratedTorque ? "PINCH GEAR OK" : "PINCH GEAR INSUFFICIENT";
   };
 
   const getStrGearStatus = () => {
-    const requiredTorque = Number(data.straightener?.rolls?.straightener?.requiredGearTorque || 0);
-    const ratedTorque = Number(data.straightener?.rolls?.straightener?.ratedTorque || 0);
+    const requiredTorque = Number(localData.straightener?.rolls?.straightener?.requiredGearTorque || 0);
+    const ratedTorque = Number(localData.straightener?.rolls?.straightener?.ratedTorque || 0);
     return requiredTorque <= ratedTorque ? "STR GEAR OK" : "STR GEAR INSUFFICIENT";
   };
 
   const getHpStatus = () => {
-    const required = Number(data.straightener?.required?.horsepower || 0);
-    const available = Number(data.straightener?.horsepower || 0);
+    const required = Number(localData.straightener?.required?.horsepower || 0);
+    const available = Number(localData.straightener?.horsepower || 0);
     return required <= available ? "HP SUFFICIENT" : "HP INSUFFICIENT";
   };
 
   const getFpmStatus = () => {
-    const feedRate = Number(data.straightener?.feedRate || 0);
+    const feedRate = Number(localData.straightener?.feedRate || 0);
     return feedRate > 0 ? "FPM SUFFICIENT" : "FPM INSUFFICIENT";
   };
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
+      {/* Show loading indicator when calculations are running */}
+      {(loading || updateLoading) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <span className="text-blue-800">
+              {updateLoading ? "Saving changes..." : "Loading..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Show error if calculation fails */}
+      {(error || updateError) && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+          <span className="text-red-800">
+            Error: {error || updateError}
+          </span>
+        </div>
+      )}
+
       {/* Header Information */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
@@ -113,14 +283,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
           <Input
             label="Customer"
             name="customer"
-            value={data.customer || ""}
+            value={localData.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={data.dates?.date || ""}
+            value={localData.dates?.date || ""}
             onChange={handleChange}
           />
         </div>
@@ -135,21 +305,21 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
           <Select
             label="Payoff"
             name="straightener.payoff"
-            value={data.straightener?.payoff || ""}
+            value={localData.straightener?.payoff || ""}
             onChange={handleChange}
             options={PAYOFF_OPTIONS}
           />
           <Select
             label="Str. Model"
             name="straightener.model"
-            value={data.straightener?.model || ""}
+            value={localData.straightener?.model || ""}
             onChange={handleChange}
             options={STR_MODEL_OPTIONS}
           />
           <Select
             label="Str. Width (in.)"
             name="straightener.width"
-            value={String(data.straightener?.width ?? "")}
+            value={String(localData.straightener?.width ?? "")}
             onChange={handleChange}
             options={STR_WIDTH_OPTIONS}
           />
@@ -157,7 +327,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
             label="No. of Str. Rolls"
             name="straightener.rolls.numberOfRolls"
             type="number"
-            value={data.straightener?.rolls?.numberOfRolls || ""}
+            value={localData.straightener?.rolls?.numberOfRolls || ""}
             onChange={handleChange}
           />
         </div>
@@ -173,41 +343,41 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
             label="Coil Wt. Capacity (lbs)"
             name="straightener.actualCoilWeight"
             type="number"
-            value={data.straightener?.actualCoilWeight || ""}
+            value={localData.straightener?.actualCoilWeight || ""}
             onChange={handleChange}
           />
           <Input
             label="Coil ID. (in)"
             name="coil.coilID"
             type="number"
-            value={data.coil?.coilID || ""}
+            value={localData.coil?.coilID || ""}
             onChange={handleChange}
           />
           <Input
             label="Coil Width (in)"
             name="material.coilWidth"
             type="number"
-            value={data.material?.coilWidth || ""}
+            value={localData.material?.coilWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Thickness (in)"
             name="material.materialThickness"
             type="number"
-            value={data.material?.materialThickness || ""}
+            value={localData.material?.materialThickness || ""}
             onChange={handleChange}
           />
           <Input
             label="Yield Strength (psi)"
             name="material.maxYieldStrength"
             type="number"
-            value={data.material?.maxYieldStrength || ""}
+            value={localData.material?.maxYieldStrength || ""}
             onChange={handleChange}
           />
           <Select
             label="Material"
             name="material.materialType"
-            value={data.material?.materialType || ""}
+            value={localData.material?.materialType || ""}
             onChange={handleChange}
             options={MATERIAL_TYPE_OPTIONS}
           />
@@ -223,7 +393,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
           <Select
             label="Horse Power (HP)"
             name="straightener.horsepower"
-            value={String(data.straightener?.horsepower ?? "")}
+            value={String(localData.straightener?.horsepower ?? "")}
             onChange={handleChange}
             options={STR_HORSEPOWER_OPTIONS}
           />
@@ -231,20 +401,20 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
             label="Acceleration (ft/sec²)"
             name="straightener.acceleration"
             type="number"
-            value={data.straightener?.acceleration || ""}
+            value={localData.straightener?.acceleration || ""}
             onChange={handleChange}
           />
           <Select
             label="Feed Rate (ft/min)"
             name="straightener.feedRate"
-            value={String(data.straightener?.feedRate ?? "")}
+            value={String(localData.straightener?.feedRate ?? "")}
             onChange={handleChange}
             options={STR_FEED_RATE_OPTIONS}
           />
           <Select
             label="Auto. Brake Compen."
             name="straightener.autoBrakeCompensation"
-            value={data.straightener?.autoBrakeCompensation || ""}
+            value={localData.straightener?.autoBrakeCompensation || ""}
             onChange={handleChange}
             options={YES_NO_OPTIONS}
           />
@@ -261,42 +431,42 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
             label="Str. Roll Dia. (in)"
             name="straightener.rolls.straightener.diameter"
             type="number"
-            value={data.straightener?.rolls?.straightener?.diameter || ""}
+            value={localData.straightener?.rolls?.straightener?.diameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Pinch Roll Dia. (in)"
             name="straightener.rolls.pinch.diameter"
             type="number"
-            value={data.straightener?.rolls?.pinch?.diameter || ""}
+            value={localData.straightener?.rolls?.pinch?.diameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Center Dist. (in)"
             name="straightener.centerDistance"
             type="number"
-            value={data.straightener?.centerDistance || ""}
+            value={localData.straightener?.centerDistance || ""}
             onChange={handleChange}
           />
           <Input
             label="Jack Force Avail. (lbs)"
             name="straightener.jackForceAvailable"
             type="number"
-            value={data.straightener?.jackForceAvailable || ""}
+            value={localData.straightener?.jackForceAvailable || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roll Depth (in)"
             name="straightener.rolls.depth.withoutMaterial"
             type="number"
-            value={data.straightener?.rolls?.depth?.withoutMaterial || ""}
+            value={localData.straightener?.rolls?.depth?.withoutMaterial || ""}
             onChange={handleChange}
           />
           <Input
             label="Modulus (psi)"
             name="straightener.modulus"
             type="number"
-            value={data.straightener?.modulus || ""}
+            value={localData.straightener?.modulus || ""}
             onChange={handleChange}
           />
         </div>
@@ -317,14 +487,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
                 label="# teeth"
                 name="straightener.gear.pinchRoll.numberOfTeeth"
                 type="number"
-                value={data.straightener?.gear?.pinchRoll?.numberOfTeeth || ""}
+                value={localData.straightener?.gear?.pinchRoll?.numberOfTeeth || ""}
                 onChange={handleChange}
               />
               <Input
                 label="DP"
                 name="straightener.gear.pinchRoll.dp"
                 type="number"
-                value={data.straightener?.gear?.pinchRoll?.dp || ""}
+                value={localData.straightener?.gear?.pinchRoll?.dp || ""}
                 onChange={handleChange}
               />
             </div>
@@ -338,14 +508,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
                 label="# teeth"
                 name="straightener.gear.straightenerRoll.numberOfTeeth"
                 type="number"
-                value={data.straightener?.gear?.straightenerRoll?.numberOfTeeth || ""}
+                value={localData.straightener?.gear?.straightenerRoll?.numberOfTeeth || ""}
                 onChange={handleChange}
               />
               <Input
                 label="DP"
                 name="straightener.gear.straightenerRoll.dp"
                 type="number"
-                value={data.straightener?.gear?.straightenerRoll?.dp || ""}
+                value={localData.straightener?.gear?.straightenerRoll?.dp || ""}
                 onChange={handleChange}
               />
             </div>
@@ -356,14 +526,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
             label="Face Width (in)"
             name="straightener.gear.faceWidth"
             type="number"
-            value={data.straightener?.gear?.faceWidth || ""}
+            value={localData.straightener?.gear?.faceWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Cont. Angle (degree)"
             name="straightener.gear.contAngle"
             type="number"
-            value={data.straightener?.gear?.contAngle || ""}
+            value={localData.straightener?.gear?.contAngle || ""}
             onChange={handleChange}
           />
         </div>
@@ -381,14 +551,13 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Required Force (lbs)"
                 name="straightener.required.force"
-                value={data.straightener?.required?.force || ""}
+                value={localData.straightener?.required?.force || ""}
                 readOnly
-                className="bg-green-100"
               />
               <Input
                 label="Rated Force (lbs)"
                 name="straightener.required.ratedForce"
-                value={data.straightener?.required?.ratedForce || ""}
+                value={localData.straightener?.required?.ratedForce || ""}
                 readOnly
               />
             </div>
@@ -396,14 +565,13 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Pinch Roll Req. Torque"
                 name="straightener.rolls.pinch.requiredGearTorque"
-                value={data.straightener?.rolls?.pinch?.requiredGearTorque || ""}
+                value={localData.straightener?.rolls?.pinch?.requiredGearTorque || ""}
                 readOnly
-                className="bg-green-100"
               />
               <Input
                 label="Pinch Roll Rated Torque"
                 name="straightener.rolls.pinch.ratedTorque"
-                value={data.straightener?.rolls?.pinch?.ratedTorque || ""}
+                value={localData.straightener?.rolls?.pinch?.ratedTorque || ""}
                 readOnly
               />
             </div>
@@ -411,14 +579,13 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Str. Roll Req. Torque"
                 name="straightener.rolls.straightener.requiredGearTorque"
-                value={data.straightener?.rolls?.straightener?.requiredGearTorque || ""}
+                value={localData.straightener?.rolls?.straightener?.requiredGearTorque || ""}
                 readOnly
-                className="bg-green-100"
               />
               <Input
                 label="Str. Roll Rated Torque"
                 name="straightener.rolls.straightener.ratedTorque"
-                value={data.straightener?.rolls?.straightener?.ratedTorque || ""}
+                value={localData.straightener?.rolls?.straightener?.ratedTorque || ""}
                 readOnly
               />
             </div>
@@ -426,9 +593,8 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Horse Power Required (HP)"
                 name="straightener.required.horsepower"
-                value={data.straightener?.required?.horsepower || ""}
+                value={localData.straightener?.required?.horsepower || ""}
                 readOnly
-                className="bg-green-100"
               />
             </div>
           </div>
@@ -444,13 +610,13 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Actual Coil Wt. (lbs)"
                 name="straightener.actualCoilWeight"
-                value={data.straightener?.actualCoilWeight || ""}
+                value={localData.straightener?.actualCoilWeight || ""}
                 readOnly
               />
               <Input
                 label="Coil OD. (in)"
                 name="straightener.coilOD"
-                value={data.straightener?.coilOD || ""}
+                value={localData.straightener?.coilOD || ""}
                 readOnly
               />
             </div>
@@ -458,19 +624,19 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing, onChange }) =>
               <Input
                 label="Str. Torque (in lbs)"
                 name="straightener.torque.straightener"
-                value={data.straightener?.torque?.straightener || ""}
+                value={localData.straightener?.torque?.straightener || ""}
                 readOnly
               />
               <Input
                 label="Accel. Torque (in lbs)"
                 name="straightener.torque.acceleration"
-                value={data.straightener?.torque?.acceleration || ""}
+                value={localData.straightener?.torque?.acceleration || ""}
                 readOnly
               />
               <Input
                 label="Brake Torque (in lbs)"
                 name="straightener.torque.brake"
-                value={data.straightener?.torque?.brake || ""}
+                value={localData.straightener?.torque?.brake || ""}
                 readOnly
               />
             </div>

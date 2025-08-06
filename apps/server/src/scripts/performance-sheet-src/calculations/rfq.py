@@ -21,7 +21,7 @@ def calculate_fpm(data: rfq_input):
 
     if data.feed_length > 0 and data.spm > 0:
         fpm = round((data.feed_length * data.spm) / 12, 2)
-        return {"fpm": fpm}
+        return fpm
 
-    return {"fpm": ""}
+    return 0
 

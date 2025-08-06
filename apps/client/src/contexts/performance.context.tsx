@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { 
+  createContext, useContext, useState, ReactNode, useCallback,
+  useEffect, useRef 
+} from "react";
+import { useParams } from "react-router-dom";
+import { mapCalculationResultsToPerformanceData } from "@/utils/universal-mapping";
+import { useUpdatePerformanceSheet } from "@/hooks/performance/use-update-perf-sheet";
 
 // Versioned material specs fields for each version
 export type MaterialSpecsVersion = {
@@ -126,6 +132,8 @@ export interface PerformanceData {
     fullWidthRolls?: string;
     motor?: string;
     amp?: string;
+    pressBedLength?: number;
+    materialInLoop?: number;
     frictionInDie?: number;
     accelerationRate?: number;
     defaultAcceleration?: number;
@@ -134,6 +142,9 @@ export interface PerformanceData {
     feedAngle1?: number;
     feedAngle2?: number;
     maximumVelocity?: number;
+    maxMotorRPM?: number;
+    motorInertia?: number;
+    settleTime?: number;
     acceleration?: number;
     ratio?: string;
     typeOfLine?: string;
@@ -575,6 +586,8 @@ const initialPerformanceData: PerformanceData = {
     fullWidthRolls: "",
     motor: "",
     amp: "",
+    pressBedLength: 0,
+    materialInLoop: 0,
     frictionInDie: 0,
     accelerationRate: 0,
     defaultAcceleration: 0,
@@ -583,6 +596,9 @@ const initialPerformanceData: PerformanceData = {
     feedAngle1: 0,
     feedAngle2: 0,
     maximumVelocity: 0,
+    maxMotorRPM: 0,
+    motorInertia: 0,
+    settleTime: 0,
     acceleration: 0,
     ratio: "",
     typeOfLine: "",
@@ -985,39 +1001,68 @@ export const PerformanceSheetContext = createContext<
   | {
       performanceData: PerformanceData;
       setPerformanceData: React.Dispatch<React.SetStateAction<PerformanceData>>;
-      updatePerformanceData: (updates: Partial<PerformanceData>) => void;
+      updatePerformanceData: (updates: Partial<PerformanceData>) => Promise<any>;
+      loading?: boolean;
+      error?: string | null;
     }
   | undefined
 >(undefined);
 
 export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) => {
   const [performanceData, setPerformanceData] = useState<PerformanceData>(initialPerformanceData);
+  const performanceDataRef = useRef(performanceData);
+  const { id: performanceSheetId } = useParams();
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    performanceDataRef.current = performanceData;
+  }, [performanceData]);
+  
+  // Use the performance-specific hook
+  const { updateSheet, loading, error } = useUpdatePerformanceSheet();
 
-  const updatePerformanceData = (updates: Partial<PerformanceData>) => {
-    setPerformanceData((prev) => {
-      // Deep merge for nested objects
-      const mergeDeep = (target: any, source: any) => {
-        const output = { ...target };
-        for (const key in source) {
-          if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-            output[key] = mergeDeep(target[key] || {}, source[key]);
-          } else {
-            output[key] = source[key];
-          }
+  const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = false) => {
+    // Always update local state first for immediate UI feedback
+    const updatedData = { ...performanceDataRef.current, ...updates };
+    setPerformanceData(updatedData);
+    
+    console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
+
+    // Only call backend if explicitly requested (for calculations or saves)
+    if (shouldSave && performanceSheetId) {
+      try {
+        const result = await updateSheet(performanceSheetId, updatedData);
+        
+        // Map the calculation results back to performance data structure
+        if (result && result.data) {
+          console.log("Calculation Results:", result.data, "for Data:", updatedData);
+          const mappedResults = mapCalculationResultsToPerformanceData(result.data, updatedData);
+          
+          // Only update calculated fields, preserve user input
+          setPerformanceData(prevData => ({
+            ...prevData,
+            ...mappedResults
+          }));
         }
-        return output;
-      };
-      
-      return mergeDeep(prev, updates);
-    });
-  };
+        
+        return result;
+      } catch (error) {
+        console.error('Error updating performance data:', error);
+        throw error;
+      }
+    }
+    
+    return updatedData;
+  }, [performanceSheetId, updateSheet]);
 
   return (
     <PerformanceSheetContext.Provider
       value={{ 
         performanceData,
         setPerformanceData,
-        updatePerformanceData
+        updatePerformanceData,
+        loading,
+        error,
       }}
     >
       {children}

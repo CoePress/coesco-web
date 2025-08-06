@@ -5,6 +5,7 @@ import {
 } from "@/services/repository";
 import { NextFunction, Request, Response } from "express";
 import { spawn, spawnSync } from "child_process";
+import { updateResultsWithParsedData } from "@/utils/performance-utils";
 
 export class PerformanceController {
   // Performance Sheets
@@ -17,7 +18,7 @@ export class PerformanceController {
           const { data, ...metadata } = sheet;
           return metadata;
         }) || [];
-
+        
       res.status(200).json({
         ...result,
         data: sheetsWithoutData,
@@ -89,8 +90,9 @@ export class PerformanceController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const result = await performanceSheetService.update(id, req.body);
-      const updatedData = JSON.stringify(result.data);
+      
+      const data = req.body.data || {};
+      const updatedData = JSON.stringify(data);
 
       const pyResult = spawnSync(
         "python",
@@ -100,16 +102,22 @@ export class PerformanceController {
           encoding: "utf-8",
         }
       );
-
+      
       if (pyResult.error) throw pyResult.error;
       if (pyResult.status !== 0)
         throw new Error(pyResult.stderr || "Script error");
 
       const parsed = JSON.parse(pyResult.stdout);
+      const updatedResults = updateResultsWithParsedData(data, parsed);
+
+      req.body.data = updatedResults;
+
+      const result = await performanceSheetService.update(id, req.body);
 
       res.status(200).json({
-        ...result,
-        parsed,
+        success: true,
+        data: result.data,
+        id: id,
       });
     } catch (err) {
       next(err);

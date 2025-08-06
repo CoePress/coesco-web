@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Checkbox from "@/components/common/checkbox";
@@ -15,202 +15,238 @@ import {
   MATERIAL_TYPE_OPTIONS,
 } from "@/utils/select-options";
 import { PerformanceData } from "@/contexts/performance.context";
-
-function hasAllRequiredFields(materialData: any, coilData: any) {
-  return (
-    materialData?.materialType &&
-    materialData?.materialThickness &&
-    materialData?.maxYieldStrength &&
-    materialData?.coilWidth &&
-    coilData?.maxCoilWeight &&
-    coilData?.coilID
-  );
-}
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useParams } from "react-router-dom";
+import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 export interface MaterialSpecsProps {
   data: PerformanceData;
   isEditing: boolean;
-  onChange: (update: Partial<PerformanceData>) => void;
 }
 
-const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange }) => {
-  // Get coil width boundaries from the nested structure
-  const coilWidthMin = Number(data.coil?.minCoilWidth) || undefined;
-  const coilWidthMax = Number(data.coil?.maxCoilWidth) || undefined;
+const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
+  const endpoint = `/performance/sheets`;
+  const { loading, error } = useGetEntity(endpoint);
+  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const { id: performanceSheetId } = useParams();
+  
+  // Local state for immediate UI updates
+  const [localData, setLocalData] = useState<PerformanceData>(data);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync with parent data on initial load
   useEffect(() => {
-    
-  }, [onChange]);
+    if (!localData.referenceNumber && data.referenceNumber) {
+      console.log('Initial data load, syncing all data');
+      setLocalData(data);
+    }
+  }, [data, localData.referenceNumber]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  // Get coil width boundaries from the nested structure
+  const coilWidthMin = Number(localData.coil?.minCoilWidth) || undefined;
+  const coilWidthMax = Number(localData.coil?.maxCoilWidth) || undefined;
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!isEditing) return;
 
     const { name, value, type } = e.target;
     const checked = type === "checkbox" && "checked" in e.target ? (e.target as HTMLInputElement).checked : undefined;
     const actualValue = type === "checkbox" ? checked : value;
 
-    // Handle nested field updates based on field name pattern
-    if (name.includes(".")) {
-      const parts = name.split(".");
-      const [section, ...rest] = parts;
-      
-      // Build the nested update object
-      let updateObj: any = {};
-      let current = updateObj;
-      
-      // Navigate to the correct nested level
-      const sectionData = data[section as keyof typeof data];
-      current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
-      current = current[section];
-      
-      // Handle deeper nesting
-      for (let i = 0; i < rest.length - 1; i++) {
-        current[rest[i]] = { ...current[rest[i]] };
-        current = current[rest[i]];
-      }
-      
-      // Set the final value
-      current[rest[rest.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      
-      onChange(updateObj);
-    } else {
-      // Handle legacy field names that map to nested structure
-      const fieldMappings: { [key: string]: any } = {
-        referenceNumber: {
-          referenceNumber: value,
-        },
-        customer: {
-          customer: value,
-        },
-        date: {
-          dates: {
-            ...data.dates,
-            date: value,
-          },
-        },
-        feedDirection: {
-          feed: {
-            ...data.feed,
-            direction: value,
-          },
-        },
-        controlsLevel: {
-          feed: {
-            ...data.feed,
-            controlsLevel: value,
-          },
-        },
-        typeOfLine: {
-          feed: {
-            ...data.feed,
-            typeOfLine: value,
-          },
-        },
-        feedControls: {
-          feed: {
-            ...data.feed,
-            controls: value,
-          },
-        },
-        passline: {
-          feed: {
-            ...data.feed,
-            passline: value,
-          },
-        },
-        typeOfRoll: {
-          straightener: {
-            ...data.straightener,
-            rolls: {
-              ...data.straightener?.rolls,
-              typeOfRoll: value,
-            },
-          },
-        },
-        reelBackplate: {
-          reel: {
-            ...data.reel,
-            backplate: {
-              ...data.reel?.backplate,
-              type: value,
-            },
-          },
-        },
-        reelStyle: {
-          reel: {
-            ...data.reel,
-            style: value,
-          },
-        },
-        lightGauge: {
-          feed: {
-            ...data.feed,
-            lightGuageNonMarking: actualValue ? "true" : "false",
-          },
-        },
-        nonMarking: {
-          feed: {
-            ...data.feed,
-            nonMarking: actualValue ? "true" : "false",
-          },
-        },
-      };
+    console.log(`Field changed: ${name}, Value: ${actualValue}`);
 
-      if (fieldMappings[name]) {
-        onChange(fieldMappings[name]);
+    // Update local state immediately for responsive UI
+    setLocalData(prevData => {
+      const updatedData = JSON.parse(JSON.stringify(prevData));
+
+      if (name.includes(".")) {
+        // Handle nested field updates
+        const parts = name.split(".");
+        let current = updatedData;
+        
+        // Navigate to the parent object
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        
+        // Set the final value
+        current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+      } else {
+        // Handle legacy field names that map to nested structure
+        const fieldMappings: { [key: string]: any } = {
+          referenceNumber: { path: "referenceNumber", value: value },
+          customer: { path: "customer", value: value },
+          date: { path: "dates.date", value: value },
+          feedDirection: { path: "feed.direction", value: value },
+          controlsLevel: { path: "feed.controlsLevel", value: value },
+          typeOfLine: { path: "feed.typeOfLine", value: value },
+          feedControls: { path: "feed.controls", value: value },
+          passline: { path: "feed.passline", value: value },
+          typeOfRoll: { path: "straightener.rolls.typeOfRoll", value: value },
+          reelBackplate: { path: "reel.backplate.type", value: value },
+          reelStyle: { path: "reel.style", value: value },
+          lightGauge: { path: "feed.lightGuageNonMarking", value: actualValue ? "true" : "false" },
+          nonMarking: { path: "feed.nonMarking", value: actualValue ? "true" : "false" },
+        };
+
+        if (fieldMappings[name]) {
+          const mapping = fieldMappings[name];
+          const parts = mapping.path.split(".");
+          let current = updatedData;
+          
+          // Navigate to the parent object
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          // Set the final value
+          current[parts[parts.length - 1]] = mapping.value;
+        } else {
+          // Handle top-level fields
+          updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+        }
       }
+
+      return updatedData;
+    });
+
+    // Debounce backend updates to avoid excessive API calls
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
 
-    // Trigger calculation if all required fields are present
-    setTimeout(() => {
-      if (hasAllRequiredFields(data.material, data.coil)) {
-        triggerCalculation();
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (!performanceSheetId) {
+          throw new Error("Performance Sheet ID is missing.");
+        }
+
+        // Create updated data for backend
+        const updatedData = JSON.parse(JSON.stringify(localData));
+        
+        // Apply the current change to the data being sent
+        if (name.includes(".")) {
+          const parts = name.split(".");
+          let current = updatedData;
+          
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+        } else {
+          // Handle legacy field mappings
+          const fieldMappings: { [key: string]: any } = {
+            referenceNumber: { path: "referenceNumber", value: value },
+            customer: { path: "customer", value: value },
+            date: { path: "dates.date", value: value },
+            feedDirection: { path: "feed.direction", value: value },
+            controlsLevel: { path: "feed.controlsLevel", value: value },
+            typeOfLine: { path: "feed.typeOfLine", value: value },
+            feedControls: { path: "feed.controls", value: value },
+            passline: { path: "feed.passline", value: value },
+            typeOfRoll: { path: "straightener.rolls.typeOfRoll", value: value },
+            reelBackplate: { path: "reel.backplate.type", value: value },
+            reelStyle: { path: "reel.style", value: value },
+            lightGauge: { path: "feed.lightGuageNonMarking", value: actualValue ? "true" : "false" },
+            nonMarking: { path: "feed.nonMarking", value: actualValue ? "true" : "false" },
+          };
+
+          if (fieldMappings[name]) {
+            const mapping = fieldMappings[name];
+            const parts = mapping.path.split(".");
+            let current = updatedData;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              if (!current[parts[i]]) {
+                current[parts[i]] = {};
+              }
+              current = current[parts[i]];
+            }
+            
+            current[parts[parts.length - 1]] = mapping.value;
+          } else {
+            updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+          }
+        }
+
+        console.log("Updating with complete data structure:", updatedData);
+
+        // Send to backend (this will also trigger calculations)
+        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        
+        console.log("Backend response:", response);
+        
+        // Handle calculated values directly from the backend response
+        if (response && response.data) {
+          console.log("Updating calculated values from backend response");
+          
+          setLocalData(prevData => ({
+            ...prevData,
+            // Update calculated fields from response
+            material: {
+              ...prevData.material,
+              minBendRadius: response.data.material?.minBendRadius || prevData.material?.minBendRadius,
+              minLoopLength: response.data.material?.minLoopLength || prevData.material?.minLoopLength,
+              calculatedCoilOD: response.data.material?.calculatedCoilOD || prevData.material?.calculatedCoilOD,
+            },
+            // Update any other calculated fields as needed
+            feed: {
+              ...prevData.feed,
+              controls: response.data.feed?.controls || prevData.feed?.controls,
+              // Add other calculated feed fields
+            }
+          }));
+        }
+
+      } catch (error) {
+        console.error('Error updating field:', error);
+        setLocalData(data);
       }
     }, 500);
   };
 
-  const triggerCalculation = async () => {
-    const material = data.material;
-    const coil = data.coil;
-
-    if (!hasAllRequiredFields(material, coil)) return;
-
-    const payload = {
-      material_type: material?.materialType || "",
-      material_thickness: Number(material?.materialThickness || 0),
-      yield_strength: Number(material?.maxYieldStrength || 0),
-      material_width: Number(material?.coilWidth || 0),
-      coil_weight_max: Number(coil?.maxCoilWeight || 0),
-      coil_id: Number(coil?.coilID || 0),
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
     };
-
-    // Guard: Only send if all required fields are present and valid
-    const allValid =
-      typeof payload.material_type === "string" &&
-      payload.material_type.trim() !== "" &&
-      typeof payload.material_thickness === "number" &&
-      !isNaN(payload.material_thickness) &&
-      payload.material_thickness > 0 &&
-      typeof payload.yield_strength === "number" &&
-      !isNaN(payload.yield_strength) &&
-      payload.yield_strength > 0 &&
-      typeof payload.material_width === "number" &&
-      !isNaN(payload.material_width) &&
-      payload.material_width > 0 &&
-      typeof payload.coil_weight_max === "number" &&
-      !isNaN(payload.coil_weight_max) &&
-      payload.coil_weight_max > 0 &&
-      typeof payload.coil_id === "number" &&
-      !isNaN(payload.coil_id) &&
-      payload.coil_id > 0;
-
-    if (!allValid) return;
-  };
+  }, []);
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
+      {/* Show loading indicator when calculations are running */}
+      {(loading || updateLoading) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <span className="text-blue-800">
+              {updateLoading ? "Saving changes..." : "Loading..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Show error if calculation fails */}
+      {(error || updateError) && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+          <span className="text-red-800">
+            Error: {error || updateError}
+          </span>
+        </div>
+      )}
+
       {/* Customer and Date Card */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
@@ -220,14 +256,14 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Input
             label="Customer"
             name="customer"
-            value={data.customer || ""}
+            value={localData.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={data.dates?.date || ""}
+            value={localData.dates?.date || ""}
             onChange={handleChange}
           />
         </div>
@@ -241,7 +277,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Input
             label="Coil Width (in)"
             name="material.coilWidth"
-            value={data.material?.coilWidth || ""}
+            value={localData.material?.coilWidth || ""}
             onChange={handleChange}
             type="number"
             min={coilWidthMin}
@@ -250,56 +286,56 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Input
             label="Coil Weight (Max)"
             name="coil.maxCoilWeight"
-            value={data.coil?.maxCoilWeight || ""}
+            value={localData.coil?.maxCoilWeight || ""}
             onChange={handleChange}
             type="number"
           />
           <Input
             label="Material Thickness (in)"
             name="material.materialThickness"
-            value={data.material?.materialThickness || ""}
+            value={localData.material?.materialThickness || ""}
             onChange={handleChange}
             type="number"
           />
           <Select
             label="Material Type"
             name="material.materialType"
-            value={data.material?.materialType || ""}
+            value={localData.material?.materialType || ""}
             onChange={handleChange}
             options={MATERIAL_TYPE_OPTIONS}
           />
           <Input
             label="Yield Strength (psi)"
             name="material.maxYieldStrength"
-            value={data.material?.maxYieldStrength || ""}
+            value={localData.material?.maxYieldStrength || ""}
             onChange={handleChange}
             type="number"
           />
           <Input
             label="Material Tensile (psi)"
             name="material.maxTensileStrength"
-            value={data.material?.maxTensileStrength || ""}
+            value={localData.material?.maxTensileStrength || ""}
             onChange={handleChange}
             type="number"
           />
           <Input
             label="Coil I.D."
             name="coil.coilID"
-            value={data.coil?.coilID || ""}
+            value={localData.coil?.coilID || ""}
             onChange={handleChange}
             type="number"
           />
           <Input
             label="Coil O.D."
             name="coil.maxCoilOD"
-            value={data.coil?.maxCoilOD || ""}
+            value={localData.coil?.maxCoilOD || ""}
             onChange={handleChange}
             type="number"
           />
           <Input
             label="Min Bend Radius (in)"
             name="material.minBendRadius"
-            value={data.material?.minBendRadius || ""}
+            value={localData.material?.minBendRadius || ""}
             onChange={handleChange}
             type="number"
             readOnly
@@ -307,7 +343,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Input
             label="Min Loop Length (ft)"
             name="material.minLoopLength"
-            value={data.material?.minLoopLength || ""}
+            value={localData.material?.minLoopLength || ""}
             onChange={handleChange}
             type="number"
             readOnly
@@ -315,7 +351,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Input
             label="Coil O.D. Calculated"
             name="material.calculatedCoilOD"
-            value={data.material?.calculatedCoilOD || ""}
+            value={localData.material?.calculatedCoilOD || ""}
             onChange={handleChange}
             type="number"
             readOnly
@@ -331,21 +367,21 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
           <Select
             label="Select Feed Direction"
             name="feedDirection"
-            value={data.feed?.direction || ""}
+            value={localData.feed?.direction || ""}
             onChange={handleChange}
             options={FEED_DIRECTION_OPTIONS}
           />
           <Select
             label="Select Controls Level"
             name="controlsLevel"
-            value={data.feed?.controlsLevel || ""}
+            value={localData.feed?.controlsLevel || ""}
             onChange={handleChange}
             options={CONTROLS_LEVEL_OPTIONS}
           />
           <Select
             label="Type of Line"
             name="typeOfLine"
-            value={data.feed?.typeOfLine || ""}
+            value={localData.feed?.typeOfLine || ""}
             onChange={handleChange}
             options={TYPE_OF_LINE_OPTIONS}
           />
@@ -353,48 +389,48 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing, onChange
             label="Feed Controls"
             name="feedControls"
             type="text"
-            value={data.feed?.controls || ""}
+            value={localData.feed?.controls || ""}
             onChange={handleChange}
-            disabled
+            readOnly
           />
           <Select
             label="Passline"
             name="passline"
-            value={data.feed?.passline || ""}
+            value={localData.feed?.passline || ""}
             onChange={handleChange}
             options={PASSLINE_OPTIONS}
           />
           <Select
             label="Select Roll"
             name="typeOfRoll"
-            value={data.straightener?.rolls?.typeOfRoll || ""}
+            value={localData.straightener?.rolls?.typeOfRoll || ""}
             onChange={handleChange}
             options={ROLL_TYPE_OPTIONS}
           />
           <Select
             label="Reel Backplate"
             name="reelBackplate"
-            value={data.reel?.backplate?.type || ""}
+            value={localData.reel?.backplate?.type || ""}
             onChange={handleChange}
             options={REEL_BACKPLATE_OPTIONS}
           />
           <Select
             label="Reel Style"
             name="reelStyle"
-            value={data.reel?.style || ""}
+            value={localData.reel?.style || ""}
             onChange={handleChange}
             options={REEL_STYLE_OPTIONS}
           />
           <Checkbox
             label="Light Gauge Non-Marking"
             name="lightGauge"
-            checked={data.feed?.lightGuageNonMarking === "true"}
+            checked={localData.feed?.lightGuageNonMarking === "true"}
             onChange={handleChange}
           />
           <Checkbox
             label="Non-Marking"
             name="nonMarking"
-            checked={data.feed?.nonMarking === "true"}
+            checked={localData.feed?.nonMarking === "true"}
             onChange={handleChange}
           />
         </div>

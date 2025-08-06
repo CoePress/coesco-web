@@ -14,10 +14,9 @@ const SHEAR_TYPE_OPTIONS = [
 export interface ShearProps {
   data: PerformanceData;
   isEditing: boolean;
-  onChange: (updates: Partial<PerformanceData>) => void;
 }
 
-const Shear: React.FC<ShearProps> = ({ data, isEditing, onChange }) => {
+const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   
   // Determine shear type based on current data or default
   const getShearType = () => {
@@ -59,7 +58,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing, onChange }) => {
       // Set the final value
       current[rest[rest.length - 1]] = actualValue;
       
-      onChange(updateObj);
+      /////////////////////////////////
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -78,7 +77,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing, onChange }) => {
       };
 
       if (fieldMappings[name]) {
-        onChange(fieldMappings[name]);
+        /////////////////////////////////
       }
     }
   };
@@ -87,13 +86,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing, onChange }) => {
     const newType = e.target.value;
     setShearType(newType);
     
-    // Update the shear.type value
-    onChange({
-      shear: {
-        ...data.shear,
-        model: newType,
-      },
-    });
+    //////////////////////////////
   };
 
   const handleCalculate = () => {

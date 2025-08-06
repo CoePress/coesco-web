@@ -7,10 +7,9 @@ import Checkbox from "@/components/common/checkbox";
 export interface SummaryReportProps {
   data: PerformanceData;
   isEditing: boolean;
-  onChange: (updates: Partial<PerformanceData>) => void;
 }
 
-const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing, onChange }) => {
+const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
 
   // Helper for checkboxes (convert string/boolean to boolean)
   const boolVal = (val: any) => val === true || val === "true" || val === "Yes";
@@ -44,7 +43,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing, onChange
       // Set the final value
       current[rest[rest.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
       
-      onChange(updateObj);
+      ////////////////////////////////
     } else {
       // Handle legacy field names that map to nested structure
       const fieldMappings: { [key: string]: any } = {
@@ -355,7 +354,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing, onChange
       };
 
       if (fieldMappings[name]) {
-        onChange(fieldMappings[name]);
+        ///////////////////////////////////
       }
     }
   };

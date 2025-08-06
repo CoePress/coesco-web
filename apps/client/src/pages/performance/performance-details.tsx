@@ -12,11 +12,10 @@ import SummaryReport from "./summary-report";
 import PageHeader from "@/components/common/page-header";
 import { Save, Lock, Link } from "lucide-react";
 import { useGetEntity } from "@/hooks/_base/use-get-entity";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { instance } from "@/utils";
 import { useSocket } from "@/contexts/socket.context";
 import { useAuth } from "@/contexts/auth.context";
-import { usePerformanceSheet } from "@/contexts/performance.context";
 import Modal from "@/components/common/modal";
 import { Select } from "@/components";
 import Button from "@/components/common/button";
@@ -46,6 +45,8 @@ type PerformanceTabValue =
 
 const PerformanceDetails = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
@@ -63,11 +64,10 @@ const PerformanceDetails = () => {
     { entityType: "company", entityId: "789" },
   ]);
   const { id: performanceSheetId } = useParams();
-  const { entity: performanceSheet } = useGetEntity(
+  const { entity: performanceSheet, loading, error, refresh } = useGetEntity(
     `/performance/sheets`,
     performanceSheetId
   );
-  const { performanceData, updatePerformanceData } = usePerformanceSheet();
   const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
@@ -192,33 +192,60 @@ const PerformanceDetails = () => {
 
   const renderTabContent = () => {
     const commonProps = {
-      data: performanceData,
-      isEditing,
-      onChange: updatePerformanceData
+      data: performanceSheet?.data || null,
+      isEditing
     };
+
+    // Get active tab from URL
+    const getActiveTabFromUrl = (): PerformanceTabValue => {
+      const pathSegments = location.pathname.split('/');
+      const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
+      
+      // Check if it's a valid tab, otherwise default to 'rfq'
+      const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
+      return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
+    };
+
+    // Don't render tab content if data is still loading
+    if (loading) {
+      return <div className="flex justify-center items-center h-64">Loading...</div>;
+    }
+
+    if (error) {
+      return <div className="flex justify-center items-center h-64 text-red-500">Error loading performance sheet</div>;
+    }
+
+    if (!performanceSheet?.data) {
+      return <div className="flex justify-center items-center h-64">No data available</div>;
+    }
 
     switch (activeTab) {
       case "rfq":
         return <RFQ {...commonProps} />;
       case "material-specs":
-        return <MaterialSpecs />;
+        return <MaterialSpecs {...commonProps} />;
       case "tddbhd":
-        return <TDDBHD />;
+        return <TDDBHD {...commonProps} />;
       case "reel-drive":
-        return <ReelDrive />;
+        return <ReelDrive {...commonProps} />;
       case "str-utility":
-        return <StrUtility />;
+        return <StrUtility {...commonProps} />;
       case "roll-str-backbend":
-        return <RollStrBackbend />;
+        return <RollStrBackbend {...commonProps} />;
       case "feed":
-        return <Feed />;
+        return <Feed {...commonProps} />;
       case "shear":
-        return <Shear />;
+        return <Shear {...commonProps} />;
       case "summary-report":
-        return <SummaryReport />;
+        return <SummaryReport {...commonProps} />;
       default:
-        return <RFQ {...commonProps}/>;
+        return <RFQ {...commonProps} />;
     }
+  };
+
+  // Handle tab changes by navigating to the new URL
+  const handleTabChange = (tab: PerformanceTabValue) => {
+    navigate(`/performance/${performanceSheetId}/${tab}`);
   };
 
   return (

@@ -85,12 +85,16 @@ def parse_str_with_default(data, keys, default_category, default_key):
 
 # --- Main mapping and calculation logic ---
 def main():
+    print("DEBUG - Starting COE Performance Sheet JSON Calculator", file=sys.stderr)
     # Try to read from stdin first, then fall back to command line arguments
     if not sys.stdin.isatty():
         # Data is being piped in via stdin
         try:
             stdin_data = sys.stdin.read()
             data = json.loads(stdin_data)
+            if 'data' in data and isinstance(data['data'], dict):
+                data = data['data']
+            print(f"DEBUG - Using data structure: {json.dumps(data, indent=2)}", file=sys.stderr)
         except json.JSONDecodeError as e:
             print(f"Error: Invalid JSON data from stdin: {e}", file=sys.stderr)
             sys.exit(1)
@@ -105,20 +109,21 @@ def main():
         except json.JSONDecodeError as e:
             parser.error(f"Invalid JSON data: {e}")
 
+    print("DEBUG - Starting RFQ", file=sys.stderr)
     # --- RFQ (calculate for average, min, and max) ---
     rfq_average_data = {
-        "feed_length": parse_float_with_default(data, ["feed", "average", "length"], 'rfq', 'feed_length'),
-        "spm": parse_float_with_default(data, ["feed", "average", "spm"], 'rfq', 'spm'),
+        "feed_length": parse_float_with_default(data, ["feed", "average", "length"], 'feed', 'average_length'),
+        "spm": parse_float_with_default(data, ["feed", "average", "spm"], 'feed', 'average_spm'),
     }
     rfq_min_data = {
-        "feed_length": parse_float_with_default(data, ["feed", "min", "length"], 'rfq', 'feed_length'),
-        "spm": parse_float_with_default(data, ["feed", "min", "spm"], 'rfq', 'spm'),
+        "feed_length": parse_float_with_default(data, ["feed", "min", "length"], 'feed', 'min_length'),
+        "spm": parse_float_with_default(data, ["feed", "min", "spm"], 'feed', 'min_spm'),
     }
     rfq_max_data = {
-        "feed_length": parse_float_with_default(data, ["feed", "max", "length"], 'rfq', 'feed_length'),
-        "spm": parse_float_with_default(data, ["feed", "max", "spm"], 'rfq', 'spm'),
+        "feed_length": parse_float_with_default(data, ["feed", "max", "length"], 'feed', 'max_length'),
+        "spm": parse_float_with_default(data, ["feed", "max", "spm"], 'feed', 'max_spm'),
     }
-    
+
     rfq_average_obj = rfq_input(**rfq_average_data)
     rfq_min_obj = rfq_input(**rfq_min_data)
     rfq_max_obj = rfq_input(**rfq_max_data)
@@ -128,7 +133,9 @@ def main():
         "min": calculate_fpm(rfq_min_obj),
         "max": calculate_fpm(rfq_max_obj)
     }
+    print(f"DEBUG - RFQ Results: {rfq_result}", file=sys.stderr)
 
+    print("DEBUG - Starting Material Specs", file=sys.stderr)
     # --- Material Specs ---
     mat_data = {
         'material_type': parse_str_with_default(data, ['material', 'materialType'], 'material', 'material_type'),
@@ -156,6 +163,9 @@ def main():
     if not calculated_coil_od or calculated_coil_od == 0:
         calculated_coil_od = parse_float_with_default(data, ['coil', 'maxCoilOD'], 'material', 'max_coil_od')
 
+    print(f"DEBUG - Material Specs Results: {mat_result}", file=sys.stderr)
+
+    print("DEBUG - Starting TDDBHD", file=sys.stderr)
     # --- TDDBHD ---
     tddbhd_data = {
         'type_of_line': parse_str_with_default(data, ['feed', 'typeOfLine'], 'feed', 'type_of_line'),
@@ -193,6 +203,9 @@ def main():
     if not final_coil_od:
         final_coil_od = calculated_coil_od
 
+    print(f"DEBUG - TDDBHD Results: {tddbhd_result}", file=sys.stderr)
+
+    print("DEBUG - Starting Reel Drive", file=sys.stderr)
     # --- Reel Drive ---
     reel_drive_data = {
         'model': parse_str_with_default(data, ['reel', 'model'], 'reel', 'model'),
@@ -207,6 +220,10 @@ def main():
     }
     reel_drive_obj = reel_drive_input(**reel_drive_data)
     reel_drive_result = calculate_reeldrive(reel_drive_obj)
+
+    print(f"DEBUG - Reel Drive Results: {reel_drive_result}", file=sys.stderr)
+
+    print("DEBUG - Starting Straightener Utility", file=sys.stderr)
 
     # --- Str Utility ---
     str_util_data = {
@@ -229,6 +246,9 @@ def main():
     str_util_obj = str_utility_input(**str_util_data)
     str_util_result = calculate_str_utility(str_util_obj)
 
+    print(f"DEBUG - Straightener Utility Results: {str_util_result}", file=sys.stderr)
+
+    print("DEBUG - Starting Roll Str Backbend", file=sys.stderr)
     # --- Roll Str Backbend ---
     roll_str_backbend_data = {
         'yield_strength': parse_float_with_default(data, ['material', 'maxYieldStrength'], 'material', 'yield_strength'),
@@ -242,6 +262,9 @@ def main():
     roll_str_backbend_obj = roll_str_backbend_input(**roll_str_backbend_data)
     roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
 
+    print(f"DEBUG - Roll Str Backbend Results: {roll_str_backbend_result}", file=sys.stderr)
+
+    print("DEBUG - Starting Feed Calculations", file=sys.stderr)
     # --- Feed (choose which) ---
     feed_model = get_nested(data, ['feed', 'model'], DEFAULTS['feed']['model']).lower()
     is_pull_thru = str2bool(get_nested(data, ['feed', 'pullThru', 'isPullThru'])) or DEFAULTS['feed']['pull_thru']
@@ -332,6 +355,9 @@ def main():
     else:
         feed_result = None
 
+    print(f"DEBUG - Feed Results ({feed_type}): {feed_result}", file=sys.stderr)
+
+    print("DEBUG - Starting Shear Calculations", file=sys.stderr)
     # --- Shear (choose which) ---
     shear_model = get_nested(data, ['shear', 'model'], '').lower()
     shear_result = None
@@ -373,6 +399,9 @@ def main():
         shear_result = calculate_bow_tie_hyd_shear(shear_obj)
     # If model is empty or not recognized, skip shear
 
+    print(f"DEBUG - Shear Results ({shear_model}): {shear_result}", file=sys.stderr)
+
+    print("DEBUG - All calculations completed", file=sys.stderr)
     # --- Output ---
     output = {
         'rfq': rfq_result,

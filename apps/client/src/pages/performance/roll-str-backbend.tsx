@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
@@ -9,6 +9,9 @@ import {
   MATERIAL_TYPE_OPTIONS,
   ROLL_TYPE_OPTIONS,
 } from "@/utils/select-options";
+import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useParams } from "react-router-dom";
+import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 const ROLL_CONFIGURATION_OPTIONS = [
   { value: "7", label: "7 Roll" },
@@ -18,14 +21,30 @@ const ROLL_CONFIGURATION_OPTIONS = [
 
 export interface RollStrBackbendProps {
   data: PerformanceData;
-  isEditing?: boolean;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | Partial<PerformanceData>) => void;
+  isEditing: boolean;
 }
 
-const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onChange }) => {
+const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) => {
+  const endpoint = `/performance/sheets`;
+  const { loading, error } = useGetEntity(endpoint);
+  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const { id: performanceSheetId } = useParams();
+  
+  // Local state for immediate UI updates
+  const [localData, setLocalData] = useState<PerformanceData>(data);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with parent data on initial load
+  useEffect(() => {
+    if (!localData.referenceNumber && data.referenceNumber) {
+      console.log('Initial data load, syncing all data');
+      setLocalData(data);
+    }
+  }, [data, localData.referenceNumber]);
+
   // Determine roll configuration from straightener.rolls.numberOfRolls
   const getRollConfiguration = () => {
-    const straightenerRolls = data.straightener?.rolls?.numberOfRolls;
+    const straightenerRolls = localData.straightener?.rolls?.numberOfRolls;
     const rollsString = String(straightenerRolls);
     
     if (rollsString === "7" || rollsString === "9" || rollsString === "11") {
@@ -42,89 +61,293 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
     if (newRollConfig !== rollConfiguration) {
       setRollConfiguration(newRollConfig);
     }
-  }, [data.straightener?.rolls?.numberOfRolls]);
+  }, [localData.straightener?.rolls?.numberOfRolls]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!isEditing) return;
     
     const { name, value, type } = e.target;
-    const actualValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
+    const actualValue = value;
 
-    // Handle nested field updates based on field name pattern
-    if (name.includes(".")) {
-      const parts = name.split(".");
-      const [section, ...rest] = parts;
-      
-      // Build the nested update object
-      let updateObj: any = {};
-      let current = updateObj;
-      
-      // Navigate to the correct nested level
-      const sectionData = data[section as keyof typeof data];
-      current[section] = { ...(typeof sectionData === "object" && sectionData !== null ? sectionData : {}) };
-      current = current[section];
-      
-      // Handle deeper nesting
-      for (let i = 0; i < rest.length - 1; i++) {
-        current[rest[i]] = { ...current[rest[i]] };
-        current = current[rest[i]];
-      }
-      
-      // Set the final value
-      current[rest[rest.length - 1]] = actualValue;
-      
-      if (onChange) {
-        onChange(updateObj);
-      }
-    } else {
-      // Handle legacy field names that map to nested structure
-      const fieldMappings: { [key: string]: any } = {
-        customer: {
-          customer: value,
-        },
-        date: {
-          dates: {
-            ...data.dates,
-            date: value,
-          },
-        },
-        referenceNumber: {
-          referenceNumber: value,
-        },
-      };
+    console.log(`Field changed: ${name}, Value: ${actualValue}`);
 
-      if (fieldMappings[name] && onChange) {
-        onChange(fieldMappings[name]);
-      } else if (onChange) {
-        onChange(e);
+    // Update local state immediately for responsive UI
+    setLocalData(prevData => {
+      const updatedData = JSON.parse(JSON.stringify(prevData));
+
+      if (name.includes(".")) {
+        // Handle nested field updates
+        const parts = name.split(".");
+        let current = updatedData;
+        
+        // Navigate to the parent object
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        
+        // Set the final value
+        current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+      } else {
+        // Handle legacy field names that map to nested structure
+        const fieldMappings: { [key: string]: any } = {
+          customer: { path: "customer", value: value },
+          date: { path: "dates.date", value: value },
+          referenceNumber: { path: "referenceNumber", value: value },
+        };
+
+        if (fieldMappings[name]) {
+          const mapping = fieldMappings[name];
+          const parts = mapping.path.split(".");
+          let current = updatedData;
+          
+          // Navigate to the parent object
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          // Set the final value
+          current[parts[parts.length - 1]] = mapping.value;
+        } else {
+          // Handle top-level fields
+          updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+        }
       }
+
+      return updatedData;
+    });
+
+    // Debounce backend updates to avoid excessive API calls
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
+
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        if (!performanceSheetId) {
+          throw new Error("Performance Sheet ID is missing.");
+        }
+
+        // Create updated data for backend
+        const updatedData = JSON.parse(JSON.stringify(localData));
+        
+        // Apply the current change to the data being sent
+        if (name.includes(".")) {
+          const parts = name.split(".");
+          let current = updatedData;
+          
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) {
+              current[parts[i]] = {};
+            }
+            current = current[parts[i]];
+          }
+          
+          current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
+        } else {
+          // Handle legacy field mappings
+          const fieldMappings: { [key: string]: any } = {
+            customer: { path: "customer", value: value },
+            date: { path: "dates.date", value: value },
+            referenceNumber: { path: "referenceNumber", value: value },
+          };
+
+          if (fieldMappings[name]) {
+            const mapping = fieldMappings[name];
+            const parts = mapping.path.split(".");
+            let current = updatedData;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              if (!current[parts[i]]) {
+                current[parts[i]] = {};
+              }
+              current = current[parts[i]];
+            }
+            
+            current[parts[parts.length - 1]] = mapping.value;
+          } else {
+            updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+          }
+        }
+
+        console.log("Updating with complete data structure:", updatedData);
+
+        // Send to backend (this will also trigger calculations)
+        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        
+        console.log("Backend response:", response);
+        
+        // Handle calculated values directly from the backend response
+        if (response && response.data && response.data.straightener) {
+          console.log("Updating calculated backbend values from backend response");
+          
+          setLocalData(prevData => ({
+            ...prevData,
+            straightener: {
+              ...prevData.straightener,
+              rolls: {
+                ...prevData.straightener?.rolls,
+                backbend: {
+                  ...prevData.straightener?.rolls?.backbend,
+                  // Update calculated radius values
+                  radius: {
+                    ...prevData.straightener?.rolls?.backbend?.radius,
+                    comingOffCoil: response.data.straightener.rolls?.backbend?.radius?.comingOffCoil || prevData.straightener?.rolls?.backbend?.radius?.comingOffCoil,
+                    offCoilAfterSpringback: response.data.straightener.rolls?.backbend?.radius?.offCoilAfterSpringback || prevData.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback,
+                    requiredToYieldSkinOfFlatMaterial: response.data.straightener.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial || prevData.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial,
+                  },
+                  bendingMomentToYieldSkin: response.data.straightener.rolls?.backbend?.bendingMomentToYieldSkin || prevData.straightener?.rolls?.backbend?.bendingMomentToYieldSkin,
+                  // Update roller calculations
+                  rollers: {
+                    ...prevData.straightener?.rolls?.backbend?.rollers,
+                    first: {
+                      ...prevData.straightener?.rolls?.backbend?.rollers?.first,
+                      height: response.data.straightener.rolls?.backbend?.rollers?.first?.height || prevData.straightener?.rolls?.backbend?.rollers?.first?.height,
+                      forceRequired: response.data.straightener.rolls?.backbend?.rollers?.first?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.first?.forceRequired,
+                      numberOfYieldStrainsAtSurface: response.data.straightener.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface || prevData.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface,
+                      up: {
+                        ...prevData.straightener?.rolls?.backbend?.rollers?.first?.up,
+                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius,
+                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference,
+                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment,
+                        springback: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.springback || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.springback,
+                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded,
+                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback,
+                      },
+                      down: {
+                        ...prevData.straightener?.rolls?.backbend?.rollers?.first?.down,
+                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius,
+                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference,
+                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment,
+                        springback: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.springback || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.springback,
+                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded,
+                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback,
+                      }
+                    },
+                    middle: response.data.straightener.rolls?.backbend?.rollers?.middle || prevData.straightener?.rolls?.backbend?.rollers?.middle,
+                    last: {
+                      ...prevData.straightener?.rolls?.backbend?.rollers?.last,
+                      height: response.data.straightener.rolls?.backbend?.rollers?.last?.height || prevData.straightener?.rolls?.backbend?.rollers?.last?.height,
+                      forceRequired: response.data.straightener.rolls?.backbend?.rollers?.last?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.last?.forceRequired,
+                      numberOfYieldStrainsAtSurface: response.data.straightener.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface || prevData.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface,
+                      up: {
+                        ...prevData.straightener?.rolls?.backbend?.rollers?.last?.up,
+                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius,
+                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference,
+                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment,
+                        springback: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.springback || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.springback,
+                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded,
+                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback,
+                      }
+                    },
+                    depthRequired: response.data.straightener.rolls?.backbend?.rollers?.depthRequired || prevData.straightener?.rolls?.backbend?.rollers?.depthRequired,
+                    forceRequired: response.data.straightener.rolls?.backbend?.rollers?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.forceRequired,
+                  },
+                  yieldMet: response.data.straightener.rolls?.backbend?.yieldMet || prevData.straightener?.rolls?.backbend?.yieldMet,
+                }
+              }
+            }
+          }));
+          
+          console.log("Updated calculated backbend values:", {
+            radiusComingOffCoil: response.data.straightener.rolls?.backbend?.radius?.comingOffCoil,
+            radiusOffCoilAfterSpringback: response.data.straightener.rolls?.backbend?.radius?.offCoilAfterSpringback,
+            bendingMomentToYieldSkin: response.data.straightener.rolls?.backbend?.bendingMomentToYieldSkin,
+            rollersDepthRequired: response.data.straightener.rolls?.backbend?.rollers?.depthRequired,
+            rollersForceRequired: response.data.straightener.rolls?.backbend?.rollers?.forceRequired,
+            yieldMet: response.data.straightener.rolls?.backbend?.yieldMet,
+          });
+        }
+
+      } catch (error) {
+        console.error('Error updating field:', error);
+        setLocalData(data);
+      }
+    }, 500);
   };
 
-  const handleRollConfigurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRollConfigurationChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newConfig = e.target.value;
     setRollConfiguration(newConfig);
     
-    // Update the straightener.rolls.numberOfRolls value
-    if (onChange) {
-      onChange({
-        straightener: {
-          ...data.straightener,
-          rolls: {
-            ...data.straightener?.rolls,
-            numberOfRolls: Number(newConfig),
-          },
-        },
-      });
+    // Update the straightener.rolls.numberOfRolls value and trigger backend update
+    if (isEditing) {
+      const updatedData = JSON.parse(JSON.stringify(localData));
+      if (!updatedData.straightener) updatedData.straightener = {};
+      if (!updatedData.straightener.rolls) updatedData.straightener.rolls = {};
+      updatedData.straightener.rolls.numberOfRolls = Number(newConfig);
+      
+      setLocalData(updatedData);
+      
+      // Trigger backend update
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+
+      updateTimeoutRef.current = setTimeout(async () => {
+        try {
+          if (!performanceSheetId) {
+            throw new Error("Performance Sheet ID is missing.");
+          }
+          
+          const response = await updateEntity(performanceSheetId, { data: updatedData });
+          console.log("Roll configuration updated:", response);
+        } catch (error) {
+          console.error('Error updating roll configuration:', error);
+        }
+      }, 500);
     }
   };
 
-  const handleCalculate = () => {
-    // Trigger calculation logic here
+  const handleCalculate = async () => {
+    if (!isEditing) return;
+    
     console.log("Calculate pressed for", rollConfiguration, "roll configuration");
-    // In a real implementation, this would trigger backend calculations
-    // and update the data with new backbend calculation results
+    
+    try {
+      if (!performanceSheetId) {
+        throw new Error("Performance Sheet ID is missing.");
+      }
+
+      // Trigger backbend calculation on the backend
+      const response = await updateEntity(performanceSheetId, { 
+        data: localData,
+        triggerBackbendCalculation: true 
+      });
+      
+      console.log("Backbend calculation triggered:", response);
+      
+      // The response should contain updated backbend calculations
+      if (response && response.data && response.data.straightener?.rolls?.backbend) {
+        setLocalData(prevData => ({
+          ...prevData,
+          straightener: {
+            ...prevData.straightener,
+            rolls: {
+              ...prevData.straightener?.rolls,
+              backbend: response.data.straightener.rolls.backbend
+            }
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error triggering backbend calculation:', error);
+    }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Get roller columns based on configuration
   const getRollerColumns = () => {
@@ -157,8 +380,8 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
 
   const rollerColumns = getRollerColumns();
 
-  // Get calculation data from data.straightener.rolls.backbend
-  const backbendData = data.straightener?.rolls?.backbend || {};
+  // Get calculation data from localData.straightener.rolls.backbend
+  const backbendData = localData.straightener?.rolls?.backbend || {};
   
   // Helper function to get roller data based on configuration
   const getRollerData = () => {
@@ -237,14 +460,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
     const result: string[] = [];
     
     rollerKeys.forEach((key) => {
-      if (key === "middle" && rollerKeys.filter(k => k === "middle").length > 1) {
-      } else {
-        if (key === "first" || key === "last") {
-        } else if (key === "middle") {
-        } else {
-        }
-      }
-      
       // Add up direction
       result.push("UP");
       
@@ -285,6 +500,27 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
+      {/* Show loading indicator when calculations are running */}
+      {(loading || updateLoading) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <span className="text-blue-800">
+              {updateLoading ? "Saving changes..." : "Loading..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Show error if calculation fails */}
+      {(error || updateError) && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+          <span className="text-red-800">
+            Error: {error || updateError}
+          </span>
+        </div>
+      )}
+
       {/* Header Information */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
@@ -294,14 +530,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
           <Input
             label="Customer"
             name="customer"
-            value={data.customer || ""}
+            value={localData.customer || ""}
             onChange={handleChange}
           />
           <Input
             label="Date"
             name="date"
             type="date"
-            value={data.dates?.date || ""}
+            value={localData.dates?.date || ""}
             onChange={handleChange}
           />
           <Select
@@ -324,40 +560,40 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
             label="Coil Width (in)"
             name="material.coilWidth"
             type="number"
-            value={data.material?.coilWidth || ""}
+            value={localData.material?.coilWidth || ""}
             onChange={handleChange}
           />
           <Input
             label="Material Thickness (in)"
             name="material.materialThickness"
             type="number"
-            value={data.material?.materialThickness || ""}
+            value={localData.material?.materialThickness || ""}
             onChange={handleChange}
           />
           <Input
             label="Yield Strength (psi)"
             name="material.maxYieldStrength"
             type="number"
-            value={data.material?.maxYieldStrength || ""}
+            value={localData.material?.maxYieldStrength || ""}
             onChange={handleChange}
           />
           <Select
             label="Material Type"
             name="material.materialType"
-            value={data.material?.materialType || ""}
+            value={localData.material?.materialType || ""}
             onChange={handleChange}
             options={MATERIAL_TYPE_OPTIONS}
           />
           <Input
             label="Straightener Model"
             name="straightener.model"
-            value={data.straightener?.model || ""}
+            value={localData.straightener?.model || ""}
             onChange={handleChange}
           />
           <Select
             label="Roll Type"
             name="straightener.rolls.typeOfRoll"
-            value={data.straightener?.rolls?.typeOfRoll || ""}
+            value={localData.straightener?.rolls?.typeOfRoll || ""}
             onChange={handleChange}
             options={ROLL_TYPE_OPTIONS}
           />
@@ -374,42 +610,42 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
             label="Roll Dia. (in)"
             name="straightener.rollDiameter"
             type="number"
-            value={data.straightener?.rollDiameter || ""}
+            value={localData.straightener?.rollDiameter || ""}
             onChange={handleChange}
           />
           <Input
             label="Center Distance (in)"
             name="straightener.centerDistance"
             type="number"
-            value={data.straightener?.centerDistance || ""}
+            value={localData.straightener?.centerDistance || ""}
             onChange={handleChange}
           />
           <Input
             label="Modulus (psi)"
             name="straightener.modulus"
             type="number"
-            value={data.straightener?.modulus || ""}
+            value={localData.straightener?.modulus || ""}
             onChange={handleChange}
           />
           <Input
             label="Jack Force Available (lb)"
             name="straightener.jackForceAvailable"
             type="number"
-            value={data.straightener?.jackForceAvailable || ""}
+            value={localData.straightener?.jackForceAvailable || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roller Depth W/Out Material (in)"
             name="straightener.rolls.depth.withoutMaterial"
             type="number"
-            value={data.straightener?.rolls?.depth?.withoutMaterial || ""}
+            value={localData.straightener?.rolls?.depth?.withoutMaterial || ""}
             onChange={handleChange}
           />
           <Input
             label="Max. Roller Depth W/ Material (in)"
             name="straightener.rolls.depth.withMaterial"
             type="number"
-            value={data.straightener?.rolls?.depth?.withMaterial || ""}
+            value={localData.straightener?.rolls?.depth?.withMaterial || ""}
             onChange={handleChange}
           />
         </div>
@@ -425,37 +661,31 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
             label="Ro (Radius Coming Off Coil)"
             value={typeof calculationData.ro === "number" ? calculationData.ro.toFixed(2) : ""}
             readOnly
-            className="bg-gray-100"
           />
           <Input
             label="Ri (Radius Off Coil After Springback)"
             value={typeof calculationData.ri === "number" ? calculationData.ri.toFixed(2) : ""}
             readOnly
-            className="bg-gray-100"
           />
           <Input
             label="1/Ri"
             value={calculationData.oneOverRi?.toFixed(4) || ""}
             readOnly
-            className="bg-gray-100"
           />
           <Input
             label="1/Ry"
             value={calculationData.oneOverRy?.toFixed(4) || ""}
             readOnly
-            className="bg-gray-100"
           />
           <Input
             label="Ry (Radius Required to Yield Skin)"
             value={typeof calculationData.ry === "number" ? calculationData.ry.toFixed(2) : ""}
             readOnly
-            className="bg-gray-100"
           />
           <Input
             label="My (Bending Moment to Yield Skin)"
             value={typeof calculationData.my === "number" ? calculationData.my.toFixed(2) : ""}
             readOnly
-            className="bg-gray-100"
           />
         </div>
         <div className="mt-4 flex justify-center">
@@ -465,7 +695,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
         </div>
       </Card>
 
-            {/* Roller Analysis Table */}
+      {/* Roller Analysis Table */}
       <Card className="mb-0 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
           Roller Analysis
@@ -740,26 +970,26 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing, onCh
         </Text>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerDepthRequired <= (data.straightener?.rolls?.depth?.withoutMaterial || 0) 
+            calculationData.rollerDepthRequired <= (localData.straightener?.rolls?.depth?.withoutMaterial || 0) 
               ? 'bg-green-100 text-green-800' 
               : 'bg-red-100 text-red-800'
           }`}>
             <Text className="text-sm">ROLLER DEPTH REQ'D:</Text>
             <Text className="text-lg font-bold">
               {calculationData.rollerDepthRequired?.toFixed(4) || "0.0000"} {
-                calculationData.rollerDepthRequired <= (data.straightener?.rolls?.depth?.withoutMaterial || 0) ? "OK" : "NOT OK"
+                calculationData.rollerDepthRequired <= (localData.straightener?.rolls?.depth?.withoutMaterial || 0) ? "OK" : "NOT OK"
               }
             </Text>
           </div>
           <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerForceRequired <= (data.straightener?.jackForceAvailable || 0)
+            calculationData.rollerForceRequired <= (localData.straightener?.jackForceAvailable || 0)
               ? 'bg-green-100 text-green-800' 
               : 'bg-red-100 text-red-800'
           }`}>
             <Text className="text-sm">ROLLER FORCE REQ'D:</Text>
             <Text className="text-lg font-bold">
               {calculationData.rollerForceRequired?.toFixed(2) || "0.00"} {
-                calculationData.rollerForceRequired <= (data.straightener?.jackForceAvailable || 0) ? "OK" : "NOT OK"
+                calculationData.rollerForceRequired <= (localData.straightener?.jackForceAvailable || 0) ? "OK" : "NOT OK"
               }
             </Text>
           </div>
