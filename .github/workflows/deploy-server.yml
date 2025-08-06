@@ -10,27 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up SSH
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.PI_DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H <your.pi.ip> >> ~/.ssh/known_hosts
+          echo "${{ secrets.PI_DEPLOY_KEY }}" > ~/.ssh/pi_deploy_key
+          chmod 600 ~/.ssh/pi_deploy_key
+          echo "${{ secrets.PI_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-      - name: Rsync code to Raspberry Pi
+      - name: Deploy to /server
         run: |
           rsync -avz --delete \
             --exclude '.git*' \
             --exclude 'node_modules' \
-            ./ pi@<your.pi.ip>:/home/pi/apps/backend
+            -e "ssh -i ~/.ssh/pi_deploy_key -o StrictHostKeyChecking=yes" \
+            ./apps/server/ ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/server/
 
-      - name: Restart app on Raspberry Pi
+      - name: Restart systemd service
         run: |
-          ssh pi@<your.pi.ip> "
-            cd /home/pi/apps/backend && \
-            npm install && \
-            pm2 restart backend || pm2 start npm --name backend -- start
+          ssh -i ~/.ssh/pi_deploy_key -o StrictHostKeyChecking=yes ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} "
+            sudo systemctl restart server
           "
+
