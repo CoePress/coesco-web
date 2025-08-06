@@ -1,0 +1,35 @@
+name: Manual DB Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_date:
+        description: "Date of the backup to restore (e.g. 2025-08-06)"
+        required: true
+
+jobs:
+  rollback:
+    name: Restore DB Backup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into Raspberry Pi and restore backup
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PI_HOST }}
+          username: ${{ secrets.PI_USER }}
+          key: ${{ secrets.PI_SSH_KEY }}
+          script: |
+            set -e
+            echo "Restoring backup for ${{ github.event.inputs.backup_date }}"
+
+            BACKUP_FILE="/home/pi/backups/db/${{ github.event.inputs.backup_date }}.sql.gz"
+
+            if [ ! -f "$BACKUP_FILE" ]; then
+              echo "Backup not found: $BACKUP_FILE"
+              exit 1
+            fi
+
+            echo "Decompressing and restoring..."
+            gunzip -c "$BACKUP_FILE" | psql -U postgres -d mydatabase
+            echo "✅ Restore complete"

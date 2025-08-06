@@ -1,4 +1,5 @@
 import http from "node:http";
+import process from "node:process";
 
 import app from "./app";
 import { env } from "./utils/env";
@@ -10,6 +11,7 @@ const server = http.createServer(app);
 
 async function main() {
   server.listen(PORT, () => {
+    // eslint-disable-next-line no-console
     console.log(`Server running on port ${PORT}`);
   });
 }
@@ -22,9 +24,9 @@ process.on("uncaughtException", handleFatal);
 process.on("unhandledRejection", handleFatal);
 
 async function shutdown() {
-  console.log("\nShutting down gracefully...");
+  console.warn("\nShutting down gracefully...");
   server.close(() => {
-    console.log("HTTP server closed.");
+    console.warn("HTTP server closed.");
   });
   await prisma.$disconnect();
   process.exit(0);
