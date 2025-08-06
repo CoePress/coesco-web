@@ -1,7 +1,8 @@
+import http from "node:http";
+
 import app from "./app";
-import http from "http";
-import { prisma } from "./utils/prisma";
 import { env } from "./utils/env";
+import { prisma } from "./utils/prisma";
 
 const PORT = env.PORT;
 
