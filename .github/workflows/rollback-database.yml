@@ -1,4 +1,4 @@
-name: Manual DB Rollback
+name: Rollback Database
 
 on:
   workflow_dispatch:
