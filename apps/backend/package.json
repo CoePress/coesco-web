@@ -9,14 +9,19 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
+    "build": "tsc && tsc-alias",
+    "start": "npm run build && node dist/server.js",
+    "db:generate": "prisma generate -schema=./prisma/schema/",
+    "db:push": "prisma db push -schema=./prisma/schema/",
+    "db:pull": "prisma db pull -schema=./prisma/schema/",
+    "db:studio": "prisma studio -schema=./prisma/schema/"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "dotenv": "^16.0.3",
     "express": "^4.21.2",
     "morgan": "^1.10.1",
+    "tsconfig-paths": "^4.2.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.25.76"
@@ -35,5 +40,8 @@
     "prisma": "^6.13.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.2"
+  },
+  "prisma": {
+    "schema": "./prisma/schema/"
   }
 }

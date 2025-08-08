@@ -1,0 +1,122 @@
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SOFT_DELETE
+  RESTORE
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SANDBOX
+  ARCHIVE
+}
+
+enum Industry {
+  AUTOMOTIVE
+  CONSTRUCTION
+  MANUFACTURING
+  OTHER
+}
+
+enum JourneyInteractionType {
+  EMAIL
+  PHONE
+  IN_PERSON
+  VIDEO_CALL
+  TEXT_MESSAGE
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum JourneyPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JourneySource {
+  WEBSITE
+  SOCIAL_MEDIA
+  REFERRAL
+  EVENT
+  OTHER
+}
+
+enum JourneyStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum JourneyType {
+  STAMPING
+  CTL
+  ROLL_FORMING
+  UPGRADE
+  PARTS
+  SERVICE
+  RETROFIT
+}
+
+enum MachineConnectionType {
+  MTCONNECT
+  FOCAS
+  OTHER
+}
+
+enum MachineControllerType {
+  MAZAK
+  FANUC
+  OTHER
+}
+
+enum MachineState {
+  ACTIVE
+  SETUP
+  IDLE
+  ALARM
+  OFFLINE
+  UNKNOWN
+}
+
+enum MachineType {
+  LATHE
+  MILL
+  GRINDER
+  OTHER
+}
+
+enum OptionRuleAction {
+  DISABLE
+  REQUIRE
+}
+
+enum QuoteStatus {
+  DRAFT
+  APPROVED
+  SENT
+  REVISED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum TimeScale {
+  MINUTE
+  HOUR
+  DAY
+  WEEK
+  MONTH
+  QUARTER
+  YEAR
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}

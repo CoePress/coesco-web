@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import process from "node:process";
 import { z } from "zod";
 
 dotenv.config();
@@ -9,8 +10,12 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.string().regex(/^\d+$/).transform(Number).default("8080"),
   DATABASE_URL: z.string().url(),
+  REDIS_HOST: z.string(),
+  REDIS_PORT: z.string().transform(Number).default("6379"),
+  LOGS_DIR: z.string(),
 });
 
+// eslint-disable-next-line node/no-process-env
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {

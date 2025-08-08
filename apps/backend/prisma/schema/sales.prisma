@@ -1,0 +1,186 @@
+model Address {
+  id           String    @id @default(uuid())
+  companyId    String
+  addressLine1 String
+  addressLine2 String?
+  city         String?
+  state        String?
+  zip          String?
+  country      String?
+  isPrimary    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
+
+  company          Company   @relation(fields: [companyId], references: [id])
+  customerJourneys Journey[] @relation("JourneyCustomerAddress")
+  dealerJourneys   Journey[] @relation("JourneyDealerAddress")
+
+  @@index([createdById])
+  @@map("addresses")
+}
+
+model Company {
+  id            String        @id @default(uuid())
+  name          String
+  website       String?
+  email         String?
+  phone         String?
+  fax           String?
+  industry      Industry?
+  yearFounded   Int?
+  revenue       Int?
+  employeeCount String?
+  customerSince DateTime?
+  paymentTerms  String?
+  creditLimit   Int?
+  taxId         String?
+  logoUrl       String?
+  notes         String?
+  tags          String[]
+  status        CompanyStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
+
+  createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  addresses        Address[]
+  contacts         Contact[]
+  customerJourneys Journey[] @relation("CustomerJourneys")
+  dealerJourneys   Journey[] @relation("DealerJourneys")
+
+  @@index([createdById])
+  @@map("companies")
+}
+
+model Contact {
+  id          String    @id @default(uuid())
+  companyId   String
+  firstName   String
+  lastName    String?
+  email       String?
+  phone       String?
+  title       String?
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  company          Company   @relation(fields: [companyId], references: [id])
+  customerJourneys Journey[] @relation("JourneyCustomerContact")
+  dealerJourneys   Journey[] @relation("JourneyDealerContact")
+
+  @@index([createdById])
+  @@map("contacts")
+}
+
+model Journey {
+  id                String           @id @default(uuid())
+  name              String?
+  rsmId             String?
+  customerId        String?
+  customerAddressId String?
+  customerContactId String?
+  dealerId          String?
+  dealerAddressId   String?
+  dealerContactId   String?
+  startDate         DateTime?
+  status            JourneyStatus?
+  type              JourneyType?
+  source            JourneySource?
+  priority          JourneyPriority?
+  confidence        Int?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  createdById       String
+  updatedById       String
+
+  rsm             Employee?            @relation("RsmJourneys", fields: [rsmId], references: [id])
+  customer        Company?             @relation("CustomerJourneys", fields: [customerId], references: [id])
+  customerAddress Address?             @relation("JourneyCustomerAddress", fields: [customerAddressId], references: [id])
+  customerContact Contact?             @relation("JourneyCustomerContact", fields: [customerContactId], references: [id])
+  dealer          Company?             @relation("DealerJourneys", fields: [dealerId], references: [id])
+  dealerAddress   Address?             @relation("JourneyDealerAddress", fields: [dealerAddressId], references: [id])
+  dealerContact   Contact?             @relation("JourneyDealerContact", fields: [dealerContactId], references: [id])
+  createdBy       Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
+  interactions    JourneyInteraction[] @relation("JourneyInteractions")
+  quotes          Quote[]              @relation("JourneyQuotes")
+
+  @@index([createdById])
+  @@map("journeys")
+}
+
+model JourneyInteraction {
+  id              String                 @id @default(uuid())
+  journeyId       String
+  interactionType JourneyInteractionType
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  journey Journey @relation("JourneyInteractions", fields: [journeyId], references: [id])
+
+  @@index([createdById])
+  @@map("journey_interactions")
+}
+
+model Quote {
+  id           String      @id @default(uuid())
+  journeyId    String?
+  year         Int
+  number       String
+  revision     String
+  status       QuoteStatus
+  ownerId      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  approvedAt   DateTime?
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
+  approvedById String?
+
+  journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
+  owner      Employee?   @relation("QuoteOwnedBy", fields: [ownerId], references: [id])
+  createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
+  items      QuoteItem[] @relation("QuoteItems")
+
+  @@unique([number, revision])
+  @@index([createdById])
+  @@index([approvedById])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id              String    @id @default(uuid())
+  quoteId         String
+  configurationId String?
+  itemId          String?
+  quantity        Int
+  unitPrice       Decimal
+  totalPrice      Decimal
+  lineNumber      Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  quote         Quote          @relation("QuoteItems", fields: [quoteId], references: [id])
+  configuration Configuration? @relation(fields: [configurationId], references: [id])
+  item          Item?          @relation(fields: [itemId], references: [id])
+
+  @@index([createdById])
+  @@map("quote_items")
+}

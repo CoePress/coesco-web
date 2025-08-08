@@ -1,4 +1,5 @@
-generated/prisma
+dist
+prisma/generated
 logs
 node_modules
 

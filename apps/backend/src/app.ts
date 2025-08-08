@@ -9,7 +9,7 @@ import { Server } from "socket.io";
 
 import routes from "./routes";
 import { __dev__, __prod__ } from "./utils/env";
-import logger from "./utils/logger";
+import { logger } from "./utils/logger";
 
 const app = express();
 const httpServer = createServer(app);
@@ -48,7 +48,7 @@ app.use(compression());
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set("trust proxy", true);
+app.set("trust proxy", false);
 
 app.use("/api", routes);
 
