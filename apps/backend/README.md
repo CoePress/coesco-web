@@ -10,6 +10,8 @@ npx prisma migrate dev
 
 npx prisma db push
 
+npx prisma generate
+
 ## Config
 
 ## Folder Structure
