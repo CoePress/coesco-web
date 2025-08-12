@@ -288,7 +288,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
 
   // Calculate derived values from local data (for immediate feedback)
   const calculatedValues = useMemo(() => {
-    const materialData = localData.shear.material || {};
+    const materialData = localData.common?.material || {};
     const shearData = localData.shear || {};
 
     const materialThickness = Number(materialData.materialThickness) || 0;
@@ -381,7 +381,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
       partsPerMinute,
       partsPerHour,
     };
-  }, [localData.shear?.material, localData.shear]);
+  }, [localData.common?.material, localData.shear]);
 
   // Header section
   const headerSection = useMemo(() => (
@@ -393,7 +393,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -415,22 +415,22 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, shearType, handleChange, handleShearTypeChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, shearType, handleChange, handleShearTypeChange, isEditing]);
 
   // Material specifications section
   const materialSpecsSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Material Specifications</Text>
       <div className="text-right mb-2">
-        <Text className="text-sm">Material Type: {localData.shear?.material?.materialType || "MCRS"}</Text>
-        <Text className="text-sm">{localData.shear?.material?.maxYieldStrength || "40,000"} psi yield</Text>
+        <Text className="text-sm">Material Type: {localData.common?.material?.materialType || "MCRS"}</Text>
+        <Text className="text-sm">{localData.common?.material?.maxYieldStrength || "40,000"} psi yield</Text>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="Max. Material Thickness (in)"
           name="material.materialThickness"
           type="number"
-          value={localData.shear?.material?.materialThickness?.toString() || ""}
+          value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -438,7 +438,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           label="Coil Width (in)"
           name="material.coilWidth"
           type="number"
-          value={localData.shear?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -446,7 +446,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           label="Material Tensile (psi)"
           name="material.maxTensileStrength"
           type="number"
-          value={localData.shear?.material?.maxTensileStrength?.toString() || ""}
+          value={localData.common?.material?.maxTensileStrength?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -457,7 +457,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </Text>
       </div>
     </div>
-  ), [localData.shear?.material, calculatedValues.shearStrength, handleChange, isEditing]);
+  ), [localData.common?.material, calculatedValues.shearStrength, handleChange, isEditing]);
 
   // Blade specifications section
   const bladeSpecsSection = useMemo(() => (

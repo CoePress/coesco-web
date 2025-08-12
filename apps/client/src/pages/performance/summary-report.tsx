@@ -129,87 +129,93 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
             // Update all sections that might have been modified
             rfq: {
               ...prevData.rfq,
-              customer: response.data.rfq?.customer || prevData.rfq?.customer,
+              customer: response.data.rfq?.customer || prevData.common?.customer,
               dates: {
                 ...prevData.rfq?.dates,
                 date: response.data.rfq?.dates?.date || prevData.rfq?.dates?.date,
               },
             },
+            materialSpecs: {
+              ...prevData.materialSpecs,
+              reel: {
+                ...prevData.materialSpecs?.reel,
+                style: response.data.reel?.style || prevData.materialSpecs?.reel?.style,
+              }
+            },
             reel: {
-              ...prevData.reel,
-              model: response.data.reel?.model || prevData.reel?.model,
-              width: response.data.reel?.width || prevData.reel?.width,
-              style: response.data.reel?.style || prevData.reel?.style,
+              ...prevData.common?.equipment?.reel,
+              model: response.data.reel?.model || prevData.common?.equipment?.reel?.model,
+              width: response.data.reel?.width || prevData.common?.equipment?.reel?.width,
               backplate: {
-                ...prevData.reel?.backplate,
-                diameter: response.data.reel?.backplate?.diameter || prevData.reel?.backplate?.diameter,
+                ...prevData.common?.equipment?.reel?.backplate,
+                diameter: response.data.reel?.backplate?.diameter || prevData.common?.equipment?.reel?.backplate?.diameter,
               },
               motorization: {
-                ...prevData.reel?.motorization,
-                isMotorized: response.data.reel?.motorization?.isMotorized || prevData.reel?.motorization?.isMotorized,
-                driveHorsepower: response.data.reel?.motorization?.driveHorsepower || prevData.reel?.motorization?.driveHorsepower,
-                speed: response.data.reel?.motorization?.speed || prevData.reel?.motorization?.speed,
-                accelRate: response.data.reel?.motorization?.accelRate || prevData.reel?.motorization?.accelRate,
-                regenRequired: response.data.reel?.motorization?.regenRequired || prevData.reel?.motorization?.regenRequired,
+                ...prevData.reelDrive?.reel?.motorization,
+                isMotorized: response.data.reel?.motorization?.isMotorized || prevData.reelDrive?.reel?.motorization?.isMotorized,
+                driveHorsepower: response.data.reel?.motorization?.driveHorsepower || prevData.reelDrive?.reel?.motorization?.driveHorsepower,
+                speed: response.data.reel?.motorization?.speed || prevData.reelDrive?.reel?.motorization?.speed,
+                accelRate: response.data.reel?.motorization?.accelRate || prevData.reelDrive?.reel?.motorization?.accelRate,
+                regenRequired: response.data.reel?.motorization?.regenRequired || prevData.reelDrive?.reel?.motorization?.regenRequired,
               },
               threadingDrive: {
-                ...prevData.reel?.threadingDrive,
-                airClutch: response.data.reel?.threadingDrive?.airClutch || prevData.reel?.threadingDrive?.airClutch,
-                hydThreadingDrive: response.data.reel?.threadingDrive?.hydThreadingDrive || prevData.reel?.threadingDrive?.hydThreadingDrive,
+                ...prevData.tddbhd?.reel?.threadingDrive,
+                airClutch: response.data.reel?.threadingDrive?.airClutch || prevData.tddbhd?.reel?.threadingDrive?.airClutch,
+                hydThreadingDrive: response.data.reel?.threadingDrive?.hydThreadingDrive || prevData.tddbhd?.reel?.threadingDrive?.hydThreadingDrive,
               },
               holddown: {
-                ...prevData.reel?.holddown,
-                assy: response.data.reel?.holddown?.assy || prevData.reel?.holddown?.assy,
-                cylinder: response.data.reel?.holddown?.cylinder || prevData.reel?.holddown?.cylinder,
+                ...prevData.tddbhd?.reel?.holddown,
+                assy: response.data.reel?.holddown?.assy || prevData.tddbhd?.reel?.holddown?.assy,
+                cylinder: response.data.reel?.holddown?.cylinder || prevData.tddbhd?.reel?.holddown?.cylinder,
               },
               dragBrake: {
-                ...prevData.reel?.dragBrake,
-                model: response.data.reel?.dragBrake?.model || prevData.reel?.dragBrake?.model,
-                quantity: response.data.reel?.dragBrake?.quantity || prevData.reel?.dragBrake?.quantity,
+                ...prevData.tddbhd?.reel?.dragBrake,
+                model: response.data.reel?.dragBrake?.model || prevData.tddbhd?.reel?.dragBrake?.model,
+                quantity: response.data.reel?.dragBrake?.quantity || prevData.tddbhd?.reel?.dragBrake?.quantity,
               },
             },
             straightener: {
-              ...prevData.straightener,
-              model: response.data.straightener?.model || prevData.straightener?.model,
-              payoff: response.data.straightener?.payoff || prevData.straightener?.payoff,
-              width: response.data.straightener?.width || prevData.straightener?.width,
-              feedRate: response.data.straightener?.feedRate || prevData.straightener?.feedRate,
-              acceleration: response.data.straightener?.acceleration || prevData.straightener?.acceleration,
-              horsepower: response.data.straightener?.horsepower || prevData.straightener?.horsepower,
+              ...prevData.strUtility?.straightener,
+              model: response.data.straightener?.model || prevData.strUtility?.straightener?.model,
+              payoff: response.data.straightener?.payoff || prevData.strUtility?.straightener?.payoff,
+              width: response.data.straightener?.width || prevData.strUtility?.straightener?.width,
+              feedRate: response.data.straightener?.feedRate || prevData.strUtility?.straightener?.feedRate,
+              acceleration: response.data.straightener?.acceleration || prevData.strUtility?.straightener?.acceleration,
+              horsepower: response.data.straightener?.horsepower || prevData.strUtility?.straightener?.horsepower,
               rolls: {
-                ...prevData.straightener?.rolls,
-                straighteningRolls: response.data.straightener?.rolls?.straighteningRolls || prevData.straightener?.rolls?.straighteningRolls,
-                backupRolls: response.data.straightener?.rolls?.backupRolls || prevData.straightener?.rolls?.backupRolls,
+                ...prevData.strUtility?.straightener?.rolls,
+                straighteningRolls: response.data.straightener?.rolls?.straighteningRolls || prevData.strUtility?.straightener?.rolls?.straighteningRolls,
+                backupRolls: response.data.straightener?.rolls?.backupRolls || prevData.strUtility?.straightener?.rolls?.backupRolls,
               },
             },
             feed: {
               ...prevData.feed,
-              application: response.data.feed?.application || prevData.feed?.application,
-              model: response.data.feed?.model || prevData.feed?.model,
-              machineWidth: response.data.feed?.machineWidth || prevData.feed?.machineWidth,
-              fullWidthRolls: response.data.feed?.fullWidthRolls || prevData.feed?.fullWidthRolls,
-              feedAngle1: response.data.feed?.feedAngle1 || prevData.feed?.feedAngle1,
-              feedAngle2: response.data.feed?.feedAngle2 || prevData.feed?.feedAngle2,
-              maximumVelocity: response.data.feed?.maximumVelocity || prevData.feed?.maximumVelocity,
-              acceleration: response.data.feed?.acceleration || prevData.feed?.acceleration,
-              ratio: response.data.feed?.ratio || prevData.feed?.ratio,
-              direction: response.data.feed?.direction || prevData.feed?.direction,
-              controlsLevel: response.data.feed?.controlsLevel || prevData.feed?.controlsLevel,
-              typeOfLine: response.data.feed?.typeOfLine || prevData.feed?.typeOfLine,
-              passline: response.data.feed?.passline || prevData.feed?.passline,
-              lightGuageNonMarking: response.data.feed?.lightGuageNonMarking || prevData.feed?.lightGuageNonMarking,
-              nonMarking: response.data.feed?.nonMarking || prevData.feed?.nonMarking,
+              application: response.data.feed?.application || prevData.feed?.feed?.application,
+              model: response.data.feed?.model || prevData.feed?.feed?.model,
+              machineWidth: response.data.feed?.machineWidth || prevData.feed?.feed?.machineWidth,
+              fullWidthRolls: response.data.feed?.fullWidthRolls || prevData.feed?.feed?.fullWidthRolls,
+              feedAngle1: response.data.feed?.feedAngle1 || prevData.feed?.feed?.feedAngle1,
+              feedAngle2: response.data.feed?.feedAngle2 || prevData.feed?.feed?.feedAngle2,
+              maximumVelocity: response.data.feed?.maximumVelocity || prevData.feed?.feed?.maximumVelocity,
+              acceleration: response.data.feed?.acceleration || prevData.feed?.feed?.acceleration,
+              ratio: response.data.feed?.ratio || prevData.feed?.feed?.ratio,
+              direction: response.data.feed?.direction || prevData.feed?.feed?.direction,
+              controlsLevel: response.data.feed?.controlsLevel || prevData.feed?.feed?.controlsLevel,
+              typeOfLine: response.data.feed?.typeOfLine || prevData.feed?.feed?.typeOfLine,
+              passline: response.data.feed?.passline || prevData.feed?.feed?.passline,
+              lightGuageNonMarking: response.data.feed?.lightGuageNonMarking || prevData.feed?.feed?.lightGuageNonMarking,
+              nonMarking: response.data.feed?.nonMarking || prevData.feed?.feed?.nonMarking,
               pullThru: {
-                ...prevData.feed?.pullThru,
-                straightenerRolls: response.data.feed?.pullThru?.straightenerRolls || prevData.feed?.pullThru?.straightenerRolls,
-                pinchRolls: response.data.feed?.pullThru?.pinchRolls || prevData.feed?.pullThru?.pinchRolls,
+                ...prevData.feed?.feed?.pullThru,
+                straightenerRolls: response.data.feed?.pullThru?.straightenerRolls || prevData.feed?.feed?.pullThru?.straightenerRolls,
+                pinchRolls: response.data.feed?.pullThru?.pinchRolls || prevData.feed?.feed?.pullThru?.pinchRolls,
               },
             },
             press: {
-              ...prevData.press,
-              bedLength: response.data.press?.bedLength || prevData.press?.bedLength,
+              ...prevData.feed?.press,
+              bedLength: response.data.press?.bedLength || prevData.feed?.press?.bedLength,
             },
-            loopPit: response.data.loopPit || prevData.loopPit,
+            loopPit: response.data.loopPit || prevData.feed?.loopPit,
           }));
         }
 
@@ -287,7 +293,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -301,7 +307,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Reel section
   const reelSection = useMemo(() => (
@@ -409,20 +415,20 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Brake Model"
           name="brakeModel"
-          value={localData.reel?.dragBrake?.model || ""}
+          value={localData.tddbhd?.reel?.dragBrake?.model || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Input
           label="Brake Quantity"
           name="brakeQuantity"
-          value={localData.reel?.dragBrake?.quantity || ""}
+          value={localData.tddbhd?.reel?.dragBrake?.quantity || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
       </div>
     </Card>
-  ), [localData.reel?.dragBrake, handleChange, isEditing]);
+  ), [localData.tddbhd?.reel?.dragBrake, handleChange, isEditing]);
 
   // Motorized Reel section
   const motorizedReelSection = useMemo(() => (

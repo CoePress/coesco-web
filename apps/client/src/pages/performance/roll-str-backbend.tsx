@@ -273,7 +273,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -287,7 +287,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Material specifications section
   const materialSpecsSection = useMemo(() => (
@@ -297,7 +297,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Select
           label="Material Type"
           name="material.materialType"
-          value={localData.rollStrBackbend?.material?.materialType || ""}
+          value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
           disabled={!isEditing}
@@ -306,7 +306,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Material Thickness (in)"
           name="material.materialThickness"
           type="number"
-          value={localData.rollStrBackbend?.material?.materialThickness?.toString() || ""}
+          value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -314,7 +314,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Coil Width (in)"
           name="material.coilWidth"
           type="number"
-          value={localData.rollStrBackbend?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -322,7 +322,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Yield Strength (psi)"
           name="material.maxYieldStrength"
           type="number"
-          value={localData.rollStrBackbend?.material?.maxYieldStrength?.toString() || ""}
+          value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -354,7 +354,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Select
           label="Straightener Model"
           name="rollStrBackbend.straightener.model"
-          value={localData.rollStrBackbend?.straightener?.model || ""}
+          value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleChange}
           options={STR_MODEL_OPTIONS}
           disabled={!isEditing}
@@ -363,7 +363,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Roll Diameter (in)"
           name="rollStrBackbend.straightener.rollDiameter"
           type="number"
-          value={localData.rollStrBackbend?.straightener?.rollDiameter?.toString() || ""}
+          value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -388,7 +388,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Required Roll Diameter (in)"
           name="rollStrBackbend.straightener.rolls.backbend.requiredRollDiameter"
           type="number"
-          value={localData.rollStrBackbend?.straightener?.rollDiameter?.toString() || ""}
+          value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -686,18 +686,18 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <div>
           <Text as="h4" className="font-medium mb-2">Roll Straightener Configuration:</Text>
           <div className="space-y-1 text-sm">
-            <Text>• Model: {localData.rollStrBackbend?.straightener?.model || "—"}</Text>
-            <Text>• Roll Diameter: {localData.rollStrBackbend?.straightener?.rollDiameter || "—"} inches</Text>
+            <Text>• Model: {localData.common?.equipment?.straightener?.model || "—"}</Text>
+            <Text>• Roll Diameter: {localData.common?.equipment?.straightener?.rollDiameter || "—"} inches</Text>
           </div>
         </div>
         
         <div>
           <Text as="h4" className="font-medium mb-2">Material Properties:</Text>
           <div className="space-y-1 text-sm">
-            <Text>• Material Type: {localData.rollStrBackbend?.material?.materialType || "—"}</Text>
-            <Text>• Thickness: {localData.rollStrBackbend?.material?.materialThickness || "—"} inches</Text>
-            <Text>• Width: {localData.rollStrBackbend?.material?.coilWidth || "—"} inches</Text>
-            <Text>• Yield Strength: {localData.rollStrBackbend?.material?.maxYieldStrength || "—"} psi</Text>
+            <Text>• Material Type: {localData.common?.material?.materialType || "—"}</Text>
+            <Text>• Thickness: {localData.common?.material?.materialThickness || "—"} inches</Text>
+            <Text>• Width: {localData.common?.material?.coilWidth || "—"} inches</Text>
+            <Text>• Yield Strength: {localData.common?.material?.maxYieldStrength || "—"} psi</Text>
           </div>
         </div>
 

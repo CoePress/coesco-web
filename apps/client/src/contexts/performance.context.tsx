@@ -31,10 +31,10 @@ export interface RollDetail {
   };
 }
 
-// RFQ Page Data Structure
-export interface RFQData {
-  // Basic Information
+// Common shared data structure
+export interface CommonData {
   customer?: string;
+  date?: string;
   customerInfo?: {
     streetAddress?: string;
     city?: string;
@@ -50,20 +50,16 @@ export interface RFQData {
     daysPerWeek?: number;
     shiftsPerDay?: number;
   };
-  dates?: {
-    date?: string;
-    decisionDate?: string;
-    idealDeliveryDate?: string;
-    earliestDeliveryDate?: string;
-    latestDeliveryDate?: string;
+  material?: {
+    materialThickness?: number;
+    coilWidth?: number;
+    coilWeight?: number;
+    materialType?: string;
+    maxYieldStrength?: number;
+    maxTensileStrength?: number;
+    materialDensity?: number;
+    modulus?: number;
   };
-  
-  // Line Configuration
-  lineApplication?: string;
-  typeOfLine?: string;
-  pullThrough?: string;
-  
-  // Coil Specifications
   coil?: {
     maxCoilWidth?: number;
     minCoilWidth?: number;
@@ -71,56 +67,34 @@ export interface RFQData {
     coilID?: number;
     maxCoilWeight?: number;
     maxCoilHandlingCap?: number;
-    slitEdge?: string;
-    millEdge?: string;
-    requireCoilCar?: string;
-    runningOffBackplate?: string;
-    requireRewinding?: string;
-    changeTimeConcern?: string;
-    timeChangeGoal?: string;
-    loading?: string;
   };
-  
-  // Material Specifications
-  material?: {
-    materialThickness?: number;
-    coilWidth?: number;
-    materialType?: string;
-    maxYieldStrength?: number;
-    maxTensileStrength?: number;
+  equipment?: {
+    reel?: {
+      model?: string;
+      width?: number;
+      horsepower?: number;
+      backplate?: {
+        diameter?: number;
+      };
+    };
+    straightener?: {
+      model?: string;
+      width?: number;
+      numberOfRolls?: number;
+      rollDiameter?: number;
+    };
+    feed?: {
+      direction?: string;
+      controlsLevel?: string;
+      controls?: string;
+      typeOfLine?: string;
+      passline?: string;
+      lightGuageNonMarking?: string;
+      nonMarking?: string;
+      maximumVelocity?: number;
+    };
   };
-  
-  // Surface & Equipment
-  runningCosmeticMaterial?: string;
-  brandOfFeed?: string;
-  
-  // Press Information
-  press?: {
-    gapFramePress?: string;
-    hydraulicPress?: string;
-    obi?: string;
-    servoPress?: string;
-    shearDieApplication?: string;
-    straightSidePress?: string;
-    other?: string;
-    tonnageOfPress?: string;
-    strokeLength?: string;
-    maxSPM?: string;
-    bedWidth?: string;
-    bedLength?: string;
-    windowSize?: string;
-    cycleTime?: string;
-  };
-  
-  // Dies Information
-  dies?: {
-    transferDies?: string;
-    progressiveDies?: string;
-    blankingDies?: string;
-  };
-  
-  // Feed Requirements
-  feed?: {
+  feedRates?: {
     average?: {
       length?: number;
       spm?: number;
@@ -137,11 +111,53 @@ export interface RFQData {
       fpm?: number; // Calculated
     };
   };
-  
-  // Technical Requirements
+}
+
+// Updated RFQ interface (removing duplicated fields)
+export interface RFQData {
+  dates?: {
+    date?: string;
+    decisionDate?: string;
+    idealDeliveryDate?: string;
+    earliestDeliveryDate?: string;
+    latestDeliveryDate?: string;
+  };
+  lineApplication?: string;
+  pullThrough?: string;
+  coil?: {
+    slitEdge?: string;
+    millEdge?: string;
+    requireCoilCar?: string;
+    runningOffBackplate?: string;
+    requireRewinding?: string;
+    changeTimeConcern?: string;
+    timeChangeGoal?: string;
+    loading?: string;
+  };
+  runningCosmeticMaterial?: string;
+  brandOfFeed?: string;
+  press?: {
+    gapFramePress?: string;
+    hydraulicPress?: string;
+    obi?: string;
+    servoPress?: string;
+    shearDieApplication?: string;
+    straightSidePress?: string;
+    other?: string;
+    tonnageOfPress?: string;
+    strokeLength?: string;
+    maxSPM?: string;
+    bedWidth?: string;
+    bedLength?: string;
+    windowSize?: string;
+    cycleTime?: string;
+  };
+  dies?: {
+    transferDies?: string;
+    progressiveDies?: string;
+    blankingDies?: string;
+  };
   voltageRequired?: number;
-  
-  // Space & Mounting
   equipmentSpaceLength?: number;
   equipmentSpaceWidth?: number;
   obstructions?: string;
@@ -150,57 +166,26 @@ export interface RFQData {
     adequateSupport?: string;
     customMounting?: string;
   };
-  passline?: string;
   loopPit?: string;
-  feedDirection?: string;
-  
-  // Special Requirements
   requireGuarding?: string;
   specialConsiderations?: string;
 }
 
-// Material Specs Page Data Structure
+// Updated Material Specs interface (removing duplicated fields)
 export interface MaterialSpecsData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Material Specifications
   material?: {
-    coilWidth?: number;
-    materialThickness?: number;
-    materialType?: string;
-    maxYieldStrength?: number;
-    maxTensileStrength?: number;
     minBendRadius?: number; // Calculated
     minLoopLength?: number; // Calculated
     calculatedCoilOD?: number; // Calculated
   };
-  
-  coil?: {
-    maxCoilWeight?: number;
-    coilID?: number;
-    maxCoilOD?: number;
-  };
-  
-  // Feed Configuration
   feed?: {
-    direction?: string;
-    controlsLevel?: string;
-    typeOfLine?: string;
     controls?: string; // Calculated
-    passline?: string;
-    lightGuageNonMarking?: string;
-    nonMarking?: string;
   };
-  
-  // Equipment Specifications
   straightener?: {
     rolls?: {
       typeOfRoll?: string;
     };
   };
-  
   reel?: {
     backplate?: {
       type?: string;
@@ -209,19 +194,9 @@ export interface MaterialSpecsData {
   };
 }
 
-// TDDBHD Page Data Structure
+// Updated TDDBHD interface (removing duplicated fields)
 export interface TDDBHDData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Reel & Material Specs
   reel?: {
-    model?: string;
-    width?: number;
-    backplate?: {
-      diameter?: number;
-    };
     dispReelMtr?: string;
     airPressureAvailable?: number;
     requiredDecelRate?: number;
@@ -229,14 +204,10 @@ export interface TDDBHDData {
     cylinderBore?: number;
     minMaterialWidth?: number; // Calculated
     brakePadDiameter?: number;
-    
-    // Threading Drive
     threadingDrive?: {
       airClutch?: string;
       hydThreadingDrive?: string;
     };
-    
-    // Hold Down
     holddown?: {
       assy?: string;
       cylinder?: string;
@@ -246,67 +217,39 @@ export interface TDDBHDData {
         available?: number; // Calculated
       };
     };
-    
-    // Drag Brake
     dragBrake?: {
       model?: string;
       quantity?: number;
       psiAirRequired?: number; // Calculated
       holdingForce?: number; // Calculated
     };
-    
-    // Torque Calculations
     torque?: {
       atMandrel?: number; // Calculated
       rewindRequired?: number; // Calculated
       required?: number; // Calculated
     };
-    
-    // Web Tension
     webTension?: {
       psi?: number; // Calculated
       lbs?: number; // Calculated
     };
   };
-  
-  material?: {
-    materialType?: string;
-    coilWidth?: number;
-    materialThickness?: number;
-    maxYieldStrength?: number;
-  };
-  
   coil?: {
-    maxCoilWeight?: number;
     coilWeight?: number; // Calculated
-    maxCoilOD?: number;
     coilOD?: number; // Calculated
   };
 }
 
-// Reel Drive Page Data Structure
+// Updated Reel Drive interface (removing duplicated fields)
 export interface ReelDriveData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Model & HP
   reel?: {
-    model?: string;
-    horsepower?: number;
-    
-    // Reel Specifications
     size?: number;
-    width?: number;
     bearing?: {
       distance?: number;
-      diameter?: {
+      diameter: {
         front?: number;
         rear?: number;
       };
     };
-    
-    // Mandrel
     mandrel?: {
       diameter?: number;
       length?: number;
@@ -316,17 +259,12 @@ export interface ReelDriveData {
       inertia?: number; // Calculated
       reflInertia?: number; // Calculated
     };
-    
-    // Backplate
     backplate?: {
-      diameter?: number;
       thickness?: number;
       weight?: number; // Calculated
       inertia?: number; // Calculated
       reflInertia?: number; // Calculated
     };
-    
-    // Reducer
     reducer?: {
       ratio?: number;
       efficiency?: number;
@@ -335,8 +273,6 @@ export interface ReelDriveData {
       inertia?: number;
       reflInertia?: number; // Calculated
     };
-    
-    // Chain
     chain?: {
       ratio?: number;
       sprktOD?: number;
@@ -345,27 +281,21 @@ export interface ReelDriveData {
       inertia?: number; // Calculated
       reflInertia?: number; // Calculated
     };
-    
-    // Total
     ratio?: string; // Calculated
     totalReflInertia?: {
       empty?: number; // Calculated
       full?: number; // Calculated
     };
-    
-    // Motor
     motor?: {
       inertia?: number;
-      rpm?: {
+      rpm: {
         base?: number;
         full?: number;
       };
     };
-    
-    // Friction
     friction?: {
       bearing?: {
-        mandrel?: {
+        mandrel: {
           rear?: number; // Calculated
           front?: number; // Calculated
         };
@@ -383,15 +313,11 @@ export interface ReelDriveData {
         };
       };
     };
-    
-    // Speed & Acceleration
     speed?: number;
     motorization?: {
       accelRate?: number;
     };
     accelerationTime?: number; // Calculated
-    
-    // Torque
     torque?: {
       empty?: {
         torque?: number; // Calculated
@@ -410,47 +336,25 @@ export interface ReelDriveData {
     };
     reelDriveOK?: string; // Calculated
   };
-  
-  // Coil
   coil?: {
     density?: number;
-    maxCoilOD?: number;
-    coilID?: number;
-    maxCoilWeight?: number;
     inertia?: number; // Calculated
     reflInertia?: number; // Calculated
   };
-  
-  material?: {
-    coilWidth?: number;
-  };
 }
 
-// Straightener Utility Page Data Structure
+// Updated Straightener Utility interface (removing duplicated fields)
 export interface StrUtilityData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Straightener Specifications
   straightener?: {
     payoff?: string;
-    model?: string;
-    width?: number;
     horsepower?: number;
     acceleration?: number;
     feedRate?: number;
     autoBrakeCompensation?: string;
-    
-    // Physical Parameters
-    rollDiameter?: number;
     centerDistance?: number;
     jackForceAvailable?: number;
     modulus?: number;
-    
-    // Rolls
     rolls?: {
-      numberOfRolls?: number;
       straighteningRolls?: number;
       depth?: {
         withoutMaterial?: number;
@@ -466,8 +370,6 @@ export interface StrUtilityData {
         ratedTorque?: number; // Calculated
       };
     };
-    
-    // Gear Data
     gear?: {
       faceWidth?: number;
       contAngle?: number;
@@ -480,8 +382,6 @@ export interface StrUtilityData {
         dp?: number;
       };
     };
-    
-    // Calculations
     actualCoilWeight?: number; // Calculated
     coilOD?: number; // Calculated
     required?: {
@@ -492,76 +392,47 @@ export interface StrUtilityData {
       jackForceCheck?: string; // Calculated
       backupRollsCheck?: string; // Calculated
     };
-    
     torque?: {
       straightener?: number; // Calculated
       acceleration?: number; // Calculated
       brake?: number; // Calculated
     };
   };
-  
-  // Coil Information
   coil?: {
-    coilID?: number;
     weight?: number;
-  };
-  
-  material?: {
-    coilWidth?: number;
-    materialThickness?: number;
-    maxYieldStrength?: number;
-    materialType?: string;
   };
 }
 
-// Roll Straightener Backbend Page Data Structure
+// Updated Roll Straightener Backbend interface (removing duplicated fields)
 export interface RollStrBackbendData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Roll Configuration
   rollConfiguration?: string; // "7", "9", "11"
-  
-  // Material & Coil Information
   material?: {
-    coilWidth?: number;
-    materialThickness?: number;
-    maxYieldStrength?: number;
-    materialType?: string;
-    density?: number; // lb/in³
+    density: number; // lb/in³
   };
-  
-  // Straightener Information
   straightener?: {
-    model?: string;
-    rollDiameter?: number;
     centerDistance?: number;
     modulus?: number;
     jackForceAvailable?: number;
-    
+    feedRate?: number;
+    poweredRolls?: string;
+    operatingPressure?: number;
+    hydraulicControl?: string;
     rolls?: {
-      numberOfRolls?: number;
       typeOfRoll?: string;
       depth?: {
         withoutMaterial?: number;
         withMaterial?: number;
       };
-      
       backbend?: {
         hiddenValue?: number;
         yieldMet?: string; // Calculated
-        
-        // Radius Calculations
+        requiredRollDiameter?: number;
         radius?: {
-          comingOffCoil?: number; // Calculated
+          comingOffCoil?: number;
           offCoilAfterSpringback?: number; // Calculated
           requiredToYieldSkinOfFlatMaterial?: number; // Calculated
         };
-        
         bendingMomentToYieldSkin?: number; // Calculated
-        
-        // Roller Analysis
         rollers?: {
           depthRequired?: number; // Calculated
           forceRequired?: number; // Calculated
@@ -587,28 +458,17 @@ export interface RollStrBackbendData {
   };
 }
 
-// Feed Page Data Structure
+// Updated Feed interface (removing duplicated fields)
 export interface FeedData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Feed Configuration
   feedType?: string; // "sigma-5", "sigma-5-pull-thru", "allen-bradley"
-  
   feed?: {
     application?: string;
     model?: string;
     machineWidth?: number;
     loopPit?: string;
     fullWidthRolls?: string;
-    
-    // Motor & Control
     motor?: string;
     amp?: string;
-    
-    // Performance Parameters
-    maximumVelocity?: number;
     frictionInDie?: number;
     accelerationRate?: number;
     defaultAcceleration?: number;
@@ -617,8 +477,6 @@ export interface FeedData {
     feedAngle1?: number;
     feedAngle2?: number;
     ratio?: number;
-    
-    // Calculated Values
     maxMotorRPM?: number; // Calculated
     motorInertia?: number; // Calculated
     maxVelocity?: number; // Calculated
@@ -627,8 +485,6 @@ export interface FeedData {
     reflInertia?: number; // Calculated
     match?: number; // Calculated
     materialInLoop?: number; // Calculated
-    
-    // Torque Values
     torque?: {
       motorPeak?: number; // Calculated
       peak?: number; // Calculated
@@ -642,8 +498,6 @@ export interface FeedData {
       };
       acceleration?: number; // Calculated
     };
-    
-    // Pull-Through Configuration
     pullThru?: {
       isPullThru?: string;
       straightenerRolls?: number;
@@ -653,64 +507,29 @@ export interface FeedData {
       kConst?: number;
       straightenerTorque?: number;
     };
-    
-    // Speed Settings
-    average?: {
-      length?: number;
-      spm?: number;
-      fpm?: number; // Calculated
-    };
-    max?: {
-      length?: number;
-      spm?: number;
-      fpm?: number; // Calculated
-    };
-    min?: {
-      length?: number;
-      spm?: number;
-      fpm?: number; // Calculated
-    };
-    
-    // Table Data
     tableValues?: Array<{
-      length: number;
-      rms_torque_fa1: number;
-      rms_torque_fa2: number;
-      spm_at_fa1: number;
-      fpm_fa1: number;
-      index_time_fa1: number;
-      spm_at_fa2: number;
-      fpm_fa2: number;
-      index_time_fa2: number;
+      length?: number;
+      rms_torque_fa1?: number;
+      rms_torque_fa2?: number;
+      spm_at_fa1?: number;
+      fpm_fa1?: number;
+      index_time_fa1?: number;
+      spm_at_fa2?: number;
+      fpm_fa2?: number;
+      index_time_fa2?: number;
     }>;
   };
-  
-  // Material Information
-  material?: {
-    coilWidth?: number;
-    materialThickness?: number;
-    materialDensity?: number;
-  };
-  
   press?: {
     bedLength?: string;
   };
 }
 
-// Shear Page Data Structure
+// Updated Shear interface (removing duplicated fields)
 export interface ShearData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Shear Configuration
   shearType?: string; // "single-rake", "bow-tie"
-  
   shear?: {
     model?: string;
     strength?: number; // Calculated
-    
-    // Blade Specifications
     blade?: {
       rakeOfBladePerFoot?: number;
       overlap?: number;
@@ -722,8 +541,6 @@ export interface ShearData {
         area?: number; // Calculated
       };
     };
-    
-    // Cylinder Specifications
     cylinder?: {
       boreSize?: number;
       rodDiameter?: number;
@@ -734,8 +551,6 @@ export interface ShearData {
       };
       actualOpeningAboveMaxMaterial?: number; // Calculated
     };
-    
-    // Hydraulic System
     hydraulic?: {
       pressure?: number;
       cylinder?: {
@@ -744,14 +559,10 @@ export interface ShearData {
       };
       fluidVelocity?: number; // Calculated
     };
-    
-    // Timing
     time?: {
       forDownwardStroke?: number;
       dwellTime?: number;
     };
-    
-    // Conclusions (All Calculated)
     conclusions?: {
       force?: {
         perCylinder?: number;
@@ -775,29 +586,11 @@ export interface ShearData {
       };
     };
   };
-  
-  material?: {
-    materialThickness?: number;
-    coilWidth?: number;
-    maxTensileStrength?: number;
-    materialType?: string;
-    maxYieldStrength?: number;
-  };
 }
 
-// Summary Report Page Data Structure
+// Updated Summary Report interface (removing duplicated fields)
 export interface SummaryReportData {
-  // Customer & Date (shared)
-  customer?: string;
-  date?: string;
-  
-  // Reel Summary
   reel?: {
-    model?: string;
-    width?: number;
-    backplate?: {
-      diameter?: number;
-    };
     motorization?: {
       isMotorized?: string;
       driveHorsepower?: number;
@@ -819,12 +612,8 @@ export interface SummaryReportData {
       quantity?: number;
     };
   };
-  
-  // Straightener Summary
   straightener?: {
-    model?: string;
     payoff?: string;
-    width?: number;
     feedRate?: number;
     acceleration?: number;
     horsepower?: number;
@@ -833,8 +622,6 @@ export interface SummaryReportData {
       backupRolls?: string;
     };
   };
-  
-  // Feed Summary
   feed?: {
     application?: string;
     model?: string;
@@ -845,44 +632,38 @@ export interface SummaryReportData {
     maximumVelocity?: number;
     acceleration?: number;
     ratio?: string;
-    direction?: string;
-    controlsLevel?: string;
-    typeOfLine?: string;
-    passline?: string;
-    lightGuageNonMarking?: string;
-    nonMarking?: string;
     pullThru?: {
       straightenerRolls?: number;
       pinchRolls?: string;
     };
   };
-  
   press?: {
     bedLength?: string;
   };
-  
   loopPit?: string;
 }
 
-// Main Performance Data Structure
+// Updated Main Performance Data Structure
 export interface PerformanceData {
   referenceNumber: string;
-  rfq: RFQData;
-  materialSpecs: MaterialSpecsData;
-  tddbhd: TDDBHDData;
-  reelDrive: ReelDriveData;
-  strUtility: StrUtilityData;
-  rollStrBackbend: RollStrBackbendData;
-  feed: FeedData;
-  shear: ShearData;
-  summaryReport: SummaryReportData;
+  common?: CommonData;
+  rfq?: RFQData;
+  materialSpecs?: MaterialSpecsData;
+  tddbhd?: TDDBHDData;
+  reelDrive?: ReelDriveData;
+  strUtility?: StrUtilityData;
+  rollStrBackbend?: RollStrBackbendData;
+  feed?: FeedData;
+  shear?: ShearData;
+  summaryReport?: SummaryReportData;
 }
 
 // Initial state for PerformanceData
 const initialPerformanceData: PerformanceData = {
   referenceNumber: "",
-  rfq: {
+  common: {
     customer: "",
+    date: "",
     customerInfo: {
       streetAddress: "",
       city: "",
@@ -898,6 +679,69 @@ const initialPerformanceData: PerformanceData = {
       daysPerWeek: 0,
       shiftsPerDay: 0,
     },
+    material: {
+      materialThickness: 0,
+      coilWidth: 0,
+      coilWeight: 0,
+      materialType: "",
+      maxYieldStrength: 0,
+      maxTensileStrength: 0,
+      materialDensity: 0,
+      modulus: 0,
+    },
+    coil: {
+      maxCoilWidth: 0,
+      minCoilWidth: 0,
+      maxCoilOD: 0,
+      coilID: 0,
+      maxCoilWeight: 0,
+      maxCoilHandlingCap: 0,
+    },
+    equipment: {
+      reel: {
+        model: "",
+        width: 0,
+        horsepower:0,
+        backplate: {
+          diameter: 0,
+        },
+      },
+      straightener: {
+        model: "",
+        width: 0,
+        numberOfRolls: 0,
+        rollDiameter: 0,
+      },
+      feed: {
+        direction: "",
+        controlsLevel: "",
+        controls: "",
+        typeOfLine: "",
+        passline: "",
+        lightGuageNonMarking: "",
+        nonMarking: "",
+        maximumVelocity: 0,
+      },
+    },
+    feedRates: {
+      average: {
+        length: 0,
+        spm: 0,
+        fpm: 0,
+      },
+      max: {
+        length: 0,
+        spm: 0,
+        fpm: 0,
+      },
+      min: {
+        length: 0,
+        spm: 0,
+        fpm: 0,
+      },
+    },
+  },
+  rfq: {
     dates: {
       date: "",
       decisionDate: "",
@@ -906,15 +750,8 @@ const initialPerformanceData: PerformanceData = {
       latestDeliveryDate: "",
     },
     lineApplication: "",
-    typeOfLine: "",
     pullThrough: "",
     coil: {
-      maxCoilWidth: 0,
-      minCoilWidth: 0,
-      maxCoilOD: 0,
-      coilID: 0,
-      maxCoilWeight: 0,
-      maxCoilHandlingCap: 0,
       slitEdge: "",
       millEdge: "",
       requireCoilCar: "",
@@ -923,13 +760,6 @@ const initialPerformanceData: PerformanceData = {
       changeTimeConcern: "",
       timeChangeGoal: "",
       loading: "",
-    },
-    material: {
-      materialThickness: 0,
-      coilWidth: 0,
-      materialType: "",
-      maxYieldStrength: 0,
-      maxTensileStrength: 0,
     },
     runningCosmeticMaterial: "",
     brandOfFeed: "",
@@ -954,11 +784,6 @@ const initialPerformanceData: PerformanceData = {
       progressiveDies: "",
       blankingDies: "",
     },
-    feed: {
-      average: { length: 0, spm: 0, fpm: 0 },
-      max: { length: 0, spm: 0, fpm: 0 },
-      min: { length: 0, spm: 0, fpm: 0 },
-    },
     voltageRequired: 0,
     equipmentSpaceLength: 0,
     equipmentSpaceWidth: 0,
@@ -968,38 +793,18 @@ const initialPerformanceData: PerformanceData = {
       adequateSupport: "",
       customMounting: "",
     },
-    passline: "",
     loopPit: "",
-    feedDirection: "",
     requireGuarding: "",
     specialConsiderations: "",
   },
   materialSpecs: {
-    customer: "",
-    date: "",
     material: {
-      coilWidth: 0,
-      materialThickness: 0,
-      materialType: "",
-      maxYieldStrength: 0,
-      maxTensileStrength: 0,
       minBendRadius: 0,
       minLoopLength: 0,
       calculatedCoilOD: 0,
     },
-    coil: {
-      maxCoilWeight: 0,
-      coilID: 0,
-      maxCoilOD: 0,
-    },
     feed: {
-      direction: "",
-      controlsLevel: "",
-      typeOfLine: "",
       controls: "",
-      passline: "",
-      lightGuageNonMarking: "",
-      nonMarking: "",
     },
     straightener: {
       rolls: {
@@ -1014,12 +819,7 @@ const initialPerformanceData: PerformanceData = {
     },
   },
   tddbhd: {
-    customer: "",
-    date: "",
     reel: {
-      model: "",
-      width: 0,
-      backplate: { diameter: 0 },
       dispReelMtr: "",
       airPressureAvailable: 0,
       requiredDecelRate: 0,
@@ -1035,7 +835,10 @@ const initialPerformanceData: PerformanceData = {
         assy: "",
         cylinder: "",
         cylinderPressure: 0,
-        force: { required: 0, available: 0 },
+        force: {
+          required: 0,
+          available: 0,
+        },
       },
       dragBrake: {
         model: "",
@@ -1053,30 +856,20 @@ const initialPerformanceData: PerformanceData = {
         lbs: 0,
       },
     },
-    material: {
-      materialType: "",
-      coilWidth: 0,
-      materialThickness: 0,
-      maxYieldStrength: 0,
-    },
     coil: {
-      maxCoilWeight: 0,
       coilWeight: 0,
-      maxCoilOD: 0,
       coilOD: 0,
     },
   },
   reelDrive: {
-    customer: "",
-    date: "",
     reel: {
-      model: "",
-      horsepower: 0,
       size: 0,
-      width: 0,
       bearing: {
         distance: 0,
-        diameter: { front: 0, rear: 0 },
+        diameter: {
+          front: 0,
+          rear: 0,
+        },
       },
       mandrel: {
         diameter: 0,
@@ -1088,7 +881,6 @@ const initialPerformanceData: PerformanceData = {
         reflInertia: 0,
       },
       backplate: {
-        diameter: 0,
         thickness: 0,
         weight: 0,
         inertia: 0,
@@ -1111,21 +903,41 @@ const initialPerformanceData: PerformanceData = {
         reflInertia: 0,
       },
       ratio: "",
-      totalReflInertia: { empty: 0, full: 0 },
+      totalReflInertia: {
+        empty: 0,
+        full: 0,
+      },
       motor: {
         inertia: 0,
-        rpm: { base: 0, full: 0 },
+        rpm: {
+          base: 0,
+          full: 0,
+        },
       },
       friction: {
         bearing: {
-          mandrel: { rear: 0, front: 0 },
-          coil: { rear: 0, front: 0 },
-          total: { empty: 0, full: 0 },
-          refl: { empty: 0, full: 0 },
+          mandrel: {
+            rear: 0,
+            front: 0,
+          },
+          coil: {
+            rear: 0,
+            front: 0,
+          },
+          total: {
+            empty: 0,
+            full: 0,
+          },
+          refl: {
+            empty: 0,
+            full: 0,
+          },
         },
       },
       speed: 0,
-      motorization: { accelRate: 0 },
+      motorization: {
+        accelRate: 0,
+      },
       accelerationTime: 0,
       torque: {
         empty: {
@@ -1147,35 +959,25 @@ const initialPerformanceData: PerformanceData = {
     },
     coil: {
       density: 0,
-      maxCoilOD: 0,
-      coilID: 0,
-      maxCoilWeight: 0,
       inertia: 0,
       reflInertia: 0,
     },
-    material: {
-      coilWidth: 0,
-    },
   },
   strUtility: {
-    customer: "",
-    date: "",
     straightener: {
       payoff: "",
-      model: "",
-      width: 0,
       horsepower: 0,
       acceleration: 0,
       feedRate: 0,
       autoBrakeCompensation: "",
-      rollDiameter: 0,
       centerDistance: 0,
       jackForceAvailable: 0,
       modulus: 0,
       rolls: {
-        numberOfRolls: 0,
         straighteningRolls: 0,
-        depth: { withoutMaterial: 0 },
+        depth: {
+          withoutMaterial: 0,
+        },
         straightener: {
           diameter: 0,
           requiredGearTorque: 0,
@@ -1190,8 +992,14 @@ const initialPerformanceData: PerformanceData = {
       gear: {
         faceWidth: 0,
         contAngle: 0,
-        straightenerRoll: { numberOfTeeth: 0, dp: 0 },
-        pinchRoll: { numberOfTeeth: 0, dp: 0 },
+        straightenerRoll: {
+          numberOfTeeth: 0,
+          dp: 0,
+        },
+        pinchRoll: {
+          numberOfTeeth: 0,
+          dp: 0,
+        },
       },
       actualCoilWeight: 0,
       coilOD: 0,
@@ -1210,35 +1018,23 @@ const initialPerformanceData: PerformanceData = {
       },
     },
     coil: {
-      coilID: 0,
       weight: 0,
-    },
-    material: {
-      coilWidth: 0,
-      materialThickness: 0,
-      maxYieldStrength: 0,
-      materialType: "",
     },
   },
   rollStrBackbend: {
-    customer: "",
-    date: "",
-    rollConfiguration: "7",
+    rollConfiguration: "",
     material: {
-      coilWidth: 0,
-      materialThickness: 0,
-      maxYieldStrength: 0,
-      materialType: "",
-      density: 0, // lb/in³
+      density: 0,
     },
     straightener: {
-      model: "",
-      rollDiameter: 0,
       centerDistance: 0,
       modulus: 0,
       jackForceAvailable: 0,
+      feedRate: 0,
+      poweredRolls: "",
+      operatingPressure: 0,
+      hydraulicControl: "",
       rolls: {
-        numberOfRolls: 0,
         typeOfRoll: "",
         depth: {
           withoutMaterial: 0,
@@ -1247,6 +1043,7 @@ const initialPerformanceData: PerformanceData = {
         backbend: {
           hiddenValue: 0,
           yieldMet: "",
+          requiredRollDiameter: 0,
           radius: {
             comingOffCoil: 0,
             offCoilAfterSpringback: 0,
@@ -1322,9 +1119,7 @@ const initialPerformanceData: PerformanceData = {
     },
   },
   feed: {
-    customer: "",
-    date: "",
-    feedType: "sigma-5",
+    feedType: "",
     feed: {
       application: "",
       model: "",
@@ -1333,7 +1128,6 @@ const initialPerformanceData: PerformanceData = {
       fullWidthRolls: "",
       motor: "",
       amp: "",
-      maximumVelocity: 0,
       frictionInDie: 0,
       accelerationRate: 0,
       defaultAcceleration: 0,
@@ -1372,24 +1166,14 @@ const initialPerformanceData: PerformanceData = {
         kConst: 0,
         straightenerTorque: 0,
       },
-      average: { length: 0, spm: 0, fpm: 0 },
-      max: { length: 0, spm: 0, fpm: 0 },
-      min: { length: 0, spm: 0, fpm: 0 },
       tableValues: [],
-    },
-    material: {
-      coilWidth: 0,
-      materialThickness: 0,
-      materialDensity: 0,
     },
     press: {
       bedLength: "",
     },
   },
   shear: {
-    customer: "",
-    date: "",
-    shearType: "single-rake",
+    shearType: "",
     shear: {
       model: "",
       strength: 0,
@@ -1397,20 +1181,29 @@ const initialPerformanceData: PerformanceData = {
         rakeOfBladePerFoot: 0,
         overlap: 0,
         bladeOpening: 0,
-        percentOfPenetration: 38,
+        percentOfPenetration: 0,
         angleOfBlade: 0,
-        initialCut: { length: 0, area: 0 },
+        initialCut: {
+          length: 0,
+          area: 0,
+        },
       },
       cylinder: {
         boreSize: 0,
         rodDiameter: 0,
         stroke: 0,
-        minStroke: { forBlade: 0, requiredForOpening: 0 },
+        minStroke: {
+          forBlade: 0,
+          requiredForOpening: 0,
+        },
         actualOpeningAboveMaxMaterial: 0,
       },
       hydraulic: {
         pressure: 0,
-        cylinder: { area: 0, volume: 0 },
+        cylinder: {
+          area: 0,
+          volume: 0,
+        },
         fluidVelocity: 0,
       },
       time: {
@@ -1420,33 +1213,29 @@ const initialPerformanceData: PerformanceData = {
       conclusions: {
         force: {
           perCylinder: 0,
-          totalApplied: { lbs: 0, tons: 0 },
+          totalApplied: {
+            lbs: 0,
+            tons: 0,
+          },
           requiredToShear: 0,
         },
         safetyFactor: 0,
         perMinute: {
-          gallons: { instantaneous: 0, averaged: 0 },
+          gallons: {
+            instantaneous: 0,
+            averaged: 0,
+          },
           shearStrokes: 0,
           parts: 0,
         },
-        perHour: { parts: 0 },
+        perHour: {
+          parts: 0,
+        },
       },
-    },
-    material: {
-      materialThickness: 0,
-      coilWidth: 0,
-      maxTensileStrength: 0,
-      materialType: "",
-      maxYieldStrength: 0,
     },
   },
   summaryReport: {
-    customer: "",
-    date: "",
     reel: {
-      model: "",
-      width: 0,
-      backplate: { diameter: 0 },
       motorization: {
         isMotorized: "",
         driveHorsepower: 0,
@@ -1469,9 +1258,7 @@ const initialPerformanceData: PerformanceData = {
       },
     },
     straightener: {
-      model: "",
       payoff: "",
-      width: 0,
       feedRate: 0,
       acceleration: 0,
       horsepower: 0,
@@ -1490,12 +1277,6 @@ const initialPerformanceData: PerformanceData = {
       maximumVelocity: 0,
       acceleration: 0,
       ratio: "",
-      direction: "",
-      controlsLevel: "",
-      typeOfLine: "",
-      passline: "",
-      lightGuageNonMarking: "",
-      nonMarking: "",
       pullThru: {
         straightenerRolls: 0,
         pinchRolls: "",

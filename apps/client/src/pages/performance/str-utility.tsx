@@ -280,7 +280,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -294,7 +294,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Straightener Specifications Section
   const straightenerSpecsSection = useMemo(() => (
@@ -314,7 +314,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         <Select
           label="Str. Model"
           name="straightener.model"
-          value={localData.strUtility?.straightener?.model || ""}
+          value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleChange}
           options={STR_MODEL_OPTIONS}
           disabled={!isEditing}
@@ -322,7 +322,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         <Select
           label="Str. Width (in.)"
           name="straightener.width"
-          value={String(localData.strUtility?.straightener?.width ?? "")}
+          value={String(localData.common?.equipment?.straightener?.width ?? "")}
           onChange={handleChange}
           options={STR_WIDTH_OPTIONS}
           disabled={!isEditing}
@@ -331,7 +331,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           label="No. of Str. Rolls"
           name="straightener.rolls.numberOfRolls"
           type="number"
-          value={localData.strUtility?.straightener?.rolls?.numberOfRolls?.toString() || ""}
+          value={localData.common?.equipment?.straightener?.numberOfRolls?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -359,7 +359,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           label="Coil ID. (in)"
           name="coil.coilID"
           type="number"
-          value={localData.strUtility?.coil?.coilID?.toString() || ""}
+          value={localData.common?.coil?.coilID?.toString() || ""}
           onChange={handleChange}
           error={fieldErrors["coil.coilID"]}
           disabled={!isEditing}
@@ -368,7 +368,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           label="Coil Width (in)"
           name="material.coilWidth"
           type="number"
-          value={localData.strUtility?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           error={fieldErrors["material.coilWidth"]}
           disabled={!isEditing}
@@ -377,7 +377,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           label="Thickness (in)"
           name="material.materialThickness"
           type="number"
-          value={localData.strUtility?.material?.materialThickness?.toString() || ""}
+          value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           error={fieldErrors["material.materialThickness"]}
           disabled={!isEditing}
@@ -386,7 +386,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           label="Yield Strength (psi)"
           name="material.maxYieldStrength"
           type="number"
-          value={localData.strUtility?.material?.maxYieldStrength?.toString() || ""}
+          value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
           error={fieldErrors["material.maxYieldStrength"]}
           disabled={!isEditing}
@@ -394,14 +394,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         <Select
           label="Material"
           name="material.materialType"
-          value={localData.strUtility?.material?.materialType || ""}
+          value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
           disabled={!isEditing}
         />
       </div>
     </Card>
-  ), [localData.strUtility?.coil, localData.strUtility?.material, fieldErrors, handleChange, isEditing]);
+  ), [localData.strUtility?.coil, localData.common?.material, fieldErrors, handleChange, isEditing]);
 
   // Operating Parameters Section
   const operatingParamsSection = useMemo(() => (

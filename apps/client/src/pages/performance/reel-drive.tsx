@@ -250,7 +250,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -264,7 +264,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Model & HP section
   const modelHpSection = useMemo(() => (
@@ -276,7 +276,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Select
           label="Reel Model"
           name="reel.model"
-          value={localData.reelDrive?.reel?.model !== undefined && localData.reelDrive?.reel?.model !== null ? String(localData.reelDrive?.reel.model) : ""}
+          value={localData.common?.equipment?.reel?.model !== undefined && localData.common?.equipment?.reel?.model !== null ? String(localData.common?.equipment?.reel.model) : ""}
           onChange={handleChange}
           options={REEL_MODEL_OPTIONS.map((opt) => ({
             value: opt.value,
@@ -287,7 +287,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Select
           label="HP"
           name="reel.horsepower"
-          value={localData.reelDrive?.reel?.horsepower !== undefined && localData.reelDrive?.reel?.horsepower !== null ? String(localData.reelDrive?.reel.horsepower) : ""}
+          value={localData.common?.equipment?.reel?.horsepower !== undefined && localData.common?.equipment?.reel?.horsepower !== null ? String(localData.common?.equipment?.reel.horsepower) : ""}
           onChange={handleChange}
           options={REEL_HORSEPOWER_OPTIONS.map((opt) => ({
             value: String(opt.value),
@@ -297,7 +297,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.model, localData.reelDrive?.reel?.horsepower, handleChange, isEditing]);
+  ), [localData.common?.equipment?.reel?.model, localData.common?.equipment?.reel?.horsepower, handleChange, isEditing]);
 
   // Reel section
   const reelSection = useMemo(() => (
@@ -317,7 +317,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="MAX WIDTH"
           name="reel.width"
-          value={localData.reelDrive?.reel?.width?.toString() || ""}
+          value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -427,7 +427,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="DIAMETER"
           name="reel.backplate.diameter"
-          value={localData.reelDrive?.reel?.backplate?.diameter?.toString() || ""}
+          value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -486,7 +486,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="O.D."
           name="coil.maxCoilOD"
-          value={localData.reelDrive?.coil?.maxCoilOD?.toString() || ""}
+          value={localData.common?.coil?.maxCoilOD?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -494,7 +494,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="I.D."
           name="coil.coilID"
-          value={localData.reelDrive?.coil?.coilID?.toString() || ""}
+          value={localData.common?.coil?.coilID?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -502,7 +502,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="WIDTH"
           name="material.coilWidth"
-          value={localData.reelDrive?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -510,7 +510,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="WEIGHT"
           name="coil.maxCoilWeight"
-          value={localData.reelDrive?.coil?.maxCoilWeight?.toString() || ""}
+          value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -533,7 +533,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.coil, localData.reelDrive?.material?.coilWidth, handleChange, isEditing]);
+  ), [localData.reelDrive?.coil, localData.common?.material?.coilWidth, handleChange, isEditing]);
 
   // Reducer section
   const reducerSection = useMemo(() => (
@@ -698,7 +698,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <Input
           label="HP"
           name="reel.horsepower"
-          value={localData.reelDrive?.reel?.horsepower?.toString() || ""}
+          value={localData.common?.equipment?.reel?.horsepower?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}
@@ -729,7 +729,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.horsepower, localData.reelDrive?.reel?.motor, handleChange, isEditing]);
+  ), [localData.common?.equipment?.reel?.horsepower, localData.reelDrive?.reel?.motor, handleChange, isEditing]);
 
   // Friction section
   const frictionSection = useMemo(() => (

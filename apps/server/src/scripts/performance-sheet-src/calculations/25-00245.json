@@ -1,7 +1,8 @@
 {
   "referenceNumber": "25-00245",
-  "rfq": {
+  "common": {
     "customer": "Lozier",
+    "date": "",
     "customerInfo": {
       "streetAddress": "6336 Pershing Drive",
       "city": "Omaha",
@@ -17,6 +18,68 @@
       "daysPerWeek": 6,
       "shiftsPerDay": 3
     },
+    "material": {
+      "materialThickness": 0.25,
+      "coilWidth": 12,
+      "coilWeight": 10000,
+      "materialType": "Cold Rolled Steel",
+      "maxYieldStrength": 40000,
+      "maxTensileStrength": 0,
+      "materialDensity": 0
+    },
+    "coil": {
+      "maxCoilWidth": 24,
+      "minCoilWidth": 4,
+      "maxCoilOD": 72,
+      "coilID": 21,
+      "maxCoilWeight": 10000,
+      "maxCoilHandlingCap": 0
+    },
+    "equipment": {
+      "reel": {
+        "model": "CPR-150",
+        "width": 24,
+        "horsepower": 5,
+        "backplate": {
+          "diameter": 27
+        }
+      },
+      "straightener": {
+        "model": "CPPS-306",
+        "width": 24,
+        "numberOfRolls": 7,
+        "rollDiameter": 3
+      },
+      "feed": {
+        "direction": "Right to Left",
+        "controlsLevel": "SyncMaster",
+        "controls": "Sigma 5 Feed",
+        "typeOfLine": "Conventional",
+        "passline": "55\"",
+        "lightGuageNonMarking": "No",
+        "nonMarking": "No",
+        "maximumVelocity": 0
+      }
+    },
+    "feedRates": {
+      "average": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
+      },
+      "max": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
+      },
+      "min": {
+        "length": 10,
+        "spm": 50,
+        "fpm": 0
+      }
+    }
+  },
+  "rfq": {
     "dates": {
       "date": "",
       "decisionDate": "",
@@ -28,12 +91,6 @@
     "typeOfLine": "Conventional",
     "pullThrough": "",
     "coil": {
-      "maxCoilWidth": 24,
-      "minCoilWidth": 4,
-      "maxCoilOD": 72,
-      "coilID": 21,
-      "maxCoilWeight": 10000,
-      "maxCoilHandlingCap": 0,
       "slitEdge": "Yes",
       "millEdge": "No",
       "requireCoilCar": "No",
@@ -42,13 +99,6 @@
       "changeTimeConcern": "No",
       "timeChangeGoal": "0",
       "loading": "Operator Side"
-    },
-    "material": {
-      "materialThickness": 0.25,
-      "coilWidth": 12,
-      "materialType": "Cold Rolled Steel",
-      "maxYieldStrength": 40000,
-      "maxTensileStrength": 0
     },
     "runningCosmeticMaterial": "No",
     "brandOfFeed": "",
@@ -73,23 +123,6 @@
       "progressiveDies": "Yes",
       "blankingDies": "No"
     },
-    "feed": {
-      "average": {
-        "length": 48,
-        "spm": 40,
-        "fpm": 0
-      },
-      "max": {
-        "length": 48,
-        "spm": 40,
-        "fpm": 0
-      },
-      "min": {
-        "length": 10,
-        "spm": 50,
-        "fpm": 0
-      }
-    },
     "voltageRequired": 480,
     "equipmentSpaceLength": 0,
     "equipmentSpaceWidth": 0,
@@ -99,38 +132,15 @@
       "adequateSupport": "",
       "customMounting": ""
     },
-    "passline": "55\"",
     "loopPit": "",
-    "feedDirection": "Right to Left",
     "requireGuarding": "",
     "specialConsiderations": ""
   },
   "materialSpecs": {
-    "customer": "Lozier",
-    "date": "",
     "material": {
-      "coilWidth": 12,
-      "materialThickness": 0.25,
-      "materialType": "Cold Rolled Steel",
-      "maxYieldStrength": 40000,
-      "maxTensileStrength": 0,
       "minBendRadius": 0,
       "minLoopLength": 0,
       "calculatedCoilOD": 0
-    },
-    "coil": {
-      "maxCoilWeight": 10000,
-      "coilID": 21,
-      "maxCoilOD": 72
-    },
-    "feed": {
-      "direction": "Right to Left",
-      "controlsLevel": "SyncMaster",
-      "typeOfLine": "Conventional",
-      "controls": "Sigma 5 Feed",
-      "passline": "55\"",
-      "lightGuageNonMarking": "No",
-      "nonMarking": "No"
     },
     "straightener": {
       "rolls": {
@@ -145,14 +155,7 @@
     }
   },
   "tddbhd": {
-    "customer": "Lozier",
-    "date": "",
     "reel": {
-      "model": "CPR-150",
-      "width": 24,
-      "backplate": {
-        "diameter": 27
-      },
       "dispReelMtr": "",
       "airPressureAvailable": 80,
       "requiredDecelRate": 1,
@@ -189,27 +192,15 @@
         "lbs": 0
       }
     },
-    "material": {
-      "materialType": "Cold Rolled Steel",
-      "coilWidth": 12,
-      "materialThickness": 0.25,
-      "maxYieldStrength": 40000
-    },
     "coil": {
-      "maxCoilWeight": 10000,
       "coilWeight": 0,
-      "maxCoilOD": 72,
       "coilOD": 0
     }
   },
   "reelDrive": {
-    "customer": "Lozier",
-    "date": "",
     "reel": {
-      "model": "CPR-150",
       "horsepower": 5,
       "size": 0,
-      "width": 24,
       "bearing": {
         "distance": 0,
         "diameter": {
@@ -227,7 +218,6 @@
         "reflInertia": 0
       },
       "backplate": {
-        "diameter": 27,
         "thickness": 0,
         "weight": 0,
         "inertia": 0,
@@ -306,33 +296,21 @@
     },
     "coil": {
       "density": 0,
-      "maxCoilOD": 72,
-      "coilID": 21,
-      "maxCoilWeight": 10000,
       "inertia": 0,
       "reflInertia": 0
-    },
-    "material": {
-      "coilWidth": 12
     }
   },
   "strUtility": {
-    "customer": "Lozier",
-    "date": "",
     "straightener": {
       "payoff": "TOP",
-      "model": "CPPS-306",
-      "width": 24,
       "horsepower": 30,
       "acceleration": 1,
       "feedRate": 200,
       "autoBrakeCompensation": "Yes",
-      "rollDiameter": 3,
       "centerDistance": 0,
       "jackForceAvailable": 0,
       "modulus": 0,
       "rolls": {
-        "numberOfRolls": 7,
         "straighteningRolls": 7,
         "depth": {
           "withoutMaterial": 0
@@ -377,35 +355,19 @@
       }
     },
     "coil": {
-      "coilID": 21,
       "weight": 10000
-    },
-    "material": {
-      "coilWidth": 12,
-      "materialThickness": 0.25,
-      "maxYieldStrength": 40000,
-      "materialType": "Cold Rolled Steel"
     }
   },
   "rollStrBackbend": {
-    "customer": "Lozier",
-    "date": "",
     "rollConfiguration": "7",
     "material": {
-      "coilWidth": 12,
-      "materialThickness": 0.25,
-      "maxYieldStrength": 40000,
-      "materialType": "Cold Rolled Steel",
       "density": 0
     },
     "straightener": {
-      "model": "CPPS-306",
-      "rollDiameter": 3,
       "centerDistance": 0,
       "modulus": 0,
       "jackForceAvailable": 0,
       "rolls": {
-        "numberOfRolls": 7,
         "typeOfRoll": "7 Roll Str. Backbend",
         "depth": {
           "withoutMaterial": 0,
@@ -489,8 +451,6 @@
     }
   },
   "feed": {
-    "customer": "Lozier",
-    "date": "",
     "feedType": "sigma-5",
     "feed": {
       "application": "Press Feed",
@@ -539,35 +499,13 @@
         "kConst": 0,
         "straightenerTorque": 0
       },
-      "average": {
-        "length": 48,
-        "spm": 40,
-        "fpm": 0
-      },
-      "max": {
-        "length": 48,
-        "spm": 40,
-        "fpm": 0
-      },
-      "min": {
-        "length": 10,
-        "spm": 50,
-        "fpm": 0
-      },
       "tableValues": []
-    },
-    "material": {
-      "coilWidth": 12,
-      "materialThickness": 0.25,
-      "materialDensity": 0
     },
     "press": {
       "bedLength": "48"
     }
   },
   "shear": {
-    "customer": "Lozier",
-    "date": "",
     "shearType": "single-rake",
     "shear": {
       "model": "",
@@ -627,24 +565,10 @@
           "parts": 0
         }
       }
-    },
-    "material": {
-      "materialThickness": 0.25,
-      "coilWidth": 12,
-      "maxTensileStrength": 0,
-      "materialType": "Cold Rolled Steel",
-      "maxYieldStrength": 40000
     }
   },
   "summaryReport": {
-    "customer": "Lozier",
-    "date": "",
     "reel": {
-      "model": "CPR-150",
-      "width": 24,
-      "backplate": {
-        "diameter": 27
-      },
       "motorization": {
         "isMotorized": "No",
         "driveHorsepower": 0,
@@ -667,9 +591,7 @@
       }
     },
     "straightener": {
-      "model": "CPPS-306",
       "payoff": "TOP",
-      "width": 24,
       "feedRate": 200,
       "acceleration": 1,
       "horsepower": 30,
@@ -688,12 +610,6 @@
       "maximumVelocity": 0,
       "acceleration": 1,
       "ratio": "",
-      "direction": "Right to Left",
-      "controlsLevel": "SyncMaster",
-      "typeOfLine": "Conventional",
-      "passline": "55\"",
-      "lightGuageNonMarking": "No",
-      "nonMarking": "No",
       "pullThru": {
         "straightenerRolls": 7,
         "pinchRolls": ""

@@ -98,25 +98,34 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           
           setLocalData(prevData => ({
             ...prevData,
+            common: {
+              ...prevData.common,
+              equipment: {
+                ...prevData.common?.equipment,
+                feed: {
+                  ...prevData.common?.equipment?.feed,
+                  maximumVelocity: response.data.feed.max_velocity || prevData.common?.equipment?.feed?.maximumVelocity,
+                }
+              }
+            },
             feed: {
               ...prevData.feed,
               // Update calculated FPM values
               average: {
-                ...prevData.feed?.feed?.average,
-                fpm: response.data.feed.average?.fpm || prevData.feed?.feed?.average?.fpm
+                ...prevData.common?.feedRates?.average,
+                fpm: response.data.feed.average?.fpm || prevData.common?.feedRates?.average?.fpm
               },
               max: {
-                ...prevData.feed?.feed?.max,
-                fpm: response.data.feed.max?.fpm || prevData.feed?.feed?.max?.fpm
+                ...prevData.common?.feedRates?.max,
+                fpm: response.data.feed.max?.fpm || prevData.common?.feedRates?.max?.fpm
               },
               min: {
-                ...prevData.feed?.feed?.min,
-                fpm: response.data.feed.min?.fpm || prevData.feed?.feed?.min?.fpm
+                ...prevData.common?.feedRates?.min,
+                fpm: response.data.feed.min?.fpm || prevData.common?.feedRates?.min?.fpm
               },
               // Update other calculated feed fields
               maxMotorRPM: response.data.feed.max_motor_rpm || prevData.feed?.feed?.maxMotorRPM,
               motorInertia: response.data.feed.motor_inertia || prevData.feed?.feed?.motorInertia,
-              maxVelocity: response.data.feed.max_vel || prevData.feed?.feed?.maximumVelocity,
               settleTime: response.data.feed.settle_time || prevData.feed?.feed?.settleTime,
               regen: response.data.feed.regen || prevData.feed?.feed?.regen,
               materialInLoop: response.data.feed.material_in_loop || prevData.feed?.feed?.materialInLoop,
@@ -262,7 +271,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -276,7 +285,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Feed configuration section
   const feedConfigSection = useMemo(() => (
@@ -355,7 +364,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Width"
           name="material.coilWidth"
           type="number"
-          value={localData.feed?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -363,7 +372,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Thickness"
           name="material.materialThickness"
           type="number"
-          value={localData.feed?.material?.materialThickness?.toString() || ""}
+          value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -379,7 +388,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Density"
           name="material.materialDensity"
           type="number"
-          value={localData.feed?.material?.materialDensity?.toString() || ""}
+          value={localData.common?.material?.materialDensity?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -393,7 +402,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.feed?.material, localData.feed?.press?.bedLength, localData.feed?.feed?.materialInLoop, handleChange, isEditing]);
+  ), [localData.common?.material, localData.feed?.press?.bedLength, localData.feed?.feed?.materialInLoop, handleChange, isEditing]);
 
   // Sigma 5 fields
   const sigma5Fields = useMemo(() => (
@@ -420,7 +429,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="STR Max Speed (ft/min)"
           name="feed.maximumVelocity"
           type="number"
-          value={localData.feed?.feed?.maximumVelocity?.toString() || ""}
+          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -471,7 +480,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Max Velocity (ft/min)"
           name="feed.maxVelocity"
           type="number"
-          value={localData.feed?.feed?.maximumVelocity?.toString() || ""}
+          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />
@@ -621,7 +630,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="Length"
               name="feed.average.length"
               type="number"
-              value={localData.feed?.feed?.average?.length?.toString() || ""}
+              value={localData.common?.feedRates?.average?.length?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -629,7 +638,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="SPM"
               name="feed.average.spm"
               type="number"
-              value={localData.feed?.feed?.average?.spm?.toString() || ""}
+              value={localData.common?.feedRates?.average?.spm?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -637,7 +646,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="FPM"
               name="feed.average.fpm"
               type="number"
-              value={localData.feed?.feed?.average?.fpm?.toString() || ""}
+              value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
@@ -651,7 +660,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="Length"
               name="feed.max.length"
               type="number"
-              value={localData.feed?.feed?.max?.length?.toString() || ""}
+              value={localData.common?.feedRates?.max?.length?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -659,7 +668,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="SPM"
               name="feed.max.spm"
               type="number"
-              value={localData.feed?.feed?.max?.spm?.toString() || ""}
+              value={localData.common?.feedRates?.max?.spm?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -667,7 +676,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="FPM"
               name="feed.max.fpm"
               type="number"
-              value={localData.feed?.feed?.max?.fpm?.toString() || ""}
+              value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
@@ -681,7 +690,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="Length"
               name="feed.min.length"
               type="number"
-              value={localData.feed?.feed?.min?.length?.toString() || ""}
+              value={localData.common?.feedRates?.min?.length?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -689,7 +698,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="SPM"
               name="feed.min.spm"
               type="number"
-              value={localData.feed?.feed?.min?.spm?.toString() || ""}
+              value={localData.common?.feedRates?.min?.spm?.toString() || ""}
               onChange={handleChange}
               disabled={!isEditing}
             />
@@ -697,7 +706,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               label="FPM"
               name="feed.min.fpm"
               type="number"
-              value={localData.feed?.feed?.min?.fpm?.toString() || ""}
+              value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />

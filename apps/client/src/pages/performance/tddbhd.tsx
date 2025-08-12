@@ -221,7 +221,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Customer"
           name="rfq.customer"
-          value={localData.rfq?.customer || ""}
+          value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -235,7 +235,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
 
   // Reel & Material Specs Section
   const reelMaterialSection = useMemo(() => (
@@ -247,7 +247,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Select
           label="Reel Model"
           name="reel.model"
-          value={localData.tddbhd?.reel?.model?.toString() || ""}
+          value={localData.common?.equipment?.reel?.model?.toString() || ""}
           onChange={handleChange}
           options={REEL_MODEL_OPTIONS.map((opt) => ({
             value: opt.value,
@@ -258,7 +258,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Select
           label="Reel Width"
           name="reel.width"
-          value={localData.tddbhd?.reel?.width?.toString() || ""}
+          value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleChange}
           options={REEL_WIDTTH_OPTIONS.map((opt) => ({
             value: opt.value,
@@ -269,7 +269,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Select
           label="Backplate Diameter"
           name="reel.backplate.diameter"
-          value={localData.tddbhd?.reel?.backplate?.diameter?.toString() || ""}
+          value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleChange}
           options={BACKPLATE_DIAMETER_OPTIONS.map((opt) => ({
             value: opt.value,
@@ -280,7 +280,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Select
           label="Material Type"
           name="material.materialType"
-          value={localData.tddbhd?.material?.materialType || ""}
+          value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
           disabled={!isEditing}
@@ -288,7 +288,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Material Width (in)"
           name="material.coilWidth"
-          value={localData.tddbhd?.material?.coilWidth?.toString() || ""}
+          value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           type="number"
           error={fieldErrors["material.coilWidth"]}
@@ -297,7 +297,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Material Thickness (in)"
           name="material.materialThickness"
-          value={localData.tddbhd?.material?.materialThickness?.toString() || ""}
+          value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           type="number"
           error={fieldErrors["material.materialThickness"]}
@@ -306,7 +306,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Material Yield Strength (psi)"
           name="material.maxYieldStrength"
-          value={localData.tddbhd?.material?.maxYieldStrength?.toString() || ""}
+          value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
           type="number"
           error={fieldErrors["material.maxYieldStrength"]}
@@ -331,7 +331,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel, localData.tddbhd?.material, fieldErrors, handleChange, isEditing]);
+  ), [localData.tddbhd?.reel, localData.common?.material, fieldErrors, handleChange, isEditing]);
 
   // Coil, Brake & Other Specs Section
   const coilBrakeSection = useMemo(() => (
@@ -343,7 +343,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Coil Weight (lbs)"
           name="coil.maxCoilWeight"
-          value={localData.tddbhd?.coil?.maxCoilWeight?.toString() || ""}
+          value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
           onChange={handleChange}
           type="number"
           error={fieldErrors["coil.maxCoilWeight"]}
@@ -352,7 +352,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         <Input
           label="Coil O.D. (in)"
           name="coil.maxCoilOD"
-          value={localData.tddbhd?.coil?.maxCoilOD?.toString() || ""}
+          value={localData.common?.coil?.maxCoilOD?.toString() || ""}
           onChange={handleChange}
           type="number"
           disabled={!isEditing}

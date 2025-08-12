@@ -94,6 +94,8 @@ export class PerformanceController {
       const data = req.body.data || {};
       const updatedData = JSON.stringify(data);
 
+      console.log("Updated data for Python script:", updatedData);
+
       const pyResult = spawnSync(
         "python",
         ["src/scripts/performance-sheet-src/main.py"],

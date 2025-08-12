@@ -125,22 +125,30 @@ def calc_coil_specs(
             - coil_refl: Reflected inertia to motor in lb-in²
             
     """
-    # Use material density for coil calculations
-    coil_density = density
-    
-    # Calculate coil width from weight and cross-sectional area
-    coil_width = reel_size / coil_density / ((coil_od**2 - coil_id**2) / 4) / pi
-    
-    # Calculate moment of inertia for hollow cylinder
-    coil_inertia = reel_size / 32.3 / 2 * ((coil_od/2)**2 + (coil_id/2)**2) /144 * 12
-    
-    # Calculate reflected inertia to motor shaft
-    if total_ratio != 0: 
-        coil_refl = coil_inertia / total_ratio**2
-    else: 
-        coil_refl = 0
+    print(f"DEBUG - calc_coil_specs called with reel_size={reel_size}, coil_od={coil_od}, coil_id={coil_id}, density={density}")
 
-    return coil_density, coil_width, coil_inertia, coil_refl
+    try:
+        # Use material density for coil calculations
+        coil_density = density
+        
+        # Calculate coil width from weight and cross-sectional area
+        coil_width = reel_size / coil_density / ((coil_od**2 - coil_id**2) / 4) / pi
+        
+        # Calculate moment of inertia for hollow cylinder
+        coil_inertia = reel_size / 32.3 / 2 * ((coil_od/2)**2 + (coil_id/2)**2) /144 * 12
+        
+        # Calculate reflected inertia to motor shaft
+        if total_ratio != 0: 
+            coil_refl = coil_inertia / total_ratio**2
+        else: 
+            coil_refl = 0
+            
+        return coil_density, coil_width, coil_inertia, coil_refl
+        
+    except ZeroDivisionError as e:
+        print(f"ERROR: ZeroDivisionError in calc_coil_specs - {str(e)}", file=sys.stderr)
+        # Return default/zero values to maintain the expected tuple structure
+        return 0.0, 0.0, 0.0, 0.0
 
 def calculate_reeldrive(data: reel_drive_input) -> Dict[str, Any]:
     """
@@ -174,6 +182,7 @@ def calculate_reeldrive(data: reel_drive_input) -> Dict[str, Any]:
         
         # Get material properties (primarily density)
         material = get_material(data.material_type)
+        print(f"DEBUG - Material properties: {material}")
         
         # Get motor inertia - handle special case for 7.5 HP
         if (data.motor_hp == 7.5):
