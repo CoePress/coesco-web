@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { PerformanceData } from "@/contexts/performance.context";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { debounce } from "lodash";
 import Card from "@/components/common/card";
 import Text from "@/components/common/text";
 import Input from "@/components/common/input";
 import Checkbox from "@/components/common/checkbox";
+import { PerformanceData } from "@/contexts/performance.context";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
-import { useParams } from "react-router-dom";
 import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 export interface SummaryReportProps {
@@ -13,244 +14,132 @@ export interface SummaryReportProps {
   isEditing: boolean;
 }
 
+// Helper to safely update nested object properties
+const setNestedValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  let current = obj;
+  
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  
+  current[keys[keys.length - 1]] = value;
+};
+
 const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   const endpoint = `/performance/sheets`;
   const { loading, error } = useGetEntity(endpoint);
   const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
   const { id: performanceSheetId } = useParams();
   
-  // Local state for immediate UI updates
+  // Local state management
   const [localData, setLocalData] = useState<PerformanceData>(data);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Refs for cleanup and debouncing
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingChangesRef = useRef<Record<string, any>>({});
 
-  // Sync with parent data on initial load
+  // Sync with prop data on initial load only
   useEffect(() => {
-    if (!localData.referenceNumber && data.referenceNumber) {
-      console.log('Initial data load, syncing all data');
+    if (data && data.referenceNumber && !localData.referenceNumber) {
       setLocalData(data);
     }
   }, [data, localData.referenceNumber]);
 
   // Helper for checkboxes (convert string/boolean to boolean)
-  const boolVal = (val: any) => val === true || val === "true" || val === "Yes";
+  const boolVal = useCallback((val: any) => val === true || val === "true" || val === "Yes", []);
 
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isEditing) return;
-    
-    const { name, value, type, checked } = e.target;
-    const actualValue = type === "checkbox" ? checked : value;
+  // Field mappings for legacy field names
+  const fieldMappings = useMemo(() => ({
+    customer: "rfq.customer",
+    date: "rfq.dates.date",
+    reelModel: "reel.model",
+    reelWidth: "reel.width",
+    backplateDiameter: "reel.backplate.diameter",
+    reelMotorization: "reel.motorization.isMotorized",
+    singleOrDoubleEnded: "reel.style",
+    airClutch: "reel.threadingDrive.airClutch",
+    hydThreadingDrive: "reel.threadingDrive.hydThreadingDrive",
+    holdDownAssy: "reel.holddown.assy",
+    holdDownCylinder: "reel.holddown.cylinder",
+    brakeModel: "reel.dragBrake.model",
+    brakeQuantity: "reel.dragBrake.quantity",
+    driveHorsepower: "reel.motorization.driveHorsepower",
+    speed: "reel.motorization.speed",
+    accelRate: "reel.motorization.accelRate",
+    regenReqd: "reel.motorization.regenRequired",
+    straightenerModel: "straightener.model",
+    straighteningRolls: "straightener.rolls.straighteningRolls",
+    backupRolls: "straightener.rolls.backupRolls",
+    payoff: "straightener.payoff",
+    straightenerWidth: "straightener.width",
+    feedRate: "straightener.feedRate",
+    acceleration: "straightener.acceleration",
+    horsepower: "straightener.horsepower",
+    application: "feed.application",
+    model: "feed.model",
+    machineWidth: "feed.machineWidth",
+    loopPit: "loopPit",
+    fullWidthRolls: "feed.fullWidthRolls",
+    feedAngle1: "feed.feedAngle1",
+    feedAngle2: "feed.feedAngle2",
+    pressBedLength: "press.bedLength",
+    maximumVelocity: "feed.maximumVelocity",
+    acceleration2: "feed.acceleration",
+    ratio: "feed.ratio",
+    pullThruStraightenerRolls: "feed.pullThru.straightenerRolls",
+    pullThruPinchRolls: "feed.pullThru.pinchRolls",
+    feedDirection: "feed.direction",
+    controlsLevel: "feed.controlsLevel",
+    typeOfLine: "feed.typeOfLine",
+    passline: "feed.passline",
+    lightGauge: "feed.lightGuageNonMarking",
+    nonMarking: "feed.nonMarking",
+  }), []);
 
-    console.log(`Field changed: ${name}, Value: ${actualValue}`);
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async (changes: Record<string, any>) => {
+      if (!performanceSheetId || !isEditing) return;
 
-    // Update local state immediately for responsive UI
-    setLocalData(prevData => {
-      const updatedData = JSON.parse(JSON.stringify(prevData));
-
-      if (name.includes(".")) {
-        // Handle nested field updates
-        const parts = name.split(".");
-        let current = updatedData;
-        
-        // Navigate to the parent object
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) {
-            current[parts[i]] = {};
-          }
-          current = current[parts[i]];
-        }
-        
-        // Set the final value
-        current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      } else {
-        // Handle legacy field names that map to nested structure
-        const fieldMappings: { [key: string]: any } = {
-          customer: { path: "customer", value: actualValue },
-          date: { path: "dates.date", value: actualValue },
-          reelModel: { path: "reel.model", value: actualValue },
-          reelWidth: { path: "reel.width", value: actualValue },
-          backplateDiameter: { path: "reel.backplate.diameter", value: actualValue },
-          reelMotorization: { path: "reel.motorization.isMotorized", value: actualValue },
-          singleOrDoubleEnded: { path: "reel.style", value: actualValue },
-          airClutch: { path: "reel.threadingDrive.airClutch", value: actualValue },
-          hydThreadingDrive: { path: "reel.threadingDrive.hydThreadingDrive", value: actualValue },
-          holdDownAssy: { path: "reel.holddown.assy", value: actualValue },
-          holdDownCylinder: { path: "reel.holddown.cylinder", value: actualValue },
-          brakeModel: { path: "reel.dragBrake.model", value: actualValue },
-          brakeQuantity: { path: "reel.dragBrake.quantity", value: actualValue },
-          driveHorsepower: { path: "reel.motorization.driveHorsepower", value: actualValue },
-          speed: { path: "reel.motorization.speed", value: actualValue },
-          accelRate: { path: "reel.motorization.accelRate", value: actualValue },
-          regenReqd: { path: "reel.motorization.regenRequired", value: actualValue },
-          straightenerModel: { path: "straightener.model", value: actualValue },
-          straighteningRolls: { path: "straightener.rolls.straighteningRolls", value: actualValue },
-          backupRolls: { path: "straightener.rolls.backupRolls", value: actualValue },
-          payoff: { path: "straightener.payoff", value: actualValue },
-          straightenerWidth: { path: "straightener.width", value: actualValue },
-          feedRate: { path: "straightener.feedRate", value: actualValue },
-          acceleration: { path: "straightener.acceleration", value: actualValue },
-          horsepower: { path: "straightener.horsepower", value: actualValue },
-          application: { path: "feed.application", value: actualValue },
-          model: { path: "feed.model", value: actualValue },
-          machineWidth: { path: "feed.machineWidth", value: actualValue },
-          loopPit: { path: "loopPit", value: actualValue },
-          fullWidthRolls: { path: "feed.fullWidthRolls", value: actualValue },
-          feedAngle1: { path: "feed.feedAngle1", value: actualValue },
-          feedAngle2: { path: "feed.feedAngle2", value: actualValue },
-          pressBedLength: { path: "press.bedLength", value: actualValue },
-          maximumVelocity: { path: "feed.maximumVelocity", value: actualValue },
-          acceleration2: { path: "feed.acceleration", value: actualValue },
-          ratio: { path: "feed.ratio", value: actualValue },
-          pullThruStraightenerRolls: { path: "feed.pullThru.straightenerRolls", value: actualValue },
-          pullThruPinchRolls: { path: "feed.pullThru.pinchRolls", value: actualValue },
-          feedDirection: { path: "feed.direction", value: actualValue },
-          controlsLevel: { path: "feed.controlsLevel", value: actualValue },
-          typeOfLine: { path: "feed.typeOfLine", value: actualValue },
-          passline: { path: "feed.passline", value: actualValue },
-          lightGauge: { path: "feed.lightGuageNonMarking", value: actualValue ? "true" : "false" },
-          nonMarking: { path: "feed.nonMarking", value: actualValue ? "true" : "false" },
-        };
-
-        if (fieldMappings[name]) {
-          const mapping = fieldMappings[name];
-          const parts = mapping.path.split(".");
-          let current = updatedData;
-          
-          // Navigate to the parent object
-          for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-              current[parts[i]] = {};
-            }
-            current = current[parts[i]];
-          }
-          
-          // Set the final value
-          current[parts[parts.length - 1]] = mapping.value;
-        } else {
-          // Handle top-level fields
-          updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-        }
-      }
-
-      return updatedData;
-    });
-
-    // Debounce backend updates to avoid excessive API calls
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-
-    updateTimeoutRef.current = setTimeout(async () => {
       try {
-        if (!performanceSheetId) {
-          throw new Error("Performance Sheet ID is missing.");
-        }
-
-        // Create updated data for backend
+        // Create a deep copy and apply all pending changes
         const updatedData = JSON.parse(JSON.stringify(localData));
         
-        // Apply the current change to the data being sent
-        if (name.includes(".")) {
-          const parts = name.split(".");
-          let current = updatedData;
-          
-          for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-              current[parts[i]] = {};
-            }
-            current = current[parts[i]];
-          }
-          
-          current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-        } else {
-          // Handle legacy field mappings
-          const fieldMappings: { [key: string]: any } = {
-            customer: { path: "customer", value: actualValue },
-            date: { path: "dates.date", value: actualValue },
-            reelModel: { path: "reel.model", value: actualValue },
-            reelWidth: { path: "reel.width", value: actualValue },
-            backplateDiameter: { path: "reel.backplate.diameter", value: actualValue },
-            reelMotorization: { path: "reel.motorization.isMotorized", value: actualValue },
-            singleOrDoubleEnded: { path: "reel.style", value: actualValue },
-            airClutch: { path: "reel.threadingDrive.airClutch", value: actualValue },
-            hydThreadingDrive: { path: "reel.threadingDrive.hydThreadingDrive", value: actualValue },
-            holdDownAssy: { path: "reel.holddown.assy", value: actualValue },
-            holdDownCylinder: { path: "reel.holddown.cylinder", value: actualValue },
-            brakeModel: { path: "reel.dragBrake.model", value: actualValue },
-            brakeQuantity: { path: "reel.dragBrake.quantity", value: actualValue },
-            driveHorsepower: { path: "reel.motorization.driveHorsepower", value: actualValue },
-            speed: { path: "reel.motorization.speed", value: actualValue },
-            accelRate: { path: "reel.motorization.accelRate", value: actualValue },
-            regenReqd: { path: "reel.motorization.regenRequired", value: actualValue },
-            straightenerModel: { path: "straightener.model", value: actualValue },
-            straighteningRolls: { path: "straightener.rolls.straighteningRolls", value: actualValue },
-            backupRolls: { path: "straightener.rolls.backupRolls", value: actualValue },
-            payoff: { path: "straightener.payoff", value: actualValue },
-            straightenerWidth: { path: "straightener.width", value: actualValue },
-            feedRate: { path: "straightener.feedRate", value: actualValue },
-            acceleration: { path: "straightener.acceleration", value: actualValue },
-            horsepower: { path: "straightener.horsepower", value: actualValue },
-            application: { path: "feed.application", value: actualValue },
-            model: { path: "feed.model", value: actualValue },
-            machineWidth: { path: "feed.machineWidth", value: actualValue },
-            loopPit: { path: "loopPit", value: actualValue },
-            fullWidthRolls: { path: "feed.fullWidthRolls", value: actualValue },
-            feedAngle1: { path: "feed.feedAngle1", value: actualValue },
-            feedAngle2: { path: "feed.feedAngle2", value: actualValue },
-            pressBedLength: { path: "press.bedLength", value: actualValue },
-            maximumVelocity: { path: "feed.maximumVelocity", value: actualValue },
-            acceleration2: { path: "feed.acceleration", value: actualValue },
-            ratio: { path: "feed.ratio", value: actualValue },
-            pullThruStraightenerRolls: { path: "feed.pullThru.straightenerRolls", value: actualValue },
-            pullThruPinchRolls: { path: "feed.pullThru.pinchRolls", value: actualValue },
-            feedDirection: { path: "feed.direction", value: actualValue },
-            controlsLevel: { path: "feed.controlsLevel", value: actualValue },
-            typeOfLine: { path: "feed.typeOfLine", value: actualValue },
-            passline: { path: "feed.passline", value: actualValue },
-            lightGauge: { path: "feed.lightGuageNonMarking", value: actualValue ? "true" : "false" },
-            nonMarking: { path: "feed.nonMarking", value: actualValue ? "true" : "false" },
-          };
+        Object.entries(changes).forEach(([path, value]) => {
+          setNestedValue(updatedData, path, value);
+        });
 
-          if (fieldMappings[name]) {
-            const mapping = fieldMappings[name];
-            const parts = mapping.path.split(".");
-            let current = updatedData;
-            
-            for (let i = 0; i < parts.length - 1; i++) {
-              if (!current[parts[i]]) {
-                current[parts[i]] = {};
-              }
-              current = current[parts[i]];
-            }
-            
-            current[parts[parts.length - 1]] = mapping.value;
-          } else {
-            updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-          }
-        }
-
-        console.log("Updating with complete data structure:", updatedData);
-
-        // Send to backend (this will also trigger calculations)
+        console.log("Saving Summary changes:", changes);
+        
         const response = await updateEntity(performanceSheetId, { data: updatedData });
         
-        console.log("Backend response:", response);
-        
-        // Handle updated values directly from the backend response
-        if (response && response.data) {
+        // Handle any calculated values from backend
+        if (response?.data) {
           console.log("Updating summary values from backend response");
           
           setLocalData(prevData => ({
             ...prevData,
             // Update all sections that might have been modified
-            customer: response.data.customer || prevData.customer,
-            dates: {
-              ...prevData.dates,
-              date: response.data.dates?.date || prevData.dates?.date,
+            rfq: {
+              ...prevData.rfq,
+              customer: response.data.rfq?.customer || prevData.rfq?.customer,
+              dates: {
+                ...prevData.rfq?.dates,
+                date: response.data.rfq?.dates?.date || prevData.rfq?.dates?.date,
+              },
             },
             reel: {
               ...prevData.reel,
               model: response.data.reel?.model || prevData.reel?.model,
               width: response.data.reel?.width || prevData.reel?.width,
+              style: response.data.reel?.style || prevData.reel?.style,
               backplate: {
                 ...prevData.reel?.backplate,
                 diameter: response.data.reel?.backplate?.diameter || prevData.reel?.backplate?.diameter,
@@ -263,7 +152,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
                 accelRate: response.data.reel?.motorization?.accelRate || prevData.reel?.motorization?.accelRate,
                 regenRequired: response.data.reel?.motorization?.regenRequired || prevData.reel?.motorization?.regenRequired,
               },
-              style: response.data.reel?.style || prevData.reel?.style,
               threadingDrive: {
                 ...prevData.reel?.threadingDrive,
                 airClutch: response.data.reel?.threadingDrive?.airClutch || prevData.reel?.threadingDrive?.airClutch,
@@ -323,34 +211,514 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
             },
             loopPit: response.data.loopPit || prevData.loopPit,
           }));
-          
-          console.log("Updated summary values:", {
-            customer: response.data.customer,
-            reelModel: response.data.reel?.model,
-            straightenerModel: response.data.straightener?.model,
-            feedApplication: response.data.feed?.application,
-          });
         }
 
+        setLastSaved(new Date());
+        setIsDirty(false);
+        pendingChangesRef.current = {};
+        
       } catch (error) {
-        console.error('Error updating field:', error);
-        setLocalData(data);
+        console.error('Error saving Summary:', error);
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          _general: 'Failed to save changes. Please try again.' 
+        }));
       }
-    }, 500);
-  };
+    }, 1000),
+    [performanceSheetId, updateEntity, isEditing, localData]
+  );
 
-  // Cleanup timeout on unmount
+  // Optimized change handler
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditing) return;
+
+    const { name, value, type, checked } = e.target;
+    const actualValue = type === "checkbox" ? checked : value;
+
+    // Clear field error
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Update local state immediately
+    setLocalData(prevData => {
+      const newData = { ...prevData };
+      
+      // Get the correct path from field mappings or use the name directly
+      const fieldPath = fieldMappings[name as keyof typeof fieldMappings] || name;
+      const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+      
+      setNestedValue(newData, fieldPath, processedValue);
+      
+      return newData;
+    });
+
+    // Track pending changes
+    const fieldPath = fieldMappings[name as keyof typeof fieldMappings] || name;
+    const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+    pendingChangesRef.current[fieldPath] = processedValue;
+    setIsDirty(true);
+
+    // Debounce save
+    debouncedSave(pendingChangesRef.current);
+  }, [isEditing, fieldErrors, fieldMappings, debouncedSave]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      debouncedSave.cancel();
     };
-  }, []);
+  }, [debouncedSave]);
+
+  // Header section
+  const headerSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Customer & Date
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Customer"
+          name="customer"
+          value={localData.rfq?.customer || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Date"
+          name="date"
+          type="date"
+          value={localData.rfq?.dates?.date || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+
+  // Reel section
+  const reelSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Reel
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Reel Model"
+          name="reelModel"
+          value={localData.reel?.model || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Reel Width"
+          name="reelWidth"
+          value={localData.reel?.width || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Backplate Diameter"
+          name="backplateDiameter"
+          value={localData.reel?.backplate?.diameter || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Reel Motorization"
+          name="reelMotorization"
+          value={localData.reel?.motorization?.isMotorized || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Single or Double Ended"
+          name="singleOrDoubleEnded"
+          value={localData.reel?.style || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.reel, handleChange, isEditing]);
+
+  // Threading Drive section
+  const threadingDriveSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Threading Drive
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Air Clutch"
+          name="airClutch"
+          value={localData.reel?.threadingDrive?.airClutch || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Hyd. Threading Drive"
+          name="hydThreadingDrive"
+          value={localData.reel?.threadingDrive?.hydThreadingDrive || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.reel?.threadingDrive, handleChange, isEditing]);
+
+  // Hold Down section
+  const holdDownSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Hold Down
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Hold Down Assy"
+          name="holdDownAssy"
+          value={localData.reel?.holddown?.assy || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Hold Down Cylinder"
+          name="holdDownCylinder"
+          value={localData.reel?.holddown?.cylinder || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.reel?.holddown, handleChange, isEditing]);
+
+  // Drag Brake section
+  const dragBrakeSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Drag Brake
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Brake Model"
+          name="brakeModel"
+          value={localData.reel?.dragBrake?.model || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Brake Quantity"
+          name="brakeQuantity"
+          value={localData.reel?.dragBrake?.quantity || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.reel?.dragBrake, handleChange, isEditing]);
+
+  // Motorized Reel section
+  const motorizedReelSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Motorized Reel
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Drive Horsepower"
+          name="driveHorsepower"
+          value={localData.reel?.motorization?.driveHorsepower || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Speed (ft/min)"
+          name="speed"
+          value={localData.reel?.motorization?.speed || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Accel Rate (ft/sec²)"
+          name="accelRate"
+          value={localData.reel?.motorization?.accelRate || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Regen Req'd"
+          name="regenReqd"
+          value={localData.reel?.motorization?.regenRequired || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.reel?.motorization, handleChange, isEditing]);
+
+  // Powered Straightener section
+  const poweredStraightenerSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Powered Straightener
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Straightener Model"
+          name="straightenerModel"
+          value={localData.straightener?.model || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Straightening Rolls"
+          name="straighteningRolls"
+          value={localData.straightener?.rolls?.straighteningRolls || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Backup Rolls"
+          name="backupRolls"
+          value={localData.straightener?.rolls?.backupRolls || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Payoff"
+          name="payoff"
+          value={localData.straightener?.payoff || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Str. Width (in)"
+          name="straightenerWidth"
+          value={localData.straightener?.width || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Feed Rate (ft/min)"
+          name="feedRate"
+          value={localData.straightener?.feedRate || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Acceleration (ft/sec)"
+          name="acceleration"
+          value={localData.straightener?.acceleration || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Horsepower (HP)"
+          name="horsepower"
+          value={localData.straightener?.horsepower || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.straightener, handleChange, isEditing]);
+
+  // Sigma 5 Feed section
+  const sigma5FeedSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Sigma 5 Feed
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Application"
+          name="application"
+          value={localData.feed?.application || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Model"
+          name="model"
+          value={localData.feed?.model || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Machine Width"
+          name="machineWidth"
+          value={localData.feed?.machineWidth || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Loop Pit"
+          name="loopPit"
+          value={localData.loopPit || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Full Width Rolls"
+          name="fullWidthRolls"
+          value={localData.feed?.fullWidthRolls || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Feed Angle 1"
+          name="feedAngle1"
+          value={localData.feed?.feedAngle1 || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Feed Angle 2"
+          name="feedAngle2"
+          value={localData.feed?.feedAngle2 || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Press Bed Length"
+          name="pressBedLength"
+          value={localData.press?.bedLength || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Maximum Velocity ft/min"
+          name="maximumVelocity"
+          value={localData.feed?.maximumVelocity || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Acceleration (ft/sec²)"
+          name="acceleration2"
+          value={localData.feed?.acceleration || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Ratio"
+          name="ratio"
+          value={localData.feed?.ratio || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Pull Thru Straightener Rolls"
+          name="pullThruStraightenerRolls"
+          value={localData.feed?.pullThru?.straightenerRolls || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Pull Thru Pinch Rolls"
+          name="pullThruPinchRolls"
+          value={localData.feed?.pullThru?.pinchRolls || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Feed Direction"
+          name="feedDirection"
+          value={localData.feed?.direction || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Controls Level"
+          name="controlsLevel"
+          value={localData.feed?.controlsLevel || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Type of line"
+          name="typeOfLine"
+          value={localData.feed?.typeOfLine || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Passline"
+          name="passline"
+          value={localData.feed?.passline || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
+          <Checkbox
+            label="Light Gauge Non-Marking"
+            name="lightGauge"
+            checked={boolVal(localData.feed?.lightGuageNonMarking)}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+          <Checkbox
+            label="Non-Marking"
+            name="nonMarking"
+            checked={boolVal(localData.feed?.nonMarking)}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData.feed, localData.press?.bedLength, localData.loopPit, boolVal, handleChange, isEditing]);
+
+  // Status indicator component
+  const StatusIndicator = () => {
+    if (updateLoading) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-blue-600">
+          <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent"></div>
+          Saving...
+        </div>
+      );
+    }
+    
+    if (isDirty) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-amber-600">
+          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+          Unsaved changes
+        </div>
+      );
+    }
+    
+    if (lastSaved) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          Saved {lastSaved.toLocaleTimeString()}
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 pb-6 gap-2">
-      {/* Show loading indicator when calculations are running */}
+      {/* Status bar */}
+      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+        <StatusIndicator />
+        {fieldErrors._general && (
+          <div className="text-sm text-red-600">{fieldErrors._general}</div>
+        )}
+      </div>
+
+      {/* Loading and error states */}
       {(loading || updateLoading) && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -362,7 +730,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Show error if calculation fails */}
       {(error || updateError) && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
           <span className="text-red-800">
@@ -371,357 +738,15 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Customer & Date
-        </Text>
-        <div className="grid grid-cols-2 gap-6">
-          <Input
-            label="Customer"
-            name="customer"
-            value={localData.customer || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Date"
-            name="date"
-            type="date"
-            value={localData.dates?.date || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Reel Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Reel
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Reel Model"
-            name="reelModel"
-            value={localData.reel?.model || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Reel Width"
-            name="reelWidth"
-            value={localData.reel?.width || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Backplate Diameter"
-            name="backplateDiameter"
-            value={localData.reel?.backplate?.diameter || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Reel Motorization"
-            name="reelMotorization"
-            value={localData.reel?.motorization?.isMotorized || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Single or Double Ended"
-            name="singleOrDoubleEnded"
-            value={localData.reel?.style || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Threading Drive Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Threading Drive
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Air Clutch"
-            name="airClutch"
-            value={localData.reel?.threadingDrive?.airClutch || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Hyd. Threading Drive"
-            name="hydThreadingDrive"
-            value={localData.reel?.threadingDrive?.hydThreadingDrive || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Hold Down Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Hold Down
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Hold Down Assy"
-            name="holdDownAssy"
-            value={localData.reel?.holddown?.assy || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Hold Down Cylinder"
-            name="holdDownCylinder"
-            value={localData.reel?.holddown?.cylinder || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Drag Brake Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Drag Brake
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Brake Model"
-            name="brakeModel"
-            value={localData.reel?.dragBrake?.model || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Brake Quantity"
-            name="brakeQuantity"
-            value={localData.reel?.dragBrake?.quantity || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Motorized Reel Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Motorized Reel
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Drive Horsepower"
-            name="driveHorsepower"
-            value={localData.reel?.motorization?.driveHorsepower || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Speed (ft/min)"
-            name="speed"
-            value={localData.reel?.motorization?.speed || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Accel Rate (ft/sec^2)"
-            name="accelRate"
-            value={localData.reel?.motorization?.accelRate || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Regen Req'd"
-            name="regenReqd"
-            value={localData.reel?.motorization?.regenRequired || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Powered Straightener Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Powered Straightener
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Straightener Model"
-            name="straightenerModel"
-            value={localData.straightener?.model || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Straightening Rolls"
-            name="straighteningRolls"
-            value={localData.straightener?.rolls?.straighteningRolls || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Backup Rolls"
-            name="backupRolls"
-            value={localData.straightener?.rolls?.backupRolls || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Payoff"
-            name="payoff"
-            value={localData.straightener?.payoff || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Str. Width (in)"
-            name="straightenerWidth"
-            value={localData.straightener?.width || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Feed Rate (ft/min)"
-            name="feedRate"
-            value={localData.straightener?.feedRate || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Acceleration (ft/sec)"
-            name="acceleration"
-            value={localData.straightener?.acceleration || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Horsepower (HP)"
-            name="horsepower"
-            value={localData.straightener?.horsepower || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Sigma 5 Feed Section */}
-      <Card className="mb-0 p-4">
-        <Text
-          as="h3"
-          className="mb-4 text-lg font-medium">
-          Sigma 5 Feed
-        </Text>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            label="Application"
-            name="application"
-            value={localData.feed?.application || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Model"
-            name="model"
-            value={localData.feed?.model || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Machine Width"
-            name="machineWidth"
-            value={localData.feed?.machineWidth || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Loop Pit"
-            name="loopPit"
-            value={localData.loopPit || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Full Width Rolls"
-            name="fullWidthRolls"
-            value={localData.feed?.fullWidthRolls || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Feed Angle 1"
-            name="feedAngle1"
-            value={localData.feed?.feedAngle1 || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Feed Angle 2"
-            name="feedAngle2"
-            value={localData.feed?.feedAngle2 || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Press Bed Length"
-            name="pressBedLength"
-            value={localData.press?.bedLength || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Maximum Velocity ft/min"
-            name="maximumVelocity"
-            value={localData.feed?.maximumVelocity || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Acceleration (ft/sec^2)"
-            name="acceleration2"
-            value={localData.feed?.acceleration || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Ratio"
-            name="ratio"
-            value={localData.feed?.ratio || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Pull Thru Straightener Rolls"
-            name="pullThruStraightenerRolls"
-            value={localData.feed?.pullThru?.straightenerRolls || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Pull Thru Pinch Rolls"
-            name="pullThruPinchRolls"
-            value={localData.feed?.pullThru?.pinchRolls || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Feed Direction"
-            name="feedDirection"
-            value={localData.feed?.direction || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Controls Level"
-            name="controlsLevel"
-            value={localData.feed?.controlsLevel || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Type of line"
-            name="typeOfLine"
-            value={localData.feed?.typeOfLine || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Passline"
-            name="passline"
-            value={localData.feed?.passline || ""}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Light Gauge Non-Marking"
-            name="lightGauge"
-            checked={boolVal(localData.feed?.lightGuageNonMarking)}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Non-Marking"
-            name="nonMarking"
-            checked={boolVal(localData.feed?.nonMarking)}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
+      {/* Form sections */}
+      {headerSection}
+      {reelSection}
+      {threadingDriveSection}
+      {holdDownSection}
+      {dragBrakeSection}
+      {motorizedReelSection}
+      {poweredStraightenerSection}
+      {sigma5FeedSection}
     </div>
   );
 };

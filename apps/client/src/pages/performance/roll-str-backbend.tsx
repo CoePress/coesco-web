@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { debounce } from "lodash";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
@@ -6,23 +8,31 @@ import Text from "@/components/common/text";
 import Button from "@/components/common/button";
 import { PerformanceData } from "@/contexts/performance.context";
 import {
+  STR_MODEL_OPTIONS,
   MATERIAL_TYPE_OPTIONS,
-  ROLL_TYPE_OPTIONS,
 } from "@/utils/select-options";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
-import { useParams } from "react-router-dom";
 import { useGetEntity } from "@/hooks/_base/use-get-entity";
-
-const ROLL_CONFIGURATION_OPTIONS = [
-  { value: "7", label: "7 Roll" },
-  { value: "9", label: "9 Roll" },
-  { value: "11", label: "11 Roll" },
-];
 
 export interface RollStrBackbendProps {
   data: PerformanceData;
   isEditing: boolean;
 }
+
+// Helper to safely update nested object properties
+const setNestedValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  let current = obj;
+  
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  
+  current[keys[keys.length - 1]] = value;
+};
 
 const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) => {
   const endpoint = `/performance/sheets`;
@@ -30,489 +40,733 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
   const { id: performanceSheetId } = useParams();
   
-  // Local state for immediate UI updates
+  // Local state management
   const [localData, setLocalData] = useState<PerformanceData>(data);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Refs for cleanup and debouncing
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingChangesRef = useRef<Record<string, any>>({});
 
-  // Sync with parent data on initial load
+  // Sync with prop data on initial load only
   useEffect(() => {
-    if (!localData.referenceNumber && data.referenceNumber) {
-      console.log('Initial data load, syncing all data');
+    if (data && data.referenceNumber && !localData.referenceNumber) {
       setLocalData(data);
     }
   }, [data, localData.referenceNumber]);
 
-  // Determine roll configuration from straightener.rolls.numberOfRolls
-  const getRollConfiguration = () => {
-    const straightenerRolls = localData.straightener?.rolls?.numberOfRolls;
-    const rollsString = String(straightenerRolls);
-    
-    if (rollsString === "7" || rollsString === "9" || rollsString === "11") {
-      return rollsString;
-    }
-    return "7"; // Default to 7 if not one of the valid options
-  };
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async (changes: Record<string, any>) => {
+      if (!performanceSheetId || !isEditing) return;
 
-  const [rollConfiguration, setRollConfiguration] = useState<string>(getRollConfiguration());
-
-  // Update rollConfiguration when data changes
-  useEffect(() => {
-    const newRollConfig = getRollConfiguration();
-    if (newRollConfig !== rollConfiguration) {
-      setRollConfiguration(newRollConfig);
-    }
-  }, [localData.straightener?.rolls?.numberOfRolls]);
-
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (!isEditing) return;
-    
-    const { name, value, type } = e.target;
-    const actualValue = value;
-
-    console.log(`Field changed: ${name}, Value: ${actualValue}`);
-
-    // Update local state immediately for responsive UI
-    setLocalData(prevData => {
-      const updatedData = JSON.parse(JSON.stringify(prevData));
-
-      if (name.includes(".")) {
-        // Handle nested field updates
-        const parts = name.split(".");
-        let current = updatedData;
-        
-        // Navigate to the parent object
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) {
-            current[parts[i]] = {};
-          }
-          current = current[parts[i]];
-        }
-        
-        // Set the final value
-        current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
-      } else {
-        // Handle legacy field names that map to nested structure
-        const fieldMappings: { [key: string]: any } = {
-          customer: { path: "customer", value: value },
-          date: { path: "dates.date", value: value },
-          referenceNumber: { path: "referenceNumber", value: value },
-        };
-
-        if (fieldMappings[name]) {
-          const mapping = fieldMappings[name];
-          const parts = mapping.path.split(".");
-          let current = updatedData;
-          
-          // Navigate to the parent object
-          for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-              current[parts[i]] = {};
-            }
-            current = current[parts[i]];
-          }
-          
-          // Set the final value
-          current[parts[parts.length - 1]] = mapping.value;
-        } else {
-          // Handle top-level fields
-          updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
-        }
-      }
-
-      return updatedData;
-    });
-
-    // Debounce backend updates to avoid excessive API calls
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-
-    updateTimeoutRef.current = setTimeout(async () => {
       try {
-        if (!performanceSheetId) {
-          throw new Error("Performance Sheet ID is missing.");
-        }
-
-        // Create updated data for backend
+        // Create a deep copy and apply all pending changes
         const updatedData = JSON.parse(JSON.stringify(localData));
         
-        // Apply the current change to the data being sent
-        if (name.includes(".")) {
-          const parts = name.split(".");
-          let current = updatedData;
-          
-          for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-              current[parts[i]] = {};
-            }
-            current = current[parts[i]];
-          }
-          
-          current[parts[parts.length - 1]] = type === "number" ? (value === "" ? "" : value) : value;
-        } else {
+        Object.entries(changes).forEach(([path, value]) => {
           // Handle legacy field mappings
-          const fieldMappings: { [key: string]: any } = {
-            customer: { path: "customer", value: value },
-            date: { path: "dates.date", value: value },
-            referenceNumber: { path: "referenceNumber", value: value },
-          };
-
-          if (fieldMappings[name]) {
-            const mapping = fieldMappings[name];
-            const parts = mapping.path.split(".");
-            let current = updatedData;
-            
-            for (let i = 0; i < parts.length - 1; i++) {
-              if (!current[parts[i]]) {
-                current[parts[i]] = {};
-              }
-              current = current[parts[i]];
-            }
-            
-            current[parts[parts.length - 1]] = mapping.value;
+          if (path === "customer") {
+            setNestedValue(updatedData, "rfq.customer", value);
+          } else if (path === "date") {
+            setNestedValue(updatedData, "rfq.dates.date", value);
           } else {
-            updatedData[name] = type === "number" ? (value === "" ? "" : value) : value;
+            setNestedValue(updatedData, path, value);
           }
-        }
+        });
 
-        console.log("Updating with complete data structure:", updatedData);
-
-        // Send to backend (this will also trigger calculations)
+        console.log("Saving Roll Straightener changes:", changes);
+        
         const response = await updateEntity(performanceSheetId, { data: updatedData });
         
-        console.log("Backend response:", response);
-        
-        // Handle calculated values directly from the backend response
-        if (response && response.data && response.data.straightener) {
-          console.log("Updating calculated backbend values from backend response");
+        // Handle calculated values from backend
+        if (response?.data?.rollStrBackbend) {
+          console.log("Updating calculated roll straightener values from backend response");
           
           setLocalData(prevData => ({
             ...prevData,
-            straightener: {
-              ...prevData.straightener,
-              rolls: {
-                ...prevData.straightener?.rolls,
-                backbend: {
-                  ...prevData.straightener?.rolls?.backbend,
-                  // Update calculated radius values
-                  radius: {
-                    ...prevData.straightener?.rolls?.backbend?.radius,
-                    comingOffCoil: response.data.straightener.rolls?.backbend?.radius?.comingOffCoil || prevData.straightener?.rolls?.backbend?.radius?.comingOffCoil,
-                    offCoilAfterSpringback: response.data.straightener.rolls?.backbend?.radius?.offCoilAfterSpringback || prevData.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback,
-                    requiredToYieldSkinOfFlatMaterial: response.data.straightener.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial || prevData.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial,
-                  },
-                  bendingMomentToYieldSkin: response.data.straightener.rolls?.backbend?.bendingMomentToYieldSkin || prevData.straightener?.rolls?.backbend?.bendingMomentToYieldSkin,
-                  // Update roller calculations
-                  rollers: {
-                    ...prevData.straightener?.rolls?.backbend?.rollers,
-                    first: {
-                      ...prevData.straightener?.rolls?.backbend?.rollers?.first,
-                      height: response.data.straightener.rolls?.backbend?.rollers?.first?.height || prevData.straightener?.rolls?.backbend?.rollers?.first?.height,
-                      forceRequired: response.data.straightener.rolls?.backbend?.rollers?.first?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.first?.forceRequired,
-                      numberOfYieldStrainsAtSurface: response.data.straightener.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface || prevData.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface,
-                      up: {
-                        ...prevData.straightener?.rolls?.backbend?.rollers?.first?.up,
-                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius,
-                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference,
-                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment,
-                        springback: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.springback || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.springback,
-                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded,
-                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback,
+            rollStrBackbend: {
+              ...prevData.rollStrBackbend,
+              straightener: {
+                ...prevData.rollStrBackbend?.straightener,
+                rolls: {
+                  ...prevData.rollStrBackbend?.straightener?.rolls,
+                  backbend: {
+                    ...prevData.rollStrBackbend?.straightener?.rolls?.backbend,
+                    // Update calculated radius values
+                    radius: {
+                      ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius,
+                      comingOffCoil: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil,
+                      offCoilAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback,
+                      requiredToYieldSkinOfFlatMaterial: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial,
+                    },
+                    bendingMomentToYieldSkin: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin,
+                    // Update roller calculations
+                    rollers: {
+                      ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers,
+                      first: {
+                        ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first,
+                        height: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height,
+                        forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired,
+                        numberOfYieldStrainsAtSurface: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface,
+                        up: {
+                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up,
+                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius,
+                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference,
+                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment,
+                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback,
+                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded,
+                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback,
+                        },
+                        down: {
+                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down,
+                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius,
+                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference,
+                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment,
+                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback,
+                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded,
+                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback,
+                        }
                       },
-                      down: {
-                        ...prevData.straightener?.rolls?.backbend?.rollers?.first?.down,
-                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius,
-                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference,
-                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment,
-                        springback: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.springback || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.springback,
-                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded,
-                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback,
-                      }
+                      middle: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle,
+                      last: {
+                        ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last,
+                        height: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height,
+                        forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired,
+                        numberOfYieldStrainsAtSurface: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface,
+                        up: {
+                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up,
+                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius,
+                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference,
+                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment,
+                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback,
+                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded,
+                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback,
+                        }
+                      },
+                      depthRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired,
+                      forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired,
                     },
-                    middle: response.data.straightener.rolls?.backbend?.rollers?.middle || prevData.straightener?.rolls?.backbend?.rollers?.middle,
-                    last: {
-                      ...prevData.straightener?.rolls?.backbend?.rollers?.last,
-                      height: response.data.straightener.rolls?.backbend?.rollers?.last?.height || prevData.straightener?.rolls?.backbend?.rollers?.last?.height,
-                      forceRequired: response.data.straightener.rolls?.backbend?.rollers?.last?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.last?.forceRequired,
-                      numberOfYieldStrainsAtSurface: response.data.straightener.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface || prevData.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface,
-                      up: {
-                        ...prevData.straightener?.rolls?.backbend?.rollers?.last?.up,
-                        resultingRadius: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.resultingRadius || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius,
-                        curvatureDifference: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.curvatureDifference || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference,
-                        bendingMoment: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.bendingMoment || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment,
-                        springback: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.springback || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.springback,
-                        percentOfThicknessYielded: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded,
-                        radiusAfterSpringback: response.data.straightener.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback || prevData.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback,
-                      }
-                    },
-                    depthRequired: response.data.straightener.rolls?.backbend?.rollers?.depthRequired || prevData.straightener?.rolls?.backbend?.rollers?.depthRequired,
-                    forceRequired: response.data.straightener.rolls?.backbend?.rollers?.forceRequired || prevData.straightener?.rolls?.backbend?.rollers?.forceRequired,
-                  },
-                  yieldMet: response.data.straightener.rolls?.backbend?.yieldMet || prevData.straightener?.rolls?.backbend?.yieldMet,
+                    yieldMet: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet,
+                  }
                 }
               }
             }
           }));
-          
-          console.log("Updated calculated backbend values:", {
-            radiusComingOffCoil: response.data.straightener.rolls?.backbend?.radius?.comingOffCoil,
-            radiusOffCoilAfterSpringback: response.data.straightener.rolls?.backbend?.radius?.offCoilAfterSpringback,
-            bendingMomentToYieldSkin: response.data.straightener.rolls?.backbend?.bendingMomentToYieldSkin,
-            rollersDepthRequired: response.data.straightener.rolls?.backbend?.rollers?.depthRequired,
-            rollersForceRequired: response.data.straightener.rolls?.backbend?.rollers?.forceRequired,
-            yieldMet: response.data.straightener.rolls?.backbend?.yieldMet,
-          });
         }
 
+        setLastSaved(new Date());
+        setIsDirty(false);
+        pendingChangesRef.current = {};
+        
       } catch (error) {
-        console.error('Error updating field:', error);
-        setLocalData(data);
+        console.error('Error saving Roll Straightener:', error);
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          _general: 'Failed to save changes. Please try again.' 
+        }));
       }
-    }, 500);
-  };
+    }, 1000),
+    [performanceSheetId, updateEntity, isEditing, localData]
+  );
 
-  const handleRollConfigurationChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newConfig = e.target.value;
-    setRollConfiguration(newConfig);
-    
-    // Update the straightener.rolls.numberOfRolls value and trigger backend update
-    if (isEditing) {
-      const updatedData = JSON.parse(JSON.stringify(localData));
-      if (!updatedData.straightener) updatedData.straightener = {};
-      if (!updatedData.straightener.rolls) updatedData.straightener.rolls = {};
-      updatedData.straightener.rolls.numberOfRolls = Number(newConfig);
-      
-      setLocalData(updatedData);
-      
-      // Trigger backend update
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-
-      updateTimeoutRef.current = setTimeout(async () => {
-        try {
-          if (!performanceSheetId) {
-            throw new Error("Performance Sheet ID is missing.");
-          }
-          
-          const response = await updateEntity(performanceSheetId, { data: updatedData });
-          console.log("Roll configuration updated:", response);
-        } catch (error) {
-          console.error('Error updating roll configuration:', error);
-        }
-      }, 500);
-    }
-  };
-
-  const handleCalculate = async () => {
+  // Optimized change handler
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!isEditing) return;
+
+    const { name, value, type } = e.target;
+
+    // Clear field error
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Update local state immediately
+    setLocalData(prevData => {
+      const newData = { ...prevData };
+      const processedValue = type === "number" ? (value === "" ? "" : value) : value;
+      
+      // Handle legacy field mappings
+      if (name === "customer") {
+        setNestedValue(newData, "rfq.customer", processedValue);
+      } else if (name === "date") {
+        setNestedValue(newData, "rfq.dates.date", processedValue);
+      } else {
+        setNestedValue(newData, name, processedValue);
+      }
+      
+      return newData;
+    });
+
+    // Track pending changes
+    const mappedName = name === "customer" ? "rfq.customer" : 
+                      name === "date" ? "rfq.dates.date" : 
+                      name;
+    pendingChangesRef.current[mappedName] = type === "number" ? (value === "" ? "" : value) : value;
+    setIsDirty(true);
+
+    // Debounce save
+    debouncedSave(pendingChangesRef.current);
+  }, [isEditing, fieldErrors, debouncedSave]);
+
+  // Calculate function
+  const handleCalculate = useCallback(async () => {
+    if (!isEditing || !performanceSheetId) return;
     
-    console.log("Calculate pressed for", rollConfiguration, "roll configuration");
+    setIsCalculating(true);
+    console.log("Calculate pressed for Roll Straightener Backbend");
     
     try {
-      if (!performanceSheetId) {
-        throw new Error("Performance Sheet ID is missing.");
-      }
-
-      // Trigger backbend calculation on the backend
+      // Trigger roll straightener backbend calculation on the backend
       const response = await updateEntity(performanceSheetId, { 
         data: localData,
-        triggerBackbendCalculation: true 
+        triggerRollStrBackbendCalculation: true 
       });
       
-      console.log("Backbend calculation triggered:", response);
+      console.log("Roll Straightener Backbend calculation triggered:", response);
       
-      // The response should contain updated backbend calculations
-      if (response && response.data && response.data.straightener?.rolls?.backbend) {
+      // The response should contain updated roll straightener calculations
+      if (response?.data?.rollStrBackbend) {
         setLocalData(prevData => ({
           ...prevData,
-          straightener: {
-            ...prevData.straightener,
-            rolls: {
-              ...prevData.straightener?.rolls,
-              backbend: response.data.straightener.rolls.backbend
-            }
+          rollStrBackbend: {
+            ...prevData.rollStrBackbend,
+            ...response.data.rollStrBackbend
           }
         }));
       }
     } catch (error) {
-      console.error('Error triggering backbend calculation:', error);
+      console.error('Error triggering roll straightener backbend calculation:', error);
+      setFieldErrors(prev => ({ 
+        ...prev, 
+        _general: 'Failed to calculate roll straightener backbend. Please try again.' 
+      }));
+    } finally {
+      setIsCalculating(false);
     }
-  };
+  }, [isEditing, performanceSheetId, updateEntity, localData]);
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      debouncedSave.cancel();
     };
-  }, []);
+  }, [debouncedSave]);
 
-  // Get roller columns based on configuration
-  const getRollerColumns = () => {
-    switch (rollConfiguration) {
-      case "7":
-        return [
-          { label: "FIRST ROLLER", index: 0 },
-          { label: "MID. ROLLER", index: 1 },
-          { label: "LAST ROLLER", index: 2 },
-        ];
-      case "9":
-        return [
-          { label: "FIRST ROLLER", index: 0 },
-          { label: "MID. ROLLER", index: 1 },
-          { label: "MID. ROLLER", index: 2 },
-          { label: "LAST ROLLER", index: 3 },
-        ];
-      case "11":
-        return [
-          { label: "FIRST ROLLER", index: 0 },
-          { label: "MID. ROLLER", index: 1 },
-          { label: "MID. ROLLER", index: 2 },
-          { label: "MID. ROLLER", index: 3 },
-          { label: "LAST ROLLER", index: 4 },
-        ];
-      default:
-        return [];
+  // Header section
+  const headerSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Roll Straightener & Back Bend Design
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Customer"
+          name="customer"
+          value={localData.rfq?.customer || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Date"
+          name="date"
+          type="date"
+          value={localData.rfq?.dates?.date || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.rfq?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+
+  // Material specifications section
+  const materialSpecsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Material Specifications</Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Select
+          label="Material Type"
+          name="material.materialType"
+          value={localData.rollStrBackbend?.material?.materialType || ""}
+          onChange={handleChange}
+          options={MATERIAL_TYPE_OPTIONS}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Material Thickness (in)"
+          name="material.materialThickness"
+          type="number"
+          value={localData.rollStrBackbend?.material?.materialThickness?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Coil Width (in)"
+          name="material.coilWidth"
+          type="number"
+          value={localData.rollStrBackbend?.material?.coilWidth?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Yield Strength (psi)"
+          name="material.maxYieldStrength"
+          type="number"
+          value={localData.rollStrBackbend?.material?.maxYieldStrength?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Elastic Modulus (psi)"
+          name="material.elasticModulus"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.modulus?.toString() || "30000000"}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Material Density (lb/in³)"
+          name="material.materialDensity"
+          type="number"
+          value={localData.rollStrBackbend?.material?.density?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.material, handleChange, isEditing]);
+
+  // Roll straightener specifications section
+  const rollStraightenerSpecsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Roll Straightener Specifications</Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Select
+          label="Straightener Model"
+          name="rollStrBackbend.straightener.model"
+          value={localData.rollStrBackbend?.straightener?.model || ""}
+          onChange={handleChange}
+          options={STR_MODEL_OPTIONS}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Roll Diameter (in)"
+          name="rollStrBackbend.straightener.rollDiameter"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rollDiameter?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener, handleChange, isEditing]);
+
+  // Backbend specifications section
+  const backbendSpecsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Backbend Specifications</Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Coming Off Coil Radius (in)"
+          name="rollStrBackbend.straightener.rolls.backbend.radius.comingOffCoil"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Required Roll Diameter (in)"
+          name="rollStrBackbend.straightener.rolls.backbend.requiredRollDiameter"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rollDiameter?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="First Roller Height (in)"
+          name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Last Roller Height (in)"
+          name="rollStrBackbend.straightener.rolls.backbend.rollers.last.height"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height?.toString() || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+      
+      <div className="mt-4 flex justify-center">
+        <Button 
+          onClick={handleCalculate} 
+          className="px-6 py-2"
+          disabled={!isEditing || isCalculating}
+        >
+          {isCalculating ? "CALCULATING..." : "CALCULATE"}
+        </Button>
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener, handleChange, handleCalculate, isEditing, isCalculating]);
+
+  // Calculated results section
+  const calculatedResultsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Calculated Results</Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Radius Values */}
+        <div className="space-y-2">
+          <Text as="h4" className="font-medium">Radius Values (in)</Text>
+          <Input
+            label="Off Coil After Springback"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+          <Input
+            label="Required to Yield Skin"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+        </div>
+
+        {/* First Roller Results */}
+        <div className="space-y-2">
+          <Text as="h4" className="font-medium">First Roller</Text>
+          <Input
+            label="Force Required (lbs)"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+          <Input
+            label="Yield Strains at Surface"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+        </div>
+
+        {/* Last Roller Results */}
+        <div className="space-y-2">
+          <Text as="h4" className="font-medium">Last Roller</Text>
+          <Input
+            label="Force Required (lbs)"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+          <Input
+            label="Yield Strains at Surface"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface?.toString() || ""}
+            disabled
+            className="bg-gray-50"
+          />
+        </div>
+      </div>
+
+      {/* Overall Results */}
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Bending Moment to Yield Skin (in-lbs)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+        <Input
+          label="Total Depth Required (in)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+        <Input
+          label="Total Force Required (lbs)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+      </div>
+
+      {/* Yield Status */}
+      <div className="mt-4">
+        <div className={`p-3 rounded-md ${
+          localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet === 'Yes' 
+            ? 'bg-green-100 border border-green-300' 
+            : localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet === 'No'
+            ? 'bg-red-100 border border-red-300'
+            : 'bg-gray-100 border border-gray-300'
+        }`}>
+          <Text className="font-medium">
+            Yield Requirements Met: {localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || "Not Calculated"}
+          </Text>
+        </div>
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend]);
+
+  // First roller detailed results section
+  const firstRollerDetailsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">First Roller Detailed Results</Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Up Direction */}
+        <div>
+          <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
+          <div className="space-y-2">
+            <Input
+              label="Resulting Radius (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Curvature Difference"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Bending Moment (in-lbs)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Springback"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="% Thickness Yielded"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Radius After Springback (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+        </div>
+
+        {/* Down Direction */}
+        <div>
+          <Text as="h4" className="mb-3 font-medium text-red-600">Down Direction</Text>
+          <div className="space-y-2">
+            <Input
+              label="Resulting Radius (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Curvature Difference"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Bending Moment (in-lbs)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Springback"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="% Thickness Yielded"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Radius After Springback (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+        </div>
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first]);
+
+  // Last roller detailed results section
+  const lastRollerDetailsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Last Roller Detailed Results</Text>
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+        {/* Up Direction Only for Last Roller */}
+        <div>
+          <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Resulting Radius (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Curvature Difference"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Bending Moment (in-lbs)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Springback"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="% Thickness Yielded"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Radius After Springback (in)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+        </div>
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last]);
+
+  // Middle rollers section
+  const middleRollersSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Middle Rollers</Text>
+      <div className="space-y-2">
+        <Input
+          label="Middle Roller Configuration"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle?.toString() || "Standard Configuration"}
+          disabled
+          className="bg-gray-50"
+        />
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle]);
+
+  // Design notes section
+  const designNotesSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h4" className="mb-4 text-lg font-medium">Design Summary</Text>
+      <div className="space-y-4">
+        <div>
+          <Text as="h4" className="font-medium mb-2">Roll Straightener Configuration:</Text>
+          <div className="space-y-1 text-sm">
+            <Text>• Model: {localData.rollStrBackbend?.straightener?.model || "—"}</Text>
+            <Text>• Roll Diameter: {localData.rollStrBackbend?.straightener?.rollDiameter || "—"} inches</Text>
+          </div>
+        </div>
+        
+        <div>
+          <Text as="h4" className="font-medium mb-2">Material Properties:</Text>
+          <div className="space-y-1 text-sm">
+            <Text>• Material Type: {localData.rollStrBackbend?.material?.materialType || "—"}</Text>
+            <Text>• Thickness: {localData.rollStrBackbend?.material?.materialThickness || "—"} inches</Text>
+            <Text>• Width: {localData.rollStrBackbend?.material?.coilWidth || "—"} inches</Text>
+            <Text>• Yield Strength: {localData.rollStrBackbend?.material?.maxYieldStrength || "—"} psi</Text>
+          </div>
+        </div>
+
+        <div>
+          <Text as="h4" className="font-medium mb-2">Backbend Results:</Text>
+          <div className="space-y-1 text-sm">
+            <Text>• Coming Off Coil Radius: {localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil || "—"} inches</Text>
+            <Text>• Total Force Required: {localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired || "—"} lbs</Text>
+            <Text>• Yield Requirements Met: {localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || "Not Calculated"}</Text>
+          </div>
+        </div>
+      </div>
+    </Card>
+  ), [localData.rollStrBackbend?.straightener, localData.rollStrBackbend?.material]);
+
+  // Status indicator component
+  const StatusIndicator = () => {
+    if (updateLoading || isCalculating) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-blue-600">
+          <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent"></div>
+          {isCalculating ? "Calculating..." : "Saving..."}
+        </div>
+      );
     }
-  };
-
-  const rollerColumns = getRollerColumns();
-
-  // Get calculation data from localData.straightener.rolls.backbend
-  const backbendData = localData.straightener?.rolls?.backbend || {};
-  
-  // Helper function to get roller data based on configuration
-  const getRollerData = () => {
-    const rollers = backbendData.rollers || {};
-    const config = rollConfiguration;
     
-    // Define which rollers to use based on configuration
-    let rollerKeys: string[] = [];
-    switch (config) {
-      case "7":
-        rollerKeys = ["first", "middle", "last"];
-        break;
-      case "9":
-        rollerKeys = ["first", "middle", "middle", "last"];
-        break;
-      case "11":
-        rollerKeys = ["first", "middle", "middle", "middle", "last"];
-        break;
-      default:
-        rollerKeys = ["first", "middle", "last"];
+    if (isDirty) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-amber-600">
+          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+          Unsaved changes
+        </div>
+      );
     }
     
-    return { rollers, rollerKeys };
-  };
-  
-  const { rollers, rollerKeys } = getRollerData();
-  
-  // Helper function to extract array data from roller structure
-  const extractRollerArray = (dataType: 'height' | 'forceRequired' | 'numberOfYieldStrainsAtSurface') => {
-    return rollerKeys.map(key => {
-      if (key === "middle" && rollerKeys.filter(k => k === "middle").length > 1) {
-        // For multiple middle rollers, we need to handle indexing
-        const middleIndex = rollerKeys.slice(0, rollerKeys.indexOf(key) + 1).filter(k => k === "middle").length - 1;
-        const middleArray = Array.isArray(rollers.middle) ? rollers.middle : [];
-        return middleArray[middleIndex]?.[dataType] || 0;
-      }
-      // Only allow 'first', 'middle', or 'last' as keys
-      if (key === "first" || key === "last") {
-        return (rollers[key as "first" | "last"]?.[dataType] ?? 0);
-      }
-      return 0;
-    });
-  };
-  
-  // Helper function to extract up/down data
-  const extractUpDownArray = (dataType: 'resultingRadius' | 'curvatureDifference' | 'bendingMoment' | 'springback' | 'percentOfThicknessYielded' | 'radiusAfterSpringback') => {
-    const result: number[] = [];
+    if (lastSaved) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          Saved {lastSaved.toLocaleTimeString()}
+        </div>
+      );
+    }
     
-    rollerKeys.forEach((key, index) => {
-      let rollerData;
-      if (key === "middle" && rollerKeys.filter(k => k === "middle").length > 1) {
-        const middleIndex = rollerKeys.slice(0, index + 1).filter(k => k === "middle").length - 1;
-        rollerData = Array.isArray(rollers.middle) ? rollers.middle[middleIndex] : undefined;
-      } else {
-        if (key === "first" || key === "last") {
-          rollerData = rollers[key as "first" | "last"];
-        } else {
-          rollerData = undefined;
-        }
-      }
-      
-      // Add up value
-      result.push(rollerData?.up?.[dataType] || 0);
-      
-      // Add down value (except for last roller)
-      if (key !== "last") {
-        result.push(rollerData?.down?.[dataType] || 0);
-      }
-    });
-    
-    return result;
+    return null;
   };
-  
-  // Helper function to extract direction of bend
-  const extractDirectionArray = () => {
-    const result: string[] = [];
-    
-    rollerKeys.forEach((key) => {
-      // Add up direction
-      result.push("UP");
-      
-      // Add down direction (except for last roller)
-      if (key !== "last") {
-        result.push("DOWN");
-      }
-    });
-    
-    return result;
-  };
-
-  const calculationData = {
-    ro: backbendData.radius?.comingOffCoil || 0,
-    ri: backbendData.radius?.offCoilAfterSpringback || 0,
-    ry: backbendData.radius?.requiredToYieldSkinOfFlatMaterial || 0,
-    oneOverRi: 0,
-    oneOverRy: 0,
-    my: backbendData.bendingMomentToYieldSkin || 0,
-    rollHeight: extractRollerArray('height'),
-    resultingRadius: extractUpDownArray('resultingRadius'),
-    directionOfBend: extractDirectionArray(),
-    oneRMinusOneRi: extractUpDownArray('curvatureDifference'),
-    mb: extractUpDownArray('bendingMoment'),
-    mbOverMy: extractUpDownArray('bendingMoment').map(mb => mb / (backbendData.bendingMomentToYieldSkin || 1)),
-    forceRequired: extractRollerArray('forceRequired'),
-    springback: extractUpDownArray('springback'),
-    percentYielded: extractUpDownArray('percentOfThicknessYielded'),
-    yieldStrains: extractRollerArray('numberOfYieldStrainsAtSurface'),
-    radiusAfterSpringback: extractUpDownArray('radiusAfterSpringback'),
-    rollerDepthRequired: backbendData.rollers?.depthRequired || 0,
-    rollerForceRequired: backbendData.rollers?.forceRequired || 0,
-    yieldMet: backbendData.yieldMet || false,
-  };
-
-  calculationData.oneOverRi = calculationData.ri !== 0 ? 1 / calculationData.ri : 0;
-  calculationData.oneOverRy = calculationData.ry !== 0 ? 1 / calculationData.ry : 0;
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Show loading indicator when calculations are running */}
+      {/* Status bar */}
+      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+        <StatusIndicator />
+        {fieldErrors._general && (
+          <div className="text-sm text-red-600">{fieldErrors._general}</div>
+        )}
+      </div>
+
+      {/* Loading and error states */}
       {(loading || updateLoading) && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
             <span className="text-blue-800">
-              {updateLoading ? "Saving changes..." : "Loading..."}
+              {updateLoading ? "Saving changes and calculating..." : "Loading..."}
             </span>
           </div>
         </div>
       )}
 
-      {/* Show error if calculation fails */}
       {(error || updateError) && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
           <span className="text-red-800">
@@ -521,486 +775,16 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       )}
 
-      {/* Header Information */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Straightener Backbend - {rollConfiguration} Roll
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Input
-            label="Customer"
-            name="customer"
-            value={localData.customer || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Date"
-            name="date"
-            type="date"
-            value={localData.dates?.date || ""}
-            onChange={handleChange}
-          />
-          <Select
-            label="Number of Rolls"
-            name="straightener.rolls.numberOfRolls"
-            value={rollConfiguration}
-            onChange={handleRollConfigurationChange}
-            options={ROLL_CONFIGURATION_OPTIONS}
-          />
-        </div>
-      </Card>
-
-      {/* Material & Coil Information */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Material & Coil Information
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Input
-            label="Coil Width (in)"
-            name="material.coilWidth"
-            type="number"
-            value={localData.material?.coilWidth || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Material Thickness (in)"
-            name="material.materialThickness"
-            type="number"
-            value={localData.material?.materialThickness || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Yield Strength (psi)"
-            name="material.maxYieldStrength"
-            type="number"
-            value={localData.material?.maxYieldStrength || ""}
-            onChange={handleChange}
-          />
-          <Select
-            label="Material Type"
-            name="material.materialType"
-            value={localData.material?.materialType || ""}
-            onChange={handleChange}
-            options={MATERIAL_TYPE_OPTIONS}
-          />
-          <Input
-            label="Straightener Model"
-            name="straightener.model"
-            value={localData.straightener?.model || ""}
-            onChange={handleChange}
-          />
-          <Select
-            label="Roll Type"
-            name="straightener.rolls.typeOfRoll"
-            value={localData.straightener?.rolls?.typeOfRoll || ""}
-            onChange={handleChange}
-            options={ROLL_TYPE_OPTIONS}
-          />
-        </div>
-      </Card>
-
-      {/* Physical Parameters */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Physical Parameters
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Input
-            label="Roll Dia. (in)"
-            name="straightener.rollDiameter"
-            type="number"
-            value={localData.straightener?.rollDiameter || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Center Distance (in)"
-            name="straightener.centerDistance"
-            type="number"
-            value={localData.straightener?.centerDistance || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Modulus (psi)"
-            name="straightener.modulus"
-            type="number"
-            value={localData.straightener?.modulus || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Jack Force Available (lb)"
-            name="straightener.jackForceAvailable"
-            type="number"
-            value={localData.straightener?.jackForceAvailable || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Max. Roller Depth W/Out Material (in)"
-            name="straightener.rolls.depth.withoutMaterial"
-            type="number"
-            value={localData.straightener?.rolls?.depth?.withoutMaterial || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Max. Roller Depth W/ Material (in)"
-            name="straightener.rolls.depth.withMaterial"
-            type="number"
-            value={localData.straightener?.rolls?.depth?.withMaterial || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      {/* Radius Calculations */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Radius Calculations
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Input
-            label="Ro (Radius Coming Off Coil)"
-            value={typeof calculationData.ro === "number" ? calculationData.ro.toFixed(2) : ""}
-            readOnly
-          />
-          <Input
-            label="Ri (Radius Off Coil After Springback)"
-            value={typeof calculationData.ri === "number" ? calculationData.ri.toFixed(2) : ""}
-            readOnly
-          />
-          <Input
-            label="1/Ri"
-            value={calculationData.oneOverRi?.toFixed(4) || ""}
-            readOnly
-          />
-          <Input
-            label="1/Ry"
-            value={calculationData.oneOverRy?.toFixed(4) || ""}
-            readOnly
-          />
-          <Input
-            label="Ry (Radius Required to Yield Skin)"
-            value={typeof calculationData.ry === "number" ? calculationData.ry.toFixed(2) : ""}
-            readOnly
-          />
-          <Input
-            label="My (Bending Moment to Yield Skin)"
-            value={typeof calculationData.my === "number" ? calculationData.my.toFixed(2) : ""}
-            readOnly
-          />
-        </div>
-        <div className="mt-4 flex justify-center">
-          <Button onClick={handleCalculate} className="px-6 py-2">
-            CALCULATE
-          </Button>
-        </div>
-      </Card>
-
-      {/* Roller Analysis Table */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Roller Analysis
-        </Text>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 p-2 text-left text-sm font-medium" rowSpan={2}>Parameter</th>
-                {rollerColumns.map((column, index) => (
-                  <th key={index} className="border border-gray-300 p-2 text-center text-sm font-medium" colSpan={index === rollerColumns.length - 1 ? 1 : 2}>
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-              <tr className="bg-gray-100">
-                {rollerColumns.map((_column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    // Last roller only has "up"
-                    <th key={`${index}-up`} className="border border-gray-300 p-1 text-center text-xs font-medium">
-                      UP
-                    </th>
-                  ) : (
-                    // All other rollers have both "up" and "down"
-                    <>
-                      <th key={`${index}-up`} className="border border-gray-300 p-1 text-center text-xs font-medium">
-                        UP
-                      </th>
-                      <th key={`${index}-down`} className="border border-gray-300 p-1 text-center text-xs font-medium">
-                        DOWN
-                      </th>
-                    </>
-                  )
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">ROLL HEIGHT</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    // Last roller only shows one value
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.rollHeight[column.index]?.toFixed(3) || "-"}
-                    </td>
-                  ) : (
-                    // Other rollers show value in UP column, empty in DOWN column
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.rollHeight[column.index]?.toFixed(3) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        -
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">RESULTING RADIUS</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    // Last roller only shows up value
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.resultingRadius[column.index * 2]?.toFixed(2) || "-"}
-                    </td>
-                  ) : (
-                    // Other rollers show both up and down
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.resultingRadius[column.index * 2]?.toFixed(2) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.resultingRadius[column.index * 2 + 1]?.toFixed(2) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">DIRECTION OF BEND</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    // Last roller only shows up direction
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.directionOfBend[column.index * 2] || "-"}
-                    </td>
-                  ) : (
-                    // Other rollers show both up and down directions
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.directionOfBend[column.index * 2] || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.directionOfBend[column.index * 2 + 1] || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">1/R-1/Ri</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.oneRMinusOneRi[column.index * 2]?.toFixed(4) || "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.oneRMinusOneRi[column.index * 2]?.toFixed(4) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.oneRMinusOneRi[column.index * 2 + 1]?.toFixed(4) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">Mb</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.mb[column.index * 2]?.toFixed(2) || "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.mb[column.index * 2]?.toFixed(2) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.mb[column.index * 2 + 1]?.toFixed(2) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">Mb/My</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.mbOverMy[column.index * 2]?.toFixed(4) || "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.mbOverMy[column.index * 2]?.toFixed(4) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.mbOverMy[column.index * 2 + 1]?.toFixed(4) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">FORCE REQUIRED</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.forceRequired[column.index]?.toFixed(2) || "-"}
-                    </td>
-                  ) : (
-                    // Show force required only in UP column, empty in DOWN column
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.forceRequired[column.index]?.toFixed(2) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        -
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">SPRINGBACK</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.springback[column.index * 2]?.toFixed(4) || "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.springback[column.index * 2]?.toFixed(4) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.springback[column.index * 2 + 1]?.toFixed(4) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">% OF MAT'L THK. YIELDED</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
-                      calculationData.percentYielded[column.index * 2] >= 70 ? 'bg-green-400' : ''
-                    }`}>
-                      {calculationData.percentYielded[column.index * 2] ? `${calculationData.percentYielded[column.index * 2]}%` : "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
-                        calculationData.percentYielded[column.index * 2] >= 70 ? 'bg-green-400' : ''
-                      }`}>
-                        {calculationData.percentYielded[column.index * 2] ? `${calculationData.percentYielded[column.index * 2]}%` : "-"}
-                      </td>
-                      <td key={`${index}-down`} className={`border border-gray-300 p-2 text-white text-center text-sm font-semibold ${
-                        calculationData.percentYielded[column.index * 2 + 1] >= 70 ? 'bg-green-400' : ''
-                      }`}>
-                        {calculationData.percentYielded[column.index * 2 + 1] ? `${calculationData.percentYielded[column.index * 2 + 1]}%` : "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-              {rollConfiguration === "7" && calculationData.yieldStrains?.length > 0 && (
-                <tr>
-                  <td className="border border-gray-300 p-2 text-sm font-medium text-white"># OF YIELD STRAINS AT SURFACE</td>
-                  {rollerColumns.map((column, index) => (
-                    index === rollerColumns.length - 1 ? (
-                      <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.yieldStrains[column.index]?.toFixed(2) || "-"}
-                      </td>
-                    ) : (
-                      // Show yield strains only in UP column, empty in DOWN column
-                      <>
-                        <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                          {calculationData.yieldStrains[column.index]?.toFixed(2) || "-"}
-                        </td>
-                        <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                          -
-                        </td>
-                      </>
-                    )
-                  ))}
-                </tr>
-              )}
-              <tr>
-                <td className="border border-gray-300 p-2 text-sm font-medium text-white">RADIUS AFTER SPRINGBACK</td>
-                {rollerColumns.map((column, index) => (
-                  index === rollerColumns.length - 1 ? (
-                    <td key={index} className="border border-gray-300 p-2 text-center text-sm text-white">
-                      {calculationData.radiusAfterSpringback[column.index * 2]?.toFixed(2) || "-"}
-                    </td>
-                  ) : (
-                    <>
-                      <td key={`${index}-up`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.radiusAfterSpringback[column.index * 2]?.toFixed(2) || "-"}
-                      </td>
-                      <td key={`${index}-down`} className="border border-gray-300 p-2 text-center text-sm text-white">
-                        {calculationData.radiusAfterSpringback[column.index * 2 + 1]?.toFixed(2) || "-"}
-                      </td>
-                    </>
-                  )
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Status Summary */}
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Status Summary
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerDepthRequired <= (localData.straightener?.rolls?.depth?.withoutMaterial || 0) 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            <Text className="text-sm">ROLLER DEPTH REQ'D:</Text>
-            <Text className="text-lg font-bold">
-              {calculationData.rollerDepthRequired?.toFixed(4) || "0.0000"} {
-                calculationData.rollerDepthRequired <= (localData.straightener?.rolls?.depth?.withoutMaterial || 0) ? "OK" : "NOT OK"
-              }
-            </Text>
-          </div>
-          <div className={`p-3 rounded text-center font-medium ${
-            calculationData.rollerForceRequired <= (localData.straightener?.jackForceAvailable || 0)
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            <Text className="text-sm">ROLLER FORCE REQ'D:</Text>
-            <Text className="text-lg font-bold">
-              {calculationData.rollerForceRequired?.toFixed(2) || "0.00"} {
-                calculationData.rollerForceRequired <= (localData.straightener?.jackForceAvailable || 0) ? "OK" : "NOT OK"
-              }
-            </Text>
-          </div>
-          <div className={`p-3 rounded text-center font-medium ${
-            calculationData.yieldMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            <Text className="text-sm">YIELD MET:</Text>
-            <Text className="text-lg font-bold">{calculationData.yieldMet ? "OK" : "NOT OK"}</Text>
-          </div>
-        </div>
-      </Card>
+      {/* Form sections */}
+      {headerSection}
+      {materialSpecsSection}
+      {rollStraightenerSpecsSection}
+      {backbendSpecsSection}
+      {calculatedResultsSection}
+      {firstRollerDetailsSection}
+      {lastRollerDetailsSection}
+      {middleRollersSection}
+      {designNotesSection}
     </div>
   );
 };

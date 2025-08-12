@@ -83,7 +83,8 @@ def calculate_tbdbhd(data: tddbhd_input):
         return f"ERROR: get_type_of_line failed for '{data.type_of_line}': {str(e)}"
     
     try:
-        drive_key_lookup = get_drive_key(data.reel_model, data.air_clutch, data.hyd_threading_drive)
+        air_clutch = "Yes" if data.air_clutch else "No"
+        drive_key_lookup = get_drive_key(data.reel_model, air_clutch, data.hyd_threading_drive)
     except Exception as e:
         return f"ERROR: get_drive_key failed for reel='{data.reel_model}', clutch='{data.air_clutch}', drive='{data.hyd_threading_drive}': {str(e)}"
     

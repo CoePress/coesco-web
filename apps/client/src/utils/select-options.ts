@@ -24,6 +24,42 @@ export const LINE_APPLICATION_OPTIONS = [
   { value: "Standalone", label: "Standalone" },
 ];
 
+export const EDGE_TYPE_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "both", label: "Both" },
+];
+
+export const LOADING_OPTIONS = [
+  { value: "operatorSide", label: "Operator Side" },
+  { value: "nonOperatorSide", label: "Non-Operator Side" },
+];
+
+export const PRESS_TYPE_OPTIONS = [
+  { value: "mechanical", label: "Mechanical" },
+  { value: "hydraulic", label: "Hydraulic" },
+  { value: "servo", label: "Servo" },
+];
+
+export const DIE_TYPE_OPTIONS = [
+  { value: "progressive", label: "Progressive" },
+  { value: "transfer", label: "Transfer" },
+  { value: "blanking", label: "Blanking" },
+];
+
+export const PRESS_APPLICATION_OPTIONS = [
+  { value: "pressFeed", label: "Press Feed" },
+  { value: "cutToLength", label: "Cut To Length" },
+  { value: "standalone", label: "Standalone" },
+];
+
+export const VOLTAGE_OPTIONS = [
+  { value: "120", label: "120V" },
+  { value: "240", label: "240V" },
+  { value: "480", label: "480V" },
+  { value: "600", label: "600V" },
+];
+
 export const FEED_DIRECTION_OPTIONS = [
   { value: "Right to Left", label: "Right to Left" },
   { value: "Left to Right", label: "Left to Right" },

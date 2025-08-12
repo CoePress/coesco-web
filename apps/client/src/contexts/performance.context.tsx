@@ -6,21 +6,7 @@ import { useParams } from "react-router-dom";
 import { mapCalculationResultsToPerformanceData } from "@/utils/universal-mapping";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 
-// Versioned material specs fields for each version
-export type MaterialSpecsVersion = {
-  materialType: string;
-  materialThickness: string;
-  coilWidth: string;
-  yieldStrength: string;
-  materialTensile: string;
-  coilID: string;
-  coilOD: string;
-  coilWeight: string;
-  minBendRad: string;
-  minLoopLength: string;
-  coilODCalculated: string;
-};
-
+// Common interfaces that are shared across pages
 export interface RollDetail {
   height?: number;
   forceRequired?: number;
@@ -45,8 +31,9 @@ export interface RollDetail {
   };
 }
 
-export interface PerformanceData {
-  referenceNumber: string;
+// RFQ Page Data Structure
+export interface RFQData {
+  // Basic Information
   customer?: string;
   customerInfo?: {
     streetAddress?: string;
@@ -70,9 +57,14 @@ export interface PerformanceData {
     earliestDeliveryDate?: string;
     latestDeliveryDate?: string;
   };
+  
+  // Line Configuration
+  lineApplication?: string;
+  typeOfLine?: string;
+  pullThrough?: string;
+  
+  // Coil Specifications
   coil?: {
-    density?: number;
-    weight?: number;
     maxCoilWidth?: number;
     minCoilWidth?: number;
     maxCoilOD?: number;
@@ -87,22 +79,22 @@ export interface PerformanceData {
     changeTimeConcern?: string;
     timeChangeGoal?: string;
     loading?: string;
-    inertia?: number;
-    reflInertia?: number;
   };
+  
+  // Material Specifications
   material?: {
     materialThickness?: number;
-    materialDensity?: number;
     coilWidth?: number;
     materialType?: string;
     maxYieldStrength?: number;
     maxTensileStrength?: number;
-    minBendRadius?: number;
-    minLoopLength?: number;
-    calculatedCoilOD?: number;
   };
+  
+  // Surface & Equipment
   runningCosmeticMaterial?: string;
   brandOfFeed?: string;
+  
+  // Press Information
   press?: {
     gapFramePress?: string;
     hydraulicPress?: string;
@@ -119,110 +111,460 @@ export interface PerformanceData {
     windowSize?: string;
     cycleTime?: string;
   };
+  
+  // Dies Information
   dies?: {
     transferDies?: string;
     progressiveDies?: string;
     blankingDies?: string;
   };
+  
+  // Feed Requirements
   feed?: {
-    application?: string;
-    model?: string;
-    machineWidth?: number;
-    loopPit?: string;
-    fullWidthRolls?: string;
-    motor?: string;
-    amp?: string;
-    pressBedLength?: number;
-    materialInLoop?: number;
-    frictionInDie?: number;
-    accelerationRate?: number;
-    defaultAcceleration?: number;
-    chartMinLength?: number;
-    lengthIncrement?: number;
-    feedAngle1?: number;
-    feedAngle2?: number;
-    maximumVelocity?: number;
-    maxMotorRPM?: number;
-    motorInertia?: number;
-    settleTime?: number;
-    acceleration?: number;
-    ratio?: string;
-    typeOfLine?: string;
-    match?: number;
-    reflInertia?: number;
-    regen?: number;
-    torque?: {
-      motorPeak?: number;
-      peak?: number;
-      frictional?: number;
-      loop?: number;
-      settle?: number;
-      rms?: {
-        motor?: number;
-        feedAngle1?: number;
-        feedAngle2?: number;
-      };
-      acceleration?: number;
-    };
-    tableData?: Record<number, any>;
-    pullThru?: {
-      isPullThru?: string;
-      straightenerRolls?: number;
-      pinchRolls?: string;
-      kConst?: number;
-      straightenerTorque?: number;
-    };
     average?: {
       length?: number;
       spm?: number;
-      fpm?: number;
+      fpm?: number; // Calculated
     };
     max?: {
       length?: number;
       spm?: number;
-      fpm?: number;
+      fpm?: number; // Calculated
     };
     min?: {
       length?: number;
       spm?: number;
-      fpm?: number;
+      fpm?: number; // Calculated
     };
-    windowDegrees?: string;
+  };
+  
+  // Technical Requirements
+  voltageRequired?: number;
+  
+  // Space & Mounting
+  equipmentSpaceLength?: number;
+  equipmentSpaceWidth?: number;
+  obstructions?: string;
+  mount?: {
+    feederMountedToPress?: string;
+    adequateSupport?: string;
+    customMounting?: string;
+  };
+  passline?: string;
+  loopPit?: string;
+  feedDirection?: string;
+  
+  // Special Requirements
+  requireGuarding?: string;
+  specialConsiderations?: string;
+}
+
+// Material Specs Page Data Structure
+export interface MaterialSpecsData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Material Specifications
+  material?: {
+    coilWidth?: number;
+    materialThickness?: number;
+    materialType?: string;
+    maxYieldStrength?: number;
+    maxTensileStrength?: number;
+    minBendRadius?: number; // Calculated
+    minLoopLength?: number; // Calculated
+    calculatedCoilOD?: number; // Calculated
+  };
+  
+  coil?: {
+    maxCoilWeight?: number;
+    coilID?: number;
+    maxCoilOD?: number;
+  };
+  
+  // Feed Configuration
+  feed?: {
     direction?: string;
-    controls?: string;
     controlsLevel?: string;
+    typeOfLine?: string;
+    controls?: string; // Calculated
     passline?: string;
     lightGuageNonMarking?: string;
     nonMarking?: string;
   };
+  
+  // Equipment Specifications
   straightener?: {
-    model?: string;
     rolls?: {
       typeOfRoll?: string;
-      straighteningRolls?: number;
+    };
+  };
+  
+  reel?: {
+    backplate?: {
+      type?: string;
+    };
+    style?: string;
+  };
+}
+
+// TDDBHD Page Data Structure
+export interface TDDBHDData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Reel & Material Specs
+  reel?: {
+    model?: string;
+    width?: number;
+    backplate?: {
+      diameter?: number;
+    };
+    dispReelMtr?: string;
+    airPressureAvailable?: number;
+    requiredDecelRate?: number;
+    coefficientOfFriction?: number; // Calculated
+    cylinderBore?: number;
+    minMaterialWidth?: number; // Calculated
+    brakePadDiameter?: number;
+    
+    // Threading Drive
+    threadingDrive?: {
+      airClutch?: string;
+      hydThreadingDrive?: string;
+    };
+    
+    // Hold Down
+    holddown?: {
+      assy?: string;
+      cylinder?: string;
+      cylinderPressure?: number;
+      force?: {
+        required?: number; // Calculated
+        available?: number; // Calculated
+      };
+    };
+    
+    // Drag Brake
+    dragBrake?: {
+      model?: string;
+      quantity?: number;
+      psiAirRequired?: number; // Calculated
+      holdingForce?: number; // Calculated
+    };
+    
+    // Torque Calculations
+    torque?: {
+      atMandrel?: number; // Calculated
+      rewindRequired?: number; // Calculated
+      required?: number; // Calculated
+    };
+    
+    // Web Tension
+    webTension?: {
+      psi?: number; // Calculated
+      lbs?: number; // Calculated
+    };
+  };
+  
+  material?: {
+    materialType?: string;
+    coilWidth?: number;
+    materialThickness?: number;
+    maxYieldStrength?: number;
+  };
+  
+  coil?: {
+    maxCoilWeight?: number;
+    coilWeight?: number; // Calculated
+    maxCoilOD?: number;
+    coilOD?: number; // Calculated
+  };
+}
+
+// Reel Drive Page Data Structure
+export interface ReelDriveData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Model & HP
+  reel?: {
+    model?: string;
+    horsepower?: number;
+    
+    // Reel Specifications
+    size?: number;
+    width?: number;
+    bearing?: {
+      distance?: number;
+      diameter?: {
+        front?: number;
+        rear?: number;
+      };
+    };
+    
+    // Mandrel
+    mandrel?: {
+      diameter?: number;
+      length?: number;
+      maxRPM?: number; // Calculated
+      RpmFull?: number; // Calculated
+      weight?: number; // Calculated
+      inertia?: number; // Calculated
+      reflInertia?: number; // Calculated
+    };
+    
+    // Backplate
+    backplate?: {
+      diameter?: number;
+      thickness?: number;
+      weight?: number; // Calculated
+      inertia?: number; // Calculated
+      reflInertia?: number; // Calculated
+    };
+    
+    // Reducer
+    reducer?: {
+      ratio?: number;
+      efficiency?: number;
+      driving?: number;
+      backdriving?: number;
+      inertia?: number;
+      reflInertia?: number; // Calculated
+    };
+    
+    // Chain
+    chain?: {
+      ratio?: number;
+      sprktOD?: number;
+      sprktThickness?: number;
+      weight?: number;
+      inertia?: number; // Calculated
+      reflInertia?: number; // Calculated
+    };
+    
+    // Total
+    ratio?: string; // Calculated
+    totalReflInertia?: {
+      empty?: number; // Calculated
+      full?: number; // Calculated
+    };
+    
+    // Motor
+    motor?: {
+      inertia?: number;
+      rpm?: {
+        base?: number;
+        full?: number;
+      };
+    };
+    
+    // Friction
+    friction?: {
+      bearing?: {
+        mandrel?: {
+          rear?: number; // Calculated
+          front?: number; // Calculated
+        };
+        coil?: {
+          rear?: number;
+          front?: number; // Calculated
+        };
+        total?: {
+          empty?: number; // Calculated
+          full?: number; // Calculated
+        };
+        refl?: {
+          empty?: number; // Calculated
+          full?: number; // Calculated
+        };
+      };
+    };
+    
+    // Speed & Acceleration
+    speed?: number;
+    motorization?: {
+      accelRate?: number;
+    };
+    accelerationTime?: number; // Calculated
+    
+    // Torque
+    torque?: {
+      empty?: {
+        torque?: number; // Calculated
+        horsepowerRequired?: number; // Calculated
+        horsepowerCheck?: string; // Calculated
+        regen?: string; // Calculated
+        regenCheck?: string; // Calculated
+      };
+      full?: {
+        torque?: number; // Calculated
+        horsepowerRequired?: number; // Calculated
+        horsepowerCheck?: string; // Calculated
+        regen?: string; // Calculated
+        regenCheck?: string; // Calculated
+      };
+    };
+    reelDriveOK?: string; // Calculated
+  };
+  
+  // Coil
+  coil?: {
+    density?: number;
+    maxCoilOD?: number;
+    coilID?: number;
+    maxCoilWeight?: number;
+    inertia?: number; // Calculated
+    reflInertia?: number; // Calculated
+  };
+  
+  material?: {
+    coilWidth?: number;
+  };
+}
+
+// Straightener Utility Page Data Structure
+export interface StrUtilityData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Straightener Specifications
+  straightener?: {
+    payoff?: string;
+    model?: string;
+    width?: number;
+    horsepower?: number;
+    acceleration?: number;
+    feedRate?: number;
+    autoBrakeCompensation?: string;
+    
+    // Physical Parameters
+    rollDiameter?: number;
+    centerDistance?: number;
+    jackForceAvailable?: number;
+    modulus?: number;
+    
+    // Rolls
+    rolls?: {
       numberOfRolls?: number;
-      backupRolls?: string;
+      straighteningRolls?: number;
+      depth?: {
+        withoutMaterial?: number;
+      };
+      straightener?: {
+        diameter?: number;
+        requiredGearTorque?: number; // Calculated
+        ratedTorque?: number; // Calculated
+      };
+      pinch?: {
+        diameter?: number;
+        requiredGearTorque?: number; // Calculated
+        ratedTorque?: number; // Calculated
+      };
+    };
+    
+    // Gear Data
+    gear?: {
+      faceWidth?: number;
+      contAngle?: number;
+      straightenerRoll?: {
+        numberOfTeeth?: number;
+        dp?: number;
+      };
+      pinchRoll?: {
+        numberOfTeeth?: number;
+        dp?: number;
+      };
+    };
+    
+    // Calculations
+    actualCoilWeight?: number; // Calculated
+    coilOD?: number; // Calculated
+    required?: {
+      force?: number; // Calculated
+      ratedForce?: number; // Calculated
+      horsepower?: number; // Calculated
+      horsepowerCheck?: string; // Calculated
+      jackForceCheck?: string; // Calculated
+      backupRollsCheck?: string; // Calculated
+    };
+    
+    torque?: {
+      straightener?: number; // Calculated
+      acceleration?: number; // Calculated
+      brake?: number; // Calculated
+    };
+  };
+  
+  // Coil Information
+  coil?: {
+    coilID?: number;
+    weight?: number;
+  };
+  
+  material?: {
+    coilWidth?: number;
+    materialThickness?: number;
+    maxYieldStrength?: number;
+    materialType?: string;
+  };
+}
+
+// Roll Straightener Backbend Page Data Structure
+export interface RollStrBackbendData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Roll Configuration
+  rollConfiguration?: string; // "7", "9", "11"
+  
+  // Material & Coil Information
+  material?: {
+    coilWidth?: number;
+    materialThickness?: number;
+    maxYieldStrength?: number;
+    materialType?: string;
+    density?: number; // lb/in³
+  };
+  
+  // Straightener Information
+  straightener?: {
+    model?: string;
+    rollDiameter?: number;
+    centerDistance?: number;
+    modulus?: number;
+    jackForceAvailable?: number;
+    
+    rolls?: {
+      numberOfRolls?: number;
+      typeOfRoll?: string;
       depth?: {
         withoutMaterial?: number;
         withMaterial?: number;
       };
-      straightener?: {
-        diameter?: number;
-        requiredGearTorque?: number;
-        ratedTorque?: number;
-        check?: string;
-      };
-      pinch?: {
-        diameter?: number;
-        requiredGearTorque?: number;
-        ratedTorque?: number;
-        check?: string;
-      };
+      
       backbend?: {
         hiddenValue?: number;
+        yieldMet?: string; // Calculated
+        
+        // Radius Calculations
+        radius?: {
+          comingOffCoil?: number; // Calculated
+          offCoilAfterSpringback?: number; // Calculated
+          requiredToYieldSkinOfFlatMaterial?: number; // Calculated
+        };
+        
+        bendingMomentToYieldSkin?: number; // Calculated
+        
+        // Roller Analysis
         rollers?: {
-          depthRequired?: number;
-          forceRequired?: number;
+          depthRequired?: number; // Calculated
+          forceRequired?: number; // Calculated
           first?: RollDetail;
           middle?: RollDetail;
           last?: {
@@ -240,230 +582,176 @@ export interface PerformanceData {
             };
           };
         };
-        yieldMet?: string;
-        radius?: {
-          comingOffCoil?: number;
-          offCoilAfterSpringback?: number;
-          requiredToYieldSkinOfFlatMaterial?: number;
-        };
-        bendingMomentToYieldSkin?: number;
-      };
-    };
-    payoff?: string;
-    width?: number;
-    feedRate?: number;
-    acceleration?: number;
-    horsepower?: number;
-    autoBrakeCompensation?: string;
-    rollDiameter?: number;
-    centerDistance?: number;
-    jackForceAvailable?: number;
-    modulus?: number;
-    actualCoilWeight?: number;
-    coilOD?: number;
-    check?: number;
-    torque?: {
-      straightener?: number;
-      acceleration?: number;
-      brake?: number;
-    };
-    required?: {
-      horsepower?: number;
-      horsepowerCheck?: string;
-      force?: number;
-      ratedForce?: number;
-      jackForceCheck?: string;
-      backupRollsCheck?: string;
-    };
-    gear?: {
-      faceWidth?: number;
-      contAngle?: number;
-      straightenerRoll?: {
-        numberOfTeeth?: number;
-        dp?: number;
-      };
-      pinchRoll?: {
-        numberOfTeeth?: number;
-        dp?: number;
       };
     };
   };
-  reel?: {
+}
+
+// Feed Page Data Structure
+export interface FeedData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Feed Configuration
+  feedType?: string; // "sigma-5", "sigma-5-pull-thru", "allen-bradley"
+  
+  feed?: {
+    application?: string;
     model?: string;
-    horsepower?: number;
-    width?: number;
-    ratio?: string;
-    reelDriveOK?: string;
-    bearing?: {
-      diameter?: {
-        front?: number;
-        rear?: number;
-      };
-      distance?: number;
-    };
-    totalReflInertia?: {
-      empty?: number;
-      full?: number;
-    };
-    mandrel?: {
-      diameter?: number;
-      length?: number;
-      maxRPM?: number;
-      RpmFull?: number;
-      weight?: number;
-      inertia?: number;
-      reflInertia?: number;
-    };
-    backplate?: {
-      type?: string;
-      diameter?: number;
-      thickness?: number;
-      weight?: number;
-      inertia?: number;
-      reflInertia?: number;
-    };
-    reducer?: {
-      ratio?: number;
-      efficiency?: number;
-      driving?: number;
-      backdriving?: number;
-      inertia?: number;
-      reflInertia?: number;
-    };
-    chain?: {
-      ratio?: number;
-      sprktOD?: number;
-      sprktThickness?: number;
-      weight?: number;
-      inertia?: number;
-      reflInertia?: number;
-    };
-    motor?: {
-      inertia?: number;
-      rpm?: {
-        base?: number;
-        full?: number;
-      };
-    };
-    friction?: {
-      bearing?: {
-        mandrel?: {
-          rear?: number;
-          front?: number;
-        };
-        coil?: {
-          rear?: number;
-          front?: number;
-        };
-        total?: {
-          empty?: number;
-          full?: number;
-        };
-        refl?: {
-          empty?: number;
-          full?: number;
-        };
-      };
-    };
-    motorization?: {
-      isMotorized?: string;
-      driveHorsepower?: number;
-      speed?: number;
-      accelRate?: number;
-      regenRequired?: string;
-    };
-    style?: string;
-    threadingDrive?: {
-      airClutch?: string;
-      hydThreadingDrive?: string;
-    };
-    holddown?: {
-      assy?: string;
-      cylinder?: string;
-      cylinderPressure?: number;
-      force?: {
-        required?: number;
-        available?: number;
-      };
-    };
-    dragBrake?: {
-      model?: string;
-      quantity?: number;
-      psiAirRequired?: number;
-      holdingForce?: number;
-    };
-    airPressureAvailable?: number;
-    requiredDecelRate?: number;
-    acceleration?: number;
-    speed?: number;
-    accelerationTime?: number;
-    coilWeight?: number;
-    coilOD?: number;
-    dispReelMtr?: string;
-    webTension?: {
-      psi?: number;
-      lbs?: number;
-    };
-    brakePadDiameter?: number;
-    cylinderBore?: number;
-    coefficientOfFriction?: number;
-    minMaterialWidth?: number;
+    machineWidth?: number;
+    loopPit?: string;
+    fullWidthRolls?: string;
+    
+    // Motor & Control
+    motor?: string;
+    amp?: string;
+    
+    // Performance Parameters
+    maximumVelocity?: number;
+    frictionInDie?: number;
+    accelerationRate?: number;
+    defaultAcceleration?: number;
+    chartMinLength?: number;
+    lengthIncrement?: number;
+    feedAngle1?: number;
+    feedAngle2?: number;
+    ratio?: number;
+    
+    // Calculated Values
+    maxMotorRPM?: number; // Calculated
+    motorInertia?: number; // Calculated
+    maxVelocity?: number; // Calculated
+    settleTime?: number; // Calculated
+    regen?: number; // Calculated
+    reflInertia?: number; // Calculated
+    match?: number; // Calculated
+    materialInLoop?: number; // Calculated
+    
+    // Torque Values
     torque?: {
-      atMandrel?: number;
-      rewindRequired?: number;
-      required?: number;
-      empty?: {
-        torque?: number;
-        horsepowerRequired?: number;
-        horsepowerCheck?: string;
-        regen?: string;
-        regenCheck?: string;
+      motorPeak?: number; // Calculated
+      peak?: number; // Calculated
+      frictional?: number; // Calculated
+      loop?: number; // Calculated
+      settle?: number; // Calculated
+      rms?: {
+        motor?: number; // Calculated
+        feedAngle1?: number; // Calculated
+        feedAngle2?: number; // Calculated
       };
-      full?: {
-        torque?: number;
-        horsepowerRequired?: number;
-        horsepowerCheck?: string;
-        regen?: string;
-        regenCheck?: string;
-      };
+      acceleration?: number; // Calculated
     };
+    
+    // Pull-Through Configuration
+    pullThru?: {
+      isPullThru?: string;
+      straightenerRolls?: number;
+      centerDistance?: number;
+      yieldStrength?: number;
+      pinchRolls?: string;
+      kConst?: number;
+      straightenerTorque?: number;
+    };
+    
+    // Speed Settings
+    average?: {
+      length?: number;
+      spm?: number;
+      fpm?: number; // Calculated
+    };
+    max?: {
+      length?: number;
+      spm?: number;
+      fpm?: number; // Calculated
+    };
+    min?: {
+      length?: number;
+      spm?: number;
+      fpm?: number; // Calculated
+    };
+    
+    // Table Data
+    tableValues?: Array<{
+      length: number;
+      rms_torque_fa1: number;
+      rms_torque_fa2: number;
+      spm_at_fa1: number;
+      fpm_fa1: number;
+      index_time_fa1: number;
+      spm_at_fa2: number;
+      fpm_fa2: number;
+      index_time_fa2: number;
+    }>;
   };
+  
+  // Material Information
+  material?: {
+    coilWidth?: number;
+    materialThickness?: number;
+    materialDensity?: number;
+  };
+  
+  press?: {
+    bedLength?: string;
+  };
+}
+
+// Shear Page Data Structure
+export interface ShearData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Shear Configuration
+  shearType?: string; // "single-rake", "bow-tie"
+  
   shear?: {
     model?: string;
-    strength?: number;
+    strength?: number; // Calculated
+    
+    // Blade Specifications
     blade?: {
       rakeOfBladePerFoot?: number;
       overlap?: number;
       bladeOpening?: number;
       percentOfPenetration?: number;
-      angleOfBlade?: number;
+      angleOfBlade?: number; // Calculated
       initialCut?: {
-        length?: number;
-        area?: number;
+        length?: number; // Calculated
+        area?: number; // Calculated
       };
     };
+    
+    // Cylinder Specifications
     cylinder?: {
       boreSize?: number;
       rodDiameter?: number;
       stroke?: number;
       minStroke?: {
-        forBlade?: number;
-        requiredForOpening?: number;
+        forBlade?: number; // Calculated
+        requiredForOpening?: number; // Calculated
       };
-      actualOpeningAboveMaxMaterial?: number;
+      actualOpeningAboveMaxMaterial?: number; // Calculated
     };
+    
+    // Hydraulic System
     hydraulic?: {
       pressure?: number;
       cylinder?: {
-        area?: number;
-        volume?: number;
+        area?: number; // Calculated
+        volume?: number; // Calculated
       };
-      fluidVelocity?: number;
+      fluidVelocity?: number; // Calculated
     };
+    
+    // Timing
     time?: {
       forDownwardStroke?: number;
       dwellTime?: number;
     };
+    
+    // Conclusions (All Calculated)
     conclusions?: {
       force?: {
         perCylinder?: number;
@@ -487,520 +775,738 @@ export interface PerformanceData {
       };
     };
   };
-  voltageRequired?: number;
-  equipmentSpaceLength?: number;
-  equipmentSpaceWidth?: number;
-  obstructions?: string;
-  mount?: {
-    feederMountedToPress?: string;
-    adequateSupport?: string;
-    customMounting?: string;
+  
+  material?: {
+    materialThickness?: number;
+    coilWidth?: number;
+    maxTensileStrength?: number;
+    materialType?: string;
+    maxYieldStrength?: number;
   };
+}
+
+// Summary Report Page Data Structure
+export interface SummaryReportData {
+  // Customer & Date (shared)
+  customer?: string;
+  date?: string;
+  
+  // Reel Summary
+  reel?: {
+    model?: string;
+    width?: number;
+    backplate?: {
+      diameter?: number;
+    };
+    motorization?: {
+      isMotorized?: string;
+      driveHorsepower?: number;
+      speed?: number;
+      accelRate?: number;
+      regenRequired?: string;
+    };
+    style?: string;
+    threadingDrive?: {
+      airClutch?: string;
+      hydThreadingDrive?: string;
+    };
+    holddown?: {
+      assy?: string;
+      cylinder?: string;
+    };
+    dragBrake?: {
+      model?: string;
+      quantity?: number;
+    };
+  };
+  
+  // Straightener Summary
+  straightener?: {
+    model?: string;
+    payoff?: string;
+    width?: number;
+    feedRate?: number;
+    acceleration?: number;
+    horsepower?: number;
+    rolls?: {
+      straighteningRolls?: number;
+      backupRolls?: string;
+    };
+  };
+  
+  // Feed Summary
+  feed?: {
+    application?: string;
+    model?: string;
+    machineWidth?: number;
+    fullWidthRolls?: string;
+    feedAngle1?: number;
+    feedAngle2?: number;
+    maximumVelocity?: number;
+    acceleration?: number;
+    ratio?: string;
+    direction?: string;
+    controlsLevel?: string;
+    typeOfLine?: string;
+    passline?: string;
+    lightGuageNonMarking?: string;
+    nonMarking?: string;
+    pullThru?: {
+      straightenerRolls?: number;
+      pinchRolls?: string;
+    };
+  };
+  
+  press?: {
+    bedLength?: string;
+  };
+  
   loopPit?: string;
-  requireGuarding?: string;
-  specialConsiderations?: string;
-};
+}
+
+// Main Performance Data Structure
+export interface PerformanceData {
+  referenceNumber: string;
+  rfq: RFQData;
+  materialSpecs: MaterialSpecsData;
+  tddbhd: TDDBHDData;
+  reelDrive: ReelDriveData;
+  strUtility: StrUtilityData;
+  rollStrBackbend: RollStrBackbendData;
+  feed: FeedData;
+  shear: ShearData;
+  summaryReport: SummaryReportData;
+}
 
 // Initial state for PerformanceData
 const initialPerformanceData: PerformanceData = {
   referenceNumber: "",
-  customer: "",
-  customerInfo: {
-    streetAddress: "",
-    city: "",
-    state: "",
-    zip: 0,
-    country: "",
-    contactName: "",
-    position: "",
-    phoneNumber: "",
-    email: "",
-    dealerName: "",
-    dealerSalesman: "",
-    daysPerWeek: 0,
-    shiftsPerDay: 0,
+  rfq: {
+    customer: "",
+    customerInfo: {
+      streetAddress: "",
+      city: "",
+      state: "",
+      zip: 0,
+      country: "",
+      contactName: "",
+      position: "",
+      phoneNumber: "",
+      email: "",
+      dealerName: "",
+      dealerSalesman: "",
+      daysPerWeek: 0,
+      shiftsPerDay: 0,
+    },
+    dates: {
+      date: "",
+      decisionDate: "",
+      idealDeliveryDate: "",
+      earliestDeliveryDate: "",
+      latestDeliveryDate: "",
+    },
+    lineApplication: "",
+    typeOfLine: "",
+    pullThrough: "",
+    coil: {
+      maxCoilWidth: 0,
+      minCoilWidth: 0,
+      maxCoilOD: 0,
+      coilID: 0,
+      maxCoilWeight: 0,
+      maxCoilHandlingCap: 0,
+      slitEdge: "",
+      millEdge: "",
+      requireCoilCar: "",
+      runningOffBackplate: "",
+      requireRewinding: "",
+      changeTimeConcern: "",
+      timeChangeGoal: "",
+      loading: "",
+    },
+    material: {
+      materialThickness: 0,
+      coilWidth: 0,
+      materialType: "",
+      maxYieldStrength: 0,
+      maxTensileStrength: 0,
+    },
+    runningCosmeticMaterial: "",
+    brandOfFeed: "",
+    press: {
+      gapFramePress: "",
+      hydraulicPress: "",
+      obi: "",
+      servoPress: "",
+      shearDieApplication: "",
+      straightSidePress: "",
+      other: "",
+      tonnageOfPress: "",
+      strokeLength: "",
+      maxSPM: "",
+      bedWidth: "",
+      bedLength: "",
+      windowSize: "",
+      cycleTime: "",
+    },
+    dies: {
+      transferDies: "",
+      progressiveDies: "",
+      blankingDies: "",
+    },
+    feed: {
+      average: { length: 0, spm: 0, fpm: 0 },
+      max: { length: 0, spm: 0, fpm: 0 },
+      min: { length: 0, spm: 0, fpm: 0 },
+    },
+    voltageRequired: 0,
+    equipmentSpaceLength: 0,
+    equipmentSpaceWidth: 0,
+    obstructions: "",
+    mount: {
+      feederMountedToPress: "",
+      adequateSupport: "",
+      customMounting: "",
+    },
+    passline: "",
+    loopPit: "",
+    feedDirection: "",
+    requireGuarding: "",
+    specialConsiderations: "",
   },
-  dates: {
+  materialSpecs: {
+    customer: "",
     date: "",
-    decisionDate: "",
-    idealDeliveryDate: "",
-    earliestDeliveryDate: "",
-    latestDeliveryDate: "",
+    material: {
+      coilWidth: 0,
+      materialThickness: 0,
+      materialType: "",
+      maxYieldStrength: 0,
+      maxTensileStrength: 0,
+      minBendRadius: 0,
+      minLoopLength: 0,
+      calculatedCoilOD: 0,
+    },
+    coil: {
+      maxCoilWeight: 0,
+      coilID: 0,
+      maxCoilOD: 0,
+    },
+    feed: {
+      direction: "",
+      controlsLevel: "",
+      typeOfLine: "",
+      controls: "",
+      passline: "",
+      lightGuageNonMarking: "",
+      nonMarking: "",
+    },
+    straightener: {
+      rolls: {
+        typeOfRoll: "",
+      },
+    },
+    reel: {
+      backplate: {
+        type: "",
+      },
+      style: "",
+    },
   },
-  coil: {
-    density: 0,
-    weight: 0,
-    maxCoilWidth: 0,
-    minCoilWidth: 0,
-    maxCoilOD: 0,
-    coilID: 0,
-    maxCoilWeight: 0,
-    maxCoilHandlingCap: 0,
-    slitEdge: "",
-    millEdge: "",
-    requireCoilCar: "",
-    runningOffBackplate: "",
-    requireRewinding: "",
-    changeTimeConcern: "",
-    timeChangeGoal: "",
-    loading: "",
-    inertia: 0,
-    reflInertia: 0,
+  tddbhd: {
+    customer: "",
+    date: "",
+    reel: {
+      model: "",
+      width: 0,
+      backplate: { diameter: 0 },
+      dispReelMtr: "",
+      airPressureAvailable: 0,
+      requiredDecelRate: 0,
+      coefficientOfFriction: 0,
+      cylinderBore: 0,
+      minMaterialWidth: 0,
+      brakePadDiameter: 0,
+      threadingDrive: {
+        airClutch: "",
+        hydThreadingDrive: "",
+      },
+      holddown: {
+        assy: "",
+        cylinder: "",
+        cylinderPressure: 0,
+        force: { required: 0, available: 0 },
+      },
+      dragBrake: {
+        model: "",
+        quantity: 0,
+        psiAirRequired: 0,
+        holdingForce: 0,
+      },
+      torque: {
+        atMandrel: 0,
+        rewindRequired: 0,
+        required: 0,
+      },
+      webTension: {
+        psi: 0,
+        lbs: 0,
+      },
+    },
+    material: {
+      materialType: "",
+      coilWidth: 0,
+      materialThickness: 0,
+      maxYieldStrength: 0,
+    },
+    coil: {
+      maxCoilWeight: 0,
+      coilWeight: 0,
+      maxCoilOD: 0,
+      coilOD: 0,
+    },
   },
-  material: {
-    materialThickness: 0,
-    materialDensity: 0,
-    coilWidth: 0,
-    materialType: "",
-    maxYieldStrength: 0,
-    maxTensileStrength: 0,
-    minBendRadius: 0,
-    minLoopLength: 0,
-    calculatedCoilOD: 0,
+  reelDrive: {
+    customer: "",
+    date: "",
+    reel: {
+      model: "",
+      horsepower: 0,
+      size: 0,
+      width: 0,
+      bearing: {
+        distance: 0,
+        diameter: { front: 0, rear: 0 },
+      },
+      mandrel: {
+        diameter: 0,
+        length: 0,
+        maxRPM: 0,
+        RpmFull: 0,
+        weight: 0,
+        inertia: 0,
+        reflInertia: 0,
+      },
+      backplate: {
+        diameter: 0,
+        thickness: 0,
+        weight: 0,
+        inertia: 0,
+        reflInertia: 0,
+      },
+      reducer: {
+        ratio: 0,
+        efficiency: 0,
+        driving: 0,
+        backdriving: 0,
+        inertia: 0,
+        reflInertia: 0,
+      },
+      chain: {
+        ratio: 0,
+        sprktOD: 0,
+        sprktThickness: 0,
+        weight: 0,
+        inertia: 0,
+        reflInertia: 0,
+      },
+      ratio: "",
+      totalReflInertia: { empty: 0, full: 0 },
+      motor: {
+        inertia: 0,
+        rpm: { base: 0, full: 0 },
+      },
+      friction: {
+        bearing: {
+          mandrel: { rear: 0, front: 0 },
+          coil: { rear: 0, front: 0 },
+          total: { empty: 0, full: 0 },
+          refl: { empty: 0, full: 0 },
+        },
+      },
+      speed: 0,
+      motorization: { accelRate: 0 },
+      accelerationTime: 0,
+      torque: {
+        empty: {
+          torque: 0,
+          horsepowerRequired: 0,
+          horsepowerCheck: "",
+          regen: "",
+          regenCheck: "",
+        },
+        full: {
+          torque: 0,
+          horsepowerRequired: 0,
+          horsepowerCheck: "",
+          regen: "",
+          regenCheck: "",
+        },
+      },
+      reelDriveOK: "",
+    },
+    coil: {
+      density: 0,
+      maxCoilOD: 0,
+      coilID: 0,
+      maxCoilWeight: 0,
+      inertia: 0,
+      reflInertia: 0,
+    },
+    material: {
+      coilWidth: 0,
+    },
   },
-  runningCosmeticMaterial: "",
-  brandOfFeed: "",
-  press: {
-    gapFramePress: "",
-    hydraulicPress: "",
-    obi: "",
-    servoPress: "",
-    shearDieApplication: "",
-    straightSidePress: "",
-    other: "",
-    tonnageOfPress: "",
-    strokeLength: "",
-    maxSPM: "",
-    bedWidth: "",
-    bedLength: "",
-    windowSize: "",
-    cycleTime: "",
+  strUtility: {
+    customer: "",
+    date: "",
+    straightener: {
+      payoff: "",
+      model: "",
+      width: 0,
+      horsepower: 0,
+      acceleration: 0,
+      feedRate: 0,
+      autoBrakeCompensation: "",
+      rollDiameter: 0,
+      centerDistance: 0,
+      jackForceAvailable: 0,
+      modulus: 0,
+      rolls: {
+        numberOfRolls: 0,
+        straighteningRolls: 0,
+        depth: { withoutMaterial: 0 },
+        straightener: {
+          diameter: 0,
+          requiredGearTorque: 0,
+          ratedTorque: 0,
+        },
+        pinch: {
+          diameter: 0,
+          requiredGearTorque: 0,
+          ratedTorque: 0,
+        },
+      },
+      gear: {
+        faceWidth: 0,
+        contAngle: 0,
+        straightenerRoll: { numberOfTeeth: 0, dp: 0 },
+        pinchRoll: { numberOfTeeth: 0, dp: 0 },
+      },
+      actualCoilWeight: 0,
+      coilOD: 0,
+      required: {
+        force: 0,
+        ratedForce: 0,
+        horsepower: 0,
+        horsepowerCheck: "",
+        jackForceCheck: "",
+        backupRollsCheck: "",
+      },
+      torque: {
+        straightener: 0,
+        acceleration: 0,
+        brake: 0,
+      },
+    },
+    coil: {
+      coilID: 0,
+      weight: 0,
+    },
+    material: {
+      coilWidth: 0,
+      materialThickness: 0,
+      maxYieldStrength: 0,
+      materialType: "",
+    },
   },
-  dies: {
-    transferDies: "",
-    progressiveDies: "",
-    blankingDies: "",
+  rollStrBackbend: {
+    customer: "",
+    date: "",
+    rollConfiguration: "7",
+    material: {
+      coilWidth: 0,
+      materialThickness: 0,
+      maxYieldStrength: 0,
+      materialType: "",
+      density: 0, // lb/in³
+    },
+    straightener: {
+      model: "",
+      rollDiameter: 0,
+      centerDistance: 0,
+      modulus: 0,
+      jackForceAvailable: 0,
+      rolls: {
+        numberOfRolls: 0,
+        typeOfRoll: "",
+        depth: {
+          withoutMaterial: 0,
+          withMaterial: 0,
+        },
+        backbend: {
+          hiddenValue: 0,
+          yieldMet: "",
+          radius: {
+            comingOffCoil: 0,
+            offCoilAfterSpringback: 0,
+            requiredToYieldSkinOfFlatMaterial: 0,
+          },
+          bendingMomentToYieldSkin: 0,
+          rollers: {
+            depthRequired: 0,
+            forceRequired: 0,
+            first: {
+              height: 0,
+              forceRequired: 0,
+              numberOfYieldStrainsAtSurface: 0,
+              up: {
+                resultingRadius: 0,
+                curvatureDifference: 0,
+                bendingMoment: 0,
+                bendingMomentRatio: 0,
+                springback: 0,
+                percentOfThicknessYielded: 0,
+                radiusAfterSpringback: 0,
+              },
+              down: {
+                resultingRadius: 0,
+                curvatureDifference: 0,
+                bendingMoment: 0,
+                bendingMomentRatio: 0,
+                springback: 0,
+                percentOfThicknessYielded: 0,
+                radiusAfterSpringback: 0,
+              },
+            },
+            middle: {
+              height: 0,
+              forceRequired: 0,
+              numberOfYieldStrainsAtSurface: 0,
+              up: {
+                resultingRadius: 0,
+                curvatureDifference: 0,
+                bendingMoment: 0,
+                bendingMomentRatio: 0,
+                springback: 0,
+                percentOfThicknessYielded: 0,
+                radiusAfterSpringback: 0,
+              },
+              down: {
+                resultingRadius: 0,
+                curvatureDifference: 0,
+                bendingMoment: 0,
+                bendingMomentRatio: 0,
+                springback: 0,
+                percentOfThicknessYielded: 0,
+                radiusAfterSpringback: 0,
+              },
+            },
+            last: {
+              height: 0,
+              forceRequired: 0,
+              numberOfYieldStrainsAtSurface: 0,
+              up: {
+                resultingRadius: 0,
+                curvatureDifference: 0,
+                bendingMoment: 0,
+                bendingMomentRatio: 0,
+                springback: 0,
+                percentOfThicknessYielded: 0,
+                radiusAfterSpringback: 0,
+              },
+            },
+          },
+        },
+      },
+    },
   },
   feed: {
-    application: "",
-    model: "",
-    machineWidth: 0,
-    loopPit: "",
-    fullWidthRolls: "",
-    motor: "",
-    amp: "",
-    pressBedLength: 0,
-    materialInLoop: 0,
-    frictionInDie: 0,
-    accelerationRate: 0,
-    defaultAcceleration: 0,
-    chartMinLength: 0,
-    lengthIncrement: 0,
-    feedAngle1: 0,
-    feedAngle2: 0,
-    maximumVelocity: 0,
-    maxMotorRPM: 0,
-    motorInertia: 0,
-    settleTime: 0,
-    acceleration: 0,
-    ratio: "",
-    typeOfLine: "",
-    match: 0,
-    reflInertia: 0,
-    regen: 0,
-    torque: {
-      motorPeak: 0,
-      peak: 0,
-      frictional: 0,
-      loop: 0,
-      settle: 0,
-      rms: {
-        motor: 0,
-        feedAngle1: 0,
-        feedAngle2: 0,
-      },
-      acceleration: 0,
-    },
-    tableData: {},
-    pullThru: {
-      isPullThru: "",
-      straightenerRolls: 0,
-      pinchRolls: "",
-      kConst: 0,
-      straightenerTorque: 0,
-    },
-    average: {
-      length: 0,
-      spm: 0,
-      fpm: 0,
-    },
-    max: {
-      length: 0,
-      spm: 0,
-      fpm: 0,
-    },
-    min: {
-      length: 0,
-      spm: 0,
-      fpm: 0,
-    },
-    windowDegrees: "",
-    direction: "",
-    controls: "",
-    controlsLevel: "",
-    passline: "",
-    lightGuageNonMarking: "",
-    nonMarking: "",
-  },
-  straightener: {
-    model: "",
-    rolls: {
-      straighteningRolls: 0,
-      numberOfRolls: 0,
-      backupRolls: "",
-      depth: {
-        withoutMaterial: 0,
-        withMaterial: 0,
-      },
-      straightener: {
-        diameter: 0,
-        requiredGearTorque: 0,
-        ratedTorque: 0,
-        check: "",
-      },
-      pinch: {
-        diameter: 0,
-        requiredGearTorque: 0,
-        ratedTorque: 0,
-        check: "",
-      },
-      backbend: {
-        hiddenValue: 0,
-        rollers: {
-          depthRequired: 0,
-          forceRequired: 0,
-          first: {
-            height: 0,
-            forceRequired: 0,
-            numberOfYieldStrainsAtSurface: 0,
-            up: {
-              resultingRadius: 0,
-              curvatureDifference: 0,
-              bendingMoment: 0,
-              bendingMomentRatio: 0,
-              springback: 0,
-              percentOfThicknessYielded: 0,
-              radiusAfterSpringback: 0,
-            },
-            down: {
-              resultingRadius: 0,
-              curvatureDifference: 0,
-              bendingMoment: 0,
-              bendingMomentRatio: 0,
-              springback: 0,
-              percentOfThicknessYielded: 0,
-              radiusAfterSpringback: 0,
-            },
-          },
-          middle: {
-            height: 0,
-            forceRequired: 0,
-            numberOfYieldStrainsAtSurface: 0,
-            up: {
-              resultingRadius: 0,
-              curvatureDifference: 0,
-              bendingMoment: 0,
-              bendingMomentRatio: 0,
-              springback: 0,
-              percentOfThicknessYielded: 0,
-              radiusAfterSpringback: 0,
-            },
-            down: {
-              resultingRadius: 0,
-              curvatureDifference: 0,
-              bendingMoment: 0,
-              bendingMomentRatio: 0,
-              springback: 0,
-              percentOfThicknessYielded: 0,
-              radiusAfterSpringback: 0,
-            },
-          },
-          last: {
-            height: 0,
-            forceRequired: 0,
-            numberOfYieldStrainsAtSurface: 0,
-            up: {
-              resultingRadius: 0,
-              curvatureDifference: 0,
-              bendingMoment: 0,
-              bendingMomentRatio: 0,
-              springback: 0,
-              percentOfThicknessYielded: 0,
-              radiusAfterSpringback: 0,
-            },
-          },
-        },
-        yieldMet: "",
-        radius: {
-          comingOffCoil: 0,
-          offCoilAfterSpringback: 0,
-          requiredToYieldSkinOfFlatMaterial: 0,
-        },
-        bendingMomentToYieldSkin: 0,
-      },
-    },
-    payoff: "",
-    width: 0,
-    feedRate: 0,
-    acceleration: 0,
-    horsepower: 0,
-    autoBrakeCompensation: "",
-    rollDiameter: 0,
-    centerDistance: 0,
-    jackForceAvailable: 0,
-    modulus: 0,
-    actualCoilWeight: 0,
-    coilOD: 0,
-    check: 0,
-    torque: {
-      straightener: 0,
-      acceleration: 0,
-      brake: 0,
-    },
-    required: {
-      horsepower: 0,
-      horsepowerCheck: "",
-      force: 0,
-      ratedForce: 0,
-      jackForceCheck: "",
-      backupRollsCheck: "",
-    },
-    gear: {
-      faceWidth: 0,
-      contAngle: 0,
-      straightenerRoll: {
-        numberOfTeeth: 0,
-        dp: 0,
-      },
-      pinchRoll: {
-        numberOfTeeth: 0,
-        dp: 0,
-      },
-    },
-  },
-  reel: {
-    model: "",
-    horsepower: 0,
-    width: 0,
-    ratio: "",
-    reelDriveOK: "",
-    bearing: {
-      diameter: {
-        front: 0,
-        rear: 0,
-      },
-      distance: 0,
-    },
-    totalReflInertia: {
-      empty: 0,
-      full: 0,
-    },
-    mandrel: {
-      diameter: 0,
-      length: 0,
-      maxRPM: 0,
-      RpmFull: 0,
-      weight: 0,
-      inertia: 0,
-      reflInertia: 0,
-    },
-    backplate: {
-      type: "",
-      diameter: 0,
-      thickness: 0,
-      weight: 0,
-      inertia: 0,
-      reflInertia: 0,
-    },
-    reducer: {
-      ratio: 0,
-      efficiency: 0,
-      driving: 0,
-      backdriving: 0,
-      inertia: 0,
-      reflInertia: 0,
-    },
-    chain: {
-      ratio: 0,
-      sprktOD: 0,
-      sprktThickness: 0,
-      weight: 0,
-      inertia: 0,
-      reflInertia: 0,
-    },
-    motor: {
-      inertia: 0,
-      rpm: {
-        base: 0,
-        full: 0,
-      },
-    },
-    friction: {
-      bearing: {
-        mandrel: {
-          rear: 0,
-          front: 0,
-        },
-        coil: {
-          rear: 0,
-          front: 0,
-        },
-        total: {
-          empty: 0,
-          full: 0,
-        },
-        refl: {
-          empty: 0,
-          full: 0,
-        },
-      },
-    },
-    motorization: {
-      isMotorized: "",
-      driveHorsepower: 0,
-      speed: 0,
-      accelRate: 0,
-      regenRequired: "",
-    },
-    style: "",
-    threadingDrive: {
-      airClutch: "",
-      hydThreadingDrive: "",
-    },
-    holddown: {
-      assy: "",
-      cylinder: "",
-      cylinderPressure: 0,
-      force: {
-        required: 0,
-        available: 0,
-      },
-    },
-    dragBrake: {
+    customer: "",
+    date: "",
+    feedType: "sigma-5",
+    feed: {
+      application: "",
       model: "",
-      quantity: 0,
-      psiAirRequired: 0,
-      holdingForce: 0,
-    },
-    airPressureAvailable: 0,
-    requiredDecelRate: 0,
-    acceleration: 0,
-    speed: 0,
-    accelerationTime: 0,
-    coilWeight: 0,
-    coilOD: 0,
-    dispReelMtr: "",
-    webTension: {
-      psi: 0,
-      lbs: 0,
-    },
-    brakePadDiameter: 0,
-    cylinderBore: 0,
-    coefficientOfFriction: 0,
-    minMaterialWidth: 0,
-    torque: {
-      atMandrel: 0,
-      rewindRequired: 0,
-      required: 0,
-      empty: {
-        torque: 0,
-        horsepowerRequired: 0,
-        horsepowerCheck: "",
-        regen: "",
-        regenCheck: "",
+      machineWidth: 0,
+      loopPit: "",
+      fullWidthRolls: "",
+      motor: "",
+      amp: "",
+      maximumVelocity: 0,
+      frictionInDie: 0,
+      accelerationRate: 0,
+      defaultAcceleration: 0,
+      chartMinLength: 0,
+      lengthIncrement: 0,
+      feedAngle1: 0,
+      feedAngle2: 0,
+      ratio: 0,
+      maxMotorRPM: 0,
+      motorInertia: 0,
+      maxVelocity: 0,
+      settleTime: 0,
+      regen: 0,
+      reflInertia: 0,
+      match: 0,
+      materialInLoop: 0,
+      torque: {
+        motorPeak: 0,
+        peak: 0,
+        frictional: 0,
+        loop: 0,
+        settle: 0,
+        rms: {
+          motor: 0,
+          feedAngle1: 0,
+          feedAngle2: 0,
+        },
+        acceleration: 0,
       },
-      full: {
-        torque: 0,
-        horsepowerRequired: 0,
-        horsepowerCheck: "",
-        regen: "",
-        regenCheck: "",
+      pullThru: {
+        isPullThru: "",
+        straightenerRolls: 0,
+        centerDistance: 0,
+        yieldStrength: 0,
+        pinchRolls: "",
+        kConst: 0,
+        straightenerTorque: 0,
       },
+      average: { length: 0, spm: 0, fpm: 0 },
+      max: { length: 0, spm: 0, fpm: 0 },
+      min: { length: 0, spm: 0, fpm: 0 },
+      tableValues: [],
+    },
+    material: {
+      coilWidth: 0,
+      materialThickness: 0,
+      materialDensity: 0,
+    },
+    press: {
+      bedLength: "",
     },
   },
   shear: {
-    model: "",
-    strength: 0,
-    blade: {
-      rakeOfBladePerFoot: 0,
-      overlap: 0,
-      bladeOpening: 0,
-      percentOfPenetration: 0,
-      angleOfBlade: 0,
-      initialCut: {
-        length: 0,
-        area: 0,
+    customer: "",
+    date: "",
+    shearType: "single-rake",
+    shear: {
+      model: "",
+      strength: 0,
+      blade: {
+        rakeOfBladePerFoot: 0,
+        overlap: 0,
+        bladeOpening: 0,
+        percentOfPenetration: 38,
+        angleOfBlade: 0,
+        initialCut: { length: 0, area: 0 },
       },
-    },
-    cylinder: {
-      boreSize: 0,
-      rodDiameter: 0,
-      stroke: 0,
-      minStroke: {
-        forBlade: 0,
-        requiredForOpening: 0,
-      },
-      actualOpeningAboveMaxMaterial: 0,
-    },
-    hydraulic: {
-      pressure: 0,
       cylinder: {
-        area: 0,
-        volume: 0,
+        boreSize: 0,
+        rodDiameter: 0,
+        stroke: 0,
+        minStroke: { forBlade: 0, requiredForOpening: 0 },
+        actualOpeningAboveMaxMaterial: 0,
       },
-      fluidVelocity: 0,
-    },
-    time: {
-      forDownwardStroke: 0,
-      dwellTime: 0,
-    },
-    conclusions: {
-      force: {
-        perCylinder: 0,
-        totalApplied: {
-          lbs: 0,
-          tons: 0,
+      hydraulic: {
+        pressure: 0,
+        cylinder: { area: 0, volume: 0 },
+        fluidVelocity: 0,
+      },
+      time: {
+        forDownwardStroke: 0,
+        dwellTime: 0,
+      },
+      conclusions: {
+        force: {
+          perCylinder: 0,
+          totalApplied: { lbs: 0, tons: 0 },
+          requiredToShear: 0,
         },
-        requiredToShear: 0,
-      },
-      safetyFactor: 0,
-      perMinute: {
-        gallons: {
-          instantaneous: 0,
-          averaged: 0,
+        safetyFactor: 0,
+        perMinute: {
+          gallons: { instantaneous: 0, averaged: 0 },
+          shearStrokes: 0,
+          parts: 0,
         },
-        shearStrokes: 0,
-        parts: 0,
+        perHour: { parts: 0 },
       },
-      perHour: {
-        parts: 0,
-      }
+    },
+    material: {
+      materialThickness: 0,
+      coilWidth: 0,
+      maxTensileStrength: 0,
+      materialType: "",
+      maxYieldStrength: 0,
     },
   },
-  voltageRequired: 0,
-  equipmentSpaceLength: 0,
-  equipmentSpaceWidth: 0,
-  obstructions: "",
-  mount: {
-    feederMountedToPress: "",
-    adequateSupport: "",
-    customMounting: "",
+  summaryReport: {
+    customer: "",
+    date: "",
+    reel: {
+      model: "",
+      width: 0,
+      backplate: { diameter: 0 },
+      motorization: {
+        isMotorized: "",
+        driveHorsepower: 0,
+        speed: 0,
+        accelRate: 0,
+        regenRequired: "",
+      },
+      style: "",
+      threadingDrive: {
+        airClutch: "",
+        hydThreadingDrive: "",
+      },
+      holddown: {
+        assy: "",
+        cylinder: "",
+      },
+      dragBrake: {
+        model: "",
+        quantity: 0,
+      },
+    },
+    straightener: {
+      model: "",
+      payoff: "",
+      width: 0,
+      feedRate: 0,
+      acceleration: 0,
+      horsepower: 0,
+      rolls: {
+        straighteningRolls: 0,
+        backupRolls: "",
+      },
+    },
+    feed: {
+      application: "",
+      model: "",
+      machineWidth: 0,
+      fullWidthRolls: "",
+      feedAngle1: 0,
+      feedAngle2: 0,
+      maximumVelocity: 0,
+      acceleration: 0,
+      ratio: "",
+      direction: "",
+      controlsLevel: "",
+      typeOfLine: "",
+      passline: "",
+      lightGuageNonMarking: "",
+      nonMarking: "",
+      pullThru: {
+        straightenerRolls: 0,
+        pinchRolls: "",
+      },
+    },
+    press: {
+      bedLength: "",
+    },
+    loopPit: "",
   },
-  loopPit: "",
-  requireGuarding: "",
-  specialConsiderations: "",
 };
-
 
 // Create the context for performance sheet
 export const PerformanceSheetContext = createContext<

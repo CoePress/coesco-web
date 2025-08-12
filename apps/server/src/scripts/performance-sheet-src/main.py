@@ -184,7 +184,7 @@ def main():
         'brake_model': parse_str_with_default(data, ['reel', 'dragBrake', 'model'], 'reel', 'drag_brake_model'),
         'cylinder': parse_str_with_default(data, ['reel', 'holddown', 'cylinder'], 'reel', 'holddown_cylinder'),
         'hold_down_assy': parse_str_with_default(data, ['reel', 'holddown', 'assy'], 'reel', 'holddown_assy'),
-        'hyd_threading_drive': str2bool(get_nested(data, ['reel', 'threadingDrive', 'hydThreadingDrive'])) or DEFAULTS['reel']['threading_drive_hyd'],
+        'hyd_threading_drive': parse_str_with_default(data, ['reel', 'threadingDrive', 'hydThreadingDrive'], 'reel', 'threading_drive_hyd'),
         'air_clutch': str2bool(get_nested(data, ['reel', 'threadingDrive', 'airClutch'])) or DEFAULTS['reel']['threading_drive_air_clutch'],
         'material_type': (get_nested(data, ['material', 'materialType']) or DEFAULTS['material']['material_type']).upper(),
         'reel_model': parse_str_with_default(data, ['reel', 'model'], 'reel', 'model'),
@@ -216,7 +216,7 @@ def main():
         'backplate_diameter': parse_float_with_default(data, ['reel', 'backplate', 'diameter'], 'reel', 'backplate_diameter'),
         'motor_hp': parse_float_with_default(data, ['reel', 'horsepower'], 'reel', 'horsepower'),
         'type_of_line': parse_str_with_default(data, ['feed', 'typeOfLine'], 'feed', 'type_of_line'),
-        'required_max_fpm': parse_float_with_default(data, ['feed', 'maximunVelocity'], 'feed', 'maximum_velocity'),
+        'required_max_fpm': parse_float_with_default(data, ['feed', 'maximumVelocity'], 'feed', 'maximum_velocity'),
     }
     reel_drive_obj = reel_drive_input(**reel_drive_data)
     reel_drive_result = calculate_reeldrive(reel_drive_obj)

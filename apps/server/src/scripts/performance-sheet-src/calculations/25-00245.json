@@ -1,483 +1,707 @@
 {
   "referenceNumber": "25-00245",
-  "customer": "Lozier",
-  "customerInfo": {
-    "streetAddress": "6336 Pershing Drive",
-    "city": "Omaha",
-    "state": "NE",
-    "zip": "68110",
-    "country": "USA",
-    "contactName": "Parker Williams",
-    "position": "Engineer",
-    "phoneNumber": "402-405-2664",
-    "email": "parker.williams@lozier.biz",
-    "dealerName": "CJ Smith",
-    "dealerSalesman": "Dave Smith",
-    "daysPerWeek": "6",
-    "shiftsPerDay": "3"
-  },
-  "dates": {
-    "date": "",
-    "decisionDate": "",
-    "idealDeliveryDate": "",
-    "earliestDeliveryDate": "",
-    "latestDeliveryDate": ""
-  },
-  "coil": {
-    "density": "",
-    "weight": "10000",
-    "maxCoilWidth": "24",
-    "minCoilWidth": "4",
-    "maxCoilOD": "72",
-    "coilID": "21",
-    "maxCoilWeight": "10000",
-    "maxCoilHandlingCap": "",
-    "slitEdge": "Yes",
-    "millEdge": "No",
-    "requireCoilCar": "No",
-    "runningOffBackplate": "No",
-    "requireRewinding": "No",
-    "changeTimeConcern": "No",
-    "timeChangeGoal": "",
-    "loading": "Operator Side",
-    "inertia": "",
-    "reflInertia": ""
-  },
-  "material": {
-    "materialThickness": "0.25",
-    "materialDensity": "",
-    "coilWidth": "12",
-    "materialType": "Cold Rolled Steel",
-    "maxYieldStrength": "40000",
-    "maxTensileStrength": "",
-    "minBendRadius": "",
-    "minLoopLength": "",
-    "calculatedCoilOD": ""
-  },
-  "runningCosmeticMaterial": "No",
-  "brandOfFeed": "",
-  "press": {
-    "gapFramePress": "No",
-    "hydraulicPress": "No",
-    "obi": "No",
-    "servoPress": "No",
-    "shearDieApplication": "No",
-    "straightSidePress": "No",
-    "other": "No",
-    "tonnageOfPress": "",
-    "strokeLength": "",
-    "maxSPM": "60",
-    "bedWidth": "",
-    "bedLength": "",
-    "windowSize": "",
-    "cycleTime": ""
-  },
-  "dies": {
-    "transferDies": "No",
-    "progressiveDies": "Yes",
-    "blankingDies": "No"
-  },
-  "feed": {
-    "application": "Press Feed",
-    "model": "Sigma 5 Feed",
-    "machineWidth": "18",
-    "loopPit": "No",
-    "fullWidthRolls": "Yes",
-    "motor": "YASKAWA SGMGV-1ADDA61",
-    "amp": "YASKAWA SGDV-280DE1A000000300",
-    "frictionInDie": "30",
-    "accelerationRate": "40",
-    "defaultAcceleration": "40",
-    "chartMinLength": "4",
-    "lengthIncrement": "4",
-    "feedAngle1": "180",
-    "feedAngle2": "240",
-    "maximunVelocity": "",
-    "acceleration": "1",
-    "ratio": "",
+  "rfq": {
+    "customer": "Lozier",
+    "customerInfo": {
+      "streetAddress": "6336 Pershing Drive",
+      "city": "Omaha",
+      "state": "NE",
+      "zip": 68110,
+      "country": "USA",
+      "contactName": "Parker Williams",
+      "position": "Engineer",
+      "phoneNumber": "402-405-2664",
+      "email": "parker.williams@lozier.biz",
+      "dealerName": "CJ Smith",
+      "dealerSalesman": "Dave Smith",
+      "daysPerWeek": 6,
+      "shiftsPerDay": 3
+    },
+    "dates": {
+      "date": "",
+      "decisionDate": "",
+      "idealDeliveryDate": "",
+      "earliestDeliveryDate": "",
+      "latestDeliveryDate": ""
+    },
+    "lineApplication": "",
     "typeOfLine": "Conventional",
-    "match": "",
-    "reflInertia": "",
-    "regen": "",
-    "torque": {
-      "motorPeak": "",
-      "peak": "",
-      "frictional": "",
-      "loop": "",
-      "settle": "",
-      "rms": {
-        "motor": "",
-        "feedAngle1": "",
-        "feedAngle2": ""
+    "pullThrough": "",
+    "coil": {
+      "maxCoilWidth": 24,
+      "minCoilWidth": 4,
+      "maxCoilOD": 72,
+      "coilID": 21,
+      "maxCoilWeight": 10000,
+      "maxCoilHandlingCap": 0,
+      "slitEdge": "Yes",
+      "millEdge": "No",
+      "requireCoilCar": "No",
+      "runningOffBackplate": "No",
+      "requireRewinding": "No",
+      "changeTimeConcern": "No",
+      "timeChangeGoal": "0",
+      "loading": "Operator Side"
+    },
+    "material": {
+      "materialThickness": 0.25,
+      "coilWidth": 12,
+      "materialType": "Cold Rolled Steel",
+      "maxYieldStrength": 40000,
+      "maxTensileStrength": 0
+    },
+    "runningCosmeticMaterial": "No",
+    "brandOfFeed": "",
+    "press": {
+      "gapFramePress": "No",
+      "hydraulicPress": "No",
+      "obi": "No",
+      "servoPress": "No",
+      "shearDieApplication": "No",
+      "straightSidePress": "No",
+      "other": "No",
+      "tonnageOfPress": "0",
+      "strokeLength": "0",
+      "maxSPM": "60",
+      "bedWidth": "0",
+      "bedLength": "48",
+      "windowSize": "0",
+      "cycleTime": "0"
+    },
+    "dies": {
+      "transferDies": "No",
+      "progressiveDies": "Yes",
+      "blankingDies": "No"
+    },
+    "feed": {
+      "average": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
       },
-      "acceleration": ""
-    },
-    "tableData": {},
-    "pullThru": {
-      "isPullThru": "No",
-      "straightenerRolls": "7",
-      "pinchRolls": "",
-      "kConst": "",
-      "straightenerTorque": ""
-    },
-    "average": {
-      "length": "48",
-      "spm": "40",
-      "fpm": ""
-    },
-    "max": {
-      "length": "48",
-      "spm": "40",
-      "fpm": ""
-    },
-    "min": {
-      "length": "10",
-      "spm": "50",
-      "fpm": ""
-    },
-    "windowDegrees": "",
-    "direction": "Right to Left",
-    "controls": "Sigma 5 Feed",
-    "controlsLevel": "SyncMaster",
-    "passline": "55\"",
-    "lightGuageNonMarking": "No",
-    "nonMarking": "No"
-  },
-  "straightener": {
-    "model": "CPPS-306",
-    "rolls": {
-      "straighteningRolls": "7",
-      "numberOfRolls": "7",
-      "backupRolls": "",
-      "depth": {
-        "withoutMaterial": "",
-        "withMaterial": ""
+      "max": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
       },
-      "straightener": {
-        "diameter": "",
-        "requiredGearTorque": "",
-        "ratedTorque": "",
-        "check": ""
-      },
-      "pinch": {
-        "diameter": "",
-        "requiredGearTorque": "",
-        "ratedTorque": "",
-        "check": ""
-      },
-      "backbend": {
-        "hiddenValue": "10205.2064976266",
-        "rollers": {
-          "depthRequired": "",
-          "forceRequired": "",
-          "first": {
-            "height": "10",
-            "forceRequired": "20",
-            "numberOfYieldStrainAtSurface": "",
-            "up": {
-              "resultingRadius": "",
-              "curvatureDifference": "",
-              "bendingMoment": "",
-              "springback": "",
-              "percentOfThicknessYielded": "",
-              "radiusAfterSpringback": ""
-            },
-            "down": {
-              "resultingRadius": "",
-              "curvatureDifference": "",
-              "bendingMoment": "",
-              "springback": "",
-              "percentOfThicknessYielded": "",
-              "radiusAfterSpringback": ""
-            }
-          },
-          "middle": {
-            "height": "12",
-            "forceRequired": "22",
-            "numberOfYieldStrainAtSurface": "",
-            "up": {
-              "resultingRadius": "",
-              "curvatureDifference": "",
-              "bendingMoment": "",
-              "springback": "",
-              "percentOfThicknessYielded": "",
-              "radiusAfterSpringback": ""
-            },
-            "down": {
-              "resultingRadius": "",
-              "curvatureDifference": "",
-              "bendingMoment": "",
-              "springback": "",
-              "percentOfThicknessYielded": "",
-              "radiusAfterSpringback": ""
-            }
-          },
-          "last": {
-            "height": "11",
-            "forceRequired": "21",
-            "numberOfYieldStrainAtSurface": "",
-            "up": {
-              "resultingRadius": "",
-              "curvatureDifference": "",
-              "bendingMoment": "",
-              "springback": "",
-              "percentOfThicknessYielded": "",
-              "radiusAfterSpringback": ""
-            }
-          }
-        },
-        "yieldMet": "",
-        "radius": {
-          "comingOffCoil": "-60",
-          "offCoilAfterSpringback": "",
-          "requiredToYieldSkinOfFlatMaterial": ""
-        },
-        "bendingMomentToYieldSkin": "200"
+      "min": {
+        "length": 10,
+        "spm": 50,
+        "fpm": 0
       }
     },
-    "payoff": "TOP",
-    "width": "24",
-    "feedRate": "200",
-    "acceleration": "1",
-    "horsepower": "30",
-    "autoBrakeCompensation": "Yes",
-    "centerDistance": "",
-    "jackForceAvailable": "",
-    "modulus": "",
-    "actualCoilWeight": "",
-    "coilOD": "",
-    "check": "",
-    "torque": {
-      "straightener": "",
-      "acceleration": "",
-      "brake": ""
+    "voltageRequired": 480,
+    "equipmentSpaceLength": 0,
+    "equipmentSpaceWidth": 0,
+    "obstructions": "",
+    "mount": {
+      "feederMountedToPress": "",
+      "adequateSupport": "",
+      "customMounting": ""
     },
-    "required": {
-      "horsepower": "",
-      "horsepowerCheck": "",
-      "force": "",
-      "ratedForce": "",
-      "jackForceCheck": "",
-      "backupRollsCheck": ""
+    "passline": "55\"",
+    "loopPit": "",
+    "feedDirection": "Right to Left",
+    "requireGuarding": "",
+    "specialConsiderations": ""
+  },
+  "materialSpecs": {
+    "customer": "Lozier",
+    "date": "",
+    "material": {
+      "coilWidth": 12,
+      "materialThickness": 0.25,
+      "materialType": "Cold Rolled Steel",
+      "maxYieldStrength": 40000,
+      "maxTensileStrength": 0,
+      "minBendRadius": 0,
+      "minLoopLength": 0,
+      "calculatedCoilOD": 0
     },
-    "gear": {
-      "faceWidth": "3.5",
-      "contAngle": "20",
-      "straightenerRoll": {
-        "numberOfTeeth": "16",
-        "dp": "6"
+    "coil": {
+      "maxCoilWeight": 10000,
+      "coilID": 21,
+      "maxCoilOD": 72
+    },
+    "feed": {
+      "direction": "Right to Left",
+      "controlsLevel": "SyncMaster",
+      "typeOfLine": "Conventional",
+      "controls": "Sigma 5 Feed",
+      "passline": "55\"",
+      "lightGuageNonMarking": "No",
+      "nonMarking": "No"
+    },
+    "straightener": {
+      "rolls": {
+        "typeOfRoll": "7 Roll Str. Backbend"
+      }
+    },
+    "reel": {
+      "backplate": {
+        "type": "Standard Backplate"
       },
-      "pinchRoll": {
-        "numberOfTeeth": "32",
-        "dp": "6"
+      "style": "Single Ended"
+    }
+  },
+  "tddbhd": {
+    "customer": "Lozier",
+    "date": "",
+    "reel": {
+      "model": "CPR-150",
+      "width": 24,
+      "backplate": {
+        "diameter": 27
+      },
+      "dispReelMtr": "",
+      "airPressureAvailable": 80,
+      "requiredDecelRate": 1,
+      "coefficientOfFriction": 0.6,
+      "cylinderBore": 5.00,
+      "minMaterialWidth": 0,
+      "brakePadDiameter": 4.00,
+      "threadingDrive": {
+        "airClutch": "Yes",
+        "hydThreadingDrive": "22 cu in (D-12689)"
+      },
+      "holddown": {
+        "assy": "MD",
+        "cylinder": "Hydraulic",
+        "cylinderPressure": 750,
+        "force": {
+          "required": 0,
+          "available": 0
+        }
+      },
+      "dragBrake": {
+        "model": "Failsafe - Single Stage",
+        "quantity": 1,
+        "psiAirRequired": 0,
+        "holdingForce": 0
+      },
+      "torque": {
+        "atMandrel": 0,
+        "rewindRequired": 0,
+        "required": 0
+      },
+      "webTension": {
+        "psi": 0,
+        "lbs": 0
+      }
+    },
+    "material": {
+      "materialType": "Cold Rolled Steel",
+      "coilWidth": 12,
+      "materialThickness": 0.25,
+      "maxYieldStrength": 40000
+    },
+    "coil": {
+      "maxCoilWeight": 10000,
+      "coilWeight": 0,
+      "maxCoilOD": 72,
+      "coilOD": 0
+    }
+  },
+  "reelDrive": {
+    "customer": "Lozier",
+    "date": "",
+    "reel": {
+      "model": "CPR-150",
+      "horsepower": 5,
+      "size": 0,
+      "width": 24,
+      "bearing": {
+        "distance": 0,
+        "diameter": {
+          "front": 0,
+          "rear": 0
+        }
+      },
+      "mandrel": {
+        "diameter": 0,
+        "length": 0,
+        "maxRPM": 0,
+        "RpmFull": 0,
+        "weight": 0,
+        "inertia": 0,
+        "reflInertia": 0
+      },
+      "backplate": {
+        "diameter": 27,
+        "thickness": 0,
+        "weight": 0,
+        "inertia": 0,
+        "reflInertia": 0
+      },
+      "reducer": {
+        "ratio": 0,
+        "efficiency": 0,
+        "driving": 0,
+        "backdriving": 0,
+        "inertia": 0,
+        "reflInertia": 0
+      },
+      "chain": {
+        "ratio": 4,
+        "sprktOD": 31,
+        "sprktThickness": 1.3,
+        "weight": 0,
+        "inertia": 0,
+        "reflInertia": 0
+      },
+      "ratio": "",
+      "totalReflInertia": {
+        "empty": 0,
+        "full": 0
+      },
+      "motor": {
+        "inertia": 5,
+        "rpm": {
+          "base": 1750,
+          "full": 0
+        }
+      },
+      "friction": {
+        "bearing": {
+          "mandrel": {
+            "rear": 0,
+            "front": 0
+          },
+          "coil": {
+            "rear": 0,
+            "front": 0
+          },
+          "total": {
+            "empty": 0,
+            "full": 0
+          },
+          "refl": {
+            "empty": 0,
+            "full": 0
+          }
+        }
+      },
+      "speed": 0,
+      "motorization": {
+        "accelRate": 0
+      },
+      "accelerationTime": 0,
+      "torque": {
+        "empty": {
+          "torque": 0,
+          "horsepowerRequired": 0,
+          "horsepowerCheck": "",
+          "regen": "",
+          "regenCheck": ""
+        },
+        "full": {
+          "torque": 0,
+          "horsepowerRequired": 0,
+          "horsepowerCheck": "",
+          "regen": "",
+          "regenCheck": ""
+        }
+      },
+      "reelDriveOK": ""
+    },
+    "coil": {
+      "density": 0,
+      "maxCoilOD": 72,
+      "coilID": 21,
+      "maxCoilWeight": 10000,
+      "inertia": 0,
+      "reflInertia": 0
+    },
+    "material": {
+      "coilWidth": 12
+    }
+  },
+  "strUtility": {
+    "customer": "Lozier",
+    "date": "",
+    "straightener": {
+      "payoff": "TOP",
+      "model": "CPPS-306",
+      "width": 24,
+      "horsepower": 30,
+      "acceleration": 1,
+      "feedRate": 200,
+      "autoBrakeCompensation": "Yes",
+      "rollDiameter": 3,
+      "centerDistance": 0,
+      "jackForceAvailable": 0,
+      "modulus": 0,
+      "rolls": {
+        "numberOfRolls": 7,
+        "straighteningRolls": 7,
+        "depth": {
+          "withoutMaterial": 0
+        },
+        "straightener": {
+          "diameter": 0,
+          "requiredGearTorque": 0,
+          "ratedTorque": 0
+        },
+        "pinch": {
+          "diameter": 0,
+          "requiredGearTorque": 0,
+          "ratedTorque": 0
+        }
+      },
+      "gear": {
+        "faceWidth": 3.5,
+        "contAngle": 20,
+        "straightenerRoll": {
+          "numberOfTeeth": 16,
+          "dp": 6
+        },
+        "pinchRoll": {
+          "numberOfTeeth": 32,
+          "dp": 6
+        }
+      },
+      "actualCoilWeight": 0,
+      "coilOD": 0,
+      "required": {
+        "force": 0,
+        "ratedForce": 0,
+        "horsepower": 0,
+        "horsepowerCheck": "",
+        "jackForceCheck": "",
+        "backupRollsCheck": ""
+      },
+      "torque": {
+        "straightener": 0,
+        "acceleration": 0,
+        "brake": 0
+      }
+    },
+    "coil": {
+      "coilID": 21,
+      "weight": 10000
+    },
+    "material": {
+      "coilWidth": 12,
+      "materialThickness": 0.25,
+      "maxYieldStrength": 40000,
+      "materialType": "Cold Rolled Steel"
+    }
+  },
+  "rollStrBackbend": {
+    "customer": "Lozier",
+    "date": "",
+    "rollConfiguration": "7",
+    "material": {
+      "coilWidth": 12,
+      "materialThickness": 0.25,
+      "maxYieldStrength": 40000,
+      "materialType": "Cold Rolled Steel",
+      "density": 0
+    },
+    "straightener": {
+      "model": "CPPS-306",
+      "rollDiameter": 3,
+      "centerDistance": 0,
+      "modulus": 0,
+      "jackForceAvailable": 0,
+      "rolls": {
+        "numberOfRolls": 7,
+        "typeOfRoll": "7 Roll Str. Backbend",
+        "depth": {
+          "withoutMaterial": 0,
+          "withMaterial": 0
+        },
+        "backbend": {
+          "hiddenValue": 10205.2064976266,
+          "yieldMet": "",
+          "radius": {
+            "comingOffCoil": -60,
+            "offCoilAfterSpringback": 0,
+            "requiredToYieldSkinOfFlatMaterial": 0
+          },
+          "bendingMomentToYieldSkin": 200,
+          "rollers": {
+            "depthRequired": 0,
+            "forceRequired": 0,
+            "first": {
+              "height": 10,
+              "forceRequired": 20,
+              "numberOfYieldStrainsAtSurface": 0,
+              "up": {
+                "resultingRadius": 0,
+                "curvatureDifference": 0,
+                "bendingMoment": 0,
+                "bendingMomentRatio": 0,
+                "springback": 0,
+                "percentOfThicknessYielded": 0,
+                "radiusAfterSpringback": 0
+              },
+              "down": {
+                "resultingRadius": 0,
+                "curvatureDifference": 0,
+                "bendingMoment": 0,
+                "bendingMomentRatio": 0,
+                "springback": 0,
+                "percentOfThicknessYielded": 0,
+                "radiusAfterSpringback": 0
+              }
+            },
+            "middle": {
+              "height": 12,
+              "forceRequired": 22,
+              "numberOfYieldStrainsAtSurface": 0,
+              "up": {
+                "resultingRadius": 0,
+                "curvatureDifference": 0,
+                "bendingMoment": 0,
+                "bendingMomentRatio": 0,
+                "springback": 0,
+                "percentOfThicknessYielded": 0,
+                "radiusAfterSpringback": 0
+              },
+              "down": {
+                "resultingRadius": 0,
+                "curvatureDifference": 0,
+                "bendingMoment": 0,
+                "bendingMomentRatio": 0,
+                "springback": 0,
+                "percentOfThicknessYielded": 0,
+                "radiusAfterSpringback": 0
+              }
+            },
+            "last": {
+              "height": 11,
+              "forceRequired": 21,
+              "numberOfYieldStrainsAtSurface": 0,
+              "up": {
+                "resultingRadius": 0,
+                "curvatureDifference": 0,
+                "bendingMoment": 0,
+                "bendingMomentRatio": 0,
+                "springback": 0,
+                "percentOfThicknessYielded": 0,
+                "radiusAfterSpringback": 0
+              }
+            }
+          }
+        }
       }
     }
   },
-  "reel": {
-    "model": "CPR-150",
-    "horsepower": "5",
-    "width": "24",
-    "ratio": "",
-    "reelDriveOK": "",
-    "bearing": {
-      "diameter": {
-        "front": "",
-        "rear": ""
+  "feed": {
+    "customer": "Lozier",
+    "date": "",
+    "feedType": "sigma-5",
+    "feed": {
+      "application": "Press Feed",
+      "model": "Sigma 5 Feed",
+      "machineWidth": 18,
+      "loopPit": "",
+      "fullWidthRolls": "Yes",
+      "motor": "YASKAWA SGMGV-1ADDA61",
+      "amp": "YASKAWA SGDV-280DE1A000000300",
+      "maximumVelocity": 0,
+      "frictionInDie": 30,
+      "accelerationRate": 40,
+      "defaultAcceleration": 40,
+      "chartMinLength": 4,
+      "lengthIncrement": 4,
+      "feedAngle1": 180,
+      "feedAngle2": 240,
+      "ratio": 0,
+      "maxMotorRPM": 1500,
+      "motorInertia": 0.2154,
+      "maxVelocity": 0,
+      "settleTime": 0.035,
+      "regen": 0,
+      "reflInertia": 0,
+      "match": 0,
+      "materialInLoop": 283,
+      "torque": {
+        "motorPeak": 0,
+        "peak": 0,
+        "frictional": 0,
+        "loop": 0,
+        "settle": 0,
+        "rms": {
+          "motor": 0,
+          "feedAngle1": 0,
+          "feedAngle2": 0
+        },
+        "acceleration": 0
       },
-      "distance": ""
-    },
-    "totalReflInertia": {
-      "empty": "",
-      "full": ""
-    },
-    "mandrel": {
-      "diameter": "",
-      "length": "",
-      "maxRPM": "",
-      "RpmFull": "",
-      "weight": "",
-      "intertia": "",
-      "reflInertia": ""
-    },
-    "backplate": {
-      "diameter": "27",
-      "thickness": "",
-      "weight": "",
-      "inertia": "",
-      "reflInertia": ""
-    },
-    "reducer": {
-      "ratio": "",
-      "efficiency": "",
-      "driving": "",
-      "backdriving": "",
-      "inertia": "",
-      "reflInertia": ""
-    },
-    "chain": {
-      "ratio": "4",
-      "sprktOD": "31",
-      "sprktThickness": "1.3",
-      "weight": "",
-      "inertia": "",
-      "reflInertia": ""
-    },
-    "motor": {
-      "inertia": "5",
-      "rpm": {
-        "base": "1750",
-        "full": ""
-      }
-    },
-    "friction": {
-      "bearing": {
-        "mandrel": {
-          "rear": "",
-          "front": ""
-        },
-        "coil": {
-          "rear": "",
-          "front": ""
-        },
-        "total": {
-          "empty": "",
-          "full": ""
-        },
-        "refl": {
-          "empty": "",
-          "full": ""
-        }
-      }
-    },
-    "motorization": {
-      "isMotorized": "No",
-      "driveHorsepower": "",
-      "speed": "",
-      "accelRate": "",
-      "regenRequired": ""
-    },
-    "style": "Single Ended",
-    "threadingDrive": {
-      "airClutch": "Yes",
-      "hydThreadingDrive": "22 cu in (D-12689)"
-    },
-    "holddown": {
-      "assy": "MD",
-      "cylinder": "Hydraulic",
-      "cylinderPressure": "750",
-      "force": {
-        "required": "",
-        "available": ""
-      }
-    },
-    "dragBrake": {
-      "model": "Failsafe - Single Stage",
-      "quantity": "1",
-      "psiAirRequired": "",
-      "holdingForce": ""
-    },
-    "airPressureAvailable": "80",
-    "requiredDecelRate": "1",
-    "acceleration": "1",
-    "speed": "",
-    "accelerationTime": "",
-    "coilWeight": "15000",
-    "coilOD": "",
-    "dispReelMtr": "",
-    "webTension": {
-      "psi": "",
-      "lbs": ""
-    },
-    "brakePadDiameter": "4.00",
-    "cylinderBore": "5.00",
-    "coefficientOfFriction": "0.6",
-    "minMaterialWidth": "",
-    "torque": {
-      "atMandrel": "",
-      "rewindRequired": "",
-      "required": "",
-      "empty": {
-        "torque": "",
-        "horsepowerRequired": "",
-        "horsepowerCheck": "",
-        "regen": "",
-        "regenCheck": ""
+      "pullThru": {
+        "isPullThru": "No",
+        "straightenerRolls": 7,
+        "centerDistance": 0,
+        "yieldStrength": 0,
+        "pinchRolls": "",
+        "kConst": 0,
+        "straightenerTorque": 0
       },
-      "full": {
-        "torque": "",
-        "horsepowerRequired": "",
-        "horsepowerCheck": "",
-        "regen": "",
-        "regenCheck": ""
-      }
+      "average": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
+      },
+      "max": {
+        "length": 48,
+        "spm": 40,
+        "fpm": 0
+      },
+      "min": {
+        "length": 10,
+        "spm": 50,
+        "fpm": 0
+      },
+      "tableValues": []
+    },
+    "material": {
+      "coilWidth": 12,
+      "materialThickness": 0.25,
+      "materialDensity": 0
+    },
+    "press": {
+      "bedLength": "48"
     }
   },
   "shear": {
-    "model": "",
-    "strength": "",
-    "blade": {
-      "rakeOfBladePerFoot": "0.5",
-      "overlap": "0.06",
-      "bladeOpening": "0.75",
-      "percentOfPenetration": "0.38",
-      "angleOfBlade": "",
-      "initialCut": {
-        "length": "",
-        "area": ""
-      }
-    },
-    "cylinder": {
-      "boreSize": "9.00",
-      "rodDiameter": "6.00",
-      "stroke": "2.00",
-      "minStroke": {
-        "forBlade": "",
-        "requiredForOpening": ""
+    "customer": "Lozier",
+    "date": "",
+    "shearType": "single-rake",
+    "shear": {
+      "model": "",
+      "strength": 0,
+      "blade": {
+        "rakeOfBladePerFoot": 0.5,
+        "overlap": 0.06,
+        "bladeOpening": 0.75,
+        "percentOfPenetration": 0.38,
+        "angleOfBlade": 0,
+        "initialCut": {
+          "length": 0,
+          "area": 0
+        }
       },
-      "actualOpeningAboveMaxMaterial": ""
-    },
-    "hydraulic": {
-      "pressure": "80",
       "cylinder": {
-        "area": "",
-        "volume": ""
-      },
-      "fluidVelocity": ""
-    },
-    "time": {
-      "forDownwardStroke": "0.5",
-      "dwellTime": "1.00"
-    },
-    "conclusions": {
-      "force": {
-        "perCylinder": "",
-        "totalApplied": {
-          "lbs": "",
-          "tons": ""
+        "boreSize": 9.00,
+        "rodDiameter": 6.00,
+        "stroke": 2.00,
+        "minStroke": {
+          "forBlade": 0,
+          "requiredForOpening": 0
         },
-        "requiredToShear": ""
+        "actualOpeningAboveMaxMaterial": 0
       },
-      "safetyFactor": "",
-      "perMinute": {
-        "gallons": {
-          "instantaneous": "",
-          "averaged": ""
+      "hydraulic": {
+        "pressure": 80,
+        "cylinder": {
+          "area": 0,
+          "volume": 0
         },
-        "shearStrokes": "",
-        "parts": ""
+        "fluidVelocity": 0
+      },
+      "time": {
+        "forDownwardStroke": 0.5,
+        "dwellTime": 1.00
+      },
+      "conclusions": {
+        "force": {
+          "perCylinder": 0,
+          "totalApplied": {
+            "lbs": 0,
+            "tons": 0
+          },
+          "requiredToShear": 0
+        },
+        "safetyFactor": 0,
+        "perMinute": {
+          "gallons": {
+            "instantaneous": 0,
+            "averaged": 0
+          },
+          "shearStrokes": 0,
+          "parts": 0
+        },
+        "perHour": {
+          "parts": 0
+        }
       }
+    },
+    "material": {
+      "materialThickness": 0.25,
+      "coilWidth": 12,
+      "maxTensileStrength": 0,
+      "materialType": "Cold Rolled Steel",
+      "maxYieldStrength": 40000
     }
   },
-  "voltageRequired": "480",
-  "equipmentSpaceLength": "",
-  "equipmentSpaceWidth": "",
-  "obstructions": "",
-  "mount": {
-    "feederMountedToPress": "",
-    "adequateSupport": "",
-    "customMounting": ""
-  },
-  "loopPit": "",
-  "requireGuarding": "",
-  "specialConsiderations": ""
+  "summaryReport": {
+    "customer": "Lozier",
+    "date": "",
+    "reel": {
+      "model": "CPR-150",
+      "width": 24,
+      "backplate": {
+        "diameter": 27
+      },
+      "motorization": {
+        "isMotorized": "No",
+        "driveHorsepower": 0,
+        "speed": 0,
+        "accelRate": 0,
+        "regenRequired": ""
+      },
+      "style": "Single Ended",
+      "threadingDrive": {
+        "airClutch": "Yes",
+        "hydThreadingDrive": "22 cu in (D-12689)"
+      },
+      "holddown": {
+        "assy": "MD",
+        "cylinder": "Hydraulic"
+      },
+      "dragBrake": {
+        "model": "Failsafe - Single Stage",
+        "quantity": 1
+      }
+    },
+    "straightener": {
+      "model": "CPPS-306",
+      "payoff": "TOP",
+      "width": 24,
+      "feedRate": 200,
+      "acceleration": 1,
+      "horsepower": 30,
+      "rolls": {
+        "straighteningRolls": 7,
+        "backupRolls": ""
+      }
+    },
+    "feed": {
+      "application": "Press Feed",
+      "model": "Sigma 5 Feed",
+      "machineWidth": 18,
+      "fullWidthRolls": "Yes",
+      "feedAngle1": 180,
+      "feedAngle2": 240,
+      "maximumVelocity": 0,
+      "acceleration": 1,
+      "ratio": "",
+      "direction": "Right to Left",
+      "controlsLevel": "SyncMaster",
+      "typeOfLine": "Conventional",
+      "passline": "55\"",
+      "lightGuageNonMarking": "No",
+      "nonMarking": "No",
+      "pullThru": {
+        "straightenerRolls": 7,
+        "pinchRolls": ""
+      }
+    },
+    "press": {
+      "bedLength": "48"
+    },
+    "loopPit": ""
+  }
 }

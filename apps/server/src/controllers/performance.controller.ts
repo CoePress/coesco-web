@@ -107,6 +107,8 @@ export class PerformanceController {
       if (pyResult.status !== 0)
         throw new Error(pyResult.stderr || "Script error");
 
+      console.log("Python script output:", pyResult.stdout);
+
       const parsed = JSON.parse(pyResult.stdout);
       const updatedResults = updateResultsWithParsedData(data, parsed);
 

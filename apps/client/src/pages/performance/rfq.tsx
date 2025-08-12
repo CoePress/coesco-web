@@ -1,19 +1,22 @@
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { debounce } from "lodash";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
-import Checkbox from "@/components/common/checkbox";
 import Textarea from "@/components/common/textarea";
 import Text from "@/components/common/text";
 import Card from "@/components/common/card";
 import {
   TYPE_OF_LINE_OPTIONS,
   MATERIAL_TYPE_OPTIONS,
+  PRESS_APPLICATION_OPTIONS,
   YES_NO_OPTIONS,
   FEED_DIRECTION_OPTIONS,
+  EDGE_TYPE_OPTIONS,
+  LOADING_OPTIONS,
 } from "@/utils/select-options";
 import { PerformanceData } from "@/contexts/performance.context";
-import { useRef, useEffect, useState } from "react";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
-import { useParams } from "react-router-dom"
 import { useGetEntity } from "@/hooks/_base/use-get-entity";
 
 export interface RFQProps {
@@ -21,145 +24,1139 @@ export interface RFQProps {
   isEditing: boolean;
 }
 
+// Validation schema
+const validateField = (name: string, value: any): string | null => {
+  if (name === "referenceNumber" && !value?.trim()) {
+    return "Reference number is required";
+  }
+  if (name === "rfq.customer" && !value?.trim()) {
+    return "Customer name is required";
+  }
+  if (name.includes("email") && value && !/\S+@\S+\.\S+/.test(value)) {
+    return "Invalid email format";
+  }
+  if (name.includes("phone") && value && !/^\+?[\d\s\-\(\)]+$/.test(value)) {
+    return "Invalid phone format";
+  }
+  if (name.includes("zip") && value && !/^\d{5}(-\d{4})?$/.test(value)) {
+    return "Invalid ZIP code format";
+  }
+  return null;
+};
+
+// Helper to safely update nested object properties
+const setNestedValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  let current = obj;
+  
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  
+  current[keys[keys.length - 1]] = value;
+};
+
 const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   const endpoint = `/performance/sheets`;
   const { loading, error } = useGetEntity(endpoint);
   const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
   const { id: performanceSheetId } = useParams();
   
-  // Local state for immediate UI updates
+  // Local state management
   const [localData, setLocalData] = useState<PerformanceData>(data);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Refs for cleanup and debouncing
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingChangesRef = useRef<Record<string, any>>({});
 
+  // Sync with prop data on initial load only
   useEffect(() => {
-    // Only sync on initial load when localData is empty
-    if (!localData.referenceNumber && data.referenceNumber) {
-      console.log('Initial data load, syncing all data');
+    if (data && data.referenceNumber && !localData.referenceNumber) {
       setLocalData(data);
     }
   }, [data, localData.referenceNumber]);
 
-  const handleChange = async (e: any) => {
-    if (!isEditing) return;
-    const { name, value, type, checked } = e.target;
-    const actualValue = type === "checkbox" ? checked : value;
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async (changes: Record<string, any>) => {
+      if (!performanceSheetId || !isEditing) return;
 
-    console.log(`Field changed: ${name}, Value: ${actualValue}`);
-
-    // Update local state immediately for responsive UI
-    setLocalData(prevData => {
-      const updatedData = JSON.parse(JSON.stringify(prevData));
-
-      if (name.includes(".")) {
-        // Handle nested field updates
-        const parts = name.split(".");
-        let current = updatedData;
-        
-        // Navigate to the parent object
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) {
-            current[parts[i]] = {};
-          }
-          current = current[parts[i]];
-        }
-        
-        // Set the final value
-        current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      } else {
-        // Handle top-level fields
-        updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      }
-
-      return updatedData;
-    });
-
-    // Debounce backend updates to avoid excessive API calls
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-
-    updateTimeoutRef.current = setTimeout(async () => {
       try {
-        if (!performanceSheetId) {
-          throw new Error("Performance Sheet ID is missing.");
-        }
-
-        // Create updated data for backend
+        // Create a deep copy and apply all pending changes
         const updatedData = JSON.parse(JSON.stringify(localData));
         
-        // Apply the current change to the data being sent
-        if (name.includes(".")) {
-          const parts = name.split(".");
-          let current = updatedData;
-          
-          for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) {
-              current[parts[i]] = {};
-            }
-            current = current[parts[i]];
-          }
-          
-          current[parts[parts.length - 1]] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-        } else {
-          updatedData[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-        }
+        Object.entries(changes).forEach(([path, value]) => {
+          setNestedValue(updatedData, path, value);
+        });
 
-        console.log("Updating with complete data structure:", updatedData);
-
-        // Send to backend (this will also trigger calculations)
+        console.log("Saving RFQ changes:", changes);
+        
         const response = await updateEntity(performanceSheetId, { data: updatedData });
         
-        console.log("Backend response:", response);
-        
-        // Handle calculated values directly from the backend response
-        if (response && response.data && response.data.feed) {
-          console.log("Updating calculated FPM values from backend response");
-          
+        // Handle calculated values from backend
+        if (response?.data) {
           setLocalData(prevData => ({
             ...prevData,
-            feed: {
-              ...prevData.feed,
-              average: {
-                ...prevData.feed?.average,
-                fpm: response.data.feed.average?.fpm?.toString() || prevData.feed?.average?.fpm
-              },
-              max: {
-                ...prevData.feed?.max,
-                fpm: response.data.feed.max?.fpm?.toString() || prevData.feed?.max?.fpm
-              },
-              min: {
-                ...prevData.feed?.min,
-                fpm: response.data.feed.min?.fpm?.toString() || prevData.feed?.min?.fpm
-              }
-            }
+            ...response.data
           }));
-          
-          console.log("Updated FPM values:", {
-            average: response.data.feed.average?.fpm,
-            max: response.data.feed.max?.fpm,
-            min: response.data.feed.min?.fpm
-          });
         }
 
+        setLastSaved(new Date());
+        setIsDirty(false);
+        pendingChangesRef.current = {};
+        
       } catch (error) {
-        console.error('Error updating field:', error);
-        setLocalData(data);
+        console.error('Error saving RFQ:', error);
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          _general: 'Failed to save changes. Please try again.' 
+        }));
       }
-    }, 500);
-  };
+    }, 1000),
+    [performanceSheetId, updateEntity, isEditing, localData]
+  );
 
-  // Cleanup timeout on unmount
+  // Optimized change handler
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    if (!isEditing) return;
+
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    const actualValue = type === "checkbox" ? checked : value;
+
+    // Clear field error
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Validate field
+    const error = validateField(name, actualValue);
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [name]: error }));
+      return;
+    }
+
+    // Update local state immediately
+    setLocalData(prevData => {
+      const newData = { ...prevData };
+      const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+      
+      if (name.includes(".")) {
+        setNestedValue(newData, name, processedValue);
+      } else {
+        (newData as any)[name] = processedValue;
+      }
+      
+      return newData;
+    });
+
+    // Track pending changes
+    pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+    setIsDirty(true);
+
+    // Debounce save
+    debouncedSave(pendingChangesRef.current);
+  }, [isEditing, fieldErrors, debouncedSave]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      debouncedSave.cancel();
     };
-  }, []);
+  }, [debouncedSave]);
+
+  // Basic Information Section
+  const basicInfoSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Basic Information
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Input
+            label="Reference Number *"
+            name="referenceNumber"
+            value={localData.referenceNumber || ""}
+            onChange={handleChange}
+            error={fieldErrors.referenceNumber}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Date"
+            type="date"
+            name="rfq.dates.date"
+            value={localData.rfq?.dates?.date || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Input
+            label="Company Name *"
+            name="rfq.customer"
+            value={localData.rfq?.customer || ""}
+            onChange={handleChange}
+            error={fieldErrors["rfq.customer"]}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="State/Province"
+            name="rfq.customerInfo.state"
+            value={localData.rfq?.customerInfo?.state || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Street Address"
+            name="rfq.customerInfo.streetAddress"
+            value={localData.rfq?.customerInfo?.streetAddress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="ZIP/Postal Code"
+            name="rfq.customerInfo.zip"
+            value={localData.rfq?.customerInfo?.zip?.toString() || ""}
+            onChange={handleChange}
+            error={fieldErrors["rfq.customerInfo.zip"]}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="City"
+            name="rfq.customerInfo.city"
+            value={localData.rfq?.customerInfo?.city || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Country"
+            name="rfq.customerInfo.country"
+            value={localData.rfq?.customerInfo?.country || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Input
+            label="Contact Name"
+            name="rfq.customerInfo.contactName"
+            value={localData.rfq?.customerInfo?.contactName || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Position"
+            name="rfq.customerInfo.position"
+            value={localData.rfq?.customerInfo?.position || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Phone"
+            name="rfq.customerInfo.phoneNumber"
+            value={localData.rfq?.customerInfo?.phoneNumber || ""}
+            onChange={handleChange}
+            error={fieldErrors["rfq.customerInfo.phoneNumber"]}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Email"
+            name="rfq.customerInfo.email"
+            value={localData.rfq?.customerInfo?.email || ""}
+            onChange={handleChange}
+            error={fieldErrors["rfq.customerInfo.email"]}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Dealer Name"
+            name="rfq.customerInfo.dealerName"
+            value={localData.rfq?.customerInfo?.dealerName || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Dealer Salesman"
+            name="rfq.customerInfo.dealerSalesman"
+            value={localData.rfq?.customerInfo?.dealerSalesman || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Input
+            label="Days per week running"
+            name="rfq.customerInfo.daysPerWeek"
+            value={localData.rfq?.customerInfo?.daysPerWeek?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Shifts per day"
+            name="rfq.customerInfo.shiftsPerDay"
+            value={localData.rfq?.customerInfo?.shiftsPerDay?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div>
+          <Input
+            label="Decision Date"
+            type="date"
+            name="rfq.dates.decisionDate"
+            value={localData.rfq?.dates?.decisionDate || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Ideal Delivery Date"
+            type="date"
+            name="rfq.dates.idealDeliveryDate"
+            value={localData.rfq?.dates?.idealDeliveryDate || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Earliest Delivery Date"
+            type="date"
+            name="rfq.dates.earliestDeliveryDate"
+            value={localData.rfq?.dates?.earliestDeliveryDate || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Latest Delivery Date"
+            type="date"
+            name="rfq.dates.latestDeliveryDate"
+            value={localData.rfq?.dates?.latestDeliveryDate || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, fieldErrors, handleChange, isEditing]);
+
+  // Line Configuration Section
+  const lineConfigSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Line Configuration
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Select
+            label="Line Application"
+            name="rfq.lineApplication"
+            value={localData.rfq?.lineApplication || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={PRESS_APPLICATION_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Type of Line"
+            name="rfq.typeOfLine"
+            value={localData.rfq?.typeOfLine || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={TYPE_OF_LINE_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Pull Through"
+            name="rfq.pullThrough"
+            value={localData.rfq?.pullThrough || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Input
+            label="Brand of Feed"
+            name="rfq.brandOfFeed"
+            value={localData.rfq?.brandOfFeed || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Select
+            label="Running Cosmetic Material"
+            name="rfq.runningCosmeticMaterial"
+            value={localData.rfq?.runningCosmeticMaterial || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Coil Specifications Section
+  const coilSpecsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Coil Specifications
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Input
+            label="Max Coil Width (in)"
+            name="rfq.coil.maxCoilWidth"
+            value={localData.rfq?.coil?.maxCoilWidth?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Min Coil Width (in)"
+            name="rfq.coil.minCoilWidth"
+            value={localData.rfq?.coil?.minCoilWidth?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max Coil OD (in)"
+            name="rfq.coil.maxCoilOD"
+            value={localData.rfq?.coil?.maxCoilOD?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Coil ID (in)"
+            name="rfq.coil.coilID"
+            value={localData.rfq?.coil?.coilID?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max Coil Weight (lbs)"
+            name="rfq.coil.maxCoilWeight"
+            value={localData.rfq?.coil?.maxCoilWeight?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max Coil Handling Cap (lbs)"
+            name="rfq.coil.maxCoilHandlingCap"
+            value={localData.rfq?.coil?.maxCoilHandlingCap?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div>
+          <Select
+            label="Slit Edge"
+            name="rfq.coil.slitEdge"
+            value={localData.rfq?.coil?.slitEdge || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={EDGE_TYPE_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Mill Edge"
+            name="rfq.coil.millEdge"
+            value={localData.rfq?.coil?.millEdge || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={EDGE_TYPE_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Require Coil Car"
+            name="rfq.coil.requireCoilCar"
+            value={localData.rfq?.coil?.requireCoilCar || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Running Off Backplate"
+            name="rfq.coil.runningOffBackplate"
+            value={localData.rfq?.coil?.runningOffBackplate || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <Select
+            label="Require Rewinding"
+            name="rfq.coil.requireRewinding"
+            value={localData.rfq?.coil?.requireRewinding || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Change Time Concern"
+            name="rfq.coil.changeTimeConcern"
+            value={localData.rfq?.coil?.changeTimeConcern || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Input
+            label="Time Change Goal (min)"
+            name="rfq.coil.timeChangeGoal"
+            value={localData.rfq?.coil?.timeChangeGoal || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Select
+            label="Loading"
+            name="rfq.coil.loading"
+            value={localData.rfq?.coil?.loading || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={LOADING_OPTIONS}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Material Specifications Section
+  const materialSpecsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Material Specifications
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <Input
+            label="Material Thickness (in)"
+            name="rfq.material.materialThickness"
+            value={localData.rfq?.material?.materialThickness?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Coil Width (in)"
+            name="rfq.material.coilWidth"
+            value={localData.rfq?.material?.coilWidth?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Select
+            label="Material Type"
+            name="rfq.material.materialType"
+            value={localData.rfq?.material?.materialType || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={MATERIAL_TYPE_OPTIONS}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max Yield Strength (PSI)"
+            name="rfq.material.maxYieldStrength"
+            value={localData.rfq?.material?.maxYieldStrength?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max Tensile Strength (PSI)"
+            name="rfq.material.maxTensileStrength"
+            value={localData.rfq?.material?.maxTensileStrength?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Press Information Section
+  const pressInfoSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Press Information
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Select
+            label="Gap Frame Press"
+            name="rfq.press.gapFramePress"
+            value={localData.rfq?.press?.gapFramePress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Hydraulic Press"
+            name="rfq.press.hydraulicPress"
+            value={localData.rfq?.press?.hydraulicPress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="OBI"
+            name="rfq.press.obi"
+            value={localData.rfq?.press?.obi || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Servo Press"
+            name="rfq.press.servoPress"
+            value={localData.rfq?.press?.servoPress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Shear Die Application"
+            name="rfq.press.shearDieApplication"
+            value={localData.rfq?.press?.shearDieApplication || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Straight Side Press"
+            name="rfq.press.straightSidePress"
+            value={localData.rfq?.press?.straightSidePress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Input
+            label="Tonnage of Press"
+            name="rfq.press.tonnageOfPress"
+            value={localData.rfq?.press?.tonnageOfPress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Stroke Length (in)"
+            name="rfq.press.strokeLength"
+            value={localData.rfq?.press?.strokeLength || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Max SPM"
+            name="rfq.press.maxSPM"
+            value={localData.rfq?.press?.maxSPM || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Bed Width (in)"
+            name="rfq.press.bedWidth"
+            value={localData.rfq?.press?.bedWidth || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Bed Length (in)"
+            name="rfq.press.bedLength"
+            value={localData.rfq?.press?.bedLength || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Window Size (in)"
+            name="rfq.press.windowSize"
+            value={localData.rfq?.press?.windowSize || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Input
+            label="Cycle Time (sec)"
+            name="rfq.press.cycleTime"
+            value={localData.rfq?.press?.cycleTime || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Other Press Type"
+            name="rfq.press.other"
+            value={localData.rfq?.press?.other || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Dies Information Section
+  const diesInfoSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Dies Information
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Select
+            label="Transfer Dies"
+            name="rfq.dies.transferDies"
+            value={localData.rfq?.dies?.transferDies || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Progressive Dies"
+            name="rfq.dies.progressiveDies"
+            value={localData.rfq?.dies?.progressiveDies || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Blanking Dies"
+            name="rfq.dies.blankingDies"
+            value={localData.rfq?.dies?.blankingDies || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Feed Requirements Section
+  const feedRequirementsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Feed Requirements
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Text as="h4" className="mb-2 text-sm font-medium">Average</Text>
+          <div className="space-y-3">
+            <Input
+              label="Length (in)"
+              name="rfq.feed.average.length"
+              value={localData.rfq?.feed?.average?.length?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="SPM"
+              name="rfq.feed.average.spm"
+              value={localData.rfq?.feed?.average?.spm?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="FPM (Calculated)"
+              name="rfq.feed.average.fpm"
+              value={localData.rfq?.feed?.average?.fpm?.toString() || ""}
+              disabled={true}
+            />
+          </div>
+        </div>
+        <div>
+          <Text as="h4" className="mb-2 text-sm font-medium">Maximum</Text>
+          <div className="space-y-3">
+            <Input
+              label="Length (in)"
+              name="rfq.feed.max.length"
+              value={localData.rfq?.feed?.max?.length?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="SPM"
+              name="rfq.feed.max.spm"
+              value={localData.rfq?.feed?.max?.spm?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="FPM (Calculated)"
+              name="rfq.feed.max.fpm"
+              value={localData.rfq?.feed?.max?.fpm?.toString() || ""}
+              disabled={true}
+            />
+          </div>
+        </div>
+        <div>
+          <Text as="h4" className="mb-2 text-sm font-medium">Minimum</Text>
+          <div className="space-y-3">
+            <Input
+              label="Length (in)"
+              name="rfq.feed.min.length"
+              value={localData.rfq?.feed?.min?.length?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="SPM"
+              name="rfq.feed.min.spm"
+              value={localData.rfq?.feed?.min?.spm?.toString() || ""}
+              onChange={handleChange}
+              type="number"
+              disabled={!isEditing}
+            />
+            <Input
+              label="FPM (Calculated)"
+              name="rfq.feed.min.fpm"
+              value={localData.rfq?.feed?.min?.fpm?.toString() || ""}
+              disabled={true}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Input
+            label="Voltage Required"
+            name="rfq.voltageRequired"
+            value={localData.rfq?.voltageRequired?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Space & Mounting Section
+  const spaceMountingSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Space & Mounting
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Input
+            label="Equipment Space Length (in)"
+            name="rfq.equipmentSpaceLength"
+            value={localData.rfq?.equipmentSpaceLength?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Input
+            label="Equipment Space Width (in)"
+            name="rfq.equipmentSpaceWidth"
+            value={localData.rfq?.equipmentSpaceWidth?.toString() || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Select
+            label="Feeder Mounted to Press"
+            name="rfq.mount.feederMountedToPress"
+            value={localData.rfq?.mount?.feederMountedToPress || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Adequate Support"
+            name="rfq.mount.adequateSupport"
+            value={localData.rfq?.mount?.adequateSupport || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Custom Mounting"
+            name="rfq.mount.customMounting"
+            value={localData.rfq?.mount?.customMounting || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Input
+            label="Passline Height (in)"
+            name="rfq.passline"
+            value={localData.rfq?.passline || ""}
+            onChange={handleChange}
+            type="number"
+            disabled={!isEditing}
+          />
+        </div>
+        <div>
+          <Select
+            label="Loop Pit"
+            name="rfq.loopPit"
+            value={localData.rfq?.loopPit || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Select
+            label="Feed Direction"
+            name="rfq.feedDirection"
+            value={localData.rfq?.feedDirection || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={FEED_DIRECTION_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <Textarea
+          label="Obstructions"
+          name="rfq.obstructions"
+          value={localData.rfq?.obstructions || ""}
+          onChange={handleChange}
+          rows={3}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Special Requirements Section
+  const specialRequirementsSection = useMemo(() => (
+    <Card className="mb-4 p-4">
+      <Text as="h3" className="mb-4 text-lg font-medium">
+        Special Requirements
+      </Text>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Select
+            label="Require Guarding"
+            name="rfq.requireGuarding"
+            value={localData.rfq?.requireGuarding || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            options={YES_NO_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Textarea
+          label="Special Considerations"
+          name="rfq.specialConsiderations"
+          value={localData.rfq?.specialConsiderations || ""}
+          onChange={handleChange}
+          rows={4}
+          disabled={!isEditing}
+        />
+      </div>
+    </Card>
+  ), [localData, handleChange, isEditing]);
+
+  // Status indicator component
+  const StatusIndicator = () => {
+    if (updateLoading) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-blue-600">
+          <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent"></div>
+          Saving...
+        </div>
+      );
+    }
+    
+    if (isDirty) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-amber-600">
+          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+          Unsaved changes
+        </div>
+      );
+    }
+    
+    if (lastSaved) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          Saved {lastSaved.toLocaleTimeString()}
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Show loading indicator when calculations are running */}
+      {/* Status bar */}
+      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+        <StatusIndicator />
+        {fieldErrors._general && (
+          <div className="text-sm text-red-600">{fieldErrors._general}</div>
+        )}
+      </div>
+
+      {/* Loading and error states */}
       {(loading || updateLoading) && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -171,7 +1168,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Show error if calculation fails */}
       {(error || updateError) && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
           <span className="text-red-800">
@@ -180,642 +1176,16 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Basic Information
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Input
-            label="Reference Number"
-            name="referenceNumber"
-            value={localData.referenceNumber || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Date"
-            type="date"
-            name="dates.date"
-            value={localData.dates?.date || ""}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Input
-            label="Company Name"
-            name="customer"
-            value={localData.customer || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="State/Province"
-            name="customerInfo.state"
-            value={localData.customerInfo?.state || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Street Address"
-            name="customerInfo.streetAddress"
-            value={localData.customerInfo?.streetAddress || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="ZIP/Postal Code"
-            name="customerInfo.zip"
-            value={localData.customerInfo?.zip || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="City"
-            name="customerInfo.city"
-            value={localData.customerInfo?.city || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Country"
-            name="customerInfo.country"
-            value={localData.customerInfo?.country || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Contact Name"
-            name="customerInfo.contactName"
-            value={localData.customerInfo?.contactName || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Position"
-            name="customerInfo.position"
-            value={localData.customerInfo?.position || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Phone"
-            name="customerInfo.phoneNumber"
-            value={localData.customerInfo?.phoneNumber || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Email"
-            name="customerInfo.email"
-            value={localData.customerInfo?.email || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Dealer Name"
-            name="customerInfo.dealerName"
-            value={localData.customerInfo?.dealerName || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Dealer Salesman"
-            name="customerInfo.dealerSalesman"
-            value={localData.customerInfo?.dealerSalesman || ""}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="How many days/week is the company running?"
-            name="customerInfo.daysPerWeek"
-            value={localData.customerInfo?.daysPerWeek || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="How many shifts/day is the company running?"
-            name="customerInfo.shiftsPerDay"
-            value={localData.customerInfo?.shiftsPerDay || ""}
-            onChange={handleChange}
-          />
-          <Select
-            label="Line Application"
-            name="feed.application"
-            value={localData.feed?.application || ""}
-            onChange={handleChange}
-            options={[
-              { value: "pressFeed", label: "Press Feed" },
-              { value: "cutToLength", label: "Cut To Length" },
-              { value: "standalone", label: "Standalone" },
-            ]}
-          />
-          <Select
-            label="Type of Line"
-            name="feed.typeOfLine"
-            value={localData.feed?.typeOfLine || ""}
-            onChange={handleChange}
-            options={TYPE_OF_LINE_OPTIONS}
-          />
-          <Select
-            label="Pull Through"
-            name="feed.pullThru.isPullThru"
-            value={localData.feed?.pullThru?.isPullThru || ""}
-            onChange={handleChange}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Coil Specifications
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Input
-            label="Max Coil Width (in)"
-            name="coil.maxCoilWidth"
-            value={localData.coil?.maxCoilWidth || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Min Coil Width (in)"
-            name="coil.minCoilWidth"
-            value={localData.coil?.minCoilWidth || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Max Coil O.D. (in)"
-            name="coil.maxCoilOD"
-            value={localData.coil?.maxCoilOD || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Coil I.D. (in)"
-            name="coil.coilID"
-            value={localData.coil?.coilID || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Max Coil Weight (lbs)"
-            name="coil.maxCoilWeight"
-            value={localData.coil?.maxCoilWeight || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Max Coil Handling Capacity (lbs)"
-            type="number"
-            name="coil.maxCoilHandlingCap"
-            value={localData.coil?.maxCoilHandlingCap || ""}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-6">
-            <Checkbox
-              label="Slit Edge"
-              name="coil.slitEdge"
-              checked={localData.coil?.slitEdge === "true"}
-              onChange={handleChange}
-            />
-            <Checkbox
-              label="Mill Edge"
-              name="coil.millEdge"
-              checked={localData.coil?.millEdge === "true"}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label="Will a coil car be required?"
-            name="coil.requireCoilCar"
-            value={localData.coil?.requireCoilCar || ""}
-            onChange={handleChange}
-            options={YES_NO_OPTIONS}
-          />
-          <Select
-            label="Will you be running off the Backplate?"
-            name="coil.runningOffBackplate"
-            value={localData.coil?.runningOffBackplate || ""}
-            onChange={handleChange}
-            options={YES_NO_OPTIONS}
-          />
-          <Select
-            label="Are you running partial coils, i.e. will you require rewinding?"
-            name="coil.requireRewinding"
-            value={localData.coil?.requireRewinding || ""}
-            onChange={handleChange}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Material Specifications
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-          <Input
-            label="Highest Yield/most challenging Mat Spec (thick)"
-            name="material.materialThickness"
-            value={localData.material?.materialThickness || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="at Width (in)"
-            name="material.coilWidth"
-            value={localData.material?.coilWidth || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Select
-            label="Material Type"
-            name="material.materialType"
-            value={localData.material?.materialType || ""}
-            onChange={handleChange}
-            options={MATERIAL_TYPE_OPTIONS}
-          />
-          <Input
-            label="Max Yield Strength (PSI)"
-            name="material.maxYieldStrength"
-            value={localData.material?.maxYieldStrength || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Max Tensile Strength (PSI)"
-            name="material.maxTensileStrength"
-            value={localData.material?.maxTensileStrength || ""}
-            onChange={handleChange}
-            type="number"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Select
-            label="Does the surface finish matter? Are they running a cosmetic material?"
-            name="runningCosmeticMaterial"
-            value={localData.runningCosmeticMaterial || ""}
-            onChange={handleChange}
-            options={[
-              { value: "No", label: "No" },
-              { value: "Yes", label: "Yes" },
-            ]}
-          />
-          <Input
-            label="Current brand of feed equipment"
-            name="brandOfFeed"
-            value={localData.brandOfFeed || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Type of Press
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Checkbox
-            label="Gap Frame Press"
-            name="press.gapFramePress"
-            checked={localData.press?.gapFramePress === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Hydraulic Press"
-            name="press.hydraulicPress"
-            checked={localData.press?.hydraulicPress === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="OBI"
-            name="press.obi"
-            checked={localData.press?.obi === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Servo Press"
-            name="press.servoPress"
-            checked={localData.press?.servoPress === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Shear Die Application"
-            name="press.shearDieApplication"
-            checked={localData.press?.shearDieApplication === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Straight Side Press"
-            name="press.straightSidePress"
-            checked={localData.press?.straightSidePress === "true"}
-            onChange={handleChange}
-          />
-          <Checkbox
-            label="Other"
-            name="press.other"
-            checked={localData.press?.other === "true"}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Input
-            label="Tonnage of Press"
-            name="press.tonnageOfPress"
-            value={localData.press?.tonnageOfPress || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Press Bed Area: Width (in)"
-            name="press.bedWidth"
-            value={localData.press?.bedWidth || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Length (in)"
-            name="press.bedLength"
-            value={localData.press?.bedLength || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Press Stroke Length (in)"
-            name="press.strokeLength"
-            value={localData.press?.strokeLength || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Window Opening Size of Press (in)"
-            name="press.windowSize"
-            value={localData.press?.windowSize || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Press Max SPM"
-            name="press.maxSPM"
-            value={localData.press?.maxSPM || ""}
-            onChange={handleChange}
-            type="number"
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Type of Dies
-        </Text>
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-6">
-            <Checkbox
-              label="Transfer Dies"
-              name="dies.transferDies"
-              checked={localData.dies?.transferDies === "true"}
-              onChange={handleChange}
-            />
-            <Checkbox
-              label="Progressive Dies"
-              name="dies.progressiveDies"
-              checked={localData.dies?.progressiveDies === "true"}
-              onChange={handleChange}
-              required
-            />
-            <Checkbox
-              label="Blanking Dies"
-              name="dies.blankingDies"
-              checked={localData.dies?.blankingDies === "true"}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Input
-            label="Average feed length"
-            name="feed.average.length"
-            value={localData.feed?.average?.length || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="at (SPM)"
-            name="feed.average.spm"
-            value={localData.feed?.average?.spm || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Feed Speed (FPM)"
-            name="feed.average.fpm"
-            value={localData.feed?.average?.fpm || ""}
-            readOnly
-            disabled
-            className="bg-gray-50"
-          />
-          <Input
-            label="Maximum feed length"
-            name="feed.max.length"
-            value={localData.feed?.max?.length || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="at (SPM)"
-            name="feed.max.spm"
-            value={localData.feed?.max?.spm || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Feed Speed (FPM)"
-            name="feed.max.fpm"
-            value={localData.feed?.max?.fpm || ""}
-            readOnly
-            disabled
-            className="bg-gray-50"
-          />
-          <Input
-            label="Minimum feed length"
-            name="feed.min.length"
-            value={localData.feed?.min?.length || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="at (SPM)"
-            name="feed.min.spm"
-            value={localData.feed?.min?.spm || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Feed Speed (FPM)"
-            name="feed.min.fpm"
-            value={localData.feed?.min?.fpm || ""}
-            readOnly
-            disabled
-            className="bg-gray-50"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Voltage Required (VAC)"
-            name="voltageRequired"
-            value={localData.voltageRequired || ""}
-            onChange={handleChange}
-            type="number"
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Space & Mounting
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Input
-            label="Space allotment Length (ft)"
-            name="equipmentSpaceLength"
-            value={localData.equipmentSpaceLength || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Width (ft)"
-            name="equipmentSpaceWidth"
-            value={localData.equipmentSpaceWidth || ""}
-            onChange={handleChange}
-            type="number"
-          />
-        </div>
-
-        <div className="space-y-4 mb-6">
-          <Input
-            label="Are there any walls or columns obstructing the equipment's location?"
-            name="obstructions"
-            value={localData.obstructions || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Can the feeder be mounted to the press?"
-            name="mount.feederMountedToPress"
-            value={localData.mount?.feederMountedToPress || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="If 'YES', we must verify there is adequate structural support to mount to. Is there adequate support?"
-            name="mount.adequateSupport"
-            value={localData.mount?.adequateSupport || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="If 'No', it will require a cabinet. Will you need custom mounting plate(s)?"
-            name="mount.customMounting"
-            value={localData.mount?.customMounting || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Passline Height (in):"
-            name="feed.passline"
-            value={localData.feed?.passline || ""}
-            onChange={handleChange}
-            type="number"
-          />
-          <Input
-            label="Will there be a loop pit?"
-            name="loopPit"
-            value={localData.loopPit || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Is coil change time a concern?"
-            name="coil.changeTimeConcern"
-            value={localData.coil?.changeTimeConcern || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="If so, what is your coil change time goal? (min)"
-            name="coil.timeChangeGoal"
-            value={localData.coil?.timeChangeGoal || ""}
-            onChange={handleChange}
-            type="number"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Select
-            label="Feed Direction"
-            name="feed.direction"
-            value={localData.feed?.direction || ""}
-            onChange={handleChange}
-            options={FEED_DIRECTION_OPTIONS}
-          />
-          <Input
-            label="Coil Loading"
-            name="coil.loading"
-            value={localData.coil?.loading || ""}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Will your line require guarding or special safety requirements?"
-            name="requireGuarding"
-            value={localData.requireGuarding || ""}
-            onChange={handleChange}
-          />
-        </div>
-      </Card>
-
-      <Card className="mb-0 p-4">
-        <Text as="h3" className="mb-4 text-lg font-medium">
-          Timeline & Delivery
-        </Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Input
-            label="When will decision be made on project?"
-            name="dates.decisionDate"
-            type="date"
-            value={localData.dates?.decisionDate || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Ideal Delivery Date"
-            name="dates.idealDeliveryDate"
-            type="date"
-            value={localData.dates?.idealDeliveryDate || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Earliest date customer can accept delivery"
-            name="dates.earliestDeliveryDate"
-            type="date"
-            value={localData.dates?.earliestDeliveryDate || ""}
-            onChange={handleChange}
-          />
-          <Input
-            label="Latest date customer can accept delivery"
-            name="dates.latestDeliveryDate"
-            type="date"
-            value={localData.dates?.latestDeliveryDate || ""}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          <Textarea
-            label="Special Considerations"
-            name="specialConsiderations"
-            value={localData.specialConsiderations || ""}
-            onChange={handleChange}
-            rows={3}
-          />
-        </div>
-      </Card>
+      {/* Form sections */}
+      {basicInfoSection}
+      {lineConfigSection}
+      {coilSpecsSection}
+      {materialSpecsSection}
+      {pressInfoSection}
+      {diesInfoSection}
+      {feedRequirementsSection}
+      {spaceMountingSection}
+      {specialRequirementsSection}
     </div>
   );
 };
