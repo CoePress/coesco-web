@@ -415,7 +415,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, shearType, handleChange, handleShearTypeChange, isEditing]);
+  ), [localData, shearType, handleChange, handleShearTypeChange, isEditing]);
 
   // Material specifications section
   const materialSpecsSection = useMemo(() => (
@@ -457,7 +457,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </Text>
       </div>
     </div>
-  ), [localData.common?.material, calculatedValues.shearStrength, handleChange, isEditing]);
+  ), [localData, calculatedValues, handleChange, isEditing]);
 
   // Blade specifications section
   const bladeSpecsSection = useMemo(() => (
@@ -508,7 +508,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </div>
-  ), [localData.shear?.shear?.blade, calculatedValues, handleChange, isEditing]);
+  ), [localData, calculatedValues, handleChange, isEditing]);
 
   // Cylinder specifications section
   const cylinderSpecsSection = useMemo(() => (
@@ -550,7 +550,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </div>
-  ), [localData.shear?.shear?.cylinder, calculatedValues, handleChange, isEditing]);
+  ), [localData, calculatedValues, handleChange, isEditing]);
 
   // Hydraulic pressure section
   const hydraulicSection = useMemo(() => (
@@ -572,7 +572,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </div>
-  ), [localData.shear?.shear?.hydraulic?.pressure, calculatedValues, handleChange, isEditing]);
+  ), [localData, calculatedValues, handleChange, isEditing]);
 
   // Time section
   const timeSection = useMemo(() => (
@@ -597,7 +597,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         />
       </div>
     </div>
-  ), [localData.shear?.shear?.time, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // User defined variables section
   const userDefinedSection = useMemo(() => (

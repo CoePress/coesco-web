@@ -268,7 +268,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       hp: getHpStatus(),
       fpm: getFpmStatus()
     };
-  }, [localData.strUtility?.straightener]);
+  }, [localData]);
 
   // Header Information Section
   const headerSection = useMemo(() => (
@@ -279,14 +279,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Customer"
-          name="customer"
+          name="common.customer"
           value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Input
           label="Date"
-          name="date"
+          name="rfq.dates.date"
           type="date"
           value={localData.rfq?.dates?.date || ""}
           onChange={handleChange}
@@ -294,7 +294,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Straightener Specifications Section
   const straightenerSpecsSection = useMemo(() => (
@@ -305,7 +305,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Select
           label="Payoff"
-          name="straightener.payoff"
+          name="strUtility.straightener.payoff"
           value={localData.strUtility?.straightener?.payoff || ""}
           onChange={handleChange}
           options={PAYOFF_OPTIONS}
@@ -313,7 +313,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Str. Model"
-          name="straightener.model"
+          name="common.equipment.straightener.model"
           value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleChange}
           options={STR_MODEL_OPTIONS}
@@ -321,7 +321,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Str. Width (in.)"
-          name="straightener.width"
+          name="common.equipment.straightener.width"
           value={String(localData.common?.equipment?.straightener?.width ?? "")}
           onChange={handleChange}
           options={STR_WIDTH_OPTIONS}
@@ -329,7 +329,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="No. of Str. Rolls"
-          name="straightener.rolls.numberOfRolls"
+          name="common.equipment.straightener.rolls.numberOfRolls"
           type="number"
           value={localData.common?.equipment?.straightener?.numberOfRolls?.toString() || ""}
           onChange={handleChange}
@@ -337,7 +337,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.strUtility?.straightener, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Coil Information Section
   const coilInfoSection = useMemo(() => (
@@ -348,34 +348,34 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Input
           label="Coil Wt. Capacity (lbs)"
-          name="coil.maxCoilWeight"
+          name="strUtility.coil.maxCoilWeight"
           type="number"
           value={localData.strUtility?.coil?.weight?.toString() || ""}
           onChange={handleChange}
-          error={fieldErrors["coil.maxCoilWeight"]}
+          error={fieldErrors["strUtility.coil.maxCoilWeight"]}
           disabled={!isEditing}
         />
         <Input
           label="Coil ID. (in)"
-          name="coil.coilID"
+          name="common.coil.coilID"
           type="number"
           value={localData.common?.coil?.coilID?.toString() || ""}
           onChange={handleChange}
-          error={fieldErrors["coil.coilID"]}
+          error={fieldErrors["common.coil.coilID"]}
           disabled={!isEditing}
         />
         <Input
           label="Coil Width (in)"
-          name="material.coilWidth"
+          name="common.material.coilWidth"
           type="number"
           value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
-          error={fieldErrors["material.coilWidth"]}
+          error={fieldErrors["common.material.coilWidth"]}
           disabled={!isEditing}
         />
         <Input
           label="Thickness (in)"
-          name="material.materialThickness"
+          name="common.material.materialThickness"
           type="number"
           value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
@@ -384,7 +384,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Yield Strength (psi)"
-          name="material.maxYieldStrength"
+          name="common.material.maxYieldStrength"
           type="number"
           value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
@@ -393,7 +393,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Material"
-          name="material.materialType"
+          name="common.material.materialType"
           value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
@@ -401,7 +401,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.strUtility?.coil, localData.common?.material, fieldErrors, handleChange, isEditing]);
+  ), [localData, fieldErrors, handleChange, isEditing]);
 
   // Operating Parameters Section
   const operatingParamsSection = useMemo(() => (
@@ -412,7 +412,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Select
           label="Horse Power (HP)"
-          name="straightener.horsepower"
+          name="strUtility.straightener.horsepower"
           value={String(localData.strUtility?.straightener?.horsepower ?? "")}
           onChange={handleChange}
           options={STR_HORSEPOWER_OPTIONS}
@@ -420,7 +420,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Acceleration (ft/sec²)"
-          name="straightener.acceleration"
+          name="strUtility.straightener.acceleration"
           type="number"
           value={localData.strUtility?.straightener?.acceleration?.toString() || ""}
           onChange={handleChange}
@@ -428,7 +428,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Feed Rate (ft/min)"
-          name="straightener.feedRate"
+          name="strUtility.straightener.feedRate"
           value={String(localData.strUtility?.straightener?.feedRate ?? "")}
           onChange={handleChange}
           options={STR_FEED_RATE_OPTIONS}
@@ -436,7 +436,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Auto. Brake Compen."
-          name="straightener.autoBrakeCompensation"
+          name="strUtility.straightener.autoBrakeCompensation"
           value={localData.strUtility?.straightener?.autoBrakeCompensation || ""}
           onChange={handleChange}
           options={YES_NO_OPTIONS}
@@ -444,7 +444,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.strUtility?.straightener, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Physical Parameters Section
   const physicalParamsSection = useMemo(() => (
@@ -455,25 +455,25 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Input
           label="Str. Roll Dia. (in)"
-          name="straightener.rolls.straightener.diameter"
+          name="strUtility.straightener.rolls.straightener.diameter"
           type="number"
           value={localData.strUtility?.straightener?.rolls?.straightener?.diameter?.toString() || ""}
           onChange={handleChange}
-          error={fieldErrors["straightener.rolls.straightener.diameter"]}
+          error={fieldErrors["strUtility.straightener.rolls.straightener.diameter"]}
           disabled={!isEditing}
         />
         <Input
           label="Pinch Roll Dia. (in)"
-          name="straightener.rolls.pinch.diameter"
+          name="strUtility.straightener.rolls.pinch.diameter"
           type="number"
           value={localData.strUtility?.straightener?.rolls?.pinch?.diameter?.toString() || ""}
           onChange={handleChange}
-          error={fieldErrors["straightener.rolls.pinch.diameter"]}
+          error={fieldErrors["strUtility.straightener.rolls.pinch.diameter"]}
           disabled={!isEditing}
         />
         <Input
           label="Center Dist. (in)"
-          name="straightener.centerDistance"
+          name="strUtility.straightener.centerDistance"
           type="number"
           value={localData.strUtility?.straightener?.centerDistance?.toString() || ""}
           onChange={handleChange}
@@ -481,7 +481,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Jack Force Avail. (lbs)"
-          name="straightener.jackForceAvailable"
+          name="strUtility.straightener.jackForceAvailable"
           type="number"
           value={localData.strUtility?.straightener?.jackForceAvailable?.toString() || ""}
           onChange={handleChange}
@@ -489,7 +489,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Max. Roll Depth (in)"
-          name="straightener.rolls.depth.withoutMaterial"
+          name="strUtility.straightener.rolls.depth.withoutMaterial"
           type="number"
           value={localData.strUtility?.straightener?.rolls?.depth?.withoutMaterial?.toString() || ""}
           onChange={handleChange}
@@ -497,7 +497,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Modulus (psi)"
-          name="straightener.modulus"
+          name="strUtility.straightener.modulus"
           type="number"
           value={localData.strUtility?.straightener?.modulus?.toString() || ""}
           onChange={handleChange}
@@ -505,7 +505,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.strUtility?.straightener, fieldErrors, handleChange, isEditing]);
+  ), [localData, fieldErrors, handleChange, isEditing]);
 
   // Gears Data Section
   const gearsDataSection = useMemo(() => (
@@ -521,7 +521,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="# teeth"
-              name="straightener.gear.pinchRoll.numberOfTeeth"
+              name="strUtility.straightener.gear.pinchRoll.numberOfTeeth"
               type="number"
               value={localData.strUtility?.straightener?.gear?.pinchRoll?.numberOfTeeth?.toString() || ""}
               onChange={handleChange}
@@ -529,7 +529,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
             />
             <Input
               label="DP"
-              name="straightener.gear.pinchRoll.dp"
+              name="strUtility.straightener.gear.pinchRoll.dp"
               type="number"
               value={localData.strUtility?.straightener?.gear?.pinchRoll?.dp?.toString() || ""}
               onChange={handleChange}
@@ -544,7 +544,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="# teeth"
-              name="straightener.gear.straightenerRoll.numberOfTeeth"
+              name="strUtility.straightener.gear.straightenerRoll.numberOfTeeth"
               type="number"
               value={localData.strUtility?.straightener?.gear?.straightenerRoll?.numberOfTeeth?.toString() || ""}
               onChange={handleChange}
@@ -552,7 +552,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
             />
             <Input
               label="DP"
-              name="straightener.gear.straightenerRoll.dp"
+              name="strUtility.straightener.gear.straightenerRoll.dp"
               type="number"
               value={localData.strUtility?.straightener?.gear?.straightenerRoll?.dp?.toString() || ""}
               onChange={handleChange}
@@ -564,7 +564,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <Input
           label="Face Width (in)"
-          name="straightener.gear.faceWidth"
+          name="strUtility.straightener.gear.faceWidth"
           type="number"
           value={localData.strUtility?.straightener?.gear?.faceWidth?.toString() || ""}
           onChange={handleChange}
@@ -572,7 +572,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Cont. Angle (degree)"
-          name="straightener.gear.contAngle"
+          name="strUtility.straightener.gear.contAngle"
           type="number"
           value={localData.strUtility?.straightener?.gear?.contAngle?.toString() || ""}
           onChange={handleChange}
@@ -580,7 +580,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.strUtility?.straightener?.gear, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Calculations Results Section
   const calculationsSection = useMemo(() => (
@@ -594,14 +594,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Required Force (lbs)"
-              name="straightener.required.force"
+              name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Rated Force (lbs)"
-              name="straightener.required.ratedForce"
+              name="strUtility.straightener.required.ratedForce"
               value={localData.strUtility?.straightener?.required?.ratedForce?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -610,14 +610,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Pinch Roll Req. Torque"
-              name="straightener.rolls.pinch.requiredGearTorque"
+              name="strUtility.straightener.rolls.pinch.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.requiredGearTorque?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Pinch Roll Rated Torque"
-              name="straightener.rolls.pinch.ratedTorque"
+              name="strUtility.straightener.rolls.pinch.ratedTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.ratedTorque?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -626,14 +626,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Str. Roll Req. Torque"
-              name="straightener.rolls.straightener.requiredGearTorque"
+              name="strUtility.straightener.rolls.straightener.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.requiredGearTorque?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Str. Roll Rated Torque"
-              name="straightener.rolls.straightener.ratedTorque"
+              name="strUtility.straightener.rolls.straightener.ratedTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.ratedTorque?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -642,7 +642,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-1 gap-4">
             <Input
               label="Horse Power Required (HP)"
-              name="straightener.required.horsepower"
+              name="strUtility.straightener.required.horsepower"
               value={localData.strUtility?.straightener?.required?.horsepower?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -660,14 +660,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Actual Coil Wt. (lbs)"
-              name="straightener.actualCoilWeight"
+              name="strUtility.straightener.actualCoilWeight"
               value={localData.strUtility?.straightener?.actualCoilWeight?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Coil OD. (in)"
-              name="straightener.coilOD"
+              name="strUtility.straightener.coilOD"
               value={localData.strUtility?.straightener?.coilOD?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -676,21 +676,21 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           <div className="grid grid-cols-3 gap-4">
             <Input
               label="Str. Torque (in lbs)"
-              name="straightener.torque.straightener"
+              name="strUtility.straightener.torque.straightener"
               value={localData.strUtility?.straightener?.torque?.straightener?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Accel. Torque (in lbs)"
-              name="straightener.torque.acceleration"
+              name="strUtility.straightener.torque.acceleration"
               value={localData.strUtility?.straightener?.torque?.acceleration?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />
             <Input
               label="Brake Torque (in lbs)"
-              name="straightener.torque.brake"
+              name="strUtility.straightener.torque.brake"
               value={localData.strUtility?.straightener?.torque?.brake?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
@@ -699,7 +699,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         </div>
       </Card>
     </div>
-  ), [localData.strUtility?.straightener]);
+  ), [localData]);
 
   // Status Indicators Section
   const statusSection = useMemo(() => (

@@ -6,6 +6,28 @@ import { useParams } from "react-router-dom";
 import { mapCalculationResultsToPerformanceData } from "@/utils/universal-mapping";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 
+function deepMerge<T>(target: T, source: Partial<T>): T {
+  const result = { ...target };
+  
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      const sourceValue = source[key];
+      const targetValue = result[key];
+      
+      if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
+          targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+        // Recursively merge nested objects
+        result[key] = deepMerge(targetValue, sourceValue);
+      } else if (sourceValue !== undefined) {
+        // Override with source value if it's not undefined
+        result[key] = sourceValue as T[typeof key];
+      }
+    }
+  }
+  
+  return result;
+}
+
 // Common interfaces that are shared across pages
 export interface RollDetail {
   height?: number;
@@ -57,6 +79,7 @@ export interface CommonData {
     materialType?: string;
     maxYieldStrength?: number;
     maxTensileStrength?: number;
+    reqMaxFPM?: number;
     materialDensity?: number;
     modulus?: number;
   };
@@ -91,7 +114,6 @@ export interface CommonData {
       passline?: string;
       lightGuageNonMarking?: string;
       nonMarking?: string;
-      maximumVelocity?: number;
     };
   };
   feedRates?: {
@@ -315,7 +337,11 @@ export interface ReelDriveData {
     };
     speed?: number;
     motorization?: {
+      isMotorized?: string;
+      driveHorsepower?: number;
+      speed?: number;
       accelRate?: number;
+      regenRequired?: string;
     };
     accelerationTime?: number; // Calculated
     torque?: {
@@ -469,6 +495,7 @@ export interface FeedData {
     fullWidthRolls?: string;
     motor?: string;
     amp?: string;
+    strMaxSpeed?: number;
     frictionInDie?: number;
     accelerationRate?: number;
     defaultAcceleration?: number;
@@ -686,6 +713,7 @@ const initialPerformanceData: PerformanceData = {
       materialType: "",
       maxYieldStrength: 0,
       maxTensileStrength: 0,
+      reqMaxFPM: 0,
       materialDensity: 0,
       modulus: 0,
     },
@@ -701,7 +729,7 @@ const initialPerformanceData: PerformanceData = {
       reel: {
         model: "",
         width: 0,
-        horsepower:0,
+        horsepower: 0,
         backplate: {
           diameter: 0,
         },
@@ -720,7 +748,6 @@ const initialPerformanceData: PerformanceData = {
         passline: "",
         lightGuageNonMarking: "",
         nonMarking: "",
-        maximumVelocity: 0,
       },
     },
     feedRates: {
@@ -936,7 +963,11 @@ const initialPerformanceData: PerformanceData = {
       },
       speed: 0,
       motorization: {
+        isMotorized: "",
+        driveHorsepower: 0,
+        speed: 0,
         accelRate: 0,
+        regenRequired: "",
       },
       accelerationTime: 0,
       torque: {
@@ -1128,6 +1159,7 @@ const initialPerformanceData: PerformanceData = {
       fullWidthRolls: "",
       motor: "",
       amp: "",
+      strMaxSpeed: 0,
       frictionInDie: 0,
       accelerationRate: 0,
       defaultAcceleration: 0,
@@ -1313,16 +1345,42 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   }, [performanceData]);
   
   // Use the performance-specific hook
-  const { loading, error } = useUpdateEntity(endpoint);
+  const { updateEntity, loading, error } = useUpdateEntity(endpoint);
 
-  const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = false) => {
-    // Always update local state first for immediate UI feedback
-    const updatedData = { ...performanceDataRef.current, ...updates };
-    setPerformanceData(updatedData);
-    
-    console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
-    return updatedData;
-  }, [performanceSheetId]);
+  const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = true) => {
+    try {
+      // Always update local state first for immediate UI feedback
+      const updatedData = deepMerge(performanceDataRef.current, updates);
+      setPerformanceData(updatedData);
+      
+      console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
+      
+      if (shouldSave && performanceSheetId) {
+        // Send updates to backend for calculations
+        const response = await updateEntity(performanceSheetId, updates);
+        
+        if (response) {
+          console.log("Backend response:", response);
+          
+          // Backend response should already be in PerformanceData format
+          // Just deep merge it with our current data
+          const finalData = deepMerge(updatedData, response);
+          setPerformanceData(finalData);
+          
+          console.log("Final merged data:", finalData);
+          
+          return finalData;
+        }
+      }
+      
+      return updatedData;
+    } catch (error) {
+      console.error('Error updating performance data:', error);
+      // Revert the optimistic update on error
+      setPerformanceData(performanceDataRef.current);
+      throw error;
+    }
+  }, [performanceSheetId, updateEntity]);
 
   return (
     <PerformanceSheetContext.Provider

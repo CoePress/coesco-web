@@ -249,14 +249,14 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Customer"
-          name="customer"
+          name="common.customer"
           value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Input
           label="Date"
-          name="date"
+          name="rfq.dates.date"
           type="date"
           value={localData.rfq?.dates?.date || ""}
           onChange={handleChange}
@@ -264,7 +264,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Model & HP section
   const modelHpSection = useMemo(() => (
@@ -275,7 +275,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
           label="Reel Model"
-          name="reel.model"
+          name="common.equipment.reel.model"
           value={localData.common?.equipment?.reel?.model !== undefined && localData.common?.equipment?.reel?.model !== null ? String(localData.common?.equipment?.reel.model) : ""}
           onChange={handleChange}
           options={REEL_MODEL_OPTIONS.map((opt) => ({
@@ -286,7 +286,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Select
           label="HP"
-          name="reel.horsepower"
+          name="common.equipment.reel.horsepower"
           value={localData.common?.equipment?.reel?.horsepower !== undefined && localData.common?.equipment?.reel?.horsepower !== null ? String(localData.common?.equipment?.reel.horsepower) : ""}
           onChange={handleChange}
           options={REEL_HORSEPOWER_OPTIONS.map((opt) => ({
@@ -297,7 +297,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.equipment?.reel?.model, localData.common?.equipment?.reel?.horsepower, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Reel section
   const reelSection = useMemo(() => (
@@ -308,7 +308,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="SIZE"
-          name="reel.size"
+          name="reelDrive.reel.size"
           value={localData.reelDrive?.reel?.size?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -316,7 +316,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="MAX WIDTH"
-          name="reel.width"
+          name="common.equipment.reel.width"
           value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -324,7 +324,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="BRG. DIST."
-          name="reel.bearing.distance"
+          name="reelDrive.reel.bearing.distance"
           value={localData.reelDrive?.reel?.bearing?.distance?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -332,7 +332,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="F. BRG. DIA."
-          name="reel.bearing.diameter.front"
+          name="reelDrive.reel.bearing.diameter.front"
           value={localData.reelDrive?.reel?.bearing?.diameter?.front?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -340,7 +340,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="R. BRG. DIA."
-          name="reel.bearing.diameter.rear"
+          name="reelDrive.reel.bearing.diameter.rear"
           value={localData.reelDrive?.reel?.bearing?.diameter?.rear?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -348,7 +348,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Mandrel section
   const mandrelSection = useMemo(() => (
@@ -359,7 +359,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="DIAMETER"
-          name="reel.mandrel.diameter"
+          name="reelDrive.reel.mandrel.diameter"
           value={localData.reelDrive?.reel?.mandrel?.diameter?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -367,7 +367,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="LENGTH"
-          name="reel.mandrel.length"
+          name="reelDrive.reel.mandrel.length"
           value={localData.reelDrive?.reel?.mandrel?.length?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -375,7 +375,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="MAX RPM"
-          name="reel.mandrel.maxRPM"
+          name="reelDrive.reel.mandrel.maxRPM"
           value={localData.reelDrive?.reel?.mandrel?.maxRPM?.toString() || ""}
           type="number"
           disabled={true}
@@ -383,7 +383,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="RPM FULL"
-          name="reel.mandrel.RpmFull"
+          name="reelDrive.reel.mandrel.RpmFull"
           value={localData.reelDrive?.reel?.mandrel?.RpmFull?.toString() || ""}
           type="number"
           disabled={true}
@@ -391,7 +391,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="WEIGHT"
-          name="reel.mandrel.weight"
+          name="reelDrive.reel.mandrel.weight"
           value={localData.reelDrive?.reel?.mandrel?.weight?.toString() || ""}
           type="number"
           disabled={true}
@@ -399,7 +399,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="reel.mandrel.inertia"
+          name="reelDrive.reel.mandrel.inertia"
           value={localData.reelDrive?.reel?.mandrel?.inertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -407,7 +407,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. INERT."
-          name="reel.mandrel.reflInertia"
+          name="reelDrive.reel.mandrel.reflInertia"
           value={localData.reelDrive?.reel?.mandrel?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -415,7 +415,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.mandrel, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Backplate section
   const backplateSection = useMemo(() => (
@@ -426,7 +426,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="DIAMETER"
-          name="reel.backplate.diameter"
+          name="common.equipment.reel.backplate.diameter"
           value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -434,7 +434,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="THICKNESS"
-          name="reel.backplate.thickness"
+          name="reelDrive.reel.backplate.thickness"
           value={localData.reelDrive?.reel?.backplate?.thickness?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -442,7 +442,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="WEIGHT"
-          name="reel.backplate.weight"
+          name="reelDrive.reel.backplate.weight"
           value={localData.reelDrive?.reel?.backplate?.weight?.toString() || ""}
           type="number"
           disabled={true}
@@ -450,7 +450,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="reel.backplate.inertia"
+          name="reelDrive.reel.backplate.inertia"
           value={localData.reelDrive?.reel?.backplate?.inertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -458,7 +458,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. INERT."
-          name="reel.backplate.reflInertia"
+          name="reelDrive.reel.backplate.reflInertia"
           value={localData.reelDrive?.reel?.backplate?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -466,7 +466,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.backplate, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Coil section
   const coilSection = useMemo(() => (
@@ -477,7 +477,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="DENSITY"
-          name="coil.density"
+          name="reelDrive.coil.density"
           value={localData.reelDrive?.coil?.density?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -485,7 +485,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="O.D."
-          name="coil.maxCoilOD"
+          name="common.coil.maxCoilOD"
           value={localData.common?.coil?.maxCoilOD?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -493,7 +493,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="I.D."
-          name="coil.coilID"
+          name="common.coil.coilID"
           value={localData.common?.coil?.coilID?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -501,7 +501,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="WIDTH"
-          name="material.coilWidth"
+          name="common.material.coilWidth"
           value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -509,7 +509,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="WEIGHT"
-          name="coil.maxCoilWeight"
+          name="common.coil.maxCoilWeight"
           value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -517,7 +517,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="coil.inertia"
+          name="reelDrive.coil.inertia"
           value={localData.reelDrive?.coil?.inertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -525,7 +525,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. INERT."
-          name="coil.reflInertia"
+          name="reelDrive.coil.reflInertia"
           value={localData.reelDrive?.coil?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -533,7 +533,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.coil, localData.common?.material?.coilWidth, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Reducer section
   const reducerSection = useMemo(() => (
@@ -544,7 +544,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="RATIO"
-          name="reel.reducer.ratio"
+          name="reelDrive.reel.reducer.ratio"
           value={localData.reelDrive?.reel?.reducer?.ratio?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -552,7 +552,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="EFFICIENCY"
-          name="reel.reducer.efficiency"
+          name="reelDrive.reel.reducer.efficiency"
           value={localData.reelDrive?.reel?.reducer?.efficiency?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -560,7 +560,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="DRIVING"
-          name="reel.reducer.driving"
+          name="reelDrive.reel.reducer.driving"
           value={localData.reelDrive?.reel?.reducer?.driving?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -568,7 +568,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="BACKDRIVING"
-          name="reel.reducer.backdriving"
+          name="reelDrive.reel.reducer.backdriving"
           value={localData.reelDrive?.reel?.reducer?.backdriving?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -576,7 +576,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="reel.reducer.inertia"
+          name="reelDrive.reel.reducer.inertia"
           value={localData.reelDrive?.reel?.reducer?.inertia?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -584,7 +584,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. INERT."
-          name="reel.reducer.reflInertia"
+          name="reelDrive.reel.reducer.reflInertia"
           value={localData.reelDrive?.reel?.reducer?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -592,7 +592,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.reducer, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Chain section
   const chainSection = useMemo(() => (
@@ -603,7 +603,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="RATIO"
-          name="reel.chain.ratio"
+          name="reelDrive.reel.chain.ratio"
           value={localData.reelDrive?.reel?.chain?.ratio?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -611,7 +611,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="SPRK. O.D."
-          name="reel.chain.sprktOD"
+          name="reelDrive.reel.chain.sprktOD"
           value={localData.reelDrive?.reel?.chain?.sprktOD?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -619,7 +619,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="SPRK. THK."
-          name="reel.chain.sprktThickness"
+          name="reelDrive.reel.chain.sprktThickness"
           value={localData.reelDrive?.reel?.chain?.sprktThickness?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -627,7 +627,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="WEIGHT"
-          name="reel.chain.weight"
+          name="reelDrive.reel.chain.weight"
           value={localData.reelDrive?.reel?.chain?.weight?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -635,7 +635,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="reel.chain.inertia"
+          name="reelDrive.reel.chain.inertia"
           value={localData.reelDrive?.reel?.chain?.inertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -643,7 +643,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. INERT."
-          name="reel.chain.reflInertia"
+          name="reelDrive.reel.chain.reflInertia"
           value={localData.reelDrive?.reel?.chain?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
@@ -651,7 +651,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.chain, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Total section
   const totalSection = useMemo(() => (
@@ -662,7 +662,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="RATIO"
-          name="reel.ratio"
+          name="reelDrive.reel.ratio"
           value={localData.reelDrive?.reel?.ratio?.toString() || ""}
           type="number"
           disabled={true}
@@ -670,7 +670,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="TOTAL REFL. INERTIA EMPTY"
-          name="reel.totalReflInertia.empty"
+          name="reelDrive.reel.totalReflInertia.empty"
           value={localData.reelDrive?.reel?.totalReflInertia?.empty?.toString() || ""}
           type="number"
           disabled={true}
@@ -678,7 +678,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="TOTAL REFL. INERTIA FULL"
-          name="reel.totalReflInertia.full"
+          name="reelDrive.reel.totalReflInertia.full"
           value={localData.reelDrive?.reel?.totalReflInertia?.full?.toString() || ""}
           type="number"
           disabled={true}
@@ -686,7 +686,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.ratio, localData.reelDrive?.reel?.totalReflInertia]);
+  ), [localData]);
 
   // Motor section
   const motorSection = useMemo(() => (
@@ -697,7 +697,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="HP"
-          name="reel.horsepower"
+          name="common.equipment.reel.horsepower"
           value={localData.common?.equipment?.reel?.horsepower?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -705,7 +705,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="INERTIA"
-          name="reel.motor.inertia"
+          name="reelDrive.reel.motor.inertia"
           value={localData.reelDrive?.reel?.motor?.inertia?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -713,7 +713,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="BASE RPM"
-          name="reel.motor.rpm.base"
+          name="reelDrive.reel.motor.rpm.base"
           value={localData.reelDrive?.reel?.motor?.rpm?.base?.toString() || ""}
           type="number"
           disabled={true}
@@ -721,7 +721,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="RPM FULL"
-          name="reel.motor.rpm.full"
+          name="reelDrive.reel.motor.rpm.full"
           value={localData.reelDrive?.reel?.motor?.rpm?.full?.toString() || ""}
           type="number"
           disabled={true}
@@ -729,7 +729,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.equipment?.reel?.horsepower, localData.reelDrive?.reel?.motor, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Friction section
   const frictionSection = useMemo(() => (
@@ -740,7 +740,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="R. BRG. MAND."
-          name="reel.friction.bearing.mandrel.rear"
+          name="reelDrive.reel.friction.bearing.mandrel.rear"
           value={localData.reelDrive?.reel?.friction?.bearing?.mandrel?.rear?.toString() || ""}
           type="number"
           disabled={true}
@@ -748,7 +748,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="F. BRG. MAND."
-          name="reel.friction.bearing.mandrel.front"
+          name="reelDrive.reel.friction.bearing.mandrel.front"
           value={localData.reelDrive?.reel?.friction?.bearing?.mandrel?.front?.toString() || ""}
           type="number"
           disabled={true}
@@ -756,7 +756,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="F. BRG. COIL"
-          name="reel.friction.bearing.coil.front"
+          name="reelDrive.reel.friction.bearing.coil.front"
           value={localData.reelDrive?.reel?.friction?.bearing?.coil?.front?.toString() || ""}
           type="number"
           disabled={true}
@@ -764,7 +764,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="TOTAL EMPTY"
-          name="reel.friction.bearing.total.empty"
+          name="reelDrive.reel.friction.bearing.total.empty"
           value={localData.reelDrive?.reel?.friction?.bearing?.total?.empty?.toString() || ""}
           type="number"
           disabled={true}
@@ -772,7 +772,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="TOTAL FULL"
-          name="reel.friction.bearing.total.full"
+          name="reelDrive.reel.friction.bearing.total.full"
           value={localData.reelDrive?.reel?.friction?.bearing?.total?.full?.toString() || ""}
           type="number"
           disabled={true}
@@ -780,7 +780,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. EMPTY"
-          name="reel.friction.bearing.refl.empty"
+          name="reelDrive.reel.friction.bearing.refl.empty"
           value={localData.reelDrive?.reel?.friction?.bearing?.refl?.empty?.toString() || ""}
           type="number"
           disabled={true}
@@ -788,7 +788,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="REFL. FULL"
-          name="reel.friction.bearing.refl.full"
+          name="reelDrive.reel.friction.bearing.refl.full"
           value={localData.reelDrive?.reel?.friction?.bearing?.refl?.full?.toString() || ""}
           type="number"
           disabled={true}
@@ -796,7 +796,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.friction]);
+  ), [localData]);
 
   // Speed & Acceleration section
   const speedAccelSection = useMemo(() => (
@@ -807,7 +807,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="SPEED"
-          name="reel.speed"
+          name="reelDrive.reel.speed"
           value={localData.reelDrive?.reel?.speed?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -815,7 +815,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="ACCEL RATE"
-          name="reel.motorization.accelRate"
+          name="reelDrive.reel.motorization.accelRate"
           value={localData.reelDrive?.reel?.motorization?.accelRate?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -823,7 +823,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="ACCEL TIME"
-          name="reel.accelerationTime"
+          name="reelDrive.reel.accelerationTime"
           value={localData.reelDrive?.reel?.accelerationTime?.toString() || ""}
           type="number"
           disabled={true}
@@ -831,7 +831,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.speed, localData.reelDrive?.reel?.motorization?.accelRate, localData.reelDrive?.reel?.accelerationTime, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Torque section
   const torqueSection = useMemo(() => (
@@ -842,7 +842,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="EMPTY"
-          name="reel.torque.empty.torque"
+          name="reelDrive.reel.torque.empty.torque"
           value={localData.reelDrive?.reel?.torque?.empty?.torque?.toString() || ""}
           type="number"
           disabled={true}
@@ -850,7 +850,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="FULL"
-          name="reel.torque.full.torque"
+          name="reelDrive.reel.torque.full.torque"
           value={localData.reelDrive?.reel?.torque?.full?.torque?.toString() || ""}
           type="number"
           disabled={true}
@@ -858,7 +858,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.torque]);
+  ), [localData]);
 
   // HP Req'd section
   const hpReqdSection = useMemo(() => (
@@ -869,7 +869,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="EMPTY"
-          name="reel.torque.empty.horsepowerRequired"
+          name="reelDrive.reel.torque.empty.horsepowerRequired"
           value={localData.reelDrive?.reel?.torque?.empty?.horsepowerRequired?.toString() || ""}
           type="number"
           disabled={true}
@@ -877,7 +877,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="FULL"
-          name="reel.torque.full.horsepowerRequired"
+          name="reelDrive.reel.torque.full.horsepowerRequired"
           value={localData.reelDrive?.reel?.torque?.full?.horsepowerRequired?.toString() || ""}
           type="number"
           disabled={true}
@@ -895,7 +895,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.torque]);
+  ), [localData]);
 
   // Regen section
   const regenSection = useMemo(() => (
@@ -906,7 +906,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       <div className="space-y-3">
         <Input
           label="EMPTY"
-          name="reel.torque.empty.regen"
+          name="reelDrive.reel.torque.empty.regen"
           value={localData.reelDrive?.reel?.torque?.empty?.regen?.toString() || ""}
           type="number"
           disabled={true}
@@ -914,7 +914,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="FULL"
-          name="reel.torque.full.regen"
+          name="reelDrive.reel.torque.full.regen"
           value={localData.reelDrive?.reel?.torque?.full?.regen?.toString() || ""}
           type="number"
           disabled={true}
@@ -932,7 +932,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.torque]);
+  ), [localData]);
 
   // Notes section
   const notesSection = useMemo(() => (
@@ -953,7 +953,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </Card>
-  ), [localData.reelDrive?.reel?.reelDriveOK]);
+  ), [localData]);
 
   // Status indicator component
   const StatusIndicator = () => {

@@ -98,16 +98,6 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           
           setLocalData(prevData => ({
             ...prevData,
-            common: {
-              ...prevData.common,
-              equipment: {
-                ...prevData.common?.equipment,
-                feed: {
-                  ...prevData.common?.equipment?.feed,
-                  maximumVelocity: response.data.feed.max_velocity || prevData.common?.equipment?.feed?.maximumVelocity,
-                }
-              }
-            },
             feed: {
               ...prevData.feed,
               // Update calculated FPM values
@@ -126,6 +116,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               // Update other calculated feed fields
               maxMotorRPM: response.data.feed.max_motor_rpm || prevData.feed?.feed?.maxMotorRPM,
               motorInertia: response.data.feed.motor_inertia || prevData.feed?.feed?.motorInertia,
+              maxVelocity: response.data.feed.max_velocity || prevData.feed?.feed?.maxVelocity,
               settleTime: response.data.feed.settle_time || prevData.feed?.feed?.settleTime,
               regen: response.data.feed.regen || prevData.feed?.feed?.regen,
               materialInLoop: response.data.feed.material_in_loop || prevData.feed?.feed?.materialInLoop,
@@ -285,7 +276,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Feed configuration section
   const feedConfigSection = useMemo(() => (
@@ -353,7 +344,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [feedType, localData.feed, handleChange, handleFeedTypeChange, isEditing]);
+  ), [feedType, localData, handleChange, handleFeedTypeChange, isEditing]);
 
   // Material information section
   const materialInfoSection = useMemo(() => (
@@ -402,7 +393,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.material, localData.feed?.press?.bedLength, localData.feed?.feed?.materialInLoop, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Sigma 5 fields
   const sigma5Fields = useMemo(() => (
@@ -429,7 +420,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="STR Max Speed (ft/min)"
           name="feed.maximumVelocity"
           type="number"
-          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
+          value={localData.feed?.feed?.maxVelocity?.toString() || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
@@ -480,7 +471,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Max Velocity (ft/min)"
           name="feed.maxVelocity"
           type="number"
-          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
+          value={localData.feed?.feed?.maxVelocity?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />
@@ -548,7 +539,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
     </div>
-  ), [localData.feed, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Pull-through fields
   const pullThruFields = useMemo(() => (
@@ -593,7 +584,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       </Card>
     </div>
-  ), [sigma5Fields, localData.feed?.feed?.pullThru, handleChange, isEditing]);
+  ), [sigma5Fields, localData, handleChange, isEditing]);
 
   // Allen Bradley fields
   const allenBradleyFields = useMemo(() => (
@@ -714,7 +705,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       </div>
     </Card>
-  ), [localData.feed, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Performance results table section
   const performanceResultsSection = useMemo(() => {
@@ -761,7 +752,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       </Card>
     );
-  }, [localData.feed?.feed?.tableValues]);
+  }, [localData]);
 
   // Status indicator component
   const StatusIndicator = () => {

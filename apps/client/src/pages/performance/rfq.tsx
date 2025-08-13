@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { debounce } from "lodash";
 import Input from "@/components/common/input";
@@ -29,7 +29,7 @@ const validateField = (name: string, value: any): string | null => {
   if (name === "referenceNumber" && !value?.trim()) {
     return "Reference number is required";
   }
-  if (name === "rfq.customer" && !value?.trim()) {
+  if (name === "common.customer" && !value?.trim()) {
     return "Customer name is required";
   }
   if (name.includes("email") && value && !/\S+@\S+\.\S+/.test(value)) {
@@ -70,6 +70,10 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Refs for cleanup and debouncing
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingChangesRef = useRef<Record<string, any>>({});
 
   // Sync with prop data on initial load only
   useEffect(() => {
@@ -78,7 +82,64 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     }
   }, [data, localData.referenceNumber]);
 
-  // Modified change handler that immediately updates and saves
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async (changes: Record<string, any>) => {
+      if (!performanceSheetId || !isEditing) return;
+
+      try {
+        // Create a deep copy and apply all pending changes
+        const updatedData = JSON.parse(JSON.stringify(localData));
+        
+        Object.entries(changes).forEach(([path, value]) => {
+          setNestedValue(updatedData, path, value);
+        });
+
+        console.log("Saving RFQ changes:", changes);
+        
+        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        
+        // Handle calculated values from backend - specifically FPM calculations
+        if (response?.data) {
+          console.log("Updating calculated FPM values from backend response");
+          setLocalData(prevData => ({
+            ...prevData,
+            // Update calculated fields from backend response
+            common: {
+              feedRates: {
+                ...prevData.common?.feedRates,
+                average: {
+                  ...prevData.common?.feedRates?.average,
+                  fpm: response.data.feedRates?.average?.fpm || prevData.common?.feedRates?.average?.fpm,
+                },
+                max: {
+                  ...prevData.common?.feedRates?.max,
+                  fpm: response.data.feedRates?.max?.fpm || prevData.common?.feedRates?.max?.fpm,
+                },
+                min: {
+                  ...prevData.common?.feedRates?.min,
+                  fpm: response.data.feedRates?.min?.fpm || prevData.common?.feedRates?.min?.fpm,
+                },
+              }
+          }}));
+        }
+
+        setLastSaved(new Date());
+        setIsDirty(false);
+        pendingChangesRef.current = {};
+        
+      } catch (error) {
+        console.error('Error saving RFQ:', error);
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          _general: 'Failed to save changes. Please try again.' 
+        }));
+      }
+    }, 1000),
+    [performanceSheetId, updateEntity, isEditing, localData]
+  );
+
+  // Optimized change handler
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (!isEditing) return;
 
@@ -102,75 +163,34 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       return;
     }
 
-    // Update local state immediately and get the new data
+    // Update local state immediately
     setLocalData(prevData => {
       const newData = { ...prevData };
       const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
       
-      if (name.includes(".")) {
-        setNestedValue(newData, name, processedValue);
-      } else {
-        (newData as any)[name] = processedValue;
-      }
-      
-      // Immediately trigger save with the updated data
-      if (performanceSheetId) {
-        debouncedSaveWithData(newData);
-      }
+      // Handle nested paths directly
+      setNestedValue(newData, name, processedValue);
       
       return newData;
     });
 
+    // Track pending changes
+    pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
     setIsDirty(true);
-  }, [isEditing, fieldErrors, performanceSheetId]);
 
-  // New debounced save function that accepts data parameter
-  const debouncedSaveWithData = useCallback(
-    debounce(async (dataToSave: PerformanceData) => {
-      if (!performanceSheetId || !isEditing) return;
+    // Debounce save
+    debouncedSave(pendingChangesRef.current);
+  }, [isEditing, fieldErrors, debouncedSave]);
 
-      try {
-        console.log("Saving RFQ changes with current data");
-        
-        const response = await updateEntity(performanceSheetId, { data: dataToSave });
-        
-        // Handle calculated values from backend - PROPER DEEP MERGE
-        if (response?.data) {
-          console.log("Backend response with calculated values:", response.data);
-          setLocalData(prevData => {
-            // Deep merge the response data into the current state
-            const newData = JSON.parse(JSON.stringify(prevData));
-            
-            // Merge the entire response data structure
-            const mergeDeep = (target: any, source: any) => {
-              for (const key in source) {
-                if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-                  if (!target[key]) target[key] = {};
-                  mergeDeep(target[key], source[key]);
-                } else {
-                  target[key] = source[key];
-                }
-              }
-            };
-            
-            mergeDeep(newData, response.data);
-            return newData;
-          });
-        }
-
-        setLastSaved(new Date());
-        setIsDirty(false);
-        
-      } catch (error) {
-        console.error('Error saving RFQ:', error);
-        setFieldErrors(prev => ({ 
-          ...prev, 
-          _general: 'Failed to save changes. Please try again.' 
-        }));
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
-    }, 1000),
-    [performanceSheetId, updateEntity, isEditing]
-  );
+      debouncedSave.cancel();
+    };
+  }, [debouncedSave]);
 
   // Basic Information Section
   const basicInfoSection = useMemo(() => (
@@ -205,17 +225,17 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Company Name *"
-            name="rfq.customer"
+            name="common.customer"
             value={localData.common?.customer || ""}
             onChange={handleChange}
-            error={fieldErrors["rfq.customer"]}
+            error={fieldErrors["common.customer"]}
             disabled={!isEditing}
           />
         </div>
         <div>
           <Input
             label="State/Province"
-            name="rfq.customerInfo.state"
+            name="common.customerInfo.state"
             value={localData.common?.customerInfo?.state || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -224,7 +244,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Street Address"
-            name="rfq.customerInfo.streetAddress"
+            name="common.customerInfo.streetAddress"
             value={localData.common?.customerInfo?.streetAddress || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -233,17 +253,17 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="ZIP/Postal Code"
-            name="rfq.customerInfo.zip"
+            name="common.customerInfo.zip"
             value={localData.common?.customerInfo?.zip?.toString() || ""}
             onChange={handleChange}
-            error={fieldErrors["rfq.customerInfo.zip"]}
+            error={fieldErrors["common.customerInfo.zip"]}
             disabled={!isEditing}
           />
         </div>
         <div>
           <Input
             label="City"
-            name="rfq.customerInfo.city"
+            name="common.customerInfo.city"
             value={localData.common?.customerInfo?.city || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -252,7 +272,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Country"
-            name="rfq.customerInfo.country"
+            name="common.customerInfo.country"
             value={localData.common?.customerInfo?.country || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -264,7 +284,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Contact Name"
-            name="rfq.customerInfo.contactName"
+            name="common.customerInfo.contactName"
             value={localData.common?.customerInfo?.contactName || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -273,7 +293,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Position"
-            name="rfq.customerInfo.position"
+            name="common.customerInfo.position"
             value={localData.common?.customerInfo?.position || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -282,27 +302,27 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Phone"
-            name="rfq.customerInfo.phoneNumber"
+            name="common.customerInfo.phoneNumber"
             value={localData.common?.customerInfo?.phoneNumber || ""}
             onChange={handleChange}
-            error={fieldErrors["rfq.customerInfo.phoneNumber"]}
+            error={fieldErrors["common.customerInfo.phoneNumber"]}
             disabled={!isEditing}
           />
         </div>
         <div>
           <Input
             label="Email"
-            name="rfq.customerInfo.email"
+            name="common.customerInfo.email"
             value={localData.common?.customerInfo?.email || ""}
             onChange={handleChange}
-            error={fieldErrors["rfq.customerInfo.email"]}
+            error={fieldErrors["common.customerInfo.email"]}
             disabled={!isEditing}
           />
         </div>
         <div>
           <Input
             label="Dealer Name"
-            name="rfq.customerInfo.dealerName"
+            name="common.customerInfo.dealerName"
             value={localData.common?.customerInfo?.dealerName || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -311,7 +331,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Dealer Salesman"
-            name="rfq.customerInfo.dealerSalesman"
+            name="common.customerInfo.dealerSalesman"
             value={localData.common?.customerInfo?.dealerSalesman || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -323,7 +343,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Days per week running"
-            name="rfq.customerInfo.daysPerWeek"
+            name="common.customerInfo.daysPerWeek"
             value={localData.common?.customerInfo?.daysPerWeek?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -333,7 +353,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Shifts per day"
-            name="rfq.customerInfo.shiftsPerDay"
+            name="common.customerInfo.shiftsPerDay"
             value={localData.common?.customerInfo?.shiftsPerDay?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -407,7 +427,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Select
             label="Type of Line"
-            name="rfq.typeOfLine"
+            name="common.equipment.feed.typeOfLine"
             value={localData.common?.equipment?.feed?.typeOfLine || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -460,7 +480,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Coil Width (in)"
-            name="rfq.coil.maxCoilWidth"
+            name="common.coil.maxCoilWidth"
             value={localData.common?.coil?.maxCoilWidth?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -470,7 +490,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Min Coil Width (in)"
-            name="rfq.coil.minCoilWidth"
+            name="common.coil.minCoilWidth"
             value={localData.common?.coil?.minCoilWidth?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -480,7 +500,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Coil OD (in)"
-            name="rfq.coil.maxCoilOD"
+            name="common.coil.maxCoilOD"
             value={localData.common?.coil?.maxCoilOD?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -490,7 +510,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Coil ID (in)"
-            name="rfq.coil.coilID"
+            name="common.coil.coilID"
             value={localData.common?.coil?.coilID?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -500,7 +520,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Coil Weight (lbs)"
-            name="rfq.coil.maxCoilWeight"
+            name="common.coil.maxCoilWeight"
             value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -510,7 +530,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Coil Handling Cap (lbs)"
-            name="rfq.coil.maxCoilHandlingCap"
+            name="common.coil.maxCoilHandlingCap"
             value={localData.common?.coil?.maxCoilHandlingCap?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -617,7 +637,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Material Thickness (in)"
-            name="rfq.material.materialThickness"
+            name="common.material.materialThickness"
             value={localData.common?.material?.materialThickness?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -627,7 +647,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Coil Width (in)"
-            name="rfq.material.coilWidth"
+            name="common.material.coilWidth"
             value={localData.common?.material?.coilWidth?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -637,7 +657,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Select
             label="Material Type"
-            name="rfq.material.materialType"
+            name="common.material.materialType"
             value={localData.common?.material?.materialType || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -647,7 +667,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Yield Strength (PSI)"
-            name="rfq.material.maxYieldStrength"
+            name="common.material.maxYieldStrength"
             value={localData.common?.material?.maxYieldStrength?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -657,7 +677,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Max Tensile Strength (PSI)"
-            name="rfq.material.maxTensileStrength"
+            name="common.material.maxTensileStrength"
             value={localData.common?.material?.maxTensileStrength?.toString() || ""}
             onChange={handleChange}
             type="number"
@@ -863,7 +883,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleChange, isEditing]);
 
-  // Feed Requirements Section
+  // Feed Requirements Section - This is where the FPM calculations show
   const feedRequirementsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -875,7 +895,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <div className="space-y-3">
             <Input
               label="Length (in)"
-              name="rfq.feed.average.length"
+              name="common.feedRates.average.length"
               value={localData.common?.feedRates?.average?.length?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -883,7 +903,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="SPM"
-              name="rfq.feed.average.spm"
+              name="common.feedRates.average.spm"
               value={localData.common?.feedRates?.average?.spm?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -891,9 +911,10 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="FPM (Calculated)"
-              name="rfq.feed.average.fpm"
+              name="common.feedRates.average.fpm"
               value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
               disabled={true}
+              className="bg-gray-50"
             />
           </div>
         </div>
@@ -902,7 +923,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <div className="space-y-3">
             <Input
               label="Length (in)"
-              name="rfq.feed.max.length"
+              name="common.feedRates.max.length"
               value={localData.common?.feedRates?.max?.length?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -910,7 +931,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="SPM"
-              name="rfq.feed.max.spm"
+              name="common.feedRates.max.spm"
               value={localData.common?.feedRates?.max?.spm?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -918,9 +939,10 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="FPM (Calculated)"
-              name="rfq.feed.max.fpm"
+              name="common.feedRates.max.fpm"
               value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
               disabled={true}
+              className="bg-gray-50"
             />
           </div>
         </div>
@@ -929,7 +951,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <div className="space-y-3">
             <Input
               label="Length (in)"
-              name="rfq.feed.min.length"
+              name="common.feedRates.min.length"
               value={localData.common?.feedRates?.min?.length?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -937,7 +959,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="SPM"
-              name="rfq.feed.min.spm"
+              name="common.feedRates.min.spm"
               value={localData.common?.feedRates?.min?.spm?.toString() || ""}
               onChange={handleChange}
               type="number"
@@ -945,9 +967,10 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             />
             <Input
               label="FPM (Calculated)"
-              name="rfq.feed.min.fpm"
+              name="common.feedRates.min.fpm"
               value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
               disabled={true}
+              className="bg-gray-50"
             />
           </div>
         </div>
@@ -1034,7 +1057,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Input
             label="Passline Height (in)"
-            name="rfq.passline"
+            name="common.equipment.feed.passline"
             value={localData.common?.equipment?.feed?.passline || ""}
             onChange={handleChange}
             type="number"
@@ -1054,7 +1077,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Select
             label="Feed Direction"
-            name="rfq.feedDirection"
+            name="common.equipment.feed.direction"
             value={localData.common?.equipment?.feed?.direction || ""}
             onChange={handleChange}
             disabled={!isEditing}
@@ -1156,7 +1179,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
             <span className="text-blue-800">
-              {updateLoading ? "Saving changes..." : "Loading..."}
+              {updateLoading ? "Saving changes and calculating FPM..." : "Loading..."}
             </span>
           </div>
         </div>

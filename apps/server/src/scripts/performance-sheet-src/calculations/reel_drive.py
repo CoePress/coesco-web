@@ -5,6 +5,7 @@ Reel Drive Calculation Module
 from models import reel_drive_input
 from math import pi
 from typing import Tuple, Dict, Any
+import sys
 
 from utils.shared import (
     CHAIN_RATIO, CHAIN_SPRKT_OD, CHAIN_SPRKT_THICKNESS, MOTOR_RPM,
@@ -125,8 +126,6 @@ def calc_coil_specs(
             - coil_refl: Reflected inertia to motor in lb-in²
             
     """
-    print(f"DEBUG - calc_coil_specs called with reel_size={reel_size}, coil_od={coil_od}, coil_id={coil_id}, density={density}")
-
     try:
         # Use material density for coil calculations
         coil_density = density
@@ -146,7 +145,6 @@ def calc_coil_specs(
         return coil_density, coil_width, coil_inertia, coil_refl
         
     except ZeroDivisionError as e:
-        print(f"ERROR: ZeroDivisionError in calc_coil_specs - {str(e)}", file=sys.stderr)
         # Return default/zero values to maintain the expected tuple structure
         return 0.0, 0.0, 0.0, 0.0
 
@@ -182,7 +180,6 @@ def calculate_reeldrive(data: reel_drive_input) -> Dict[str, Any]:
         
         # Get material properties (primarily density)
         material = get_material(data.material_type)
-        print(f"DEBUG - Material properties: {material}")
         
         # Get motor inertia - handle special case for 7.5 HP
         if (data.motor_hp == 7.5):

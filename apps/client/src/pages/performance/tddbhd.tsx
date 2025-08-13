@@ -220,7 +220,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Customer"
-          name="rfq.customer"
+          name="common.customer"
           value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
@@ -235,7 +235,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Reel & Material Specs Section
   const reelMaterialSection = useMemo(() => (
@@ -246,7 +246,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <Select
           label="Reel Model"
-          name="reel.model"
+          name="common.equipment.reel.model"
           value={localData.common?.equipment?.reel?.model?.toString() || ""}
           onChange={handleChange}
           options={REEL_MODEL_OPTIONS.map((opt) => ({
@@ -257,7 +257,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Reel Width"
-          name="reel.width"
+          name="common.equipment.reel.width"
           value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleChange}
           options={REEL_WIDTTH_OPTIONS.map((opt) => ({
@@ -268,7 +268,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Backplate Diameter"
-          name="reel.backplate.diameter"
+          name="common.equipment.reel.backplate.diameter"
           value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleChange}
           options={BACKPLATE_DIAMETER_OPTIONS.map((opt) => ({
@@ -279,7 +279,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Material Type"
-          name="material.materialType"
+          name="common.material.materialType"
           value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
@@ -287,34 +287,34 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Material Width (in)"
-          name="material.coilWidth"
+          name="common.material.coilWidth"
           value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["material.coilWidth"]}
+          error={fieldErrors["common.material.coilWidth"]}
           disabled={!isEditing}
         />
         <Input
           label="Material Thickness (in)"
-          name="material.materialThickness"
+          name="common.material.materialThickness"
           value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["material.materialThickness"]}
+          error={fieldErrors["common.material.materialThickness"]}
           disabled={!isEditing}
         />
         <Input
           label="Material Yield Strength (psi)"
-          name="material.maxYieldStrength"
+          name="common.material.maxYieldStrength"
           value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["material.maxYieldStrength"]}
+          error={fieldErrors["common.material.maxYieldStrength"]}
           disabled={!isEditing}
         />
         <Input
           label="Air Pressure Available (psi)"
-          name="reel.airPressureAvailable"
+          name="tddbhd.reel.airPressureAvailable"
           value={localData.tddbhd?.reel?.airPressureAvailable?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -323,7 +323,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Required Decel. Rate (ft/sec²)"
-          name="reel.requiredDecelRate"
+          name="tddbhd.reel.requiredDecelRate"
           value={localData.tddbhd?.reel?.requiredDecelRate?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -331,7 +331,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel, localData.common?.material, fieldErrors, handleChange, isEditing]);
+  ), [localData, fieldErrors, handleChange, isEditing]);
 
   // Coil, Brake & Other Specs Section
   const coilBrakeSection = useMemo(() => (
@@ -342,16 +342,16 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Input
           label="Coil Weight (lbs)"
-          name="coil.maxCoilWeight"
+          name="common.coil.maxCoilWeight"
           value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["coil.maxCoilWeight"]}
+          error={fieldErrors["common.coil.maxCoilWeight"]}
           disabled={!isEditing}
         />
         <Input
           label="Coil O.D. (in)"
-          name="coil.maxCoilOD"
+          name="common.coil.maxCoilOD"
           value={localData.common?.coil?.maxCoilOD?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -359,7 +359,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Disp. (Reel) Mtr."
-          name="reel.dispReelMtr"
+          name="tddbhd.reel.dispReelMtr"
           value={localData.tddbhd?.reel?.dispReelMtr?.toString() || ""}
           type="text"
           disabled={true}
@@ -367,7 +367,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Web Tension (psi)"
-          name="reel.webTension.psi"
+          name="tddbhd.reel.webTension.psi"
           value={localData.tddbhd?.reel?.webTension?.psi?.toString() || ""}
           type="number"
           disabled={true}
@@ -375,7 +375,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Web Tension (lbs)"
-          name="reel.webTension.lbs"
+          name="tddbhd.reel.webTension.lbs"
           value={localData.tddbhd?.reel?.webTension?.lbs?.toString() || ""}
           type="number"
           disabled={true}
@@ -383,7 +383,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Brake Pad Diameter (in)"
-          name="reel.brakePadDiameter"
+          name="tddbhd.reel.brakePadDiameter"
           value={localData.tddbhd?.reel?.brakePadDiameter?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -391,7 +391,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Cylinder Bore (in)"
-          name="reel.cylinderBore"
+          name="tddbhd.reel.cylinderBore"
           value={localData.tddbhd?.reel?.cylinderBore?.toString() || ""}
           type="number"
           disabled={true}
@@ -399,7 +399,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Coefficient of Friction"
-          name="reel.coefficientOfFriction"
+          name="tddbhd.reel.coefficientOfFriction"
           value={localData.tddbhd?.reel?.coefficientOfFriction?.toString() || ""}
           type="number"
           disabled={true}
@@ -407,7 +407,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.coil, localData.tddbhd?.reel, fieldErrors, handleChange, isEditing]);
+  ), [localData, fieldErrors, handleChange, isEditing]);
 
   // Threading Drive Section
   const threadingDriveSection = useMemo(() => (
@@ -418,14 +418,14 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="space-y-4">
         <Input
           label="Air Clutch"
-          name="reel.threadingDrive.airClutch"
+          name="tddbhd.reel.threadingDrive.airClutch"
           value={localData.tddbhd?.reel?.threadingDrive?.airClutch || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Select
           label="Hyd. Threading Drive"
-          name="reel.threadingDrive.hydThreadingDrive"
+          name="tddbhd.reel.threadingDrive.hydThreadingDrive"
           value={localData.tddbhd?.reel?.threadingDrive?.hydThreadingDrive || ""}
           onChange={handleChange}
           options={HYDRAULIC_THREADING_DRIVE_OPTIONS}
@@ -433,7 +433,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Torque At Mandrel (in. lbs.)"
-          name="reel.torque.atMandrel"
+          name="tddbhd.reel.torque.atMandrel"
           value={localData.tddbhd?.reel?.torque?.atMandrel?.toString() || ""}
           type="number"
           disabled={true}
@@ -441,7 +441,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Rewind Torque Req. (in. lbs.)"
-          name="reel.torque.rewindRequired"
+          name="tddbhd.reel.torque.rewindRequired"
           value={localData.tddbhd?.reel?.torque?.rewindRequired?.toString() || ""}
           type="number"
           disabled={true}
@@ -449,7 +449,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel?.threadingDrive, localData.tddbhd?.reel?.torque, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Hold Down Section
   const holdDownSection = useMemo(() => (
@@ -460,7 +460,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="space-y-4">
         <Select
           label="Hold Down Assy"
-          name="reel.holddown.assy"
+          name="tddbhd.reel.holddown.assy"
           value={localData.tddbhd?.reel?.holddown?.assy || ""}
           onChange={handleChange}
           options={HOLD_DOWN_ASSY_OPTIONS}
@@ -468,7 +468,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Holddown Pressure (psi)"
-          name="reel.holddown.cylinderPressure"
+          name="tddbhd.reel.holddown.cylinderPressure"
           value={localData.tddbhd?.reel?.holddown?.cylinderPressure?.toString() || ""}
           type="number"
           disabled={true}
@@ -476,7 +476,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Hold Down Force Required (lbs)"
-          name="reel.holddown.force.required"
+          name="tddbhd.reel.holddown.force.required"
           value={localData.tddbhd?.reel?.holddown?.force?.required?.toString() || ""}
           type="number"
           disabled={true}
@@ -484,7 +484,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Hold Down Force Available (lbs)"
-          name="reel.holddown.force.available"
+          name="tddbhd.reel.holddown.force.available"
           value={localData.tddbhd?.reel?.holddown?.force?.available?.toString() || ""}
           type="number"
           disabled={true}
@@ -492,7 +492,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Min. Material Width (in)"
-          name="reel.minMaterialWidth"
+          name="tddbhd.reel.minMaterialWidth"
           value={localData.tddbhd?.reel?.minMaterialWidth?.toString() || ""}
           type="number"
           disabled={true}
@@ -500,7 +500,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel?.holddown, localData.tddbhd?.reel?.minMaterialWidth, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Cylinder Section
   const cylinderSection = useMemo(() => (
@@ -511,7 +511,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="space-y-4">
         <Select
           label="Type"
-          name="reel.holddown.cylinder"
+          name="tddbhd.reel.holddown.cylinder"
           value={localData.tddbhd?.reel?.holddown?.cylinder || ""}
           onChange={handleChange}
           options={HOLD_DOWN_CYLINDER_OPTIONS}
@@ -519,7 +519,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Pressure (psi)"
-          name="reel.holddown.cylinderPressure"
+          name="tddbhd.reel.holddown.cylinderPressure"
           value={localData.tddbhd?.reel?.holddown?.cylinderPressure?.toString() || ""}
           type="number"
           disabled={true}
@@ -527,7 +527,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel?.holddown, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Drag Brake Section
   const dragBrakeSection = useMemo(() => (
@@ -538,7 +538,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="space-y-4">
         <Select
           label="Brake Model"
-          name="reel.dragBrake.model"
+          name="tddbhd.reel.dragBrake.model"
           value={localData.tddbhd?.reel?.dragBrake?.model || ""}
           onChange={handleChange}
           options={BRAKE_MODEL_OPTIONS}
@@ -546,7 +546,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Brake Quantity"
-          name="reel.dragBrake.quantity"
+          name="tddbhd.reel.dragBrake.quantity"
           value={localData.tddbhd?.reel?.dragBrake?.quantity?.toString() || ""}
           onChange={handleChange}
           options={BRAKE_QUANTITY_OPTIONS}
@@ -554,7 +554,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Torque Required (in. lbs.)"
-          name="reel.torque.required"
+          name="tddbhd.reel.torque.required"
           value={localData.tddbhd?.reel?.torque?.required?.toString() || ""}
           type="number"
           disabled={true}
@@ -562,7 +562,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Failsafe - Single Stage (psi air req.)"
-          name="reel.dragBrake.psiAirRequired"
+          name="tddbhd.reel.dragBrake.psiAirRequired"
           value={localData.tddbhd?.reel?.dragBrake?.psiAirRequired?.toString() || ""}
           type="number"
           disabled={true}
@@ -570,7 +570,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Failsafe Holding Force (in. lbs.)"
-          name="reel.dragBrake.holdingForce"
+          name="tddbhd.reel.dragBrake.holdingForce"
           value={localData.tddbhd?.reel?.dragBrake?.holdingForce?.toString() || ""}
           type="number"
           disabled={true}
@@ -578,7 +578,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.tddbhd?.reel?.dragBrake, localData.tddbhd?.reel?.torque, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Status indicator component
   const StatusIndicator = () => {

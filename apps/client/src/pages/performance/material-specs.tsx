@@ -207,7 +207,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           label="Customer"
-          name="rfq.customer"
+          name="common.customer"
           value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
@@ -222,7 +222,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Material Specifications Section
   const materialSpecsSection = useMemo(() => (
@@ -233,7 +233,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Input
           label="Coil Width (in)"
-          name="material.coilWidth"
+          name="common.material.coilWidth"
           value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -244,7 +244,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Coil Weight (Max)"
-          name="coil.maxCoilWeight"
+          name="common.coil.maxCoilWeight"
           value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -253,7 +253,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Material Thickness (in)"
-          name="material.materialThickness"
+          name="common.material.materialThickness"
           value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -262,7 +262,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Material Type"
-          name="material.materialType"
+          name="common.material.materialType"
           value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
@@ -270,25 +270,34 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Yield Strength (psi)"
-          name="material.maxYieldStrength"
+          name="common.material.maxYieldStrength"
           value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["material.maxYieldStrength"]}
+          error={fieldErrors["common.material.maxYieldStrength"]}
           disabled={!isEditing}
         />
         <Input
           label="Material Tensile (psi)"
-          name="material.maxTensileStrength"
+          name="common.material.maxTensileStrength"
           value={localData.common?.material?.maxTensileStrength?.toString() || ""}
           onChange={handleChange}
           type="number"
-          error={fieldErrors["material.maxTensileStrength"]}
+          error={fieldErrors["common.material.maxTensileStrength"]}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Required Max FPM"
+          name="common.material.reqMaxFPM"
+          value={localData.common?.material?.reqMaxFPM?.toString() || ""}
+          onChange={handleChange}
+          type="number"
+          error={fieldErrors["common.material.reqMaxFPM"]}
           disabled={!isEditing}
         />
         <Input
           label="Coil I.D."
-          name="coil.coilID"
+          name="common.coil.coilID"
           value={localData.common?.coil?.coilID?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -296,7 +305,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Coil O.D."
-          name="coil.maxCoilOD"
+          name="common.coil.maxCoilOD"
           value={localData.common?.coil?.maxCoilOD?.toString() || ""}
           onChange={handleChange}
           type="number"
@@ -304,7 +313,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Min Bend Radius (in)"
-          name="material.minBendRadius"
+          name="materialSpecs.material.minBendRadius"
           value={localData.materialSpecs?.material?.minBendRadius?.toString() || ""}
           type="number"
           disabled={true}
@@ -312,7 +321,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Min Loop Length (ft)"
-          name="material.minLoopLength"
+          name="materialSpecs.material.minLoopLength"
           value={localData.materialSpecs?.material?.minLoopLength?.toString() || ""}
           type="number"
           disabled={true}
@@ -320,7 +329,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Coil O.D. Calculated"
-          name="material.calculatedCoilOD"
+          name="materialSpecs.material.calculatedCoilOD"
           value={localData.materialSpecs?.material?.calculatedCoilOD?.toString() || ""}
           type="number"
           disabled={true}
@@ -329,8 +338,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
       </div>
     </Card>
   ), [
-    localData.materialSpecs?.material,
-    localData.common?.coil,
+    localData,
     coilWidthBounds,
     fieldErrors,
     handleChange,
@@ -346,7 +354,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
         <Select
           label="Select Feed Direction"
-          name="feed.direction"
+          name="common.equipment.feed.direction"
           value={localData.common?.equipment?.feed?.direction || ""}
           onChange={handleChange}
           options={FEED_DIRECTION_OPTIONS}
@@ -354,7 +362,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Select Controls Level"
-          name="feed.controlsLevel"
+          name="common.equipment.feed.controlsLevel"
           value={localData.common?.equipment?.feed?.controlsLevel || ""}
           onChange={handleChange}
           options={CONTROLS_LEVEL_OPTIONS}
@@ -362,7 +370,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Type of Line"
-          name="feed.typeOfLine"
+          name="common.equipment.feed.typeOfLine"
           value={localData.common?.equipment?.feed?.typeOfLine || ""}
           onChange={handleChange}
           options={TYPE_OF_LINE_OPTIONS}
@@ -370,7 +378,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Feed Controls"
-          name="feed.controls"
+          name="materialSpecs.feed.controls"
           type="text"
           value={localData.materialSpecs?.feed?.controls || ""}
           disabled={true}
@@ -378,7 +386,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Passline"
-          name="feed.passline"
+          name="common.equipment.feed.passline"
           value={localData.common?.equipment?.feed?.passline || ""}
           onChange={handleChange}
           options={PASSLINE_OPTIONS}
@@ -386,7 +394,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Select Roll"
-          name="straightener.rolls.typeOfRoll"
+          name="materialSpecs.straightener.rolls.typeOfRoll"
           value={localData.materialSpecs?.straightener?.rolls?.typeOfRoll || ""}
           onChange={handleChange}
           options={ROLL_TYPE_OPTIONS}
@@ -394,7 +402,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Reel Backplate"
-          name="reel.backplate.type"
+          name="materialSpecs.reel.backplate.type"
           value={localData.materialSpecs?.reel?.backplate?.type || ""}
           onChange={handleChange}
           options={REEL_BACKPLATE_OPTIONS}
@@ -402,7 +410,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Reel Style"
-          name="reel.style"
+          name="materialSpecs.reel.style"
           value={localData.materialSpecs?.reel?.style || ""}
           onChange={handleChange}
           options={REEL_STYLE_OPTIONS}
@@ -410,14 +418,14 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         />
         <Checkbox
           label="Light Gauge Non-Marking"
-          name="feed.lightGuageNonMarking"
+          name="common.equipment.feed.lightGuageNonMarking"
           checked={localData.common?.equipment?.feed?.lightGuageNonMarking === "true"}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Checkbox
           label="Non-Marking"
-          name="feed.nonMarking"
+          name="common.equipment.feed.nonMarking"
           checked={localData.common?.equipment?.feed?.nonMarking === "true"}
           onChange={handleChange}
           disabled={!isEditing}
@@ -425,9 +433,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
       </div>
     </Card>
   ), [
-    localData.feed,
-    localData.materialSpecs?.straightener?.rolls,
-    localData.materialSpecs?.reel,
+    localData,
     handleChange,
     isEditing
   ]);

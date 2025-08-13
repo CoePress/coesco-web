@@ -25,6 +25,7 @@
       "materialType": "Cold Rolled Steel",
       "maxYieldStrength": 40000,
       "maxTensileStrength": 0,
+      "reqMaxFPM": 160,
       "materialDensity": 0
     },
     "coil": {
@@ -199,7 +200,6 @@
   },
   "reelDrive": {
     "reel": {
-      "horsepower": 5,
       "size": 0,
       "bearing": {
         "distance": 0,
@@ -273,7 +273,11 @@
       },
       "speed": 0,
       "motorization": {
-        "accelRate": 0
+        "isMotorized": "No",
+        "driveHorsepower": 0,
+        "speed": 0,
+        "accelRate": 0,
+        "regenRequired": ""
       },
       "accelerationTime": 0,
       "torque": {
@@ -460,7 +464,7 @@
       "fullWidthRolls": "Yes",
       "motor": "YASKAWA SGMGV-1ADDA61",
       "amp": "YASKAWA SGDV-280DE1A000000300",
-      "maximumVelocity": 0,
+      "strMaxSpeed": 200,
       "frictionInDie": 30,
       "accelerationRate": 40,
       "defaultAcceleration": 40,

@@ -272,14 +272,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Customer"
-          name="customer"
+          name="common.customer"
           value={localData.common?.customer || ""}
           onChange={handleChange}
           disabled={!isEditing}
         />
         <Input
           label="Date"
-          name="date"
+          name="rfq.dates.date"
           type="date"
           value={localData.rfq?.dates?.date || ""}
           onChange={handleChange}
@@ -287,7 +287,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
       </div>
     </Card>
-  ), [localData.common?.customer, localData.rfq?.dates?.date, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Material specifications section
   const materialSpecsSection = useMemo(() => (
@@ -296,7 +296,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
           label="Material Type"
-          name="material.materialType"
+          name="common.material.materialType"
           value={localData.common?.material?.materialType || ""}
           onChange={handleChange}
           options={MATERIAL_TYPE_OPTIONS}
@@ -304,7 +304,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Material Thickness (in)"
-          name="material.materialThickness"
+          name="common.material.materialThickness"
           type="number"
           value={localData.common?.material?.materialThickness?.toString() || ""}
           onChange={handleChange}
@@ -312,7 +312,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Coil Width (in)"
-          name="material.coilWidth"
+          name="common.material.coilWidth"
           type="number"
           value={localData.common?.material?.coilWidth?.toString() || ""}
           onChange={handleChange}
@@ -320,7 +320,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Yield Strength (psi)"
-          name="material.maxYieldStrength"
+          name="common.material.maxYieldStrength"
           type="number"
           value={localData.common?.material?.maxYieldStrength?.toString() || ""}
           onChange={handleChange}
@@ -328,7 +328,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Elastic Modulus (psi)"
-          name="material.elasticModulus"
+          name="rollStrBackbend.straightener.modulus"
           type="number"
           value={localData.rollStrBackbend?.straightener?.modulus?.toString() || "30000000"}
           onChange={handleChange}
@@ -336,7 +336,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Material Density (lb/in³)"
-          name="material.materialDensity"
+          name="rollStrBackbend.material.density"
           type="number"
           value={localData.rollStrBackbend?.material?.density?.toString() || ""}
           onChange={handleChange}
@@ -344,7 +344,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.material, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Roll straightener specifications section
   const rollStraightenerSpecsSection = useMemo(() => (
@@ -353,7 +353,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
           label="Straightener Model"
-          name="rollStrBackbend.straightener.model"
+          name="common.equipment.straightener.model"
           value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleChange}
           options={STR_MODEL_OPTIONS}
@@ -361,7 +361,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Roll Diameter (in)"
-          name="rollStrBackbend.straightener.rollDiameter"
+          name="common.equipment.straightener.rollDiameter"
           type="number"
           value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
           onChange={handleChange}
@@ -369,7 +369,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener, handleChange, isEditing]);
+  ), [localData, handleChange, isEditing]);
 
   // Backbend specifications section
   const backbendSpecsSection = useMemo(() => (
@@ -420,7 +420,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </Button>
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener, handleChange, handleCalculate, isEditing, isCalculating]);
+  ), [localData, handleChange, handleCalculate, isEditing, isCalculating]);
 
   // Calculated results section
   const calculatedResultsSection = useMemo(() => (
@@ -516,7 +516,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend]);
+  ), [localData]);
 
   // First roller detailed results section
   const firstRollerDetailsSection = useMemo(() => (
@@ -610,7 +610,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first]);
+  ), [localData]);
 
   // Last roller detailed results section
   const lastRollerDetailsSection = useMemo(() => (
@@ -661,7 +661,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last]);
+  ), [localData]);
 
   // Middle rollers section
   const middleRollersSection = useMemo(() => (
@@ -676,7 +676,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle]);
+  ), [localData]);
 
   // Design notes section
   const designNotesSection = useMemo(() => (
@@ -711,7 +711,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       </div>
     </Card>
-  ), [localData.rollStrBackbend?.straightener, localData.rollStrBackbend?.material]);
+  ), [localData]);
 
   // Status indicator component
   const StatusIndicator = () => {
