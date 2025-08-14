@@ -4,8 +4,8 @@ type MessageBoxProps = {
   placeholder?: string;
   onSend: (payload: { text: string; files: File[]; audio?: Blob }) => void;
   disabled?: boolean;
-  maxRows?: number; // for auto-resize constraint
-  accept?: string;  // file input accept filter, e.g. "image/*,.pdf"
+  maxRows?: number;
+  accept?: string;
 };
 
 export default function MessageBox({
@@ -19,18 +19,15 @@ export default function MessageBox({
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Voice recording
   const [recording, setRecording] = useState(false);
   const [recError, setRecError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
 
-  // Refs
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const boxRef = useRef<HTMLDivElement | null>(null);
 
-  // ---------- Auto-resize textarea ----------
   const autosize = useCallback(() => {
     const ta = taRef.current;
     if (!ta) return;
@@ -44,7 +41,6 @@ export default function MessageBox({
     autosize();
   }, [text, autosize]);
 
-  // ---------- Send ----------
   const doSend = useCallback(
     (audio?: Blob) => {
       const trimmed = text.trim();
@@ -56,7 +52,6 @@ export default function MessageBox({
     [text, files, onSend]
   );
 
-  // ---------- File helpers ----------
   const addFiles = (incoming: FileList | File[]) => {
     const arr = Array.from(incoming);
     if (arr.length === 0) return;
@@ -71,7 +66,6 @@ export default function MessageBox({
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // Paste files (images/docs) directly
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
       if (!boxRef.current?.contains(document.activeElement)) return;
@@ -93,7 +87,6 @@ export default function MessageBox({
     return () => document.removeEventListener('paste', handler);
   }, []);
 
-  // Drag & drop
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -107,7 +100,6 @@ export default function MessageBox({
     if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files);
   };
 
-  // ---------- Voice recording ----------
   const toggleRecording = async () => {
     if (recording) {
       mediaRecorderRef.current?.stop();
@@ -126,7 +118,6 @@ export default function MessageBox({
       mr.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        // Immediately send text+files+audio. Adjust if you want a review step.
         doSend(blob);
       };
       mr.start();
@@ -137,7 +128,6 @@ export default function MessageBox({
     }
   };
 
-  // ---------- Keyboard: Enter to send; Shift+Enter for newline ----------
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -147,7 +137,6 @@ export default function MessageBox({
 
   return (
     <div ref={boxRef} className="w-full">
-      {/* File chips (when selected) */}
       {files.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {files.map((f, i) => (
@@ -172,36 +161,30 @@ export default function MessageBox({
         </div>
       )}
 
-      {/* Input container (Cursor-like) */}
       <div
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          'relative w-full rounded-2xl border bg-white',
-          'border-slate-300 focus-within:border-slate-400',
+          'relative w-full rounded-md border bg-white flex',
+          'border-slate-300 focus-within:border-slate-400 p-2',
           'shadow-sm',
           isDragging ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
         ].join(' ')}
       >
-        {/* Textarea */}
-        <div className="px-3 sm:px-4 py-2.5 sm:py-3">
-          <textarea
-            ref={taRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={isDragging ? 'Drop files to attach…' : placeholder}
-            rows={1}
-            disabled={disabled}
-            className="block w-full resize-none bg-transparent outline-none placeholder-slate-400 text-sm sm:text-base"
-            aria-label="Message input"
-          />
-        </div>
+        <textarea
+          ref={taRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={isDragging ? 'Drop files to attach…' : placeholder}
+          rows={1}
+          disabled={disabled}
+          className="block w-full resize-none bg-transparent outline-none placeholder-slate-400 text-sm sm:text-base"
+          aria-label="Message input"
+        />
 
-        {/* Right controls */}
-        <div className="absolute right-2 sm:right-3 bottom-2.5 sm:bottom-3 flex items-center gap-1.5">
-          {/* Attach */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             disabled={disabled}
@@ -215,7 +198,6 @@ export default function MessageBox({
             </svg>
           </button>
 
-          {/* Voice */}
           <button
             type="button"
             disabled={disabled}
@@ -227,7 +209,6 @@ export default function MessageBox({
               recording ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-100',
             ].join(' ')}
           >
-            {/* Mic icon */}
             {recording ? (
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
                 <path strokeWidth="2" strokeLinecap="round" d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3z" />
@@ -241,7 +222,6 @@ export default function MessageBox({
             )}
           </button>
 
-          {/* Send */}
           <button
             type="button"
             disabled={disabled || (!text.trim() && files.length === 0)}
@@ -256,7 +236,6 @@ export default function MessageBox({
           </button>
         </div>
 
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -269,7 +248,6 @@ export default function MessageBox({
         />
       </div>
 
-      {/* Recording error (if any) */}
       {recError && (
         <p className="mt-2 text-xs text-red-600">
           {recError}

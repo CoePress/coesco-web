@@ -2,7 +2,8 @@ import type { Server, Socket } from "socket.io";
 
 import { logger } from "@/utils/logger";
 
-import { lockingService } from ".";
+import { agentService, lockingService } from ".";
+import { messageService } from "../repository";
 
 export class SocketService {
   private io: Server | null = null;
@@ -92,21 +93,23 @@ export class SocketService {
         socket.leave(chatId);
       });
 
-      socket.on("message:send", (payload, ack?: any) => {
-        logger.info(`[${socket.id}] Message send event`, payload);
+      socket.on("message:send", async (payload, ack?: any) => {
+        try {
+          const { chatId, text } = payload;
+          if (!chatId || !text) {
+            ack?.({ ok: false, error: "Invalid payload" });
+            return;
+          }
 
-        const { chatId, text } = payload;
-        if (chatId && text) {
-          chat.to(chatId).emit("message:new", {
-            chatId,
-            text,
-            fromSocket: socket.id,
-            createdAt: new Date().toISOString(),
-          });
+          const { userMsg, assistantMsg } = await agentService.processMessage(chatId, text);
+          chat.to(chatId).emit("message:new", userMsg);
+          chat.to(chatId).emit("message:new", assistantMsg);
+
           ack?.({ ok: true });
         }
-        else {
-          ack?.({ ok: false, error: "Invalid payload" });
+        catch (err) {
+          logger.error(`Error processing message for socket ${socket.id}`, err);
+          ack?.({ ok: false, error: "Internal server error" });
         }
       });
 
