@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import type { IQueryParams } from "@/types";
 
-import { chatService } from "@/services/repository";
+import { chatService, messageService } from "@/services/repository";
 
 export class ChatController {
   async getChats(req: Request, res: Response, next: NextFunction) {
@@ -30,8 +30,8 @@ export class ChatController {
 
   async getChat(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const result = await chatService.getById(id);
+      const { chatId } = req.params;
+      const result = await chatService.getById(chatId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -52,8 +52,8 @@ export class ChatController {
 
   async updateChat(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const result = await chatService.update(id, req.body);
+      const { chatId } = req.params;
+      const result = await chatService.update(chatId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -63,12 +63,27 @@ export class ChatController {
 
   async deleteChat(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const result = await chatService.delete(id);
+      const { chatId } = req.params;
+      const result = await chatService.delete(chatId);
       res.status(200).json(result);
     }
     catch (error) {
       next(error);
     }
   };
+
+  async getMessages(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { chatId } = req.params;
+      const result = await messageService.getAll({
+        filter: {
+          chatId,
+        },
+      });
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
 }

@@ -1,16 +1,14 @@
 import "tsconfig-paths/register";
-import http from "node:http";
 import process from "node:process";
 
-import app from "./app";
-import { cacheService } from "./services/core";
+import { server } from "./app";
+import { cacheService, initializeServices } from "./services/core";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
 import { prisma } from "./utils/prisma";
 
-const server = http.createServer(app);
-
 async function main() {
+  initializeServices();
   server.listen(env.PORT, () => {
     logger.info(`Server running on port ${env.PORT}`);
   });

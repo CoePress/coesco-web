@@ -1,4 +1,5 @@
-export { default as Chat } from "./chat"
+export { default as ChatPage } from "./chat"
 export { default as Login } from "./login"
 export { default as Menu } from "./menu"
 export { default as MicrosoftCallback } from "./microsoft-callback"
+export { default as Resources } from "./resources"

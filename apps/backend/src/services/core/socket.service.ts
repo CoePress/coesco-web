@@ -74,8 +74,45 @@ export class SocketService {
 
   private registerChatNamespace() {
     const chat = this.getNamespace("chat");
+
     chat.on("connection", (socket: Socket) => {
       logger.info(`Chat client connected: ${socket.id}`);
+
+      if (socket.handshake.query && Object.keys(socket.handshake.query).length > 0) {
+        logger.info(`Query params for ${socket.id}:`, socket.handshake.query);
+      }
+
+      socket.on("room:join", ({ chatId }) => {
+        logger.info(`[${socket.id}] Joining room ${chatId}`);
+        socket.join(chatId);
+      });
+
+      socket.on("room:leave", ({ chatId }) => {
+        logger.info(`[${socket.id}] Leaving room ${chatId}`);
+        socket.leave(chatId);
+      });
+
+      socket.on("message:send", (payload, ack?: any) => {
+        logger.info(`[${socket.id}] Message send event`, payload);
+
+        const { chatId, text } = payload;
+        if (chatId && text) {
+          chat.to(chatId).emit("message:new", {
+            chatId,
+            text,
+            fromSocket: socket.id,
+            createdAt: new Date().toISOString(),
+          });
+          ack?.({ ok: true });
+        }
+        else {
+          ack?.({ ok: false, error: "Invalid payload" });
+        }
+      });
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] Chat client disconnected: ${reason}`);
+      });
     });
   }
 

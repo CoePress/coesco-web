@@ -13,7 +13,7 @@ import { __dev__, __prod__ } from "./utils/env";
 import { logger } from "./utils/logger";
 
 const app = express();
-const httpServer = createServer(app);
+const server = createServer(app);
 
 const corsOptions = {
   origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
@@ -23,7 +23,7 @@ const corsOptions = {
   exposedHeaders: ["Content-Range", "X-Content-Range"],
 };
 
-const io = new Server(httpServer, {
+const io = new Server(server, {
   cors: corsOptions,
   pingInterval: 5000,
   pingTimeout: 5000,
@@ -55,5 +55,5 @@ app.set("trust proxy", false);
 app.use("/api", routes);
 
 export { io };
-export { httpServer };
+export { server };
 export default app;
