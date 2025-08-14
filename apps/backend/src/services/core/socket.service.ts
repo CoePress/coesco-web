@@ -16,6 +16,7 @@ export class SocketService {
     this.registerIotNamespace();
     this.registerLockingNamespace();
     this.registerMetricsNamespace();
+    this.registerChatNamespace();
   }
 
   private registerIotNamespace() {
@@ -68,6 +69,13 @@ export class SocketService {
     const metrics = this.getNamespace("metrics");
     metrics.on("connection", (socket: Socket) => {
       logger.info(`Metrics client connected: ${socket.id}`);
+    });
+  }
+
+  private registerChatNamespace() {
+    const chat = this.getNamespace("chat");
+    chat.on("connection", (socket: Socket) => {
+      logger.info(`Chat client connected: ${socket.id}`);
     });
   }
 

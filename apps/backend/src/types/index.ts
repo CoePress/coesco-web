@@ -1,3 +1,5 @@
+import type { Employee, User, UserRole } from "@prisma/client";
+
 export interface IQueryParams<T> {
   page?: number;
   limit?: number;
@@ -33,4 +35,42 @@ export interface IServiceResult<T> {
     totalPages?: number;
   };
   error?: string;
+}
+
+export interface IApiKey {
+  id: string;
+  key: string;
+  ownerId: string;
+  name: string;
+  createdAt: Date;
+  expiresAt?: Date;
+  scopes: string[];
+}
+
+export interface IAuth {
+  id: string;
+  email: string;
+  password?: string;
+  microsoftId?: string;
+  userId: string;
+  role: UserRole;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IAuthAttributes
+  extends Omit<IAuth, "createdAt" | "updatedAt"> {}
+
+export interface IAuthResponse {
+  token: string;
+  refreshToken: string;
+  user: User;
+  employee: Employee | null;
+}
+
+export interface IAuthTokens {
+  token: string;
+  refreshToken: string;
 }

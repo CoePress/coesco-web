@@ -1,11 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { cookieOptions } from "@/config/env";
+
 import { authService } from "../services/core";
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = authService.login();
+      const { email, password } = req.body;
+      const result = await authService.login(email, password);
+      res.cookie("accessToken", result.token, cookieOptions);
+      res.cookie("refreshToken", result.refreshToken, cookieOptions);
       res.status(200).json(result);
     }
     catch (error) {
@@ -15,8 +20,8 @@ export class AuthController {
 
   async microsoftLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = authService.microsoftLogin();
-      res.status(200).json(result);
+      const url = await authService.microsoftLogin();
+      res.json({ url });
     }
     catch (error) {
       next(error);
@@ -25,7 +30,14 @@ export class AuthController {
 
   async microsoftCallback(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = authService.microsoftCallback();
+      const { code, state } = req.body;
+      const result = await authService.microsoftCallback(
+        code as string,
+        state as string,
+      );
+
+      res.cookie("accessToken", result.token, cookieOptions);
+      res.cookie("refreshToken", result.refreshToken, cookieOptions);
       res.status(200).json(result);
     }
     catch (error) {
@@ -35,57 +47,20 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = authService.logout();
-      res.status(200).json(result);
+      res.clearCookie("accessToken", cookieOptions);
+      res.clearCookie("refreshToken", cookieOptions);
+
+      res.json({ message: "Logged out successfully" });
     }
     catch (error) {
       next(error);
     }
   }
 
-  async me(req: Request, res: Response, next: NextFunction) {
+  async session(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = authService.me();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getSessions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = authService.getSessions();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteSessions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = authService.deleteSessions();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteSession(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = authService.deleteSession();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async recentActivity(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = authService.recentActivity();
+      const accessToken = req.cookies?.accessToken ?? null;
+      const result = await authService.session(accessToken);
       res.status(200).json(result);
     }
     catch (error) {
