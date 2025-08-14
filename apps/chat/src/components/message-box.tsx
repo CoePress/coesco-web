@@ -1,3 +1,4 @@
+import { FileIcon, MicIcon, MicOff, XIcon } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type MessageBoxProps = {
@@ -142,7 +143,7 @@ export default function MessageBox({
           {files.map((f, i) => (
             <span
               key={f.name + i}
-              className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs"
+              className="group inline-flex items-center gap-2 rounded border bg-background px-2 py-1 text-xs"
               title={f.name}
             >
               <span className="truncate max-w-[16rem]">{f.name}</span>
@@ -150,11 +151,9 @@ export default function MessageBox({
                 type="button"
                 onClick={() => removeFileAt(i)}
                 aria-label={`Remove ${f.name}`}
-                className="rounded-full p-1 hover:bg-slate-100"
+                className="rounded-full text-text-muted hover:text-red-500/50 cursor-pointer"
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor">
-                  <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XIcon size={14}/>
               </button>
             </span>
           ))}
@@ -166,9 +165,7 @@ export default function MessageBox({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          'relative w-full rounded-md border bg-white flex',
-          'border-slate-300 focus-within:border-slate-400 p-2',
-          'shadow-sm',
+          'relative w-full rounded-md border bg-background flex items-center p-2 shadow-sm',
           isDragging ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
         ].join(' ')}
       >
@@ -180,7 +177,7 @@ export default function MessageBox({
           placeholder={isDragging ? 'Drop files to attach…' : placeholder}
           rows={1}
           disabled={disabled}
-          className="block w-full resize-none bg-transparent outline-none placeholder-slate-400 text-sm sm:text-base"
+          className="block w-full resize-none bg- flex-1 outline-none placeholder-text-muted text-sm sm:text-base"
           aria-label="Message input"
         />
 
@@ -191,11 +188,11 @@ export default function MessageBox({
             title="Attach files"
             aria-label="Attach files"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 rounded-md hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={[
+              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface text-text',
+            ].join(' ')}
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
-              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 15V6a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3v12a4 4 0 0 0 8 0V7" />
-            </svg>
+            <FileIcon size={16}/>
           </button>
 
           <button
@@ -205,20 +202,14 @@ export default function MessageBox({
             aria-label={recording ? 'Stop recording' : 'Record voice'}
             onClick={toggleRecording}
             className={[
-              'p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-              recording ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-100',
+              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface',
+              recording ? 'text-red-500' : 'text-text',
             ].join(' ')}
           >
             {recording ? (
-              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
-                <path strokeWidth="2" strokeLinecap="round" d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3z" />
-                <path strokeWidth="2" strokeLinecap="round" d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v2M8 21h8" />
-              </svg>
+              <MicOff size={16} />
             ) : (
-              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
-                <path strokeWidth="2" strokeLinecap="round" d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3z" />
-                <path strokeWidth="2" strokeLinecap="round" d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v2M8 21h8" />
-              </svg>
+              <MicIcon size={16} />
             )}
           </button>
 
@@ -226,7 +217,7 @@ export default function MessageBox({
             type="button"
             disabled={disabled || (!text.trim() && files.length === 0)}
             onClick={() => doSend()}
-            className="p-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="p-2 cursor-pointer rounded-md bg-primary/90 text-white hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Send message"
             title="Send"
           >

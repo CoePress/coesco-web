@@ -2,10 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/auth.context";
 import { useGetEntities } from "../hooks/use-get-entities";
 import api from "../utils/axios";
-import { MessageBox } from "../components";
+import { MessageBox, ThemeToggle } from "../components";
 import { useNavigate, useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
-import { EllipsisIcon } from "lucide-react";
+import { EllipsisIcon, MenuIcon } from "lucide-react";
 
 type Chat = {
   id: string;
@@ -41,7 +41,7 @@ export default function ChatPage() {
 
   const socketRef = useRef<Socket | null>(null);
   const editInputRef = useRef<HTMLInputElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null); // <-- for scroll
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const { employee } = useAuth();
   const navigate = useNavigate();
@@ -75,41 +75,6 @@ export default function ChatPage() {
     const base = (messages ?? []).slice().reverse();
     return [...base, ...liveMessages];
   }, [messages, liveMessages]);
-
-  // Jump to bottom instantly on initial load or when switching chats
-  useLayoutEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-    }
-  }, [selectedChatId, messagesLoading]);
-
-  // Smooth scroll only when messages update
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [orderedMessages]);
-
-  // Set selected chat from route
-  useEffect(() => {
-    setSelectedChatId(routeId ?? null);
-  }, [routeId]);
-
-  // Auto nav to newest chat if pending
-  useEffect(() => {
-    if (pendingNavToLatest && chats && chats.length > 0) {
-      navigate(`/chat/${chats[0].id}`);
-      setPendingNavToLatest(false);
-    }
-  }, [pendingNavToLatest, chats, navigate]);
-
-  // Click outside menu to close
-  useEffect(() => {
-    if (!menuOpenFor) return;
-    const onDocClick = () => setMenuOpenFor(null);
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [menuOpenFor]);
 
   const initials =
     ((employee?.firstName?.[0] ?? "") + (employee?.lastName?.[0] ?? "")).toUpperCase() || "??";
@@ -147,69 +112,7 @@ export default function ChatPage() {
       console.warn("Socket not connected; queued send/log only", payload);
     }
   };
-
-  // Initialize socket once
-  useEffect(() => {
-    if (socketRef.current) return;
-
-    const socket = io("http://localhost:8080/chat", {
-      withCredentials: true,
-      transports: ["websocket"],
-      query: { employeeId: employee?.id ?? "" },
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      setIsSocketConnected(true);
-      if (selectedChatId) {
-        socket.emit("room:join", { chatId: selectedChatId });
-      }
-    });
-
-    socket.on("disconnect", () => setIsSocketConnected(false));
-    socket.on("connect_error", (err) => console.error("socket connect_error", err));
-    socket.on("error", (err) => console.error("socket error", err));
-
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-      setIsSocketConnected(false);
-    };
-  }, [employee?.id, selectedChatId]);
-
-  // Join/leave room when selectedChatId changes
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-    if (selectedChatId) {
-      socket.emit("room:join", { chatId: selectedChatId });
-    }
-    return () => {
-      if (selectedChatId) {
-        socket.emit("room:leave", { chatId: selectedChatId });
-      }
-    };
-  }, [selectedChatId]);
-
-  // Listen for new messages
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    const onMessageNew = (msg: Message) => {
-      if (msg.chatId === selectedChatId) {
-        setLiveMessages((prev) => [...prev, msg]);
-        refreshMessages();
-      }
-    };
-
-    socket.on("message:new", onMessageNew);
-    return () => {
-      socket.off("message:new", onMessageNew);
-    };
-  }, [selectedChatId, refreshMessages]);
-
+  
   const startEditing = (chat: Chat) => {
     setEditingChatId(chat.id);
     setEditingName(chat.name);
@@ -239,8 +142,97 @@ export default function ChatPage() {
     setEditingName("");
   };
 
+  useLayoutEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [selectedChatId, messagesLoading]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [orderedMessages]);
+
+  useEffect(() => {
+    setSelectedChatId(routeId ?? null);
+  }, [routeId]);
+
+  useEffect(() => {
+    if (pendingNavToLatest && chats && chats.length > 0) {
+      navigate(`/chat/${chats[0].id}`);
+      setPendingNavToLatest(false);
+    }
+  }, [pendingNavToLatest, chats, navigate]);
+
+  useEffect(() => {
+    if (!menuOpenFor) return;
+    const onDocClick = () => setMenuOpenFor(null);
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [menuOpenFor]);
+
+  useEffect(() => {
+    if (socketRef.current) return;
+
+    const socket = io("http://localhost:8080/chat", {
+      withCredentials: true,
+      transports: ["websocket"],
+      query: { employeeId: employee?.id ?? "" },
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsSocketConnected(true);
+      if (selectedChatId) {
+        socket.emit("room:join", { chatId: selectedChatId });
+      }
+    });
+
+    socket.on("disconnect", () => setIsSocketConnected(false));
+    socket.on("connect_error", (err) => console.error("socket connect_error", err));
+    socket.on("error", (err) => console.error("socket error", err));
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      setIsSocketConnected(false);
+    };
+  }, [employee?.id, selectedChatId]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    if (selectedChatId) {
+      socket.emit("room:join", { chatId: selectedChatId });
+    }
+    return () => {
+      if (selectedChatId) {
+        socket.emit("room:leave", { chatId: selectedChatId });
+      }
+    };
+  }, [selectedChatId]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const onMessageNew = (msg: Message) => {
+      if (msg.chatId === selectedChatId) {
+        setLiveMessages((prev) => [...prev, msg]);
+        refreshMessages();
+      }
+    };
+
+    socket.on("message:new", onMessageNew);
+    return () => {
+      socket.off("message:new", onMessageNew);
+    };
+  }, [selectedChatId, refreshMessages]);
+
   return (
-    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex">
+    <div className="min-h-[100dvh] bg-background text-text flex">
       <div
         className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
@@ -251,7 +243,7 @@ export default function ChatPage() {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200",
+          "fixed inset-y-0 left-0 z-40 w-72 bg-foreground border-r",
           "transition-transform duration-200 ease-in-out",
           "-translate-x-full",
           open ? "translate-x-0" : "",
@@ -275,7 +267,7 @@ export default function ChatPage() {
           <button
             type="button"
             onClick={() => navigate("/chat")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50 active:bg-slate-100 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-foreground cursor-pointer"
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
               <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
@@ -286,7 +278,7 @@ export default function ChatPage() {
           <button
             type="button"
             onClick={() => navigate("/resources")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50 active:bg-slate-100 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-foreground cursor-pointer"
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
               <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
@@ -302,7 +294,7 @@ export default function ChatPage() {
               id="chat-search"
               type="text"
               placeholder="Search chats..."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
             />
           </div>
 
@@ -315,8 +307,8 @@ export default function ChatPage() {
                 <button
                   key={c.id}
                   onClick={() => handleSelectChat(c.id)}
-                  className={`relative flex w-full text-left items-center justify-between px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer ${
-                    selectedChatId === c.id ? "bg-slate-100" : ""
+                  className={`relative flex w-full text-left items-center justify-between px-3 py-2 rounded-md hover:bg-background/50 cursor-pointer ${
+                    selectedChatId === c.id ? "bg-surface" : "bg-transparent"
                   }`}
                   aria-current={selectedChatId === c.id ? "page" : undefined}
                 >
@@ -346,9 +338,9 @@ export default function ChatPage() {
                       e.stopPropagation();
                       setMenuOpenFor((open) => (open === c.id ? null : c.id));
                     }}
-                    className="absolute right-2 inline-flex items-center justify-center rounded-md p-1 hover:bg-slate-200"
+                    className="absolute right-2 inline-flex items-center justify-center rounded-md p-1 hover:text-text text-text-muted cursor-pointer"
                   >
-                    <EllipsisIcon size={16} className="text-slate-600" />
+                    <EllipsisIcon size={16} />
                   </button>
 
                   {menuOpenFor === c.id && (
@@ -356,13 +348,13 @@ export default function ChatPage() {
                       role="menu"
                       aria-label="Chat actions"
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute right-2 top-9 z-50 w-36 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg"
+                      className="absolute right-2 top-9 z-50 w-36 overflow-hidden rounded-md bg-background shadow-lg"
                     >
                       <button
                         role="menuitem"
                         type="button"
                         onClick={() => startEditing(c)}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-foreground"
                       >
                         Rename
                       </button>
@@ -387,23 +379,22 @@ export default function ChatPage() {
       </aside>
 
       <div className={`flex-1 flex flex-col ${open ? "lg:pl-72" : "lg:pl-0"}`}>
-        <header className="sticky top-0 z-20 h-14 bg-white/80 backdrop-blur border-b border-slate-200">
-          <div className="h-full px-4 flex items-center gap-3">
+        <header className="sticky top-0 z-20 h-14 bg-background/80 backdrop-blur border-b">
+          <div className="h-full px-2 flex items-center gap-2">
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle sidebar"
               aria-expanded={open}
-              className="p-2 rounded-md hover:bg-slate-100 focus:outline-none cursor-pointer"
+              className="p-2 rounded-md hover:bg-surface focus:outline-none cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
-                <path strokeWidth="2" strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
+              <MenuIcon size={18} />
             </button>
 
             <div className="flex-1 font-semibold tracking-tight">Chat</div>
 
             <div className="flex items-center gap-3 pl-2">
+              <ThemeToggle />
               <div className="hidden sm:flex flex-col items-end leading-tight">
                 <span className="text-sm font-medium">
                   {employee?.firstName} {employee?.lastName?.[0] || ""}
@@ -414,10 +405,10 @@ export default function ChatPage() {
                 <img
                   src={employee.avatarUrl}
                   alt={`${employee?.firstName ?? ""} ${employee?.lastName ?? ""}`}
-                  className="h-9 w-9 rounded-full border border-slate-200 object-cover"
+                  className="h-9 w-9 rounded border object-cover"
                 />
               ) : (
-                <div className="h-9 w-9 rounded-full grid place-items-center border border-slate-200 text-sm font-medium">
+                <div className="h-9 w-9 rounded grid place-items-center border text-sm font-medium">
                   {initials}
                 </div>
               )}
@@ -449,7 +440,7 @@ export default function ChatPage() {
                       return (
                         <div key={m.id} className={`chat ${bubbleSide}`}>
                           <div className="chat-image text-center flex items-center justify-center">
-                            <div className="w-9 h-9 rounded-full ring-1 ring-slate-200 bg-white grid place-items-center">
+                            <div className="w-9 h-9 rounded-full border bg-background grid place-items-center">
                               <span className="text-xs font-semibold">{initials}</span>
                             </div>
                           </div>
@@ -464,7 +455,7 @@ export default function ChatPage() {
                             </time>
                           </div>
 
-                          <div className="chat-bubble text-sm">{m.content}</div>
+                          <div className={`chat-bubble text-sm text-text ${isSelf ? "bg-surface" : "bg-foreground"}`}>{m.content}</div>
                         </div>
                       );
                     })}
@@ -477,7 +468,7 @@ export default function ChatPage() {
         </div>
 
         {selectedChatId && (
-          <div className="sticky bottom-0 border-t border-slate-200 bg-white p-4">
+          <div className="sticky bottom-0 border-t bg-foreground p-4">
             <div className="mx-auto max-w-5xl">
               <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
             </div>
