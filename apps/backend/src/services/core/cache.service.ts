@@ -1,6 +1,6 @@
 import Redis from "ioredis";
 
-import { env } from "@/utils/env";
+import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
 
 export class CacheService {

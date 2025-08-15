@@ -22,6 +22,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default("1d"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+  FANUC_ADAPTER_HOST: z.string(),
+  FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
 });
 
 // eslint-disable-next-line node/no-process-env

@@ -243,38 +243,7 @@ export const generateApiKey = ({
   return prefix ? `${prefix}-${randomString}` : randomString;
 };
 
-export const buildDateRangeFilter = (startDate: string, endDate: string) => {
-  return {
-    OR: [
-      {
-        startTime: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
-      },
-      {
-        endTime: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
-      },
-      {
-        AND: [
-          {
-            startTime: {
-              lte: new Date(startDate),
-            },
-          },
-          {
-            endTime: {
-              gte: new Date(endDate),
-            },
-          },
-        ],
-      },
-    ],
-  };
-};
+
 
 export const deriveTableNames = (modelName: string): string[] => {
   const snake = modelName.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();

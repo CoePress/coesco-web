@@ -8,8 +8,8 @@ import morgan from "morgan";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 
+import { __dev__, __prod__ } from "./config/env";
 import routes from "./routes";
-import { __dev__, __prod__ } from "./utils/env";
 import { logger } from "./utils/logger";
 
 const app = express();

@@ -3,12 +3,11 @@ import type { Server, Socket } from "socket.io";
 import { logger } from "@/utils/logger";
 
 import { agentService, lockingService } from ".";
-import { messageService } from "../repository";
 
 export class SocketService {
   private io: Server | null = null;
 
-  public registerNamespaces(io: Server): void {
+  initialize(io: Server): void {
     this.io = io;
     if (!this.io) {
       throw new Error("Socket.IO instance not set");
@@ -20,10 +19,33 @@ export class SocketService {
     this.registerChatNamespace();
   }
 
+  public broadcastMachineStates(data: any): void {
+    if (!this.io)
+      return;
+    this.io.of("/iot").to("machine_states").emit("machine_states", data);
+  }
+
   private registerIotNamespace() {
     const iot = this.getNamespace("iot");
+
     iot.on("connection", (socket: Socket) => {
       logger.info(`IOT client connected: ${socket.id}`);
+
+      socket.on("machine_states:subscribe", () => {
+        socket.join("machine_states");
+        socket.emit("machine_states:subscribed");
+        logger.info(`[${socket.id}] subscribed to machine_states`);
+      });
+
+      socket.on("machine_states:unsubscribe", () => {
+        socket.leave("machine_states");
+        socket.emit("machine_states:unsubscribed");
+        logger.info(`[${socket.id}] unsubscribed from machine_states`);
+      });
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] IOT client disconnected: ${reason}`);
+      });
     });
   }
 

@@ -74,3 +74,12 @@ export interface IAuthTokens {
   token: string;
   refreshToken: string;
 }
+
+export interface IDateRange {
+  duration: number;
+  totalDays: number;
+  startDate: Date;
+  endDate: Date;
+  previousStartDate: Date;
+  previousEndDate: Date;
+}

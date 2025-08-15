@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
-import { env } from "../utils/env";
+import { env } from "@/config/env";
 
 export class SystemController {
   async getLogFiles(req: Request, res: Response, next: NextFunction) {
