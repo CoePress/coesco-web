@@ -25,7 +25,7 @@ const MicrosoftCallback = () => {
       }
 
       try {
-        const { data } = await instance.post("/auth/callback/microsoft", {
+        const { data } = await instance.post("/auth/microsoft/callback", {
           code,
           state,
         });

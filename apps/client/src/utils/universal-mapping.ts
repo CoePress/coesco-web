@@ -1,5 +1,3 @@
-// Universal mapping utility for backend-to-frontend data transformation
-
 export type MappingConfig = {
   [backendKey: string]: string | { key: string, transform?: (val: any, backend?: any) => any }
 };
@@ -20,6 +18,5 @@ export function mapBackendToFrontend<T = any>(
       }
     }
   }
-  // Allow for extra custom logic (for nested/complex fields)
   return extra ? { ...result, ...extra(backendData, result) } : result;
 } 

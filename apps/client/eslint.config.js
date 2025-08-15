@@ -25,5 +25,9 @@ export default tseslint.config(
       ],
       'react/react-in-jsx-scope': 'off',
     },
+    parserOptions: {
+      tsconfigRootDir: __dirname,
+      project: ['./apps/client/tsconfig.json'],
+    }
   },
 )

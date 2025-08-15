@@ -8,8 +8,8 @@ router.get("/logs", systemController.getLogFiles);
 
 router.get("/logs/:file", systemController.getLogFile);
 
-router.get("/", (_req, res) => {
-  res.send("OK");
+router.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 export default router;

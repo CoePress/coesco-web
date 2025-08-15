@@ -6,6 +6,7 @@ import { PerformanceSheetProvider } from "@/contexts/performance.context";
 import MainMenu from "./pages/general/main-menu";
 import NotFound from "./pages/general/not-found";
 import Login from "./pages/general/login";
+import ChatPage from "./pages/chat/chat";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -77,6 +78,14 @@ const App = () => {
             withLayout={true}
           />
         }>
+        <Route
+          path="/chat"
+          element={<ChatPage />}
+        />
+        <Route
+          path="/chat/:id"
+          element={<ChatPage />}
+        />
         {modules
           .filter((module) => module.slug === "admin")
           .map((module) => (

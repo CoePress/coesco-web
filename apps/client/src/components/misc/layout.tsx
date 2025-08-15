@@ -9,6 +9,7 @@ import Button from "../common/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import { useAuth } from "@/contexts/auth.context";
+import ChatSidebar from "./chat-sidebar";
 
 // type HeaderProps = {
 //   employee: any;
@@ -125,37 +126,32 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             <X size={16} />
           </Button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2">
-          <div className="flex flex-col gap-2">
-            {(() => {
-              return (
-                <>
-                  {currentModule?.pages?.map((page) => {
-                    const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
-
-                    return (
-                      <Link
-                        key={page.slug || "index"}
-                        to={trimmer(fullPath)}
-                        className={`flex items-center gap-3 px-4 py-2 rounded ${
-                          isOpen ? "opacity-100" : "opacity-0"
-                        } ${
-                          isActive(fullPath)
-                            ? "bg-background text-primary"
-                            : "text-text-muted hover:bg-surface"
-                        }`}>
-                        <page.icon size={18} />
-                        <span className="font-medium text-sm">
-                          {page.label}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </>
-              );
-            })()}
-          </div>
-        </nav>
+          <nav className="flex-1 overflow-y-auto p-2">
+            {location.pathname.startsWith("/chat") ? (
+              <ChatSidebar />
+            ) : (
+              <div className="flex flex-col gap-2">
+                {currentModule?.pages?.map((page) => {
+                  const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
+                  return (
+                    <Link
+                      key={page.slug || "index"}
+                      to={trimmer(fullPath)}
+                      className={`flex items-center gap-3 px-4 py-2 rounded ${
+                        isOpen ? "opacity-100" : "opacity-0"
+                      } ${
+                        isActive(fullPath)
+                          ? "bg-background text-primary"
+                          : "text-text-muted hover:bg-surface"
+                      }`}>
+                      <page.icon size={18} />
+                      <span className="font-medium text-sm">{page.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </nav>
       </div>
     </div>
   );

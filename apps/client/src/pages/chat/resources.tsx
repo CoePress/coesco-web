@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 type Resource = {
   id: string;
   name: string;
-  type: string; // e.g. 'application/pdf'
+  type: string;
   url: string;
   uploadedAt: string;
   tags: string[];

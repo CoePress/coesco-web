@@ -12,7 +12,7 @@ const useLogin = () => {
     setError(null);
 
     try {
-      const { data } = await instance.get(`/auth/login/microsoft`);
+      const { data } = await instance.get(`/auth/microsoft/login`);
 
       window.location.href = data.url;
     } catch (error) {

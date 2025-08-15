@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 
 import { IApiResponse, IQueryParams } from "../utils/types";
-import api from "../utils/axios";
+import api from "@/utils/axios";
 
 export const useGetEntities = <T = any>(
   endpoint: string | null,
