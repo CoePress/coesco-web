@@ -5,31 +5,31 @@ import { quoteController } from "@/controllers";
 const router = Router();
 
 // Quotes
-router.post("/quotes", quoteController.createQuote);
-router.get("/quotes", quoteController.getQuotes);
-router.get("/quotes/:quoteId", quoteController.getQuote);
-router.patch("/quotes/:quoteId", quoteController.updateQuote);
-router.delete("/quotes/:quoteId", quoteController.deleteQuote);
+router.post("/", quoteController.createQuote);
+router.get("/", quoteController.getQuotes);
+router.get("/:quoteId", quoteController.getQuote);
+router.patch("/:quoteId", quoteController.updateQuote);
+router.delete("/:quoteId", quoteController.deleteQuote);
 
 // Quote Items
-router.post("/quotes/:quoteId/items", quoteController.createQuoteItem);
-router.get("/quotes/:quoteId/items", quoteController.getQuoteItems);
-router.get("/quotes/:quoteId/items/:quoteItemId", quoteController.getQuoteItem);
-router.patch("/quotes/:quoteId/items/:quoteItemId", quoteController.updateQuoteItem);
-router.delete("/quotes/:quoteId/items/:quoteItemId", quoteController.deleteQuoteItem);
+router.post("/:quoteId/items", quoteController.createQuoteItem);
+router.get("/:quoteId/items", quoteController.getQuoteItems);
+router.get("/:quoteId/items/:quoteItemId", quoteController.getQuoteItem);
+router.patch("/:quoteId/items/:quoteItemId", quoteController.updateQuoteItem);
+router.delete("/:quoteId/items/:quoteItemId", quoteController.deleteQuoteItem);
 
 // Actions
-router.post("/quotes/:quoteId/approve", quoteController.approveQuote);
-router.post("/quotes/:quoteId/revise", quoteController.reviseQuote);
-router.post("/quotes/:quoteId/accept", quoteController.acceptQuote);
-router.post("/quotes/:quoteId/reject", quoteController.rejectQuote);
-router.post("/quotes/:quoteId/cancel", quoteController.cancelQuote);
-router.post("/quotes/:quoteId/expire", quoteController.expireQuote);
-router.post("/quotes/:quoteId/send", quoteController.sendQuote);
-router.get("/quotes/:quoteId/pdf", quoteController.exportPDF);
+router.post("/:quoteId/approve", quoteController.approveQuote);
+router.post("/:quoteId/revise", quoteController.reviseQuote);
+router.post("/:quoteId/accept", quoteController.acceptQuote);
+router.post("/:quoteId/reject", quoteController.rejectQuote);
+router.post("/:quoteId/cancel", quoteController.cancelQuote);
+router.post("/:quoteId/expire", quoteController.expireQuote);
+router.post("/:quoteId/send", quoteController.sendQuote);
+router.get("/:quoteId/pdf", quoteController.exportPDF);
 
 // Relations
-router.patch("/quotes/:quoteId/owner", quoteController.setOwner);
-router.patch("/quotes/:quoteId/journey", quoteController.setJourney);
+router.patch("/:quoteId/owner", quoteController.setOwner);
+router.patch("/:quoteId/journey", quoteController.setJourney);
 
 export default router;
