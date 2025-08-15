@@ -25,6 +25,14 @@ router.get("/contacts/:contactId", () => { });
 router.patch("/contacts/:contactId", () => { });
 router.delete("/contacts/:contactId", () => { });
 
+// Journeys
+router.post("/companies/:companyId/journeys", () => { });
+router.get("/companies/:companyId/journeys", () => { });
+router.get("/journeys", () => { });
+router.get("/journeys/:journeyId", () => { });
+router.patch("/journeys/:journeyId", () => { });
+router.delete("/journeys/:journeyId", () => { });
+
 // Quotes
 router.post("/companies/:companyId/quotes", () => { });
 router.get("/companies/:companyId/quotes", () => { });

@@ -1,12 +1,14 @@
-import { deriveTableNames, getObjectDiff } from "@/utils";
-import { getRequestContext } from "./context";
 import { Prisma } from "@prisma/client";
+
+import type { IQueryParams } from "@/types";
+
+import { deriveTableNames, getObjectDiff } from "@/utils";
+import { getEmployeeContext } from "@/utils/context";
 import { buildQuery, prisma } from "@/utils/prisma";
-import { IQueryParams } from "@/types/api.types";
 
 const columnCache = new Map<string, string[]>();
 
-export class GenericService<T> {
+export class BaseService<T> {
   protected model: any;
   protected entityName?: string;
   protected modelName?: string;
@@ -16,7 +18,7 @@ export class GenericService<T> {
     const searchFields = this.getSearchFields();
     const { query, finalWhere, page, take } = await this.buildQueryParams(
       params,
-      searchFields
+      searchFields,
     );
 
     const client = tx ?? this.model;
@@ -57,14 +59,15 @@ export class GenericService<T> {
   }
 
   async getHistory(id: string) {
-    if (!this.modelName) throw new Error("Missing model name");
+    if (!this.modelName)
+      throw new Error("Missing model name");
 
     const entries = await prisma.auditLog.findMany({
       where: { model: this.modelName, recordId: id },
       orderBy: { createdAt: "asc" },
     });
 
-    return entries.map((entry) => ({
+    return entries.map(entry => ({
       action: entry.action,
       actor: { id: entry.changedBy },
       timestamp: entry.createdAt,
@@ -153,7 +156,8 @@ export class GenericService<T> {
 
     if (tx) {
       await execute(tx);
-    } else {
+    }
+    else {
       await prisma.$transaction(execute);
     }
     return { success: true };
@@ -161,8 +165,10 @@ export class GenericService<T> {
 
   // Private Methods
   private async getColumns(): Promise<string[]> {
-    if (this._columns) return this._columns;
-    if (!this.modelName) return [];
+    if (this._columns)
+      return this._columns;
+    if (!this.modelName)
+      return [];
 
     if (columnCache.has(this.modelName)) {
       this._columns = columnCache.get(this.modelName)!;
@@ -177,22 +183,22 @@ export class GenericService<T> {
         AND table_name IN (${Prisma.join(tables)})
     `;
 
-    const cols = rows.map((r) => r.column_name);
+    const cols = rows.map(r => r.column_name);
     columnCache.set(this.modelName, cols);
     this._columns = cols;
     return cols;
   }
 
   private async getScope(
-    columns?: string[]
+    columns?: string[],
   ): Promise<Record<string, any> | undefined> {
-    const ctx = getRequestContext();
+    const ctx = getEmployeeContext();
     const cols = columns ?? (await this.getColumns());
 
     const scope: Record<string, any>[] = [];
 
     if (cols.includes("ownerId")) {
-      scope.push({ OR: [{ ownerId: null }, { ownerId: ctx.employeeId }] });
+      scope.push({ OR: [{ ownerId: null }, { ownerId: ctx.id }] });
     }
 
     if (cols.includes("deletedAt")) {
@@ -207,27 +213,30 @@ export class GenericService<T> {
     timestamps?: boolean;
     softDelete?: boolean;
   }) {
-    const ctx = getRequestContext();
+    const ctx = getEmployeeContext();
     const columns = await this.getColumns();
     const meta: Record<string, any> = {};
     const now = new Date();
 
     if (opts.for === "create") {
-      if (columns.includes("createdById")) meta["createdById"] = ctx.employeeId;
+      if (columns.includes("createdById"))
+        meta.createdById = ctx.id;
       if (opts.timestamps && columns.includes("createdAt"))
-        meta["createdAt"] = now;
+        meta.createdAt = now;
     }
 
     if (["create", "update"].includes(opts.for)) {
-      if (columns.includes("updatedById")) meta["updatedById"] = ctx.employeeId;
+      if (columns.includes("updatedById"))
+        meta.updatedById = ctx.id;
       if (opts.timestamps && columns.includes("updatedAt"))
-        meta["updatedAt"] = now;
+        meta.updatedAt = now;
     }
 
     if (opts.for === "delete") {
       if (opts.softDelete && columns.includes("deletedAt"))
-        meta["deletedAt"] = now;
-      if (columns.includes("deletedById")) meta["deletedById"] = ctx.employeeId;
+        meta.deletedAt = now;
+      if (columns.includes("deletedById"))
+        meta.deletedById = ctx.id;
     }
 
     return meta;
@@ -235,11 +244,11 @@ export class GenericService<T> {
 
   private async buildQueryParams(
     params?: IQueryParams<T>,
-    searchFields?: (string | { field: string; weight: number })[]
+    searchFields?: (string | { field: string; weight: number })[],
   ): Promise<any> {
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
       params ?? {},
-      searchFields
+      searchFields,
     );
     const columns = await this.getColumns();
     const scope = await this.getScope(columns);
@@ -253,8 +262,10 @@ export class GenericService<T> {
       skip,
     };
 
-    if (select) query.select = select;
-    else if (include) query.include = include;
+    if (select)
+      query.select = select;
+    else if (include)
+      query.include = include;
 
     return { query, finalWhere, page, take };
   }
@@ -263,25 +274,28 @@ export class GenericService<T> {
     action: "CREATE" | "UPDATE" | "DELETE",
     before?: Record<string, any>,
     after?: Record<string, any>,
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
   ) {
-    if (this.modelName === "auditLog") return;
+    if (this.modelName === "auditLog")
+      return;
 
-    const ctx = getRequestContext();
+    const ctx = getEmployeeContext();
     const auditModel = tx?.auditLog ?? prisma.auditLog;
 
     const recordId = after?.id ?? before?.id;
-    if (!recordId) return;
+    if (!recordId)
+      return;
 
     const diff = getObjectDiff(before, after);
-    if (Object.keys(diff).length === 0) return;
+    if (Object.keys(diff).length === 0)
+      return;
 
     await auditModel.create({
       data: {
         model: this.modelName!,
         recordId,
         action,
-        changedBy: ctx.employeeId ?? "system",
+        changedBy: ctx.id ?? "system",
         diff,
         createdAt: new Date(),
       },
@@ -289,8 +303,8 @@ export class GenericService<T> {
   }
 
   // Protected Methods
-  protected validate(data: any) {
-    return;
+  protected validate(_data: any) {
+
   }
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {

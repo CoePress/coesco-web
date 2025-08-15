@@ -102,3 +102,28 @@ export function buildDateRangeFilter(startDate: string, endDate: string) {
     ],
   };
 }
+
+export function getObjectDiff(before: Record<string, any> = {}, after: Record<string, any> = {}): Record<string, { before: any; after: any }> {
+  const diff: Record<string, { before: any; after: any }> = {};
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+
+  for (const key of keys) {
+    const a = normalizeValue(before?.[key]);
+    const b = normalizeValue(after?.[key]);
+    if (!isEqual(a, b)) {
+      diff[key] = { before: before?.[key], after: after?.[key] };
+    }
+  }
+
+  return diff;
+}
+
+export function normalizeValue(value: any) {
+  if (value instanceof Date)
+    return value.toISOString();
+  return value;
+}
+
+export function isEqual(a: any, b: any): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
