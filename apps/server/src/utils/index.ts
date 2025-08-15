@@ -243,8 +243,6 @@ export const generateApiKey = ({
   return prefix ? `${prefix}-${randomString}` : randomString;
 };
 
-
-
 export const deriveTableNames = (modelName: string): string[] => {
   const snake = modelName.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
 

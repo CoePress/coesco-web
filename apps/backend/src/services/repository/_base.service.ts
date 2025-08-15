@@ -48,8 +48,6 @@ export class BaseService<T> {
     return payload;
   }
 
-  /* ------------------------------------------------------------------ CRUD */
-
   async getAll(
     params?: IQueryParams<T>,
     tx?: Prisma.TransactionClient,

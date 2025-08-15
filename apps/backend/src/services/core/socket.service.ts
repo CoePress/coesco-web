@@ -146,4 +146,28 @@ export class SocketService {
       throw new Error("Socket.IO instance not set");
     return this.io.of(`/${endpoint}`);
   }
+
+  async stop() {
+    if (!this.io)
+      return;
+    try {
+      logger.info("Closing Socket.IO server...");
+      this.io.of("/client").disconnectSockets(true);
+      await new Promise<void>((resolve, reject) => {
+        this.io!.close((err) => {
+          if (err) {
+            reject(err);
+          }
+          else {
+            resolve();
+          }
+        });
+      });
+
+      logger.info("Socket.IO server closed");
+    }
+    catch (err) {
+      logger.error(`Socket.IO close error: ${err}`);
+    }
+  }
 }

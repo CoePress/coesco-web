@@ -23,7 +23,7 @@ process.on("uncaughtException", handleFatal);
 process.on("unhandledRejection", handleFatal);
 
 async function shutdown() {
-  logger.warn("\nShutting down gracefully...");
+  logger.warn("Shutting down gracefully...");
   server.close(() => {
     logger.warn("HTTP server closed.");
   });
