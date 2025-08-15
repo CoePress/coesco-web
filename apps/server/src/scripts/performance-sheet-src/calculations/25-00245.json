@@ -157,7 +157,7 @@
   },
   "tddbhd": {
     "reel": {
-      "dispReelMtr": "",
+      "dispReelMtr": 0,
       "airPressureAvailable": 80,
       "requiredDecelRate": 1,
       "coefficientOfFriction": 0.6,

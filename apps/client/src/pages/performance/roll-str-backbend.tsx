@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { debounce } from "lodash";
 import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
@@ -11,257 +10,35 @@ import {
   STR_MODEL_OPTIONS,
   MATERIAL_TYPE_OPTIONS,
 } from "@/utils/select-options";
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
-import { useGetEntity } from "@/hooks/_base/use-get-entity";
+import { usePerformanceDataService } from "@/utils/performance-service";
 
 export interface RollStrBackbendProps {
   data: PerformanceData;
   isEditing: boolean;
 }
 
-// Helper to safely update nested object properties
-const setNestedValue = (obj: any, path: string, value: any) => {
-  const keys = path.split(".");
-  let current = obj;
-  
-  for (let i = 0; i < keys.length - 1; i++) {
-    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
-      current[keys[i]] = {};
-    }
-    current = current[keys[i]];
-  }
-  
-  current[keys[keys.length - 1]] = value;
-};
-
 const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) => {
-  const endpoint = `/performance/sheets`;
-  const { loading, error } = useGetEntity(endpoint);
-  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
   const { id: performanceSheetId } = useParams();
   
-  // Local state management
-  const [localData, setLocalData] = useState<PerformanceData>(data);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isDirty, setIsDirty] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  
-  // Refs for cleanup and debouncing
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingChangesRef = useRef<Record<string, any>>({});
-
-  // Sync with prop data on initial load only
-  useEffect(() => {
-    if (data && data.referenceNumber && !localData.referenceNumber) {
-      setLocalData(data);
-    }
-  }, [data, localData.referenceNumber]);
-
-  // Debounced save function
-  const debouncedSave = useCallback(
-    debounce(async (changes: Record<string, any>) => {
-      if (!performanceSheetId || !isEditing) return;
-
-      try {
-        // Create a deep copy and apply all pending changes
-        const updatedData = JSON.parse(JSON.stringify(localData));
-        
-        Object.entries(changes).forEach(([path, value]) => {
-          // Handle legacy field mappings
-          if (path === "customer") {
-            setNestedValue(updatedData, "rfq.customer", value);
-          } else if (path === "date") {
-            setNestedValue(updatedData, "rfq.dates.date", value);
-          } else {
-            setNestedValue(updatedData, path, value);
-          }
-        });
-
-        console.log("Saving Roll Straightener changes:", changes);
-        
-        const response = await updateEntity(performanceSheetId, { data: updatedData });
-        
-        // Handle calculated values from backend
-        if (response?.data?.rollStrBackbend) {
-          console.log("Updating calculated roll straightener values from backend response");
-          
-          setLocalData(prevData => ({
-            ...prevData,
-            rollStrBackbend: {
-              ...prevData.rollStrBackbend,
-              straightener: {
-                ...prevData.rollStrBackbend?.straightener,
-                rolls: {
-                  ...prevData.rollStrBackbend?.straightener?.rolls,
-                  backbend: {
-                    ...prevData.rollStrBackbend?.straightener?.rolls?.backbend,
-                    // Update calculated radius values
-                    radius: {
-                      ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius,
-                      comingOffCoil: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil,
-                      offCoilAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback,
-                      requiredToYieldSkinOfFlatMaterial: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial,
-                    },
-                    bendingMomentToYieldSkin: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin,
-                    // Update roller calculations
-                    rollers: {
-                      ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers,
-                      first: {
-                        ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first,
-                        height: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height,
-                        forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired,
-                        numberOfYieldStrainsAtSurface: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface,
-                        up: {
-                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up,
-                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius,
-                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference,
-                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment,
-                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback,
-                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded,
-                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback,
-                        },
-                        down: {
-                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down,
-                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius,
-                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference,
-                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment,
-                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback,
-                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded,
-                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback,
-                        }
-                      },
-                      middle: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle,
-                      last: {
-                        ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last,
-                        height: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height,
-                        forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired,
-                        numberOfYieldStrainsAtSurface: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface,
-                        up: {
-                          ...prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up,
-                          resultingRadius: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius,
-                          curvatureDifference: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference,
-                          bendingMoment: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment,
-                          springback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback,
-                          percentOfThicknessYielded: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded,
-                          radiusAfterSpringback: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback,
-                        }
-                      },
-                      depthRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired,
-                      forceRequired: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired,
-                    },
-                    yieldMet: response.data.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || prevData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet,
-                  }
-                }
-              }
-            }
-          }));
-        }
-
-        setLastSaved(new Date());
-        setIsDirty(false);
-        pendingChangesRef.current = {};
-        
-      } catch (error) {
-        console.error('Error saving Roll Straightener:', error);
-        setFieldErrors(prev => ({ 
-          ...prev, 
-          _general: 'Failed to save changes. Please try again.' 
-        }));
-      }
-    }, 1000),
-    [performanceSheetId, updateEntity, isEditing, localData]
-  );
-
-  // Optimized change handler
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (!isEditing) return;
-
-    const { name, value, type } = e.target;
-
-    // Clear field error
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-
-    // Update local state immediately
-    setLocalData(prevData => {
-      const newData = { ...prevData };
-      const processedValue = type === "number" ? (value === "" ? "" : value) : value;
-      
-      // Handle legacy field mappings
-      if (name === "customer") {
-        setNestedValue(newData, "rfq.customer", processedValue);
-      } else if (name === "date") {
-        setNestedValue(newData, "rfq.dates.date", processedValue);
-      } else {
-        setNestedValue(newData, name, processedValue);
-      }
-      
-      return newData;
-    });
-
-    // Track pending changes
-    const mappedName = name === "customer" ? "rfq.customer" : 
-                      name === "date" ? "rfq.dates.date" : 
-                      name;
-    pendingChangesRef.current[mappedName] = type === "number" ? (value === "" ? "" : value) : value;
-    setIsDirty(true);
-
-    // Debounce save
-    debouncedSave(pendingChangesRef.current);
-  }, [isEditing, fieldErrors, debouncedSave]);
+  // Use the performance data service
+  const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
+  const { state, handleFieldChange, saveImmediately } = dataService;
+  const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
   // Calculate function
   const handleCalculate = useCallback(async () => {
     if (!isEditing || !performanceSheetId) return;
     
-    setIsCalculating(true);
     console.log("Calculate pressed for Roll Straightener Backbend");
     
     try {
       // Trigger roll straightener backbend calculation on the backend
-      const response = await updateEntity(performanceSheetId, { 
-        data: localData,
-        triggerRollStrBackbendCalculation: true 
-      });
-      
+      const response = await saveImmediately();
       console.log("Roll Straightener Backbend calculation triggered:", response);
-      
-      // The response should contain updated roll straightener calculations
-      if (response?.data?.rollStrBackbend) {
-        setLocalData(prevData => ({
-          ...prevData,
-          rollStrBackbend: {
-            ...prevData.rollStrBackbend,
-            ...response.data.rollStrBackbend
-          }
-        }));
-      }
     } catch (error) {
       console.error('Error triggering roll straightener backbend calculation:', error);
-      setFieldErrors(prev => ({ 
-        ...prev, 
-        _general: 'Failed to calculate roll straightener backbend. Please try again.' 
-      }));
-    } finally {
-      setIsCalculating(false);
     }
-  }, [isEditing, performanceSheetId, updateEntity, localData]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-      debouncedSave.cancel();
-    };
-  }, [debouncedSave]);
+  }, [isEditing, performanceSheetId, saveImmediately]);
 
   // Header section
   const headerSection = useMemo(() => (
@@ -274,7 +51,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Customer"
           name="common.customer"
           value={localData.common?.customer || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -282,12 +59,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rfq.dates.date"
           type="date"
           value={localData.rfq?.dates?.date || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
       </div>
     </Card>
-  ), [localData, handleChange, isEditing]);
+  ), [localData, handleFieldChange, isEditing]);
 
   // Material specifications section
   const materialSpecsSection = useMemo(() => (
@@ -298,7 +75,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Material Type"
           name="common.material.materialType"
           value={localData.common?.material?.materialType || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           options={MATERIAL_TYPE_OPTIONS}
           disabled={!isEditing}
         />
@@ -307,7 +84,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="common.material.materialThickness"
           type="number"
           value={localData.common?.material?.materialThickness?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -315,7 +92,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="common.material.coilWidth"
           type="number"
           value={localData.common?.material?.coilWidth?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -323,7 +100,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="common.material.maxYieldStrength"
           type="number"
           value={localData.common?.material?.maxYieldStrength?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -331,7 +108,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.straightener.modulus"
           type="number"
           value={localData.rollStrBackbend?.straightener?.modulus?.toString() || "30000000"}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -339,12 +116,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.material.density"
           type="number"
           value={localData.rollStrBackbend?.material?.density?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
       </div>
     </Card>
-  ), [localData, handleChange, isEditing]);
+  ), [localData, handleFieldChange, isEditing]);
 
   // Roll straightener specifications section
   const rollStraightenerSpecsSection = useMemo(() => (
@@ -355,7 +132,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Straightener Model"
           name="common.equipment.straightener.model"
           value={localData.common?.equipment?.straightener?.model || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           options={STR_MODEL_OPTIONS}
           disabled={!isEditing}
         />
@@ -364,12 +141,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="common.equipment.straightener.rollDiameter"
           type="number"
           value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
       </div>
     </Card>
-  ), [localData, handleChange, isEditing]);
+  ), [localData, handleFieldChange, isEditing]);
 
   // Backbend specifications section
   const backbendSpecsSection = useMemo(() => (
@@ -381,7 +158,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.straightener.rolls.backbend.radius.comingOffCoil"
           type="number"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.comingOffCoil?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -389,7 +166,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.straightener.rolls.backbend.requiredRollDiameter"
           type="number"
           value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -397,7 +174,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
           type="number"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
@@ -405,7 +182,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           name="rollStrBackbend.straightener.rolls.backbend.rollers.last.height"
           type="number"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height?.toString() || ""}
-          onChange={handleChange}
+          onChange={handleFieldChange}
           disabled={!isEditing}
         />
       </div>
@@ -414,13 +191,13 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Button 
           onClick={handleCalculate} 
           className="px-6 py-2"
-          disabled={!isEditing || isCalculating}
+          disabled={!isEditing || isLoading}
         >
-          {isCalculating ? "CALCULATING..." : "CALCULATE"}
+          {isLoading ? "CALCULATING..." : "CALCULATE"}
         </Button>
       </div>
     </Card>
-  ), [localData, handleChange, handleCalculate, isEditing, isCalculating]);
+  ), [localData, handleFieldChange, handleCalculate, isEditing, isLoading]);
 
   // Calculated results section
   const calculatedResultsSection = useMemo(() => (
@@ -715,11 +492,11 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
 
   // Status indicator component
   const StatusIndicator = () => {
-    if (updateLoading || isCalculating) {
+    if (isLoading) {
       return (
         <div className="flex items-center gap-2 text-sm text-blue-600">
           <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent"></div>
-          {isCalculating ? "Calculating..." : "Saving..."}
+          Calculating...
         </div>
       );
     }
@@ -756,21 +533,21 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       </div>
 
       {/* Loading and error states */}
-      {(loading || updateLoading) && (
+      {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
             <span className="text-blue-800">
-              {updateLoading ? "Saving changes and calculating..." : "Loading..."}
+              Saving changes and calculating...
             </span>
           </div>
         </div>
       )}
 
-      {(error || updateError) && (
+      {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
           <span className="text-red-800">
-            Error: {error || updateError}
+            Error: {error}
           </span>
         </div>
       )}

@@ -219,7 +219,7 @@ export interface MaterialSpecsData {
 // Updated TDDBHD interface (removing duplicated fields)
 export interface TDDBHDData {
   reel?: {
-    dispReelMtr?: string;
+    dispReelMtr?: number;
     airPressureAvailable?: number;
     requiredDecelRate?: number;
     coefficientOfFriction?: number; // Calculated
@@ -847,7 +847,7 @@ const initialPerformanceData: PerformanceData = {
   },
   tddbhd: {
     reel: {
-      dispReelMtr: "",
+      dispReelMtr: 0,
       airPressureAvailable: 0,
       requiredDecelRate: 0,
       coefficientOfFriction: 0,
@@ -1349,6 +1349,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
 
   const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = true) => {
     try {
+      console.log("Updating performance data with:", updates);
       // Always update local state first for immediate UI feedback
       const updatedData = deepMerge(performanceDataRef.current, updates);
       setPerformanceData(updatedData);

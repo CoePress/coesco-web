@@ -120,7 +120,7 @@ export class PerformanceController {
 
       res.status(200).json({
         success: true,
-        data: result.data,
+        data: updatedResults,
         id: id,
       });
     } catch (err) {
