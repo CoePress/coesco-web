@@ -1,9 +1,8 @@
 import type { Address, Company, Contact, Journey } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import type { IQueryParams } from "@/types";
-
 import { addressService, companyService, contactService, journeyService } from "@/services/repository";
+import { buildQueryParams } from "@/utils";
 
 export class CRMController {
   // Companies
@@ -19,16 +18,7 @@ export class CRMController {
 
   async getCompanies(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Company> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Company>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Company>(req.query);
       const result = await companyService.getAll(params);
       res.status(200).json(result);
     }
@@ -80,16 +70,7 @@ export class CRMController {
 
   async getAddresses(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Address> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Address>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Address>(req.query);
       const result = await addressService.getAll(params);
       res.status(200).json(result);
     }
@@ -141,16 +122,7 @@ export class CRMController {
 
   async getContacts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Contact> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Contact>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Contact>(req.query);
       const result = await contactService.getAll(params);
       res.status(200).json(result);
     }
@@ -202,16 +174,7 @@ export class CRMController {
 
   async getJourneys(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Journey> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Journey>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Journey>(req.query);
       const result = await journeyService.getAll(params);
       res.status(200).json(result);
     }

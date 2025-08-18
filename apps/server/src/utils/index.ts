@@ -6,7 +6,7 @@ import {
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
-import type { IDateRange } from "@/types";
+import type { IDateRange, IQueryParams } from "@/types";
 
 export function deriveTableNames(modelName: string): string[] {
   const snake = modelName.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
@@ -126,4 +126,16 @@ export function normalizeValue(value: any) {
 
 export function isEqual(a: any, b: any): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+export function buildQueryParams<T>(query: any): IQueryParams<T> {
+  return {
+    page: query.page ? Number.parseInt(query.page as string) : 1,
+    limit: query.limit ? Number.parseInt(query.limit as string) : undefined,
+    sort: query.sort as string,
+    order: query.order as "asc" | "desc",
+    search: query.search as string,
+    filter: query.filter as Partial<T>,
+    include: query.include ? JSON.parse(query.include as string) : undefined,
+  };
 }

@@ -1,10 +1,9 @@
-import type { Machine } from "@prisma/client";
+import type { Machine, MachineStatus } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import type { IQueryParams } from "@/types";
-
 import { machiningService } from "@/services";
-import { machineService } from "@/services/repository";
+import { machineService, machineStatusService } from "@/services/repository";
+import { buildQueryParams } from "@/utils";
 
 export class ProductionController {
   // Machines
@@ -20,16 +19,7 @@ export class ProductionController {
 
   async getMachines(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Machine> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Machine>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Machine>(req.query);
       const result = await machineService.getAll(params);
       res.status(200).json(result);
     }
@@ -69,8 +59,26 @@ export class ProductionController {
   }
 
   // Misc
-  async getMachineStatuses() { }
-  async getMachineStatus() { }
+  async getMachineStatuses(req: Request, res: Response, next: NextFunction) {
+    try {
+      const params = buildQueryParams<MachineStatus>(req.query);
+      const result = await machineStatusService.getAll(params);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async getMachineStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await machineStatusService.getById(req.params.companyId);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
 
   async getOverview(req: Request, res: Response, next: NextFunction) {
     try {

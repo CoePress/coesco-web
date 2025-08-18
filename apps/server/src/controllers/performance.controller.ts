@@ -1,9 +1,8 @@
 import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import type { IQueryParams } from "@/types";
-
 import { performanceSheetLinkService, performanceSheetService, performanceSheetVersionService } from "@/services/repository";
+import { buildQueryParams } from "@/utils";
 
 export class PerformanceController {
   // Performance Sheet Versions
@@ -19,16 +18,7 @@ export class PerformanceController {
 
   async getPerformanceSheetVersions(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<PerformanceSheetVersion> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<PerformanceSheetVersion>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<PerformanceSheetVersion>(req.query);
       const result = await performanceSheetVersionService.getAll(params);
       res.status(200).json(result);
     }
@@ -80,16 +70,7 @@ export class PerformanceController {
 
   async getPerformanceSheets(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<PerformanceSheet> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<PerformanceSheet>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<PerformanceSheet>(req.query);
       const result = await performanceSheetService.getAll(params);
       res.status(200).json(result);
     }
@@ -141,16 +122,7 @@ export class PerformanceController {
 
   async getPerformanceSheetLinks(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<PerformanceSheetLink> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<PerformanceSheetLink>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<PerformanceSheetLink>(req.query);
       const result = await performanceSheetLinkService.getAll(params);
       res.status(200).json(result);
     }

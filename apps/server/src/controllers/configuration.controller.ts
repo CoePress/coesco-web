@@ -1,9 +1,8 @@
 import type { Configuration, ConfigurationOption, Item, OptionCategory, OptionDetails, OptionHeader, OptionRule, OptionRuleTarget, OptionRuleTrigger, ProductClass, ProductClassOptionCategory } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import type { IQueryParams } from "@/types";
-
 import { configurationOptionService, configurationService, itemService, optionCategoryService, optionDetailsService, optionHeaderService, optionRuleService, optionRuleTargetService, optionRuleTriggerService, productClassOptionCategoryService, productClassService } from "@/services/repository";
+import { buildQueryParams } from "@/utils";
 
 export class ConfigurationController {
   // Items
@@ -19,16 +18,7 @@ export class ConfigurationController {
 
   async getItems(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Item> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Item>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Item>(req.query);
       const result = await itemService.getAll(params);
       res.status(200).json(result);
     }
@@ -80,16 +70,7 @@ export class ConfigurationController {
 
   async getProductClasses(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<ProductClass> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<ProductClass>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<ProductClass>(req.query);
       const result = await productClassService.getAll(params);
       res.status(200).json(result);
     }
@@ -141,16 +122,7 @@ export class ConfigurationController {
 
   async getOptionCategories(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionCategory> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionCategory>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionCategory>(req.query);
       const result = await optionCategoryService.getAll(params);
       res.status(200).json(result);
     }
@@ -202,16 +174,7 @@ export class ConfigurationController {
 
   async getPCOCs(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<ProductClassOptionCategory> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<ProductClassOptionCategory>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<ProductClassOptionCategory>(req.query);
       const result = await productClassOptionCategoryService.getAll(params);
       res.status(200).json(result);
     }
@@ -263,16 +226,7 @@ export class ConfigurationController {
 
   async getOptionHeaders(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionHeader> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionHeader>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionHeader>(req.query);
       const result = await optionHeaderService.getAll(params);
       res.status(200).json(result);
     }
@@ -324,16 +278,7 @@ export class ConfigurationController {
 
   async getOptionDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionDetails> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionDetails>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionDetails>(req.query);
       const result = await optionDetailsService.getAll(params);
       res.status(200).json(result);
     }
@@ -385,16 +330,7 @@ export class ConfigurationController {
 
   async getOptionRules(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionRule> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionRule>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionRule>(req.query);
       const result = await optionRuleService.getAll(params);
       res.status(200).json(result);
     }
@@ -446,16 +382,7 @@ export class ConfigurationController {
 
   async getOptionRuleTargets(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionRuleTarget> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionRuleTarget>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionRuleTarget>(req.query);
       const result = await optionRuleTargetService.getAll(params);
       res.status(200).json(result);
     }
@@ -507,16 +434,7 @@ export class ConfigurationController {
 
   async getOptionRuleTriggers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<OptionRuleTrigger> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<OptionRuleTrigger>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<OptionRuleTrigger>(req.query);
       const result = await optionRuleTriggerService.getAll(params);
       res.status(200).json(result);
     }
@@ -568,16 +486,7 @@ export class ConfigurationController {
 
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<Configuration> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<Configuration>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<Configuration>(req.query);
       const result = await configurationService.getAll(params);
       res.status(200).json(result);
     }
@@ -629,16 +538,7 @@ export class ConfigurationController {
 
   async getConfigurationOptions(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, sort, order, search, filter, include } = req.query;
-      const params: IQueryParams<ConfigurationOption> = {
-        page: page ? Number.parseInt(page as string) : 1,
-        limit: limit ? Number.parseInt(limit as string) : undefined,
-        sort: sort as string,
-        order: order as "asc" | "desc",
-        search: search as string,
-        filter: filter as Partial<ConfigurationOption>,
-        include: include ? JSON.parse(include as string) : undefined,
-      };
+      const params = buildQueryParams<ConfigurationOption>(req.query);
       const result = await configurationOptionService.getAll(params);
       res.status(200).json(result);
     }

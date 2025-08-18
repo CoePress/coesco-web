@@ -29,28 +29,15 @@ async function getRelationships(models: any) {
   return relationships;
 }
 
-async function getModels() {
-  const schemaDir = path.resolve(__dirname, "../../prisma/schema");
+export async function getModels() {
+  const schemaPath = path.resolve(__dirname, "../../prisma/schema.prisma");
 
-  // Read all .prisma files in the directory
-  const schemaFiles = fs.readdirSync(schemaDir)
-    .filter(file => file.endsWith(".prisma"))
-    .map(file => path.join(schemaDir, file));
+  if (!fs.existsSync(schemaPath)) {
+    throw new Error(`schema.prisma not found at: ${schemaPath}`);
+  }
 
-  // Merge contents in a deterministic order (main file first if exists)
-  schemaFiles.sort((a, b) => {
-    if (path.basename(a) === "schema.prisma")
-      return -1;
-    if (path.basename(b) === "schema.prisma")
-      return 1;
-    return a.localeCompare(b);
-  });
-
-  const mergedSchema = schemaFiles
-    .map(file => fs.readFileSync(file, "utf-8"))
-    .join("\n");
-
-  const dmmf = await getDMMF({ datamodel: mergedSchema });
+  const datamodel = fs.readFileSync(schemaPath, "utf-8");
+  const dmmf = await getDMMF({ datamodel });
   return dmmf.datamodel.models;
 }
 
@@ -138,7 +125,7 @@ ${validations}
 
       if (body === newBody) {
         console.log(`No changes: ${model.name}`);
-        continue; // skip overwrite
+        continue;
       }
     }
 
