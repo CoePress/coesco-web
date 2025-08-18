@@ -12,7 +12,7 @@
     "build": "tsc && tsc-alias",
     "start": "npm run build && node dist/server.js",
     "generate": "tsx src/scripts/service-generator.ts",
-    "seed": "tsx src/utils/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
