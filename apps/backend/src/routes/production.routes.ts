@@ -15,10 +15,9 @@ router.delete("/machines/:machineId", productionController.deleteMachine);
 router.get("/statuses", productionController.getMachineStatuses);
 router.get("/statuses/:machineStatusId", productionController.getMachineStatus);
 
-// Analytics
+// Misc
 router.get("/overview", productionController.getOverview);
-router.get("/overview", productionController.getOverview);
-
-router.get("/fanuc/reset", productionController.resetFanucAdapter);
+router.get("/timeline", productionController.getTimeline);
+router.post("/fanuc/reset", productionController.resetFanucAdapter);
 
 export default router;

@@ -322,7 +322,7 @@ export class ConfigurationController {
     }
   }
 
-  async getOptionsDetails(req: Request, res: Response, next: NextFunction) {
+  async getOptionDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, limit, sort, order, search, filter, include } = req.query;
       const params: IQueryParams<OptionDetails> = {

@@ -32,16 +32,6 @@ router.get("/product-class-option-categories/:pcocId", configurationController.g
 router.patch("/product-class-option-categories/:pcocId", configurationController.updatePCOC);
 router.delete("/product-class-option-categories/:pcocId", configurationController.deletePCOC);
 
-// Convenience Joins
-router.get(
-  "/product-classes/:productClassId/option-categories",
-  configurationController.listPCOCsForProductClass,
-);
-router.get(
-  "/option-categories/:categoryId/product-classes",
-  configurationController.listPCOCsForCategory,
-);
-
 // Options (Headers)
 router.post("/options", configurationController.createOptionHeader);
 router.get("/options", configurationController.getOptionHeaders);
@@ -50,11 +40,11 @@ router.patch("/options/:optionId", configurationController.updateOptionHeader);
 router.delete("/options/:optionId", configurationController.deleteOptionHeader);
 
 // Option Details
-router.post("/options/:optionId/details", configurationController.createOptionDetail);
-router.get("/options/:optionId/details", configurationController.getOptionsDetails);
-router.get("/options/:optionId/details/:detailId", configurationController.getOptionDetail);
-router.patch("/options/:optionId/details/:detailId", configurationController.updateOptionDetail);
-router.delete("/options/:optionId/details/:detailId", configurationController.deleteOptionDetail);
+router.post("/option-details", configurationController.createOptionDetail);
+router.get("/option-details", configurationController.getOptionDetails);
+router.get("/option-details/:detailId", configurationController.getOptionDetail);
+router.patch("/option-details/:detailId", configurationController.updateOptionDetail);
+router.delete("/option-details/:detailId", configurationController.deleteOptionDetail);
 
 // Option Rules
 router.post("/option-rules", configurationController.createOptionRule);
@@ -64,20 +54,18 @@ router.patch("/option-rules/:ruleId", configurationController.updateOptionRule);
 router.delete("/option-rules/:ruleId", configurationController.deleteOptionRule);
 
 // Option Rule Triggers
-router.get("/option-rules/:ruleId/triggers", configurationController.listRuleTriggers);
-router.post("/option-rules/:ruleId/triggers", configurationController.addRuleTrigger);
-router.delete(
-  "/option-rules/:ruleId/triggers/:optionId",
-  configurationController.removeRuleTrigger,
-);
+router.post("/option-rule-triggers", configurationController.createOptionRuleTrigger);
+router.get("/option-rule-triggers", configurationController.getOptionRuleTriggers);
+router.get("/option-rule-triggers/:triggerId", configurationController.getOptionRuleTrigger);
+router.patch("/option-rule-triggers/:triggerId", configurationController.updateOptionRuleTrigger);
+router.delete("/option-rule-triggers/:triggerId", configurationController.deleteOptionRuleTrigger);
 
 // Option Rule Targets
-router.get("/option-rules/:ruleId/targets", configurationController.listRuleTargets);
-router.post("/option-rules/:ruleId/targets", configurationController.addRuleTarget);
-router.delete(
-  "/option-rules/:ruleId/targets/:optionId",
-  configurationController.removeRuleTarget,
-);
+router.post("/option-rule-targets", configurationController.createOptionRuleTarget);
+router.get("/option-rule-targets", configurationController.getOptionRuleTargets);
+router.get("/option-rule-targets/:targetId", configurationController.getOptionRuleTarget);
+router.patch("/option-rule-targets/:targetId", configurationController.updateOptionRuleTarget);
+router.delete("/option-rule-targets/:targetId", configurationController.deleteOptionRuleTarget);
 
 // Configurations
 router.post("/configurations", configurationController.createConfiguration);
@@ -87,17 +75,10 @@ router.patch("/configurations/:configurationId", configurationController.updateC
 router.delete("/configurations/:configurationId", configurationController.deleteConfiguration);
 
 // Configuration Options
-router.get(
-  "/configurations/:configurationId/options",
-  configurationController.listSelectedOptions,
-);
-router.post(
-  "/configurations/:configurationId/options",
-  configurationController.addSelectedOption,
-);
-router.delete(
-  "/configurations/:configurationId/options/:optionId",
-  configurationController.removeSelectedOption,
-);
+router.post("/configuration-options", configurationController.createConfigurationOption);
+router.get("/configuration-options", configurationController.getConfigurationOptions);
+router.get("/configuration-options/:configurationOptionId", configurationController.getConfigurationOption);
+router.patch("/configuration-options/:configurationOptionId", configurationController.updateConfigurationOption);
+router.delete("/configuration-options/:configurationOptionId", configurationController.deleteConfigurationOption);
 
 export default router;
