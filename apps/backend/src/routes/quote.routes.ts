@@ -26,7 +26,7 @@ router.post("/:quoteId/reject", quoteController.rejectQuote);
 router.post("/:quoteId/cancel", quoteController.cancelQuote);
 router.post("/:quoteId/expire", quoteController.expireQuote);
 router.post("/:quoteId/send", quoteController.sendQuote);
-router.get("/:quoteId/pdf", quoteController.exportPDF);
+router.get("/:quoteId/export/pdf", quoteController.exportPDF);
 
 // Relations
 router.patch("/:quoteId/owner", quoteController.setOwner);

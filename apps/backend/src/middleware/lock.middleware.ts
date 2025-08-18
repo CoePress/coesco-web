@@ -1,17 +1,13 @@
-import { Response, NextFunction } from "express";
-import { logger } from "@/utils/logger";
-import { AuthenticatedRequest } from "./auth.middleware";
-import { lockingService } from "@/services";
+import type { NextFunction, Response } from "express";
 
-export const checkEntityLock = (
-  entityType: string,
-  entityIdParam: string = "id",
-  userIdParam: string = "userId"
-) => {
+import { lockingService } from "@/services/core";
+import { logger } from "@/utils/logger";
+
+export function checkEntityLock(entityType: string, entityIdParam: string = "id", userIdParam: string = "userId") {
   return async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const entityId = req.params[entityIdParam] || req.body[entityIdParam];
@@ -50,7 +46,8 @@ export const checkEntityLock = (
       }
 
       next();
-    } catch (error) {
+    }
+    catch (error) {
       logger.error("Error in checkEntityLock middleware:", error);
       res.status(500).json({
         success: false,
@@ -58,17 +55,13 @@ export const checkEntityLock = (
       });
     }
   };
-};
+}
 
-export const acquireEntityLock = (
-  entityType: string,
-  entityIdParam: string = "id",
-  userIdParam: string = "userId"
-) => {
+export function acquireEntityLock(entityType: string, entityIdParam: string = "id", userIdParam: string = "userId") {
   return async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const entityId = req.params[entityIdParam] || req.body[entityIdParam];
@@ -100,7 +93,7 @@ export const acquireEntityLock = (
         entityType,
         entityId,
         userId,
-        username
+        username,
       );
 
       if (!result.success) {
@@ -113,7 +106,8 @@ export const acquireEntityLock = (
 
       req.lockInfo = result.lockInfo;
       next();
-    } catch (error) {
+    }
+    catch (error) {
       logger.error("Error in acquireEntityLock middleware:", error);
       res.status(500).json({
         success: false,
@@ -121,17 +115,13 @@ export const acquireEntityLock = (
       });
     }
   };
-};
+}
 
-export const releaseEntityLock = (
-  entityType: string,
-  entityIdParam: string = "id",
-  userIdParam: string = "userId"
-) => {
+export function releaseEntityLock(entityType: string, entityIdParam: string = "id", userIdParam: string = "userId") {
   return async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const entityId = req.params[entityIdParam] || req.body[entityIdParam];
@@ -143,21 +133,10 @@ export const releaseEntityLock = (
 
       await lockingService.releaseLock(entityType, entityId, userId);
       next();
-    } catch (error) {
+    }
+    catch (error) {
       logger.error("Error in releaseEntityLock middleware:", error);
       next();
     }
   };
-};
-
-declare global {
-  namespace Express {
-    interface Request {
-      lockInfo?: {
-        userId: string;
-        timestamp: number;
-        username?: string;
-      };
-    }
-  }
 }

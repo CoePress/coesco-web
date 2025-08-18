@@ -2,7 +2,7 @@ import type { Server, Socket } from "socket.io";
 
 import { logger } from "@/utils/logger";
 
-import { agentService, lockingService } from ".";
+import { agentService } from ".";
 
 export class SocketService {
   private io: Server | null = null;
@@ -14,7 +14,6 @@ export class SocketService {
     }
 
     this.registerIotNamespace();
-    this.registerLockingNamespace();
     this.registerMetricsNamespace();
     this.registerChatNamespace();
   }
@@ -45,45 +44,6 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] IOT client disconnected: ${reason}`);
-      });
-    });
-  }
-
-  private registerLockingNamespace() {
-    const locking = this.getNamespace("locking");
-    locking.on("connection", (socket: Socket) => {
-      logger.info(`Locking client connected: ${socket.id}`);
-
-      socket.on("lock:request", async ({ resourceId }) => {
-        logger.info(`[${socket.id}] Requested lock for ${resourceId}`);
-
-        const success = await lockingService.acquireLock(resourceId, socket.id);
-
-        if (!success) {
-          socket.emit("lock:request:failed", { resourceId });
-          return;
-        }
-
-        socket.emit("lock:granted", { resourceId });
-      });
-
-      socket.on("lock:release", async ({ resourceId }) => {
-        logger.info(`[${socket.id}] Released lock for ${resourceId}`);
-
-        const success = await lockingService.releaseLock(resourceId, socket.id);
-
-        if (!success) {
-          socket.emit("lock:release:failed", { resourceId });
-          return;
-        }
-
-        socket.emit("lock:released", { resourceId });
-      });
-
-      socket.emit("lock:connected", { message: "Connected to locking namespace" });
-
-      socket.on("disconnect", (reason) => {
-        logger.info(`[${socket.id}] Locking client disconnected: ${reason}`);
       });
     });
   }

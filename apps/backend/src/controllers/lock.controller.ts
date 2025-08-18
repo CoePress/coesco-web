@@ -1,15 +1,16 @@
-import { NextFunction, Request, Response } from "express";
-import { lockingService } from "@/services";
+import type { NextFunction, Request, Response } from "express";
+
+import { lockingService } from "@/services/core";
 import { getEmployeeContext } from "@/utils/context";
 
 export class LockController {
   async acquireLock(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
-      const { recordType, recordId, ttl, username } = req.body;
+      const { recordType, recordId, ttl } = req.body;
 
       const employee = getEmployeeContext();
 
@@ -26,7 +27,6 @@ export class LockController {
         recordId,
         employee.id,
         ttl || undefined,
-        username
       );
 
       if (result.success) {
@@ -35,14 +35,16 @@ export class LockController {
           message: "Lock acquired successfully",
           lockInfo: result.lockInfo,
         });
-      } else {
+      }
+      else {
         res.status(409).json({
           success: false,
           error: result.error,
           lockedBy: result.lockedBy,
         });
       }
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -50,7 +52,7 @@ export class LockController {
   async releaseLock(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { recordType, recordId, userId } = req.body;
@@ -66,7 +68,7 @@ export class LockController {
       const result = await lockingService.releaseLock(
         recordType,
         recordId,
-        userId
+        userId,
       );
 
       if (result.success) {
@@ -74,14 +76,16 @@ export class LockController {
           success: true,
           message: "Lock released successfully",
         });
-      } else {
+      }
+      else {
         res.status(403).json({
           success: false,
           error: result.error,
           lockedBy: result.lockedBy,
         });
       }
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -89,7 +93,7 @@ export class LockController {
   async forceReleaseLock(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { recordType, recordId, adminUserId } = req.body;
@@ -114,7 +118,7 @@ export class LockController {
       const result = await lockingService.forceReleaseLock(
         recordType,
         recordId,
-        adminUserId
+        adminUserId,
       );
 
       if (result.success) {
@@ -122,13 +126,15 @@ export class LockController {
           success: true,
           message: "Lock force-released successfully",
         });
-      } else {
+      }
+      else {
         res.status(500).json({
           success: false,
           error: result.error,
         });
       }
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -136,7 +142,7 @@ export class LockController {
   async extendLock(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { recordType, recordId, ttl } = req.body;
@@ -155,7 +161,7 @@ export class LockController {
         recordType,
         recordId,
         employee.id,
-        ttl
+        ttl,
       );
 
       if (result.success) {
@@ -164,14 +170,16 @@ export class LockController {
           message: "Lock extended successfully",
           lockInfo: result.lockInfo,
         });
-      } else {
+      }
+      else {
         res.status(400).json({
           success: false,
           error: result.error,
           lockedBy: result.lockedBy,
         });
       }
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -179,7 +187,7 @@ export class LockController {
   async getLockStatus(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { recordType, recordId } = req.params;
@@ -200,7 +208,8 @@ export class LockController {
         isLocked,
         lockInfo: lockInfo || null,
       });
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -208,7 +217,7 @@ export class LockController {
   async getAllLocks(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       // TODO: Add admin role validation here
@@ -228,7 +237,8 @@ export class LockController {
         success: true,
         locks,
       });
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -236,7 +246,7 @@ export class LockController {
   async getAllLocksByRecordType(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { recordType } = req.params;
@@ -255,7 +265,8 @@ export class LockController {
         success: true,
         locks,
       });
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }
@@ -263,7 +274,7 @@ export class LockController {
   async clearAllLocks(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       // TODO: Add admin role validation here
@@ -283,7 +294,8 @@ export class LockController {
         success: true,
         message: "All locks cleared successfully",
       });
-    } catch (error) {
+    }
+    catch (error) {
       next(error);
     }
   }

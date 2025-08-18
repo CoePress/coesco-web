@@ -7,32 +7,29 @@ const router = Router();
 // Companies
 router.post("/companies", crmController.createCompany);
 router.get("/companies", crmController.getCompanies);
-router.get("/companies/:companyId", crmController.getCompany);
-router.patch("/companies/:companyId", crmController.updateCompany);
-router.delete("/companies/:companyId", crmController.deleteCompany);
+router.get("/companies/:id", crmController.getCompany);
+router.patch("/companies/:id", crmController.updateCompany);
+router.delete("/companies/:id", crmController.deleteCompany);
 
 // Addresses
-router.post("/companies/:companyId/addresses", crmController.createAddress);
-router.get("/companies/:companyId/addresses", crmController.getAddressesByCompany);
+router.post("/addresses", crmController.createAddress);
 router.get("/addresses", crmController.getAddresses);
-router.get("/addresses/:addressId", crmController.getAddress);
-router.patch("/addresses/:addressId", crmController.updateAddress);
-router.delete("/addresses/:addressId", crmController.deleteAddress);
+router.get("/addresses/:id", crmController.getAddress);
+router.patch("/addresses/:id", crmController.updateAddress);
+router.delete("/addresses/:id", crmController.deleteAddress);
 
 // Contacts
-router.post("/companies/:companyId/contacts", crmController.createContact);
-router.get("/companies/:companyId/contacts", crmController.getContactsByCompany);
+router.post("/contacts", crmController.createContact);
 router.get("/contacts", crmController.getContacts);
-router.get("/contacts/:contactId", crmController.getContact);
-router.patch("/contacts/:contactId", crmController.updateContact);
-router.delete("/contacts/:contactId", crmController.deleteContact);
+router.get("/contacts/:id", crmController.getContact);
+router.patch("/contacts/:id", crmController.updateContact);
+router.delete("/contacts/:id", crmController.deleteContact);
 
 // Journeys
-router.post("/companies/:companyId/journeys", crmController.createJourney);
-router.get("/companies/:companyId/journeys", crmController.getJourneysByCompany);
+router.post("/journeys", crmController.createJourney);
 router.get("/journeys", crmController.getJourneys);
-router.get("/journeys/:journeyId", crmController.getJourney);
-router.patch("/journeys/:journeyId", crmController.updateJourney);
-router.delete("/journeys/:journeyId", crmController.deleteJourney);
+router.get("/journeys/:id", crmController.getJourney);
+router.patch("/journeys/:id", crmController.updateJourney);
+router.delete("/journeys/:id", crmController.deleteJourney);
 
 export default router;
