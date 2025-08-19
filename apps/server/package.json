@@ -15,7 +15,7 @@
     "db:fresh": "npm run generate && npm run db:generate && npm run db:reset && npm run db:seed",
     "dev": "nodemon src/server.ts",
     "build": "npm run db:generate && tsc && tsc-alias",
-    "start": "npm run build && node dist/server.js"
+    "start": "npm run build && node dist/src/server.js"
   },
   "dependencies": {
     "@azure/msal-node": "^3.7.1",
