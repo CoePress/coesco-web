@@ -159,10 +159,9 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
 type LayoutProps = {
   children: React.ReactNode;
-  employee: any;
 };
 
-const Layout = ({ employee, children }: LayoutProps) => {
+const Layout = ({ children }: LayoutProps) => {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();

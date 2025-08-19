@@ -1,7 +1,3 @@
-// Centralized select options for reuse across the app
-
-import { Label } from "recharts";
-
 export const FEED_DIRECTION_OPTIONS = [
   { value: "Right to Left", label: "Right to Left" },
   { value: "Left to Right", label: "Left to Right" },

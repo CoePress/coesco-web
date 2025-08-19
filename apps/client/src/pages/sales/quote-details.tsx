@@ -33,7 +33,6 @@ import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 import PageHeader from "@/components/common/page-head";
 
 const QuoteDetails = () => {
-  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDealerModalOpen, setIsDealerModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);

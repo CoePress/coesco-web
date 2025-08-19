@@ -467,11 +467,6 @@ const Catalog = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedItem, setSelectedItem] = useState<any | null>();
-  const [filters, setFilters] = useState({
-    machines: {},
-    parts: {},
-    services: {},
-  });
 
   const navigate = useNavigate();
 

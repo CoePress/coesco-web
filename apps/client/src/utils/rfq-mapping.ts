@@ -1,6 +1,5 @@
 import { mapBackendToFrontend, MappingConfig } from './universal-mapping';
 
-// Example mapping config for RFQ
 export const RFQ_MAPPING: MappingConfig = {
   reference: 'referenceNumber',
   date: 'date',
@@ -31,7 +30,7 @@ export const RFQ_MAPPING: MappingConfig = {
 };
 
 export function mapBackendToFrontendRFQ(backendData: any) {
-  return mapBackendToFrontend(backendData, RFQ_MAPPING, (backend, partial) => ({
+  return mapBackendToFrontend(backendData, RFQ_MAPPING, (backend, _partial) => ({
     maxThick: {
       materialThickness: backend.max_material_thickness !== undefined && backend.max_material_thickness !== null ? String(backend.max_material_thickness) : '',
       coilWidth: backend.max_material_width !== undefined && backend.max_material_width !== null ? String(backend.max_material_width) : '',

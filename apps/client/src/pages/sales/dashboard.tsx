@@ -4,10 +4,8 @@ import {
   Users,
   DollarSign,
   MoreHorizontal,
-  Filter,
   List,
   RefreshCcw,
-  FilterIcon,
 } from "lucide-react";
 import {
   BarChart,
