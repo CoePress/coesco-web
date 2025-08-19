@@ -63,6 +63,12 @@ sudo systemctl enable coesco
 **Start service**
 sudo systemctl start coesco
 
+**Restart service**
+sudo systemctl restart coesco
+
+**Stop service**
+sudo systemctl stop coesco
+
 **Check service status**
 sudo systemctl status coesco
 
