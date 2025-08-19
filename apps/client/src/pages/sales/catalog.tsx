@@ -495,20 +495,20 @@ const Catalog = () => {
   };
 
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/configurations/classes");
+    useGetEntities("/catalog/product-classes");
   const { entities: configurations, loading: configurationsLoading } =
-    useGetEntities("/configurations");
+    useGetEntities("/catalog/configurations");
   const deepestSelectedClassId =
     selections.length > 0 ? selections[selections.length - 1] : "";
   const { entities: _productClassOptions, loading: optionsLoading } =
     useGetEntities(
       deepestSelectedClassId
-        ? `/configurations/classes/${deepestSelectedClassId}/options`
+        ? `/catalog/product-classes/${deepestSelectedClassId}/options`
         : ""
     );
 
   const { entities: optionCategories, loading: _optionCategoriesLoading } =
-    useGetEntities("/configurations/categories");
+    useGetEntities("/catalog/option-categories");
 
   const quoteParams = useMemo(
     () => ({ include: ["journey", "journey.customer"] }),
@@ -525,7 +525,7 @@ const Catalog = () => {
   );
 
   const { entities: items, loading: itemsLoading } = useGetEntities(
-    "/items",
+    "/catalog/items",
     params
   );
 

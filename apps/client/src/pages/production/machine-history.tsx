@@ -29,7 +29,7 @@ const MachineHistory = () => {
     loading: statesLoading,
     error: statesError,
     pagination,
-  } = useGetEntities("/machines/statuses", {
+  } = useGetEntities("/production/machines/statuses", {
     page,
     limit,
     sort,
@@ -41,7 +41,7 @@ const MachineHistory = () => {
     entities: machines,
     loading: machinesLoading,
     error: machinesError,
-  } = useGetEntities("/machines");
+  } = useGetEntities("/production/machines");
 
   const loading = statesLoading || machinesLoading;
   const error = statesError || machinesError;

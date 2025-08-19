@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import authRoutes from "./auth.routes";
+import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
 import crmRoutes from "./crm.routes";
 import employeeRoutes from "./employee.routes";
@@ -12,6 +13,7 @@ import systemRoutes from "./system.routes";
 const router = Router();
 
 router.use("/auth", authRoutes);
+router.use("/catalog", catalogRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);
 router.use("/employees", employeeRoutes);

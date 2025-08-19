@@ -2,7 +2,7 @@ import { Button, Loader, PageHeader, Table } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Machines = () => {
-  const { entities: machines, loading, error } = useGetEntities("/machines");
+  const { entities: machines, loading, error } = useGetEntities("/production/machines");
 
   if (loading) {
     return (

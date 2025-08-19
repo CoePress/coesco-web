@@ -35,7 +35,7 @@ const useGetOverview = ({
         if (filter) params.filter = filter;
 
         const { data } = await instance.get<IApiResponse<IMachineOverview>>(
-          `/machines/overview`,
+          `/production/overview`,
           {
             params,
           }

@@ -1,11 +1,12 @@
 /* eslint-disable node/prefer-global/process */
 import { MachineConnectionType, MachineControllerType, MachineType } from "@prisma/client";
 
+import { microsoftService } from "@/services";
 import { contextStorage } from "@/utils/context";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
-contextStorage.enterWith(SYSTEM_CONTEXT);
+// contextStorage.enterWith(SYSTEM_CONTEXT);
 
 const machines = [
   {
@@ -107,6 +108,7 @@ async function seedMachines() {
 }
 
 async function seed() {
+  await microsoftService.sync();
   await seedMachines();
 
   logger.info("All seeding completed successfully");

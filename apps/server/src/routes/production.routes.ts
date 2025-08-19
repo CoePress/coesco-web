@@ -7,13 +7,15 @@ const router = Router();
 // Machines
 router.post("/machines", productionController.createMachine);
 router.get("/machines", productionController.getMachines);
+
+// Machine Statuses
+router.get("/machines/statuses", productionController.getMachineStatuses);
+router.get("/machines/statuses/:machineStatusId", productionController.getMachineStatus);
+
+// Machines Continued
 router.get("/machines/:machineId", productionController.getMachine);
 router.patch("/machines/:machineId", productionController.updateMachine);
 router.delete("/machines/:machineId", productionController.deleteMachine);
-
-// Machine Statuses
-router.get("/statuses", productionController.getMachineStatuses);
-router.get("/statuses/:machineStatusId", productionController.getMachineStatus);
 
 // Misc
 router.get("/overview", productionController.getOverview);

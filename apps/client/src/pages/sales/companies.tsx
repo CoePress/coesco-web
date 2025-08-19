@@ -12,7 +12,7 @@ import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import PageHeader from "@/components/common/page-head";
 
 const Companies = () => {
-  const { entities: companies } = useGetEntities("/companies");
+  const { entities: companies } = useGetEntities("/crm/companies");
 
   const columns: TableColumn<any>[] = [
     {

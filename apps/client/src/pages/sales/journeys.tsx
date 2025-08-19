@@ -15,7 +15,7 @@ import PageHeader from "@/components/common/page-head";
 const Journeys = () => {
   const [selectedRows] = useState<(string | number)[]>([]);
 
-  const { entities: journeys } = useGetEntities("/journeys");
+  const { entities: journeys } = useGetEntities("/crm/journeys");
 
   const columns: TableColumn<any>[] = [
     {

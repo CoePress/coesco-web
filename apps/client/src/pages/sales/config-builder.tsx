@@ -404,7 +404,7 @@ const ConfigBuilder = () => {
   >({});
 
   const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/configurations/classes");
+    useGetEntities("/configurations/product-classes");
 
   const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
     "/configurations/rules"
