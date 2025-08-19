@@ -15,6 +15,7 @@ import systemRoutes from "./system.routes";
 const router = Router();
 
 router.use("/auth", authRoutes);
+router.use("/system", systemRoutes);
 router.use(protect);
 router.use("/catalog", catalogRoutes);
 router.use("/chat", chatRoutes);
@@ -23,6 +24,5 @@ router.use("/employees", employeeRoutes);
 router.use("/performance", performanceRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
-router.use("/system", systemRoutes);
 
 export default router;
