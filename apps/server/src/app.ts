@@ -9,6 +9,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 import { __dev__, __prod__ } from "./config/env";
+import { errorHandler } from "./middleware/error.middleware";
 import routes from "./routes";
 import { logger } from "./utils/logger";
 
@@ -55,6 +56,8 @@ app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", false);
 
 app.use("/api", routes);
+
+app.use(errorHandler);
 
 export { io };
 export { server };

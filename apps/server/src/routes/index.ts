@@ -1,5 +1,7 @@
 import { Router } from "express";
 
+import { protect } from "@/middleware/auth.middleware";
+
 import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
@@ -13,6 +15,7 @@ import systemRoutes from "./system.routes";
 const router = Router();
 
 router.use("/auth", authRoutes);
+router.use(protect);
 router.use("/catalog", catalogRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);

@@ -1,3 +1,9 @@
+import type { Request, Response } from "express";
+
+import { ZodError } from "zod";
+
+import { __prod__ } from "@/config/env";
+
 export class AppError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -34,4 +40,44 @@ export class InternalServerError extends AppError {
   constructor(message: string) {
     super(message, 500);
   }
+}
+
+export function errorHandler(err: Error, req: Request, res: Response) {
+  let statusCode = 500;
+  let errorMessage: string | Array<{ field: string; message: string }>
+    = err.message;
+  const errorDetails = __prod__
+    ? undefined
+    : {
+        stack: err.stack
+          ?.split("\n")
+          .map(line => line.trim())
+          .filter(line => line.startsWith("at "))
+          .map(line => line.replace(/at\s+/, ""))
+          .join("\n"),
+      };
+
+  if (err instanceof ZodError) {
+    statusCode = 400;
+    errorMessage = err.errors.map(e => ({
+      field: e.path.join("."),
+      message: e.message,
+    }));
+  }
+  else if (err instanceof AppError) {
+    statusCode = err.status;
+    errorMessage = err.message;
+  }
+
+  const responseBody = {
+    error: errorMessage,
+    ...(errorDetails && { details: errorDetails }),
+  };
+
+  res.locals.errorMessage
+    = typeof errorMessage === "string"
+      ? errorMessage
+      : JSON.stringify(errorMessage);
+
+  res.status(statusCode).json(responseBody);
 }
