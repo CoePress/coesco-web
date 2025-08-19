@@ -2,7 +2,6 @@
 import { MachineConnectionType, MachineControllerType, MachineType } from "@prisma/client";
 
 import { microsoftService } from "@/services";
-import { contextStorage } from "@/utils/context";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 

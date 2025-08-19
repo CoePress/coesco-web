@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -9,7 +11,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 import { __dev__, __prod__ } from "./config/env";
-import { errorHandler } from "./middleware/error.middleware";
+import { errorHandler, NotFoundError } from "./middleware/error.middleware";
 import routes from "./routes";
 import { logger } from "./utils/logger";
 
@@ -56,6 +58,10 @@ app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", false);
 
 app.use("/api", routes);
+
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  next(new NotFoundError(`Route not found: ${req.method} ${req.originalUrl}`));
+});
 
 app.use(errorHandler);
 

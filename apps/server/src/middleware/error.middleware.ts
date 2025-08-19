@@ -1,4 +1,5 @@
-import type { Request, Response } from "express";
+// middleware/error.middleware.ts
+import type { NextFunction, Request, Response } from "express";
 
 import { ZodError } from "zod";
 
@@ -17,67 +18,59 @@ export class NotFoundError extends AppError {
     super(message, 404);
   }
 }
-
 export class BadRequestError extends AppError {
   constructor(message: string) {
     super(message, 400);
   }
 }
-
 export class UnauthorizedError extends AppError {
   constructor(message: string) {
     super(message, 401);
   }
 }
-
 export class ForbiddenError extends AppError {
-  constructor(message: string) {
-    super(message, 403);
-  }
+  constructor(message: string) { super(message, 403); }
 }
-
 export class InternalServerError extends AppError {
-  constructor(message: string) {
-    super(message, 500);
-  }
+  constructor(message: string) { super(message, 500); }
 }
 
-export function errorHandler(err: Error, req: Request, res: Response) {
+export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction) {
+  if (res.headersSent)
+    return next(err as any);
+
   let statusCode = 500;
-  let errorMessage: string | Array<{ field: string; message: string }>
-    = err.message;
-  const errorDetails = __prod__
-    ? undefined
-    : {
-        stack: err.stack
-          ?.split("\n")
-          .map(line => line.trim())
-          .filter(line => line.startsWith("at "))
-          .map(line => line.replace(/at\s+/, ""))
-          .join("\n"),
-      };
+  let errorMessage: string | Array<{ field: string; message: string }>;
+  let stack: string | undefined;
 
   if (err instanceof ZodError) {
     statusCode = 400;
-    errorMessage = err.errors.map(e => ({
-      field: e.path.join("."),
-      message: e.message,
-    }));
+    errorMessage = err.errors.map(e => ({ field: e.path.join("."), message: e.message }));
   }
   else if (err instanceof AppError) {
     statusCode = err.status;
     errorMessage = err.message;
   }
+  else if (err instanceof Error) {
+    errorMessage = err.message || "Internal Server Error";
+  }
+  else {
+    errorMessage = "Internal Server Error";
+  }
 
-  const responseBody = {
-    error: errorMessage,
-    ...(errorDetails && { details: errorDetails }),
-  };
+  if (!__prod__ && err instanceof Error && err.stack) {
+    stack = err.stack
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.startsWith("at "))
+      .map(line => line.replace(/at\s+/, ""))
+      .join("\n");
+  }
 
-  res.locals.errorMessage
-    = typeof errorMessage === "string"
-      ? errorMessage
-      : JSON.stringify(errorMessage);
+  const responseBody = { error: errorMessage, ...(stack && { details: stack }) };
 
-  res.status(statusCode).json(responseBody);
+  res
+    .status(statusCode)
+    .type("application/json")
+    .json(responseBody);
 }
