@@ -15,15 +15,14 @@ export const SocketContext = createContext<SocketContextType | undefined>(
 
 type SocketProviderProps = {
   children: React.ReactNode;
-  listenTo: string[];
+  listenTo?: string[];
 };
 
-export const SocketProvider = ({ children, listenTo }: SocketProviderProps) => {
+export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
 
-  // Single connection effect
   useEffect(() => {
     if (!socketRef.current) {
       socketRef.current = io(`${env.VITE_BASE_URL}/client`, {
@@ -41,9 +40,8 @@ export const SocketProvider = ({ children, listenTo }: SocketProviderProps) => {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, []); // Empty dependency array - only run once
+  }, []);
 
-  // Handle machine states
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -59,30 +57,25 @@ export const SocketProvider = ({ children, listenTo }: SocketProviderProps) => {
     };
   }, []);
 
-  // Handle dynamic event subscriptions
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
 
-    // Remove all existing listeners
     socket.removeAllListeners();
 
-    // Re-add the essential listeners
     socket.on("connect", () => setIsConnected(true));
     socket.on("disconnect", () => setIsConnected(false));
     socket.on("machine_states", (data: any[]) => setMachineStates(data));
 
-    // Add dynamic listeners
     listenTo.forEach((event) => {
       socket.on(event, () => {
-        // Handle dynamic events here if needed
       });
     });
 
     return () => {
       socket.removeAllListeners();
     };
-  }, [listenTo]); // Only re-run when listenTo changes
+  }, [listenTo]);
 
   const emit = (
     event: string,

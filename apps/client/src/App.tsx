@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
-import { PerformanceSheetProvider } from "@/contexts/performance.context";
 import MainMenu from "./pages/general/main-menu";
 import NotFound from "./pages/general/not-found";
 import Login from "./pages/general/login";
@@ -112,9 +111,7 @@ const App = () => {
   );
 
   return (
-    <PerformanceSheetProvider>
-      <SocketProvider listenTo={[]}>{content}</SocketProvider>
-    </PerformanceSheetProvider>
+    <SocketProvider listenTo={[]}>{content}</SocketProvider>
   );
 };
 
