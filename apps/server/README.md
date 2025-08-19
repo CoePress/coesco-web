@@ -1,8 +1,6 @@
 # Server
 
-## Setup
-
-## Dev Scripts
+## Development
 
 npx prisma migrate dev --name init
 
@@ -12,68 +10,54 @@ npx prisma db push
 
 npx prisma generate
 
-## Config
-
-## Folder Structure
-
-## Endpoints
-
-## Auth
-
-## Env Vars
-
-## Deployment
-
-## Notes
-
 ## Devices
 
-**Raspberry Pi (Test):**
+| Device                 | MAC Address         | IP Address       |
+|------------------------|---------------------|------------------|
+| Raspberry Pi (Test)    | B8:27:EB:70:FD:30   | 10.231.64.81     |
+| Raspberry Pi (Prod)    | 2C:CF:67:51:5A:F7   | 10.231.64.38     |
+| Mazak 200              | 88:13:BF:62:51:A0   | 192.231.64.83    |
+| Mazak 350              | AC:15:18:D5:3A:EC   | 192.231.64.53    |
+| Mazak 450              | AC:15:18:D8:65:A8   | 192.231.64.45    |
+| Doosan                 | XX:XX:XX:XX:XX:XX   | 192.231.64.127   |
+| Kuraki Boring Mill     | XX:XX:XX:XX:XX:XX   | XXX.XXX.XX.XXX   |
+| OKK                    | XX:XX:XX:XX:XX:XX   | 192.231.64.203   |
+| Niigata HN80           | XX:XX:XX:XX:XX:XX   | 192.231.64.202   |
+| Niigata SPN63          | XX:XX:XX:XX:XX:XX   | 192.231.64.201   |
 
-- B8:27:EB:70:FD:30
-- 10.231.64.81
+## Server
 
-**Raspberry Pi (Production):**
+### Service File (/etc/systemd/system/coesco.service)
 
-- 2c:cf:67:51:5a:f7
-- 10.231.64.38
+[Unit]
+Description=Coesco Server
+After=network.target
 
-**Mazak 200:**
+[Service]
+User=system
+WorkingDirectory=/home/system/Coesco/apps/server
+ExecStart=/usr/bin/npm start
+Environment=FORCE_COLOR=1
+Environment=NODE_ENV=production
+Restart=always
+RestartSec=5
 
-- 88:13:BF:62:51:A0
-- 192.231.64.83
+[Install]
+WantedBy=multi-user.target
 
-**Mazak 350:**
+### Commands
 
-- AC:15:18:D5:3A:EC
-- 192.231.64.53
+**Reload daemon**
+sudo systemctl daemon-reload
 
-**Mazak 450:**
+**Enable service to start on boot**
+sudo systemctl enable coesco
 
-- AC:15:18:D8:65:A8
-- 192.231.64.45
+**Start service**
+sudo systemctl start coesco
 
-**Doosan:**
+**Check service status**
+sudo systemctl status coesco
 
-- XX:XX:XX:XX:XX:XX
-- 192.231.64.127
-
-**Kuraki Boring Mill:**
-
-- XX:XX:XX:XX:XX:XX
-- XXX.XXX.XX.XXX
-
-**OKK:**
-
-- XX:XX:XX:XX:XX:XX
-- 192.231.64.203
-
-**Niigata HN80:**
-
-- XX:XX:XX:XX:XX:XX
-- 192.231.64.202
-
-**Niigata SPN63:**
-
-- XX:XX:XX:XX:XX:XX
-- 192.231.64.201
+**Tail service logs**
+journalctl -f --output=cat -u coesco.service

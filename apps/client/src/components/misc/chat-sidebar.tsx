@@ -104,7 +104,7 @@ export default function ChatSidebar() {
           <span className="font-medium text-sm">New Chat</span>
         </Button>
         <Button
-          onClick={() => navigate("/resources")}
+          onClick={() => navigate("/chat/resources")}
           variant="secondary-outline"
           className="w-full"
         >
