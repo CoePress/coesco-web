@@ -38,3 +38,44 @@ yarn-error.log*
 *.pem
 
 dump.rdb
+
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio / VS Code
+.vscode/
+.vs/
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Publish artifacts
+*.exe
+*.dll
+*.pdb
+*.db
+*.so
+*.dylib
+
+# Environment / secrets
+*.env
+secrets.json
+
+# Rider / JetBrains
+.idea/
+
+# Other
+launchSettings.json

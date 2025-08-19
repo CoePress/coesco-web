@@ -4,7 +4,6 @@
 
 - Setup proper artifact transfer with rsync
 - Setup proper CI/CD for sever
-- Skip deployment when client is unchanged
 - Add ability to reset the fanuc adapter from portal
 
 ## Tools
@@ -13,3 +12,8 @@
 - Azure Key Vault ($0.03 per 10,000 transactions - cache keys on startup to reduce calls)
 - Vercel Pro ($20/user/month - can get by with one account)
 - Google API (free with limits)
+
+
+## Notes
+
+dotnet publish -c Release -r linux-arm64 --self-contained true -o ./out
