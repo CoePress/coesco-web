@@ -10,6 +10,13 @@ npx prisma db push
 
 npx prisma generate
 
+## Deployment
+
+1. SSH into pi
+2. cd Coesco
+3. git pull
+4. npm install
+
 ## Devices
 
 | Device                 | MAC Address         | IP Address       |

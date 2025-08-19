@@ -34,7 +34,7 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = parsed.data!;
 export const __dev__ = env.NODE_ENV === "development";
 export const __test__ = env.NODE_ENV === "test";
 export const __prod__ = env.NODE_ENV === "production";
