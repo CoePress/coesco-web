@@ -23,18 +23,18 @@ const TreeNode = ({ node }: { node: any }) => {
   );
 };
 
-const isDescendantOf = (
-  childId: string,
-  parentId: string,
-  productClasses: any[]
-): boolean => {
-  let current = productClasses.find((pc) => pc.id === childId);
-  while (current) {
-    if (current.parentId === parentId) return true;
-    current = productClasses.find((pc) => pc.id === current?.parentId);
-  }
-  return false;
-};
+// const isDescendantOf = (
+//   childId: string,
+//   parentId: string,
+//   productClasses: any[]
+// ): boolean => {
+//   let current = productClasses.find((pc) => pc.id === childId);
+//   while (current) {
+//     if (current.parentId === parentId) return true;
+//     current = productClasses.find((pc) => pc.id === current?.parentId);
+//   }
+//   return false;
+// };
 
 const QuoteModal = ({
   isOpen,
@@ -460,6 +460,75 @@ const DetailModal = ({
   );
 };
 
+const ItemCard = ({ item, itemType, productClasses, onDetails, onAddToQuote }: {
+  item: any;
+  itemType: string;
+  productClasses: any[];
+  onDetails: (item: any) => void;
+  onAddToQuote: (item: any) => void;
+}) => {
+  let productClass;
+  if (itemType === "machines") {
+    productClass = productClasses?.find(
+      (pc) => pc.id === item.productClassId
+    );
+  }
+
+  return (
+    <div className="bg-foreground rounded border hover:shadow-md transition-shadow">
+      <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-48 object-cover rounded-t-lg"
+          />
+        ) : (
+          <span>No Image Available</span>
+        )}
+      </div>
+      <div className="p-2">
+        <div className="flex justify-between items-start">
+          <div className="overflow-hidden w-full">
+            <h3 className="text-lg font-medium text-text-muted">
+              {item.name}
+            </h3>
+            <p className="text-sm text-text-muted mt-1 truncate">
+              {item.description || "No description available"}
+            </p>
+            {productClass && (
+              <p className="text-xs text-text-muted mt-2">
+                {productClass.name}
+              </p>
+            )}
+          </div>
+          <button
+            className="text-text-muted hover:text-text cursor-pointer"
+            onClick={() => onDetails(item)}>
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+
+        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+          <div>
+            <div className="text-xs text-text-muted">
+              {item.isTemplate ? "Starting from" : "Price"}
+            </div>
+            <div className="text-lg font-semibold text-text-muted">
+              {formatCurrency(item.pricing?.totalPrice || 0, false)}
+            </div>
+          </div>
+          <Button
+            onClick={() => onAddToQuote(item)}
+            variant="primary">
+            Add to Quote
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Catalog = () => {
   const [selections, _setSelections] = useState<string[]>([]);
   const [itemType, setItemType] = useState("parts");
@@ -491,10 +560,13 @@ const Catalog = () => {
 
   const { entities: productClasses, loading: productClassesLoading } =
     useGetEntities("/catalog/product-classes");
+  
   const { entities: configurations, loading: configurationsLoading } =
     useGetEntities("/catalog/configurations");
+  
   const deepestSelectedClassId =
     selections.length > 0 ? selections[selections.length - 1] : "";
+  
   const { entities: _productClassOptions, loading: optionsLoading } =
     useGetEntities(
       deepestSelectedClassId
@@ -538,7 +610,7 @@ const Catalog = () => {
   const handleDetails = (item: any) => {
     setSelectedItem(item);
     setModalOpen(true);
-    setModalMode("add");
+    setModalMode("details");
   };
 
   const handleModalClose = () => {
@@ -547,90 +619,27 @@ const Catalog = () => {
     setModalMode("");
   };
 
-  const getFilteredByProductClass = () => {
-    if (!configurations) return [];
+  // const getFilteredByProductClass = () => {
+  //   if (!configurations) return [];
 
-    if (selections.length === 0) return configurations;
+  //   if (selections.length === 0) return configurations;
 
-    const lastSelection = selections[selections.length - 1];
+  //   const lastSelection = selections[selections.length - 1];
 
-    return configurations.filter((config) => {
-      const configClass = productClasses?.find(
-        (pc) => pc.id === config.productClassId
-      );
-      if (!configClass) return false;
+  //   return configurations.filter((config) => {
+  //     const configClass = productClasses?.find(
+  //       (pc) => pc.id === config.productClassId
+  //     );
+  //     if (!configClass) return false;
 
-      return (
-        configClass.id === lastSelection ||
-        isDescendantOf(configClass.id, lastSelection, productClasses || [])
-      );
-    });
-  };
+  //     return (
+  //       configClass.id === lastSelection ||
+  //       isDescendantOf(configClass.id, lastSelection, productClasses || [])
+  //     );
+  //   });
+  // };
 
-  const ItemCard = (item: any, itemType: string) => {
-    let productClass;
-    if (itemType === "machines") {
-      productClass = productClasses?.find(
-        (pc) => pc.id === item.productClassId
-      );
-    }
-
-    return (
-      <div
-        key={item.id}
-        className="bg-foreground rounded border hover:shadow-md transition-shadow">
-        <div className="h-48 w-full bg-surface flex items-center justify-center rounded-t-lg text-text-muted">
-          {item.image ? (
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-48 object-cover rounded-t-lg"
-            />
-          ) : (
-            <span>No Image Available</span>
-          )}
-        </div>
-        <div className="p-2">
-          <div className="flex justify-between items-start">
-            <div className="overflow-hidden w-full">
-              <h3 className="text-lg font-medium text-text-muted">
-                {item.name}
-              </h3>
-              <p className="text-sm text-text-muted mt-1 truncate">
-                {item.description || "No description available"}
-              </p>
-              {productClass && (
-                <p className="text-xs text-text-muted mt-2">
-                  {productClass.name}
-                </p>
-              )}
-            </div>
-            <button
-              className="text-text-muted hover:text-text cursor-pointer"
-              onClick={() => handleDetails(item)}>
-              <MoreHorizontal size={20} />
-            </button>
-          </div>
-
-          <div className="mt-4 pt-4 border-t flex justify-between items-center">
-            <div>
-              <div className="text-xs text-text-muted">
-                {item.isTemplate ? "Starting from" : "Price"}
-              </div>
-              <div className="text-lg font-semibold text-text-muted">
-                {formatCurrency(item.pricing?.totalPrice || 0, false)}
-              </div>
-            </div>
-            <Button
-              onClick={() => handleAddToQuote(item)}
-              variant="primary">
-              Add to Quote
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  console.log(configurations)
 
   const getFilteredItems = () => {
     return items || [];
@@ -669,8 +678,12 @@ const Catalog = () => {
     return items.map((item) => {
       return (
         <ItemCard
+          key={item.id}
           item={item}
           itemType={itemType}
+          productClasses={productClasses || []}
+          onDetails={handleDetails}
+          onAddToQuote={handleAddToQuote}
         />
       );
     });
@@ -684,7 +697,6 @@ const Catalog = () => {
         actions={<Actions />}
       />
 
-      {/* TODO: make this a component */}
       <div className="p-2">
         <div className="mb-2">
           <div className="inline-flex gap-1 bg-surface rounded-lg p-1">
