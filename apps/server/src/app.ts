@@ -15,6 +15,8 @@ import { logger } from "./utils/logger";
 const app = express();
 const server = createServer(app);
 
+app.set("trust proxy", 1);
+
 const corsOptions = {
   origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
   credentials: true,
