@@ -44,7 +44,7 @@ export const ProtectedRoute = ({
   allowedRoles,
   withLayout = true,
 }: ProtectedRouteProps) => {
-  const { user, employee, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -77,7 +77,7 @@ export const ProtectedRoute = ({
   }
 
   return (
-    <Layout employee={employee}>
+    <Layout>
       <Outlet />
     </Layout>
   );

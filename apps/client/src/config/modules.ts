@@ -17,10 +17,8 @@ import {
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import PerformanceDetails from "@/pages/performance/performance-details";
 import Sandbox from "@/pages/_sandbox/sandbox";
 import SalesDashboard from "@/pages/sales/dashboard";
-import FormMerge from "@/pages/_sandbox/form-merge";
 import Design from "@/pages/_sandbox/design";
 import ChatPLK from "@/pages/_sandbox/chat-plk";
 import WarehouseMap from "@/pages/_sandbox/warehouse-map";
@@ -33,14 +31,12 @@ import Quotes from "@/pages/sales/quotes";
 import QuoteDetails from "@/pages/sales/quote-details";
 import Catalog from "@/pages/sales/catalog";
 import Options from "@/pages/sales/options";
-import PerformanceSheets from "@/pages/performance/performance-sheets";
 import ProductionDashboard from "@/pages/production/dashboard";
 import Machines from "@/pages/production/machines";
 import MachineHistory from "@/pages/production/machine-history";
 import Employees from "@/pages/admin/employees";
 import OptionRules from "@/pages/admin/option-rules";
 import AuditLogs from "@/pages/admin/audit-logs";
-import AuditConfiguration from "@/pages/admin/audit-config";
 import ConfigBuilder from "@/pages/sales/config-builder";
 
 export type Module = {
@@ -141,20 +137,6 @@ const salesModule: Module = {
       icon: Box,
       component: Options,
     },
-    {
-      slug: "performance",
-      label: "Performance Sheets",
-      icon: FileText,
-      component: PerformanceSheets,
-      children: [
-        {
-          slug: ":id",
-          label: "Performance Details",
-          icon: FileText,
-          component: PerformanceDetails,
-        },
-      ],
-    },
   ],
 };
 
@@ -210,19 +192,7 @@ const adminModule: Module = {
       label: "Audit Logs",
       icon: FileText,
       component: AuditLogs,
-    },
-    {
-      slug: "audit-config",
-      label: "Audit Config",
-      icon: FileText,
-      component: AuditConfiguration,
-    },
-    {
-      slug: "form-merge",
-      label: "Form Merge",
-      icon: FileText,
-      component: FormMerge,
-    },
+    }
   ],
 };
 
