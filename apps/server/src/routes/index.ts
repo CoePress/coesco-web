@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { protect } from "@/middleware/auth.middleware";
 
+import adminRoutes from "./admin.routes"
 import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
@@ -17,6 +18,8 @@ const router = Router();
 router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
 router.use(protect);
+// TODO: add is admin / permissions to admin route protection
+router.use("/admin", adminRoutes)
 router.use("/catalog", catalogRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);

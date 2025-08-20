@@ -3,11 +3,15 @@ import { io } from "@/app";
 import { MachineMonitorService } from "./business/machining.service";
 import { MicrosoftService } from "./business/microsoft.service";
 import { socketService } from "./core";
+import { DeviceService } from "./business/device.service";
 
+export const deviceService = new DeviceService();
 export const machiningService = new MachineMonitorService();
 export const microsoftService = new MicrosoftService();
 
-export function initializeServices() {
+export async function initializeServices() {
   socketService.initialize(io);
-  machiningService.initialize();
+  await machiningService.initialize();
+  await deviceService.startMonitoring();
+  console.log("Device monitoring service started");
 }

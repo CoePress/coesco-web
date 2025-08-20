@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,8 @@ public class FocasService
     {
         return _machines.Values.Select(m => new {
             m.Slug, m.Ip, m.Port,
-            m.Status, m.Handle, m.LastSeen, m.ConsecutiveFailures
+            m.Connection, m.Status, m.Mode,
+            m.Handle, m.LastSeen, m.ConsecutiveFailures
         }).ToList();
     }
 
@@ -38,24 +40,20 @@ public class FocasService
         if (rc == 0)
         {
             m.Handle = handle;
-            m.Status = "CONNECTED";
+            m.Connection = "CONNECTED";
             m.ConsecutiveFailures = 0;
             m.LastSeen = DateTime.UtcNow;
             return $"{slug} connected (handle={handle})";
         }
         else
         {
-            m.Status = "DISCONNECTED";
+            m.Connection = "DISCONNECTED";
             m.ConsecutiveFailures++;
             return $"{slug} connect error {rc}";
         }
     }
 
-    public string Connect(string ip, ushort port, string slug)
-    {
-        // shim for compatibility: slug drives everything
-        return Connect(slug);
-    }
+    public string Connect(string ip, ushort port, string slug) => Connect(slug);
 
     public string Disconnect(string slug)
     {
@@ -66,7 +64,9 @@ public class FocasService
         {
             Focas.cnc_freelibhndl(h);
             m.Handle = null;
-            m.Status = "DISCONNECTED";
+            m.Connection = "DISCONNECTED";
+            m.Status = "UNKNOWN";
+            m.Mode = "UNKNOWN";
             m.LastSeen = DateTime.UtcNow;
             return $"{slug} disconnected";
         }
@@ -79,27 +79,29 @@ public class FocasService
         {
             foreach (var m in _machines.Values)
             {
-                if (m.Handle is null)
+                if (m.Handle is ushort h)
                 {
-                    // try connect
-                    var rc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var handle);
+                    var rc = Focas.cnc_statinfo(h, out var stat);
+                    Console.WriteLine($"[DEBUG] cnc_statinfo rc={rc} for {m.Slug}");
+
                     if (rc == 0)
                     {
-                        m.Handle = handle;
-                        m.Status = "CONNECTED";
-                        m.ConsecutiveFailures = 0;
+                        Console.WriteLine($"[DEBUG] raw stat: aut={stat.aut}, run={stat.run}, tmmode={stat.tmmode}");
+                        m.Connection = "CONNECTED";
+                        m.Status = StatusNumberToString(stat.run);
+                        m.Mode   = ModeNumberToString(stat.aut);
                         m.LastSeen = DateTime.UtcNow;
                     }
                     else
                     {
-                        m.Status = "DISCONNECTED";
+                        Console.WriteLine($"[ERROR] cnc_statinfo FAILED rc={rc} for {m.Slug}");
+                        Focas.cnc_freelibhndl(h);
+                        m.Handle = null;
+                        m.Connection = "DISCONNECTED";
+                        m.Status = "UNKNOWN";
+                        m.Mode = "UNKNOWN";
                         m.ConsecutiveFailures++;
                     }
-                }
-                else
-                {
-                    // TODO: add cheap health check call here
-                    m.LastSeen = DateTime.UtcNow;
                 }
             }
             await Task.Delay(TimeSpan.FromSeconds(30), ct);
@@ -112,7 +114,9 @@ public class FocasService
         public string Ip { get; }
         public ushort Port { get; }
         public ushort? Handle { get; set; }
-        public string Status { get; set; } = "INIT";
+        public string Connection { get; set; } = "INIT";
+        public string Mode { get; set; } = "UNKNOWN";
+        public string Status { get; set; } = "UNKNOWN";
         public DateTime LastSeen { get; set; }
         public int ConsecutiveFailures { get; set; }
 
@@ -121,4 +125,30 @@ public class FocasService
             Slug = slug; Ip = ip; Port = port;
         }
     }
+
+    private static string ModeNumberToString(int num) => num switch
+    {
+        0 => "MDI",
+        1 => "MEM",
+        2 => "****",
+        3 => "EDIT",
+        4 => "HND",
+        5 => "JOG",
+        6 => "T-JOG",
+        7 => "T-HND",
+        8 => "INC",
+        9 => "REF",
+        10 => "RMT",
+        _ => "UNAVAILABLE",
+    };
+
+    private static string StatusNumberToString(int num) => num switch
+    {
+        0 => "****",
+        1 => "STOP",
+        2 => "HOLD",
+        3 => "STRT",
+        4 => "MSTR",
+        _ => "UNAVAILABLE",
+    };
 }

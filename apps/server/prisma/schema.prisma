@@ -614,6 +614,27 @@ model MachineStatus {
   @@map("machine_statuses")
 }
 
+model NtfyDevice {
+  id                String    @id @default(uuid())
+  name              String
+  host              String
+  port              Int       @default(80)
+  pingIntervalSec   Int       @default(30)
+  maxMissedPings    Int       @default(3)
+  currentMissedPings Int      @default(0)
+  enabled           Boolean   @default(true)
+  lastPingTime      DateTime?
+  lastPingSuccess   Boolean?
+  isDown            Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  @@map("ntfy_devices")
+}
+
 enum AuditAction {
   CREATE
   UPDATE

@@ -13,6 +13,7 @@ import {
   PaintBucket,
   MessageCircle,
   Map,
+  ComputerIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
@@ -38,6 +39,7 @@ import Employees from "@/pages/admin/employees";
 import OptionRules from "@/pages/admin/option-rules";
 import AuditLogs from "@/pages/admin/audit-logs";
 import ConfigBuilder from "@/pages/sales/config-builder";
+import Devices from "@/pages/admin/devices";
 
 export type Module = {
   sequence: number;
@@ -180,6 +182,12 @@ const adminModule: Module = {
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
+    },
+    {
+      slug: "devices",
+      label: "Devices",
+      icon: ComputerIcon,
+      component: Devices,
     },
     {
       slug: "option-rules",
