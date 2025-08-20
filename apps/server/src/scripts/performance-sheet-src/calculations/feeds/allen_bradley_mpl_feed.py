@@ -19,6 +19,6 @@ def calculate_allen_bradley(data: base_feed_params):
         Exception: If an error occurs during the calculation or saving process.
 
     """
-    result = run_allen_bradley_calculation(data, "allen_bradley")
+    result = run_allen_bradley_calculation(data, data.feed_type)
 
     return result

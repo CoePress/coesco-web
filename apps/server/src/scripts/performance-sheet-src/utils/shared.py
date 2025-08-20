@@ -43,6 +43,7 @@ DEFAULTS = {
         'controls_level': 'SyncMaster',
         'type_of_line': 'Conventional',
         'controls': 'Sigma 5 Feed',
+        'type': 'sigma_five',
         'passline': 0.0,
         'light_gauge_non_marking': False,
         'non_marking': False,
@@ -68,6 +69,7 @@ DEFAULTS = {
         'max_length': 0.0,
         'max_spm': 0.0,
         'rate': 0.0,
+        'friction_in_die': 0,
     },
     
     # Reel defaults

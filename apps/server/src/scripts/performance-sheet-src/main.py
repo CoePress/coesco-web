@@ -244,21 +244,16 @@ def main():
     roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
 
     # --- Feed (choose which) ---
-    feed_model = get_nested(data, ["feed", "feed", "model"], DEFAULTS["feed"]["model"]).lower()
     is_pull_thru = parse_str_with_default(data, ["feed", "feed", "pullThru", "isPullThru"], "feed", "pull_thru")
-    feed_type = None
+    feed_type = parse_str_with_default(data, ["common", "equipment", "feed", "type"], "feed", "type")
     feed_result = None
     
-    if "sigma" in feed_model and is_pull_thru:
-        feed_type = "sigma_five_feed_with_pt"
-        feed_model_lookup = get_nested(data, ["feed", "feed", "model"])
-        if feed_model_lookup and feed_model_lookup.lower() == "sigma 5 feed":
-            feed_model_lookup = DEFAULTS["feed"]["model"]  # Default to S3 model
-            
+    if "sigma" in feed_type and is_pull_thru.lower() == "yes":            
         feed_data = {
-            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_type": feed_type,
+            "feed_model": parse_str_with_default(data, ["common", "equipment", "feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
-            "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
+            "loop_pit": parse_str_with_default(data, ["common", "equipment","feed", "loopPit"], "feed", "loop_pit"),
             "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["materialType"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
             "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
@@ -266,8 +261,8 @@ def main():
             "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-            "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
-            "friction_in_die": 0,  # Not present
+            "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
+            "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
             "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
             "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
             "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),
@@ -280,25 +275,21 @@ def main():
         }
         feed_obj = feed_w_pull_thru_input(**feed_data)
         feed_result = calculate_sigma_five_pt(feed_obj)
-    elif "sigma" in feed_model:
-        feed_type = "sigma_five_feed"
-        feed_model_lookup = get_nested(data, ["feed", "model"])
-        if feed_model_lookup and feed_model_lookup.lower() == "sigma 5 feed":
-            feed_model_lookup = DEFAULTS["feed"]["model"]  # Default to S3 model
-        
+    elif "sigma" in feed_type:
         feed_data = {
-            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_type": feed_type,
+            "feed_model": parse_str_with_default(data, ["common", "equipment", "feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
-            "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
+            "loop_pit": parse_str_with_default(data, ["common", "equipment", "feed", "loopPit"], "feed", "loop_pit"),
             "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
             "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
-            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "roll_width"),
+            "roll_width": parse_int_with_default(data, ["feed", "feed", "fullWidthRolls"], "feed", "roll_width"),
             "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-            "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
-            "friction_in_die": 0,  # Not present
+            "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
+            "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
             "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
             "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
             "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),
@@ -307,21 +298,21 @@ def main():
         }
         feed_obj = base_feed_params(**feed_data)
         feed_result = calculate_sigma_five(feed_obj)
-    elif "allen" in feed_model or "mpl" in feed_model:
-        feed_type = "allen_bradley_mpl_feed"
+    elif "allen" in feed_type or "mpl" in feed_type:
         feed_data = {
-            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_type": feed_type,
+            "feed_model": parse_str_with_default(data, ["common", "equipment","feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
-            "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
+            "loop_pit": parse_str_with_default(data, ["common", "equipment", "feed", "loopPit"], "feed", "loop_pit"),
             "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
             "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
-            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "roll_width"),
+            "roll_width": parse_int_with_default(data, ["feed", "feed", "fullWidthRolls"], "feed", "roll_width"),
             "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
-            "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
-            "friction_in_die": 0,  # Not present
+            "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
+            "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
             "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
             "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
             "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),

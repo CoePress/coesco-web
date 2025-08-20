@@ -255,8 +255,8 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Select
             label="Line Application"
-            name="rfq.lineApplication"
-            value={localData.rfq?.lineApplication || ""}
+            name="feed.feed.application"
+            value={localData.feed?.feed?.application || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={PRESS_APPLICATION_OPTIONS}
@@ -275,8 +275,8 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Select
             label="Pull Through"
-            name="rfq.pullThrough"
-            value={localData.rfq?.pullThrough || ""}
+            name="feed.feed.pullThru.isPullThru"
+            value={localData.feed?.feed?.pullThru?.isPullThru || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
@@ -639,7 +639,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <Input
             label="Bed Length (in)"
             name="rfq.press.bedLength"
-            value={localData.rfq?.press?.bedLength || ""}
+            value={localData.common?.press?.bedLength || ""}
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
@@ -906,7 +906,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
           <Select
             label="Loop Pit"
             name="rfq.loopPit"
-            value={localData.rfq?.loopPit || ""}
+            value={localData.common?.equipment?.feed?.loopPit || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}

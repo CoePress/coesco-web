@@ -34,14 +34,14 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
     if (isPullThruBool) {
       return "sigma-5-pull-thru";
     }
-    if (localData.feed?.feed?.model?.includes("CPRF")) {
+    if (localData.common?.equipment?.feed?.model?.includes("CPRF")) {
       return "sigma-5";
     }
-    if (localData.feed?.feed?.model?.includes("AB") || localData.feed?.feed?.model?.includes("Allen")) {
+    if (localData.common?.equipment?.feed?.model?.includes("AB") || localData.common?.equipment?.feed?.model?.includes("Allen")) {
       return "allen-bradley";
     }
     return "sigma-5"; // default
-  }, [localData.feed?.feed?.model, localData.feed?.feed?.pullThru?.isPullThru]);
+  }, [localData.common?.equipment?.feed?.model, localData.feed?.feed?.pullThru?.isPullThru]);
 
   // Handle feed type change
   const handleFeedTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -110,7 +110,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         <Select
           label="Model"
           name="feed.feed.model"
-          value={localData.feed?.feed?.model || ""}
+          value={localData.common?.equipment?.feed?.model || ""}
           onChange={handleFieldChange}
           options={
             feedType === "sigma-5"
@@ -137,7 +137,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         <Select
           label="Loop Pit"
           name="feed.feed.loopPit"
-          value={localData.feed?.feed?.loopPit || ""}
+          value={localData.common?.equipment?.feed?.loopPit || ""}
           onChange={handleFieldChange}
           options={YES_NO_OPTIONS}
           disabled={!isEditing}
@@ -179,7 +179,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Press Bed Length"
           name="feed.press.bedLength"
           type="number"
-          value={localData.feed?.press?.bedLength?.toString() || ""}
+          value={localData.common?.press?.bedLength?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />
@@ -228,7 +228,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="STR Max Speed (ft/min)"
           name="feed.feed.maximumVelocity"
           type="number"
-          value={localData.feed?.feed?.maxVelocity?.toString() || ""}
+          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -258,7 +258,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <Input
           label="Max Motor RPM"
           name="feed.feed.maxMotorRPM"
@@ -279,7 +279,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           label="Max Velocity (ft/min)"
           name="feed.feed.maxVelocity"
           type="number"
-          value={localData.feed?.feed?.maxVelocity?.toString() || ""}
+          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />
@@ -288,6 +288,14 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           name="feed.feed.settleTime"
           type="number"
           value={localData.feed?.feed?.settleTime?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Ratio"
+          name="feed.feed.ratio"
+          type="number"
+          value={localData.feed?.feed?.ratio?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />
@@ -328,20 +336,101 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Input
-          label="Ratio"
-          name="feed.feed.ratio"
-          type="number"
-          value={localData.feed?.feed?.ratio?.toString() || ""}
-          disabled={true}
-          className="bg-gray-50"
-        />
+      <div className="grid grid-cols-4 gap-4">
         <Input
           label="ReGen (Watts)"
           name="feed.feed.regen"
           type="number"
           value={localData.feed?.feed?.regen?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        
+        <Input
+          label="Motor Peak Torque (lbs-in)"
+          name="feed.feed.torque.motorPeak"
+          type="number"
+          value={localData.feed?.feed?.torque?.motorPeak?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Motor RMS Torque (lbs-in)"
+          name="feed.feed.torque.rms.motor"
+          type="number"
+          value={localData.feed?.feed?.torque?.rms?.motor?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Frictional Torque (lbs-in)"
+          name="feed.feed.torque.frictional"
+          type="number"
+          value={localData.feed?.feed?.torque?.frictional?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Loop Torque (lbs-in)"
+          name="feed.feed.torque.loop"
+          type="number"
+          value={localData.feed?.feed?.torque?.loop?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Settle Torque (lbs-in)"
+          name="feed.feed.torque.settle"
+          type="number"
+          value={localData.feed?.feed?.torque?.settle?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input 
+          label="REF. Inertia (lbs-in-sec²)"
+          name="feed.feed.reflInertia"
+          type="number"
+          value={localData.feed?.feed?.reflInertia?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="MATCH"
+          name="feed.feed.match"
+          type="number"
+          value={localData.feed?.feed?.match?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input 
+          label="Peak Torque (lbs-in)"
+          name="feed.feed.torque.peak"
+          type="number"
+          value={localData.feed?.feed?.torque?.peak?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="RMS Torque (FA1) (lbs-in)"
+          name="feed.feed.torque.rms.feedAngle1"
+          type="number"
+          value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="RMS Torque (FA2) (lbs-in)"
+          name="feed.feed.torque.rms.feedAngle2"
+          type="number"
+          value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
+          label="Acceleration Torque (lbs-in)"
+          name="feed.feed.torque.acceleration"
+          type="number"
+          value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
           disabled={true}
           className="bg-gray-50"
         />

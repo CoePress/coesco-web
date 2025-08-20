@@ -83,5 +83,6 @@ def calculate_variant(data: material_specs_input):
     return {
         "min_bend_radius": min_bend_radius,
         "min_loop_length": min_loop_length,
-        "coil_od_calculated": coil_od_calculated
+        "coil_od_calculated": coil_od_calculated,
+        "material_density": density
     }

@@ -105,17 +105,17 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         />
         <Input
           label="Elastic Modulus (psi)"
-          name="rollStrBackbend.straightener.modulus"
+          name="strUtility.straightener.modulus"
           type="number"
-          value={localData.rollStrBackbend?.straightener?.modulus?.toString() || "30000000"}
+          value={localData.strUtility?.straightener?.modulus?.toString() || "30000000"}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
           label="Material Density (lb/in³)"
-          name="rollStrBackbend.material.density"
+          name="common.material.materialDensity"
           type="number"
-          value={localData.rollStrBackbend?.material?.density?.toString() || ""}
+          value={localData.common?.material?.materialDensity?.toString() || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />

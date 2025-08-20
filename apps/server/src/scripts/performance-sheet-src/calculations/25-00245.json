@@ -49,9 +49,10 @@
         "model": "CPPS-306",
         "width": 24,
         "numberOfRolls": 7,
-        "rollDiameter": 3
+        "rollDiameter": 0
       },
       "feed": {
+        "model": "CPRF-S5",
         "direction": "Right to Left",
         "controlsLevel": "SyncMaster",
         "controls": "Sigma 5 Feed",
@@ -59,7 +60,8 @@
         "passline": "55\"",
         "lightGuageNonMarking": "No",
         "nonMarking": "No",
-        "maximumVelocity": 0
+        "maximumVelocity": 0,
+        "loopPit": "No"
       }
     },
     "feedRates": {
@@ -78,6 +80,9 @@
         "spm": 50,
         "fpm": 0
       }
+    },
+    "press": {
+      "bedLength": 48
     }
   },
   "rfq": {
@@ -88,9 +93,6 @@
       "earliestDeliveryDate": "",
       "latestDeliveryDate": ""
     },
-    "lineApplication": "",
-    "typeOfLine": "Conventional",
-    "pullThrough": "",
     "coil": {
       "slitEdge": "Yes",
       "millEdge": "No",
@@ -115,7 +117,6 @@
       "strokeLength": "0",
       "maxSPM": "60",
       "bedWidth": "0",
-      "bedLength": "48",
       "windowSize": "0",
       "cycleTime": "0"
     },
@@ -133,7 +134,6 @@
       "adequateSupport": "",
       "customMounting": ""
     },
-    "loopPit": "",
     "requireGuarding": "",
     "specialConsiderations": ""
   },
@@ -161,9 +161,9 @@
       "airPressureAvailable": 80,
       "requiredDecelRate": 1,
       "coefficientOfFriction": 0.6,
-      "cylinderBore": 5.00,
+      "cylinderBore": 0,
       "minMaterialWidth": 0,
-      "brakePadDiameter": 4.00,
+      "brakePadDiameter": 0,
       "threadingDrive": {
         "airClutch": "Yes",
         "hydThreadingDrive": "22 cu in (D-12689)"
@@ -240,14 +240,14 @@
         "inertia": 0,
         "reflInertia": 0
       },
-      "ratio": "",
+      "ratio": 0,
       "totalReflInertia": {
         "empty": 0,
         "full": 0
       },
       "motor": {
         "hp": 5,
-        "inertia": 5,
+        "inertia": 0,
         "rpm": {
           "base": 1750,
           "full": 0
@@ -303,8 +303,6 @@
     },
     "coil": {
       "density": 0,
-      "od": 0,
-      "id": 0,
       "width": 0,
       "weight": 0,
       "inertia": 0,
@@ -338,15 +336,15 @@
         }
       },
       "gear": {
-        "faceWidth": 3.5,
-        "contAngle": 20,
+        "faceWidth": 0,
+        "contAngle": 0,
         "straightenerRoll": {
-          "numberOfTeeth": 16,
-          "dp": 6
+          "numberOfTeeth": 0,
+          "dp": 0
         },
         "pinchRoll": {
-          "numberOfTeeth": 32,
-          "dp": 6
+          "numberOfTeeth": 0,
+          "dp": 0
         }
       },
       "actualCoilWeight": 0,
@@ -372,13 +370,9 @@
   },
   "rollStrBackbend": {
     "rollConfiguration": "7",
-    "material": {
-      "density": 0
-    },
     "straightener": {
       "rollDiameter": 0,
       "centerDistance": 0,
-      "modulus": 0,
       "jackForceAvailable": 0,
       "rolls": {
         "typeOfRoll": "7 Roll Str. Backbend",
@@ -394,17 +388,17 @@
             "offCoilAfterSpringback": 0,
             "oneOffCoil": 0,
             "curveAtYield": 0,
-            "radiusAtYield": 0
+            "radiusAtYield": 0,
+            "bendingMomentToYield": 0
           },
-          "bendingMomentToYieldSkin": 200,
           "rollers": {
             "depthRequired": 0,
             "depthRequiredCheck": "",
             "forceRequired": 0,
             "forceRequiredCheck": "",
             "first": {
-              "height": 10,
-              "forceRequired": 20,
+              "height": 0,
+              "forceRequired": 0,
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -426,8 +420,8 @@
               }
             },
             "middle": {
-              "height": 12,
-              "forceRequired": 22,
+              "height": 0,
+              "forceRequired": 0,
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -449,8 +443,8 @@
               }
             },
             "last": {
-              "height": 11,
-              "forceRequired": 21,
+              "height": 0,
+              "forceRequired": 0,
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -468,12 +462,10 @@
     }
   },
   "feed": {
-    "feedType": "sigma-5",
+    "feedType": "sigma_five",
     "feed": {
       "application": "Press Feed",
-      "model": "CPRF-S1",
       "machineWidth": 18,
-      "loopPit": "",
       "fullWidthRolls": "Yes",
       "motor": "YASKAWA SGMGV-1ADDA61",
       "amp": "YASKAWA SGDV-280DE1A000000300",
@@ -487,9 +479,8 @@
       "feedAngle2": 240,
       "ratio": 0,
       "maxMotorRPM": 1500,
-      "motorInertia": 0.2154,
-      "maxVelocity": 0,
-      "settleTime": 0.035,
+      "motorInertia": 0,
+      "settleTime": 0,
       "regen": 0,
       "reflInertia": 0,
       "match": 0,
@@ -509,7 +500,7 @@
       },
       "pullThru": {
         "isPullThru": "No",
-        "straightenerRolls": 7,
+        "straightenerRolls": 5,
         "centerDistance": 0,
         "yieldStrength": 0,
         "pinchRolls": "",
@@ -518,9 +509,6 @@
         "payoffMaxSpeed": 0
       },
       "tableValues": []
-    },
-    "press": {
-      "bedLength": "48"
     }
   },
   "shear": {
@@ -584,58 +572,5 @@
         }
       }
     }
-  },
-  "summaryReport": {
-    "reel": {
-      "motorization": {
-        "isMotorized": "No",
-        "driveHorsepower": 0,
-        "speed": 0,
-        "accelRate": 0,
-        "regenRequired": ""
-      },
-      "style": "Single Ended",
-      "threadingDrive": {
-        "airClutch": "Yes",
-        "hydThreadingDrive": "22 cu in (D-12689)"
-      },
-      "holddown": {
-        "assy": "MD",
-        "cylinder": "Hydraulic"
-      },
-      "dragBrake": {
-        "model": "Failsafe - Single Stage",
-        "quantity": 1
-      }
-    },
-    "straightener": {
-      "payoff": "TOP",
-      "feedRate": 200,
-      "acceleration": 1,
-      "horsepower": 30,
-      "rolls": {
-        "straighteningRolls": 7,
-        "backupRolls": ""
-      }
-    },
-    "feed": {
-      "application": "Press Feed",
-      "model": "Sigma 5 Feed",
-      "machineWidth": 18,
-      "fullWidthRolls": "Yes",
-      "feedAngle1": 180,
-      "feedAngle2": 240,
-      "maximumVelocity": 0,
-      "acceleration": 1,
-      "ratio": "",
-      "pullThru": {
-        "straightenerRolls": 7,
-        "pinchRolls": ""
-      }
-    },
-    "press": {
-      "bedLength": "48"
-    },
-    "loopPit": ""
   }
 }

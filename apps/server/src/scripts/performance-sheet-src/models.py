@@ -162,6 +162,7 @@ class time_input(BaseModel):
 ##################################################
 # BaseFeedParams is used to define the common parameters for feed calculations
 class base_feed_params(BaseModel):
+    feed_type: str
     feed_model: str
     width: int
     loop_pit: str

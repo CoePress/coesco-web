@@ -3,9 +3,9 @@ Sigma Five Feed with Pull Thru Calculation Module
 
 """
 from services.feed_calculations import run_sigma_five_calculation, run_sigma_five_pt_calculation
-from models import feed_w_pull_thru_input
+from models import base_feed_params, feed_w_pull_thru_input
 
-def calculate_sigma_five_pt(data: feed_w_pull_thru_input):
+def calculate_sigma_five_pt(data: base_feed_params):
     """
     Calculate Sigma Five feed parameters with pull-thru configuration.
 
@@ -20,10 +20,10 @@ def calculate_sigma_five_pt(data: feed_w_pull_thru_input):
     
     """
 
-    base_result = run_sigma_five_calculation(data, "sigma_five_pt")
-    pt_result = run_sigma_five_pt_calculation(base_result, 
-                data.straightening_rolls, data.material_width, data.material_thickness, 
-                data.feed_model, data.yield_strength, data.str_pinch_rolls, data.req_max_fpm, "sigma_five_pt")
+    feed_w_pull_thru = feed_w_pull_thru_input(**data)
+
+    base_result = run_sigma_five_calculation(data, data.feed_type)
+    pt_result = run_sigma_five_pt_calculation(feed_w_pull_thru, data.feed_type)
     
     base_result["peak_torque"] += pt_result["straightner_torque"]
 

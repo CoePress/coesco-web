@@ -3,7 +3,6 @@ import React, {
   useEffect, useRef 
 } from "react";
 import { useParams } from "react-router-dom";
-import { mapCalculationResultsToPerformanceData } from "@/utils/universal-mapping";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
 
 function deepMerge<T>(target: T, source: Partial<T>): T {
@@ -107,6 +106,7 @@ export interface CommonData {
       rollDiameter?: number;
     };
     feed?: {
+      model?: string;
       direction?: string;
       controlsLevel?: string;
       controls?: string;
@@ -114,6 +114,8 @@ export interface CommonData {
       passline?: string;
       lightGuageNonMarking?: string;
       nonMarking?: string;
+      maximumVelocity?: number;
+      loopPit?: string;
     };
   };
   feedRates?: {
@@ -133,6 +135,9 @@ export interface CommonData {
       fpm?: number; // Calculated
     };
   };
+  press?: {
+    bedLength?: string;
+  };
 }
 
 // Updated RFQ interface (removing duplicated fields)
@@ -144,8 +149,6 @@ export interface RFQData {
     earliestDeliveryDate?: string;
     latestDeliveryDate?: string;
   };
-  lineApplication?: string;
-  pullThrough?: string;
   coil?: {
     slitEdge?: string;
     millEdge?: string;
@@ -170,7 +173,6 @@ export interface RFQData {
     strokeLength?: string;
     maxSPM?: string;
     bedWidth?: string;
-    bedLength?: string;
     windowSize?: string;
     cycleTime?: string;
   };
@@ -188,7 +190,6 @@ export interface RFQData {
     adequateSupport?: string;
     customMounting?: string;
   };
-  loopPit?: string;
   requireGuarding?: string;
   specialConsiderations?: string;
 }
@@ -304,7 +305,7 @@ export interface ReelDriveData {
       inertia?: number; // Calculated
       reflInertia?: number; // Calculated
     };
-    ratio?: string; // Calculated
+    ratio?: number; // Calculated
     totalReflInertia?: {
       empty?: number; // Calculated
       full?: number; // Calculated
@@ -367,8 +368,6 @@ export interface ReelDriveData {
   };
   coil?: {
     density?: number;
-    od?: number; // Calculated
-    id?: number; // Calculated
     width?: number; // Calculated
     weight?: number; // Calculated
     inertia?: number; // Calculated
@@ -440,13 +439,9 @@ export interface StrUtilityData {
 // Updated Roll Straightener Backbend interface (removing duplicated fields)
 export interface RollStrBackbendData {
   rollConfiguration?: string; // "7", "9", "11"
-  material?: {
-    density: number; // lb/in³
-  };
   straightener?: {
     rollDiameter?: number;
     centerDistance?: number;
-    modulus?: number;
     jackForceAvailable?: number;
     feedRate?: number;
     poweredRolls?: string;
@@ -502,9 +497,7 @@ export interface FeedData {
   feedType?: string; // "sigma-5", "sigma-5-pull-thru", "allen-bradley"
   feed?: {
     application?: string;
-    model?: string;
     machineWidth?: number;
-    loopPit?: string;
     fullWidthRolls?: string;
     motor?: string;
     amp?: string;
@@ -519,7 +512,6 @@ export interface FeedData {
     ratio?: number;
     maxMotorRPM?: number; // Calculated
     motorInertia?: number; // Calculated
-    maxVelocity?: number; // Calculated
     settleTime?: number; // Calculated
     regen?: number; // Calculated
     reflInertia?: number; // Calculated
@@ -559,9 +551,6 @@ export interface FeedData {
       fpm_fa2?: number;
       index_time_fa2?: number;
     }>;
-  };
-  press?: {
-    bedLength?: string;
   };
 }
 
@@ -629,61 +618,6 @@ export interface ShearData {
   };
 }
 
-// Updated Summary Report interface (removing duplicated fields)
-export interface SummaryReportData {
-  reel?: {
-    motorization?: {
-      isMotorized?: string;
-      driveHorsepower?: number;
-      speed?: number;
-      accelRate?: number;
-      regenRequired?: string;
-    };
-    style?: string;
-    threadingDrive?: {
-      airClutch?: string;
-      hydThreadingDrive?: string;
-    };
-    holddown?: {
-      assy?: string;
-      cylinder?: string;
-    };
-    dragBrake?: {
-      model?: string;
-      quantity?: number;
-    };
-  };
-  straightener?: {
-    payoff?: string;
-    feedRate?: number;
-    acceleration?: number;
-    horsepower?: number;
-    rolls?: {
-      straighteningRolls?: number;
-      backupRolls?: string;
-    };
-  };
-  feed?: {
-    application?: string;
-    model?: string;
-    machineWidth?: number;
-    fullWidthRolls?: string;
-    feedAngle1?: number;
-    feedAngle2?: number;
-    maximumVelocity?: number;
-    acceleration?: number;
-    ratio?: string;
-    pullThru?: {
-      straightenerRolls?: number;
-      pinchRolls?: string;
-    };
-  };
-  press?: {
-    bedLength?: string;
-  };
-  loopPit?: string;
-}
-
 // Updated Main Performance Data Structure
 export interface PerformanceData {
   referenceNumber: string;
@@ -696,7 +630,6 @@ export interface PerformanceData {
   rollStrBackbend?: RollStrBackbendData;
   feed?: FeedData;
   shear?: ShearData;
-  summaryReport?: SummaryReportData;
 }
 
 // Initial state for PerformanceData
@@ -729,7 +662,6 @@ const initialPerformanceData: PerformanceData = {
       maxTensileStrength: 0,
       reqMaxFPM: 0,
       materialDensity: 0,
-      modulus: 0,
     },
     coil: {
       maxCoilWidth: 0,
@@ -741,7 +673,7 @@ const initialPerformanceData: PerformanceData = {
     },
     equipment: {
       reel: {
-        model: "",
+        model: "CPR-040",
         width: 0,
         horsepower: 0,
         backplate: {
@@ -749,12 +681,13 @@ const initialPerformanceData: PerformanceData = {
         },
       },
       straightener: {
-        model: "",
+        model: "CPPS-250",
         width: 0,
         numberOfRolls: 0,
         rollDiameter: 0,
       },
       feed: {
+        model: "CPRF-S1",
         direction: "",
         controlsLevel: "",
         controls: "",
@@ -762,6 +695,8 @@ const initialPerformanceData: PerformanceData = {
         passline: "",
         lightGuageNonMarking: "",
         nonMarking: "",
+        maximumVelocity: 0,
+        loopPit: "",
       },
     },
     feedRates: {
@@ -781,6 +716,9 @@ const initialPerformanceData: PerformanceData = {
         fpm: 0,
       },
     },
+    press: {
+      bedLength: "",
+    },
   },
   rfq: {
     dates: {
@@ -790,8 +728,6 @@ const initialPerformanceData: PerformanceData = {
       earliestDeliveryDate: "",
       latestDeliveryDate: "",
     },
-    lineApplication: "",
-    pullThrough: "",
     coil: {
       slitEdge: "",
       millEdge: "",
@@ -816,7 +752,6 @@ const initialPerformanceData: PerformanceData = {
       strokeLength: "",
       maxSPM: "",
       bedWidth: "",
-      bedLength: "",
       windowSize: "",
       cycleTime: "",
     },
@@ -834,7 +769,6 @@ const initialPerformanceData: PerformanceData = {
       adequateSupport: "",
       customMounting: "",
     },
-    loopPit: "",
     requireGuarding: "",
     specialConsiderations: "",
   },
@@ -843,9 +777,6 @@ const initialPerformanceData: PerformanceData = {
       minBendRadius: 0,
       minLoopLength: 0,
       calculatedCoilOD: 0,
-    },
-    feed: {
-      controls: "",
     },
     straightener: {
       rolls: {
@@ -944,7 +875,7 @@ const initialPerformanceData: PerformanceData = {
         inertia: 0,
         reflInertia: 0,
       },
-      ratio: "",
+      ratio: 0,
       totalReflInertia: {
         empty: 0,
         full: 0,
@@ -1007,8 +938,6 @@ const initialPerformanceData: PerformanceData = {
     },
     coil: {
       density: 0,
-      od: 0,
-      id: 0,
       width: 0,
       weight: 0,
       inertia: 0,
@@ -1076,18 +1005,10 @@ const initialPerformanceData: PerformanceData = {
   },
   rollStrBackbend: {
     rollConfiguration: "",
-    material: {
-      density: 0,
-    },
     straightener: {
       rollDiameter: 0,
       centerDistance: 0,
-      modulus: 0,
       jackForceAvailable: 0,
-      feedRate: 0,
-      poweredRolls: "",
-      operatingPressure: 0,
-      hydraulicControl: "",
       rolls: {
         typeOfRoll: "",
         depth: {
@@ -1180,9 +1101,7 @@ const initialPerformanceData: PerformanceData = {
     feedType: "",
     feed: {
       application: "",
-      model: "",
       machineWidth: 0,
-      loopPit: "",
       fullWidthRolls: "",
       motor: "",
       amp: "",
@@ -1197,7 +1116,6 @@ const initialPerformanceData: PerformanceData = {
       ratio: 0,
       maxMotorRPM: 0,
       motorInertia: 0,
-      maxVelocity: 0,
       settleTime: 0,
       regen: 0,
       reflInertia: 0,
@@ -1227,9 +1145,6 @@ const initialPerformanceData: PerformanceData = {
         payoffMaxSpeed: 0,
       },
       tableValues: [],
-    },
-    press: {
-      bedLength: "",
     },
   },
   shear: {
@@ -1293,59 +1208,6 @@ const initialPerformanceData: PerformanceData = {
         },
       },
     },
-  },
-  summaryReport: {
-    reel: {
-      motorization: {
-        isMotorized: "",
-        driveHorsepower: 0,
-        speed: 0,
-        accelRate: 0,
-        regenRequired: "",
-      },
-      style: "",
-      threadingDrive: {
-        airClutch: "",
-        hydThreadingDrive: "",
-      },
-      holddown: {
-        assy: "",
-        cylinder: "",
-      },
-      dragBrake: {
-        model: "",
-        quantity: 0,
-      },
-    },
-    straightener: {
-      payoff: "",
-      feedRate: 0,
-      acceleration: 0,
-      horsepower: 0,
-      rolls: {
-        straighteningRolls: 0,
-        backupRolls: "",
-      },
-    },
-    feed: {
-      application: "",
-      model: "",
-      machineWidth: 0,
-      fullWidthRolls: "",
-      feedAngle1: 0,
-      feedAngle2: 0,
-      maximumVelocity: 0,
-      acceleration: 0,
-      ratio: "",
-      pullThru: {
-        straightenerRolls: 0,
-        pinchRolls: "",
-      },
-    },
-    press: {
-      bedLength: "",
-    },
-    loopPit: "",
   },
 };
 

@@ -300,7 +300,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Loop Pit"
           name="feed.feed.loopPit"
-          value={localData.feed?.feed?.loopPit || ""}
+          value={localData.common?.equipment?.feed?.loopPit || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -328,14 +328,14 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Press Bed Length"
           name="feed.press.bedLength"
-          value={localData.feed?.press?.bedLength || ""}
+          value={localData.common?.press?.bedLength || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
           label="Maximum Velocity ft/min"
           name="feed.feed.maxVelocity"
-          value={localData.feed?.feed?.maxVelocity || ""}
+          value={localData.common?.equipment?.feed?.maximumVelocity || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />

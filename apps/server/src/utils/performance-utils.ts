@@ -74,6 +74,11 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     if (materialSpecs.min_loop_length !== undefined) {
       setNestedValue(updatedResults, 'materialSpecs.material.minLoopLength', materialSpecs.min_loop_length);
     }
+
+    // Map density
+    if (materialSpecs.material_density !== undefined) {
+      setNestedValue(updatedResults, 'common.material.materialDensity', materialSpecs.material_density);
+    }
   }
 
   // Update TDDBHD results
@@ -123,7 +128,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'tddbhd.reel.holddown.cylinderPressure', tddbhdResults.holddown_pressure);
     }
     if (tddbhdResults.cylinder_bore !== undefined) {
-      setNestedValue(updatedResults, 'tddbhd.reel.holddown.cylinderBore', tddbhdResults.cylinder_bore);
+      setNestedValue(updatedResults, 'tddbhd.reel.cylinderBore', tddbhdResults.cylinder_bore);
     }
     
     // Map brake calculations
@@ -209,10 +214,10 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'reelDrive.coil.density', reelDriveResults.coil.density);
     }
     if (reelDriveResults.coil.od !== undefined) {
-      setNestedValue(updatedResults, 'reelDrive.coil.od', reelDriveResults.coil.od);
+      setNestedValue(updatedResults, 'common.coil.od', reelDriveResults.coil.od);
     }
     if (reelDriveResults.coil.id !== undefined) {
-      setNestedValue(updatedResults, 'reelDrive.coil.id', reelDriveResults.coil.id);
+      setNestedValue(updatedResults, 'common.coil.id', reelDriveResults.coil.id);
     }
     if (reelDriveResults.coil.width !== undefined) {
       setNestedValue(updatedResults, 'reelDrive.coil.width', reelDriveResults.coil.width);
@@ -513,7 +518,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired', rollStrResults.roller_force_required);
     }
     if (rollStrResults.roller_force_required_check !== undefined) {
-      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceCheck', rollStrResults.roller_force_required_check === "OK" ? "Yes" : "No");
+      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck', rollStrResults.roller_force_required_check === "OK" ? "Yes" : "No");
     }
     
     // Map first roller calculations - UP direction
@@ -707,7 +712,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'feed.feed.motorInertia', feedResults.motor_inertia);
     }
     if (feedResults.max_vel !== undefined) {
-      setNestedValue(updatedResults, 'feed.feed.maxVelocity', feedResults.max_vel);
+      setNestedValue(updatedResults, 'common.equipment.feed.maximumVelocity', feedResults.max_vel);
     }
     if (feedResults.settle_time !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.settleTime', feedResults.settle_time);
@@ -776,7 +781,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     
     // Calculate material in loop (this appears to be calculated on frontend)
     const materialThickness = getNestedValue(updatedResults, 'common.material.materialThickness') || 0;
-    const loopPit = getNestedValue(updatedResults, 'feed.feed.loopPit') || "";
+    const loopPit = getNestedValue(updatedResults, 'common.equipment.feed.loopPit') || "";
     let materialInLoop = 0;
     
     if (materialThickness > 0) {

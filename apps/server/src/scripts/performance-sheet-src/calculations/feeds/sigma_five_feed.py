@@ -20,6 +20,6 @@ def calculate_sigma_five(data: base_feed_params):
     
     """
 
-    result = run_sigma_five_calculation(data, "sigma_five")
+    result = run_sigma_five_calculation(data, data.feed_type)
 
     return result
