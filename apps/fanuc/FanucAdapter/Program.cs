@@ -14,6 +14,8 @@ var machines = new[]
     new Machine("192.231.64.127", 8193, "hn80",  true),
 };
 
+var focas = new FocasService(machines.Select(m => (m.Slug, m.Host, (ushort)m.Port)));
+
 app.Use(async (ctx, next) =>
 {
     if (!ctx.Request.Headers.TryGetValue(API_KEY_HEADER, out var key) || key != API_KEY_VALUE)
@@ -26,7 +28,7 @@ app.Use(async (ctx, next) =>
     await next(ctx);
 });
 
-app.MapGet("/api/v1/healthz", () => Results.Text("ok", "text/plain"));
+app.MapGet("/api/v1/health", () => Results.Text("ok", "text/plain"));
 app.MapGet("/api/v1/status", () => Results.Json(new { ok = true, stub = true }));
 app.MapPost("/api/v1/reset", () => Results.Json(new { ok = true }));
 
@@ -71,11 +73,10 @@ foreach (var m in machines)
     });
 }
 
-app.MapGet("/api/v1/focas/test", () =>
-{
-    var focas = new FocasService();
-    return focas.Connect("192.231.64.127", 8193);
-});
+// FOCAS endpoints
+app.MapGet("/api/v1/focas/test", () => focas.Connect("192.231.64.127", 8193, "hn80"));
+app.MapGet("/api/v1/focas/status", () => Results.Json(focas.Status()));
+app.MapPost("/api/v1/focas/{slug}/disconnect", (string slug) => focas.Disconnect(slug));
 
 app.Run();
 
