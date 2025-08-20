@@ -217,13 +217,12 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={TYPE_OF_LINE_OPTIONS}
           disabled={!isEditing}
         />
-        <Select
+        <Input
           label="Feed Controls"
-          name="materialSpecs.feed.controls"
-          value={localData.materialSpecs?.feed?.controls || ""}
+          name="common.equipment.feed.controls"
+          value={localData.common?.equipment?.feed?.controls || ""}
           onChange={handleFieldChange}
-          options={CONTROLS_LEVEL_OPTIONS}
-          disabled={!isEditing}
+          disabled={true}
         />
         <Select
           label="Passline"

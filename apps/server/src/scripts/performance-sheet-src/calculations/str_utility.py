@@ -29,29 +29,81 @@ def calculate_str_utility(data: str_utility_input):
         ValueError: If any lookup fails or if calculations cannot be performed.
     
     """
-    # Lookups for calculations
-    try:
-        if data.horsepower == 7.5:
-            horsepower_string = "7.5"
-        else:    
-            horsepower_string = str(int(data.horsepower))
+    # Individual lookups with error handling
+    if data.horsepower == 7.5:
+        horsepower_string = "7.5"
+    else:    
+        horsepower_string = str(int(data.horsepower))
 
+    try:
         str_roll_dia = get_str_model_value(data.str_model, "roll_diameter", "str_roll_dia")
+    except:
+        return "ERROR: Str roll diameter lookup failed."
+
+    try:
         center_dist = get_str_model_value(data.str_model, "center_distance", "center_dist")
+    except:
+        return "ERROR: Center distance lookup failed."
+
+    try:
         pinch_roll_dia = get_str_model_value(data.str_model, "pinch_roll_dia", "pinch_roll_dia")
+    except:
+        return "ERROR: Pinch roll diameter lookup failed."
+
+    try:
         jack_force_available = get_str_model_value(data.str_model, "jack_force_avail", "jack_force_available")
+    except:
+        return "ERROR: Jack force available lookup failed."
+
+    try:
         max_roll_depth = get_str_model_value(data.str_model, "min_roll_depth", "max_roll_depth")
+    except:
+        return "ERROR: Max roll depth lookup failed."
+
+    try:
         str_gear_torque = get_str_model_value(data.str_model, "str_gear_torq", "str_gear_torque")
+    except:
+        return "ERROR: Str gear torque lookup failed."
+
+    try:
         density = get_material_density(data.material_type)
+    except:
+        return "ERROR: Material density lookup failed."
+
+    try:
         modulus = get_material_modulus(data.material_type)
+    except:
+        return "ERROR: Material modulus lookup failed."
+
+    try:
         pinch_roll_teeth = get_str_model_value(data.str_model, "pr_teeth", "pinch_roll_teeth")
+    except:
+        return "ERROR: Pinch roll teeth lookup failed."
+
+    try:
         pinch_roll_dp = get_str_model_value(data.str_model, "proll_dp", "pinch_roll_dp")
+    except:
+        return "ERROR: Pinch roll DP lookup failed."
+
+    try:
         str_roll_teeth = get_str_model_value(data.str_model, "sroll_teeth", "str_roll_teeth")
+    except:
+        return "ERROR: Str roll teeth lookup failed."
+
+    try:
         str_roll_dp = get_str_model_value(data.str_model, "sroll_dp", "str_roll_dp")
+    except:
+        return "ERROR: Str roll DP lookup failed."
+
+    try:
         face_width = get_str_model_value(data.str_model, "face_width", "face_width")
+    except:
+        return "ERROR: Face width lookup failed."
+
+    try:
         motor_inertia = get_motor_inertia(horsepower_string)
     except:
-        return "ERROR: Str Utility lookup failed."
+        return "ERROR: Motor inertia lookup failed."
 
     # Needed values for calculations
     str_qty = data.num_str_rolls

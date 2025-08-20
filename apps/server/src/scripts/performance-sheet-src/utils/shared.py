@@ -22,7 +22,8 @@ class RFQState:
 rfq_state = RFQState()
 
 ### CENTRALIZED DEFAULT VALUES ###
-DEFAULTS = {    
+DEFAULTS = {   
+
     # Material specs defaults
     'material': {
         'material_type': 'COLD ROLLED STEEL',
@@ -47,8 +48,9 @@ DEFAULTS = {
         'non_marking': False,
         'model': 'CPRF-S3',
         'machine_width': 0,
-        'loop_pit': 'no',
-        'application': 'press feed',
+        'roll_width': 'No',
+        'loop_pit': 'No',
+        'application': 'Press Feed',
         'average_fpm': 0.0,
         'maximum_velocity': 0.0,
         'acceleration_rate': 0.0,
@@ -56,7 +58,7 @@ DEFAULTS = {
         'length_increment': 0.0,
         'feed_angle_1': 0.0,
         'feed_angle_2': 0.0,
-        'pull_thru': False,
+        'pull_thru': 'No',
         'straightener_rolls': 0,
         'pinch_rolls': 0,
         'average_length': 0.0,
@@ -65,6 +67,7 @@ DEFAULTS = {
         'min_spm': 0.0,
         'max_length': 0.0,
         'max_spm': 0.0,
+        'rate': 0.0,
     },
     
     # Reel defaults
@@ -94,6 +97,7 @@ DEFAULTS = {
         'auto_brake_compensation': 'Yes',
         'acceleration': 0.0,
         'number_of_rolls': 0,
+        'calc_const': 0,
     },
     
     # Press defaults
@@ -177,7 +181,7 @@ ACCEL_RATE = 1
 ### Shared values
 # roll_str_backbend
 roll_str_backbend_state = {
-    "calc_const": 10007.4705248145,
+    "calc_const": 10205.2064976266,
     "percent_material_yielded": 0,
     "confirm_check": False
 }

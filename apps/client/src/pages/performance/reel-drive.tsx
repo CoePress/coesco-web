@@ -335,14 +335,6 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           disabled={!isEditing}
         />
         <Input
-          label="EFFICIENCY"
-          name="reelDrive.reel.reducer.efficiency"
-          value={localData.reelDrive?.reel?.reducer?.efficiency?.toString() || ""}
-          onChange={handleFieldChange}
-          type="number"
-          disabled={!isEditing}
-        />
-        <Input
           label="DRIVING"
           name="reelDrive.reel.reducer.driving"
           value={localData.reelDrive?.reel?.reducer?.driving?.toString() || ""}
@@ -599,8 +591,8 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="ACCEL RATE"
-          name="reelDrive.reel.motorization.accelRate"
-          value={localData.reelDrive?.reel?.motorization?.accelRate?.toString() || ""}
+          name="reelDrive.reel.accelerationRate"
+          value={localData.reelDrive?.reel?.accelerationRate?.toString() || ""}
           onChange={handleFieldChange}
           type="number"
           disabled={!isEditing}

@@ -415,8 +415,8 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
             />
             <Input
               label="Rated Force (lbs)"
-              name="strUtility.straightener.required.ratedForce"
-              value={localData.strUtility?.straightener?.required?.ratedForce?.toString() || ""}
+              name="strUtility.straightener.jackForceAvailable"
+              value={localData.strUtility?.straightener?.jackForceAvailable?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
             />

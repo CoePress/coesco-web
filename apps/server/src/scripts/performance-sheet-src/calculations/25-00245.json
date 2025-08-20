@@ -201,6 +201,7 @@
   "reelDrive": {
     "reel": {
       "size": 0,
+      "maxWidth": 0,
       "bearing": {
         "distance": 0,
         "diameter": {
@@ -218,6 +219,7 @@
         "reflInertia": 0
       },
       "backplate": {
+        "diameter": 0,
         "thickness": 0,
         "weight": 0,
         "inertia": 0,
@@ -225,7 +227,6 @@
       },
       "reducer": {
         "ratio": 0,
-        "efficiency": 0,
         "driving": 0,
         "backdriving": 0,
         "inertia": 0,
@@ -245,6 +246,7 @@
         "full": 0
       },
       "motor": {
+        "hp": 5,
         "inertia": 5,
         "rpm": {
           "base": 1750,
@@ -279,6 +281,7 @@
         "accelRate": 0,
         "regenRequired": ""
       },
+      "accelerationRate": 0,
       "accelerationTime": 0,
       "torque": {
         "empty": {
@@ -300,6 +303,10 @@
     },
     "coil": {
       "density": 0,
+      "od": 0,
+      "id": 0,
+      "width": 0,
+      "weight": 0,
       "inertia": 0,
       "reflInertia": 0
     }
@@ -350,7 +357,8 @@
         "horsepower": 0,
         "horsepowerCheck": "",
         "jackForceCheck": "",
-        "backupRollsCheck": ""
+        "backupRollsCheck": "",
+        "feedRateCheck": ""
       },
       "torque": {
         "straightener": 0,
@@ -368,6 +376,7 @@
       "density": 0
     },
     "straightener": {
+      "rollDiameter": 0,
       "centerDistance": 0,
       "modulus": 0,
       "jackForceAvailable": 0,
@@ -383,12 +392,16 @@
           "radius": {
             "comingOffCoil": -60,
             "offCoilAfterSpringback": 0,
-            "requiredToYieldSkinOfFlatMaterial": 0
+            "oneOffCoil": 0,
+            "curveAtYield": 0,
+            "radiusAtYield": 0
           },
           "bendingMomentToYieldSkin": 200,
           "rollers": {
             "depthRequired": 0,
+            "depthRequiredCheck": "",
             "forceRequired": 0,
+            "forceRequiredCheck": "",
             "first": {
               "height": 10,
               "forceRequired": 20,
@@ -458,7 +471,7 @@
     "feedType": "sigma-5",
     "feed": {
       "application": "Press Feed",
-      "model": "Sigma 5 Feed",
+      "model": "CPRF-S1",
       "machineWidth": 18,
       "loopPit": "",
       "fullWidthRolls": "Yes",
@@ -501,7 +514,8 @@
         "yieldStrength": 0,
         "pinchRolls": "",
         "kConst": 0,
-        "straightenerTorque": 0
+        "straightenerTorque": 0,
+        "payoffMaxSpeed": 0
       },
       "tableValues": []
     },

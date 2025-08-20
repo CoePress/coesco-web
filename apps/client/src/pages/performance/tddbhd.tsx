@@ -162,11 +162,11 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Input
           label="Coil Weight (lbs)"
-          name="common.coil.maxCoilWeight"
-          value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
+          name="tddbhd.coil.coilWeight"
+          value={localData.tddbhd?.coil?.coilWeight?.toString() || ""}
           onChange={handleFieldChange}
           type="number"
-          error={getFieldError("common.coil.maxCoilWeight")}
+          error={getFieldError("tddbhd.coil.coilWeight")}
           disabled={!isEditing}
         />
         <Input

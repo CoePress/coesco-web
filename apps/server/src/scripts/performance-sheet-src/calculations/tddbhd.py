@@ -68,9 +68,9 @@ def calculate_tbdbhd(data: tddbhd_input):
         return f"ERROR: get_pressure_psi failed for key='{holddown_matrix_key}', pressure='{data.air_pressure}': {str(e)}"
     
     try:
-        hold_down_force_available = get_holddown_force_available(holddown_matrix_key, data.air_pressure)
+        hold_down_force_available = get_holddown_force_available(holddown_matrix_key, holddown_pressure_calc)
     except Exception as e:
-        return f"ERROR: get_holddown_force_available failed for key='{holddown_matrix_key}', pressure='{data.air_pressure}': {str(e)}"
+        return f"ERROR: get_holddown_force_available failed for key='{holddown_matrix_key}', pressure='{holddown_pressure_calc}': {str(e)}"
     
     try:
         min_material_width_lookup = get_min_material_width(holddown_matrix_key)
@@ -204,7 +204,7 @@ def calculate_tbdbhd(data: tddbhd_input):
         "web_tension_lbs": round(web_tension_lbs, 3),
         "calculated_coil_weight": round(coil_weight, 3),
         "coil_od": round(coil_od, 3),
-        "disp_reel_mtr": disp_reel_mtr,
+        "disp_reel_mtr": round(disp_reel_mtr),
         "cylinder_bore": round(cylinder_bore, 3),
         "torque_at_mandrel": round(torque_at_mandrel, 3) if torque_at_mandrel else None,
         "rewind_torque": round(rewind_torque, 3),

@@ -108,16 +108,16 @@ def main():
 
     # --- RFQ (calculate for average, min, and max) ---
     rfq_average_data = {
-        "feed_length": parse_float_with_default(data, ["common", "feedRates", "average", "length"], "average", "length"),
-        "spm": parse_float_with_default(data, ["common", "feedRates", "average", "spm"], "average", "spm"),
+        "feed_length": parse_float_with_default(data, ["common", "feedRates", "average", "length"], "feed", "rate"),
+        "spm": parse_float_with_default(data, ["common", "feedRates", "average", "spm"], "feed", "rate"),
     }
     rfq_min_data = {
-        "feed_length": parse_float_with_default(data, ["common", "feedRates", "min", "length"], "min", "length"),
-        "spm": parse_float_with_default(data, ["common", "feedRates", "min", "spm"], "min", "spm"),
+        "feed_length": parse_float_with_default(data, ["common", "feedRates", "min", "length"], "feed", "rate"),
+        "spm": parse_float_with_default(data, ["common", "feedRates", "min", "spm"], "feed", "rate"),
     }
     rfq_max_data = {
-        "feed_length": parse_float_with_default(data, ["common", "feedRates", "max", "length"], "max", "length"),
-        "spm": parse_float_with_default(data, ["common", "feedRates", "max", "spm"], "max", "spm"),
+        "feed_length": parse_float_with_default(data, ["common", "feedRates", "max", "length"], "feed", "rate"),
+        "spm": parse_float_with_default(data, ["common", "feedRates", "max", "spm"], "feed", "rate"),
     }
 
     rfq_average_obj = rfq_input(**rfq_average_data)
@@ -132,15 +132,15 @@ def main():
     
     # --- Material Specs ---
     mat_data = {
-        "material_type": parse_str_with_default(data, ["common", "material", "materialType"], "material", "materialType"),
-        "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "materialThickness"),
-        "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "maxYieldStrength"),
-        "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coilWidth"),
-        "coil_weight": parse_float_with_default(data, ["common", "material", "coilWeight"], "material", "coilWeight"),
-        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coilID"),
+        "material_type": parse_str_with_default(data, ["common", "material", "materialType"], "material", "material_type"),
+        "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
+        "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "max_yield_strength"),
+        "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
+        "coil_weight": parse_float_with_default(data, ["common", "material", "coilWeight"], "material", "coil_weight"),
+        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
         "feed_direction": parse_str_with_default(data, ["common", "equipment", "feed", "direction"], "feed", "direction"),
-        "controls_level": parse_str_with_default(data, ["common", "equipment", "feed", "controlsLevel"], "feed", "controlsLevel"),
-        "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "typeOfLine"),
+        "controls_level": parse_str_with_default(data, ["common", "equipment", "feed", "controlsLevel"], "feed", "controls_level"),
+        "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
         "feed_controls": parse_str_with_default(data, ["common", "equipment", "feed", "controls"], "feed", "controls"),
         "passline": parse_float_with_default(data, ["common", "equipment", "feed", "passline"], "feed", "passline"),
         "selected_roll": None,  # Not present
@@ -165,9 +165,9 @@ def main():
         "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
         "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
         "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
-        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "coil", "coil_id"),
-        "coil_od": calculated_coil_od,
-        "coil_weight": parse_float_with_default(data, ["common", "material", "weight"], "material", "coil_weight"),
+        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
+        "coil_od": parse_float_with_default(data, ["common", "coil", "maxCoilOD"], "material", "max_coil_od"),
+        "coil_weight": parse_float_with_default(data, ["common", "material", "coilWeight"], "material", "coil_weight"),
         "decel": parse_float_with_default(data, ["tddbhd", "reel", "requiredDecelRate"], "reel", "required_decel_rate"),
         "friction": parse_float_with_default(data, ["tddbhd", "reel", "coefficientOfFriction"], "reel", "coefficient_of_friction"),
         "air_pressure": parse_float_with_default(data, ["tddbhd", "reel", "airPressureAvailable"], "reel", "air_pressure_available"),
@@ -198,33 +198,33 @@ def main():
     reel_drive_data = {
         "model": parse_str_with_default(data, ["common", "equipment", "reel", "model"], "reel", "model"),
         "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
-        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "coil", "coil_id"),
-        "coil_od": final_coil_od,
+        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
+        "coil_od": parse_float_with_default(data, ["common", "coil", "maxCoilOD"], "material", "max_coil_od"),
         "reel_width": parse_float_with_default(data, ["common", "equipment", "reel", "width"], "reel", "width"),
         "backplate_diameter": parse_float_with_default(data, ["common", "equipment", "reel", "backplate", "diameter"], "reel", "backplate_diameter"),
         "motor_hp": parse_float_with_default(data, ["common", "equipment", "reel", "horsepower"], "reel", "horsepower"),
         "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
-        "required_max_fpm": parse_float_with_default(data, ["common", "material", "reqMaxFPM"], "material", "required_max_fpm"),
+        "required_max_fpm": parse_float_with_default(data, ["common", "material", "reqMaxFPM"], "feed", "rate"),
     }
     reel_drive_obj = reel_drive_input(**reel_drive_data)
     reel_drive_result = calculate_reeldrive(reel_drive_obj)
 
     # --- Str Utility ---
     str_util_data = {
-        "max_coil_weight": parse_float_with_default(data, ["common", "coil", "maxCoilWeight"], "coil", "max_coil_weight"),
-        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "coil", "coil_id"),
+        "max_coil_weight": parse_float_with_default(data, ["common", "coil", "maxCoilWeight"], "material", "max_coil_weight"),
+        "coil_id": parse_float_with_default(data, ["common", "coil", "coilID"], "material", "coil_id"),
         "coil_od": final_coil_od,
-        "coil_width": parse_float_with_default(data, ["common", "coil", "maxCoilWidth"], "coil", "max_coil_width"),
+        "coil_width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
         "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
         "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
         "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
         "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
         "str_width": parse_float_with_default(data, ["common", "equipment", "straightener", "width"], "straightener", "width"),
-        "horsepower": parse_float_with_default(data, ["str_utility", "straightener", "horsepower"], "straightener", "horsepower"),
-        "feed_rate": parse_float_with_default(data, ["str_utility", "straightener", "feedRate"], "straightener", "feed_rate"),
-        "max_feed_rate": parse_float_with_default(data, ["str_utility", "straightener", "feedRate"], "straightener", "feed_rate"),
-        "auto_brake_compensation": str2bool(get_nested(data, ["str_utility", "straightener", "autoBrakeCompensation"])) or DEFAULTS["straightener"]["auto_brake_compensation"],
-        "acceleration": parse_float_with_default(data, ["str_utility", "straightener", "acceleration"], "straightener", "acceleration"),
+        "horsepower": parse_float_with_default(data, ["strUtility", "straightener", "horsepower"], "straightener", "horsepower"),
+        "feed_rate": parse_float_with_default(data, ["strUtility", "straightener", "feedRate"], "feed", "rate"),
+        "max_feed_rate": parse_float_with_default(data, ["strUtility", "straightener", "feedRate"], "feed", "rate"),
+        "auto_brake_compensation": parse_str_with_default(data, ["strUtility", "straightener", "autoBrakeCompensation"], "straightener", "auto_brake_compensation"),
+        "acceleration": parse_float_with_default(data, ["strUtility", "straightener", "acceleration"], "straightener", "acceleration"),
         "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
     }
     str_util_obj = str_utility_input(**str_util_data)
@@ -238,14 +238,14 @@ def main():
         "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
         "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
         "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
-        "calc_const": None,  # Not present
+        "calc_const": parse_int_with_default(data, ["rollStrBackbend", "straightener", "rolls", "backbend", "hiddenValue"], "straightener", "calc_const"), 
     }
     roll_str_backbend_obj = roll_str_backbend_input(**roll_str_backbend_data)
     roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
 
     # --- Feed (choose which) ---
     feed_model = get_nested(data, ["feed", "feed", "model"], DEFAULTS["feed"]["model"]).lower()
-    is_pull_thru = str2bool(get_nested(data, ["feed", "feed", "pullThru", "isPullThru"])) or DEFAULTS["feed"]["pull_thru"]
+    is_pull_thru = parse_str_with_default(data, ["feed", "feed", "pullThru", "isPullThru"], "feed", "pull_thru")
     feed_type = None
     feed_result = None
     
@@ -253,17 +253,17 @@ def main():
         feed_type = "sigma_five_feed_with_pt"
         feed_model_lookup = get_nested(data, ["feed", "feed", "model"])
         if feed_model_lookup and feed_model_lookup.lower() == "sigma 5 feed":
-            feed_model_lookup = DEFAULTS["feed"]["feed"]["model"]  # Default to S3 model
+            feed_model_lookup = DEFAULTS["feed"]["model"]  # Default to S3 model
             
         feed_data = {
-            "feed_model": parse_int_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
             "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
-            "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
+            "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["materialType"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
-            "type_of_line": parse_str_with_default(data, ["common", "feed", "typeOfLine"], "feed", "type_of_line"),
-            "roll_width": parse_int_with_default(data, ["feed", "feed", "fullWidthRolls"], "feed", "machine_width"),
-            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "average_fpm"),
+            "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
+            "roll_width": parse_str_with_default(data, ["feed", "feed", "fullWidthRolls"], "feed", "roll_width"),
+            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
             "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
@@ -273,10 +273,10 @@ def main():
             "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),
             "feed_angle_1": parse_float_with_default(data, ["feed", "feed", "feedAngle1"], "feed", "feed_angle_1"),
             "feed_angle_2": parse_float_with_default(data, ["feed", "feed", "feedAngle2"], "feed", "feed_angle_2"),
-            "straightening_rolls": parse_int_with_default(data, ["feed", "feed", "pullThru", "straightenerRolls"], "feed", "straightener_rolls"),
+            "straightening_rolls": parse_int_with_default(data, ["feed", "feed", "pullThru", "straightenerRolls"], "feed", "straightening_rolls"),
             "yield_strength": parse_float_with_default(data, ["common", "material", "maxYieldStrength"], "material", "yield_strength"),
             "str_pinch_rolls": parse_str_with_default(data, ["feed", "feed", "pullThru", "pinchRolls"], "feed", "pinch_rolls"),
-            "req_max_fpm": parse_float_with_default(data, ["feed", "feed", "strMaxSpeed"], "feed", "req_max_fpm"),
+            "req_max_fpm": parse_float_with_default(data, ["feed", "feed", "strMaxSpeed"], "feed", "rate"),
         }
         feed_obj = feed_w_pull_thru_input(**feed_data)
         feed_result = calculate_sigma_five_pt(feed_obj)
@@ -287,14 +287,14 @@ def main():
             feed_model_lookup = DEFAULTS["feed"]["model"]  # Default to S3 model
         
         feed_data = {
-            "feed_model": parse_int_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
             "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
             "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
-            "type_of_line": parse_str_with_default(data, ["common", "feed", "typeOfLine"], "feed", "type_of_line"),
-            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
-            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "average_fpm"),
+            "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
+            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "roll_width"),
+            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
             "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
@@ -310,14 +310,14 @@ def main():
     elif "allen" in feed_model or "mpl" in feed_model:
         feed_type = "allen_bradley_mpl_feed"
         feed_data = {
-            "feed_model": parse_int_with_default(data, ["feed", "feed", "model"], "feed", "model"),
+            "feed_model": parse_str_with_default(data, ["feed", "feed", "model"], "feed", "model"),
             "width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
             "loop_pit": parse_str_with_default(data, ["feed", "feed", "loopPit"], "feed", "loop_pit"),
             "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
             "application": parse_str_with_default(data, ["feed", "feed", "application"], "feed", "application"),
-            "type_of_line": parse_str_with_default(data, ["common", "feed", "typeOfLine"], "feed", "type_of_line"),
-            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "machine_width"),
-            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "average_fpm"),
+            "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
+            "roll_width": parse_int_with_default(data, ["feed", "feed", "machineWidth"], "feed", "roll_width"),
+            "feed_rate": parse_float_with_default(data, ["common", "feedRates", "average", "fpm"], "feed", "rate"),
             "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
             "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
             "press_bed_length": parse_int_with_default(data, ["feed", "press", "bedLength"], "press", "bed_length"),
@@ -349,7 +349,7 @@ def main():
             "rod_dia": parse_float_with_default(data, ["shear", "shear", "cylinder", "rodDiameter"], "shear", "rod_diameter"),
             "stroke": parse_float_with_default(data, ["shear", "shear", "cylinder", "stroke"], "shear", "stroke"),
             "pressure": parse_float_with_default(data, ["shear", "shear", "hydraulic", "pressure"], "shear", "hydraulic_pressure"),
-            "time_for_down_stroke": parse_float_with_default(data, ["shear", "shear", "time", "forDownwardStroke"], "shear", "time_for_downward_stroke"),
+            "time_for_down_stroke": parse_float_with_default(data, ["shear", "shear", "time", "forDownwardStroke"], "shear", "time_for_down_stroke"),
             "dwell_time": parse_float_with_default(data, ["shear", "shear", "time", "dwellTime"], "shear", "dwell_time"),
         }
         shear_obj = hyd_shear_input(**shear_data)
@@ -367,7 +367,7 @@ def main():
             "rod_dia": parse_float_with_default(data, ["shear", "shear", "cylinder", "rodDiameter"], "shear", "rod_diameter"),
             "stroke": parse_float_with_default(data, ["shear", "shear", "cylinder", "stroke"], "shear", "stroke"),
             "pressure": parse_float_with_default(data, ["shear", "shear", "hydraulic", "pressure"], "shear", "hydraulic_pressure"),
-            "time_for_down_stroke": parse_float_with_default(data, ["shear", "shear", "time", "forDownwardStroke"], "shear", "time_for_downward_stroke"),
+            "time_for_down_stroke": parse_float_with_default(data, ["shear", "shear", "time", "forDownwardStroke"], "shear", "time_for_down_stroke"),
             "dwell_time": parse_float_with_default(data, ["shear", "shear", "time", "dwellTime"], "shear", "dwell_time"),
         }
         shear_obj = hyd_shear_input(**shear_data)

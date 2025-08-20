@@ -186,16 +186,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           disabled={!isEditing}
         />
       </div>
-      
-      <div className="mt-4 flex justify-center">
-        <Button 
-          onClick={handleCalculate} 
-          className="px-6 py-2"
-          disabled={!isEditing || isLoading}
-        >
-          {isLoading ? "CALCULATING..." : "CALCULATE"}
-        </Button>
-      </div>
     </Card>
   ), [localData, handleFieldChange, handleCalculate, isEditing, isLoading]);
 
@@ -214,8 +204,8 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
             className="bg-gray-50"
           />
           <Input
-            label="Required to Yield Skin"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.requiredToYieldSkinOfFlatMaterial?.toString() || ""}
+            label="Bending Moment to Yield Skin (in-lbs)"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.bendingMomentToYield?.toString() || ""}
             disabled
             className="bg-gray-50"
           />
@@ -259,8 +249,20 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       {/* Overall Results */}
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
-          label="Bending Moment to Yield Skin (in-lbs)"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.bendingMomentToYieldSkin?.toString() || ""}
+          label="One over radius off coil after springback"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.oneOffCoil?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+        <Input
+          label="Curve at Yield"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.curveAtYield?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+        <Input
+          label="Radius req to yield flat material (in)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.radiusAtYield?.toString() || ""}
           disabled
           className="bg-gray-50"
         />
@@ -323,6 +325,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               className="bg-gray-50"
             />
             <Input
+              label="Bending Moment Ratio"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMomentRatio?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback?.toString() || ""}
               disabled
@@ -362,6 +370,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
             <Input
               label="Bending Moment (in-lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Bending Moment Ratio"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMomentRatio?.toString() || ""}
               disabled
               className="bg-gray-50"
             />
@@ -417,6 +431,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               className="bg-gray-50"
             />
             <Input
+              label="Bending Moment Ratio"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMomentRatio?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback?.toString() || ""}
               disabled
@@ -441,19 +461,272 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   ), [localData]);
 
   // Middle rollers section
-  const middleRollersSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h4" className="mb-4 text-lg font-medium">Middle Rollers</Text>
-      <div className="space-y-2">
-        <Input
-          label="Middle Roller Configuration"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle?.toString() || "Standard Configuration"}
-          disabled
-          className="bg-gray-50"
-        />
-      </div>
-    </Card>
-  ), [localData]);
+  const middleRollersSection = useMemo(() => {
+    // Determine number of middle rollers based on straightener rolls
+    const numStraightenerRolls = localData.common?.equipment?.straightener?.numberOfRolls || 7;
+    let numMiddleRollers = 0;
+    
+    if (numStraightenerRolls === 7) {
+      numMiddleRollers = 1;
+    } else if (numStraightenerRolls === 9) {
+      numMiddleRollers = 2;
+    } else if (numStraightenerRolls === 11) {
+      numMiddleRollers = 3;
+    }
+
+    // If there's only one middle roller, check the single middle path
+    if (numMiddleRollers === 1) {
+      const middleData = localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle;
+      
+      return (
+        <Card className="mb-4 p-4">
+          <Text as="h4" className="mb-4 text-lg font-medium">Middle Roller</Text>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Up Direction */}
+            <div>
+              <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
+              <div className="space-y-2">
+                <Input
+                  label="Height (in)"
+                  value={middleData?.height?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Resulting Radius (in)"
+                  value={middleData?.up?.resultingRadius?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Curvature Difference"
+                  value={middleData?.up?.curvatureDifference?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment (in-lbs)"
+                  value={middleData?.up?.bendingMoment?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment Ratio"
+                  value={middleData?.up?.bendingMomentRatio?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Springback"
+                  value={middleData?.up?.springback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="% Thickness Yielded"
+                  value={middleData?.up?.percentOfThicknessYielded?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Force Required (lbs)"
+                  value={middleData?.forceRequired?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Yield Strains at Surface"
+                  value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+
+            {/* Down Direction */}
+            <div>
+              <Text as="h4" className="mb-3 font-medium text-red-600">Down Direction</Text>
+              <div className="space-y-2">
+                <Input
+                  label="Resulting Radius (in)"
+                  value={middleData?.down?.resultingRadius?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Curvature Difference"
+                  value={middleData?.down?.curvatureDifference?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment (in-lbs)"
+                  value={middleData?.down?.bendingMoment?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment Ratio"
+                  value={middleData?.down?.bendingMomentRatio?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Springback"
+                  value={middleData?.down?.springback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="% Thickness Yielded"
+                  value={middleData?.down?.percentOfThicknessYielded?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Radius After Springback (in)"
+                  value={middleData?.down?.radiusAfterSpringback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    // For multiple middle rollers, render each one
+    const middleRollers = [];
+    for (let i = 1; i <= numMiddleRollers; i++) {
+      let middleData;
+      if (numStraightenerRolls === 7) {
+        middleData = localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle;
+      } 
+      else { 
+        middleData = localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle?.[i];
+      }
+
+      middleRollers.push(
+        <Card key={i} className="mb-4 p-4">
+          <Text as="h4" className="mb-4 text-lg font-medium">Middle Roller {i}</Text>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Up Direction */}
+            <div>
+              <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
+              <div className="space-y-2">
+                <Input
+                  label="Height (in)"
+                  value={middleData?.height?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Resulting Radius (in)"
+                  value={middleData?.up?.resultingRadius?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Curvature Difference"
+                  value={middleData?.up?.curvatureDifference?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment (in-lbs)"
+                  value={middleData?.up?.bendingMoment?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment Ratio"
+                  value={middleData?.up?.bendingMomentRatio?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Springback"
+                  value={middleData?.up?.springback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="% Thickness Yielded"
+                  value={middleData?.up?.percentOfThicknessYielded?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Force Required (lbs)"
+                  value={middleData?.forceRequired?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Yield Strains at Surface"
+                  value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+
+            {/* Down Direction */}
+            <div>
+              <Text as="h4" className="mb-3 font-medium text-red-600">Down Direction</Text>
+              <div className="space-y-2">
+                <Input
+                  label="Resulting Radius (in)"
+                  value={middleData?.down?.resultingRadius?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Curvature Difference"
+                  value={middleData?.down?.curvatureDifference?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment (in-lbs)"
+                  value={middleData?.down?.bendingMoment?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Bending Moment Ratio"
+                  value={middleData?.down?.bendingMomentRatio?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Springback"
+                  value={middleData?.down?.springback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="% Thickness Yielded"
+                  value={middleData?.down?.percentOfThicknessYielded?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
+                  label="Radius After Springback (in)"
+                  value={middleData?.down?.radiusAfterSpringback?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    return <>{middleRollers}</>;
+  }, [localData]);
 
   // Design notes section
   const designNotesSection = useMemo(() => (

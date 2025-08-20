@@ -58,14 +58,14 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     radius_at_yield = 1 / curve_at_yield
     bending_moment_to_yield = data.width * data.yield_strength * (data.thickness ** 2) / 6
     if abs(1 / radius_off_coil) > curve_at_yield:
-        radius_off_coil_after_springback = 1 / ((1 / radius_off_coil) - ((abs(radius_off_coil) / radius_off_coil) * (1.5 * (1 - creep_factor)) * curve_at_yield * (1 / ((1/3) * (curve_at_yield / (1 / radius_off_coil)) ** 2))))
+        radius_off_coil_after_springback = 1 / ((1 / radius_off_coil) - ((abs(radius_off_coil) / radius_off_coil) * (1.5 * (1 - creep_factor)) * curve_at_yield * (1 - ((1/3) * (curve_at_yield / (1 / radius_off_coil)) ** 2))))
     else:
         if creep_factor == 0:
             radius_off_coil_after_springback = abs(radius_off_coil) / radius_off_coil * 99999
         else:
             radius_off_coil_after_springback = radius_off_coil / creep_factor
 
-    r_ri = 1 / radius_off_coil_after_springback
+    one_radius_off_coil = 1 / radius_off_coil_after_springback
 
     if data.calc_const is not None:
         roll_str_backbend_state["calc_const"] = data.calc_const
@@ -219,12 +219,20 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     force_required_first = mb_first_up * 5.333 / center_dist
 
     result = {
+        "num_str_rolls": data.num_str_rolls,
         "roll_diameter": round(str_roll_dia, 4),
         "center_distance": round(center_dist, 4),
         "modules": modules,
         "jack_force_available": jack_force_available,
         "max_roll_depth_without_material": round(max_roll_depth_without_material, 3),
         "max_roll_depth_with_material": round(max_roll_depth_with_material, 3),
+        "radius_off_coil": round(radius_off_coil, 3),
+        "radius_off_coil_after_springback": round(radius_off_coil_after_springback, 3),
+        "one_radius_off_coil": round(one_radius_off_coil, 3),
+        "curve_at_yield": round(curve_at_yield, 4),
+        "radius_at_yield": round(radius_at_yield, 4),
+        "bending_moment_to_yield": round(bending_moment_to_yield, 4),
+        "hidden_const": main_value,
         "roller_depth_required": round(roller_depth_required, 3),
         "roller_depth_required_check": roller_depth_required_check,
         "roller_force_required": round(roller_force_required, 3),

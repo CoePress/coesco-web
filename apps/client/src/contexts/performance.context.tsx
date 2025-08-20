@@ -265,6 +265,7 @@ export interface TDDBHDData {
 export interface ReelDriveData {
   reel?: {
     size?: number;
+    maxWidth?: number; 
     bearing?: {
       distance?: number;
       diameter: {
@@ -282,6 +283,7 @@ export interface ReelDriveData {
       reflInertia?: number; // Calculated
     };
     backplate?: {
+      diameter?: number;
       thickness?: number;
       weight?: number; // Calculated
       inertia?: number; // Calculated
@@ -289,7 +291,6 @@ export interface ReelDriveData {
     };
     reducer?: {
       ratio?: number;
-      efficiency?: number;
       driving?: number;
       backdriving?: number;
       inertia?: number;
@@ -309,6 +310,7 @@ export interface ReelDriveData {
       full?: number; // Calculated
     };
     motor?: {
+      hp?: number;
       inertia?: number;
       rpm: {
         base?: number;
@@ -343,6 +345,7 @@ export interface ReelDriveData {
       accelRate?: number;
       regenRequired?: string;
     };
+    accelerationRate?: number; // Calculated
     accelerationTime?: number; // Calculated
     torque?: {
       empty?: {
@@ -364,6 +367,10 @@ export interface ReelDriveData {
   };
   coil?: {
     density?: number;
+    od?: number; // Calculated
+    id?: number; // Calculated
+    width?: number; // Calculated
+    weight?: number; // Calculated
     inertia?: number; // Calculated
     reflInertia?: number; // Calculated
   };
@@ -417,6 +424,7 @@ export interface StrUtilityData {
       horsepowerCheck?: string; // Calculated
       jackForceCheck?: string; // Calculated
       backupRollsCheck?: string; // Calculated
+      feedRateCheck?: string; // Calculated
     };
     torque?: {
       straightener?: number; // Calculated
@@ -436,6 +444,7 @@ export interface RollStrBackbendData {
     density: number; // lb/in³
   };
   straightener?: {
+    rollDiameter?: number;
     centerDistance?: number;
     modulus?: number;
     jackForceAvailable?: number;
@@ -456,14 +465,18 @@ export interface RollStrBackbendData {
         radius?: {
           comingOffCoil?: number;
           offCoilAfterSpringback?: number; // Calculated
-          requiredToYieldSkinOfFlatMaterial?: number; // Calculated
+          oneOffCoil?: number; // Calculated
+          curveAtYield?: number; // Calculated
+          radiusAtYield?: number; // Calculated
+          bendingMomentToYield?: number; // Calculated
         };
-        bendingMomentToYieldSkin?: number; // Calculated
         rollers?: {
           depthRequired?: number; // Calculated
+          depthRequiredCheck?: string; // Calculated
           forceRequired?: number; // Calculated
+          forceRequiredCheck?: string; // Calculated
           first?: RollDetail;
-          middle?: RollDetail;
+          middle?: RollDetail & { [key: number]: RollDetail };
           last?: {
             height?: number;
             forceRequired?: number;
@@ -533,6 +546,7 @@ export interface FeedData {
       pinchRolls?: string;
       kConst?: number;
       straightenerTorque?: number;
+      payoffMaxSpeed?: number;
     };
     tableValues?: Array<{
       length?: number;
@@ -891,6 +905,7 @@ const initialPerformanceData: PerformanceData = {
   reelDrive: {
     reel: {
       size: 0,
+      maxWidth: 0,
       bearing: {
         distance: 0,
         diameter: {
@@ -908,6 +923,7 @@ const initialPerformanceData: PerformanceData = {
         reflInertia: 0,
       },
       backplate: {
+        diameter: 0,
         thickness: 0,
         weight: 0,
         inertia: 0,
@@ -915,7 +931,6 @@ const initialPerformanceData: PerformanceData = {
       },
       reducer: {
         ratio: 0,
-        efficiency: 0,
         driving: 0,
         backdriving: 0,
         inertia: 0,
@@ -935,6 +950,7 @@ const initialPerformanceData: PerformanceData = {
         full: 0,
       },
       motor: {
+        hp: 0,
         inertia: 0,
         rpm: {
           base: 0,
@@ -969,6 +985,7 @@ const initialPerformanceData: PerformanceData = {
         accelRate: 0,
         regenRequired: "",
       },
+      accelerationRate: 0,
       accelerationTime: 0,
       torque: {
         empty: {
@@ -990,6 +1007,10 @@ const initialPerformanceData: PerformanceData = {
     },
     coil: {
       density: 0,
+      od: 0,
+      id: 0,
+      width: 0,
+      weight: 0,
       inertia: 0,
       reflInertia: 0,
     },
@@ -1041,6 +1062,7 @@ const initialPerformanceData: PerformanceData = {
         horsepowerCheck: "",
         jackForceCheck: "",
         backupRollsCheck: "",
+        feedRateCheck: "",
       },
       torque: {
         straightener: 0,
@@ -1058,6 +1080,7 @@ const initialPerformanceData: PerformanceData = {
       density: 0,
     },
     straightener: {
+      rollDiameter: 0,
       centerDistance: 0,
       modulus: 0,
       jackForceAvailable: 0,
@@ -1078,12 +1101,16 @@ const initialPerformanceData: PerformanceData = {
           radius: {
             comingOffCoil: 0,
             offCoilAfterSpringback: 0,
-            requiredToYieldSkinOfFlatMaterial: 0,
+            oneOffCoil: 0,
+            curveAtYield: 0,
+            radiusAtYield: 0,
+            bendingMomentToYield: 0,
           },
-          bendingMomentToYieldSkin: 0,
           rollers: {
             depthRequired: 0,
+            depthRequiredCheck: "",
             forceRequired: 0,
+            forceRequiredCheck: "",
             first: {
               height: 0,
               forceRequired: 0,
@@ -1197,6 +1224,7 @@ const initialPerformanceData: PerformanceData = {
         pinchRolls: "",
         kConst: 0,
         straightenerTorque: 0,
+        payoffMaxSpeed: 0,
       },
       tableValues: [],
     },
