@@ -13,7 +13,14 @@
 - Vercel Pro ($20/user/month - can get by with one account)
 - Google API (free with limits)
 
-
 ## Notes
 
-dotnet publish -c Release -r linux-arm64 --self-contained true -o ./out
+Production
+HOST: 10.231.200.38
+USER: system
+PASS: JgWN6dydUH0tx1EFxR5ddm+9tSXoIscN
+
+# 32-character random password (letters + numbers + symbols)
+```powershell
+[Convert]::ToBase64String((1..24 | ForEach-Object {Get-Random -Maximum 256})) 
+```

@@ -1,0 +1,10 @@
+{
+  "name": "@coesco/fanuc",
+  "private": true,
+  "scripts": {
+    "build": "dotnet publish FanucAdapter/FanucAdapter.csproj -c Release -o out",
+    "test": "dotnet test test/FanucAdapter/FanucAdapter.Tests.csproj -c Release --nologo",
+    "dev": "dotnet run --no-restore --project FanucAdapter/FanucAdapter.csproj",
+    "clean": "dotnet clean FanucAdapter/FanucAdapter.csproj && dotnet nuget locals all --clear && node -e \"require('fs').rmSync('out',{recursive:true,force:true})\""
+  }
+}

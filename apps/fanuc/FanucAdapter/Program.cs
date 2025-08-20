@@ -1,3 +1,4 @@
+using FanucAdapter.Services;
 using System.Xml.Linq;
 
 var app = WebApplication.Create();
@@ -10,9 +11,7 @@ const string API_KEY_VALUE  = "my-secret-key";
 // TEMP: in-memory CNC machine list (to be replaced by an API later)
 var machines = new[]
 {
-    new Machine("10.0.0.10", 9001, "lathe-1",  true),
-    new Machine("10.0.0.11", 9002, "mill-2",   false),
-    new Machine("10.0.0.12", 9003, "router-a", true),
+    new Machine("192.231.64.127", 8193, "hn80",  true),
 };
 
 app.Use(async (ctx, next) =>
@@ -71,6 +70,12 @@ foreach (var m in machines)
         return Results.Text(doc.ToString(SaveOptions.DisableFormatting), "application/xml");
     });
 }
+
+app.MapGet("/api/v1/focas/test", () =>
+{
+    var focas = new FocasService();
+    return focas.Connect("192.231.64.127", 8193);
+});
 
 app.Run();
 
