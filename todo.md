@@ -2,10 +2,8 @@
 
 ## To Do
 
-- Setup proper artifact transfer with rsync
-- Setup proper CI/CD for sever
-- Add ability to reset the fanuc adapter from portal
-- 
+- Clean up hooks & api instance
+- Setup CI/CD with artifact transfer using rsync
 
 ## Misc Todo
 
