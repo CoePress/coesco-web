@@ -11,68 +11,6 @@ import { useAuth } from "@/contexts/auth.context";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../_old/command-bar";
 
-// type HeaderProps = {
-//   employee: any;
-// };
-
-// const Header = ({ employee }: HeaderProps) => {
-//   const userMenuRef = useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     const handleClickOutside = (event: MouseEvent) => {
-//       if (
-//         userMenuRef.current &&
-//         !userMenuRef.current.contains(event.target as Node)
-//       ) {
-//       }
-//     };
-
-//     document.addEventListener("mousedown", handleClickOutside);
-//     return () => {
-//       document.removeEventListener("mousedown", handleClickOutside);
-//     };
-//   }, []);
-
-//   const initials = employee.firstName[0] + employee.lastName[0];
-
-//   return (
-//     <header className="bg-foreground border-b border-border p-2">
-//       <div className="flex items-center justify-end">
-//         {/* <div className="flex flex-col gap-0.5 leading-none">
-//           <h1 className="text-text">Companies</h1>
-//           <nav className="flex items-center text-sm text-text-muted gap-1">
-//             <a
-//               href="/"
-//               className="hover:text-primary">
-//               Dashboard
-//             </a>
-//             <span className="text-text-muted">/</span>
-//             <a
-//               href="/companies"
-//               className="hover:text-primary">
-//               Companies
-//             </a>
-//             <span className="text-text-muted">/</span>
-//             <span className="text-text">HubSpot</span>
-//           </nav>
-//         </div> */}
-
-//         <div className="flex items-center">
-//           {/* <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
-//             <HelpCircle size={20} />
-//           </div>
-//           <div className="text-text-muted mr-3 cursor-pointer hover:text-primary">
-//             <Bell size={20} />
-//           </div> */}
-//           <div className="h-10 aspect-square bg-border rounded-lg flex items-center justify-center">
-//             <span className="text-text-muted">{initials}</span>
-//           </div>
-//         </div>
-//       </div>
-//     </header>
-//   );
-// };
-
 type SidebarProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -144,7 +82,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                           ? "bg-background text-primary"
                           : "text-text-muted hover:bg-surface"
                       }`}>
-                      <page.icon size={18} />
+                      {page.icon && <page.icon size={18} />}
                       <span className="font-medium text-sm">{page.label}</span>
                     </Link>
                   );
@@ -326,8 +264,6 @@ const Layout = ({ children }: LayoutProps) => {
         setIsOpen={toggleSidebar}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* <Header employee={employee} /> */}
-
         {isCommandBarOpen && (
           <div className="fixed inset-0 flex items-start justify-center pt-32 z-50 bg-background/50 backdrop-blur-sm">
             <div

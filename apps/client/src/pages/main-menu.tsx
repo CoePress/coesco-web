@@ -145,13 +145,6 @@ const MainMenu = () => {
         </Button>
         <Button
           variant="secondary-outline"
-          onClick={() => navigate("/settings")}
-          className="w-32">
-          <Settings size={16} />
-          Settings
-        </Button>
-        <Button
-          variant="secondary-outline"
           onClick={handleLogout}
           className="w-32">
           <LogOut size={16} />
@@ -171,12 +164,6 @@ const MainMenu = () => {
           onClick={toggleTheme}
           className="flex-1 mx-1">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </Button>
-        <Button
-          variant="secondary-outline"
-          onClick={() => navigate("/settings")}
-          className="flex-1 mx-1">
-          <Settings size={16} />
         </Button>
         <Button
           variant="secondary-outline"

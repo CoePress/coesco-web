@@ -6,7 +6,6 @@ import {
   PaintBucketIcon,
   CodeIcon,
   DollarSignIcon,
-  RouteIcon,
   FileTextIcon,
   BoxIcon,
   FactoryIcon,
@@ -39,7 +38,7 @@ export type Module = {
 export type Page = {
   slug: string | null;
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   component: ComponentType;
   children?: Page[];
 };
@@ -62,6 +61,20 @@ const adminModule: Module = {
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
+      children: [
+        {
+          slug: ":id",
+          label: "Employee Details",
+          component: JourneyDetails,
+          children: [
+            {
+              slug: "permissions",
+              label: "Employee Permissions",
+              component: JourneyDetails,
+            },
+          ],
+        },
+      ],
     },
     {
       slug: "permissions",
@@ -147,7 +160,6 @@ const salesModule: Module = {
         {
           slug: ":id",
           label: "Journey Details",
-          icon: RouteIcon,
           component: JourneyDetails,
         },
       ],
@@ -161,7 +173,6 @@ const salesModule: Module = {
         {
           slug: ":id",
           label: "Company Details",
-          icon: UsersIcon,
           component: CompanyDetails,
         },
       ],
@@ -175,7 +186,6 @@ const salesModule: Module = {
         {
           slug: ":id",
           label: "Quote Details",
-          icon: FileTextIcon,
           component: QuoteDetails,
         },
       ],
@@ -189,7 +199,6 @@ const salesModule: Module = {
         {
           slug: ":id",
           label: "Product Details",
-          icon: FileTextIcon,
           component: ProductDetails,
         },
       ],
@@ -203,7 +212,6 @@ const salesModule: Module = {
         {
           slug: ":id",
           label: "Performance Sheet Details",
-          icon: FileTextIcon,
           component: PerformanceSheetDetails,
         },
       ],
