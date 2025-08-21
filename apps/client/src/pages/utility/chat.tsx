@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { useGetEntities } from "@/hooks/use-get-entities";
 import { useAuth } from "@/contexts/auth.context";
-import ThemeToggle from "@/components/misc/theme-toggle";
-import MessageBox from "@/components/misc/message-box";
+import ThemeToggle from "@/components/feature/theme-toggle";
+import MessageBox from "@/components/_old/message-box";
 
 type Message = {
   id: string;

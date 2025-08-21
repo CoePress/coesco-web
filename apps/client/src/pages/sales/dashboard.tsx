@@ -22,7 +22,7 @@ import {
 
 import { Button } from "@/components";
 import { formatCurrency, openPopup } from "@/utils";
-import PageHeader from "@/components/common/page-head";
+import PageHeader from "@/components/_old/page-head";
 
 const mockData = [
   { month: "Jan", sales: 65000, quotes: 85000, conversion: 76, deals: 42 },

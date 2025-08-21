@@ -1,14 +1,14 @@
 // Common
-export { default as AddressInput } from "./common/address-input";
-export { default as AdvancedDropdown } from "./common/advanced-dropdown";
-export { default as DatePicker } from "./common/date-picker";
-export { default as PageHeader } from "./common/page-header";
+export { default as AddressInput } from "./_old/address-input";
+export { default as AdvancedDropdown } from "./_old/advanced-dropdown";
+export { default as DatePicker } from "./_old/date-picker";
+export { default as PageHeader } from "./_old/page-header";
 export { default as Text } from "./ui/text";
 
 
 // Misc
-export { default as CommandBar } from "./misc/command-bar";
-export { default as MachineMap } from "./misc/machine-map";
+export { default as CommandBar } from "./_old/command-bar";
+export { default as MachineMap } from "./_old/machine-map";
 export { default as MicrosoftCallback } from "../pages/utility/microsoft-callback";
 export { default as MobileLayout } from "./layout/mobile-layout";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";

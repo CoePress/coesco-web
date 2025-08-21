@@ -8,8 +8,8 @@ import Button from "../ui/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import { useAuth } from "@/contexts/auth.context";
-import ChatSidebar from "../misc/chat-sidebar";
-import CommandBar from "../misc/command-bar";
+import ChatSidebar from "./chat-sidebar";
+import CommandBar from "../_old/command-bar";
 
 // type HeaderProps = {
 //   employee: any;

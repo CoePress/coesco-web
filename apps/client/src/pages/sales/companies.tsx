@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { Table, Button } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import PageHeader from "@/components/common/page-head";
+import PageHeader from "@/components/_old/page-head";
 
 const Companies = () => {
   const { entities: companies } = useGetEntities("/crm/companies");

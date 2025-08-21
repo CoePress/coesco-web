@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Modal, Button, Tabs, Loader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import PageHeader from "@/components/common/page-head";
+import PageHeader from "@/components/_old/page-head";
 
 interface RuleCondition {
   id: string;

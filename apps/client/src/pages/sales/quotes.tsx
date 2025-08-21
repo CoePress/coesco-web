@@ -7,8 +7,8 @@ import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
-import AdvancedDropdown from "@/components/common/advanced-dropdown";
-import PageHeader from "@/components/common/page-head";
+import AdvancedDropdown from "@/components/_old/advanced-dropdown";
+import PageHeader from "@/components/_old/page-head";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

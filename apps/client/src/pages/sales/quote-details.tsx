@@ -29,7 +29,7 @@ import { useSendQuote } from "@/hooks/sales/use-send-quote";
 import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
 import { useUpdateLineNumber } from "@/hooks/sales/use-update-linenumber";
 import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
-import PageHeader from "@/components/common/page-head";
+import PageHeader from "@/components/_old/page-head";
 
 const QuoteDetails = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
