@@ -1,5 +1,5 @@
 import { RefreshCcw, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   StatusBadge,
@@ -40,7 +40,6 @@ const Devices = () => {
   // Form state
   const [deviceName, setDeviceName] = useState("");
   const [deviceHost, setDeviceHost] = useState("");
-  const [devicePort, setDevicePort] = useState(80);
   const [deviceEnabled, setDeviceEnabled] = useState(true);
   const [maxMissedPings, setMaxMissedPings] = useState(3);
 
@@ -53,7 +52,7 @@ const Devices = () => {
       key: "host",
       header: "Host",
       render: (_, row) => (
-        <span className="font-mono text-sm">{row.host}:{row.port}</span>
+        <span className="font-mono text-sm">{row.host}</span>
       ),
     },
     {
@@ -109,7 +108,6 @@ const Devices = () => {
             setSelectedDevice(row);
             setDeviceName(row.name);
             setDeviceHost(row.host);
-            setDevicePort(row.port);
             setDeviceEnabled(row.enabled);
             setMaxMissedPings(row.maxMissedPings);
             setIsEditModalOpen(true);
@@ -136,7 +134,6 @@ const Devices = () => {
   const resetForm = () => {
     setDeviceName("");
     setDeviceHost("");
-    setDevicePort(80);
     setDeviceEnabled(true);
     setMaxMissedPings(3);
     setSelectedDevice(null);
@@ -146,7 +143,6 @@ const Devices = () => {
     const deviceData = {
       name: deviceName,
       host: deviceHost,
-      port: devicePort,
       enabled: deviceEnabled,
       maxMissedPings,
     };
@@ -299,16 +295,6 @@ const Devices = () => {
           </div>
 
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Port</label>
-            <input
-              type="number"
-              value={devicePort}
-              onChange={(e) => setDevicePort(parseInt(e.target.value) || 80)}
-              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
-            />
-          </div>
-
-          <div>
             <label className="text-sm text-text-muted mb-2 block">Max Missed Pings</label>
             <input
               type="number"
@@ -375,16 +361,6 @@ const Devices = () => {
               value={deviceHost}
               onChange={(e) => setDeviceHost(e.target.value)}
               className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-text-muted mb-2 block">Port</label>
-            <input
-              type="number"
-              value={devicePort}
-              onChange={(e) => setDevicePort(parseInt(e.target.value) || 80)}
-              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
             />
           </div>
 

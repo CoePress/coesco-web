@@ -2,12 +2,13 @@ import { Router } from "express";
 
 import { protect } from "@/middleware/auth.middleware";
 
-import adminRoutes from "./admin.routes"
+import adminRoutes from "./admin.routes";
 import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
 import crmRoutes from "./crm.routes";
 import employeeRoutes from "./employee.routes";
+import legacyRoutes from "./legacy.routes";
 import performanceRoutes from "./performance.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
@@ -19,11 +20,12 @@ router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
 router.use(protect);
 // TODO: add is admin / permissions to admin route protection
-router.use("/admin", adminRoutes)
+router.use("/admin", adminRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);
 router.use("/employees", employeeRoutes);
+router.use("/legacy", legacyRoutes);
 router.use("/performance", performanceRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);

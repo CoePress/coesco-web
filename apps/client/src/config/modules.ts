@@ -1,45 +1,27 @@
 import {
   LucideIcon,
   UsersIcon,
-  BarChart,
-  Factory,
-  Box,
-  Shield,
-  Clock,
-  DollarSign,
-  Route,
-  FileText,
-  Code,
-  PaintBucket,
-  MessageCircle,
-  Map,
   ComputerIcon,
+  SearchIcon,
+  PaintBucketIcon,
+  CodeIcon,
+  DollarSignIcon,
+  BarChartIcon,
+  RouteIcon,
+  FileTextIcon,
+  BoxIcon,
+  FactoryIcon,
+  ClockIcon,
+  ShieldIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import Sandbox from "@/pages/_sandbox/sandbox";
-import SalesDashboard from "@/pages/sales/dashboard";
-import Design from "@/pages/_sandbox/design";
-import ChatPLK from "@/pages/_sandbox/chat-plk";
-import WarehouseMap from "@/pages/_sandbox/warehouse-map";
-import Pipeline from "@/pages/sales/pipeline";
-import Companies from "@/pages/sales/companies";
-import CompanyDetails from "@/pages/sales/company-details";
-import Journeys from "@/pages/sales/journeys";
-import JourneyDetailsPage from "@/pages/sales/journey-details";
-import Quotes from "@/pages/sales/quotes";
-import QuoteDetails from "@/pages/sales/quote-details";
-import Catalog from "@/pages/sales/catalog";
-import Options from "@/pages/sales/options";
-import ProductionDashboard from "@/pages/production/dashboard";
-import Machines from "@/pages/production/machines";
-import MachineHistory from "@/pages/production/machine-history";
-import Employees from "@/pages/admin/employees";
-import OptionRules from "@/pages/admin/option-rules";
-import AuditLogs from "@/pages/admin/audit-logs";
-import ConfigBuilder from "@/pages/sales/config-builder";
-import Devices from "@/pages/admin/devices";
+import { AuditLogs, Companies, CompanyDetails, Devices, Employees, JourneyDetails, Journeys, Machines, MachineStatuses, Pipeline, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard } from "@/pages";
+import Sandbox from "@/pages/sandbox/sandbox";
+import Design from "@/pages/sandbox/design";
+import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
+
 
 export type Module = {
   sequence: number;
@@ -62,19 +44,19 @@ const salesModule: Module = {
   sequence: 1,
   slug: "sales",
   label: "Sales",
-  icon: DollarSign,
+  icon: DollarSignIcon,
   status: "development" as const,
   pages: [
     {
       slug: null,
       label: "Dashboard",
-      icon: BarChart,
+      icon: BarChartIcon,
       component: SalesDashboard,
     },
     {
       slug: "pipeline",
       label: "Pipeline",
-      icon: DollarSign,
+      icon: DollarSignIcon,
       component: Pipeline,
     },
     {
@@ -94,50 +76,36 @@ const salesModule: Module = {
     {
       slug: "journeys",
       label: "Journeys",
-      icon: Route,
+      icon: RouteIcon,
       component: Journeys,
       children: [
         {
           slug: ":id",
           label: "Journey",
-          icon: Route,
-          component: JourneyDetailsPage,
+          icon: RouteIcon,
+          component: JourneyDetails,
         },
       ],
     },
     {
       slug: "quotes",
       label: "Quotes",
-      icon: FileText,
+      icon: FileTextIcon,
       component: Quotes,
       children: [
         {
           slug: ":id",
           label: "Quote",
-          icon: FileText,
+          icon: FileTextIcon,
           component: QuoteDetails,
         },
       ],
     },
     {
-      slug: "catalog",
-      label: "Catalog",
-      icon: Box,
-      component: Catalog,
-      children: [
-        {
-          slug: "builder",
-          label: "Builder",
-          icon: Box,
-          component: ConfigBuilder,
-        },
-      ],
-    },
-    {
-      slug: "options",
-      label: "Options",
-      icon: Box,
-      component: Options,
+      slug: "products",
+      label: "Product Catalog",
+      icon: BoxIcon,
+      component: Products,
     },
   ],
 };
@@ -146,26 +114,26 @@ const productionModule: Module = {
   sequence: 2,
   slug: "production",
   label: "Production",
-  icon: Factory,
+  icon: FactoryIcon,
   status: "active" as const,
   pages: [
     {
       slug: null,
       label: "Dashboard",
-      icon: BarChart,
+      icon: BarChartIcon,
       component: ProductionDashboard,
     },
     {
       slug: "machines",
       label: "Machines",
-      icon: Box,
+      icon: BoxIcon,
       component: Machines,
     },
     {
-      slug: "machine-history",
-      label: "Machine History",
-      icon: Clock,
-      component: MachineHistory,
+      slug: "machine-states",
+      label: "Machine States",
+      icon: ClockIcon,
+      component: MachineStatuses,
     },
   ],
 };
@@ -174,11 +142,11 @@ const adminModule: Module = {
   sequence: 3,
   slug: "admin",
   label: "Admin",
-  icon: Shield,
+  icon: ShieldIcon,
   status: "active" as const,
   pages: [
     {
-      slug: null,
+      slug: "employees",
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
@@ -190,15 +158,9 @@ const adminModule: Module = {
       component: Devices,
     },
     {
-      slug: "option-rules",
-      label: "Option Rules",
-      icon: Box,
-      component: OptionRules,
-    },
-    {
       slug: "audit-logs",
       label: "Audit Logs",
-      icon: FileText,
+      icon: FileTextIcon,
       component: AuditLogs,
     }
   ],
@@ -208,32 +170,26 @@ const sandboxModule: Module = {
   sequence: 4,
   slug: "sandbox",
   label: "Sandbox",
-  icon: Code,
+  icon: CodeIcon,
   status: "development" as const,
   pages: [
     {
       slug: null,
       label: "Sandbox",
-      icon: Code,
+      icon: CodeIcon,
       component: Sandbox,
     },
     {
       slug: "design-elements",
       label: "Design Elements",
-      icon: PaintBucket,
+      icon: PaintBucketIcon,
       component: Design,
     },
     {
-      slug: "chat-plk",
-      label: "Chat PLK",
-      icon: MessageCircle,
-      component: ChatPLK,
-    },
-    {
-      slug: "warehouse-map",
-      label: "Warehouse Map",
-      icon: Map,
-      component: WarehouseMap,
+      slug: "legacy-explorer",
+      label: "Legacy Explorer",
+      icon: SearchIcon,
+      component: LegacyExplorer,
     },
   ],
 };

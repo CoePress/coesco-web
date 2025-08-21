@@ -5,6 +5,13 @@
 - Setup proper artifact transfer with rsync
 - Setup proper CI/CD for sever
 - Add ability to reset the fanuc adapter from portal
+- 
+
+## Misc Todo
+
+- Device Monitor (Ntfy)
+  - 24/7 & business hours
+  - Fallback to an hour after notification
 
 ## Tools
 
@@ -19,8 +26,3 @@ Production
 HOST: 10.231.200.38
 USER: system
 PASS: JgWN6dydUH0tx1EFxR5ddm+9tSXoIscN
-
-# 32-character random password (letters + numbers + symbols)
-```powershell
-[Convert]::ToBase64String((1..24 | ForEach-Object {Get-Random -Maximum 256})) 
-```

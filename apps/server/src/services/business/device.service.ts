@@ -1,4 +1,7 @@
 import axios from "axios";
+import ping from "ping";
+
+import { logger } from "@/utils/logger";
 
 import { ntfyDeviceService } from "../repository";
 
@@ -15,11 +18,11 @@ export class DeviceService {
     }
 
     try {
-      const response = await axios.get(`http://${device.data.host}:${device.data.port}`, {
-        timeout: 5000,
+      const res = await ping.promise.probe(device.data.host, {
+        timeout: 5, // seconds
       });
 
-      const isAlive = response.status >= 200 && response.status < 400;
+      const isAlive = res.alive;
 
       await ntfyDeviceService.update(deviceId, {
         lastPingTime: new Date(),
@@ -150,7 +153,7 @@ export class DeviceService {
   }
 
   async reloadMonitoring(): Promise<void> {
-    console.log("Reloading device monitoring...");
+    logger.info("Reloading device monitoring...");
     await this.stopMonitoring();
     await this.startMonitoring();
   }

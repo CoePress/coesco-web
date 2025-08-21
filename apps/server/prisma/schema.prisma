@@ -618,7 +618,6 @@ model NtfyDevice {
   id                String    @id @default(uuid())
   name              String
   host              String
-  port              Int       @default(80)
   pingIntervalSec   Int       @default(30)
   maxMissedPings    Int       @default(3)
   currentMissedPings Int      @default(0)

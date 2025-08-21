@@ -2,10 +2,10 @@ import { Routes, Route } from "react-router-dom";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
-import MainMenu from "./pages/general/main-menu";
-import NotFound from "./pages/general/not-found";
-import Login from "./pages/general/login";
-import ChatPage from "./pages/chat/chat";
+import MainMenu from "./pages/main-menu";
+import NotFound from "./pages/not-found";
+import Login from "./pages/login";
+import ChatPage from "./pages/utility/chat";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
