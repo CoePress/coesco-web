@@ -7,7 +7,7 @@ import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
-import PageHeader from "@/components/_old/page-head";
+import PageHeader from "@/components/layout/page-header";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

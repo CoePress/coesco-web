@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { formatCurrency } from "@/utils";
 import { Button, Modal, Loader } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import PageHeader from "@/components/_old/page-head";
+import PageHeader from "@/components/layout/page-header";
 import { useNavigate } from "react-router-dom";
 
 const TreeNode = ({ node }: { node: any }) => {

@@ -1,4 +1,4 @@
-import { RefreshCcw, Plus } from "lucide-react";
+import { BeakerIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -180,6 +180,11 @@ const Devices = () => {
     }
   };
 
+  const handleCreateClick = () => { 
+    resetForm();
+    setIsAddModalOpen(true);
+  }
+
   const handleTest = async () => {
     try {
         // Update existing device
@@ -210,39 +215,28 @@ const Devices = () => {
     return <div>Error loading devices</div>;
   }
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={handleTest} variant="secondary-outline">
+          <BeakerIcon size={16} /> Test Notification
+        </Button>
+        <Button onClick={handleCreateClick}>
+          <PlusIcon size={16} /> New Device
+        </Button>
+        <Button onClick={refresh} variant="secondary-outline">
+          <RefreshCcwIcon size={16} /> Refresh
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Devices"
         description={`${pagination.total} total devices`}
-        actions={[
-          {
-            type: "button",
-            label: "TEST",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: () => {
-              handleTest();
-            },
-          },
-          {
-            type: "button",
-            label: "Add Device",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: () => {
-              resetForm();
-              setIsAddModalOpen(true);
-            },
-          },
-          {
-            type: "button",
-            label: "Refresh",
-            variant: "secondary-outline",
-            icon: <RefreshCcw size={16} />,
-            onClick: () => refresh(),
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <Table<IDevice>
@@ -262,7 +256,6 @@ const Devices = () => {
         }}
       />
 
-      {/* Add Device Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => {

@@ -22,7 +22,7 @@ import {
 
 import { Button } from "@/components";
 import { formatCurrency, openPopup } from "@/utils";
-import PageHeader from "@/components/_old/page-head";
+import PageHeader from "@/components/layout/page-header";
 
 const mockData = [
   { month: "Jan", sales: 65000, quotes: 85000, conversion: 76, deals: 42 },
@@ -95,15 +95,7 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
 };
 
 const SalesDashboard = () => {
-  const Actions = () => {
-    return (
-      <div className="flex gap-2">
-        <Button>
-          <RefreshCcw size={20} /> Refresh
-        </Button>
-      </div>
-    );
-  };
+
 
   const kpis = [
     {
@@ -149,6 +141,16 @@ const SalesDashboard = () => {
   ];
 
   const COLORS = ["var(--success)", "var(--error)"];
+
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button>
+          <RefreshCcw size={20} /> Refresh
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full flex-1 flex flex-col">

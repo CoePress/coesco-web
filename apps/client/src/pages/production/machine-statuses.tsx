@@ -1,5 +1,4 @@
-import { Loader, StatusBadge } from "@/components";
-import PageHeader from "@/components/_old/page-head"
+import { Loader, PageHeader, StatusBadge } from "@/components";
 import Table, { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { formatDuration, getVariantFromStatus } from "@/utils";

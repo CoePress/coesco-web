@@ -7,6 +7,8 @@ import {
   Map,
   Calendar,
   Filter,
+  PlusCircleIcon,
+  MapIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -22,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/theme.context";
 
 import {
+  Button,
   Card,
   Loader,
   MachineMap,
@@ -546,33 +549,27 @@ const ProductionDashboard = () => {
     }
   }, [utilizationOverTime, chartView]);
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
+          <MapIcon size={16} /> 
+          Map
+        </Button>
+        <Button onClick={refresh} variant="primary">
+          <RefreshCcw size={16} /> 
+          Refresh
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
         title="Production Dashboard"
         description="Real-time machine status and metrics"
-        actions={[
-          {
-            type: "button",
-            label: "Map",
-            variant: "secondary-outline",
-            icon: <Map size={16} />,
-            onClick: () => setIsMapModalOpen(true),
-          },
-          {
-            type: "datepicker",
-            dateRange: dateRange,
-            setDateRange: setDateRange,
-            icon: <Calendar size={16} />,
-          },
-          {
-            type: "button",
-            label: "Refresh",
-            variant: "primary",
-            icon: <RefreshCcw size={16} />,
-            onClick: refresh,
-          },
-        ]}
+        actions={<Actions />}
       />
 
       {error && (
