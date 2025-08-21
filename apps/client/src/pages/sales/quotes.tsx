@@ -1,4 +1,4 @@
-import { PlusCircleIcon } from "lucide-react";
+import { DollarSignIcon, FileTextIcon, PlusCircleIcon, TrendingUpIcon, UsersIcon } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
 import PageHeader from "@/components/layout/page-header";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,6 +102,37 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
+  const kpis = [
+    {
+      title: "Monthly Revenue",
+      value: formatCurrency(92000, false),
+      description: "Total revenue this month",
+      icon: <DollarSignIcon size={16} />,
+      change: 12.5,
+    },
+    {
+      title: "Total Quotes",
+      value: "118",
+      description: "Active quotes this month",
+      icon: <FileTextIcon size={16} />,
+      change: 8.2,
+    },
+    {
+      title: "Conversion Rate",
+      value: "78%",
+      description: "Quote to deal conversion",
+      icon: <TrendingUpIcon size={16} />,
+      change: -2.1,
+    },
+    {
+      title: "Active Deals",
+      value: "47",
+      description: "Deals in pipeline",
+      icon: <UsersIcon size={16} />,
+      change: 5.3,
+    },
+  ];
+
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -119,22 +151,30 @@ const Quotes = () => {
         actions={<Actions />}
       />
 
-      <Table
-        columns={columns}
-        data={quotes || []}
-        total={quotes?.length || 0}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort as "createdAt" | "updatedAt");
-          setOrder(newOrder as "asc" | "desc");
-        }}
-      />
+      <div className="p-2 gap-2 flex flex-col flex-1">
+        <Metrics>
+          {kpis.map((metric) => (
+            <MetricsCard {...metric} />
+          ))}
+        </Metrics>
+
+        <Table
+          columns={columns}
+          data={quotes || []}
+          total={quotes?.length || 0}
+          idField="id"
+          pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          sort={sort}
+          order={order}
+          onSortChange={(newSort, newOrder) => {
+            setSort(newSort as "createdAt" | "updatedAt");
+            setOrder(newOrder as "asc" | "desc");
+          }}
+        />
+      </div>
 
       {isModalOpen && (
         <CreateQuoteModal

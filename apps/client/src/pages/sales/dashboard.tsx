@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components";
 import { formatCurrency, openPopup } from "@/utils";
 import PageHeader from "@/components/layout/page-header";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 const mockData = [
   { month: "Jan", sales: 65000, quotes: 85000, conversion: 76, deals: 42 },
@@ -62,41 +63,7 @@ const mockTasks = [
   },
 ];
 
-type KPICardProps = {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: React.ReactNode;
-  change?: number;
-};
-
-const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
-  const color = change && change > 0 ? "success" : "error";
-
-  return (
-    <div className="bg-foreground rounded border p-2">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-2 text-primary">
-          {icon}
-          <p className="text-sm text-text-muted">{title}</p>
-        </div>
-        {change && (
-          <span
-            className={`text-xs text-${color} bg-${color}/10 px-2 py-1 rounded`}>
-            {change > 0 ? "+" : ""}
-            {change}%
-          </span>
-        )}
-      </div>
-      <h3 className="text-xl font-semibold text-text-muted">{value}</h3>
-      <p className="text-xs text-text-muted mt-1">{description}</p>
-    </div>
-  );
-};
-
 const SalesDashboard = () => {
-
-
   const kpis = [
     {
       title: "Monthly Revenue",
@@ -161,14 +128,11 @@ const SalesDashboard = () => {
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+        <Metrics>
           {kpis.map((metric) => (
-            <KPICard
-              key={metric.title}
-              {...metric}
-            />
+            <MetricsCard {...metric} />
           ))}
-        </div>
+        </Metrics>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
           <div className="md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border flex flex-col min-h-[250px]">

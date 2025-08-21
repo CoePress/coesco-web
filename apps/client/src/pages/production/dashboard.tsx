@@ -4,10 +4,7 @@ import {
   AlertTriangle,
   RefreshCcw,
   Clock,
-  Map,
-  Calendar,
   Filter,
-  PlusCircleIcon,
   MapIcon,
 } from "lucide-react";
 import {
@@ -37,6 +34,7 @@ import useGetOverview from "@/hooks/production/use-get-overview";
 import useGetTimeline from "@/hooks/production/use-get-timeline";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
 import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 type ExpandedMachine = IOverviewMachine & {
   status: string;
@@ -281,48 +279,6 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
             </div>
           ))} */}
       </div>
-    </div>
-  );
-};
-
-type KPICardProps = {
-  title: string;
-  value: number | string;
-  description: string;
-  icon: React.ReactNode;
-  change?: number;
-};
-
-const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
-  let color;
-
-  const hasChange = change !== undefined && change !== null;
-
-  if (hasChange && change > 0) {
-    color = "text-success bg-success/10";
-  } else if (hasChange && change < 0) {
-    color = "text-error bg-error/10";
-  } else {
-    color = "text-text-muted bg-surface";
-  }
-
-  return (
-    <div className="bg-foreground rounded border p-2">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-2 text-primary">
-          {icon}
-          <p className="text-sm text-text-muted ">{title}</p>
-        </div>
-        {hasChange && (
-          <span className={`text-xs ${color} px-2 py-1 rounded`}>
-            {change}%
-          </span>
-        )}
-      </div>
-      <h3 className="text-xl font-semibold text-text-muted">{value}</h3>
-      <p className="text-xs text-text-muted mt-1 hidden md:block">
-        {description}
-      </p>
     </div>
   );
 };
@@ -579,11 +535,11 @@ const ProductionDashboard = () => {
       )}
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <Metrics>
           {kpis.map((metric) => (
-            <KPICard {...metric} />
+            <MetricsCard {...metric} />
           ))}
-        </div>
+        </Metrics>
 
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex-1 grid grid-cols-4 gap-2">
