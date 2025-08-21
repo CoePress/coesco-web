@@ -17,7 +17,7 @@ import {
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AuditLogs, Companies, CompanyDetails, Devices, Employees, JourneyDetails, Journeys, Machines, MachineStatuses, Pipeline, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard } from "@/pages";
+import { AuditLogs, Companies, CompanyDetails, Devices, Employees, JourneyDetails, Machines, MachineStatuses, PerformanceSheetDetails, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -40,73 +40,31 @@ export type Page = {
   children?: Page[];
 };
 
-const salesModule: Module = {
-  sequence: 1,
-  slug: "sales",
-  label: "Sales",
-  icon: DollarSignIcon,
-  status: "development" as const,
+const adminModule: Module = {
+  sequence: 3,
+  slug: "admin",
+  label: "Admin",
+  icon: ShieldIcon,
+  status: "active" as const,
   pages: [
     {
-      slug: null,
-      label: "Dashboard",
-      icon: BarChartIcon,
-      component: SalesDashboard,
-    },
-    {
-      slug: "pipeline",
-      label: "Pipeline",
-      icon: DollarSignIcon,
-      component: Pipeline,
-    },
-    {
-      slug: "companies",
-      label: "Companies",
+      slug: "employees",
+      label: "Employees",
       icon: UsersIcon,
-      component: Companies,
-      children: [
-        {
-          slug: ":id",
-          label: "Company",
-          icon: UsersIcon,
-          component: CompanyDetails,
-        },
-      ],
+      component: Employees,
     },
     {
-      slug: "journeys",
-      label: "Journeys",
-      icon: RouteIcon,
-      component: Journeys,
-      children: [
-        {
-          slug: ":id",
-          label: "Journey",
-          icon: RouteIcon,
-          component: JourneyDetails,
-        },
-      ],
+      slug: "devices",
+      label: "Devices",
+      icon: ComputerIcon,
+      component: Devices,
     },
     {
-      slug: "quotes",
-      label: "Quotes",
+      slug: "audit-logs",
+      label: "Audit Logs",
       icon: FileTextIcon,
-      component: Quotes,
-      children: [
-        {
-          slug: ":id",
-          label: "Quote",
-          icon: FileTextIcon,
-          component: QuoteDetails,
-        },
-      ],
-    },
-    {
-      slug: "products",
-      label: "Product Catalog",
-      icon: BoxIcon,
-      component: Products,
-    },
+      component: AuditLogs,
+    }
   ],
 };
 
@@ -138,31 +96,89 @@ const productionModule: Module = {
   ],
 };
 
-const adminModule: Module = {
-  sequence: 3,
-  slug: "admin",
-  label: "Admin",
-  icon: ShieldIcon,
-  status: "active" as const,
+const salesModule: Module = {
+  sequence: 1,
+  slug: "sales",
+  label: "Sales",
+  icon: DollarSignIcon,
+  status: "development" as const,
   pages: [
     {
-      slug: "employees",
-      label: "Employees",
+      slug: null,
+      label: "Dashboard",
+      icon: BarChartIcon,
+      component: SalesDashboard,
+    },
+    {
+      slug: "pipeline",
+      label: "Pipeline",
+      icon: DollarSignIcon,
+      component: Pipeline,
+      children: [
+        {
+          slug: ":id",
+          label: "Journey Details",
+          icon: RouteIcon,
+          component: JourneyDetails,
+        },
+      ],
+    },
+    {
+      slug: "companies",
+      label: "Companies",
       icon: UsersIcon,
-      component: Employees,
+      component: Companies,
+      children: [
+        {
+          slug: ":id",
+          label: "Company Details",
+          icon: UsersIcon,
+          component: CompanyDetails,
+        },
+      ],
     },
     {
-      slug: "devices",
-      label: "Devices",
-      icon: ComputerIcon,
-      component: Devices,
-    },
-    {
-      slug: "audit-logs",
-      label: "Audit Logs",
+      slug: "quotes",
+      label: "Quotes",
       icon: FileTextIcon,
-      component: AuditLogs,
-    }
+      component: Quotes,
+      children: [
+        {
+          slug: ":id",
+          label: "Quote Details",
+          icon: FileTextIcon,
+          component: QuoteDetails,
+        },
+      ],
+    },
+    {
+      slug: "products",
+      label: "Product Catalog",
+      icon: BoxIcon,
+      component: Products,
+      children: [
+        {
+          slug: ":id",
+          label: "Product Details",
+          icon: FileTextIcon,
+          component: ProductDetails,
+        },
+      ],
+    },
+    {
+      slug: "performance-sheets",
+      label: "Performance Sheets",
+      icon: BoxIcon,
+      component: Products,
+      children: [
+        {
+          slug: ":id",
+          label: "Performance Sheet Details",
+          icon: FileTextIcon,
+          component: PerformanceSheetDetails,
+        },
+      ],
+    },
   ],
 };
 
@@ -195,9 +211,9 @@ const sandboxModule: Module = {
 };
 
 const modules: Module[] = [
+  adminModule,
   productionModule,
   salesModule,
-  adminModule,
   sandboxModule,
 ]
   .filter(

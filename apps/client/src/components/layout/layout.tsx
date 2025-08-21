@@ -3,13 +3,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { X, Home, Sun, Moon, ChevronsRight } from "lucide-react";
 
 import modules from "@/config/modules";
-import CommandBar from "./command-bar";
 import { useTheme } from "@/contexts/theme.context";
-import Button from "../common/button";
+import Button from "../ui/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import { useAuth } from "@/contexts/auth.context";
-import ChatSidebar from "./chat-sidebar";
+import ChatSidebar from "../misc/chat-sidebar";
+import CommandBar from "../misc/command-bar";
 
 // type HeaderProps = {
 //   employee: any;

@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import Table from "@/components/common/table";
+import Table from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Pipeline = () => {

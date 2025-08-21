@@ -15,7 +15,6 @@ import {
   Card,
   Loader,
   Modal,
-  PageSearch,
   Table,
   Tabs,
 } from "@/components";
@@ -976,18 +975,6 @@ const AddItemModal = ({
                   { label: "Services", value: "services" },
                 ]}
               />
-
-              <PageSearch
-                placeholder={`Search ${activeTab}...`}
-                filters={[
-                  { label: "Category", icon: ChevronDown, onClick: () => {} },
-                  {
-                    label: "Price Range",
-                    icon: ChevronDown,
-                    onClick: () => {},
-                  },
-                ]}
-              />
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
@@ -1279,7 +1266,6 @@ const SelectCompanyModal = ({
   };
 
   const title = type === "customer" ? "Select Customer" : "Select Dealer";
-  const placeholder = `Search ${type}s...`;
   const newButtonText = `New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
 
   return (
@@ -1289,14 +1275,6 @@ const SelectCompanyModal = ({
       title={title}
       size="lg">
       <div className="flex flex-col gap-4">
-        <PageSearch
-          placeholder={placeholder}
-          filters={[
-            { label: "Location", icon: ChevronDown, onClick: () => {} },
-            { label: "Status", icon: ChevronDown, onClick: () => {} },
-          ]}
-        />
-
         <Table
           columns={[
             {

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { formatDuration, getVariantFromStatus } from "@/utils";
-import { TableColumn } from "@/components/common/table";
+import { TableColumn } from "@/components/ui/table";
 import { IMachineStatus } from "@/utils/types";
 
 const MachineHistory = () => {

@@ -1,13 +1,11 @@
 import {
-  Filter,
   MoreHorizontal,
-  ChevronDown,
   PlusCircleIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Table, PageSearch, Button } from "@/components";
-import { TableColumn } from "@/components/common/table";
+import { Table, Button } from "@/components";
+import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import PageHeader from "@/components/common/page-head";
 
@@ -63,11 +61,6 @@ const Companies = () => {
     },
   ];
 
-  const pageTitle = "Companies";
-  const pageDescription = companies
-    ? `${companies?.length} total companies`
-    : "";
-
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -81,17 +74,9 @@ const Companies = () => {
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title={pageTitle}
-        description={pageDescription}
+        title="Companies"
+        description={companies ? `${companies?.length} total companies` : ""}
         actions={<Actions />}
-      />
-
-      <PageSearch
-        placeholder="Search companies..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
       />
 
       <Table<any>

@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EllipsisIcon } from "lucide-react";
 import { useGetEntities } from "@/hooks/use-get-entities";
 import api from "@/utils/axios";
-import Button from "../common/button";
+import Button from "../ui/button";
 
 type Chat = {
   id: string;

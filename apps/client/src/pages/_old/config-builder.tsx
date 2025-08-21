@@ -21,7 +21,6 @@ import {
   PageHeader,
   Modal,
   Loader,
-  PageSearch,
   Table,
 } from "@/components";
 import { formatCurrency } from "@/utils";
@@ -304,14 +303,6 @@ const PerformanceRequirementsModal = ({
           </>
         ) : (
           <>
-            <PageSearch
-              placeholder="Search performance forms..."
-              filters={[
-                { label: "Customer", icon: ChevronDown, onClick: () => {} },
-                { label: "Created By", icon: ChevronDown, onClick: () => {} },
-              ]}
-            />
-
             <Table
               columns={[
                 {

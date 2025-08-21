@@ -7,7 +7,7 @@ import {
   Phone,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import Modal from "@/components/common/modal";
+import Modal from "@/components/ui/modal";
 import { Button } from "@/components";
 
 const CompanyDetails = () => {

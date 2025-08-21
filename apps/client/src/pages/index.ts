@@ -28,6 +28,7 @@ export { default as SalesDashboard } from "./sales/dashboard"
 
 // Utility
 export { default as Chat } from "./utility/chat"
+export { default as MicrosoftCallback } from "./utility/microsoft-callback"
 export { default as Resources } from "./utility/resources"
 
 // Warehouse

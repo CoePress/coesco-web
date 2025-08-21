@@ -1,20 +1,14 @@
 import {
-  Filter,
   MoreHorizontal,
-  ChevronDown,
   PlusCircleIcon,
 } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
-
-import { Table, PageSearch, Button } from "@/components";
-import { TableColumn } from "@/components/common/table";
+import { Table, Button } from "@/components";
+import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import PageHeader from "@/components/common/page-head";
 
 const Journeys = () => {
-  const [selectedRows] = useState<(string | number)[]>([]);
-
   const { entities: journeys } = useGetEntities("/crm/journeys");
 
   const columns: TableColumn<any>[] = [
@@ -56,16 +50,6 @@ const Journeys = () => {
         title={pageTitle}
         description={pageDescription}
         actions={<Actions />}
-      />
-
-      <PageSearch
-        placeholder="Search journeys..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-        label={`${selectedRows.length} selected`}
-        labelTrigger={selectedRows.length > 0}
       />
 
       <Table<any>

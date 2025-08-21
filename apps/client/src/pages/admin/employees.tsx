@@ -9,7 +9,7 @@ import {
   Loader,
   Modal,
 } from "@/components";
-import { TableColumn } from "@/components/common/table";
+import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import useSyncEmployees from "@/hooks/admin/use-sync-employees";
 import useUpdateEmployee from "@/hooks/admin/use-update-employee";

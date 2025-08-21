@@ -1,7 +1,7 @@
-import Button from "@/components/common/button";
-import Body from "@/components/common/text";
-import Input from "@/components/common/input";
-import Select from "@/components/common/select";
+import Button from "@/components/ui/button";
+import Text from "@/components/ui/text";
+import Input from "@/components/ui/input";
+import Select from "@/components/ui/select";
 import PageHeader from "@/components/common/page-head";
 
 const Actions = () => {
@@ -23,82 +23,92 @@ const Design = () => {
         goBack
       />
 
-      <div className="flex gap-2 items-center justify-center flex-1">
-        <div className="flex flex-col gap-2 items-center">
-          <Body
+      <div className="flex flex-col gap-2 flex-1">
+        <div>
+          <Text
             as="h3"
             className="mb-2">
             Buttons
-          </Body>
-          <Button variant="primary">Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="primary-outline">Primary Outline</Button>
-          <Button variant="secondary-outline">Secondary Outline</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
-          <Button disabled>Disabled</Button>
+          </Text>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button variant="primary">Primary</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="primary-outline">Primary Outline</Button>
+            <Button variant="secondary-outline">Secondary Outline</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="destructive">Destructive</Button>
+            <Button disabled>Disabled</Button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 items-center">
-          <Body
+        <div>
+          <Text
             as="h3"
             className="mb-2">
             Typography
-          </Body>
-          <Body as="h1">Heading 1</Body>
-          <Body as="h2">Heading 2</Body>
-          <Body as="h3">Heading 3</Body>
-          <Body as="h4">Heading 4</Body>
-          <Body as="p">Paragraph</Body>
+          </Text>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Text as="h1">Heading 1</Text>
+            <Text as="h2">Heading 2</Text>
+            <Text as="h3">Heading 3</Text>
+            <Text as="h4">Heading 4</Text>
+            <Text as="p">Paragraph</Text>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4 items-start w-64">
-          <Body
+        <div>
+          <Text
             as="h3"
-            className="mb-2 self-center">
+            className="mb-2">
             Inputs
-          </Body>
+          </Text>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              label="Text Input"
+              placeholder="Enter your name"
+              required
+              className="max-w-64"
+            />
+            <Input
+              type="email"
+              label="Email Input"
+              placeholder="Enter your email"
+              className="max-w-64"
+            />
 
-          <Input
-            label="Text Input"
-            placeholder="Enter your name"
-            required
-          />
+            <Input
+              type="password"
+              label="Password Input"
+              placeholder="Enter your password"
+              className="max-w-64"
+            />
 
-          <Input
-            type="email"
-            label="Email Input"
-            placeholder="Enter your email"
-          />
+            <Input
+              label="Disabled Input"
+              placeholder="This is disabled"
+              disabled
+              className="max-w-64"
+            />
 
-          <Input
-            type="password"
-            label="Password Input"
-            placeholder="Enter your password"
-          />
+            <Input
+              label="Error Input"
+              placeholder="Error state"
+              value="Invalid value"
+              error="This field is required"
+              className="max-w-64"
+            />
 
-          <Input
-            label="Disabled Input"
-            placeholder="This is disabled"
-            disabled
-          />
-
-          <Input
-            label="Error Input"
-            placeholder="Error state"
-            value="Invalid value"
-            error="This field is required"
-          />
-
-          <Select
-            label="Select Input"
-            placeholder="Choose an option"
-            options={[
-              { value: "option1", label: "Option 1" },
-              { value: "option2", label: "Option 2" },
-              { value: "option3", label: "Option 3" },
-            ]}
-          />
+            <Select
+              label="Select Input"
+              placeholder="Choose an option"
+              options={[
+                { value: "option1", label: "Option 1" },
+                { value: "option2", label: "Option 2" },
+                { value: "option3", label: "Option 3" },
+              ]}
+              className="max-w-64"
+            />
+          </div>
         </div>
       </div>
     </div>

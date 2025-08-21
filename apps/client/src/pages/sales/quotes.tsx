@@ -1,10 +1,10 @@
-import { Filter, ChevronDown, PlusCircleIcon } from "lucide-react";
+import { PlusCircleIcon } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { Button, Modal, PageSearch, StatusBadge, Table } from "@/components";
+import { Button, Modal, StatusBadge, Table } from "@/components";
 import { formatCurrency } from "@/utils";
-import { TableColumn } from "@/components/common/table";
+import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
 import AdvancedDropdown from "@/components/common/advanced-dropdown";
@@ -102,9 +102,6 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const pageTitle = "Quotes";
-  const pageDescription = `${quotes?.length} total quotes`;
-
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -118,19 +115,9 @@ const Quotes = () => {
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title={pageTitle}
-        description={pageDescription}
+        title="Quotes"
+        description={`${quotes?.length} total quotes`}
         actions={<Actions />}
-      />
-
-      <PageSearch
-        placeholder="Search quotes..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-        label="Quotes"
-        labelTrigger={false}
       />
 
       <Table
