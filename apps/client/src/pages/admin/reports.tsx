@@ -1,6 +1,13 @@
+import { PageHeader } from "@/components"
+
 const Reports = () => {
   return (
-    <div>Reports</div>
+    <div className="w-full flex flex-1 flex-col">
+      <PageHeader
+        title="Reports"
+        description="Report management"
+      />
+    </div>
   )
 }
 

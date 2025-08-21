@@ -1,10 +1,13 @@
 // Admin
-export { default as AuditLogs } from "./admin/audit-logs"
+export { default as AdminDashboard } from "./admin/dashboard"
 export { default as Bugs } from "./admin/bugs"
 export { default as Devices } from "./admin/devices"
 export { default as Employees } from "./admin/employees"
+export { default as Logs } from "./admin/logs"
+export { default as Permissions } from "./admin/permissions"
 export { default as Reports } from "./admin/reports"
 export { default as Sessions } from "./admin/sessions"
+export { default as Settings } from "./admin/settings"
 
 // Production
 export { default as Machines } from "./production/machines"

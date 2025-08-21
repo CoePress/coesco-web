@@ -2,12 +2,11 @@ import { PlusCircleIcon } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { Button, Modal, StatusBadge, Table } from "@/components";
+import { AdvancedDropdown, Button, Modal, StatusBadge, Table } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
-import AdvancedDropdown from "@/components/_old/advanced-dropdown";
 import PageHeader from "@/components/_old/page-head";
 
 const Quotes = () => {

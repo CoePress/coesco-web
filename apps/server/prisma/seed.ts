@@ -14,7 +14,7 @@ const machines = [
     type: MachineType.LATHE,
     controllerType: MachineControllerType.MAZAK,
     connectionType: MachineConnectionType.MTCONNECT,
-    connectionHost: "192.231.64.83",
+    connectionHost: "192.231.64.71",
     connectionPort: 5000,
   },
   {
@@ -23,7 +23,7 @@ const machines = [
     type: MachineType.LATHE,
     controllerType: MachineControllerType.MAZAK,
     connectionType: MachineConnectionType.MTCONNECT,
-    connectionHost: "192.231.64.53",
+    connectionHost: "192.231.64.81",
     connectionPort: 5000,
   },
   {
@@ -32,7 +32,7 @@ const machines = [
     type: MachineType.LATHE,
     controllerType: MachineControllerType.MAZAK,
     connectionType: MachineConnectionType.MTCONNECT,
-    connectionHost: "192.231.64.45",
+    connectionHost: "192.231.64.49",
     connectionPort: 5000,
   },
   {

@@ -1,14 +1,14 @@
 import { PageHeader } from "@/components"
 
-const Sessions = () => {
+const Logs = () => {
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title="Sessions"
-        description="Session management"
+        title="Logs"
+        description="Logs explorer"
       />
     </div>
   )
 }
 
-export default Sessions
+export default Logs

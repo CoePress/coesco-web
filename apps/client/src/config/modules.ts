@@ -6,18 +6,22 @@ import {
   PaintBucketIcon,
   CodeIcon,
   DollarSignIcon,
-  BarChartIcon,
   RouteIcon,
   FileTextIcon,
   BoxIcon,
   FactoryIcon,
-  ClockIcon,
   ShieldIcon,
+  LayoutDashboardIcon,
+  LockIcon,
+  LogsIcon,
+  ChartNoAxesCombined,
+  ActivityIcon,
+  FileClockIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AuditLogs, Companies, CompanyDetails, Devices, Employees, JourneyDetails, Machines, MachineStatuses, PerformanceSheetDetails, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheetDetails, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -48,11 +52,30 @@ const adminModule: Module = {
   status: "active" as const,
   pages: [
     {
+      slug: null,
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      component: AdminDashboard,
+    },
+    {
       slug: "employees",
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
     },
+    {
+      slug: "permissions",
+      label: "Permissions",
+      icon: LockIcon,
+      component: Permissions,
+    },
+    {
+      slug: "sessions",
+      label: "Sessions",
+      icon: FileClockIcon,
+      component: Sessions,
+    },
+    
     {
       slug: "devices",
       label: "Devices",
@@ -60,11 +83,17 @@ const adminModule: Module = {
       component: Devices,
     },
     {
-      slug: "audit-logs",
-      label: "Audit Logs",
+      slug: "reports",
+      label: "Reports",
       icon: FileTextIcon,
-      component: AuditLogs,
-    }
+      component: Reports,
+    },
+    {
+      slug: "logs",
+      label: "Logs",
+      icon: LogsIcon,
+      component: Logs,
+    },
   ],
 };
 
@@ -78,7 +107,7 @@ const productionModule: Module = {
     {
       slug: null,
       label: "Dashboard",
-      icon: BarChartIcon,
+      icon: LayoutDashboardIcon,
       component: ProductionDashboard,
     },
     {
@@ -90,7 +119,7 @@ const productionModule: Module = {
     {
       slug: "machine-states",
       label: "Machine States",
-      icon: ClockIcon,
+      icon: ActivityIcon,
       component: MachineStatuses,
     },
   ],
@@ -106,7 +135,7 @@ const salesModule: Module = {
     {
       slug: null,
       label: "Dashboard",
-      icon: BarChartIcon,
+      icon: LayoutDashboardIcon,
       component: SalesDashboard,
     },
     {
@@ -168,8 +197,8 @@ const salesModule: Module = {
     {
       slug: "performance-sheets",
       label: "Performance Sheets",
-      icon: BoxIcon,
-      component: Products,
+      icon: ChartNoAxesCombined,
+      component: PerformanceSheets,
       children: [
         {
           slug: ":id",

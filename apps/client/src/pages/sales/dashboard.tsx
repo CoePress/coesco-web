@@ -95,9 +95,6 @@ const KPICard = ({ title, value, description, icon, change }: KPICardProps) => {
 };
 
 const SalesDashboard = () => {
-  const pageTitle = "Sales Dashboard";
-  const pageDescription = "Track your sales performance and metrics";
-
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -156,8 +153,8 @@ const SalesDashboard = () => {
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
-        title={pageTitle}
-        description={pageDescription}
+        title="Sales Dashboard"
+        description="Track your sales performance and metrics"
         actions={<Actions />}
       />
 
