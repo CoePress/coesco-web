@@ -3,7 +3,7 @@ import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 
-import { __prod__, env } from "@/config/env";
+import { env } from "@/config/env";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
@@ -53,6 +53,8 @@ interface MachineStateData {
 
 export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
+  private isInitialized = false;
+  private isStarted = false;
   private readonly offlineState = {
     state: MachineState.OFFLINE,
     execution: "OFFLINE",
@@ -74,19 +76,20 @@ export class MachineMonitorService {
 
   private activeRequests: Set<AbortController> = new Set();
 
-  constructor() {
-    if (__prod__) {
-      this.start();
-    }
-  }
-
   async initialize() {
+    if (this.isInitialized && this.isStarted) {
+      logger.debug("Machine monitor already initialized and started");
+      return;
+    }
+
     try {
+      logger.info("Initializing and starting machine monitor");
+
+      // Initialize machine states
       const machines = await machineService.getAll();
 
       if (!machines?.data) {
-        logger.error("No machines found or invalid response");
-        return;
+        throw new Error("No machines found or invalid response");
       }
 
       for (const machine of machines.data) {
@@ -123,31 +126,51 @@ export class MachineMonitorService {
           );
         }
       }
+
+      // Start polling
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+      }
+      this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+
+      this.isInitialized = true;
+      this.isStarted = true;
+      logger.info("Machine monitor initialized and started successfully");
     }
     catch (error) {
-      logger.error("Error initializing machine states:", error);
+      logger.error("Failed to initialize and start machine monitor:", error);
+      throw error;
     }
-  }
-
-  start() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
   }
 
   async stop() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
+    if (!this.isStarted) {
+      logger.debug("Machine monitor is not started");
+      return;
     }
 
-    await this.closeAllMachineStatuses();
+    try {
+      logger.info("Stopping machine monitor");
 
-    for (const controller of this.activeRequests) {
-      controller.abort();
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+
+      await this.closeAllMachineStatuses();
+
+      for (const controller of this.activeRequests) {
+        controller.abort();
+      }
+      this.activeRequests.clear();
+
+      this.isStarted = false;
+      logger.info("Machine monitor stopped successfully");
     }
-    this.activeRequests.clear();
+    catch (error) {
+      logger.error("Error stopping machine monitor:", error);
+      throw error;
+    }
   }
 
   async getMachineOverview(startDate: string, endDate: string, view: string) {
@@ -1297,6 +1320,21 @@ export class MachineMonitorService {
       name: machine.name,
       type: machine.type,
     }));
+  }
+
+  async reset() {
+    logger.info("Resetting machine monitor service");
+
+    try {
+      await this.stop();
+      this.isInitialized = false;
+      this.isStarted = false;
+      logger.info("Machine monitor service reset successfully");
+    }
+    catch (error) {
+      logger.error("Error resetting machine monitor service:", error);
+      throw error;
+    }
   }
 
   async resetFanucAdapter() {
