@@ -20,7 +20,7 @@ import {
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AdminDashboard, Companies, CompanyDetails, Configurations, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheetDetails, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheetDetails, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -197,9 +197,9 @@ const salesModule: Module = {
       component: Products,
       children: [
         {
-          slug: "configurations",
+          slug: "configuration-builder",
           label: "Configuration Builder",
-          component: Configurations,
+          component: ConfigurationBuilder,
         },
         {
           slug: "p/:id",

@@ -215,7 +215,7 @@ const Products = () => {
                 <Button 
                   variant="primary" 
                   className="w-full mt-4"
-                  onClick={() => navigate('/sales/products/configurations')}
+                  onClick={() => navigate('/sales/products/configuration-builder')}
                 >
                   <Wrench size={16} />
                   Configuration Builder
