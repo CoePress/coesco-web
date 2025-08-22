@@ -984,7 +984,7 @@ const ConfigurationBuilder = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}

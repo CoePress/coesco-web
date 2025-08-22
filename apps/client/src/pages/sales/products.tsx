@@ -24,7 +24,7 @@ const Products = () => {
     error,
     refresh,
     pagination,
-  } = useGetEntities("/products");
+  } = useGetEntities("/catalog/items");
 
   const columns: TableColumn<any>[] = [
     {

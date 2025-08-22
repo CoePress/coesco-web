@@ -219,6 +219,31 @@ const QuoteDetails = () => {
   const Actions = () => {
     const actions = [];
 
+    // Add Customer/Dealer buttons for DRAFT quotes
+    if (quoteOverview?.quote?.status === "DRAFT") {
+      if (!customer) {
+        actions.push(
+          <Button
+            key="add-customer"
+            variant="secondary-outline"
+            onClick={() => setIsCustomerModalOpen(true)}>
+            <Plus size={16} /> Add Customer
+          </Button>
+        );
+      }
+      
+      if (!dealer) {
+        actions.push(
+          <Button
+            key="add-dealer"
+            variant="secondary-outline"
+            onClick={() => setIsDealerModalOpen(true)}>
+            <Plus size={16} /> Add Dealer
+          </Button>
+        );
+      }
+    }
+
     if (quoteItems.length > 0) {
       actions.push(
         <Button
@@ -278,172 +303,103 @@ const QuoteDetails = () => {
 
       <div className="mx-auto p-2">
         <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-3 gap-2">
-            {/* Quote Info */}
-            <Card>
-              <div className="text-xs text-text-muted mb-1">Quote</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div>
-                    <div className="text-xs text-text-muted">Number</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.number || "Q-2024-001"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Revision</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.revision || "A"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Status</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.status || "DRAFT"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Created</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.createdAt
-                        ? formatDate(quoteOverview?.quote?.createdAt)
-                        : "Jan 15, 2024"}
-                    </div>
-                  </div>
+          {/* Full width Quote Info Card */}
+          <Card>
+            <div className="grid grid-cols-5 gap-6">
+              {/* Quote Number & Revision */}
+              <div className="space-y-1">
+                <div className="text-xs text-text-muted">Number</div>
+                <div className="text-sm font-medium text-text">
+                  {quoteOverview?.quote?.number || "Q-2024-001"}
                 </div>
-                <div className="space-y-2">
-                  <div>
-                    <div className="text-xs text-text-muted">Created By</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.createdById
-                        ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
-                        : "Alex Chen"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Expires</div>
-                    <div className="text-xs text-text">
-                      {quoteOverview?.quote?.expiryDate
-                        ? formatDate(quoteOverview?.quote?.expiryDate)
-                        : "Feb 15, 2024"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Total</div>
-                    <div className="text-xs text-text">
-                      {formatCurrency(
-                        quoteItems.reduce(
-                          (acc: number, item: any) =>
-                            acc + Number(item.totalPrice),
-                          0
-                        ) -
-                          quoteItems.reduce(
-                            (acc: number, item: any) =>
-                              acc + (Number(item.discount) || 0),
-                            0
-                          ) +
-                          quoteItems.reduce(
-                            (acc: number, item: any) =>
-                              acc + (Number(item.taxAmount) || 0),
-                            0
-                          )
-                      )}
-                    </div>
-                  </div>
+                <div className="text-xs text-text-muted">Revision</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.revision || "A"}
+                </div>
+                <div className="text-xs text-text-muted">Status</div>
+                <div className="text-sm font-medium text-text">
+                  {quoteOverview?.quote?.status || "DRAFT"}
                 </div>
               </div>
-            </Card>
 
-            {/* Customer */}
-            <Card>
-              <div className="text-xs text-text-muted mb-1">Customer</div>
-              {customer ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-xs text-text-muted">Name</div>
-                      <div className="text-xs text-text">
-                        {customer?.name || "Acme Manufacturing Co."}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-text-muted">Contact</div>
-                      <div className="text-xs text-text">
-                        {customer?.contact || "John Smith"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-text-muted">Email</div>
-                      <div className="text-xs text-text">
-                        {customer?.email || "john@acme.com"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-text-muted">Phone</div>
-                      <div className="text-xs text-text">
-                        {customer?.phone || "(555) 123-4567"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-xs text-text-muted">Shipping</div>
-                      <div className="text-xs text-text">
-                        123 Industrial Blvd
-                      </div>
-                      <div className="text-xs text-text">Detroit, MI 48201</div>
-                      <div className="text-xs text-text">United States</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-text-muted">Billing</div>
-                      <div className="text-xs text-text">
-                        456 Corporate Plaza
-                      </div>
-                      <div className="text-xs text-text">Chicago, IL 60601</div>
-                      <div className="text-xs text-text">United States</div>
-                    </div>
-                  </div>
+              {/* Created Info */}
+              <div className="space-y-1">
+                <div className="text-xs text-text-muted">Created</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.createdAt
+                    ? formatDate(quoteOverview?.quote?.createdAt)
+                    : "Jan 15, 2024"}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="text-xs text-text-muted">No customer</div>
-                  <Button
-                    variant="secondary-outline"
-                    size="sm"
-                    disabled={quoteOverview?.quote?.status !== "DRAFT"}
-                    onClick={() => setIsCustomerModalOpen(true)}>
-                    <Plus size={14} />
-                    Add
-                  </Button>
+                <div className="text-xs text-text-muted">Created By</div>
+                <div className="text-sm font-medium text-text">
+                  {quoteOverview?.quote?.createdById
+                    ? `${quoteOverview?.quote?.createdBy?.firstName} ${quoteOverview?.quote?.createdBy?.lastName}`
+                    : "Alex Chen"}
                 </div>
-              )}
-            </Card>
+                <div className="text-xs text-text-muted">Expires</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.expiryDate
+                    ? formatDate(quoteOverview?.quote?.expiryDate)
+                    : "-"}
+                </div>
+              </div>
 
-            {/* Dealer */}
-            <Card>
-              <div className="text-xs text-text-muted mb-1">Dealer</div>
-              {dealer ? (
-                <div className="space-y-1">
-                  <div className="text-sm text-text">{dealer?.name}</div>
-                  <div className="text-xs text-text-muted">
-                    {dealer?.contact}
-                  </div>
-                  <div className="text-xs text-text-muted">{dealer?.email}</div>
+              {/* Approval Info */}
+              <div className="space-y-1">
+                <div className="text-xs text-text-muted">Approved</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.approvedAt
+                    ? formatDate(quoteOverview?.quote?.approvedAt)
+                    : "-"}
                 </div>
-              ) : (
-                <div className="flex justify-center items-center flex-1">
-                  <Button
-                    variant="secondary-outline"
-                    size="sm"
-                    disabled={quoteOverview?.quote?.status !== "DRAFT"}
-                    onClick={() => setIsDealerModalOpen(true)}>
-                    <Plus size={14} />
-                    Add Dealer
-                  </Button>
+                <div className="text-xs text-text-muted">Approved By</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.approvedBy
+                    ? `${quoteOverview?.quote?.approvedBy?.firstName} ${quoteOverview?.quote?.approvedBy?.lastName}`
+                    : "-"}
                 </div>
-              )}
-            </Card>
-          </div>
+                <div className="text-xs text-text-muted">Sent</div>
+                <div className="text-sm text-text">
+                  {quoteOverview?.quote?.sentAt
+                    ? formatDate(quoteOverview?.quote?.sentAt)
+                    : "-"}
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div className="space-y-1">
+                <div className="text-xs text-text-muted">Customer</div>
+                <div className="text-sm font-medium text-text">
+                  {customer?.name || "-"}
+                </div>
+                <div className="text-xs text-text-muted">Contact</div>
+                <div className="text-sm text-text">
+                  {customer?.contact || "-"}
+                </div>
+                <div className="text-xs text-text-muted">Email</div>
+                <div className="text-sm text-text">
+                  {customer?.email || "-"}
+                </div>
+              </div>
+
+              {/* Dealer Info */}
+              <div className="space-y-1">
+                <div className="text-xs text-text-muted">Dealer</div>
+                <div className="text-sm font-medium text-text">
+                  {dealer?.name || "-"}
+                </div>
+                <div className="text-xs text-text-muted">Contact</div>
+                <div className="text-sm text-text">
+                  {dealer?.contact || "-"}
+                </div>
+                <div className="text-xs text-text-muted">Email</div>
+                <div className="text-sm text-text">
+                  {dealer?.email || "-"}
+                </div>
+              </div>
+
+            </div>
+          </Card>
 
           <Card>
             <div className="bg-foreground border-b flex justify-between items-center pb-2">
