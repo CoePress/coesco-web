@@ -1,6 +1,6 @@
-import { Search } from "lucide-react";
+import { Search, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button, PageHeader, StatusBadge, Table, Select } from "@/components";
 import { formatCurrency } from "@/utils";
@@ -8,6 +8,7 @@ import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Products = () => {
+  const navigate = useNavigate();
   const [productType, setProductType] = useState<'machines' | 'parts' | 'services'>('machines');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
@@ -209,6 +210,17 @@ const Products = () => {
               >
                 Clear Filters
               </Button>
+
+              {productType === 'machines' && (
+                <Button 
+                  variant="primary" 
+                  className="w-full mt-4"
+                  onClick={() => navigate('/sales/products/configurations')}
+                >
+                  <Wrench size={16} />
+                  Configuration Builder
+                </Button>
+              )}
             </div>
           </div>
 
