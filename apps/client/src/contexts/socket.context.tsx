@@ -7,6 +7,10 @@ type SocketContextType = {
   socket: Socket | null;
   emit: (event: string, data: any, callback?: (...args: any[]) => void) => void;
   machineStates: any[];
+  iotSocket: Socket | null;
+  isIotConnected: boolean;
+  subscribeToMachineStates: () => void;
+  unsubscribeFromMachineStates: () => void;
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -22,6 +26,9 @@ export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps)
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
+  const [isIotConnected, setIsIotConnected] = useState(false);
+  const iotSocketRef = useRef<Socket | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     if (!socketRef.current) {
@@ -39,23 +46,49 @@ export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps)
     return () => {
       socketRef.current?.disconnect();
       socketRef.current = null;
+      iotSocketRef.current?.disconnect();
+      iotSocketRef.current = null;
     };
   }, []);
 
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
+  const subscribeToMachineStates = () => {
+    if (!iotSocketRef.current) {
+      iotSocketRef.current = io(`${env.VITE_BASE_URL}/iot`, {
+        reconnectionDelayMax: 10000,
+        transports: ["websocket", "polling"],
+      });
 
-    const handleMachineStates = (data: any[]) => {
-      setMachineStates(data);
-    };
+      const iotSocket = iotSocketRef.current;
 
-    socket.on("machine_states", handleMachineStates);
+      iotSocket.on("connect", () => {
+        setIsIotConnected(true);
+        iotSocket.emit("machine_states:subscribe");
+      });
 
-    return () => {
-      socket.off("machine_states", handleMachineStates);
-    };
-  }, []);
+      iotSocket.on("disconnect", () => {
+        setIsIotConnected(false);
+        setIsSubscribed(false);
+      });
+
+      iotSocket.on("machine_states:subscribed", () => {
+        setIsSubscribed(true);
+      });
+
+      iotSocket.on("machine_states", (data: any[]) => {
+        setMachineStates(data);
+      });
+    } else if (iotSocketRef.current.connected && !isSubscribed) {
+      iotSocketRef.current.emit("machine_states:subscribe");
+    }
+  };
+
+  const unsubscribeFromMachineStates = () => {
+    if (iotSocketRef.current?.connected) {
+      iotSocketRef.current.emit("machine_states:unsubscribe");
+      setIsSubscribed(false);
+    }
+  };
+
 
   useEffect(() => {
     const socket = socketRef.current;
@@ -65,7 +98,6 @@ export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps)
 
     socket.on("connect", () => setIsConnected(true));
     socket.on("disconnect", () => setIsConnected(false));
-    socket.on("machine_states", (data: any[]) => setMachineStates(data));
 
     listenTo.forEach((event) => {
       socket.on(event, () => {
@@ -96,6 +128,10 @@ export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps)
     socket: socketRef.current,
     emit,
     machineStates,
+    iotSocket: iotSocketRef.current,
+    isIotConnected,
+    subscribeToMachineStates,
+    unsubscribeFromMachineStates,
   };
 
   return (

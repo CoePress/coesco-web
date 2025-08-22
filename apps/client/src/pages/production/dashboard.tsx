@@ -360,7 +360,15 @@ const ProductionDashboard = () => {
   };
 
   const [dateRange, setDateRange] = useState(getInitialDateRange);
-  const { machineStates } = useSocket();
+  const { machineStates, subscribeToMachineStates, unsubscribeFromMachineStates } = useSocket();
+
+  useEffect(() => {
+    subscribeToMachineStates();
+    
+    return () => {
+      unsubscribeFromMachineStates();
+    };
+  }, []);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { overview, loading, error, refresh } = useGetOverview({
