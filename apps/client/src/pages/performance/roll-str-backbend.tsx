@@ -4,7 +4,6 @@ import Card from "@/components/common/card";
 import Input from "@/components/common/input";
 import Select from "@/components/common/select";
 import Text from "@/components/common/text";
-import Button from "@/components/common/button";
 import { PerformanceData } from "@/contexts/performance.context";
 import {
   STR_MODEL_OPTIONS,
@@ -144,6 +143,50 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
+        <Input
+          label="Center Distance (in)"
+          name="rollStrBackbend.straightener.centerDistance"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.centerDistance?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Jack Force Avauilable (lbs)"
+          name="rollStrBackbend.straightener.jackForceAvailable"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.jackForceAvailable?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Max Roller Depth without Material (in)"
+          name="rollStrBackbend.straightener.rolls.depth.withoutMaterial"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rolls?.depth?.withoutMaterial?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Max Roller Depth with Material (in)"
+          name="rollStrBackbend.straightener.rolls.depth.withMaterial"
+          type="number"
+          value={localData.rollStrBackbend?.straightener?.rolls?.depth?.withMaterial?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Total Depth Required (in)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
+        <Input
+          label="Total Force Required (lbs)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired?.toString() || ""}
+          disabled
+          className="bg-gray-50"
+        />
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
@@ -162,92 +205,17 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           disabled={!isEditing}
         />
         <Input
-          label="Required Roll Diameter (in)"
-          name="rollStrBackbend.straightener.rolls.backbend.requiredRollDiameter"
-          type="number"
-          value={localData.common?.equipment?.straightener?.rollDiameter?.toString() || ""}
-          onChange={handleFieldChange}
-          disabled={!isEditing}
+          label="Off Coil After Springback"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback?.toString() || ""}
+          disabled
+          className="bg-gray-50"
         />
         <Input
-          label="First Roller Height (in)"
-          name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
-          type="number"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
-          onChange={handleFieldChange}
-          disabled={!isEditing}
+          label="Bending Moment to Yield Skin (in-lbs)"
+          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.bendingMomentToYield?.toString() || ""}
+          disabled
+          className="bg-gray-50"
         />
-        <Input
-          label="Last Roller Height (in)"
-          name="rollStrBackbend.straightener.rolls.backbend.rollers.last.height"
-          type="number"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height?.toString() || ""}
-          onChange={handleFieldChange}
-          disabled={!isEditing}
-        />
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, handleCalculate, isEditing, isLoading]);
-
-  // Calculated results section
-  const calculatedResultsSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h4" className="mb-4 text-lg font-medium">Calculated Results</Text>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Radius Values */}
-        <div className="space-y-2">
-          <Text as="h4" className="font-medium">Radius Values (in)</Text>
-          <Input
-            label="Off Coil After Springback"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-          <Input
-            label="Bending Moment to Yield Skin (in-lbs)"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.bendingMomentToYield?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-        </div>
-
-        {/* First Roller Results */}
-        <div className="space-y-2">
-          <Text as="h4" className="font-medium">First Roller</Text>
-          <Input
-            label="Force Required (lbs)"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-          <Input
-            label="Yield Strains at Surface"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-        </div>
-
-        {/* Last Roller Results */}
-        <div className="space-y-2">
-          <Text as="h4" className="font-medium">Last Roller</Text>
-          <Input
-            label="Force Required (lbs)"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-          <Input
-            label="Yield Strains at Surface"
-            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface?.toString() || ""}
-            disabled
-            className="bg-gray-50"
-          />
-        </div>
-      </div>
-
-      {/* Overall Results */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="One over radius off coil after springback"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.oneOffCoil?.toString() || ""}
@@ -263,18 +231,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Input
           label="Radius req to yield flat material (in)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.radiusAtYield?.toString() || ""}
-          disabled
-          className="bg-gray-50"
-        />
-        <Input
-          label="Total Depth Required (in)"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired?.toString() || ""}
-          disabled
-          className="bg-gray-50"
-        />
-        <Input
-          label="Total Force Required (lbs)"
-          value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired?.toString() || ""}
           disabled
           className="bg-gray-50"
         />
@@ -295,7 +251,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       </div>
     </Card>
-  ), [localData]);
+  ), [localData, handleFieldChange, handleCalculate, isEditing, isLoading]);
 
   // First roller detailed results section
   const firstRollerDetailsSection = useMemo(() => (
@@ -306,6 +262,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <div>
           <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
           <div className="space-y-2">
+            <Input
+              label="First Roller Height (in)"
+              name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
+              type="number"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
+              onChange={handleFieldChange}
+              disabled={!isEditing}
+            />
             <Input
               label="Resulting Radius (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius?.toString() || ""}
@@ -331,6 +295,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               className="bg-gray-50"
             />
             <Input
+              label="Force Required (lbs)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback?.toString() || ""}
               disabled
@@ -339,6 +309,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
             <Input
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Yield Strains at Surface"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface?.toString() || ""}
               disabled
               className="bg-gray-50"
             />
@@ -412,6 +388,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <div>
           <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Input
+            label="Last Roller Height (in)"
+            name="rollStrBackbend.straightener.rolls.backbend.rollers.last.height"
+            type="number"
+            value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.height?.toString() || ""}
+            onChange={handleFieldChange}
+            disabled={!isEditing}
+          />
             <Input
               label="Resulting Radius (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius?.toString() || ""}
@@ -437,6 +421,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               className="bg-gray-50"
             />
             <Input
+              label="Force Required (lbs)"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback?.toString() || ""}
               disabled
@@ -445,6 +435,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
             <Input
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded?.toString() || ""}
+              disabled
+              className="bg-gray-50"
+            />
+            <Input
+              label="Yield Strains at Surface"
+              value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface?.toString() || ""}
               disabled
               className="bg-gray-50"
             />
@@ -517,6 +513,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   className="bg-gray-50"
                 />
                 <Input
+                  label="Force Required (lbs)"
+                  value={middleData?.forceRequired?.toString() || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <Input
                   label="Springback"
                   value={middleData?.up?.springback?.toString() || ""}
                   disabled
@@ -529,14 +531,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   className="bg-gray-50"
                 />
                 <Input
-                  label="Force Required (lbs)"
-                  value={middleData?.forceRequired?.toString() || ""}
+                  label="Yield Strains at Surface"
+                  value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
                   disabled
                   className="bg-gray-50"
                 />
                 <Input
-                  label="Yield Strains at Surface"
-                  value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
+                  label="Radius After Springback (in)"
+                  value={middleData?.up?.radiusAfterSpringback?.toString() || ""}
                   disabled
                   className="bg-gray-50"
                 />
@@ -830,10 +832,9 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       {materialSpecsSection}
       {rollStraightenerSpecsSection}
       {backbendSpecsSection}
-      {calculatedResultsSection}
       {firstRollerDetailsSection}
-      {lastRollerDetailsSection}
       {middleRollersSection}
+      {lastRollerDetailsSection}
       {designNotesSection}
     </div>
   );

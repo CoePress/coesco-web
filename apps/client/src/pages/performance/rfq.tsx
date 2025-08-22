@@ -11,11 +11,11 @@ import {
   PRESS_APPLICATION_OPTIONS,
   YES_NO_OPTIONS,
   FEED_DIRECTION_OPTIONS,
-  EDGE_TYPE_OPTIONS,
   LOADING_OPTIONS,
 } from "@/utils/select-options";
 import { PerformanceData } from "@/contexts/performance.context";
 import { usePerformanceDataService } from "@/utils/performance-service.ts";
+import Checkbox from "@/components/common/checkbox";
 
 export interface RFQProps {
   data: PerformanceData;
@@ -379,23 +379,21 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div>
-          <Select
+          <Checkbox
             label="Slit Edge"
-            name="rfq.coil.slitEdge"
-            value={localData.rfq?.coil?.slitEdge || ""}
+            name="rfq.coil.slitEdgeCB"
+            checked={localData.rfq?.coil?.slitEdge || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={EDGE_TYPE_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Mill Edge"
             name="rfq.coil.millEdge"
-            value={localData.rfq?.coil?.millEdge || ""}
+            checked={localData.rfq?.coil?.millEdge || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={EDGE_TYPE_OPTIONS}
           />
         </div>
         <div>
@@ -534,63 +532,66 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       </Text>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div>
-          <Select
+          <Checkbox
             label="Gap Frame Press"
             name="rfq.press.gapFramePress"
-            value={localData.rfq?.press?.gapFramePress || ""}
+            checked={localData.rfq?.press?.gapFramePress || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Hydraulic Press"
             name="rfq.press.hydraulicPress"
-            value={localData.rfq?.press?.hydraulicPress || ""}
+            checked={localData.rfq?.press?.hydraulicPress || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="OBI"
             name="rfq.press.obi"
-            value={localData.rfq?.press?.obi || ""}
+            checked={localData.rfq?.press?.obi || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Servo Press"
             name="rfq.press.servoPress"
-            value={localData.rfq?.press?.servoPress || ""}
+            checked={localData.rfq?.press?.servoPress || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Shear Die Application"
             name="rfq.press.shearDieApplication"
-            value={localData.rfq?.press?.shearDieApplication || ""}
+            checked={localData.rfq?.press?.shearDieApplication || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Straight Side Press"
             name="rfq.press.straightSidePress"
-            value={localData.rfq?.press?.straightSidePress || ""}
+            checked={localData.rfq?.press?.straightSidePress || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
+          />
+        </div>
+        <div>
+          <Checkbox
+            label="Other Press Type"
+            name="rfq.press.other"
+            checked={localData.rfq?.press?.other || false}
+            onChange={handleFieldChange}
+            disabled={!isEditing}
           />
         </div>
       </div>
@@ -667,15 +668,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             disabled={!isEditing}
           />
         </div>
-        <div>
-          <Input
-            label="Other Press Type"
-            name="rfq.press.other"
-            value={localData.rfq?.press?.other || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
@@ -688,33 +680,30 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       </Text>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Select
+          <Checkbox
             label="Transfer Dies"
             name="rfq.dies.transferDies"
-            value={localData.rfq?.dies?.transferDies || ""}
+            checked={localData.rfq?.dies?.transferDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Progressive Dies"
             name="rfq.dies.progressiveDies"
-            value={localData.rfq?.dies?.progressiveDies || ""}
+            checked={localData.rfq?.dies?.progressiveDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
         <div>
-          <Select
+          <Checkbox
             label="Blanking Dies"
             name="rfq.dies.blankingDies"
-            value={localData.rfq?.dies?.blankingDies || ""}
+            checked={localData.rfq?.dies?.blankingDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
-            options={YES_NO_OPTIONS}
           />
         </div>
       </div>

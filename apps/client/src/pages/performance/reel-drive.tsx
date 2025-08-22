@@ -539,6 +539,14 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           className="bg-gray-50"
         />
         <Input
+          label="R. BRG. COIL"
+          name="reelDrive.reel.friction.bearing.coil.rear"
+          value={localData.reelDrive?.reel?.friction?.bearing?.coil?.rear?.toString() || ""}
+          type="number"
+          disabled={true}
+          className="bg-gray-50"
+        />
+        <Input
           label="TOTAL EMPTY"
           name="reelDrive.reel.friction.bearing.total.empty"
           value={localData.reelDrive?.reel?.friction?.bearing?.total?.empty?.toString() || ""}
@@ -662,11 +670,19 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">OK:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck && localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) 
+            (localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck) 
               ? 'bg-green-100 text-green-800' 
               : 'bg-red-100 text-red-800'
           }`}>
-            {(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck && localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) ? "OK" : "NOT OK"}
+            {(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck) ? "OK" : "NOT OK"}
+          </span>
+          <label className="text-sm font-medium">OK:</label>
+          <span className={`px-2 py-1 rounded text-sm font-semibold ${
+            (localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {(localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) ? "OK" : "NOT OK"}
           </span>
         </div>
       </div>
@@ -699,32 +715,19 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">Regen:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.empty?.regen || localData.reelDrive?.reel?.torque?.full?.regen) 
+            (localData.reelDrive?.reel?.torque?.empty?.regen) 
               ? 'bg-green-100 text-green-800' 
               : 'bg-gray-100 text-gray-800'
           }`}>
-            {(localData.reelDrive?.reel?.torque?.empty?.regen || localData.reelDrive?.reel?.torque?.full?.regen) ? "YES" : "NO"}
+            {(localData.reelDrive?.reel?.torque?.empty?.regen) ? "YES" : "NO"}
           </span>
-        </div>
-      </div>
-    </Card>
-  ), [localData]);
-
-  // Notes section
-  const notesSection = useMemo(() => (
-    <Card className="p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Notes
-      </Text>
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">USE PULLOFF:</label>
+          <label className="text-sm font-medium">Regen:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            localData.reelDrive?.reel?.reelDriveOK 
+            (localData.reelDrive?.reel?.torque?.full?.regen) 
               ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
           }`}>
-            {localData.reelDrive?.reel?.reelDriveOK ? "NO" : "YES"}
+            {(localData.reelDrive?.reel?.torque?.full?.regen) ? "YES" : "NO"}
           </span>
         </div>
       </div>
@@ -807,7 +810,6 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         {torqueSection}
         {hpReqdSection}
         {regenSection}
-        {notesSection}
       </div>
     </div>
   );

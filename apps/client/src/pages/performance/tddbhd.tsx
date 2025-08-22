@@ -322,33 +322,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Cylinder Section
-  const cylinderSection = useMemo(() => (
-    <Card className="p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Cylinder
-      </Text>
-      <div className="space-y-4">
-        <Select
-          label="Type"
-          name="tddbhd.reel.holddown.cylinder"
-          value={localData.tddbhd?.reel?.holddown?.cylinder || ""}
-          onChange={handleFieldChange}
-          options={HOLD_DOWN_CYLINDER_OPTIONS}
-          disabled={!isEditing}
-        />
-        <Input
-          label="Pressure (psi)"
-          name="tddbhd.reel.holddown.cylinderPressure"
-          value={localData.tddbhd?.reel?.holddown?.cylinderPressure?.toString() || ""}
-          type="number"
-          disabled={true}
-          className="bg-gray-50"
-        />
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
   // Drag Brake Section
   const dragBrakeSection = useMemo(() => (
     <Card className="p-4">
@@ -471,7 +444,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       
       {/* Cylinder and Drag Brake */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {cylinderSection}
         {dragBrakeSection}
       </div>
     </div>

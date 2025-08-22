@@ -98,7 +98,7 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     max_vel = max_motor_rpm / ratio * (l_roll * pi / 720) * 60
 
     # Frictional Torque
-    if spec_type == "sigma_five":
+    if "sigma_five" in spec_type:
         frictional_torque = (u_roll * 0.5 * data.friction_in_die) / ratio + friction_torque
     else:
         frictional_torque = (u_roll * 0.5 * data.friction_in_die) / ratio

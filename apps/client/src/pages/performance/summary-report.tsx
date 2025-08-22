@@ -137,7 +137,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Hold Down Cylinder"
           name="tddbhd.reel.holddown.cylinder"
-          value={localData.tddbhd?.reel?.holddown?.cylinder || ""}
+          value={localData.tddbhd?.reel?.holddown?.cylinderPressure || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -286,7 +286,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Model"
           name="feed.feed.model"
-          value={localData.feed?.feed?.model || ""}
+          value={localData.common?.equipment?.feed?.model || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -415,6 +415,55 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, boolVal, handleFieldChange, isEditing]);
 
+  // Performance results table section
+  const performanceResultsSection = useMemo(() => {
+    const tableData = localData.feed?.feed?.tableValues || [];
+    const lengthRows = [tableData[0].length, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
+
+    return (
+      <Card className="mb-4 p-4">
+        <Text as="h4" className="mb-4 text-lg font-medium">Performance Results</Text>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-800">
+                <th className="border border-gray-300 p-2 text-white">Length</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ 180°</th>
+                <th className="border border-gray-300 p-2 text-white">FPM</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ 240°</th>
+                <th className="border border-gray-300 p-2 text-white">FPM</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lengthRows.map((length) => {
+                const rowData = tableData.find((row: any) => row.length === length);
+                return (
+                  <tr key={length} className="bg-gray-800">
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.length || length}
+                    </td>
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.spm_at_fa1 || "#N/A"}
+                    </td>
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.fpm_fa1 || "#N/A"}
+                    </td>
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.spm_at_fa2 || "#N/A"}
+                    </td>
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.fpm_fa2 || "#N/A"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    );
+  }, [localData]);
+
   // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
@@ -486,6 +535,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
       {motorizedReelSection}
       {poweredStraightenerSection}
       {sigma5FeedSection}
+      {performanceResultsSection}
     </div>
   );
 };

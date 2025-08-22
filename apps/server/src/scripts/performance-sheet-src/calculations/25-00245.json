@@ -57,7 +57,7 @@
         "controlsLevel": "SyncMaster",
         "controls": "Sigma 5 Feed",
         "typeOfLine": "Conventional",
-        "passline": "55\"",
+        "passline": "55",
         "lightGuageNonMarking": "No",
         "nonMarking": "No",
         "maximumVelocity": 0,
@@ -94,8 +94,8 @@
       "latestDeliveryDate": ""
     },
     "coil": {
-      "slitEdge": "Yes",
-      "millEdge": "No",
+      "slitEdge": true,
+      "millEdge": false,
       "requireCoilCar": "No",
       "runningOffBackplate": "No",
       "requireRewinding": "No",
@@ -106,13 +106,13 @@
     "runningCosmeticMaterial": "No",
     "brandOfFeed": "",
     "press": {
-      "gapFramePress": "No",
-      "hydraulicPress": "No",
-      "obi": "No",
-      "servoPress": "No",
-      "shearDieApplication": "No",
-      "straightSidePress": "No",
-      "other": "No",
+      "gapFramePress": false,
+      "hydraulicPress": false,
+      "obi": false,
+      "servoPress": false,
+      "shearDieApplication": false,
+      "straightSidePress": false,
+      "other": false,
       "tonnageOfPress": "0",
       "strokeLength": "0",
       "maxSPM": "60",
@@ -121,9 +121,9 @@
       "cycleTime": "0"
     },
     "dies": {
-      "transferDies": "No",
-      "progressiveDies": "Yes",
-      "blankingDies": "No"
+      "transferDies": false,
+      "progressiveDies": true,
+      "blankingDies": false
     },
     "voltageRequired": 480,
     "equipmentSpaceLength": 0,
@@ -381,7 +381,6 @@
           "withMaterial": 0
         },
         "backbend": {
-          "hiddenValue": 10205.2064976266,
           "yieldMet": "",
           "radius": {
             "comingOffCoil": -60,
@@ -500,10 +499,10 @@
       },
       "pullThru": {
         "isPullThru": "No",
-        "straightenerRolls": 5,
+        "straightenerRolls": 0,
         "centerDistance": 0,
         "yieldStrength": 0,
-        "pinchRolls": "",
+        "pinchRolls": 0,
         "kConst": 0,
         "straightenerTorque": 0,
         "payoffMaxSpeed": 0

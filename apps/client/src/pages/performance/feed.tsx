@@ -607,7 +607,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   // Performance results table section
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
-    const lengthRows = [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60];
+    const lengthRows = [tableData[0].length, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
     return (
       <Card className="mb-4 p-4">
@@ -628,7 +628,9 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
                 const rowData = tableData.find((row: any) => row.length === length);
                 return (
                   <tr key={length} className="bg-gray-800">
-                    <td className="border border-gray-300 p-2 text-center text-white">{length}</td>
+                    <td className="border border-gray-300 p-2 text-center text-white">
+                      {rowData?.length || length}
+                    </td>
                     <td className="border border-gray-300 p-2 text-center text-white">
                       {rowData?.spm_at_fa1 || "#N/A"}
                     </td>

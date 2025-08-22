@@ -2,7 +2,8 @@
 Roll Str Backbend Calculation Module
 
 """
-from models import roll_str_backbend_input
+from models import roll_str_backbend_input, hidden_const_input
+from calculations.rolls.hidden_const import calculate_hidden_const
 from math import sqrt
 
 from utils.shared import (
@@ -51,7 +52,6 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
         return "ERROR: Invalid number of rolls for backbend."
 
     # Values needed for calculations
-    main_value = roll_str_backbend_state["calc_const"]
     creep_factor = CREEP_FACTOR
     radius_off_coil = RADIUS_OFF_COIL
     curve_at_yield = 2 * data.yield_strength / (data.thickness * modules)
@@ -67,9 +67,12 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
 
     one_radius_off_coil = 1 / radius_off_coil_after_springback
 
-    if data.calc_const is not None:
-        roll_str_backbend_state["calc_const"] = data.calc_const
-        main_value = data.calc_const
+    hidden_input = hidden_const_input(
+        center_distance = center_dist,
+        radius_at_yield = radius_at_yield,
+        thickness = data.thickness      
+    )
+    main_value = calculate_hidden_const(hidden_input)
 
     # Max Roller Depth with material
     check = ((str_roll_dia + data.thickness) ** 2) - ((center_dist / 2) ** 2)

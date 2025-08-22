@@ -96,7 +96,12 @@ class roll_str_backbend_input(BaseModel):
     material_type: str
     str_model: str
     num_str_rolls: int
-    calc_const: Optional[float]
+
+# Hidden Constant Calculation for Roll Str Backbend
+class hidden_const_input(BaseModel):
+    center_distance: float
+    radius_at_yield: float
+    thickness: float
 
 ##################################################
 # Physics Calculation Models

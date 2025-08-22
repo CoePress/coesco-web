@@ -61,7 +61,7 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
     Calculate shorter values based on the initial values and input data.
     """
     # Calculate shorter values
-    if index == 1:
+    if index is 1:
         length = data.min_length
     else:
         length = data.min_length + (data.increment * (index - 1))
@@ -141,8 +141,8 @@ def calculate_feed_time(data: time_input, feed_angle: int = 0):
         "rms_torque": min_values["rms_torque"]
     }]
 
-    for i in range(2, 22):
-        values = calculate_values(data, init_values, data.feed_angle_1, i)
+    for i in range(2, 24):
+        values = calculate_values(data, init_values, feed_angle, i)
         lengths.append({
             "index": i,
             "length": values["length"],

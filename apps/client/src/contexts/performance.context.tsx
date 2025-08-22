@@ -150,8 +150,8 @@ export interface RFQData {
     latestDeliveryDate?: string;
   };
   coil?: {
-    slitEdge?: string;
-    millEdge?: string;
+    slitEdge?: boolean;
+    millEdge?: boolean;
     requireCoilCar?: string;
     runningOffBackplate?: string;
     requireRewinding?: string;
@@ -162,13 +162,13 @@ export interface RFQData {
   runningCosmeticMaterial?: string;
   brandOfFeed?: string;
   press?: {
-    gapFramePress?: string;
-    hydraulicPress?: string;
-    obi?: string;
-    servoPress?: string;
-    shearDieApplication?: string;
-    straightSidePress?: string;
-    other?: string;
+    gapFramePress?: boolean;
+    hydraulicPress?: boolean;
+    obi?: boolean;
+    servoPress?: boolean;
+    shearDieApplication?: boolean;
+    straightSidePress?: boolean;
+    other?: boolean;
     tonnageOfPress?: string;
     strokeLength?: string;
     maxSPM?: string;
@@ -177,9 +177,9 @@ export interface RFQData {
     cycleTime?: string;
   };
   dies?: {
-    transferDies?: string;
-    progressiveDies?: string;
-    blankingDies?: string;
+    transferDies?: boolean;
+    progressiveDies?: boolean;
+    blankingDies?: boolean;
   };
   voltageRequired?: number;
   equipmentSpaceLength?: number;
@@ -454,7 +454,6 @@ export interface RollStrBackbendData {
         withMaterial?: number;
       };
       backbend?: {
-        hiddenValue?: number;
         yieldMet?: string; // Calculated
         requiredRollDiameter?: number;
         radius?: {
@@ -535,7 +534,7 @@ export interface FeedData {
       straightenerRolls?: number;
       centerDistance?: number;
       yieldStrength?: number;
-      pinchRolls?: string;
+      pinchRolls?: number;
       kConst?: number;
       straightenerTorque?: number;
       payoffMaxSpeed?: number;
@@ -729,8 +728,8 @@ const initialPerformanceData: PerformanceData = {
       latestDeliveryDate: "",
     },
     coil: {
-      slitEdge: "",
-      millEdge: "",
+      slitEdge: false,
+      millEdge: false,
       requireCoilCar: "",
       runningOffBackplate: "",
       requireRewinding: "",
@@ -741,13 +740,13 @@ const initialPerformanceData: PerformanceData = {
     runningCosmeticMaterial: "",
     brandOfFeed: "",
     press: {
-      gapFramePress: "",
-      hydraulicPress: "",
-      obi: "",
-      servoPress: "",
-      shearDieApplication: "",
-      straightSidePress: "",
-      other: "",
+      gapFramePress: false,
+      hydraulicPress: false,
+      obi: false,
+      servoPress: false,
+      shearDieApplication: false,
+      straightSidePress: false,
+      other: false,
       tonnageOfPress: "",
       strokeLength: "",
       maxSPM: "",
@@ -756,9 +755,9 @@ const initialPerformanceData: PerformanceData = {
       cycleTime: "",
     },
     dies: {
-      transferDies: "",
-      progressiveDies: "",
-      blankingDies: "",
+      transferDies: false,
+      progressiveDies: false,
+      blankingDies: false,
     },
     voltageRequired: 0,
     equipmentSpaceLength: 0,
@@ -1016,7 +1015,6 @@ const initialPerformanceData: PerformanceData = {
           withMaterial: 0,
         },
         backbend: {
-          hiddenValue: 0,
           yieldMet: "",
           requiredRollDiameter: 0,
           radius: {
@@ -1139,7 +1137,7 @@ const initialPerformanceData: PerformanceData = {
         straightenerRolls: 0,
         centerDistance: 0,
         yieldStrength: 0,
-        pinchRolls: "",
+        pinchRolls: 0,
         kConst: 0,
         straightenerTorque: 0,
         payoffMaxSpeed: 0,

@@ -238,7 +238,6 @@ def main():
         "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
         "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
         "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
-        "calc_const": parse_int_with_default(data, ["rollStrBackbend", "straightener", "rolls", "backbend", "hiddenValue"], "straightener", "calc_const"), 
     }
     roll_str_backbend_obj = roll_str_backbend_input(**roll_str_backbend_data)
     roll_str_backbend_result = calculate_roll_str_backbend(roll_str_backbend_obj)
