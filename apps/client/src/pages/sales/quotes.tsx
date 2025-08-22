@@ -267,7 +267,7 @@ const Quotes = () => {
             setSort(newSort as "createdAt" | "updatedAt");
             setOrder(newOrder as "asc" | "desc");
           }}
-          className="bg-foreground rounded border overflow-clip"
+          className="rounded border overflow-clip"
         />
       </div>
 

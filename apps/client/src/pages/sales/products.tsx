@@ -1,4 +1,4 @@
-import { PackageIcon, DollarSignIcon, TrendingUpIcon, BarChart3Icon, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -6,7 +6,6 @@ import { Button, PageHeader, StatusBadge, Table, Select } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 const Products = () => {
   const [productType, setProductType] = useState<'machines' | 'parts' | 'services'>('machines');
@@ -76,37 +75,6 @@ const Products = () => {
     }))
   }
 
-  const kpis = [
-    {
-      title: "Total Products",
-      value: "2,847",
-      description: "Active catalog items",
-      icon: <PackageIcon size={16} />,
-      change: 12.5,
-    },
-    {
-      title: "Total Value",
-      value: formatCurrency(1250000, false),
-      description: "Inventory value",
-      icon: <DollarSignIcon size={16} />,
-      change: 8.2,
-    },
-    {
-      title: "Low Stock Items",
-      value: "23",
-      description: "Need reordering",
-      icon: <TrendingUpIcon size={16} />,
-      change: -15.3,
-    },
-    {
-      title: "Categories",
-      value: "12",
-      description: "Product categories",
-      icon: <BarChart3Icon size={16} />,
-      change: 0,
-    },
-  ];
-
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
@@ -120,16 +88,8 @@ const Products = () => {
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">
-        {/* <Metrics>
-          {kpis.map((metric, idx) => (
-            <MetricsCard key={idx} {...metric} />
-          ))}
-        </Metrics> */}
-
         <div className="grid grid-cols-4 gap-2 flex-1">
-          {/* Filter Sidebar */}
-          <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border h-fit">
-            {/* Product Type Toggle */}
+          <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border h-full overflow-y-auto">
             <div className="flex gap-1 mb-2 bg-surface p-1 rounded">
               <button
                 onClick={() => setProductType('machines')}
@@ -163,7 +123,6 @@ const Products = () => {
               </button>
             </div>
 
-            {/* Search Input */}
             <div className="relative mb-2">
               <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-text-muted" />
@@ -253,7 +212,6 @@ const Products = () => {
             </div>
           </div>
 
-          {/* Main Content Area */}
           <div className="col-span-3">
             <Table
               columns={columns}
@@ -264,7 +222,7 @@ const Products = () => {
               currentPage={pagination?.page || 1}
               totalPages={pagination?.totalPages || 1}
               onPageChange={() => {}}
-              className="bg-foreground rounded border overflow-clip"
+              className="rounded border overflow-clip"
               loading={loading}
               emptyMessage="No products found"
             />
