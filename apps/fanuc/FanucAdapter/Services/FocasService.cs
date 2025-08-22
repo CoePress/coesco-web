@@ -25,7 +25,7 @@ public class FocasService
             m.Slug, m.Ip, m.Port,
             m.Connection, m.Status, m.Mode,
             m.ProgramName, m.SpindleSpeed,
-            m.Handle, m.LastSeen, m.ConsecutiveFailures
+            m.LastSeen, m.ConsecutiveFailures
         }).ToList();
     }
 
@@ -77,160 +77,80 @@ public class FocasService
 
     private async Task Loop(CancellationToken ct)
     {
-        // Initial connection to all machines
-        foreach (var m in _machines.Values)
-        {
-            Console.WriteLine($"[STARTUP] Connecting to {m.Slug} at {m.Ip}:{m.Port}");
-            var rc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var handle);
-            if (rc == 0)
-            {
-                m.Handle = handle;
-                m.Connection = "CONNECTED";
-                m.LastSeen = DateTime.UtcNow;
-                m.HandleCreatedAt = DateTime.UtcNow;
-                Console.WriteLine($"[STARTUP] {m.Slug} connected with handle={handle}");
-            }
-            else
-            {
-                Console.WriteLine($"[STARTUP] {m.Slug} connection failed: {rc}");
-                m.Connection = "DISCONNECTED";
-            }
-        }
+        Console.WriteLine("[STARTUP] Using connect-read-disconnect strategy");
         
         while (!ct.IsCancellationRequested)
         {
             foreach (var m in _machines.Values)
             {
-                if (m.Handle is ushort h)
+                try
                 {
-                    try
+                    // Connect fresh every time
+                    var rc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var handle);
+                    if (rc == 0)
                     {
-                        // Refresh handle every 30 seconds to prevent stale connections
-                        if ((DateTime.UtcNow - m.HandleCreatedAt).TotalSeconds > 30)
-                        {
-                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [INFO] Refreshing handle for {m.Slug} (handle age: {(DateTime.UtcNow - m.HandleCreatedAt).TotalSeconds:F0}s)");
-                            Focas.cnc_freelibhndl(h);
-                            
-                            var refreshRc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var newHandle);
-                            if (refreshRc == 0)
-                            {
-                                m.Handle = newHandle;
-                                m.HandleCreatedAt = DateTime.UtcNow;
-                                h = newHandle;
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [INFO] Handle refreshed: {newHandle}");
-                            }
-                        }
-                        
-                        // Simple read - just get the data without reconnecting
+                        // Read all data quickly
                         var stat = new ODBST();
-                        var rc = Focas.cnc_statinfo(h, stat);
+                        var statRc = Focas.cnc_statinfo(handle, stat);
                         
-                        if (rc == 0)
+                        if (statRc == 0)
                         {
-                            // Success - update data
                             m.Connection = "CONNECTED";
                             m.Status = StatusNumberToString(stat.run);
                             m.Mode = ModeNumberToString(stat.aut);
                             var previousLastSeen = m.LastSeen;
                             m.LastSeen = DateTime.UtcNow;
+                            
+                            // Reset failures on success
+                            if (m.ConsecutiveFailures > 0)
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [INFO] {m.Slug} recovered after {m.ConsecutiveFailures} failures");
+                            }
                             m.ConsecutiveFailures = 0;
                             
-                            // Log successful reads periodically
-                            if ((DateTime.UtcNow - previousLastSeen).TotalSeconds > 5)
+                            // Log periodically to confirm it's working
+                            if ((DateTime.UtcNow - previousLastSeen).TotalSeconds > 30)
                             {
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [OK] Reading successfully from {m.Slug} - Status={m.Status}, Mode={m.Mode}");
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [OK] {m.Slug} - Status={m.Status}, Mode={m.Mode}, Program={m.ProgramName}");
                             }
                             
                             // Get spindle speed
-                            var spindleRc = Focas.cnc_acts(h, out var act);
+                            var spindleRc = Focas.cnc_acts(handle, out var act);
                             if (spindleRc == 0)
                                 m.SpindleSpeed = act.data;
                             
                             // Get program number
-                            var prgNumRc = Focas.cnc_rdprgnum(h, out var prgNum);
+                            var prgNumRc = Focas.cnc_rdprgnum(handle, out var prgNum);
                             if (prgNumRc == 0)
                                 m.ProgramName = $"O{prgNum.data}";
                         }
-                        else if (rc == -8 || rc == -16)
-                        {
-                            m.ConsecutiveFailures++;
-                            
-                            // Only reconnect after multiple failures or timeout
-                            if (m.ConsecutiveFailures >= 3 || (DateTime.Now - m.LastSeen).TotalSeconds > 10)
-                            {
-                                // Connection lost - try to reconnect
-                                var now = DateTime.Now;
-                                Console.WriteLine($"[{now:HH:mm:ss.fff}] [WARN] Lost connection to {m.Slug} (rc={rc}, failures={m.ConsecutiveFailures}), reconnecting...");
-                                Console.WriteLine($"  Last successful read was {(now - m.LastSeen).TotalSeconds:F1} seconds ago");
-                                Focas.cnc_freelibhndl(h);
-                                m.Handle = null;
-                                
-                                // Wait a bit before reconnecting
-                                await Task.Delay(500);
-                                
-                                var reconnectRc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var newHandle);
-                                if (reconnectRc == 0)
-                                {
-                                    m.Handle = newHandle;
-                                    m.HandleCreatedAt = DateTime.UtcNow;
-                                    m.Connection = "CONNECTED";
-                                    m.ConsecutiveFailures = 0;
-                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [INFO] Reconnected to {m.Slug} with handle={newHandle}");
-                                    
-                                    // Try to read immediately with new handle to verify it works
-                                    var testStat = new ODBST();
-                                    var testRc = Focas.cnc_statinfo(newHandle, testStat);
-                                    Console.WriteLine($"  Test read with new handle: rc={testRc}");
-                                    
-                                    if (testRc == 0)
-                                    {
-                                        // Update data from test read
-                                        m.Status = StatusNumberToString(testStat.run);
-                                        m.Mode = ModeNumberToString(testStat.aut);
-                                        m.LastSeen = DateTime.UtcNow;
-                                        Console.WriteLine($"  Test read data: Status={m.Status}, Mode={m.Mode}");
-                                    }
-                                }
-                                else
-                                {
-                                    m.Connection = "DISCONNECTED";
-                                }
-                            }
-                            else
-                            {
-                                // Just log the error but keep trying with same handle
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [WARN] Read failed for {m.Slug} (rc={rc}), attempt {m.ConsecutiveFailures}/3");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ERROR] Exception polling {m.Slug}: {ex.Message}");
-                        m.Connection = "ERROR";
-                    }
-                }
-                else
-                {
-                    // Not connected - try to connect
-                    if (m.ConsecutiveFailures < 10) // Don't spam connection attempts
-                    {
-                        var rc = Focas.cnc_allclibhndl3(m.Ip, m.Port, 10, out var handle);
-                        if (rc == 0)
-                        {
-                            m.Handle = handle;
-                            m.Connection = "CONNECTED";
-                            m.ConsecutiveFailures = 0;
-                            Console.WriteLine($"[INFO] Connected to {m.Slug} with handle={handle}");
-                        }
                         else
                         {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [ERROR] Read failed for {m.Slug}: rc={statRc}");
+                            m.Connection = "READ_ERROR";
                             m.ConsecutiveFailures++;
                         }
+                        
+                        // ALWAYS disconnect immediately
+                        Focas.cnc_freelibhndl(handle);
+                    }
+                    else
+                    {
+                        // Log first failure and then every 10th
+                        if (m.ConsecutiveFailures == 0 || m.ConsecutiveFailures % 10 == 0)
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [ERROR] Connect failed for {m.Slug}: rc={rc} ({GetErrorDescription((short)rc)})");
+                        m.Connection = "DISCONNECTED";
+                        m.ConsecutiveFailures++;
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Exception polling {m.Slug}: {ex.Message}");
+                    m.Connection = "ERROR";
+                }
             }
-            // Try polling every 2 seconds instead of 1
-            await Task.Delay(TimeSpan.FromSeconds(2), ct);
+            
+            await Task.Delay(TimeSpan.FromSeconds(1), ct);
         }
     }
 
