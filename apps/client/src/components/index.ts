@@ -13,6 +13,8 @@ export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";
 
 
 // Feature
+export { default as Toolbar } from "./feature/toolbar";
+export type { Filter, FilterOption } from "./feature/toolbar";
 
 // Forms
 export { default as LoginForm } from "./forms/login-form";

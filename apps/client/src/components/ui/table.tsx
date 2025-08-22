@@ -71,10 +71,10 @@ const Table = <T extends Record<string, any>>({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className={`flex-1 flex flex-col h-full ${className}`}>
       <div className="flex-1 overflow-auto">
         <table
-          className={`min-w-full divide-y divide-border text-text-muted text-sm ${className}`}>
+          className="min-w-full divide-y divide-border text-text-muted text-sm">
           <thead className="bg-foreground">
             <tr>
               {selectable && (
@@ -156,7 +156,7 @@ const Table = <T extends Record<string, any>>({
       </div>
 
       {pagination && (
-        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full rounded-b-lg">
+        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
             Showing{" "}
             <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}
