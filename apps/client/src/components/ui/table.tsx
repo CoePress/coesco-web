@@ -78,7 +78,9 @@ const Table = <T extends Record<string, any>>({
     <div className={`flex-1 flex flex-col h-full ${className}`}>
       <div className="flex-1 overflow-auto relative">
         <table
-          className="min-w-full h-full divide-y divide-border text-text-muted text-sm">
+          className={`min-w-full divide-y divide-border text-text-muted text-sm ${
+            !loading && data.length === 0 ? 'h-full' : ''
+          }`}>
           <thead className="bg-foreground">
             <tr>
               {selectable && (
@@ -117,7 +119,7 @@ const Table = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-foreground divide-y divide-border relative">
+          <tbody className="divide-y divide-border relative">
             {loading ? (
               <tr>
                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
@@ -140,7 +142,7 @@ const Table = <T extends Record<string, any>>({
                 return (
                   <tr
                     key={String(row[idField])}
-                    className={`hover:bg-surface ${
+                    className={`hover:bg-surface bg-foreground ${
                       onRowClick ? "cursor-pointer" : ""
                     }`}
                     onClick={() => onRowClick?.(row)}>
