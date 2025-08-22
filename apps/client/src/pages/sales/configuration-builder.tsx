@@ -390,12 +390,8 @@ const ConfigurationBuilder = () => {
     Record<string, number>
   >({});
 
-  const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/configurations/product-classes");
-
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
-    "/configurations/rules"
-  );
+  const { entities: productClasses, loading: productClassesLoading } = useGetEntities("/catalog/product-classes");
+  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities("/catalog/option-rules");
 
   const selectedProductClass =
     productClassSelections.length > 0
