@@ -1,10 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { quoteService } from "@/services/repository";
+
 export class QuoteController {
   // Quotes
   async createQuote(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = "";
+      const result = quoteService.create(req.body);
       res.status(200).json(result);
     }
     catch (error) {

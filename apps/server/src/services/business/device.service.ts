@@ -131,7 +131,7 @@ export class DeviceService {
   }
 
   // Monitoring Control
-  async startMonitoring(): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.isMonitoring)
       return;
 
@@ -141,7 +141,7 @@ export class DeviceService {
     }, 10000);
   }
 
-  async stopMonitoring(): Promise<void> {
+  async shutdown(): Promise<void> {
     if (!this.isMonitoring)
       return;
 
@@ -152,9 +152,9 @@ export class DeviceService {
     }
   }
 
-  async reloadMonitoring(): Promise<void> {
+  async reload(): Promise<void> {
     logger.info("Reloading device monitoring...");
-    await this.stopMonitoring();
-    await this.startMonitoring();
+    await this.shutdown();
+    await this.initialize();
   }
 }

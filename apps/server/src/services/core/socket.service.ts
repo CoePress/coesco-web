@@ -7,7 +7,7 @@ import { agentService } from ".";
 export class SocketService {
   private io: Server | null = null;
 
-  initialize(io: Server): void {
+  async initialize(io: Server): Promise<void> {
     this.io = io;
     if (!this.io) {
       throw new Error("Socket.IO instance not set");
