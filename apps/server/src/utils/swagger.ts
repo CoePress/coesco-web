@@ -8,7 +8,7 @@ const doc = {
     title: "Coesco API",
     description: "Description",
   },
-  host: "localhost:8080",
+  host: "localhost:8080/api",
   tags: [
     { name: "Admin", description: "" },
     { name: "Auth", description: "" },

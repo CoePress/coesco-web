@@ -59,7 +59,7 @@ export class AuthController {
 
   async session(req: Request, res: Response, next: NextFunction) {
     try {
-      const accessToken = req.cookies?.accessToken ?? null;
+      const { accessToken } = req.cookies;
       const result = await authService.session(accessToken);
       res.status(200).json(result);
     }
