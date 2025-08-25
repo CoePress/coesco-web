@@ -16,12 +16,25 @@ export class SocketService {
     this.registerIotNamespace();
     this.registerMetricsNamespace();
     this.registerChatNamespace();
+    this.registerSystemNamespace();
   }
 
   public broadcastMachineStates(data: any): void {
     if (!this.io)
       return;
     this.io.of("/iot").to("machine_states").emit("machine_states", data);
+  }
+
+  public broadcastSystemHealth(data: any): void {
+    if (!this.io)
+      return;
+    this.io.of("/system").to("health").emit("health", data);
+  }
+
+  public broadcastSystemUpdate(data: any): void {
+    if (!this.io)
+      return;
+    this.io.of("/system").to("updates").emit("update", data);
   }
 
   private registerIotNamespace() {
@@ -97,6 +110,42 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] Chat client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private registerSystemNamespace() {
+    const system = this.getNamespace("system");
+
+    system.on("connection", (socket: Socket) => {
+      logger.info(`System client connected: ${socket.id}`);
+
+      socket.on("health:subscribe", () => {
+        socket.join("health");
+        socket.emit("health:subscribed");
+        logger.info(`[${socket.id}] subscribed to system health`);
+      });
+
+      socket.on("health:unsubscribe", () => {
+        socket.leave("health");
+        socket.emit("health:unsubscribed");
+        logger.info(`[${socket.id}] unsubscribed from system health`);
+      });
+
+      socket.on("updates:subscribe", () => {
+        socket.join("updates");
+        socket.emit("updates:subscribed");
+        logger.info(`[${socket.id}] subscribed to system updates`);
+      });
+
+      socket.on("updates:unsubscribe", () => {
+        socket.leave("updates");
+        socket.emit("updates:unsubscribed");
+        logger.info(`[${socket.id}] unsubscribed from system updates`);
+      });
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] System client disconnected: ${reason}`);
       });
     });
   }

@@ -369,6 +369,7 @@ const ProductionDashboard = () => {
       unsubscribeFromMachineStates();
     };
   }, []);
+  
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { overview, loading, error, refresh } = useGetOverview({

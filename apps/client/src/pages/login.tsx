@@ -1,6 +1,6 @@
 import { Button, Input, Card } from "@/components";
 import { AuthContext } from "@/contexts/auth.context";
-import useGetSystemStatus from "@/hooks/admin/use-get-system-status";
+import { useSocket } from "@/contexts/socket.context";
 import useLogin from "@/hooks/auth/use-login";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -47,17 +47,28 @@ const Login = () => {
   const { login, loading: loginLoading, error: loginError } = useLogin();
   const { user } = useContext(AuthContext)!;
   const navigate = useNavigate();
-  const { status, refetch: refetchHealth } = useGetSystemStatus({
-    enabled: true,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: false,
-  });
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get("error");
   const errorMessage = getErrorMessage(errorParam) || loginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const { isSystemConnected, subscribeToSystemStatus, unsubscribeFromSystemStatus } = useSocket();
+
+  useEffect(() => {
+    subscribeToSystemStatus();
+    
+    const retryInterval = setInterval(() => {
+      if (!isSystemConnected) {
+        subscribeToSystemStatus();
+      }
+    }, 3000);
+    
+    return () => {
+      clearInterval(retryInterval);
+      unsubscribeFromSystemStatus();
+    };
+  }, [isSystemConnected]);
 
   useEffect(() => {
     let mounted = true;
@@ -71,7 +82,7 @@ const Login = () => {
     };
   }, [user, navigate]);
 
-  const systemDown = status === "bad" || status === null;
+  const systemDown = !isSystemConnected;
 
   if (systemDown) {
     return (
@@ -82,12 +93,12 @@ const Login = () => {
             <div className="bg-destructive/10 border border-destructive/20 text-destructive p-2 rounded text-center">
               <p className="font-semibold mb-2">System Unavailable</p>
               <p className="text-sm mb-4">
-                Our services are currently down. Please try again later.
+                Our services are currently down. Attempting to reconnect...
               </p>
               <Button
                 variant="secondary-outline"
-                onClick={refetchHealth}
-                className="w-max mx-auto">
+                className="w-max mx-auto"
+                onClick={() => subscribeToSystemStatus()}>
                 Retry Connection
               </Button>
             </div>
