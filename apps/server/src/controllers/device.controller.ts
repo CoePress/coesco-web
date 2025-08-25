@@ -1,16 +1,16 @@
+import type { NtfyDevice } from "@prisma/client";
+import type { NextFunction, Request, Response } from "express";
+
 import { deviceService } from "@/services";
 import { ntfyDeviceService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
-import { NtfyDevice } from "@prisma/client";
-import { NextFunction, Request, Response } from "express";
 
 export class DeviceController {
-  
   //   // Devices
   async createDevice(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await ntfyDeviceService.create(req.body);
-      await deviceService.reloadMonitoring();
+      await deviceService.reload();
       res.status(200).json(result);
     }
     catch (error) {
@@ -42,7 +42,7 @@ export class DeviceController {
   async updateDevice(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await ntfyDeviceService.update(req.params.deviceId, req.body);
-      await deviceService.reloadMonitoring();
+      await deviceService.reload();
       res.status(200).json(result);
     }
     catch (error) {
@@ -53,7 +53,7 @@ export class DeviceController {
   async deleteDevice(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await ntfyDeviceService.delete(req.params.deviceId);
-      await deviceService.reloadMonitoring();
+      await deviceService.reload();
       res.status(200).json(result);
     }
     catch (error) {

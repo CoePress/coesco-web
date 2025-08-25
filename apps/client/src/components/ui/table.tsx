@@ -1,4 +1,4 @@
-import { Button } from "@/components";
+import { Button, Loader } from "@/components";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 export type TableColumn<T> = {
@@ -121,11 +121,10 @@ const Table = <T extends Record<string, any>>({
           </thead>
           <tbody className="divide-y divide-border relative">
             {loading ? (
-              <tr>
+               <tr>
                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                    <p className="text-text-muted">Loading...</p>
+                  <div className="flex items-center justify-center h-full">
+                    <Loader />
                   </div>
                 </td>
               </tr>
