@@ -1,8 +1,7 @@
 import type { Server, Socket } from "socket.io";
 
+import { agentService } from "@/services";
 import { logger } from "@/utils/logger";
-
-import { agentService } from ".";
 
 export class SocketService {
   private io: Server | null = null;

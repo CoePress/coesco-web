@@ -38,7 +38,7 @@ const commonQueryParams = [
   { name: "include", in: "query", type: "string", description: "JSON array of relations to include" },
 ];
 
-const outputFile = "./src/config/swagger-output.json";
+const outputFile = "./src/config/swagger.json";
 const routes = ["./src/routes/index.ts"];
 
 swaggerAutogen()(outputFile, routes, doc).then(() => {

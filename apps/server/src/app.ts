@@ -50,7 +50,7 @@ const limiter = rateLimit({
 });
 
 // eslint-disable-next-line node/prefer-global/process
-const swaggerPath = path.join(process.cwd(), "./src/config/swagger-output.json");
+const swaggerPath = path.join(process.cwd(), "./src/config/swagger.json");
 const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
 app.use("/api", limiter);

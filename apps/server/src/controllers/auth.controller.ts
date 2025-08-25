@@ -1,8 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { cookieOptions } from "@/config/env";
-
-import { authService } from "../services/core";
+import { authService } from "@/services";
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {

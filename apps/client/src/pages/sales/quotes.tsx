@@ -32,6 +32,7 @@ const Quotes = () => {
   } = useGetEntities("/quotes", {
     include,
   });
+  
   const { createEntity: createQuote, loading: createLoading } =
     useCreateEntity("/quotes");
 

@@ -11,7 +11,7 @@ import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
-import { cacheService, socketService } from "../core";
+import { cacheService, socketService } from "../";
 import { machineService, machineStatusService } from "../repository";
 
 interface CachedMachineState {
@@ -80,14 +80,11 @@ export class MachineMonitorService {
 
   async initialize() {
     if (this.isInitialized && this.isStarted) {
-      logger.debug("Machine monitor already initialized and started");
+      logger.debug("Machine monitor initialized");
       return;
     }
 
     try {
-      logger.info("Initializing and starting machine monitor");
-
-      // Initialize machine states
       const machines = await machineService.getAll();
 
       if (!machines?.data) {
@@ -129,7 +126,6 @@ export class MachineMonitorService {
         }
       }
 
-      // Start polling
       if (this.pollInterval) {
         clearInterval(this.pollInterval);
       }
@@ -137,10 +133,10 @@ export class MachineMonitorService {
 
       this.isInitialized = true;
       this.isStarted = true;
-      logger.info("Machine monitor initialized and started successfully");
+      logger.info("Machine monitor initialized");
     }
     catch (error) {
-      logger.error("Failed to initialize and start machine monitor:", error);
+      logger.error("Failed to initialize machine monitor:", error);
       throw error;
     }
   }
