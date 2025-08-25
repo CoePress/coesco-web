@@ -54,7 +54,7 @@ const swaggerPath = path.join(process.cwd(), "./src/config/swagger-output.json")
 const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
 app.use("/api", limiter);
-app.use(morgan("combined", { stream }));
+app.use(morgan("dev", { stream }));
 
 app.use(helmet());
 app.use(compression());
