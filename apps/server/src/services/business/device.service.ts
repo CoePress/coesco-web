@@ -1,3 +1,5 @@
+import type { NtfyDevice } from "@prisma/client";
+
 import axios from "axios";
 import ping from "ping";
 
@@ -48,7 +50,7 @@ export class DeviceService {
     if (!devices.success)
       return;
 
-    const promises = devices.data.map(async (device) => {
+    const promises = devices.data.map(async (device: NtfyDevice) => {
       const success = await this.pingDevice(device.id);
       if (success) {
         await this.handlePingSuccess(device.id);

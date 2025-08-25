@@ -1,3 +1,5 @@
+import type { Machine } from "@prisma/client";
+
 import { MachineConnectionType, MachineState, TimeScale } from "@prisma/client";
 import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
@@ -306,7 +308,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
-    const m = machines.data.map((machine) => {
+    const m = machines.data.map((machine: Machine) => {
       return {
         id: machine.id,
         name: machine.name,

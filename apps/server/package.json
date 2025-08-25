@@ -9,12 +9,14 @@
   "main": "server.js",
   "scripts": {
     "swagger": "tsx src/utils/swagger.ts",
-    "generate": "tsx src/scripts/service-generator.ts",
+    "generate": "tsx src/scripts/service-generator.ts && npm run lint:fix",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
     "db:generate": "prisma generate",
     "db:reset": "prisma db push --force-reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:prod": "node dist/prisma/seed.js",
-    "db:fresh": "npm run generate && npm run db:generate && npm run db:reset && npm run db:seed",
+    "db:fresh": "npm run generate && npm run db:generate && npm run db:reset && npm run db:seed && npm run lint:fix",
     "dev": "nodemon src/server.ts",
     "build": "npm run db:generate && tsc && tsc-alias",
     "start": "npm run build && node dist/src/server.js"

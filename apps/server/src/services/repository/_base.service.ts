@@ -79,6 +79,8 @@ export class BaseService<T> {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
+    await this.validate(payload);
+
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
       const created = await model.create({ data: payload });
@@ -93,8 +95,6 @@ export class BaseService<T> {
   async update(id: string, data: any, tx?: Prisma.TransactionClient) {
     const meta = await this.getMetaFields({ for: "update", timestamps: true });
     const payload = { ...data, ...meta };
-
-    this.validate({ id, ...data });
 
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
@@ -303,7 +303,8 @@ export class BaseService<T> {
   }
 
   // Protected Methods
-  protected validate(_data: any) {
+  protected async validate(_data: any): Promise<void> {
+    // Override in child classes for validation
   }
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {

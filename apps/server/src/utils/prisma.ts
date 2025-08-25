@@ -43,10 +43,17 @@ function buildNestedInclude(paths: string[]) {
     let current = result;
     parts.forEach((part, index) => {
       if (index === parts.length - 1) {
-        current[part] = true;
+        if (!current[part] || current[part] === true) {
+          current[part] = true;
+        }
       }
       else {
-        current[part] ??= { include: {} };
+        if (current[part] === true) {
+          current[part] = { include: {} };
+        }
+        else if (!current[part]) {
+          current[part] = { include: {} };
+        }
         current = current[part].include;
       }
     });
