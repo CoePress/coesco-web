@@ -1,9 +1,8 @@
 import { Prisma } from "@prisma/client";
 
-import type { IQueryParams, IServiceResult } from "@/types";
+import type { IQueryParams } from "@/types";
 
-import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
-import { deriveTableNames } from "@/utils";
+import { deriveTableNames, getObjectDiff } from "@/utils";
 import { getEmployeeContext } from "@/utils/context";
 import { buildQuery, prisma } from "@/utils/prisma";
 
@@ -13,230 +12,301 @@ export class BaseService<T> {
   protected model: any;
   protected entityName?: string;
   protected modelName?: string;
+  protected _columns?: string[];
 
+  async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
+    const searchFields = this.getSearchFields();
+    const { query, finalWhere, page, take } = await this.buildQueryParams(
+      params,
+      searchFields,
+    );
+
+    const client = tx ?? this.model;
+
+    const [items, total] = await Promise.all([
+      client.findMany(query),
+      client.count({ where: finalWhere }),
+    ]);
+
+    const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
+
+    return {
+      success: true,
+      data: items,
+      meta: {
+        page,
+        limit: take,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  async getById(id: string, tx?: Prisma.TransactionClient) {
+    const scope = await this.getScope();
+    const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
+
+    const item = await model.findFirst({
+      where: {
+        AND: [{ id }, scope ?? {}],
+      },
+    });
+
+    return {
+      success: true,
+      data: item,
+    };
+  }
+
+  async getHistory(id: string) {
+    if (!this.modelName)
+      throw new Error("Missing model name");
+
+    const entries = await prisma.auditLog.findMany({
+      where: { model: this.modelName, recordId: id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return entries.map(entry => ({
+      action: entry.action,
+      actor: { id: entry.changedBy },
+      timestamp: entry.createdAt,
+      diff: entry.diff as Record<string, { before: any; after: any }>,
+    }));
+  }
+
+  async create(data: any, tx?: Prisma.TransactionClient) {
+    const meta = await this.getMetaFields({ for: "create", timestamps: true });
+    const payload = { ...data, ...meta };
+
+    const execute = async (client: Prisma.TransactionClient) => {
+      const model = (client as any)[this.modelName!];
+      const created = await model.create({ data: payload });
+      await this.log("CREATE", undefined, created, client);
+      return created;
+    };
+
+    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+    return { success: true, data: result };
+  }
+
+  async update(id: string, data: any, tx?: Prisma.TransactionClient) {
+    const meta = await this.getMetaFields({ for: "update", timestamps: true });
+    const payload = { ...data, ...meta };
+
+    this.validate({ id, ...data });
+
+    const execute = async (client: Prisma.TransactionClient) => {
+      const model = (client as any)[this.modelName!];
+
+      const scope = await this.getScope();
+      const where = { AND: [{ id }, scope ?? {}] };
+      const before = await model.findFirst({ where });
+
+      if (!before) {
+        throw new Error(`Cannot update: ${this.modelName} ${id} not found`);
+      }
+
+      const diff = getObjectDiff(before, { ...before, ...payload });
+      delete diff.updatedAt;
+
+      if (Object.keys(diff).length === 0) {
+        throw new Error(`${this.modelName} ${id} update made no changes`);
+      }
+
+      const updated = await model.update({
+        where: { id },
+        data: payload,
+      });
+
+      await this.log("UPDATE", before, updated, client);
+      return updated;
+    };
+
+    const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+    return { success: true, data: result };
+  }
+
+  async delete(id: string, tx?: Prisma.TransactionClient) {
+    const meta = await this.getMetaFields({
+      for: "delete",
+      timestamps: true,
+      softDelete: true,
+    });
+
+    const execute = async (client: Prisma.TransactionClient) => {
+      const model = (client as any)[this.modelName!];
+
+      const scope = await this.getScope();
+      const where = { AND: [{ id }, scope ?? {}] };
+      const before = await model.findFirst({ where });
+
+      if (!before) {
+        throw new Error(`Cannot delete: ${this.modelName} ${id} not found`);
+      }
+
+      const deleted = await model.update({
+        where: { id },
+        data: meta,
+      });
+
+      await this.log("DELETE", before, deleted, client);
+      return deleted;
+    };
+
+    if (tx) {
+      await execute(tx);
+    }
+    else {
+      await prisma.$transaction(execute);
+    }
+    return { success: true };
+  }
+
+  // Private Methods
   private async getColumns(): Promise<string[]> {
+    if (this._columns)
+      return this._columns;
     if (!this.modelName)
       return [];
 
     if (columnCache.has(this.modelName)) {
-      return columnCache.get(this.modelName)!;
+      this._columns = columnCache.get(this.modelName)!;
+      return this._columns;
     }
 
     const tables = deriveTableNames(this.modelName);
     const rows = await prisma.$queryRaw<Array<{ column_name: string }>>`
       SELECT column_name
-      FROM   information_schema.columns
-      WHERE  table_schema = 'public'
-        AND  table_name   IN (${Prisma.join(tables)})
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name IN (${Prisma.join(tables)})
     `;
 
     const cols = rows.map(r => r.column_name);
     columnCache.set(this.modelName, cols);
+    this._columns = cols;
     return cols;
   }
 
-  private async withAuditCols(payload: any) {
-    const cols = await this.getColumns();
-    const employee = getEmployeeContext();
+  private async getScope(
+    columns?: string[],
+  ): Promise<Record<string, any> | undefined> {
+    const ctx = getEmployeeContext();
+    const cols = columns ?? (await this.getColumns());
 
-    if (cols.includes("createdById") && !payload.createdById) {
-      payload.createdById = employee.id;
+    const scope: Record<string, any>[] = [];
+
+    if (cols.includes("ownerId")) {
+      scope.push({ OR: [{ ownerId: null }, { ownerId: ctx.id }] });
     }
-    if (cols.includes("updatedById") && !payload.updatedById) {
-      payload.updatedById = employee.id;
+
+    if (cols.includes("deletedAt")) {
+      scope.push({ deletedAt: null });
     }
-    return payload;
+
+    return scope.length ? { AND: scope } : undefined;
   }
 
-  async getAll(
+  private async getMetaFields(opts: {
+    for: "create" | "update" | "delete";
+    timestamps?: boolean;
+    softDelete?: boolean;
+  }) {
+    const ctx = getEmployeeContext();
+    const columns = await this.getColumns();
+    const meta: Record<string, any> = {};
+    const now = new Date();
+
+    if (opts.for === "create") {
+      if (columns.includes("createdById"))
+        meta.createdById = ctx.id;
+      if (opts.timestamps && columns.includes("createdAt"))
+        meta.createdAt = now;
+    }
+
+    if (["create", "update"].includes(opts.for)) {
+      if (columns.includes("updatedById"))
+        meta.updatedById = ctx.id;
+      if (opts.timestamps && columns.includes("updatedAt"))
+        meta.updatedAt = now;
+    }
+
+    if (opts.for === "delete") {
+      if (opts.softDelete && columns.includes("deletedAt"))
+        meta.deletedAt = now;
+      if (columns.includes("deletedById"))
+        meta.deletedById = ctx.id;
+    }
+
+    return meta;
+  }
+
+  private async buildQueryParams(
     params?: IQueryParams<T>,
-    tx?: Prisma.TransactionClient,
-  ): Promise<IServiceResult<T[]>> {
-    try {
-      const { where, orderBy, page, take, skip, select, include } = buildQuery(
-        params ?? {},
-        params?.searchFields?.map(String) ?? [],
-      );
+    searchFields?: (string | { field: string; weight: number })[],
+  ): Promise<any> {
+    const { where, orderBy, page, take, skip, select, include } = buildQuery(
+      params ?? {},
+      searchFields,
+    );
+    const columns = await this.getColumns();
+    const scope = await this.getScope(columns);
 
-      const query = { where, orderBy, take, skip } as any;
-      if (select)
-        query.select = select;
-      else if (include)
-        query.include = include;
+    const finalWhere = { AND: [where ?? {}, scope ?? {}] };
 
-      const [items, total] = await Promise.all([
-        (tx ?? this.model).findMany(query),
-        (tx ?? this.model).count({ where }),
-      ]);
+    const query: any = {
+      where: finalWhere,
+      orderBy,
+      take,
+      skip,
+    };
 
-      return {
-        success: true,
-        data: items,
-        meta: {
-          page,
-          limit: take,
-          total,
-          totalPages: take ? Math.ceil(total / (take || 1)) : 1,
-        },
-      };
-    }
-    catch (err: any) {
-      console.error(`Error in ${this.entityName}.getAll:`, err);
-      throw new BadRequestError(
-        `Failed to fetch ${this.entityName} list: ${err.message}`,
-      );
-    }
+    if (select)
+      query.select = select;
+    else if (include)
+      query.include = include;
+
+    return { query, finalWhere, page, take };
   }
 
-  async getById(
-    id: string,
+  private async log(
+    action: "CREATE" | "UPDATE" | "DELETE",
+    before?: Record<string, any>,
+    after?: Record<string, any>,
     tx?: Prisma.TransactionClient,
-    include?: any,
-    throwError = false,
-  ): Promise<IServiceResult<T>> {
-    try {
-      const query = { where: { id }, ...(include ? { include } : {}) } as any;
-      const entity = await (tx ?? this.model).findUnique(query);
+  ) {
+    if (this.modelName === "auditLog")
+      return;
 
-      if (!entity)
-        throw new NotFoundError(`${this.entityName} with id ${id} not found`);
-      return { success: true, data: entity };
-    }
-    catch (err: any) {
-      if (throwError)
-        throw err;
-      return { success: false, data: null as any };
-    }
+    const ctx = getEmployeeContext();
+    const auditModel = tx?.auditLog ?? prisma.auditLog;
+
+    const recordId = after?.id ?? before?.id;
+    if (!recordId)
+      return;
+
+    const diff = getObjectDiff(before, after);
+    if (Object.keys(diff).length === 0)
+      return;
+
+    await auditModel.create({
+      data: {
+        model: this.modelName!,
+        recordId,
+        action,
+        changedBy: ctx.id ?? "system",
+        diff,
+        createdAt: new Date(),
+      },
+    });
   }
 
-  async create(
-    data: Omit<T, "id" | "createdAt" | "updatedAt"> & Record<string, any>,
-    tx?: Prisma.TransactionClient,
-  ): Promise<IServiceResult<T>> {
-    try {
-      const payload = await this.withAuditCols({ ...data });
-      const entity = await (tx ?? this.model).create({ data: payload });
-      return { success: true, data: entity };
-    }
-    catch (err: any) {
-      console.error(`Error in ${this.entityName}.create:`, err);
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2002")
-          throw new BadRequestError(`Duplicate ${this.entityName}`);
-        if (err.code === "P2003")
-          throw new BadRequestError(`Invalid reference on ${this.entityName}`);
-      }
-      throw new BadRequestError(
-        `Failed to create ${this.entityName}: ${err.message}`,
-      );
-    }
+  // Protected Methods
+  protected validate(_data: any) {
   }
 
-  async update(
-    id: string,
-    data: Partial<Omit<T, "id" | "createdAt" | "updatedAt">> | any,
-    tx?: Prisma.TransactionClient,
-    userId?: string,
-  ): Promise<IServiceResult<T>> {
-    try {
-      const entity = await this.model.findUnique({ where: { id } });
-
-      if (!entity) {
-        throw new NotFoundError(`${this.entityName} with id ${id} not found`);
-      }
-
-      const updateData: any = {};
-      const relationsToInclude: any = {};
-
-      for (const [key, value] of Object.entries(data)) {
-        if (key.includes(".")) {
-          const [relation, field] = key.split(".");
-          if (!updateData[relation]) {
-            updateData[relation] = {
-              update: {
-                where: { id: entity.userId },
-                data: {},
-              },
-            };
-          }
-          updateData[relation].update.data[field] = value;
-          relationsToInclude[relation] = true;
-        }
-        else {
-          updateData[key] = value;
-        }
-      }
-
-      const updatedEntity = await this.model.update({
-        where: { id },
-        data: updateData,
-        include:
-          Object.keys(relationsToInclude).length > 0
-            ? relationsToInclude
-            : undefined,
-      });
-
-      if (!updatedEntity) {
-        throw new BadRequestError(`Failed to update ${this.entityName}`);
-      }
-
-      return { success: true, data: updatedEntity };
-    }
-    catch (error: any) {
-      if (error instanceof NotFoundError)
-        throw error;
-      console.error(`Error in ${this.entityName}.update:`, error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") {
-          throw new BadRequestError(
-            `A ${this.entityName} with this data already exists`,
-          );
-        }
-        if (error.code === "P2003") {
-          throw new BadRequestError(
-            `Invalid reference in ${this.entityName} update`,
-          );
-        }
-      }
-      throw new BadRequestError(
-        `Failed to update ${this.entityName}: ${error.message}`,
-      );
-    }
-  }
-
-  async delete(
-    id: string,
-    tx?: Prisma.TransactionClient,
-  ): Promise<IServiceResult<T>> {
-    try {
-      const entity = await this.model.findUnique({ where: { id } });
-
-      if (!entity) {
-        throw new NotFoundError(`${this.entityName} with id ${id} not found`);
-      }
-
-      const deletedEntity = await this.model.delete({ where: { id } });
-      return { success: true, data: deletedEntity };
-    }
-    catch (error: any) {
-      if (error instanceof NotFoundError)
-        throw error;
-
-      console.error(`Error in ${this.entityName}.delete:`, error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2003") {
-          throw new BadRequestError(
-            `Cannot delete ${this.entityName} because it is referenced by other records`,
-          );
-        }
-      }
-      throw new BadRequestError(
-        `Failed to delete ${this.entityName}: ${error.message}`,
-      );
-    }
-  }
-
-  protected async validate(_data: any) {
-    // implement in child classes
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [];
   }
 }
