@@ -285,7 +285,6 @@ const Quotes = () => {
   );
 };
 
-// Create Quote Modal Component
 const CreateQuoteModal = ({
   isOpen,
   onClose,
@@ -314,11 +313,10 @@ const CreateQuoteModal = ({
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
 
-  // Only load data when modal is open
   const { entities: companies, refresh: refreshCompanies } =
-    useGetEntities("/companies");
+    useGetEntities("/crm/companies");
   const { entities: journeys, refresh: refreshJourneys } =
-    useGetEntities("/journeys");
+    useGetEntities("/crm/journeys");
 
   const customerOptions = useMemo(
     () =>
