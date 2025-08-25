@@ -24,6 +24,20 @@ const doc = {
   ],
 };
 
+const commonQueryParams = [
+  { name: "page", in: "query", type: "integer", description: "Page number (default: 1)" },
+  { name: "limit", in: "query", type: "integer", description: "Items per page" },
+  { name: "search", in: "query", type: "string", description: "Search term" },
+  { name: "filter", in: "query", type: "string", description: "JSON filter object" },
+  { name: "sort", in: "query", type: "string", description: "Sort field (default: createdAt)" },
+  { name: "order", in: "query", type: "string", description: "Sort order (default: desc)", enum: ["asc", "desc"] },
+  { name: "dateFrom", in: "query", type: "string", description: "Filter from date (ISO format)" },
+  { name: "dateTo", in: "query", type: "string", description: "Filter to date (ISO format)" },
+  { name: "select", in: "query", type: "string", description: "JSON array of fields to select" },
+  { name: "fields", in: "query", type: "array", items: { type: "string" }, description: "Array of fields to select" },
+  { name: "include", in: "query", type: "string", description: "JSON array of relations to include" },
+];
+
 const outputFile = "./src/config/swagger-output.json";
 const routes = ["./src/routes/index.ts"];
 
@@ -64,6 +78,13 @@ swaggerAutogen()(outputFile, routes, doc).then(() => {
       }
       else if (path.startsWith("/system/")) {
         swaggerDoc.paths[path][method].tags = ["System"];
+      }
+
+      if (method === "get" && !path.includes("{")) {
+        swaggerDoc.paths[path][method].parameters = [
+          ...(swaggerDoc.paths[path][method].parameters || []),
+          ...commonQueryParams,
+        ];
       }
     });
   });
