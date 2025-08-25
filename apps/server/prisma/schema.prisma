@@ -600,14 +600,14 @@ model MachineStatus {
   state        MachineState
   execution    String
   controller   String
-  program      String
-  tool         String
-  metrics      Json
-  alarmCode    String
-  alarmMessage String
+  program      String?
+  tool         String?
+  metrics      Json?
+  alarmCode    String?
+  alarmMessage String?
   startTime    DateTime
   endTime      DateTime?
-  duration     Int
+  duration     Int?
   createdAt    DateTime     @default(now())
 
   machine Machine @relation(fields: [machineId], references: [id])
