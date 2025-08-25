@@ -29,6 +29,10 @@
       "description": ""
     },
     {
+      "name": "Employees",
+      "description": ""
+    },
+    {
       "name": "Legacy",
       "description": ""
     },
@@ -1668,7 +1672,10 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "tags": [
+          "Employees"
+        ]
       }
     },
     "/employees/sync": {
@@ -1678,7 +1685,10 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "tags": [
+          "Employees"
+        ]
       }
     },
     "/legacy/{database}/tables": {

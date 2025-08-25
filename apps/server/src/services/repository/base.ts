@@ -304,7 +304,6 @@ export class BaseService<T> {
 
   // Protected Methods
   protected validate(_data: any) {
-
   }
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {

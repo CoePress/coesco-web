@@ -15,6 +15,7 @@ const doc = {
     { name: "Catalog", description: "" },
     { name: "Chat", description: "" },
     { name: "CRM", description: "" },
+    { name: "Employees", description: "" },
     { name: "Legacy", description: "" },
     { name: "Production", description: "" },
     { name: "Performance", description: "" },
@@ -45,6 +46,9 @@ swaggerAutogen()(outputFile, routes, doc).then(() => {
       }
       else if (path.startsWith("/crm/")) {
         swaggerDoc.paths[path][method].tags = ["CRM"];
+      }
+      else if (path.startsWith("/employees/")) {
+        swaggerDoc.paths[path][method].tags = ["Employees"];
       }
       else if (path.startsWith("/legacy/")) {
         swaggerDoc.paths[path][method].tags = ["Legacy"];

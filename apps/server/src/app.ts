@@ -72,8 +72,11 @@ app.use(
   "/docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerDoc, {
-    explorer: true, // adds a search bar
-    customSiteTitle: "API Docs", // optional
+    explorer: true,
+    swaggerOptions: {
+      tagsSorter: "alpha",
+      operationsSorter: "alpha",
+    },
   }),
 );
 

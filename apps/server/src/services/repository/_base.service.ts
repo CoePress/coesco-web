@@ -236,9 +236,7 @@ export class BaseService<T> {
     }
   }
 
-  async audit(data: any) {}
-
-  protected async validate(data: any) {
+  protected async validate(_data: any) {
     // implement in child classes
   }
 }
