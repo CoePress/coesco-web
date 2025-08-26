@@ -379,7 +379,6 @@ export class MachineMonitorService {
           `machine:${machine.id}:current_state`,
         );
 
-        let data;
         let state;
 
         const machineData = await this.pollMachine(machine);
@@ -388,19 +387,16 @@ export class MachineMonitorService {
           throw new BadRequestError("Failed to poll machine data");
         }
 
+        const data = await this.processMTConnectData(machineData);
+        if (!data) {
+          throw new BadRequestError("Failed to process MTConnect data");
+        }
+
         switch (machine.controllerType) {
           case MachineControllerType.MAZAK:
-            data = await this.processMTConnectData(machineData);
-            if (!data) {
-              throw new BadRequestError("Failed to process MTConnect data");
-            }
             state = await this.determineMTConnectState(data, cachedState);
             break;
           case MachineControllerType.FANUC:
-            data = await this.processFanucData(machineData);
-            if (!data) {
-              throw new BadRequestError("Failed to process Fanuc data");
-            }
             state = await this.determineFanucState(data, cachedState);
             break;
           default:
@@ -490,7 +486,7 @@ export class MachineMonitorService {
           state,
         });
       }
-      catch (error: any) {
+      catch {
         const openStatuses = await machineStatusService.getAll({
           filter: {
             machineId: machine.id,
@@ -638,32 +634,6 @@ export class MachineMonitorService {
     };
   }
 
-  async processFanucData(data: any) {
-    if (!data) {
-      return null;
-    }
-
-    const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-
-    return {
-      execution: parsedData.execution || "",
-      controller: parsedData.controller || "",
-      program: parsedData.program || "",
-      tool: parsedData.tool || "",
-      metrics: {
-        spindleSpeed: parsedData.spindleSpeed || 0,
-        feedRate: parsedData.feedRate || 0,
-        axisPositions: {
-          X: parsedData.axisX || 0,
-          Y: parsedData.axisY || 0,
-          Z: parsedData.axisZ || 0,
-        },
-      },
-      alarm: parsedData.alarm || "",
-      timestamp: new Date().toISOString(),
-    };
-  }
-
   async processMachineData(data: any) {
     return data;
   }
@@ -708,7 +678,7 @@ export class MachineMonitorService {
         json: () => Promise.resolve(JSON.parse(response.data)),
       };
     }
-    catch (error: any) {
+    catch {
       return null;
     }
     finally {
@@ -747,21 +717,31 @@ export class MachineMonitorService {
     return MachineState.IDLE;
   }
 
-  private async determineFanucState(current: any, _previous: any) {
-    if (!current || !current.execution || current.execution === "OFFLINE") {
+  private async determineFanucState(current: any, previous: any) {
+    if (!current || !current.execution) {
       return MachineState.OFFLINE;
     }
 
-    if (current.execution === "STRT") {
+    if (current.execution === "ACTIVE") {
       return MachineState.ACTIVE;
     }
 
-    if (current.execution === "****") {
+    if (current.execution === "STOPPED") {
       return MachineState.IDLE;
     }
 
-    if (current.execution === "ALARM") {
+    if (current.alarm && current.alarm !== "") {
       return MachineState.ALARM;
+    }
+
+    const hasMoved = await this.hasMoved(current, previous);
+
+    if (previous?.state === MachineState.SETUP && !hasMoved) {
+      return MachineState.IDLE;
+    }
+
+    if (previous?.state !== MachineState.ACTIVE && hasMoved) {
+      return MachineState.SETUP;
     }
 
     return MachineState.IDLE;

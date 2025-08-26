@@ -28,6 +28,39 @@ public class FocasService
             m.LastSeen, m.ConsecutiveFailures
         }).ToList();
     }
+    
+    public MachineData GetMachineData(string slug)
+    {
+        if (!_machines.TryGetValue(slug, out var m))
+            return null;
+            
+        return new MachineData
+        {
+            MachineName = m.Slug,
+            Uuid = m.Uuid,
+            ConnectionStatus = m.Connection,
+            ExecutionStatus = m.Status,
+            ControllerMode = m.Mode,
+            ProgramName = m.ProgramName,
+            EmergencyStop = m.Emergency == 0 ? "ARMED" : "TRIGGERED",
+            SpindleSpeed = m.SpindleSpeed,
+            SpindleLoad = m.SpindleLoad,
+            SpindleOverride = m.SpindleOverride,
+            FeedRate = m.FeedRate,
+            FeedOverride = m.FeedOverride,
+            PartCount = m.PartCount,
+            LineNumber = m.LineNumber,
+            XPosition = m.XPosition != null ? new AxisData { Actual = m.XPosition.Value } : null,
+            YPosition = m.YPosition != null ? new AxisData { Actual = m.YPosition.Value } : null,
+            ZPosition = m.ZPosition != null ? new AxisData { Actual = m.ZPosition.Value } : null,
+            XLoad = m.XLoad,
+            YLoad = m.YLoad,
+            ZLoad = m.ZLoad,
+            XFeedRate = m.XFeedRate,
+            YFeedRate = m.YFeedRate,
+            ZFeedRate = m.ZFeedRate
+        };
+    }
 
     public string Connect(string slug)
     {
@@ -98,6 +131,7 @@ public class FocasService
                             m.Connection = "CONNECTED";
                             m.Status = StatusNumberToString(stat.run);
                             m.Mode = ModeNumberToString(stat.aut);
+                            m.Emergency = stat.emergency;
                             var previousLastSeen = m.LastSeen;
                             m.LastSeen = DateTime.UtcNow;
                             
@@ -159,19 +193,39 @@ public class FocasService
         public string Slug { get; }
         public string Ip { get; }
         public ushort Port { get; }
+        public string Uuid { get; }
         public ushort? Handle { get; set; }
         public string Connection { get; set; } = "INIT";
         public string Mode { get; set; } = "UNKNOWN";
         public string Status { get; set; } = "UNKNOWN";
         public string ProgramName { get; set; } = "UNKNOWN";
         public int SpindleSpeed { get; set; } = 0;
+        public double? SpindleLoad { get; set; }
+        public int? SpindleOverride { get; set; }
+        public double? FeedRate { get; set; }
+        public int? FeedOverride { get; set; }
+        public int? PartCount { get; set; }
+        public int? LineNumber { get; set; }
+        public int Emergency { get; set; } = 0;
+        public double? XPosition { get; set; }
+        public double? YPosition { get; set; }
+        public double? ZPosition { get; set; }
+        public double? XLoad { get; set; }
+        public double? YLoad { get; set; }
+        public double? ZLoad { get; set; }
+        public double? XFeedRate { get; set; }
+        public double? YFeedRate { get; set; }
+        public double? ZFeedRate { get; set; }
         public DateTime LastSeen { get; set; }
         public DateTime HandleCreatedAt { get; set; }
         public int ConsecutiveFailures { get; set; }
 
         public MachineState(string slug, string ip, ushort port)
         {
-            Slug = slug; Ip = ip; Port = port;
+            Slug = slug; 
+            Ip = ip; 
+            Port = port;
+            Uuid = Guid.NewGuid().ToString();
         }
     }
 

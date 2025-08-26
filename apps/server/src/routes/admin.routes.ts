@@ -12,12 +12,12 @@ router.patch("/devices/:deviceId", adminController.updateDevice);
 router.delete("/devices/:deviceId", adminController.deleteDevice);
 
 // Employees
-router.post("/employees", adminController.createDevice);
+router.post("/employees", adminController.createEmployee);
 router.post("/employees/sync", adminController.syncEmployees);
-router.get("/employees", adminController.getDevices);
-router.get("/employees/:employeeId", adminController.getDevice);
-router.patch("/employees/:employeeId", adminController.updateDevice);
-router.delete("/employees/:employeeId", adminController.deleteDevice);
+router.get("/employees", adminController.getEmployees);
+router.get("/employees/:employeeId", adminController.getEmployee);
+router.patch("/employees/:employeeId", adminController.updateEmployee);
+router.delete("/employees/:employeeId", adminController.deleteEmployee);
 
 // Permissions
 router.post("/permissions", adminController.createPermission);
