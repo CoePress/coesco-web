@@ -38,16 +38,15 @@ const Machines = () => {
       header: "Controller Type",
     },
     {
-      key: "connectionType",
-      header: "Connection Type",
+      key: "connectionUrl",
+      header: "Connection URL",
     },
     {
-      key: "connectionHost",
-      header: "Connection Host",
-    },
-    {
-      key: "connectionPort",
-      header: "Connection Port",
+      key: "enabled",
+      header: "Status",
+      render: (_, row) => (
+        row.enabled ? <div className="text-success">Enabled</div> : <div className="text-error">Disabled</div>
+      )
     },
     {
       key: "actions",

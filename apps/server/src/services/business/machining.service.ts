@@ -366,18 +366,12 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
-    const machinesToSkip = ["kuraki", "niigata-spn63"];
-
     for (const machine of machines.data) {
-      if (machinesToSkip.includes(machine.slug)) {
-        continue;
-      }
-
       let cachedState: CachedMachineState | null = null;
       try {
-        if (!machine.connectionHost || !machine.connectionPort) {
+        if (!machine.connectionUrl) {
           throw new BadRequestError(
-            "Machine is missing connection information",
+            "Machine is missing connection URL",
           );
         }
 
@@ -497,7 +491,6 @@ export class MachineMonitorService {
         });
       }
       catch (error: any) {
-        logger.error(error);
         const openStatuses = await machineStatusService.getAll({
           filter: {
             machineId: machine.id,
@@ -675,7 +668,7 @@ export class MachineMonitorService {
     return data;
   }
 
-  private async fetchData(url: string, timeoutMs: number = 500) {
+  private async fetchData(url: string, timeoutMs: number = 500, apiKey?: string) {
     const controller = new AbortController();
     this.activeRequests.add(controller);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -686,15 +679,21 @@ export class MachineMonitorService {
         ? new HttpsAgent({ rejectUnauthorized: false })
         : new HttpAgent();
 
+      const headers: Record<string, string> = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      };
+
+      if (apiKey) {
+        headers["X-API-Key"] = apiKey;
+      }
+
       const response = await axios.get(url, {
         httpAgent: agent,
         httpsAgent: isHttps ? agent : undefined,
         signal: controller.signal as any,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0",
-        },
+        headers,
         timeout: timeoutMs,
         responseType: "text",
       });
@@ -710,7 +709,6 @@ export class MachineMonitorService {
       };
     }
     catch (error: any) {
-      logger.error(error);
       return null;
     }
     finally {
