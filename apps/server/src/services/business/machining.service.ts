@@ -1,6 +1,6 @@
-import type { Machine } from "@prisma/client";
+import type { Machine, MachineStatus } from "@prisma/client";
 
-import { MachineConnectionType, MachineState, TimeScale } from "@prisma/client";
+import { MachineControllerType, MachineState, TimeScale } from "@prisma/client";
 import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
@@ -31,26 +31,6 @@ interface CachedMachineState {
   };
   alarm: string | null;
   timestamp: string;
-}
-
-interface MachineStateData {
-  id: string;
-  machineId: string;
-  state: MachineState;
-  execution: string;
-  controller: string;
-  program: string;
-  tool: string;
-  metrics: any;
-  alarmCode: string;
-  alarmMessage: string;
-  startTime: Date;
-  endTime: Date | null;
-  duration: number;
-  createdAt: Date;
-  machine?: {
-    type: string;
-  };
 }
 
 export class MachineMonitorService {
@@ -297,7 +277,7 @@ export class MachineMonitorService {
     };
   }
 
-  async getMachineTimeline(startDate: string, endDate: string) {
+  async getMachineTimeline(_startDate: string, _endDate: string) {
     const machines = await machineService.getAll();
 
     if (!machines.data) {
@@ -369,7 +349,11 @@ export class MachineMonitorService {
 
   async pollMachines() {
     const current = [];
-    const machines = await machineService.getAll();
+    const machines = await machineService.getAll({
+      filter: {
+        enabled: true,
+      },
+    });
 
     if (!machines.data) {
       throw new BadRequestError("No machines found");
@@ -403,15 +387,15 @@ export class MachineMonitorService {
           throw new BadRequestError("Failed to poll machine data");
         }
 
-        switch (machine.connectionType) {
-          case MachineConnectionType.MTCONNECT:
+        switch (machine.controllerType) {
+          case MachineControllerType.MAZAK:
             data = await this.processMTConnectData(machineData);
             if (!data) {
               throw new BadRequestError("Failed to process MTConnect data");
             }
             state = await this.determineMTConnectState(data, cachedState);
             break;
-          case MachineConnectionType.FOCAS:
+          case MachineControllerType.FANUC:
             data = await this.processFanucData(machineData);
             if (!data) {
               throw new BadRequestError("Failed to process Fanuc data");
@@ -505,7 +489,8 @@ export class MachineMonitorService {
           state,
         });
       }
-      catch (error) {
+      catch (error: any) {
+        logger.error(error);
         const openStatuses = await machineStatusService.getAll({
           filter: {
             machineId: machine.id,
@@ -518,7 +503,6 @@ export class MachineMonitorService {
 
         if (needsOfflineState) {
           try {
-            // Close ALL open statuses for this machine
             for (const status of openStatuses.data) {
               await machineStatusService.update(status.id, {
                 endTime: new Date(),
@@ -589,14 +573,12 @@ export class MachineMonitorService {
     return current;
   }
 
-  async pollMachine(machine: any) {
-    const isMTConnect = machine.connectionType === MachineConnectionType.MTCONNECT;
+  async pollMachine(machine: Machine) {
+    if (!machine.connectionUrl) {
+      throw new BadRequestError("Machine connection url is required");
+    }
 
-    const url = isMTConnect
-      ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `http://${env.FANUC_ADAPTER_HOST}:${env.FANUC_ADAPTER_PORT}/api/v1/${machine.slug}/current`;
-
-    const response = await this.fetchData(url);
+    const response = await this.fetchData(machine.connectionUrl);
     if (!response) {
       return null;
     }
@@ -682,6 +664,10 @@ export class MachineMonitorService {
     };
   }
 
+  async processMachineData(data: any) {
+    return data;
+  }
+
   private async fetchData(url: string, timeoutMs: number = 500) {
     const controller = new AbortController();
     this.activeRequests.add(controller);
@@ -717,6 +703,7 @@ export class MachineMonitorService {
       };
     }
     catch (error: any) {
+      logger.error(error);
       return null;
     }
     finally {
@@ -755,7 +742,7 @@ export class MachineMonitorService {
     return MachineState.IDLE;
   }
 
-  private async determineFanucState(current: any, previous: any) {
+  private async determineFanucState(current: any, _previous: any) {
     if (!current || !current.execution || current.execution === "OFFLINE") {
       return MachineState.OFFLINE;
     }
@@ -1174,7 +1161,7 @@ export class MachineMonitorService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: MachineStateData[],
+    states: MachineStatus[],
     machineCount: number,
     now: Date,
     view: string = "all",
@@ -1231,10 +1218,8 @@ export class MachineMonitorService {
       {} as Record<string, typeof states>,
     );
 
-    // Create all possible groups/machines to ensure they're all returned
     const allGroups = new Set<string>();
     if (view === "group") {
-      // Get all unique machine types
       machines.forEach((machine) => {
         if (machine.type) {
           allGroups.add(machine.type);
@@ -1242,7 +1227,6 @@ export class MachineMonitorService {
       });
     }
     else {
-      // Get all machine IDs
       machines.forEach((machine) => {
         if (machine.id) {
           allGroups.add(machine.id);
@@ -1263,7 +1247,6 @@ export class MachineMonitorService {
         groups: {},
       };
 
-      // Iterate through all possible groups to ensure they're all included
       for (const key of allGroups) {
         const groupStates = groupedStates[key] || [];
         const divisionTotals = this.calculateStatusTotals(
@@ -1277,7 +1260,6 @@ export class MachineMonitorService {
         const divisionDuration
           = division.end.getTime() - division.start.getTime();
 
-        // Calculate machine count for this specific group
         let groupMachineCount = 0;
         if (view === "group") {
           groupMachineCount = machines.filter(m => m.type === key).length;
