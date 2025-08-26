@@ -105,7 +105,7 @@ const Employees = () => {
     error,
     pagination,
     refresh,
-  } = useGetEntities("/employees", {
+  } = useGetEntities("/admin/employees", {
     page,
     limit,
     sort,

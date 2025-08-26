@@ -1,4 +1,4 @@
-import type { Machine, MachineStatus } from "@prisma/client";
+import type { Machine, Prisma } from "@prisma/client";
 
 import { MachineControllerType, MachineState, TimeScale } from "@prisma/client";
 import axios from "axios";
@@ -171,7 +171,11 @@ export class MachineMonitorService {
       dateRange.previousEndDate.toISOString(),
     );
 
-    const [machines, states, previousStates] = await Promise.all([
+    type MachineStatusWithMachine = Prisma.MachineStatusGetPayload<{
+      include: { machine: true };
+    }>;
+
+    const [machines, statesResponse, previousStatesResponse] = await Promise.all([
       machineService.getAll(),
       machineStatusService.getAll({
         filter: JSON.stringify(currentDateFilter),
@@ -182,6 +186,9 @@ export class MachineMonitorService {
         include: { machine: true },
       }),
     ]);
+
+    const states = statesResponse as { data: MachineStatusWithMachine[] };
+    const previousStates = previousStatesResponse as { data: MachineStatusWithMachine[] };
 
     if (!machines.data || !states.data || !previousStates.data) {
       throw new BadRequestError("No machines found");
@@ -1161,7 +1168,7 @@ export class MachineMonitorService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: MachineStatus[],
+    states: Prisma.MachineStatusGetPayload<{ include: { machine: true } }>[],
     machineCount: number,
     now: Date,
     view: string = "all",
