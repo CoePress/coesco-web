@@ -30,6 +30,5 @@ export const socketService = new SocketService();
 export async function initializeServices() {
   await socketService.initialize(io);
   await machiningService.initialize();
-  await mcpService.initialize();
   await deviceService.initialize();
 }

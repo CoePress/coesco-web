@@ -8,10 +8,11 @@ app.Urls.Add("http://0.0.0.0:5000");
 const string API_KEY_HEADER = "X-API-KEY";
 const string API_KEY_VALUE  = "my-secret-key";
 
-// TEMP: in-memory CNC machine list (to be replaced by an API later)
 var machines = new[]
 {
-    new Machine("192.231.64.203", 8193, "hn80",  true),
+    new Machine("192.231.64.127", 8193, "doosan",  true),
+    new Machine("192.231.64.202", 8193, "hn80",  true),
+    new Machine("192.231.64.203", 8193, "okk",  true),
 };
 
 var focas = new FocasService(machines.Select(m => (m.Slug, m.Host, (ushort)m.Port)));
@@ -29,7 +30,6 @@ app.Use(async (ctx, next) =>
 });
 
 app.MapGet("/api/v1/health", () => Results.Text("ok", "text/plain"));
-app.MapGet("/api/v1/status", () => Results.Json(new { ok = true, stub = true }));
 app.MapPost("/api/v1/reset", () => Results.Json(new { ok = true }));
 
 foreach (var m in machines)
@@ -72,11 +72,6 @@ foreach (var m in machines)
         return Results.Text(doc.ToString(SaveOptions.DisableFormatting), "application/xml");
     });
 }
-
-// FOCAS endpoints
-app.MapGet("/api/v1/focas/test", () => focas.Connect("192.231.64.203", 8193, "hn80"));
-app.MapGet("/api/v1/focas/status", () => Results.Json(focas.Status()));
-app.MapPost("/api/v1/focas/{slug}/disconnect", (string slug) => focas.Disconnect(slug));
 
 app.Run();
 

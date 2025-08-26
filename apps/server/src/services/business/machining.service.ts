@@ -590,26 +590,18 @@ export class MachineMonitorService {
   }
 
   async pollMachine(machine: any) {
-    const isMTConnect
-      = machine.connectionType === MachineConnectionType.MTCONNECT;
+    const isMTConnect = machine.connectionType === MachineConnectionType.MTCONNECT;
 
     const url = isMTConnect
       ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `http://${env.FANUC_ADAPTER_HOST}:${env.FANUC_ADAPTER_PORT}/api/machines/${machine.slug}`;
+      : `http://${env.FANUC_ADAPTER_HOST}:${env.FANUC_ADAPTER_PORT}/api/v1/${machine.slug}/current`;
 
     const response = await this.fetchData(url);
     if (!response) {
       return null;
     }
 
-    if (isMTConnect) {
-      const text = await response.text();
-      return text;
-    }
-    else {
-      const json = await response.json();
-      return json;
-    }
+    return response.text();
   }
 
   async processMTConnectData(xml: string | null) {
