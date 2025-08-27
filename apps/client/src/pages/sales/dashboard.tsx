@@ -21,7 +21,7 @@ import {
 } from "recharts";
 
 import { Button } from "@/components";
-import { formatCurrency, openPopup } from "@/utils";
+import { formatCurrency } from "@/utils";
 import PageHeader from "@/components/layout/page-header";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
@@ -323,13 +323,6 @@ const SalesDashboard = () => {
             <div className="p-2 border-b flex justify-between items-center">
               <h3 className="text-sm text-text-muted">Top Deals</h3>
               <Button
-                onClick={() =>
-                  openPopup("sales", [
-                    "entity=deals",
-                    "sort=value",
-                    "order=desc",
-                  ])
-                }
                 variant="secondary-outline"
                 size="sm">
                 <List size={16} />
