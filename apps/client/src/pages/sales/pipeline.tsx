@@ -11,7 +11,7 @@ import Table from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Pipeline = () => {
-  const [viewMode, setViewMode] = useState("kanban");
+  const [viewMode] = useState("kanban");
   const { entities: deals, loading: _dealsLoading } = useGetEntities("/deals");
 
   const pipelineStages = [

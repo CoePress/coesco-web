@@ -140,9 +140,6 @@ const MachineHistory = () => {
     },
   ];
 
-  const [openDropdown, setOpenDropdown] = useState<"machine" | "state" | null>(
-    null
-  );
 
   if (loading) {
     return (
@@ -158,33 +155,41 @@ const MachineHistory = () => {
       <PageHeader
         title="Machine History"
         description="Explore all machine history"
-        actions={[
-          {
-            type: "dropdown",
-            options: machineOptions,
-            onChange: setSelectedMachine,
-            value: selectedMachine,
-            isOpen: openDropdown === "machine",
-            onOpenChange: (isOpen) =>
-              setOpenDropdown(isOpen ? "machine" : null),
-            label: "Filter by machine",
-          },
-          {
-            type: "dropdown",
-            options: stateOptions,
-            onChange: setSelectedState,
-            value: selectedState,
-            isOpen: openDropdown === "state",
-            onOpenChange: (isOpen) => setOpenDropdown(isOpen ? "state" : null),
-            label: "Filter by state",
-          },
-          {
-            type: "button",
-            label: "Export",
-            icon: <Download size={16} />,
-            onClick: () => {},
-          },
-        ]}
+        actions={
+          <div className="flex gap-2 items-center">
+            <select
+              value={selectedMachine}
+              onChange={(e) => setSelectedMachine(e.target.value)}
+              className="px-3 py-1.5 rounded border bg-foreground text-text text-sm border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="">Filter by machine</option>
+              {machineOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="px-3 py-1.5 rounded border bg-foreground text-text text-sm border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="">Filter by state</option>
+              {stateOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {}}
+              className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer text-sm"
+            >
+              <Download size={16} />
+              <span>Export</span>
+            </button>
+          </div>
+        }
       />
 
       <Table<IMachineStatus>

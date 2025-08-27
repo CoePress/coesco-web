@@ -184,14 +184,15 @@ const OptionRules = () => {
       <PageHeader
         title="Option Rules"
         description="Manage configuration rules that control option dependencies and constraints"
-        actions={[
-          {
-            type: "button",
-            label: "Create Rule",
-            icon: <Plus size={16} />,
-            onClick: handleCreate,
-          },
-        ]}
+        actions={
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer text-sm"
+          >
+            <Plus size={16} />
+            <span>Create Rule</span>
+          </button>
+        }
       />
 
       <div className="bg-white rounded-lg border">

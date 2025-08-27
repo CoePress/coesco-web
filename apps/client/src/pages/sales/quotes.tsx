@@ -25,8 +25,6 @@ const Quotes = () => {
 
   const {
     entities: quotes,
-    loading: quotesLoading,
-    error: quotesError,
     refresh,
     pagination,
   } = useGetEntities("/quotes", {

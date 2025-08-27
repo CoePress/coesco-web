@@ -111,7 +111,7 @@ const App = () => {
   );
 
   return (
-    <SocketProvider listenTo={[]}>{content}</SocketProvider>
+    <SocketProvider>{content}</SocketProvider>
   );
 };
 

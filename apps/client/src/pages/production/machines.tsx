@@ -22,7 +22,6 @@ const Machines = () => {
 
   if (error) return <div>Error</div>;
 
-  const handleEditClick = () => { }
 
   const columns: TableColumn<any>[] = [
     {
@@ -51,7 +50,7 @@ const Machines = () => {
     {
       key: "actions",
       header: "",
-      render: (_, row) => (
+      render: () => (
         <Button
           variant="secondary-outline"
           size="sm"

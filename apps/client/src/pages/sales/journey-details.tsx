@@ -457,7 +457,6 @@ function JourneyHistoryTab() {
 
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
-  const navigate = useNavigate();
 
   const journeyId = useParams().id;
 
@@ -487,18 +486,16 @@ const JourneyDetailsPage = () => {
         } • ${formatCurrency(
           journeyOverview?.journey?.value || sampleJourney.value
         )}`}
-        backButton
-        onBack={() => navigate("/sales/journeys")}
-        actions={[
-          {
-            type: "button",
-            label: activeTab === "details" ? "New Journey" : "Add Note",
-            variant: "primary",
-            icon:
-              activeTab === "details" ? <Plus size={16} /> : <Edit size={16} />,
-            onClick: () => {},
-          },
-        ]}
+        goBack
+        actions={
+          <button
+            onClick={() => {}}
+            className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer text-sm"
+          >
+            {activeTab === "details" ? <Plus size={16} /> : <Edit size={16} />}
+            <span>{activeTab === "details" ? "New Journey" : "Add Note"}</span>
+          </button>
+        }
       />
       <Tabs
         activeTab={activeTab}
