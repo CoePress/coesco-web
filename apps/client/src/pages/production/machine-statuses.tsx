@@ -11,8 +11,8 @@ const MachineStatuses = () => {
   const [limit] = useState(25);
   const [sort, setSort] = useState("startTime");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [selectedState, setSelectedState] = useState("");
-  const [selectedMachine, setSelectedMachine] = useState("");
+  const [selectedState, _setSelectedState] = useState("");
+  const [selectedMachine, _setSelectedMachine] = useState("");
 
   const filter = useMemo(
     () => ({
@@ -30,22 +30,22 @@ const MachineStatuses = () => {
   const loading = machineStatusesLoading || machinesLoading;
   const error = machineStatusesError || machinesError;
 
-  const stateOptions = [
-    { label: "All States", value: "" },
-    { label: "Active", value: "ACTIVE" },
-    { label: "Idle", value: "IDLE" },
-    { label: "Alarm", value: "ALARM" },
-    { label: "Maintenance", value: "MAINTENANCE" },
-    { label: "Offline", value: "OFFLINE" },
-  ];
+  // const stateOptions = [
+  //   { label: "All States", value: "" },
+  //   { label: "Active", value: "ACTIVE" },
+  //   { label: "Idle", value: "IDLE" },
+  //   { label: "Alarm", value: "ALARM" },
+  //   { label: "Maintenance", value: "MAINTENANCE" },
+  //   { label: "Offline", value: "OFFLINE" },
+  // ];
 
-  const machineOptions = [
-    { label: "All Machines", value: "" },
-    ...(machines?.map((machine) => ({
-      label: machine.name,
-      value: machine.id,
-    })) || []),
-  ];
+  // const machineOptions = [
+  //   { label: "All Machines", value: "" },
+  //   ...(machines?.map((machine) => ({
+  //     label: machine.name,
+  //     value: machine.id,
+  //   })) || []),
+  // ];
 
   const columns = [
     {

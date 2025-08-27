@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
-import { Moon, Settings, Sun, LogOut, Code, MessageCircle } from "lucide-react";
+import { Moon, Sun, LogOut, Code, MessageCircle } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import useLogout from "@/hooks/auth/use-logout";

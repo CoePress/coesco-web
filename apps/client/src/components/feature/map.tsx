@@ -1,6 +1,4 @@
-type Props = {}
-
-const Map = (props: Props) => {
+const Map = () => {
   return (
     <div>Map</div>
   )

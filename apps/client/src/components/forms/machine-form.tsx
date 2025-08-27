@@ -1,6 +1,4 @@
-type Props = {}
-
-const MachineForm = (props: Props) => {
+const MachineForm = () => {
   return (
     <div>MachineForm</div>
   )

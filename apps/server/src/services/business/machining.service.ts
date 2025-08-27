@@ -392,15 +392,26 @@ export class MachineMonitorService {
           throw new BadRequestError("Failed to process MTConnect data");
         }
 
-        switch (machine.controllerType) {
-          case MachineControllerType.MAZAK:
-            state = await this.determineMTConnectState(data, cachedState);
-            break;
-          case MachineControllerType.FANUC:
-            state = await this.determineFanucState(data, cachedState);
-            break;
-          default:
-            throw new BadRequestError("Invalid machine connection type");
+        if (data.availability === "UNAVAILABLE") {
+          state = MachineState.OFFLINE;
+          data.execution = "OFFLINE";
+          data.controller = "OFFLINE";
+          data.program = "";
+          data.tool = "";
+          data.metrics = this.offlineState.metrics;
+          data.alarm = "";
+        }
+        else {
+          switch (machine.controllerType) {
+            case MachineControllerType.MAZAK:
+              state = await this.determineMTConnectState(data, cachedState);
+              break;
+            case MachineControllerType.FANUC:
+              state = await this.determineFanucState(data, cachedState);
+              break;
+            default:
+              throw new BadRequestError("Invalid machine connection type");
+          }
         }
 
         if (!data || !state) {
@@ -419,7 +430,6 @@ export class MachineMonitorService {
 
         if (needsNewState) {
           try {
-            // Close ALL open statuses for this machine
             for (const status of openStatuses.data) {
               await machineStatusService.update(status.id, {
                 endTime: new Date(),
@@ -590,6 +600,7 @@ export class MachineMonitorService {
         .trim();
     };
 
+    const availability = extractValue(xml, "avail") || "";
     const program = extractValue(xml, "pgm") || "";
     const programComment = cleanProgramComment(extractValue(xml, "pcmt") || "");
     const programFull = `${program} ${
@@ -607,6 +618,7 @@ export class MachineMonitorService {
     };
 
     return {
+      availability,
       execution,
       controller,
       program: programFull,
