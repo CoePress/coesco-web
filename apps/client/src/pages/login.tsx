@@ -89,18 +89,15 @@ const Login = () => {
       <div className="relative h-[100dvh] w-screen flex items-center justify-center p-2">
         <BackgroundImage />
         <div className="relative z-10 w-full max-w-sm">
-          <Card className="shadow-xl border border-border/30 backdrop-blur-sm bg-background/95">
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-2 rounded text-center">
+          <Card className="shadow-xl border border-border/50 backdrop-blur-sm bg-background/75">
+            <div className="text-text-muted p-2 rounded text-center">
               <p className="font-semibold mb-2">System Unavailable</p>
-              <p className="text-sm mb-4">
-                Our services are currently down. Attempting to reconnect...
+              <p className="text-sm">
+                The system is currently down.
               </p>
-              <Button
-                variant="secondary-outline"
-                className="w-max mx-auto"
-                onClick={() => subscribeToSystemStatus()}>
-                Retry Connection
-              </Button>
+              <p className="text-sm">
+                Please try again shortly.
+              </p>
             </div>
           </Card>
         </div>

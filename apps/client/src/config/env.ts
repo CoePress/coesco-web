@@ -6,14 +6,13 @@ const envSchema = z.object({
   VITE_API_URL: z.string().url(),
 });
 
-const env = envSchema.safeParse(import.meta.env);
+const parsed = envSchema.safeParse(import.meta.env);
 
-if (!env.success) {
-  console.error("Invalid environment variables:", env.error.format());
-  throw new Error("Invalid environment variables");
+if (!parsed.success) {
+  console.error("❌ Invalid environment variables:", parsed.error.format());
+  process.exit(1);
 }
 
-export const __dev__ = env.data.VITE_NODE_ENV === "development";
-export const __prod__ = env.data.VITE_NODE_ENV === "production";
-
-export default env.data;
+export const env = parsed.data!;
+export const __dev__ = env.VITE_NODE_ENV === "development";
+export const __prod__ = env.VITE_NODE_ENV === "production";
