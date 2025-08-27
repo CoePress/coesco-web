@@ -569,19 +569,6 @@ export class MachineMonitorService {
     return current;
   }
 
-  async pollMachine(machine: Machine) {
-    if (!machine.connectionUrl) {
-      throw new BadRequestError("Machine connection url is required");
-    }
-
-    const response = await this.fetchData(machine.connectionUrl);
-    if (!response) {
-      return null;
-    }
-
-    return response.text();
-  }
-
   async processMTConnectData(xml: string | null) {
     if (!xml) {
       return null;
@@ -634,13 +621,26 @@ export class MachineMonitorService {
     };
   }
 
-  async processMachineData(data: any) {
-    return data;
+  async pollMachine(machine: Machine) {
+    if (!machine.connectionUrl) {
+      throw new BadRequestError("Machine connection url is required");
+    }
+
+    let apiKey;
+    if (machine.controllerType === "FANUC") {
+      apiKey = "my-secret-key";
+    }
+
+    const response = await this.fetchData(machine.connectionUrl, 500, apiKey);
+    if (!response) {
+      return null;
+    }
+
+    return response.text();
   }
 
-  private async fetchData(url: string, timeoutMs: number = 500, apiKey?: string) {
+  private async fetchData(url: string, timeoutMs: number = 1000, apiKey?: string) {
     const controller = new AbortController();
-    this.activeRequests.add(controller);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -664,11 +664,11 @@ export class MachineMonitorService {
         httpsAgent: isHttps ? agent : undefined,
         signal: controller.signal as any,
         headers,
-        timeout: timeoutMs,
         responseType: "text",
       });
 
       if (response.status !== 200) {
+        logger.warn(`Non-200 response from ${url}: ${response.status}`);
         return null;
       }
 
@@ -678,12 +678,17 @@ export class MachineMonitorService {
         json: () => Promise.resolve(JSON.parse(response.data)),
       };
     }
-    catch {
+    catch (error: any) {
+      if (error.name === "CanceledError") {
+        return null;
+      }
+      else {
+        logger.error(`Request to ${url} failed: ${error.message}`);
+      }
       return null;
     }
     finally {
       clearTimeout(timeout);
-      this.activeRequests.delete(controller);
     }
   }
 
