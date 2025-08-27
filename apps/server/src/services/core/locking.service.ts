@@ -1,7 +1,6 @@
+import { cacheService } from "@/services";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
-
-import { cacheService } from ".";
 
 export interface LockInfo {
   userId: string;

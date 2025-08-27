@@ -1,6 +1,4 @@
-type Props = {}
-
-const Kanban = (props: Props) => {
+const Kanban = () => {
   return (
     <div>Kanban</div>
   )

@@ -80,7 +80,7 @@ const Employees = () => {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -105,7 +105,7 @@ const Employees = () => {
     error,
     pagination,
     refresh,
-  } = useGetEntities("/employees", {
+  } = useGetEntities("/admin/employees", {
     page,
     limit,
     sort,
@@ -125,20 +125,22 @@ const Employees = () => {
     return <div>Error</div>;
   }
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={syncEmployees}>
+          <RefreshCcw size={16} /> Sync with Microsoft
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Employees"
         description={`${pagination.total} total employees`}
-        actions={[
-          {
-            type: "button",
-            label: "Sync",
-            variant: "secondary-outline",
-            icon: <RefreshCcw size={16} />,
-            onClick: () => syncEmployees(),
-          },
-        ]}
+        actions={<Actions />}
       />
 
       <Table<IEmployee>

@@ -1,19 +1,22 @@
-import { PlusCircleIcon } from "lucide-react";
+import { DollarSignIcon, FileTextIcon, PlusCircleIcon, TrendingUpIcon, UsersIcon } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { AdvancedDropdown, Button, Modal, StatusBadge, Table } from "@/components";
+import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useCreateEntity } from "@/hooks/_base/use-create-entity";
-import PageHeader from "@/components/_old/page-head";
+import PageHeader from "@/components/layout/page-header";
+import { Filter } from "@/components/feature/toolbar";
+import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [_, setPage] = useState(1);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const include = useMemo(
     () => ["journey", "journey.customer", "createdBy"],
@@ -22,11 +25,14 @@ const Quotes = () => {
 
   const {
     entities: quotes,
+    loading: quotesLoading,
+    error: quotesError,
     refresh,
     pagination,
   } = useGetEntities("/quotes", {
     include,
   });
+  
   const { createEntity: createQuote, loading: createLoading } =
     useCreateEntity("/quotes");
 
@@ -101,6 +107,37 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
+  const kpis = [
+    {
+      title: "Monthly Revenue",
+      value: formatCurrency(92000, false),
+      description: "Total revenue this month",
+      icon: <DollarSignIcon size={16} />,
+      change: 12.5,
+    },
+    {
+      title: "Total Quotes",
+      value: "118",
+      description: "Active quotes this month",
+      icon: <FileTextIcon size={16} />,
+      change: 8.2,
+    },
+    {
+      title: "Conversion Rate",
+      value: "78%",
+      description: "Quote to deal conversion",
+      icon: <TrendingUpIcon size={16} />,
+      change: -2.1,
+    },
+    {
+      title: "Active Deals",
+      value: "47",
+      description: "Deals in pipeline",
+      icon: <UsersIcon size={16} />,
+      change: 5.3,
+    },
+  ];
+
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -111,6 +148,86 @@ const Quotes = () => {
     );
   };
 
+  const handleSearch = (query: string) => {
+    console.log('Searching for:', query)
+  }
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [key]: value
+    }))
+  }
+
+  const handleExport = () => {
+    console.log('Exporting quotes...', filteredQuotes)
+    // TODO: Implement actual export functionality
+  }
+
+  const filters: Filter[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: '', label: 'All Statuses' },
+        { value: 'draft', label: 'Draft' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'expired', label: 'Expired' }
+      ],
+      placeholder: 'Filter by status'
+    },
+    {
+      key: 'revision',
+      label: 'Revision',
+      options: [
+        { value: '', label: 'All Revisions' },
+        { value: '0', label: 'Original' },
+        { value: '1', label: 'Revision 1' },
+        { value: '2', label: 'Revision 2' },
+        { value: '3+', label: '3+' }
+      ],
+      placeholder: 'Filter by revision'
+    },
+    {
+      key: 'dateRange',
+      label: 'Date Range',
+      options: [
+        { value: '', label: 'All Time' },
+        { value: 'today', label: 'Today' },
+        { value: 'yesterday', label: 'Yesterday' },
+        { value: 'last7days', label: 'Last 7 Days' },
+        { value: 'last30days', label: 'Last 30 Days' },
+        { value: 'thisMonth', label: 'This Month' },
+        { value: 'lastMonth', label: 'Last Month' },
+        { value: 'thisQuarter', label: 'This Quarter' },
+        { value: 'thisYear', label: 'This Year' }
+      ],
+      placeholder: 'Filter by date'
+    }
+  ]
+
+  const filteredQuotes = useMemo(() => {
+    if (!quotes) return []
+    
+    return quotes.filter((quote: any) => {
+      if (filterValues.status && quote.status !== filterValues.status) {
+        return false
+      }
+      
+      if (filterValues.revision) {
+        if (filterValues.revision === '3+' && quote.revision < 3) {
+          return false
+        } else if (filterValues.revision !== '3+' && quote.revision !== parseInt(filterValues.revision)) {
+          return false
+        }
+      }
+      
+      return true
+    })
+  }, [quotes, filterValues])
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
@@ -119,22 +236,42 @@ const Quotes = () => {
         actions={<Actions />}
       />
 
-      <Table
-        columns={columns}
-        data={quotes || []}
-        total={quotes?.length || 0}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort as "createdAt" | "updatedAt");
-          setOrder(newOrder as "asc" | "desc");
-        }}
-      />
+      <div className="p-2 gap-2 flex flex-col flex-1">
+        <Metrics>
+          {kpis.map((metric) => (
+            <MetricsCard {...metric} />
+          ))}
+        </Metrics>
+
+        <Toolbar
+          onSearch={handleSearch}
+          searchPlaceholder="Search quotes..."
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          filterValues={filterValues}
+          showExport={true}
+          onExport={handleExport}
+        />
+
+        <Table
+          columns={columns}
+          data={filteredQuotes}
+          total={filteredQuotes.length}
+          idField="id"
+          pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          sort={sort}
+          order={order}
+          onSortChange={(newSort, newOrder) => {
+            setSort(newSort as "createdAt" | "updatedAt");
+            setOrder(newOrder as "asc" | "desc");
+          }}
+          className="rounded border overflow-clip"
+          emptyMessage="No quotes found"
+        />
+      </div>
 
       {isModalOpen && (
         <CreateQuoteModal
@@ -149,7 +286,6 @@ const Quotes = () => {
   );
 };
 
-// Create Quote Modal Component
 const CreateQuoteModal = ({
   isOpen,
   onClose,
@@ -178,11 +314,10 @@ const CreateQuoteModal = ({
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
 
-  // Only load data when modal is open
   const { entities: companies, refresh: refreshCompanies } =
-    useGetEntities("/companies");
+    useGetEntities("/crm/companies");
   const { entities: journeys, refresh: refreshJourneys } =
-    useGetEntities("/journeys");
+    useGetEntities("/crm/journeys");
 
   const customerOptions = useMemo(
     () =>
@@ -308,7 +443,7 @@ const CreateQuoteModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Quote"
-      size="sm">
+      size="xs">
       {/* Customer Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Customer</label>
@@ -377,7 +512,6 @@ const CreateQuoteModal = ({
         </div>
       )}
 
-      {/* Info Text */}
       <div className="text-xs text-text-muted bg-surface p-3 rounded">
         {(!customerValue || customerValue === "") &&
           (!journeyValue || journeyValue === "") &&
@@ -418,7 +552,6 @@ const CreateQuoteModal = ({
           "Quote will be created as part of the selected journey."}
       </div>
 
-      {/* Create Button */}
       <Button
         onClick={handleCreateQuote}
         disabled={isCreateDisabledState}

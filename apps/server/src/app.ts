@@ -7,8 +7,11 @@ import express from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import path from "node:path";
 import { Server } from "socket.io";
+import swaggerUi from "swagger-ui-express";
 
 import { __dev__, __prod__ } from "./config/env";
 import { errorHandler, NotFoundError } from "./middleware/error.middleware";
@@ -46,6 +49,10 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+// eslint-disable-next-line node/prefer-global/process
+const swaggerPath = path.join(process.cwd(), "./src/config/swagger.json");
+const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
+
 app.use("/api", limiter);
 app.use(morgan("dev", { stream }));
 
@@ -56,6 +63,22 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", false);
+
+app.get("/openapi.json", (_req, res) => {
+  res.type("application/json").send(swaggerDoc);
+});
+
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDoc, {
+    explorer: true,
+    swaggerOptions: {
+      tagsSorter: "alpha",
+      operationsSorter: "alpha",
+    },
+  }),
+);
 
 app.use("/api", routes);
 

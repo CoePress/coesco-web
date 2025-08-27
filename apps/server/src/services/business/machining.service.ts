@@ -1,15 +1,17 @@
-import { MachineConnectionType, MachineState, TimeScale } from "@prisma/client";
+import type { Machine, Prisma } from "@prisma/client";
+
+import { MachineControllerType, MachineState, TimeScale } from "@prisma/client";
 import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 
-import { __prod__, env } from "@/config/env";
+import { env } from "@/config/env";
 import { BadRequestError } from "@/middleware/error.middleware";
 import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
-import { cacheService, socketService } from "../core";
+import { cacheService, socketService } from "../";
 import { machineService, machineStatusService } from "../repository";
 
 interface CachedMachineState {
@@ -31,28 +33,10 @@ interface CachedMachineState {
   timestamp: string;
 }
 
-interface MachineStateData {
-  id: string;
-  machineId: string;
-  state: MachineState;
-  execution: string;
-  controller: string;
-  program: string;
-  tool: string;
-  metrics: any;
-  alarmCode: string;
-  alarmMessage: string;
-  startTime: Date;
-  endTime: Date | null;
-  duration: number;
-  createdAt: Date;
-  machine?: {
-    type: string;
-  };
-}
-
 export class MachineMonitorService {
   private pollInterval: NodeJS.Timeout | null = null;
+  private isInitialized = false;
+  private isStarted = false;
   private readonly offlineState = {
     state: MachineState.OFFLINE,
     execution: "OFFLINE",
@@ -74,19 +58,17 @@ export class MachineMonitorService {
 
   private activeRequests: Set<AbortController> = new Set();
 
-  constructor() {
-    if (__prod__) {
-      this.start();
-    }
-  }
-
   async initialize() {
+    if (this.isInitialized && this.isStarted) {
+      logger.debug("Machine monitor initialized");
+      return;
+    }
+
     try {
       const machines = await machineService.getAll();
 
       if (!machines?.data) {
-        logger.error("No machines found or invalid response");
-        return;
+        throw new Error("No machines found or invalid response");
       }
 
       for (const machine of machines.data) {
@@ -123,31 +105,50 @@ export class MachineMonitorService {
           );
         }
       }
+
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+      }
+      this.pollInterval = setInterval(() => this.pollMachines(), 1000);
+
+      this.isInitialized = true;
+      this.isStarted = true;
+      logger.info("Machine monitor initialized");
     }
     catch (error) {
-      logger.error("Error initializing machine states:", error);
+      logger.error("Failed to initialize machine monitor:", error);
+      throw error;
     }
-  }
-
-  start() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => this.pollMachines(), 1000);
   }
 
   async stop() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
+    if (!this.isStarted) {
+      logger.debug("Machine monitor is not started");
+      return;
     }
 
-    await this.closeAllMachineStatuses();
+    try {
+      logger.info("Stopping machine monitor");
 
-    for (const controller of this.activeRequests) {
-      controller.abort();
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+
+      await this.closeAllMachineStatuses();
+
+      for (const controller of this.activeRequests) {
+        controller.abort();
+      }
+      this.activeRequests.clear();
+
+      this.isStarted = false;
+      logger.info("Machine monitor stopped successfully");
     }
-    this.activeRequests.clear();
+    catch (error) {
+      logger.error("Error stopping machine monitor:", error);
+      throw error;
+    }
   }
 
   async getMachineOverview(startDate: string, endDate: string, view: string) {
@@ -170,7 +171,11 @@ export class MachineMonitorService {
       dateRange.previousEndDate.toISOString(),
     );
 
-    const [machines, states, previousStates] = await Promise.all([
+    type MachineStatusWithMachine = Prisma.MachineStatusGetPayload<{
+      include: { machine: true };
+    }>;
+
+    const [machines, statesResponse, previousStatesResponse] = await Promise.all([
       machineService.getAll(),
       machineStatusService.getAll({
         filter: JSON.stringify(currentDateFilter),
@@ -181,6 +186,9 @@ export class MachineMonitorService {
         include: { machine: true },
       }),
     ]);
+
+    const states = statesResponse as { data: MachineStatusWithMachine[] };
+    const previousStates = previousStatesResponse as { data: MachineStatusWithMachine[] };
 
     if (!machines.data || !states.data || !previousStates.data) {
       throw new BadRequestError("No machines found");
@@ -276,14 +284,14 @@ export class MachineMonitorService {
     };
   }
 
-  async getMachineTimeline(startDate: string, endDate: string) {
+  async getMachineTimeline(_startDate: string, _endDate: string) {
     const machines = await machineService.getAll();
 
     if (!machines.data) {
       throw new BadRequestError("No machines found");
     }
 
-    const m = machines.data.map((machine) => {
+    const m = machines.data.map((machine: Machine) => {
       return {
         id: machine.id,
         name: machine.name,
@@ -348,24 +356,22 @@ export class MachineMonitorService {
 
   async pollMachines() {
     const current = [];
-    const machines = await machineService.getAll();
+    const machines = await machineService.getAll({
+      filter: {
+        enabled: true,
+      },
+    });
 
     if (!machines.data) {
       throw new BadRequestError("No machines found");
     }
 
-    const machinesToSkip = ["kuraki", "niigata-spn63"];
-
     for (const machine of machines.data) {
-      if (machinesToSkip.includes(machine.slug)) {
-        continue;
-      }
-
       let cachedState: CachedMachineState | null = null;
       try {
-        if (!machine.connectionHost || !machine.connectionPort) {
+        if (!machine.connectionUrl) {
           throw new BadRequestError(
-            "Machine is missing connection information",
+            "Machine is missing connection URL",
           );
         }
 
@@ -373,7 +379,6 @@ export class MachineMonitorService {
           `machine:${machine.id}:current_state`,
         );
 
-        let data;
         let state;
 
         const machineData = await this.pollMachine(machine);
@@ -382,23 +387,31 @@ export class MachineMonitorService {
           throw new BadRequestError("Failed to poll machine data");
         }
 
-        switch (machine.connectionType) {
-          case MachineConnectionType.MTCONNECT:
-            data = await this.processMTConnectData(machineData);
-            if (!data) {
-              throw new BadRequestError("Failed to process MTConnect data");
-            }
-            state = await this.determineMTConnectState(data, cachedState);
-            break;
-          case MachineConnectionType.FOCAS:
-            data = await this.processFanucData(machineData);
-            if (!data) {
-              throw new BadRequestError("Failed to process Fanuc data");
-            }
-            state = await this.determineFanucState(data, cachedState);
-            break;
-          default:
-            throw new BadRequestError("Invalid machine connection type");
+        const data = await this.processMTConnectData(machineData);
+        if (!data) {
+          throw new BadRequestError("Failed to process MTConnect data");
+        }
+
+        if (data.availability === "UNAVAILABLE") {
+          state = MachineState.OFFLINE;
+          data.execution = "OFFLINE";
+          data.controller = "OFFLINE";
+          data.program = "";
+          data.tool = "";
+          data.metrics = this.offlineState.metrics;
+          data.alarm = "";
+        }
+        else {
+          switch (machine.controllerType) {
+            case MachineControllerType.MAZAK:
+              state = await this.determineMTConnectState(data, cachedState);
+              break;
+            case MachineControllerType.FANUC:
+              state = await this.determineFanucState(data, cachedState);
+              break;
+            default:
+              throw new BadRequestError("Invalid machine connection type");
+          }
         }
 
         if (!data || !state) {
@@ -417,7 +430,6 @@ export class MachineMonitorService {
 
         if (needsNewState) {
           try {
-            // Close ALL open statuses for this machine
             for (const status of openStatuses.data) {
               await machineStatusService.update(status.id, {
                 endTime: new Date(),
@@ -484,7 +496,7 @@ export class MachineMonitorService {
           state,
         });
       }
-      catch (error) {
+      catch {
         const openStatuses = await machineStatusService.getAll({
           filter: {
             machineId: machine.id,
@@ -497,7 +509,6 @@ export class MachineMonitorService {
 
         if (needsOfflineState) {
           try {
-            // Close ALL open statuses for this machine
             for (const status of openStatuses.data) {
               await machineStatusService.update(status.id, {
                 endTime: new Date(),
@@ -568,29 +579,6 @@ export class MachineMonitorService {
     return current;
   }
 
-  async pollMachine(machine: any) {
-    const isMTConnect
-      = machine.connectionType === MachineConnectionType.MTCONNECT;
-
-    const url = isMTConnect
-      ? `http://${machine.connectionHost}:${machine.connectionPort}/current`
-      : `http://${env.FANUC_ADAPTER_HOST}:${env.FANUC_ADAPTER_PORT}/api/machines/${machine.slug}`;
-
-    const response = await this.fetchData(url);
-    if (!response) {
-      return null;
-    }
-
-    if (isMTConnect) {
-      const text = await response.text();
-      return text;
-    }
-    else {
-      const json = await response.json();
-      return json;
-    }
-  }
-
   async processMTConnectData(xml: string | null) {
     if (!xml) {
       return null;
@@ -612,6 +600,7 @@ export class MachineMonitorService {
         .trim();
     };
 
+    const availability = extractValue(xml, "avail") || "";
     const program = extractValue(xml, "pgm") || "";
     const programComment = cleanProgramComment(extractValue(xml, "pcmt") || "");
     const programFull = `${program} ${
@@ -629,6 +618,7 @@ export class MachineMonitorService {
     };
 
     return {
+      availability,
       execution,
       controller,
       program: programFull,
@@ -643,35 +633,26 @@ export class MachineMonitorService {
     };
   }
 
-  async processFanucData(data: any) {
-    if (!data) {
+  async pollMachine(machine: Machine) {
+    if (!machine.connectionUrl) {
+      throw new BadRequestError("Machine connection url is required");
+    }
+
+    let apiKey;
+    if (machine.controllerType === "FANUC") {
+      apiKey = "my-secret-key";
+    }
+
+    const response = await this.fetchData(machine.connectionUrl, 500, apiKey);
+    if (!response) {
       return null;
     }
 
-    const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-
-    return {
-      execution: parsedData.execution || "",
-      controller: parsedData.controller || "",
-      program: parsedData.program || "",
-      tool: parsedData.tool || "",
-      metrics: {
-        spindleSpeed: parsedData.spindleSpeed || 0,
-        feedRate: parsedData.feedRate || 0,
-        axisPositions: {
-          X: parsedData.axisX || 0,
-          Y: parsedData.axisY || 0,
-          Z: parsedData.axisZ || 0,
-        },
-      },
-      alarm: parsedData.alarm || "",
-      timestamp: new Date().toISOString(),
-    };
+    return response.text();
   }
 
-  private async fetchData(url: string, timeoutMs: number = 500) {
+  private async fetchData(url: string, timeoutMs: number = 1000, apiKey?: string) {
     const controller = new AbortController();
-    this.activeRequests.add(controller);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -680,20 +661,26 @@ export class MachineMonitorService {
         ? new HttpsAgent({ rejectUnauthorized: false })
         : new HttpAgent();
 
+      const headers: Record<string, string> = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      };
+
+      if (apiKey) {
+        headers["X-API-Key"] = apiKey;
+      }
+
       const response = await axios.get(url, {
         httpAgent: agent,
         httpsAgent: isHttps ? agent : undefined,
         signal: controller.signal as any,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0",
-        },
-        timeout: timeoutMs,
+        headers,
         responseType: "text",
       });
 
       if (response.status !== 200) {
+        logger.warn(`Non-200 response from ${url}: ${response.status}`);
         return null;
       }
 
@@ -704,11 +691,16 @@ export class MachineMonitorService {
       };
     }
     catch (error: any) {
+      if (error.name === "CanceledError") {
+        return null;
+      }
+      else {
+        logger.error(`Request to ${url} failed: ${error.message}`);
+      }
       return null;
     }
     finally {
       clearTimeout(timeout);
-      this.activeRequests.delete(controller);
     }
   }
 
@@ -743,20 +735,30 @@ export class MachineMonitorService {
   }
 
   private async determineFanucState(current: any, previous: any) {
-    if (!current || !current.execution || current.execution === "OFFLINE") {
+    if (!current || !current.execution) {
       return MachineState.OFFLINE;
     }
 
-    if (current.execution === "STRT") {
+    if (current.execution === "ACTIVE") {
       return MachineState.ACTIVE;
     }
 
-    if (current.execution === "****") {
+    if (current.execution === "STOPPED") {
       return MachineState.IDLE;
     }
 
-    if (current.execution === "ALARM") {
+    if (current.alarm && current.alarm !== "") {
       return MachineState.ALARM;
+    }
+
+    const hasMoved = await this.hasMoved(current, previous);
+
+    if (previous?.state === MachineState.SETUP && !hasMoved) {
+      return MachineState.IDLE;
+    }
+
+    if (previous?.state !== MachineState.ACTIVE && hasMoved) {
+      return MachineState.SETUP;
     }
 
     return MachineState.IDLE;
@@ -1161,7 +1163,7 @@ export class MachineMonitorService {
 
   private calculateUtilizationOverTime(
     divisions: Array<{ start: Date; end: Date; label: string }>,
-    states: MachineStateData[],
+    states: Prisma.MachineStatusGetPayload<{ include: { machine: true } }>[],
     machineCount: number,
     now: Date,
     view: string = "all",
@@ -1218,10 +1220,8 @@ export class MachineMonitorService {
       {} as Record<string, typeof states>,
     );
 
-    // Create all possible groups/machines to ensure they're all returned
     const allGroups = new Set<string>();
     if (view === "group") {
-      // Get all unique machine types
       machines.forEach((machine) => {
         if (machine.type) {
           allGroups.add(machine.type);
@@ -1229,7 +1229,6 @@ export class MachineMonitorService {
       });
     }
     else {
-      // Get all machine IDs
       machines.forEach((machine) => {
         if (machine.id) {
           allGroups.add(machine.id);
@@ -1250,7 +1249,6 @@ export class MachineMonitorService {
         groups: {},
       };
 
-      // Iterate through all possible groups to ensure they're all included
       for (const key of allGroups) {
         const groupStates = groupedStates[key] || [];
         const divisionTotals = this.calculateStatusTotals(
@@ -1264,7 +1262,6 @@ export class MachineMonitorService {
         const divisionDuration
           = division.end.getTime() - division.start.getTime();
 
-        // Calculate machine count for this specific group
         let groupMachineCount = 0;
         if (view === "group") {
           groupMachineCount = machines.filter(m => m.type === key).length;
@@ -1297,6 +1294,21 @@ export class MachineMonitorService {
       name: machine.name,
       type: machine.type,
     }));
+  }
+
+  async reset() {
+    logger.info("Resetting machine monitor service");
+
+    try {
+      await this.stop();
+      this.isInitialized = false;
+      this.isStarted = false;
+      logger.info("Machine monitor service reset successfully");
+    }
+    catch (error) {
+      logger.error("Error resetting machine monitor service:", error);
+      throw error;
+    }
   }
 
   async resetFanucAdapter() {

@@ -1,8 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { cookieOptions } from "@/config/env";
-
-import { authService } from "../services/core";
+import { authService } from "@/services";
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
@@ -59,7 +58,7 @@ export class AuthController {
 
   async session(req: Request, res: Response, next: NextFunction) {
     try {
-      const accessToken = req.cookies?.accessToken ?? null;
+      const { accessToken } = req.cookies;
       const result = await authService.session(accessToken);
       res.status(200).json(result);
     }

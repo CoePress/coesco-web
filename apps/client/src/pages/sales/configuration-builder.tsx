@@ -7,15 +7,12 @@ import {
   CircleX,
   CircleAlert,
   CircleMinus,
-  Save,
   Minus,
   CheckSquare,
   Square,
-  Settings,
   ChevronLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Button,
   PageHeader,
@@ -377,8 +374,7 @@ const PerformanceRequirementsModal = ({
   );
 };
 
-const ConfigBuilder = () => {
-  const navigate = useNavigate();
+const ConfigurationBuilder = () => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<SelectedOption[]>([]);
   const [validationResults, setValidationResults] = useState<
@@ -394,12 +390,8 @@ const ConfigBuilder = () => {
     Record<string, number>
   >({});
 
-  const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/configurations/product-classes");
-
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
-    "/configurations/rules"
-  );
+  const { entities: productClasses, loading: productClassesLoading } = useGetEntities("/catalog/product-classes");
+  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities("/catalog/option-rules");
 
   const selectedProductClass =
     productClassSelections.length > 0
@@ -992,31 +984,10 @@ const ConfigBuilder = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        backButton
-        onBack={() => navigate("/sales/catalog")}
-        actions={[
-          {
-            type: "button",
-            label: "Performance",
-            variant: "secondary-outline",
-            icon: <Settings size={16} />,
-            onClick: () => setIsRequirementsModalOpen(true),
-          },
-          {
-            type: "button",
-            label: "Save",
-            variant: "primary",
-            icon: <Save size={16} />,
-            onClick: () => setIsSaveModalOpen(true),
-            disabled: validationResults.some(
-              (r) => r.type === "error" || r.type === "warning"
-            ),
-          },
-        ]}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -1343,4 +1314,4 @@ const ConfigBuilder = () => {
   );
 };
 
-export default ConfigBuilder;
+export default ConfigurationBuilder;

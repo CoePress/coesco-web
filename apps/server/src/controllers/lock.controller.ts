@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { lockingService } from "@/services/core";
+import { lockingService } from "@/services";
 import { getEmployeeContext } from "@/utils/context";
 
 export class LockController {

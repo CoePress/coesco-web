@@ -1,10 +1,15 @@
+import type { Quote } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
+
+import { quoteBuilderService } from "@/services";
+import { quoteService } from "@/services/repository";
+import { buildQueryParams } from "@/utils";
 
 export class QuoteController {
   // Quotes
   async createQuote(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = "";
+      const result = await quoteBuilderService.createQuote(req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -14,7 +19,8 @@ export class QuoteController {
 
   async getQuotes(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = "";
+      const params = buildQueryParams<Quote>(req.query);
+      const result = await quoteService.getAll(params);
       res.status(200).json(result);
     }
     catch (error) {

@@ -48,14 +48,6 @@ export const formatDuration = (ms: number): string => {
   return parts.join(" ");
 };
 
-export const openPopup = (module: string, params: string[]) => {
-  window.open(
-    `/${module}/popup?${params.join("&")}`,
-    "_blank",
-    "width=800,height=600"
-  );
-};
-
 export const isProductClassDescendant = (
   childId: string,
   parentId: string,
@@ -125,55 +117,3 @@ export const instance = axios.create({
   },
 });
 
-export const pythonInstance = axios.create({
-  baseURL: env.VITE_PYTHON_API_URL,
-  withCredentials: true,
-  timeout: 10000, // 10 second timeout
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
-});
-
-// Add request interceptor for debugging
-pythonInstance.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor for debugging
-pythonInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout');
-    } else if (!error.response) {
-      console.error('Network error - no response received');
-      console.error('Error details:', error);
-    } else {
-      console.error('Response error:', error.response.status, error.response.data);
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Converts snake_case keys to camelCase recursively for objects and arrays
-export function snakeToCamel(obj: any): any {
-  if (Array.isArray(obj)) {
-    return obj.map(snakeToCamel);
-  } else if (obj !== null && typeof obj === 'object') {
-    return Object.keys(obj).reduce((acc, key) => {
-      const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-      acc[camelKey] = snakeToCamel(obj[key]);
-      return acc;
-    }, {} as any);
-  }
-  return obj;
-}

@@ -4,10 +4,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Table, Button } from "@/components";
+import { Table, Button, PageHeader } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import PageHeader from "@/components/_old/page-head";
 
 const Companies = () => {
   const { entities: companies } = useGetEntities("/crm/companies");

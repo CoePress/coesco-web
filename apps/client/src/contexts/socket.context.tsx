@@ -1,12 +1,24 @@
 import env from "@/config/env";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useRef,
+  useEffect,
+  useState,
+} from "react";
 import { io, Socket } from "socket.io-client";
 
 type SocketContextType = {
-  isConnected: boolean;
-  socket: Socket | null;
-  emit: (event: string, data: any, callback?: (...args: any[]) => void) => void;
+  systemSocket: Socket | null;
+  systemStatus: string;
+  isSystemConnected: boolean;
+  subscribeToSystemStatus: () => void;
+  unsubscribeFromSystemStatus: () => void;
+
+  iotSocket: Socket | null;
   machineStates: any[];
+  subscribeToMachineStates: () => void;
+  unsubscribeFromMachineStates: () => void;
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -15,87 +27,107 @@ export const SocketContext = createContext<SocketContextType | undefined>(
 
 type SocketProviderProps = {
   children: React.ReactNode;
-  listenTo?: string[];
 };
 
-export const SocketProvider = ({ children, listenTo = [] }: SocketProviderProps) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+export const SocketProvider = ({ children }: SocketProviderProps) => {
+  const systemSocketRef = useRef<Socket | null>(null);
+  const [systemStatus, setSystemStatus] = useState("");
+  const [isSystemConnected, setIsSystemConnected] = useState(false);
+  const iotSocketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io(`${env.VITE_BASE_URL}/client`, {
+  const subscribeToSystemStatus = () => {
+    if (!systemSocketRef.current) {
+      systemSocketRef.current = io(`${env.VITE_BASE_URL}/system`, {
         reconnectionDelayMax: 10000,
         transports: ["websocket", "polling"],
       });
 
-      const socket = socketRef.current;
-
-      socket.on("connect", () => setIsConnected(true));
-      socket.on("disconnect", () => setIsConnected(false));
-    }
-
-    return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    const handleMachineStates = (data: any[]) => {
-      setMachineStates(data);
-    };
-
-    socket.on("machine_states", handleMachineStates);
-
-    return () => {
-      socket.off("machine_states", handleMachineStates);
-    };
-  }, []);
-
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    socket.removeAllListeners();
-
-    socket.on("connect", () => setIsConnected(true));
-    socket.on("disconnect", () => setIsConnected(false));
-    socket.on("machine_states", (data: any[]) => setMachineStates(data));
-
-    listenTo.forEach((event) => {
-      socket.on(event, () => {
+      const socket = systemSocketRef.current;
+      socket.on("connect", () => {
+        setIsSystemConnected(true);
+        socket.emit("system_status:subscribe");
       });
-    });
 
-    return () => {
-      socket.removeAllListeners();
-    };
-  }, [listenTo]);
+      socket.on("disconnect", () => {
+        setIsSystemConnected(false);
+        setSystemStatus("");
+      });
 
-  const emit = (
-    event: string,
-    data: any,
-    callback?: (...args: any[]) => void
-  ) => {
-    if (socketRef.current?.connected) {
-      if (callback) {
-        socketRef.current.emit(event, data, callback);
-      } else {
-        socketRef.current.emit(event, data);
-      }
+      socket.on("connect_error", () => {
+        setIsSystemConnected(false);
+        setSystemStatus("");
+      });
+
+      socket.on("system_status", (status: string) => {
+        setSystemStatus(status);
+      });
+    } else if (systemSocketRef.current.connected) {
+      systemSocketRef.current.emit("system_status:subscribe");
     }
   };
 
-  const contextValue = {
-    isConnected,
-    socket: socketRef.current,
-    emit,
+  const unsubscribeFromSystemStatus = () => {
+    if (systemSocketRef.current?.connected) {
+      systemSocketRef.current.emit("system_status:unsubscribe");
+      setSystemStatus("");
+    }
+  };
+
+  const subscribeToMachineStates = () => {
+    if (!iotSocketRef.current) {
+      iotSocketRef.current = io(`${env.VITE_BASE_URL}/iot`, {
+        reconnectionDelayMax: 10000,
+        transports: ["websocket", "polling"],
+      });
+
+      const socket = iotSocketRef.current;
+      socket.on("connect", () => {
+        socket.emit("machine_states:subscribe");
+      });
+
+      socket.on("disconnect", () => {
+        setIsSubscribed(false);
+      });
+
+      socket.on("machine_states:subscribed", () => {
+        setIsSubscribed(true);
+      });
+
+      socket.on("machine_states", (data: any[]) => {
+        setMachineStates(data);
+      });
+    } else if (iotSocketRef.current.connected && !isSubscribed) {
+      iotSocketRef.current.emit("machine_states:subscribe");
+    }
+  };
+
+  const unsubscribeFromMachineStates = () => {
+    if (iotSocketRef.current?.connected) {
+      iotSocketRef.current.emit("machine_states:unsubscribe");
+      setIsSubscribed(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      systemSocketRef.current?.disconnect();
+      iotSocketRef.current?.disconnect();
+    };
+  }, []);
+
+  const contextValue: SocketContextType = {
+    systemSocket: systemSocketRef.current,
+    systemStatus,
+    isSystemConnected,
+    subscribeToSystemStatus,
+    unsubscribeFromSystemStatus,
+
+    iotSocket: iotSocketRef.current,
     machineStates,
+    subscribeToMachineStates,
+    unsubscribeFromMachineStates,
   };
 
   return (

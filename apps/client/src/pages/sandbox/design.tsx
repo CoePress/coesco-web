@@ -2,7 +2,7 @@ import Button from "@/components/ui/button";
 import Text from "@/components/ui/text";
 import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
-import PageHeader from "@/components/_old/page-head";
+import PageHeader from "@/components/layout/page-header";
 
 const Actions = () => {
   return (

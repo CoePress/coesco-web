@@ -1,13 +1,11 @@
 import {
-  Download,
   MoreHorizontal,
   Plus,
-  Layout,
-  List as ListIcon,
+  PlusIcon,
 } from "lucide-react";
 import { useState } from "react";
 
-import { PageHeader, StatusBadge } from "@/components";
+import { Button, PageHeader, StatusBadge } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import Table from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
@@ -186,41 +184,38 @@ const Pipeline = () => {
     },
   ];
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button>
+          <PlusIcon size={16} /> New Journey
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "View",
-            variant: "secondary-outline",
-            icon: <Layout size={16} />,
-            onClick: () => setViewMode("kanban"),
-          },
-          {
-            type: "button",
-            label: "List",
-            variant: "secondary-outline",
-            icon: <ListIcon size={16} />,
-            onClick: () => setViewMode("list"),
-          },
-          {
-            type: "button",
-            label: "Export",
-            variant: "secondary-outline",
-            icon: <Download size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Add Deal",
-            variant: "primary",
-            icon: <Plus size={16} />,
-            onClick: () => {},
-          },
-        ]}
+        actions={<Actions />}
+        // actions={[
+        //   {
+        //     type: "button",
+        //     label: "View",
+        //     variant: "secondary-outline",
+        //     icon: <Layout size={16} />,
+        //     onClick: () => setViewMode("kanban"),
+        //   },
+        //   {
+        //     type: "button",
+        //     label: "List",
+        //     variant: "secondary-outline",
+        //     icon: <ListIcon size={16} />,
+        //     onClick: () => setViewMode("list"),
+        //   },
+        // ]}
       />
 
       {viewMode === "kanban" && (

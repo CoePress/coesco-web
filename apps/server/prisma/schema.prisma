@@ -6,6 +6,8 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// User
 model User {
   id          String    @id @default(uuid())
   username    String    @unique
@@ -18,6 +20,8 @@ model User {
   updatedAt   DateTime  @updatedAt
 
   employee Employee?
+  roles   RoleAssignment[]
+  customPermissions PermissionException[]
 
   @@map("users")
 }
@@ -53,6 +57,98 @@ model Employee {
   @@index([createdById])
   @@map("employees")
 }
+
+model Permission {
+  id          String   @id @default(uuid())
+  resource    String
+  action      String
+  description String?
+  condition   Json?            // optional ABAC-ish guard your app can evaluate
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions   RolePermission[]
+  exceptionGrants   PermissionException[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  assignments RoleAssignment[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id            String     @id @default(uuid())
+  roleId        String
+  permissionId  String
+  condition     Json?             // optional, e.g. {"field":"status","in":["DRAFT"]}
+
+  createdAt     DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model RoleAssignment {
+  id          String   @id @default(uuid())
+  userId      String
+  roleId      String
+  scope       Json               // e.g., {"plant":"DET"} — keep keys predictable
+  scopeKey    String             // canonical string for indexing, e.g. "plant=DET"
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role  Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([roleId])
+  @@unique([userId, roleId, scopeKey])
+  @@map("role_assignments")
+}
+
+model PermissionException {
+  id            String   @id @default(uuid())
+  userId        String
+  permissionId  String
+  scope         Json
+  scopeKey      String
+  reason        String?
+  expiresAt     DateTime?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([permissionId])
+  @@map("permission_exceptions")
+}
+
+// Sales
+
+// Production
+
+// Misc
 
 model PerformanceSheetVersion {
   id          String    @id @default(uuid())
@@ -575,11 +671,8 @@ model Machine {
   name            String
   type            MachineType
   controllerType  MachineControllerType
-  controllerModel String?
-  connectionType  MachineConnectionType
-  connectionHost  String?
-  connectionPort  Int?
   connectionUrl   String?
+  enabled       Boolean               @default(false)
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   deletedAt       DateTime?
@@ -599,14 +692,14 @@ model MachineStatus {
   state        MachineState
   execution    String
   controller   String
-  program      String
-  tool         String
-  metrics      Json
-  alarmCode    String
-  alarmMessage String
+  program      String?
+  tool         String?
+  metrics      Json?
+  alarmCode    String?
+  alarmMessage String?
   startTime    DateTime
   endTime      DateTime?
-  duration     Int
+  duration     Int?
   createdAt    DateTime     @default(now())
 
   machine Machine @relation(fields: [machineId], references: [id])
@@ -696,12 +789,6 @@ enum JourneyType {
   PARTS
   SERVICE
   RETROFIT
-}
-
-enum MachineConnectionType {
-  MTCONNECT
-  FOCAS
-  OTHER
 }
 
 enum MachineControllerType {

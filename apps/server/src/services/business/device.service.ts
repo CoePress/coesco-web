@@ -1,3 +1,5 @@
+import type { NtfyDevice } from "@prisma/client";
+
 import axios from "axios";
 import ping from "ping";
 
@@ -48,7 +50,7 @@ export class DeviceService {
     if (!devices.success)
       return;
 
-    const promises = devices.data.map(async (device) => {
+    const promises = devices.data.map(async (device: NtfyDevice) => {
       const success = await this.pingDevice(device.id);
       if (success) {
         await this.handlePingSuccess(device.id);
@@ -131,7 +133,7 @@ export class DeviceService {
   }
 
   // Monitoring Control
-  async startMonitoring(): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.isMonitoring)
       return;
 
@@ -141,7 +143,7 @@ export class DeviceService {
     }, 10000);
   }
 
-  async stopMonitoring(): Promise<void> {
+  async shutdown(): Promise<void> {
     if (!this.isMonitoring)
       return;
 
@@ -152,9 +154,9 @@ export class DeviceService {
     }
   }
 
-  async reloadMonitoring(): Promise<void> {
+  async reload(): Promise<void> {
     logger.info("Reloading device monitoring...");
-    await this.stopMonitoring();
-    await this.startMonitoring();
+    await this.shutdown();
+    await this.initialize();
   }
 }

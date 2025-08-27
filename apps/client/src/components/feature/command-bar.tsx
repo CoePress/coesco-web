@@ -1,6 +1,4 @@
-type Props = {}
-
-const CommandBar = (props: Props) => {
+const CommandBar = () => {
   return (
     <div>CommandBar</div>
   )

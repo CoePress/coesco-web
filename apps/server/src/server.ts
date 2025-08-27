@@ -3,8 +3,7 @@ import process from "node:process";
 
 import { server } from "./app";
 import { env } from "./config/env";
-import { initializeServices } from "./services";
-import { cacheService } from "./services/core";
+import { cacheService, initializeServices } from "./services";
 import { logger } from "./utils/logger";
 import { prisma } from "./utils/prisma";
 

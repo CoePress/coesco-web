@@ -1,4 +1,4 @@
-import { Button } from "@/components";
+import { Button, Loader } from "@/components";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 export type TableColumn<T> = {
@@ -25,6 +25,8 @@ type TableProps<T> = {
   sort?: string;
   order?: "asc" | "desc";
   onSortChange?: (sort: string, order: "asc" | "desc") => void;
+  loading?: boolean;
+  emptyMessage?: string;
 };
 
 const Table = <T extends Record<string, any>>({
@@ -44,6 +46,8 @@ const Table = <T extends Record<string, any>>({
   sort,
   order = "asc",
   onSortChange,
+  loading = false,
+  emptyMessage = "No records found",
 }: TableProps<T>) => {
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -71,10 +75,12 @@ const Table = <T extends Record<string, any>>({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
+    <div className={`flex-1 flex flex-col h-full ${className}`}>
+      <div className="flex-1 overflow-auto relative">
         <table
-          className={`min-w-full divide-y divide-border text-text-muted text-sm ${className}`}>
+          className={`min-w-full divide-y divide-border text-text-muted text-sm ${
+            !loading && data.length === 0 ? 'h-full' : ''
+          }`}>
           <thead className="bg-foreground">
             <tr>
               {selectable && (
@@ -113,50 +119,68 @@ const Table = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-foreground divide-y divide-border">
-            {data.map((row) => {
-              return (
-                <tr
-                  key={String(row[idField])}
-                  className={`hover:bg-surface ${
-                    onRowClick ? "cursor-pointer" : ""
-                  }`}
-                  onClick={() => onRowClick?.(row)}>
-                  {selectable && (
-                    <td
-                      className="pl-4 py-2 whitespace-nowrap"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleRow(row[idField]);
-                      }}>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-border"
-                        checked={selectedItems.includes(row[idField])}
-                        onChange={() => {}}
-                      />
-                    </td>
-                  )}
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className={`px-2 py-2 whitespace-nowrap ${
-                        column.className || ""
-                      }`}>
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
+          <tbody className="divide-y divide-border relative">
+            {loading ? (
+               <tr>
+                <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
+                  <div className="flex items-center justify-center h-full">
+                    <Loader />
+                  </div>
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-text-muted">{emptyMessage}</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              data.map((row) => {
+                return (
+                  <tr
+                    key={String(row[idField])}
+                    className={`hover:bg-surface bg-foreground ${
+                      onRowClick ? "cursor-pointer" : ""
+                    }`}
+                    onClick={() => onRowClick?.(row)}>
+                    {selectable && (
+                      <td
+                        className="pl-4 py-2 whitespace-nowrap"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleRow(row[idField]);
+                        }}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-border"
+                          checked={selectedItems.includes(row[idField])}
+                          onChange={() => {}}
+                        />
+                      </td>
+                    )}
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={`px-2 py-2 whitespace-nowrap ${
+                          column.className || ""
+                        }`}>
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       {pagination && (
-        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full rounded-b-lg">
+        <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
             Showing{" "}
             <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}

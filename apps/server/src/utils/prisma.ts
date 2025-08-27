@@ -43,10 +43,17 @@ function buildNestedInclude(paths: string[]) {
     let current = result;
     parts.forEach((part, index) => {
       if (index === parts.length - 1) {
-        current[part] = true;
+        if (!current[part] || current[part] === true) {
+          current[part] = true;
+        }
       }
       else {
-        current[part] ??= { include: {} };
+        if (current[part] === true) {
+          current[part] = { include: {} };
+        }
+        else if (!current[part]) {
+          current[part] = { include: {} };
+        }
         current = current[part].include;
       }
     });
@@ -79,8 +86,8 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
       result.select = parsedSelect;
     }
   }
-  else if (Array.isArray(params.fields) && params.fields.length > 0) {
-    result.select = params.fields.reduce(
+  else if (Array.isArray(params.select) && params.select.length > 0) {
+    result.select = params.select.reduce(
       (acc, field) => {
         acc[field] = true;
         return acc;

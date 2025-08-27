@@ -2,9 +2,7 @@
 export { default as AddressInput } from "./_old/address-input";
 export { default as AdvancedDropdown } from "./_old/advanced-dropdown";
 export { default as DatePicker } from "./_old/date-picker";
-export { default as PageHeader } from "./_old/page-header";
 export { default as Text } from "./ui/text";
-
 
 // Misc
 export { default as CommandBar } from "./_old/command-bar";
@@ -15,12 +13,15 @@ export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";
 
 
 // Feature
+export { default as Toolbar } from "./feature/toolbar";
+export type { Filter, FilterOption } from "./feature/toolbar";
 
 // Forms
 export { default as LoginForm } from "./forms/login-form";
 
 // Layout
 export { default as Layout } from "./layout/layout";
+export { default as PageHeader } from "./layout/page-header";
 
 // UI
 export { default as Button } from "./ui/button";

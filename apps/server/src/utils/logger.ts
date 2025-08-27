@@ -9,7 +9,7 @@ if (!fs.existsSync(logDir)) {
 }
 
 export const logger = createLogger({
-  level: "info",
+  level: "http",
   format: format.combine(
     format.timestamp(),
     format.errors({ stack: true }),

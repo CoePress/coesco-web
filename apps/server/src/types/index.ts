@@ -10,7 +10,6 @@ export interface IQueryParams<T> {
   searchFields?: Array<keyof T>;
   dateFrom?: Date | string;
   dateTo?: Date | string;
-  fields?: string[];
   include?: string[] | Record<string, any> | string;
   select?: string[] | Record<string, any> | string;
 }
