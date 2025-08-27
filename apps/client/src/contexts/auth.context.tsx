@@ -1,3 +1,4 @@
+import { env } from "@/config/env";
 import axios from "axios";
 import {
   createContext,
@@ -9,7 +10,6 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import env from "@/config/env";
 
 interface IAuthContextType {
   user: any;
