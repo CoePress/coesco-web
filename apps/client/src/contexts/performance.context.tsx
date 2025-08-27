@@ -226,6 +226,7 @@ export interface TDDBHDData {
     coefficientOfFriction?: number; // Calculated
     cylinderBore?: number;
     minMaterialWidth?: number; // Calculated
+    confirmedMinWidth?: boolean;
     brakePadDiameter?: number;
     threadingDrive?: {
       airClutch?: string;
@@ -254,6 +255,15 @@ export interface TDDBHDData {
     webTension?: {
       psi?: number; // Calculated
       lbs?: number; // Calculated
+    };
+    checks?: {
+      minMaterialWidthCheck?: string; // Calculated
+      airPressureCheck?: string; // Calculated
+      rewindTorqueCheck?: string; // Calculated
+      holdDownForceCheck?: string; // Calculated
+      brakePressCheck?: string; // Calculated
+      torqueRequiredCheck?: string; // Calculated
+      tddbhdCheck?: string; // Calculated
     };
   };
   coil?: {
@@ -424,6 +434,9 @@ export interface StrUtilityData {
       jackForceCheck?: string; // Calculated
       backupRollsCheck?: string; // Calculated
       feedRateCheck?: string; // Calculated
+      pinchRollCheck?: string; // Calculated
+      strRollCheck?: string; // Calculated
+      fpmCheck?: string; // Calculated
     };
     torque?: {
       straightener?: number; // Calculated
@@ -797,6 +810,7 @@ const initialPerformanceData: PerformanceData = {
       coefficientOfFriction: 0,
       cylinderBore: 0,
       minMaterialWidth: 0,
+      confirmedMinWidth: false,
       brakePadDiameter: 0,
       threadingDrive: {
         airClutch: "",
@@ -825,6 +839,15 @@ const initialPerformanceData: PerformanceData = {
       webTension: {
         psi: 0,
         lbs: 0,
+      },
+      checks: {
+        minMaterialWidthCheck: "",
+        airPressureCheck: "",
+        rewindTorqueCheck: "",
+        holdDownForceCheck: "",
+        brakePressCheck: "",
+        torqueRequiredCheck: "",
+        tddbhdCheck: "",
       },
     },
     coil: {
@@ -991,6 +1014,9 @@ const initialPerformanceData: PerformanceData = {
         jackForceCheck: "",
         backupRollsCheck: "",
         feedRateCheck: "",
+        pinchRollCheck: "",
+        strRollCheck: "",
+        fpmCheck: "",
       },
       torque: {
         straightener: 0,

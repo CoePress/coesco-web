@@ -356,14 +356,14 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         <Input
           label="Pull Thru Straightener Rolls"
           name="feed.feed.pullThru.straightenerRolls"
-          value={localData.feed?.feed?.pullThru?.straightenerRolls || ""}
+          value={localData.feed?.feed?.pullThru?.straightenerRolls || "N/A"}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
         <Input
           label="Pull Thru Pinch Rolls"
           name="feed.feed.pullThru.pinchRolls"
-          value={localData.feed?.feed?.pullThru?.pinchRolls || ""}
+          value={localData.feed?.feed?.pullThru?.pinchRolls || "N/A"}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -418,7 +418,8 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   // Performance results table section
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
-    const lengthRows = [tableData[0].length, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
+    const initLength = tableData[0]?.length || 0;
+    const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
     return (
       <Card className="mb-4 p-4">

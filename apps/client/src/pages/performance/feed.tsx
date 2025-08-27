@@ -226,9 +226,9 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
       <div className="grid grid-cols-4 gap-4">
         <Input
           label="STR Max Speed (ft/min)"
-          name="feed.feed.maximumVelocity"
+          name="feed.feed.strMaxSpeed"
           type="number"
-          value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
+          value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -277,7 +277,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Max Velocity (ft/min)"
-          name="feed.feed.maxVelocity"
+          name="common.equipment.feed.maxVelocity"
           type="number"
           value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           disabled={true}
@@ -607,7 +607,8 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   // Performance results table section
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
-    const lengthRows = [tableData[0].length, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
+    const initLength = tableData[0]?.length || 0;
+    const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
     return (
       <Card className="mb-4 p-4">

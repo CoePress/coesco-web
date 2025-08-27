@@ -163,6 +163,7 @@
       "coefficientOfFriction": 0.6,
       "cylinderBore": 0,
       "minMaterialWidth": 0,
+      "confirmedMinWidth": false,
       "brakePadDiameter": 0,
       "threadingDrive": {
         "airClutch": "Yes",
@@ -191,6 +192,15 @@
       "webTension": {
         "psi": 0,
         "lbs": 0
+      },
+      "checks": {
+        "minMaterialWidthCheck": "FAIL",
+        "airPressureCheck": "FAIL",
+        "rewindTorqueCheck": "FAIL",
+        "holdDownForceCheck": "FAIL",
+        "brakePressCheck": "FAIL",
+        "torqueRequiredCheck": "FAIL",
+        "tddbhdCheck": "NOT OK"
       }
     },
     "coil": {
@@ -356,7 +366,10 @@
         "horsepowerCheck": "",
         "jackForceCheck": "",
         "backupRollsCheck": "",
-        "feedRateCheck": ""
+        "feedRateCheck": "",
+        "pinchRollCheck": "",
+        "strRollCheck": "",
+        "fpmCheck": ""
       },
       "torque": {
         "straightener": 0,

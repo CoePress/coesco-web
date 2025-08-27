@@ -198,6 +198,51 @@ def calculate_tbdbhd(data: tddbhd_input):
         return "ERROR: TDDBHD brake quantity invalid."
 
     failsafe_holding_force = hold_force * friction * num_brakepads * brake_dist * data.brake_qty 
+    
+    # Checks
+    if min_material_width <= data.width:
+        min_material_width_check = "PASS"
+    else:
+        min_material_width_check = "FAIL"
+
+    if data.air_pressure <= 120:
+        air_pressure_check = "PASS"
+    else:
+        air_pressure_check = "FAIL"
+
+    if rewind_torque <= torque_at_mandrel:
+        rewind_torque_check = "PASS"
+    else:
+        rewind_torque_check = "FAIL"
+
+    if hold_down_force_req <= hold_down_force_available:
+        hold_down_force_check = "PASS"
+    else:
+        hold_down_force_check = "FAIL"
+
+    if brake_press_required <= data.air_pressure:
+        brake_press_check = "PASS"
+    else:
+        brake_press_check = "FAIL"
+
+    if torque_required <= failsafe_holding_force:
+        torque_required_check = "PASS"
+    else:
+        torque_required_check = "FAIL"
+
+    if reel_type.upper() == "PULLOFF":
+        if ((min_material_width_check == "PASS" or data.confirmed_min_width == True) and 
+            rewind_torque_check == "PASS" and
+            hold_down_force_check == "PASS" and
+            brake_press_check == "PASS" and
+            (torque_required_check == "PASS" or hold_down_force_available == 0)
+            ):
+            tddbhd_check = "OK"
+        else:
+            tddbhd_check = "NOT OK"
+    else:
+        tddbhd_check = "USE MOTORIZED"
+
     return {
         "friction": round(friction, 3),
         "web_tension_psi": round(web_tension_psi, 3),
@@ -215,4 +260,11 @@ def calculate_tbdbhd(data: tddbhd_input):
         "torque_required": round(torque_required, 3),
         "failsafe_required": round(brake_press_required, 3),
         "failsafe_holding_force": round(failsafe_holding_force, 3),
+        "min_material_width_check": min_material_width_check,
+        "air_pressure_check": air_pressure_check,
+        "rewind_torque_check": rewind_torque_check,
+        "hold_down_force_check": hold_down_force_check,
+        "brake_press_check": brake_press_check,
+        "torque_required_check": torque_required_check,
+        "tddbhd_check": tddbhd_check
     }

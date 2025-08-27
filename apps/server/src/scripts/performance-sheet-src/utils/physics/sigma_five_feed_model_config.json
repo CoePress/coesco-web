@@ -1460,7 +1460,7 @@
             "qty": 2,
             "lbs": 0,
             "inertia": 0,
-            "ratio": 10.16
+            "ratio": 0
         },
         "hub_YSS630": {
             "o_dia": 3.130,
@@ -1470,7 +1470,7 @@
             "qty": 2,
             "lbs": 0,
             "inertia": 0,
-            "ratio": 10.16
+            "ratio": 0
         },
         "u_pul": {
             "o_dia": 8.770,
@@ -1618,7 +1618,7 @@
             "qty": 2,
             "lbs": 0,
             "inertia": 0,
-            "ratio": 13.20
+            "ratio": 0
         },
         "i_hub": {
             "o_dia": 3.130,
@@ -1628,7 +1628,7 @@
             "qty": 2,
             "lbs": 0,
             "inertia": 0,
-            "ratio": 13.20
+            "ratio": 0
         },
         "d_gears_YSS630": {
             "o_dia": 6.330,

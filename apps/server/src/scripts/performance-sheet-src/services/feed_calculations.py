@@ -148,8 +148,8 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
         # Str Max SP Inch
         str_max_sp_inch = str_max_sp * 12
     else:
-        str_max_sp = 0
-        str_max_sp_inch = 0
+        str_max_sp = 0.0
+        str_max_sp_inch = 0.0
 
     # Time calculations
     time = time_input(
@@ -220,13 +220,13 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
         rms_torque_fa1 = max(rms_torque_fa1_list) if rms_torque_fa1_list else 0
         rms_torque_fa2 = max(rms_torque_fa2_list) if rms_torque_fa2_list else 0
     else:    
-        rms_torque_fa1 = sqrt(((peak_torque ** 2 * feed_angle_1_values[0]["acceleration_time"]) + 
-                                (acceleration_torque ** 2 * feed_angle_1_values[0]["acceleration_time"]) + 
-                                (settle_torque ** 2 * settle_time) + (loop_torque ** 2 * feed_angle_1_values[0]["dwell_time"])) / 
+        rms_torque_fa1 = sqrt((((peak_torque ** 2) * feed_angle_1_values[0]["acceleration_time"]) + 
+                                ((acceleration_torque ** 2) * feed_angle_1_values[0]["acceleration_time"]) + 
+                                ((settle_torque ** 2) * settle_time) + ((loop_torque ** 2) * feed_angle_1_values[0]["dwell_time"])) / 
                                 (feed_angle_1_values[0]["cycle_time"]))
-        rms_torque_fa2 = sqrt(((peak_torque ** 2 * feed_angle_2_values[0]["acceleration_time"]) +
-                                (acceleration_torque ** 2 * feed_angle_2_values[0]["acceleration_time"]) + 
-                                (settle_torque ** 2 * settle_time) + (loop_torque ** 2 * feed_angle_2_values[0]["dwell_time"])) / 
+        rms_torque_fa2 = sqrt((((peak_torque ** 2) * feed_angle_2_values[0]["acceleration_time"]) +
+                                ((acceleration_torque ** 2) * feed_angle_2_values[0]["acceleration_time"]) + 
+                                ((settle_torque ** 2) * settle_time) + ((loop_torque ** 2) * feed_angle_2_values[0]["dwell_time"])) / 
                                 (feed_angle_2_values[0]["cycle_time"]))
 
     # Calculate Regen

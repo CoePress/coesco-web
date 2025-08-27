@@ -146,6 +146,29 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     if (tddbhdResults.coil_od !== undefined) {
       setNestedValue(updatedResults, 'tddbhd.coil.coilOD', tddbhdResults.coil_od);
     }
+
+    // Map TDDBHD checks
+    if (tddbhdResults.min_material_width_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.minMaterialWidthCheck', tddbhdResults.min_material_width_check);
+    }
+    if (tddbhdResults.air_pressure_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.airPressureCheck', tddbhdResults.air_pressure_check);
+    }
+    if (tddbhdResults.rewind_torque_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.rewindTorqueCheck', tddbhdResults.rewind_torque_check);
+    }
+    if (tddbhdResults.hold_down_force_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.holdDownForceCheck', tddbhdResults.hold_down_force_check);
+    }
+    if (tddbhdResults.brake_press_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.brakePressCheck', tddbhdResults.brake_press_check);  
+    }
+    if (tddbhdResults.torque_required_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.torqueRequiredCheck', tddbhdResults.torque_required_check);
+    }
+    if (tddbhdResults.tddbhd_check !== undefined) {
+      setNestedValue(updatedResults, 'tddbhd.reel.checks.tddbhdCheck', tddbhdResults.tddbhd_check);
+    }
   }
   
   // Update Reel Drive results
@@ -275,11 +298,11 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     }
 
     // Map total reflected inertia
-    if (reelDriveResults.total.total_refl_inertia_empty !== undefined) {
-      setNestedValue(updatedResults, 'reelDrive.reel.totalReflInertia.empty', reelDriveResults.total.total_refl_inertia_empty);
+    if (reelDriveResults.total.total_refl_inert_empty !== undefined) {
+      setNestedValue(updatedResults, 'reelDrive.reel.totalReflInertia.empty', reelDriveResults.total.total_refl_inert_empty);
     }
-    if (reelDriveResults.total.total_refl_inertia_full !== undefined) {
-      setNestedValue(updatedResults, 'reelDrive.reel.totalReflInertia.full', reelDriveResults.total.total_refl_inertia_full);
+    if (reelDriveResults.total.total_refl_inert_full !== undefined) {
+      setNestedValue(updatedResults, 'reelDrive.reel.totalReflInertia.full', reelDriveResults.total.total_refl_inert_full);
     }
 
     // Map motor calculations
@@ -301,7 +324,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'reelDrive.reel.friction.bearing.mandrel.rear', reelDriveResults.friction.r_brg_mand);
     }
     if (reelDriveResults.friction.f_brg_mand !== undefined) {
-      setNestedValue(updatedResults, 'reelDrive.reel.friction.bearing.mandrel.front', reelDriveResults.f_brg_mand);
+      setNestedValue(updatedResults, 'reelDrive.reel.friction.bearing.mandrel.front', reelDriveResults.friction.f_brg_mand);
     }
     if (reelDriveResults.friction.r_brg_coil !== undefined) {
       setNestedValue(updatedResults, 'reelDrive.reel.friction.bearing.coil.front', reelDriveResults.friction.r_brg_coil);
@@ -455,6 +478,29 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     }
     if (strUtilityResults.brake_torque !== undefined) {
       setNestedValue(updatedResults, 'strUtility.straightener.torque.brake', strUtilityResults.brake_torque);
+    }
+
+    // Map checks
+    if (strUtilityResults.backup_rolls_recommended !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.backupRollsCheck', strUtilityResults.backup_rolls_recommended);
+    }
+    if (strUtilityResults.required_force_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.jackForceCheck', strUtilityResults.required_force_check);
+    }
+    if (strUtilityResults.horsepower_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.horsepowerCheck', strUtilityResults.horsepower_check);
+    }
+    if (strUtilityResults.feed_rate_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.feedRateCheck', strUtilityResults.feed_rate_check);
+    }
+    if (strUtilityResults.pinch_rolls_recommended !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.pinchRollsCheck', strUtilityResults.pinch_rolls_recommended);
+    }
+    if (strUtilityResults.str_rolls_recommended !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.strRollsCheck', strUtilityResults.str_rolls_recommended);
+    }
+    if (strUtilityResults.fpm_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.fpmCheck', strUtilityResults.fpm_check);
     }
   }
   

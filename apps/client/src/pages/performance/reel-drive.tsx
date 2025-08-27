@@ -454,7 +454,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <Input
           label="TOTAL REFL. INERTIA FULL"
-          name="reelDrive.reel.totalReflInertia.full"
+          name="reelDrive.reel.friction.totalReflInertia.full"
           value={localData.reelDrive?.reel?.totalReflInertia?.full?.toString() || ""}
           type="number"
           disabled={true}

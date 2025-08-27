@@ -35,6 +35,7 @@ class tddbhd_input(BaseModel):
     coil_id: float
     coil_od: float
     coil_weight: float
+    confirmed_min_width: bool
 
     decel: float
     friction: float
@@ -74,6 +75,7 @@ class str_utility_input(BaseModel):
     material_thickness: float
     yield_strength: float
     material_type: str
+    yield_met: str
 
     str_model: str
     str_width: float

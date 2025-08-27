@@ -29,6 +29,16 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  // Checks
+  const requiredForceCheck = data.strUtility?.straightener?.required?.jackForceCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const pinchRollCheck = data.strUtility?.straightener?.required?.pinchRollCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const strRollCheck = data.strUtility?.straightener?.required?.strRollCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const horsepowerCheck = data.strUtility?.straightener?.required?.horsepowerCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const backupRollsCheck = data.strUtility?.straightener?.required?.backupRollsCheck === "OK" ? "var(--color-success)" : "var(--color-warning)";
+  const fpmCheck = data.strUtility?.straightener?.required?.fpmCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const yieldMet = data.reelDrive?.reel?.reelDriveOK === "OK" ? "var(--color-success)" : "var(--color-error)";
+  const feedRateCheck = data.strUtility?.straightener?.required?.feedRateCheck === "OK" ? "var(--color-success)" : "var(--color-error)";  
+
   // Status calculation functions
   const statusCalculations = useMemo(() => {
     const getJackForceStatus = () => {
@@ -411,7 +421,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
             />
             <Input
               label="Rated Force (lbs)"

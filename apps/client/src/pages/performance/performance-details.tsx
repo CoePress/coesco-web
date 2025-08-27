@@ -43,6 +43,7 @@ type PerformanceTabValue =
   | "shear"
   | "summary-report";
 
+
 const PerformanceDetails = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
   const location = useLocation();
@@ -71,6 +72,16 @@ const PerformanceDetails = () => {
   const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
+  const visibleTabs = [
+    { label: "RFQ", value: "rfq" },
+    { label: "Material Specs", value: "material-specs" },
+    { label: "Summary Report", value: "summary-report" },
+    { label: "TDDBHD", value: "tddbhd" },
+    { label: "Str Utility", value: "str-utility" },
+    { label: "Roll Str Backbend", value: "roll-str-backbend" },
+    { label: "Feed", value: "feed" },
+  ];
+  
   useEffect(() => {
     if (!performanceSheetId) return;
 
@@ -259,7 +270,7 @@ const PerformanceDetails = () => {
       <Tabs
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(tab as PerformanceTabValue)}
-        tabs={PERFORMANCE_TABS}
+        tabs={visibleTabs}
       />
 
       <div className="tab-content">{renderTabContent()}</div>

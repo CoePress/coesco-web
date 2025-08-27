@@ -48,7 +48,6 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
         raise ValueError("Width must be greater than zero")
 
     model = feed_model.upper()
-    roll_flag = roll_width.lower() in ("y", "yes")
     default_length = e_data.get("length", 0)
 
     def in_model(*keys):
@@ -68,10 +67,10 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
 
     # Models S3, S4, S5
     if in_model("S3", "S4", "S5"):
-        if roll_flag:
+        if roll_width.lower() == 'yes':
             if element in ("u_roll", "u_roll_contact", "u_roll_1"):
                 if in_model("S5"):
-                    return width + 1.725
+                    return width + 0.49
                 else:
                     return width + 1.99
             elif "l_roll" in element or "l_roll_contact" in element or "l_roll_1" in element or "l_roll_2" in element:
@@ -90,9 +89,12 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
                     "S4": 4.24,
                     "S5": 3.906
                 }.get(next((m for m in ["S3", "S4", "S5"] if m in model), ""), default_length)
+            elif element == "l_journ":
+                if "S5" in model:
+                    return 16.75
             elif element in ("s_roll", "sp_roll"):
                 return width + (1.75 if "S3" in model else 1.625)
-        else:
+        elif roll_width.lower() == 'no':
             if element in ("u_roll", "l_roll", "u_roll_contact", "l_roll_contact"):
                 return width * 0.5
             elif element == "u_roll_2":
@@ -112,12 +114,17 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
                     "S4": 4.74,
                     "S5": 5.657
                 }.get(next((m for m in ["S3", "S4", "S5"] if m in model), ""), 0)
+            elif element == "l_journ":
+                if "S5" in model:
+                    return 10.968
             elif element in ("s_roll", "sp_roll"):
                 return width + (1.75 if "S3" in model else 1.625)
+            
+        else: return 0
 
     # Models S6, S7, S8
     if in_model("S6", "S7", "S8"):
-        if roll_flag:
+        if roll_width.lower() == 'yes':
             return from_lookup({
                 "u_roll_1": width + 1.725,
                 "l_roll_1": width + 1,
@@ -126,7 +133,7 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
                 "s_roll": width + 1.625,
                 "sp_roll": width + 1.625
             })
-        else:
+        elif roll_width.lower() == 'no':
             return from_lookup({
                 "u_roll": width * 0.5,
                 "l_roll": width * 0.5,
@@ -135,6 +142,8 @@ def calculate_length(width: float, feed_model: str, roll_width: str, element: st
                 "s_roll": width + 1.625,
                 "sp_roll": width + 1.625
             })
+        
+        else: return 0
 
     # Fallback
     return default_length
@@ -193,6 +202,7 @@ def calculate_total_refl_inertia(data: inertia_input):
                     material_dia = element_data["o_dia"]
 
             qty = element_data.get("qty", 1)
+            feed = data.feed_model.upper()
 
             # Gearbox refl inertia
             if "g_box" in element_name:
@@ -201,7 +211,22 @@ def calculate_total_refl_inertia(data: inertia_input):
                     results += refl
             else:
                 if element_data["ratio"] == 0:
-                    if element_name == "s_roll" or element_name == "sp_roll":
+                    if element_name == "gears_idler":
+                        ratio = (feed_data[element_name]["o_dia"] / feed_data["gears_drive"]["o_dia"]) * data.ratio
+                    elif element_name == "gears_idler_YSS630":
+                        ratio = (feed_data[element_name]["o_dia"] / feed_data["gears_drive_YSS627"]["o_dia"]) * data.ratio
+                    elif element_name == "i_gears_YSS630":
+                        ratio = (feed_data[element_name]["o_dia"] / feed_data["d_gears_YSS6633"]["o_dia"]) * data.ratio
+                    elif element_name == "hub_YSS630" or element_name == "HUB_YSS630":
+                        if "S5" in feed:
+                            ratio = (feed_data["gears_idler_YSS630"]["o_dia"] / feed_data["gears_drive_YSS627"]["o_dia"]) * data.ratio
+                        else:
+                            ratio = (feed_data["i_gears_YSS630"]["o_dia"] / feed_data["d_gears_YSS6633"]["o_dia"]) * data.ratio
+                    elif element_name == "i_gears" or element_name == "i_hub" or element_name == "i_HUB":
+                        ratio = (feed_data[element_name]["o_dia"] / feed_data["d_gears_YSS630"]["o_dia"]) * data.ratio
+                    elif element_name == "i_gears_YSS636" or element_name == "i_hub_YSS636" or element_name == "i_HUB_YSS636":
+                        ratio = (feed_data[element_name]["o_dia"] / feed_data["d_gears_YSS636"]["o_dia"]) * data.ratio
+                    elif element_name == "s_roll" or element_name == "sp_roll":
                         ratio = (feed_data[element_name]["o_dia"] / feed_data["u_roll_1"]["o_dia"]) * data.ratio
                     else:
                         ratio = data.ratio
@@ -209,6 +234,7 @@ def calculate_total_refl_inertia(data: inertia_input):
                     ratio = element_data["ratio"]
 
                 refl = compute_refl_inertia(data, qty, len, element_data["o_dia"], element_data["i_dia"], element_data["density"],ratio)
+
                 results += refl
 
         # Material refl inertia

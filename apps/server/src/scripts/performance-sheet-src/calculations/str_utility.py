@@ -306,17 +306,50 @@ def calculate_str_utility(data: str_utility_input):
     # Actual Coil Weight
     actual_coil_weight = (((coil_od**2) - data.coil_id**2) / 4) * pi * data.coil_width * density
 
+    # Checks
+    # Required Force Check
+    if jack_force_available > required_force:
+        required_force_check = "OK"
+    else:
+        required_force_check = "NOT OK"
+
+    # Backup Rolls Check
+    if required_force >= (jack_force_available * 0.6):
+        backup_rolls_reccomended = "Back Up Rolls Recommended"
+    else:
+        backup_rolls_reccomended = "Not Recommended"
+
+    # Pinch Gear Check
+    if pinch_roll_rated_torque > pinch_roll_req_torque:
+        pinch_roll_check = "OK"
+    else:
+        pinch_roll_check = "NOT OK"
+
+    # Str Gear Check
+    if str_roll_rated_torque > str_roll_req_torque:
+        str_roll_check = "OK"
+    else:
+        str_roll_check = "NOT OK"
+
+    # Horsepower Check
+    if data.horsepower > horsepower_required:
+        horsepower_check = "OK"
+    else:
+        horsepower_check = "NOT OK"
+
+    # FPM Check
+    if data.feed_rate >= data.max_feed_rate * feed_rate_buffer:
+        fpm_check = "FPM SUFFICIENT"
+    else:
+        fpm_check = "FPM INSUFFICIENT"
+
     # Feed Rate check
-    feed_rate_check = ""
-    if (data.feed_rate >= data.max_feed_rate * feed_rate_buffer and 
-        jack_force_available > required_force and
-        pinch_roll_rated_torque > pinch_roll_req_torque and
-        str_roll_rated_torque > str_roll_req_torque and
-        data.horsepower > horsepower_required):
-        if get_percent_material_yielded_check(
-            roll_str_backbend_state["percent_material_yielded"],
-            roll_str_backbend_state["confirm_check"]
-        ) == "OK":
+    if (fpm_check == "FPM SUFFICIENT" and 
+        required_force_check == "OK" and
+        pinch_roll_check == "OK" and
+        str_roll_check == "OK" and
+        horsepower_check == "OK"):
+        if data.yield_met == "OK":
             feed_rate_check = "OK"
     else:
         feed_rate_check = "NOT OK"
@@ -347,5 +380,11 @@ def calculate_str_utility(data: str_utility_input):
         "str_torque" : round(str_torque, 3),
         "acceleration_torque" : round(accel_torque, 3),
         "brake_torque" : round(brake_torque, 3),
+        "backup_rolls_recommended" : backup_rolls_reccomended,
+        "required_force_check" : required_force_check,
+        "pinch_roll_check" : pinch_roll_check,
+        "str_roll_check" : str_roll_check,
+        "horsepower_check" : horsepower_check,
+        "fpm_check" : fpm_check,
         "feed_rate_check" : feed_rate_check
     }
