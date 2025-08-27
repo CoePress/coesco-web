@@ -614,22 +614,24 @@ const AuditLogs = () => {
       <PageHeader
         title="Audit Logs"
         description="Monitor user actions and data changes across the system"
-        actions={[
-          {
-            type: "button",
-            label: "Date Range",
-            variant: "secondary-outline",
-            icon: <Calendar size={16} />,
-            onClick: () => {},
-          },
-          {
-            type: "button",
-            label: "Refresh",
-            variant: "secondary-outline",
-            icon: <RefreshCcw size={16} />,
-            onClick: () => {},
-          },
-        ]}
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={() => {}}
+              className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer text-sm"
+            >
+              <Calendar size={16} />
+              <span>Date Range</span>
+            </button>
+            <button
+              onClick={() => {}}
+              className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer text-sm"
+            >
+              <RefreshCcw size={16} />
+              <span>Refresh</span>
+            </button>
+          </div>
+        }
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">

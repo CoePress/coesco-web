@@ -97,15 +97,15 @@ const ChatPLK = () => {
       <PageHeader
         title="Chat Assistant"
         description="Ask anything – powered by Paul"
-        actions={[
-          {
-            type: "button",
-            label: "New Chat",
-            variant: "secondary-outline",
-            icon: <MessageSquare size={16} />,
-            onClick: () => {},
-          },
-        ]}
+        actions={
+          <button
+            onClick={() => {}}
+            className="flex items-center gap-2 px-3 py-1.5 border rounded-md border-border bg-transparent text-text/75 hover:bg-text/15 hover:border-text/15 cursor-pointer text-sm"
+          >
+            <MessageSquare size={16} />
+            <span>New Chat</span>
+          </button>
+        }
       />
 
       <div className="flex flex-1 min-h-0 bg-background relative">

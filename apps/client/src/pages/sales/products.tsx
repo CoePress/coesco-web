@@ -21,8 +21,6 @@ const Products = () => {
   const {
     entities: products,
     loading,
-    error,
-    refresh,
     pagination,
   } = useGetEntities("/catalog/items");
 
