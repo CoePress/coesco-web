@@ -10,12 +10,6 @@ npx prisma db push
 
 npx prisma generate
 
-## Deployment
-
-1. SSH into pi
-2. cd Coesco
-3. git pull
-4. npm install
 
 ## Devices
 
@@ -34,43 +28,34 @@ npx prisma generate
 
 ## Server
 
-### Service File (/etc/systemd/system/coesco.service)
-
-[Unit]
-Description=Coesco Server
-After=network.target
-
-[Service]
-User=system
-WorkingDirectory=/home/system/Coesco/apps/server
-ExecStart=/usr/bin/npm start
-Environment=FORCE_COLOR=1
-Environment=NODE_ENV=production
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-
 ### Commands
+
+fanuc.service
+server.service
 
 **Reload daemon**
 sudo systemctl daemon-reload
 
 **Enable service to start on boot**
-sudo systemctl enable coesco
+sudo systemctl enable <service-file>
 
 **Start service**
-sudo systemctl start coesco
+sudo systemctl start <service-file>
 
 **Restart service**
-sudo systemctl restart coesco
+sudo systemctl restart <service-file>
 
 **Stop service**
-sudo systemctl stop coesco
+sudo systemctl stop <service-file>
 
 **Check service status**
-sudo systemctl status coesco
+sudo systemctl status <service-file>
 
 **Tail service logs**
-journalctl -f --output=cat -u coesco.service
+journalctl -f --output=cat -u <service-file>
+
+sudo systemctl daemon-reload
+sudo systemctl enable fanuc.service
+sudo systemctl enable server.service
+sudo systemctl restart fanuc.service
+sudo systemctl restart server.service

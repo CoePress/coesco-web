@@ -1,0 +1,15 @@
+[Unit]
+Description=Server
+After=network.target
+
+[Service]
+User=system
+WorkingDirectory=/home/system/Server
+ExecStart=/usr/bin/npm start
+Environment=FORCE_COLOR=1
+Environment=NODE_ENV=production
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

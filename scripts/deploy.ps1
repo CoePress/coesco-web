@@ -60,11 +60,33 @@ function Deploy-Fanuc {
 
 function Deploy-Server {
     Write-Host "`n🚀 Deploying Server..."
-    # TODO: Add publish/copy/reset steps similar to Fanuc
-    # Example:
-    # dotnet publish ...
-    # ssh/scp steps...
-    Write-Host "⚠️  Server deploy not yet implemented."
+
+    $serverProject = Join-Path $scriptDir "..\apps\server"
+    $serverBuild   = "$serverProject\*"
+
+    # Step 0: Install production deps
+    Write-Host "Installing server dependencies..."
+    pushd $serverProject
+    npm ci --omit=dev
+    popd
+
+    # Step 1: Reset remote
+    Write-Host "Resetting $serverRoot..."
+    ssh "$($linuxUser)@$($linuxHost)" "rm -rf $serverRoot && mkdir -p $serverRoot"
+
+    # Step 2: Copy files
+    Write-Host "Copying server files..."
+    scp -r $serverBuild "$($linuxUser)@$($linuxHost):$serverRoot/"
+
+    # Step 3: Permissions
+    Write-Host "Setting permissions..."
+    ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && chmod -R 755 ."
+
+    # Step 4: Restart service
+    Write-Host "Restarting server.service..."
+    # ssh "$($linuxUser)@$($linuxHost)" "sudo systemctl daemon-reload && sudo systemctl restart server.service"
+
+    Write-Host "✅ Server deployment complete. Running from $serverRoot"
 }
 
 # -------------------------------

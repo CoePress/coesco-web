@@ -1,0 +1,15 @@
+[Unit]
+Description=Fanuc
+After=network.target
+
+[Service]
+User=system
+WorkingDirectory=/home/system/Fanuc
+ExecStart=/home/system/Fanuc/FanucAdapter
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
