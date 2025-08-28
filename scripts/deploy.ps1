@@ -63,23 +63,24 @@ function Deploy-Server {
 
    $serverProject = Join-Path $scriptDir "..\apps\server"
    
-   # Step 0: Build locally
-   Write-Host "Building server locally..."
    pushd $serverProject
    npm run build
    popd
 
-   # Step 1: Reset remote
-   Write-Host "Resetting $serverRoot..."
-   ssh "$($linuxUser)@$($linuxHost)" "rm -rf $serverRoot && mkdir -p $serverRoot"
+   # Only delete contents EXCEPT .env file
+   Write-Host "Cleaning server directory (preserving .env)..."
+   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && find . -mindepth 1 -not -name '.env' -delete"
 
-   # Step 2: Copy entire server folder
-   Write-Host "Copying entire server folder..."
-   scp -r "$serverProject/*" "$($linuxUser)@$($linuxHost):$serverRoot/"
+   Write-Host "Copying with scp (excluding .env)..."
+   Get-ChildItem $serverProject | Where-Object { $_.Name -ne ".env" } | ForEach-Object {
+       if ($_.PSIsContainer) {
+           scp -r $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
+       } else {
+           scp $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
+       }
+   }
 
-   # Step 3: Install deps and start
-   Write-Host "Installing dependencies and starting server..."
-   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && npm ci && npm start"
+   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && npm install && npm start"
 
    Write-Host "✅ Server deployment complete."
 }

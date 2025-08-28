@@ -58,4 +58,9 @@ sudo systemctl daemon-reload
 sudo systemctl enable fanuc.service
 sudo systemctl enable server.service
 sudo systemctl restart fanuc.service
+
+
+psql -h 10.231.200.38 -U cpec -d coesco
+
 sudo systemctl restart server.service
+journalctl -f --output=cat -u server.service
