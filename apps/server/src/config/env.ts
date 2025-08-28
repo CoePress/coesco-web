@@ -12,6 +12,7 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.string().regex(/^\d+$/).transform(Number).default("8080"),
   DATABASE_URL: z.string().url(),
+  COPY_DATABASE_URL: z.string().url(),
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string().transform(Number).default("6379"),
   LOGS_DIR: z.string(),
@@ -24,6 +25,22 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   FANUC_ADAPTER_HOST: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
+
+  ODBC_DRIVER: z.string().default("Progress OpenEdge 12.8 Driver"),
+  PROSQL_USER: z.string().default("sqltst"),
+  PROSQL_PASSWORD: z.string().default("password"),
+
+  STD_HOST: z.string().default("coescoplk"),
+  STD_PORT: z.string().default("52551"),
+  STD_DB: z.string().default("base"),
+
+  JOB_HOST: z.string().default("coescoplk"),
+  JOB_PORT: z.string().default("52552"),
+  JOB_DB: z.string().default("job"),
+
+  QUOTE_HOST: z.string().default("coescoplk"),
+  QUOTE_PORT: z.string().default("52555"),
+  QUOTE_DB: z.string().default("quotesys"),
 });
 
 // eslint-disable-next-line node/no-process-env

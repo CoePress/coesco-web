@@ -31,4 +31,5 @@ export async function initializeServices() {
   await socketService.initialize(io);
   await machiningService.initialize();
   await deviceService.initialize();
+  await legacyService.initialize();
 }

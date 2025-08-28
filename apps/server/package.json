@@ -19,7 +19,8 @@
     "db:fresh": "npm run db:generate && npm run db:reset",
     "dev": "nodemon src/server.ts",
     "build": "npm run db:generate && tsc && tsc-alias",
-    "start": "npm run build && node dist/src/server.js"
+    "start": "npm run build && node dist/src/server.js",
+    "pipeline": "tsx src/scripts/data-pipeline.ts"
   },
   "dependencies": {
     "@azure/msal-node": "^3.7.1",
@@ -36,6 +37,8 @@
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
+    "odbc": "^2.4.9",
+    "pg": "^8.16.3",
     "ping": "^0.4.4",
     "socket.io": "^4.8.1",
     "swagger-ui-express": "^5.0.1",
@@ -57,6 +60,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.3.0",
+    "@types/pg": "^8.15.5",
     "@types/ping": "^0.4.4",
     "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^9.32.0",

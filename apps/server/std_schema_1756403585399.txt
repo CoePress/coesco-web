@@ -1,0 +1,4946 @@
+DATABASE SCHEMA ANALYSIS - STD
+========================
+
+Total Tables: 228
+Generated: 2025-08-28T17:53:05.397Z
+
+TABLE: AccountType
+Fields (1):
+  - AccountType
+
+TABLE: Address
+Fields (30):
+  - CanShip
+  - CanBill
+  - Address1
+  - Address2
+  - ZipCode
+  - PhoneNumber
+  - FaxPhoneNum
+  - Company_ID
+  - Address_ID
+  - City
+  - State
+  - Country
+  - Notes
+  - AddressName
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - BillToNum
+  - BillToId
+  - ShipInstr
+  - Directions
+  - Address3
+  - OriginalVia
+  - EmailInvoiceTo
+  - SystemNotes
+  - InvoiceSubject
+  - TaxID
+
+TABLE: ADPXRef
+Fields (4):
+  - CompCode
+  - File#
+  - EmpNum
+  - StartDate
+
+TABLE: AfterHours
+Fields (29):
+  - Ticket
+  - RefJobNumber
+  - InitCallDate
+  - InitCallTime
+  - ServiceType
+  - PaymentMethod
+  - ContactName
+  - PhoneNumber
+  - ContactEmail
+  - BillingEmail
+  - CustomerName
+  - Company_ID
+  - Problem
+  - ServiceReport
+  - Comments
+  - Complaint
+  - IssueResolved
+  - TktResDate
+  - TktResInit
+  - TicketComplete
+  - TktCompDate
+  - TktCompInit
+  - JobNumber
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: AHTimeSheet
+Fields (11):
+  - Ticket
+  - EmpNum
+  - WorkDate
+  - StartTime
+  - EndTime
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: AssemblyCode
+Fields (5):
+  - Item
+  - AssemblyCode
+  - CreateDate
+  - CreateInit
+  - ApprStatus
+
+TABLE: AssemblyGroup
+Fields (5):
+  - AssemblyCode
+  - MachineLink
+  - CreateDate
+  - CreateInit
+  - ApprStatus
+
+TABLE: AssemblyMach
+Fields (5):
+  - MachineLink
+  - Description
+  - CreateDate
+  - CreateInit
+  - ApprStatus
+
+TABLE: AssemblyName
+Fields (5):
+  - AssemblyCode
+  - Description
+  - CreateDate
+  - CreateInit
+  - ApprStatus
+
+TABLE: AttrFile
+Fields (12):
+  - AttrId
+  - AttrFormat
+  - AttrModifier
+  - AttrType
+  - ValueRequired
+  - AttrName
+  - AttrSize
+  - ValueList
+  - SystemLevel
+  - AttrSecurity
+  - WidgetType
+  - WidgetAttr
+
+TABLE: AttrGroup
+Fields (3):
+  - AttrModifier
+  - GroupDesc
+  - AttrSecurity
+
+TABLE: AXCapability
+Fields (4):
+  - OperationCode
+  - Capability
+  - Mandatory
+  - Level
+
+TABLE: AXDimenType
+Fields (2):
+  - DimenCode
+  - Dimension
+
+TABLE: AXDimenValue
+Fields (3):
+  - DimenCode
+  - DimenName
+  - DimenValue
+
+TABLE: AXInvoice
+Fields (17):
+  - Account
+  - Invoice
+  - InvoiceStatus
+  - Debit
+  - Credit
+  - TransDate
+  - Txt
+  - SalesTax
+  - Freight
+  - ConfirmedTotal
+  - Variance
+  - Inventoried
+  - InvTotal
+  - VendorName
+  - CreateDate
+  - CreateTime
+  - CreateInit
+
+TABLE: AXInvoiceDist
+Fields (8):
+  - Account
+  - Invoice
+  - AcctCombined
+  - LinePriority
+  - Debit
+  - Credit
+  - Txt
+  - Inventoried
+
+TABLE: AXInvoiceRcpt
+Fields (5):
+  - Account
+  - Invoice
+  - RefNumber
+  - RefType
+  - RcptNumber
+
+TABLE: AXItemDim
+Fields (4):
+  - AXItem
+  - AXProductType
+  - HasSize
+  - HasConfig
+
+TABLE: AXItemExport
+Fields (7):
+  - AXItem
+  - AXSize
+  - AXConfig
+  - AXProductType
+  - Item
+  - Description
+  - Exported
+
+TABLE: AXJournalBatch
+Fields (5):
+  - BatchNumber
+  - BatchStatus
+  - Description
+  - CreateDate
+  - CreateInit
+
+TABLE: AXJournalLine
+Fields (22):
+  - BatchNumber
+  - RowOrder
+  - AccountType
+  - Account
+  - Location
+  - BusinessUnit
+  - CostCenter
+  - ProfitCenter
+  - ProfitType
+  - Department
+  - Employee
+  - Debit
+  - Credit
+  - TransDate
+  - DueDate
+  - PaymentTerms
+  - PaymentMethod
+  - Invoice
+  - PONumber
+  - Description
+  - Reference
+  - InventoryGroup
+
+TABLE: AXMainAccount
+Fields (4):
+  - MainAccount
+  - Name
+  - AcctStruct
+  - AccountType
+
+TABLE: AXOperation
+Fields (9):
+  - Operation
+  - Occurrence
+  - OperationCode
+  - OperationName
+  - Exported
+  - ResourceType
+  - ResourceID
+  - MainAccount
+  - CostResource
+
+TABLE: AXResGroup
+Fields (6):
+  - ResourceID
+  - Name
+  - SetupCategoryID
+  - QtyCategoryID
+  - ProcessCategoryID
+  - Exported
+
+TABLE: AXResource
+Fields (8):
+  - ResourceID
+  - Name
+  - Type
+  - SetupCategoryID
+  - QtyCategoryID
+  - ProcessCategoryID
+  - Exported
+  - ResGroupID
+
+TABLE: AXResReq
+Fields (4):
+  - Item
+  - OperationCode
+  - Capability
+  - Level
+
+TABLE: AXRoute
+Fields (11):
+  - OprId
+  - RouteID
+  - OprNum
+  - AccError
+  - ErrorPct
+  - JobPayType
+  - Level
+  - OprNumNext
+  - LinkType
+  - OprPriority
+  - Exported
+
+TABLE: AXRouteOpr
+Fields (29):
+  - OprId
+  - ItemCode
+  - ItemRelation
+  - ConfigID
+  - DimConfig
+  - DimSize
+  - DimColor
+  - DimStyle
+  - RouteCode
+  - RouteRelation
+  - SiteID
+  - RouteGroupID
+  - FormulaFactor1
+  - ProcessPerQty
+  - ProcessTime
+  - RouteType
+  - SetupTime
+  - SetupCategoryID
+  - QtyCategoryID
+  - ProcessCategoryID
+  - WrkCtrIDCost
+  - QueueTimeBefore
+  - QueueTimeAfter
+  - TranspTime
+  - Exported
+  - ResourceType
+  - ResourceID
+  - Level
+  - SetupRequired
+
+TABLE: AXRouteTable
+Fields (6):
+  - RouteID
+  - Name
+  - ItemGroupID
+  - Route_Approved
+  - Route_APNumber
+  - Exported
+
+TABLE: AXRouteVersion
+Fields (18):
+  - ItemID
+  - RouteID
+  - InventDimID
+  - DimConfig
+  - DimSize
+  - DimColor
+  - DimStyle
+  - Name
+  - InventSiteID
+  - FromDate
+  - ToDate
+  - Active
+  - Route_Approved
+  - Route_APN
+  - RouteVersion_APN
+  - Exported
+  - Budget_Approved
+  - Budget_Approver
+
+TABLE: BizRule
+Fields (13):
+  - RuleID
+  - RuleType
+  - PropName
+  - PropType
+  - ValueList
+  - ParentRuleID
+  - EvalOrder
+  - Condition
+  - CreateDtTm
+  - CreateInit
+  - RuleStatus
+  - SortOrder
+  - FieldLabel
+
+TABLE: BizRuleLink
+Fields (7):
+  - LinkID
+  - TableName
+  - TableKey
+  - EvalOrder
+  - RuleID
+  - CreateDtTm
+  - CreateInit
+
+TABLE: BomImpTrans
+Fields (23):
+  - TransDate
+  - TransTime
+  - TransType
+  - BomItem
+  - LineNumber
+  - CompItem
+  - ImpactedBom
+  - OldImpLine
+  - OldImpComp
+  - OldAdjust
+  - OldAdjInvQty
+  - OldAdjCutQty
+  - OldSource
+  - OldDimension
+  - ImpactedLine
+  - ImpactedComp
+  - Adjust
+  - AdjustInvQty
+  - AdjustCutQty
+  - Source
+  - Dimensions
+  - Notes
+  - Initials
+
+TABLE: BomOptImpact
+Fields (17):
+  - BomItem
+  - LineNumber
+  - CompItem
+  - ImpactedBom
+  - ImpactedLine
+  - ImpactedComp
+  - Adjust
+  - AdjustInvQty
+  - AdjustCutQty
+  - Source
+  - Dimensions
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: Cadfile
+Fields (8):
+  - FileSys
+  - Pathname
+  - Filename
+  - FileExt
+  - FileStat
+  - EditDate
+  - CheckedOut
+  - Notes
+
+TABLE: CallDetail
+Fields (12):
+  - CallDate
+  - CallOwner
+  - CallRefNum
+  - CallStatus
+  - CallTime
+  - CallType
+  - CloseDate
+  - CloseTime
+  - CustComments
+  - FollowupDate
+  - FollowupTime
+  - OurComments
+
+TABLE: CallHistory
+Fields (25):
+  - CallRefNum
+  - CallStatus
+  - CallDate
+  - CallTime
+  - CallType
+  - FollowupDate
+  - FollowupTime
+  - CallOwner
+  - Contactname
+  - PhoneNumber
+  - CustComments
+  - OurComments
+  - CustEmail
+  - Company_ID
+  - Address_ID
+  - FaxNumber
+  - Resolution
+  - StdEffected
+  - StdUpdated
+  - ServiceCodes
+  - RefEquipment
+  - RefSerial#
+  - CloseDate
+  - CloseTime
+  - Issues
+
+TABLE: Capability
+Fields (1):
+  - Capability
+
+TABLE: CardCredit
+Fields (35):
+  - DivisionId
+  - RefType
+  - RefCode
+  - CardOrder
+  - CardType
+  - CardNumber
+  - CardNoMask
+  - ExpDate
+  - Amount
+  - CardStatus
+  - CHName
+  - CHAddress
+  - CHAddress2
+  - CHCity
+  - CHState
+  - CHZip
+  - CHPhone
+  - CHEmail
+  - CVV2
+  - TakenBy
+  - TakenTime
+  - ApprovedBy
+  - ApprovedOn
+  - TakenOn
+  - ApprovedTime
+  - ApprovalCode
+  - ApprovalAmount
+  - Comment
+  - PONo
+  - Tax
+  - Company_ID
+  - ReceiptType
+  - ReceiptAddr
+  - ReceiptFax
+  - EncodedCheck
+
+TABLE: ccDist
+Fields (4):
+  - TransNo
+  - InvoiceNumber
+  - Amount
+  - PostStatus
+
+TABLE: ccTrans
+Fields (50):
+  - TransNo
+  - OSCID
+  - BatchNo
+  - Action
+  - CardType
+  - CardNo
+  - CardNoMask
+  - ExpDate
+  - Amount
+  - AuthAmount
+  - CHName
+  - CHAddress
+  - CHAddress2
+  - CHCity
+  - CHState
+  - CHZip
+  - CHPhone
+  - CHEmail
+  - CVV2
+  - EnteredBy
+  - AVSResult
+  - AuthStatus
+  - AuthDetails
+  - ApprCode
+  - ReqDate
+  - ReqTime
+  - AuthDate
+  - AuthTime
+  - SettleDate
+  - SettleTime
+  - Comment
+  - Source
+  - doRetry
+  - numTries
+  - SubmitDate
+  - SubmitTime
+  - CurrencyCode
+  - TrackData
+  - PONo
+  - Tax
+  - RoutingNo
+  - AccountNo
+  - Company_ID
+  - DivisionId
+  - RefType
+  - RefCode
+  - CardOrder
+  - ReceiptType
+  - ReceiptAddr
+  - ReceiptFax
+
+TABLE: ChangeLog
+Fields (8):
+  - TableName
+  - TableKey
+  - TransDate
+  - TransTime
+  - ModInit
+  - FieldChanged
+  - BeforeValue
+  - AfterValue
+
+TABLE: ChangeRequest
+Fields (17):
+  - Mod-ItemNum
+  - New-ItemNum
+  - EmpNum
+  - Date
+  - RevDesc
+  - Notes
+  - UseInv
+  - ModInv
+  - ModParts
+  - Type
+  - StockDelete
+  - StockAdd
+  - InvLevel
+  - Cost
+  - Processed
+  - InvNotes
+  - FileAttach
+
+TABLE: CNCFixture
+Fields (3):
+  - FixtureID
+  - FixtureName
+  - FixtureLoc
+
+TABLE: CNCFtoM
+Fields (2):
+  - FixtureID
+  - MachineID
+
+TABLE: CNCMachine
+Fields (2):
+  - MachineID
+  - MachineDescr
+
+TABLE: CNCPart
+Fields (2):
+  - PartNumber
+  - PartDescription
+
+TABLE: CNCPtoF
+Fields (3):
+  - PartNumber
+  - FixtureID
+  - FixtureStatus
+
+TABLE: COAStructType
+Fields (1):
+  - AcctStruct
+
+TABLE: ComGroup
+Fields (2):
+  - GroupDesc
+  - GroupName
+
+TABLE: ComGrp
+Fields (2):
+  - CommCode
+  - GroupName
+
+TABLE: CommDesc
+Fields (3):
+  - CommCode
+  - PatternId
+  - PatternOrder
+
+TABLE: Commodity
+Fields (3):
+  - CommCode
+  - Description
+  - AttrList
+
+TABLE: Company
+Fields (34):
+  - CustDlrName
+  - Dealer
+  - Active
+  - IsDealer
+  - CreditStatus
+  - CreditNote
+  - OnHoldBy
+  - OnHoldDate
+  - OffHoldBy
+  - OffHoldDate
+  - Classification
+  - CustType
+  - LastCreditStat
+  - Discounted
+  - Company_ID
+  - CoeRSM
+  - IsExcDealer
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - Notes
+  - ShipInstr
+  - BillToPhone
+  - BillToExt
+  - CreditLimit
+  - AcctBalance
+  - BalanceDate
+  - TermsCode
+  - Exported
+  - SystemNotes
+  - TaxID
+
+TABLE: CompanyAKA
+Fields (3):
+  - Name
+  - Type
+  - Addr_Id
+
+TABLE: CompanyKey
+Fields (3):
+  - NameKey
+  - Type
+  - Addr_Id
+
+TABLE: CompanyMaster
+Fields (7):
+  - Master_Id
+  - CompanyName
+  - Type
+  - Notes
+  - MasterStatus
+  - CreateDate
+  - CreateInit
+
+TABLE: CompanyXRef
+Fields (2):
+  - Master_Id
+  - Company_ID
+
+TABLE: Constants
+Fields (4):
+  - CType
+  - CName
+  - CDesc
+  - CValue
+
+TABLE: ConstantValue
+Fields (9):
+  - KeyName
+  - StDate
+  - EndDate
+  - KeyType
+  - StringValue
+  - IntegerValue
+  - DecimalValue
+  - LogicalValue
+  - DateValue
+
+TABLE: ContactGroup
+Fields (7):
+  - ID
+  - ContactGroup
+  - Company_ID
+  - Address_ID
+  - Cont_ID
+  - CreateDate
+  - CreateInit
+
+TABLE: Contacts
+Fields (22):
+  - LastName
+  - FirstName
+  - Notes
+  - Cont_Id
+  - Company_ID
+  - Address_ID
+  - Type
+  - PhoneNumber
+  - FaxPhoneNum
+  - PhoneExt
+  - Email
+  - Website
+  - ConTitle
+  - AltPhone
+  - AltDesc
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - MoreAddress
+
+TABLE: Country
+Fields (4):
+  - Country
+  - ZipCodeFormat
+  - CallingCode
+  - CountryCode
+
+TABLE: County
+Fields (3):
+  - County
+  - State
+  - Country
+
+TABLE: CreditCard
+Fields (18):
+  - RefCode
+  - CardType
+  - CardNumber
+  - CardHolder
+  - CardExpDate
+  - CardNotes
+  - TakenBy
+  - TakenOn
+  - ZipCode
+  - Address
+  - ApprovalCode
+  - TakenTime
+  - CardStatus
+  - ApprovedBy
+  - ApprovedOn
+  - ApprovedTime
+  - ApprovalAmount
+  - SpecialRequest
+
+TABLE: CreditHistory
+Fields (8):
+  - Company_ID
+  - StartDate
+  - EndDate
+  - CreditStatus
+  - CreditLimit
+  - Notes
+  - CreateDate
+  - CreateInit
+
+TABLE: CustomerItem
+Fields (3):
+  - Company_ID
+  - Item
+  - CustomerItem
+
+TABLE: DaysAllotted
+Fields (9):
+  - EmpNum
+  - ExpDate
+  - DayType
+  - DaysAllotted
+  - AuthDate
+  - AuthInit
+  - AllottedNotes
+  - CreatedAt
+  - CreateInit
+
+TABLE: DaysTaken
+Fields (8):
+  - EmpNum
+  - DayType
+  - DateTaken
+  - DayTaken
+  - Flags
+  - Notes
+  - CreatedAt
+  - CreateInit
+
+TABLE: DefBreakTime
+Fields (4):
+  - DeptCode
+  - EmpNum
+  - StartDate
+  - EndDate
+
+TABLE: Demographic
+Fields (6):
+  - Category
+  - Description
+  - SortOrder
+  - Parent_Category
+  - Parent_Description
+  - Use_Status
+
+TABLE: DemographMap
+Fields (2):
+  - FieldName
+  - Category
+
+TABLE: DeptArea
+Fields (3):
+  - DeptArea
+  - DispOrder
+  - DeptList
+
+TABLE: DeptAreaTarget
+Fields (5):
+  - DeptArea
+  - StDate
+  - ProdTarget
+  - CreateDate
+  - CreateInit
+
+TABLE: DescTemplate
+Fields (3):
+  - PatternId
+  - Pattern
+  - PatternName
+
+TABLE: Division
+Fields (15):
+  - DivisionId
+  - DivisionName
+  - Shortname
+  - Address1
+  - Address2
+  - City
+  - State
+  - ZipCode
+  - PhoneNumber
+  - FaxPhoneNum
+  - LogoFile
+  - DBDirectory
+  - Self_Connect
+  - Remote_Connect
+  - TaxID#
+
+TABLE: DocLink
+Fields (3):
+  - DocID
+  - TableName
+  - TableKey
+
+TABLE: Document
+Fields (8):
+  - DocID
+  - DocName
+  - DocClass
+  - DocDesc
+  - DocMemo
+  - DeleteOn
+  - CreateDate
+  - CreateInit
+
+TABLE: DynamicFile
+Fields (3):
+  - FileName
+  - KeyFields
+  - RawData
+
+TABLE: EmpHistory
+Fields (8):
+  - EmpNum
+  - DeptCode
+  - StDate
+  - DivisionId
+  - Salaried
+  - LaborRateClass
+  - ShiftPrem
+  - WorkShift
+
+TABLE: EmpHoursTarget
+Fields (5):
+  - EmpNum
+  - StDate
+  - HoursTarget
+  - CreateDate
+  - CreateInit
+
+TABLE: Employee
+Fields (48):
+  - EmpNum
+  - EmpLastName
+  - EmpFirstName
+  - EmpMiddleInt
+  - DeptCode
+  - LaborRateClass
+  - Salaried
+  - StartDate
+  - TermDate
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - ShiftPrem
+  - PayrollTermDate
+  - Emptitle
+  - EmpInitials
+  - EmpFaxPhone
+  - HomePhone
+  - HireDate
+  - EffectDate
+  - LaborRate
+  - PrevLabRate
+  - Password
+  - Permissions
+  - LabelOrder
+  - DefaultInfo
+  - ClientNums
+  - PayrollInfo
+  - VacationDays
+  - DivisionId
+  - UserMenu
+  - UserAsMain
+  - VacDate
+  - DirectPhone
+  - MobilePhone
+  - Address1
+  - Address2
+  - Address3
+  - City
+  - State
+  - ZipCode
+  - Country
+  - WorkShift
+  - PinCode
+  - VendorNumber
+
+TABLE: EmployeeType
+Fields (3):
+  - EmpType
+  - Payroll
+  - Description
+
+TABLE: EmpMgr
+Fields (2):
+  - EmpNum
+  - MgrNum
+
+TABLE: EmpTarget
+Fields (5):
+  - EmpNum
+  - StDate
+  - ProdTarget
+  - CreateDate
+  - CreateInit
+
+TABLE: ExpCategory
+Fields (6):
+  - Description
+  - SortOrder
+  - BSMainAccount
+  - COGSAccount
+  - MainAccount
+  - ExtendedField
+
+TABLE: ExpenseTrans
+Fields (25):
+  - ExpVoucher
+  - VendorNumber
+  - TransDate
+  - PostDate
+  - Mileage
+  - MileRate
+  - Amount
+  - Description
+  - BSAccount
+  - ExpAccount
+  - ExpCategory
+  - OtherAccount
+  - APStatus
+  - ExpStatus
+  - ExpTransDate
+  - EntryStatus
+  - EnterBy
+  - EnterDate
+  - MgrApprBy
+  - MgrApprDate
+  - APApprBy
+  - APApprDate
+  - DeptCode
+  - WasExpensed
+  - PaymentCode
+
+TABLE: ExpReport
+Fields (9):
+  - ExpReportNum
+  - VendorNumber
+  - DeptCode
+  - DatePrepared
+  - EntryStatus
+  - APStatus
+  - ExpStatus
+  - Comment
+  - SubmitBy
+
+TABLE: ExpReportDtl
+Fields (2):
+  - ExpReportNum
+  - ExpVoucher
+
+TABLE: ExtProp
+Fields (10):
+  - PropKey
+  - PropName
+  - PropType
+  - StringValue
+  - IntegerValue
+  - DecimalValue
+  - LogicalValue
+  - DateValue
+  - CreateDate
+  - CreateInit
+
+TABLE: FaxStatus
+Fields (9):
+  - FaxId
+  - Sender
+  - TotalPages
+  - Destination
+  - XmittedOn
+  - LoadDate
+  - XmitTime
+  - CurStatus
+  - Tries
+
+TABLE: Funnel
+Fields (35):
+  - FunnelID
+  - SortOrder
+  - FunnelStatus
+  - Company_ID
+  - Address_ID
+  - DealerNumber
+  - DlrId
+  - TargetAccount
+  - City
+  - State
+  - Industry
+  - ProjectName
+  - RSMInitiated
+  - RSMHelped
+  - RSMTerritory
+  - LeadSource
+  - LeadName
+  - WklyInter
+  - TypeOfLine
+  - OppValue
+  - OppStage
+  - OppStartDate
+  - ProbSubDate
+  - DecisionTime
+  - PORcvdDate
+  - ActionDate
+  - Competition
+  - ChanceToWin
+  - QuoteNum
+  - NumDaysCycle
+  - ReasonWonLost
+  - Notes
+  - OutcomeYear
+  - CreateDate
+  - ModifyDate
+
+TABLE: GeoRegions
+Fields (6):
+  - AreaName
+  - StateProv
+  - DispName
+  - Country
+  - RegionStatus
+  - Abbrev
+
+TABLE: GlCodes
+Fields (6):
+  - GlCode
+  - Description
+  - Inventoried
+  - Capital
+  - Active
+  - GLFlags
+
+TABLE: GLMap
+Fields (4):
+  - GlCode
+  - AcctCombined
+  - Reversible
+  - MainAccount
+
+TABLE: HelpContext
+Fields (6):
+  - Datafield
+  - DataFile
+  - IsMenu
+  - HelpProg
+  - RunPersist
+  - OSContext
+
+TABLE: HelpKey
+Fields (4):
+  - OSContext
+  - Context
+  - KeyName
+  - Action
+
+TABLE: Holiday
+Fields (2):
+  - HolidayDate
+  - Description
+
+TABLE: HoursMapEmp
+Fields (6):
+  - HoursType
+  - EmpNum
+  - StartDate
+  - EndDate
+  - AcctCombined
+  - BSAcctCombined
+
+TABLE: HoursType
+Fields (3):
+  - HoursType
+  - TypeName
+  - MainAccount
+
+TABLE: HoursTypeMap
+Fields (5):
+  - HoursType
+  - StartDate
+  - EndDate
+  - AcctCombined
+  - BSAcctCombined
+
+TABLE: ImportLog
+Fields (4):
+  - FileType
+  - FileName
+  - ImportDtTm
+  - ImportInit
+
+TABLE: InstallDesc
+Fields (10):
+  - ID
+  - Name
+  - Descr
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - EqPos
+
+TABLE: InstallList
+Fields (6):
+  - EquGroup
+  - ID
+  - MfgInst
+  - EqPos
+  - CustInst
+  - ThirdInst
+
+TABLE: InvClass
+Fields (3):
+  - InvClass
+  - ClassDescr
+  - Inventoried
+
+TABLE: ItemBlanketNote
+Fields (6):
+  - Item
+  - VendorNumber
+  - SortOrder
+  - Note
+  - CreateDate
+  - CreateInit
+
+TABLE: ItemChange
+Fields (6):
+  - OldItem
+  - NewItem
+  - DateComplete
+  - CreateDate
+  - CreateInit
+  - DivisionList
+
+TABLE: ItemGroup
+Fields (2):
+  - MainAccount
+  - ItemGroup
+
+TABLE: ItemLength
+Fields (2):
+  - Item
+  - Lengths
+
+TABLE: ItemLocation
+Fields (14):
+  - Item
+  - Location
+  - MinStockLvl
+  - MaxStockLvl
+  - ReOrderQty
+  - OrderMethod
+  - FromLocation
+  - Comment
+  - Frequency
+  - LastChecked
+  - LastCheckBy
+  - CreateDate
+  - CreateInit
+  - DivisionId
+
+TABLE: ItemLog
+Fields (15):
+  - Item
+  - JobNumber
+  - JobSuffix
+  - InvJobNumber
+  - InvJobSuffix
+  - DateTimeIn
+  - UserIn
+  - DateTimeOut
+  - PurposeCode
+  - UserOut
+  - Quantity
+  - Dimensions
+  - KitInfo
+  - Notes
+  - Location
+
+TABLE: ItemMaster
+Fields (70):
+  - Item
+  - Description
+  - DescrLine2
+  - Source
+  - OrderUM
+  - CostUM
+  - InvUM
+  - ConvFactor
+  - PrintNumber
+  - LstCstQtyCst
+  - LstInvQtyCst
+  - SalesDescr
+  - BOMApproved
+  - PrimInvLoc
+  - MinStockLvl
+  - CommCode
+  - MinReOrdrQty
+  - StdVendor
+  - StdCstQtyCst
+  - StdInvQtyCst
+  - StdCutCharge
+  - CostExpDate
+  - PurchNotes
+  - SetUpDescr
+  - Fixture
+  - MfgNotes
+  - RouterApprvd
+  - MaxStockLvl
+  - SellingPrice
+  - Symbol
+  - OldPartNum
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - LeadTime
+  - Workcell
+  - GlCode
+  - InvClass
+  - MinUpdated
+  - LastUsed
+  - FirstUsed
+  - FirstJob
+  - FirstSfx
+  - SpecialRtr
+  - ItemStatus
+  - LastCounted
+  - CyclePriority
+  - Documents
+  - SparePart
+  - AttrList
+  - AttrValue
+  - PatternId
+  - ManualDescr
+  - PONotes
+  - MadeToPrint
+  - PrintSize
+  - VendorStocked
+  - DivisionId
+  - BomRevision
+  - MiscData
+  - QtInvQtyCst
+  - QtCstQtyCst
+  - QtUpdated
+  - QtUpdateInit
+  - LeadUpdated
+  - MinVendorOrder
+  - PurchaseType
+
+TABLE: ItemReminder
+Fields (7):
+  - Item
+  - FieldName
+  - ReviewDate
+  - ReviewStatus
+  - Notes
+  - CreateDate
+  - CreateInit
+
+TABLE: ItemSubClass
+Fields (14):
+  - ClassSubClss
+  - SubClassDesc
+  - Model#Prefix
+  - GlCode
+  - PriceMult
+  - ClassType
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - Construction
+  - ItemGroup
+
+TABLE: ItemTimeEst
+Fields (7):
+  - Item
+  - MinPerCut
+  - MinPerBench
+  - BenchFactor
+  - EstBy
+  - EstDate
+  - EstNotes
+
+TABLE: ItemToModel
+Fields (9):
+  - Model
+  - Item
+  - Options
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: ItemTran
+Fields (5):
+  - Changes
+  - FieldChanged
+  - Initials
+  - TransDate
+  - Item
+
+TABLE: JobType
+Fields (4):
+  - JobType
+  - TypeName
+  - BomReqd
+  - Production
+
+TABLE: Journey
+Fields (56):
+  - ID
+  - Target_Account
+  - City
+  - State_Province
+  - Company_ID
+  - Address_ID
+  - Industry
+  - Dealer
+  - OEM
+  - Competition
+  - RSM
+  - RSM_Helped
+  - RSM_Territory
+  - Service_Tech
+  - Lead_Source
+  - Journey_Type
+  - Journey_Value
+  - Journey_Stage
+  - Journey_Start_Date
+  - Quote_Presentation_Date
+  - Expected_Decision_Date
+  - Date_PO_Received
+  - Action_Date
+  - Project_Models
+  - Chance_To_Secure_order
+  - Quote_Key_Value
+  - Quote_Number
+  - Reason_Won_Lost
+  - Qty_of_Items
+  - Next_Steps
+  - Notes
+  - Journey_Status
+  - Date_Lost
+  - Main_Contact_ID
+  - CreateInit
+  - Deleted
+  - Country
+  - ProducedBy
+  - CreateDT
+  - RFQ_Complete
+  - Equipment_Type
+  - Project_Name
+  - Presentation_Method
+  - Presentation_Method_OK
+  - Other_Industry
+  - Other_Dealer
+  - Dealer_Contact
+  - Priority
+  - Quote_Completed_Date
+  - Quote_Type
+  - Visit_Outcome
+  - Anticipated_Visit_Date
+  - Visit_Date
+  - Project_Notes
+  - Reason_Won
+  - Reason_Lost
+
+TABLE: Journey_Contact
+Fields (11):
+  - ID
+  - Jrn_ID
+  - Contact_Name
+  - Contact_Email
+  - Contact_Office
+  - Contact_Mobile
+  - Contact_Position
+  - CreateDtTm
+  - CreateInit
+  - IsPrimary
+  - Contact_Note
+
+TABLE: Journey_Log
+Fields (5):
+  - ID
+  - Jrn_ID
+  - Action
+  - CreateDtTm
+  - CreateInit
+
+TABLE: Journey_Note
+Fields (6):
+  - ID
+  - Jrn_ID
+  - Note
+  - CreateDtTm
+  - Activity
+  - CreateInit
+
+TABLE: KeyJobDate
+Fields (7):
+  - DateName
+  - DateDesc
+  - SortOrder
+  - Days
+  - Calculated
+  - StartDate
+  - EndDate
+
+TABLE: MailList
+Fields (5):
+  - ListID
+  - ListDesc
+  - AppliesTo
+  - Frequency
+  - NextDate
+
+TABLE: MailTo
+Fields (7):
+  - SendTo
+  - Subject
+  - Body
+  - SendDate
+  - SentFrom
+  - SentDate
+  - FileAttach
+
+TABLE: MailxRef
+Fields (5):
+  - ListId
+  - AddressID
+  - AddressType
+  - ContactID
+  - AuthInit
+
+TABLE: MenuAccess
+Fields (4):
+  - Activity
+  - UserInits
+  - MenuVersion
+  - AccessCount
+
+TABLE: MenuChange
+Fields (5):
+  - Activity
+  - MenuVersion
+  - TransDate
+  - ChangesMade
+  - LinesChanged
+
+TABLE: MenuDetail
+Fields (13):
+  - MenuName
+  - LineNumber
+  - ProgName
+  - ProgDesc
+  - Parameters
+  - HelpDescr
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - MenuDescr
+
+TABLE: MenuHeader
+Fields (11):
+  - MenuName
+  - MenuTitle
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - OSContext
+  - MenuOwner
+  - MenuVersion
+
+TABLE: MenuShortcut
+Fields (4):
+  - Parameters
+  - ProgName
+  - Shortcut
+  - UserInits
+
+TABLE: MileageRate
+Fields (3):
+  - StartDate
+  - CentsPerMile
+  - SellPerMile
+
+TABLE: ModelDtl
+Fields (6):
+  - Model-Idx
+  - Model-Descr
+  - Model-Order
+  - Family-Pos
+  - IsGroup
+  - CustPfx
+
+TABLE: newTerritory
+Fields (8):
+  - AreaName
+  - Company_Id
+  - IsExclusive
+  - Address_ID
+  - Active
+  - EndDate
+  - IsLocation
+  - StartDate
+
+TABLE: OneStep
+Fields (7):
+  - Profile
+  - BrokerHost
+  - BrokerPort
+  - SerialNo
+  - LicenseKey
+  - UserName
+  - Password
+
+TABLE: Operation
+Fields (17):
+  - Operation
+  - OperDesc
+  - DeptCode
+  - WorkCtr
+  - OutsideProc
+  - SetUpRework
+  - StdOPVendor
+  - OpGlCode
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - Resource
+  - Abbrev
+  - Flags
+
+TABLE: OperListToRoute
+Fields (3):
+  - OperList
+  - Item
+  - RouteID
+
+TABLE: OptGroupDef
+Fields (4):
+  - SortOrder
+  - GroupDesc
+  - RangeMin
+  - RangeMax
+
+TABLE: OptionOrder
+Fields (6):
+  - OrderId
+  - Description
+  - RangeMin
+  - RangeMax
+  - Comments
+  - SortOrder
+
+TABLE: PalletInfo
+Fields (11):
+  - Pallet
+  - Location
+  - DateTimeIn
+  - UserIn
+  - PalletStatus
+  - PalletPurpose
+  - PalletType
+  - Destination
+  - Comments
+  - CreateDateTm
+  - CreateUser
+
+TABLE: PalletLink
+Fields (12):
+  - Pallet
+  - JobNumber
+  - JobSuffix
+  - BOMItem
+  - LineNumber
+  - CompItem
+  - Quantity
+  - Dimensions
+  - DateTimeIn
+  - UserIn
+  - KitInfo
+  - Inventoried
+
+TABLE: PalletLog
+Fields (12):
+  - Pallet
+  - LogType
+  - LogSeq
+  - DateTimeIn
+  - UserIn
+  - DateTimeOut
+  - UserOut
+  - PurposeCode
+  - JobNumber
+  - JobSuffix
+  - BOMItem
+  - Location
+
+TABLE: PalletPurpose
+Fields (8):
+  - Pallet
+  - PurposeCode
+  - JobNumber
+  - JobSuffix
+  - BOMItem
+  - DateTimeIn
+  - UserIn
+  - PalletStatus
+
+TABLE: PayPremium
+Fields (9):
+  - EmpNum
+  - WorkDate
+  - HoursCodes
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: Permission
+Fields (13):
+  - Activity
+  - Can-Run
+  - Permissions
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - PermType
+  - Purpose
+  - DistGroup
+  - Recursive
+
+TABLE: Printers
+Fields (5):
+  - Printnum
+  - PrintName
+  - PrintDesc
+  - PrintType
+  - PrintPerm
+
+TABLE: PrintGrp
+Fields (2):
+  - PrintGrp
+  - Printnum
+
+TABLE: PrintNumber
+Fields (5):
+  - PrintNumber
+  - Description
+  - CreateInit
+  - CreateDate
+  - RefInformation
+
+TABLE: PrintUsrGrp
+Fields (2):
+  - Printnum
+  - EmpNum
+
+TABLE: ProjectEst
+Fields (12):
+  - ProjID
+  - Date
+  - Source
+  - EstTime
+  - Estimator
+  - EstNotes
+  - EstOrgHrs
+  - EstOrgCost
+  - EstRevHrs
+  - EstRevCost
+  - EstEffDate
+  - RevEffDate
+
+TABLE: ProjectLink
+Fields (5):
+  - ProjID
+  - TableName
+  - TableKey
+  - CreateDate
+  - CreateInit
+
+TABLE: ProjectRev
+Fields (9):
+  - ProjID
+  - RevDate
+  - RevTime
+  - RevInit
+  - EstRevHrs
+  - EstRevCost
+  - Notes
+  - AuthorizedBy
+  - RevEffDate
+
+TABLE: PublicItem
+Fields (2):
+  - Publication
+  - Item
+
+TABLE: PurposeCode
+Fields (2):
+  - PurposeCode
+  - Description
+
+TABLE: QRevService
+Fields (7):
+  - ID
+  - QYear
+  - QNum
+  - QRev
+  - QuoteID
+  - CreatedAt
+  - CreateInit
+
+TABLE: ReqForm
+Fields (22):
+  - ReqID
+  - ReqDate
+  - EmpNum
+  - ReqType
+  - Priority
+  - ProgLoc
+  - MISStatus
+  - MISTime
+  - MISActTime
+  - StartDate
+  - FinishDate
+  - Phase
+  - TaskModule
+  - TaskName
+  - WBSCode
+  - Predecessors
+  - RequestEd
+  - MISNotesEd
+  - Resources
+  - ProjectId
+  - ParentId
+  - RequestOrder
+
+TABLE: ReqTimeSheet
+Fields (16):
+  - ReqId
+  - EmpNum
+  - WorkDate
+  - StartTime
+  - EndTime
+  - Hours
+  - Accomplished
+  - JobNumber
+  - JobSuffix
+  - BOMItem
+  - RouterSeq#
+  - Operation
+  - Quantity
+  - ShiftNote
+  - CreateDate
+  - CreateInit
+
+TABLE: ResourceAssignment
+Fields (11):
+  - ResourceID
+  - Resource
+  - StartDate
+  - EndDate
+  - DailyHours
+  - Hours
+  - ProdPerc
+  - ProdHours
+  - HasChanged
+  - AssignBy
+  - AssignOn
+
+TABLE: ResourceLink
+Fields (8):
+  - ResourceID
+  - Resource
+  - StartDate
+  - EndDate
+  - DailyHours
+  - Hours
+  - ProdHours
+  - ProdPerc
+
+TABLE: ResourceName
+Fields (5):
+  - ResourceID
+  - Description
+  - ResourceType
+  - ResourceCode
+  - IsActive
+
+TABLE: ResourcePeriod
+Fields (8):
+  - Resource
+  - PeriodStart
+  - Hours
+  - HrsPerDay
+  - Days
+  - People
+  - AssignBy
+  - AssignOn
+
+TABLE: RootFileSys
+Fields (6):
+  - FileSys
+  - RootDirectory
+  - RebuiltOn
+  - RebuiltAt
+  - Flags
+  - SearchOrder
+
+TABLE: RSMActivity
+Fields (5):
+  - RSM
+  - PeriodType
+  - PeriodStart
+  - Activity
+  - Cnt
+
+TABLE: RtrImpTrans
+Fields (21):
+  - TransDate
+  - TransTime
+  - TransType
+  - BomItem
+  - LineNumber
+  - CompItem
+  - ImpactedBom
+  - OldImpSeq
+  - OldAdjust
+  - OldAdjTime
+  - OldAdjOPCost
+  - OldOperation
+  - OldStdVendor
+  - ImpactedSeq
+  - Adjust
+  - AdjustTime
+  - AdjustOPCost
+  - Operation
+  - StdOPVendor
+  - Notes
+  - Initials
+
+TABLE: RtrOptImpact
+Fields (16):
+  - BomItem
+  - LineNumber
+  - CompItem
+  - ImpactedBom
+  - ImpactedSeq
+  - Adjust
+  - AdjustTime
+  - AdjustOPCost
+  - Operation
+  - StdOPVendor
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: RwkProblem
+Fields (2):
+  - DeptCode
+  - ProblemItem
+
+TABLE: SalesCode
+Fields (4):
+  - DivisionId
+  - CodeType
+  - Description
+  - GlCode
+
+TABLE: ScanMenu
+Fields (2):
+  - MenuName
+  - MenuDescription
+
+TABLE: ScanMenuItem
+Fields (4):
+  - MenuName
+  - LineNumber
+  - Description
+  - Action
+
+TABLE: ServiceCampaign
+Fields (6):
+  - CampaignID
+  - StartDate
+  - Description
+  - Notes
+  - StatusCode
+  - ItemList
+
+TABLE: ServiceEstimate
+Fields (14):
+  - ID
+  - QuoteID
+  - CustomerInfo
+  - ReferenceInfo
+  - Scope
+  - ManualScope
+  - LevelOfService
+  - InstallCategory
+  - QuoteDate
+  - QuotedBy
+  - QuotedAmount
+  - QuotedCost
+  - CreatedAt
+  - CreateInit
+
+TABLE: ServiceEstimateTrip
+Fields (6):
+  - ID
+  - QuoteID
+  - TripID
+  - Order
+  - CreatedAt
+  - CreateInit
+
+TABLE: ServiceTrip
+Fields (82):
+  - ID
+  - TripID
+  - CustomerInfo
+  - ReferenceInfo
+  - Description
+  - AdminMarkup
+  - DesiredMargin
+  - EffectDate
+  - RegularRate
+  - OvertimeRate
+  - DoubleTimeRate
+  - RegularCost
+  - OvertimeCost
+  - DoubleTimeCost
+  - RentalCarPerDay
+  - CompanyCarPerDay
+  - MaxHoursPerDay
+  - MPH
+  - RentalMPG
+  - CompanyMPG
+  - GasPerGal
+  - TravelPerDiem
+  - PerDiemType
+  - ChargePerMile
+  - HotelPerDay
+  - TypeOfTechnician
+  - LeaveOnWeekday
+  - IncludeCar
+  - VehicleType
+  - RentalCarCost
+  - CompanyCarCost
+  - Miles
+  - MilesPersonalCar
+  - MilesRentalCar
+  - MilesCompanyCar
+  - MileageCost
+  - InPlantDays
+  - DailyWorkHours
+  - Airfare
+  - TechCount
+  - IncludeHotel
+  - HoursByDay
+  - RegularHours
+  - OvertimeHours
+  - DoubleTimeHours
+  - TravelHours
+  - FuelCost
+  - CompanyFuelCost
+  - LocalTrip
+  - WorkSaturday
+  - WorkSunday
+  - MilesToAirport
+  - MilesToHotel
+  - MilesCoeToHotel
+  - MilesHotelToPlant
+  - NumOfTrips
+  - OneWayTrip
+  - TravelDayBefore
+  - TravelDayAfter
+  - TripHoursAtAirport
+  - TripFlightTime
+  - TripMiles
+  - TripDriveTime
+  - TripTravelTime
+  - TravelFirstDay
+  - TravelLastDay
+  - PlantMiles
+  - PlantDriveTime
+  - PerDiem
+  - HotelNights
+  - RegularHoursCharge
+  - OvertimeHoursCharge
+  - DoubleTimeHoursCharge
+  - TravelCharge
+  - HotelCharge
+  - RentalCarCharge
+  - AirfareCharge
+  - MileageCharge
+  - TechVisitQuote
+  - TechVisitCost
+  - CreatedAt
+  - CreateInit
+
+TABLE: ServiceTripSpecial
+Fields (12):
+  - ID
+  - TripID
+  - Order
+  - Description
+  - Quantity
+  - UnitCost
+  - UnitRate
+  - MarkupRate
+  - MarkupMethod
+  - Charge
+  - CreatedAt
+  - CreateInit
+
+TABLE: ShipCarrier
+Fields (5):
+  - ShipService
+  - Carrier
+  - SortOrder
+  - LastTrackId
+  - InsuranceRate
+
+TABLE: SparePartRef
+Fields (6):
+  - Item
+  - LinkType
+  - BOMItem
+  - SuggestQty
+  - LinkStatus
+  - AddedBy
+
+TABLE: SrvCampIssue
+Fields (3):
+  - CampaignID
+  - Description
+  - Notes
+
+TABLE: SrvCampLoc
+Fields (6):
+  - CampaignID
+  - Company_ID
+  - Address_ID
+  - StatusCode
+  - ServiceNotes
+  - SalesNotes
+
+TABLE: SrvCampXref
+Fields (9):
+  - CampaignID
+  - Company_ID
+  - Address_ID
+  - DivisionId
+  - JobNumber
+  - JobSuffix
+  - Completion
+  - ItemList
+  - BOMInfo
+
+TABLE: StartupParams
+Fields (2):
+  - ParamName
+  - FileName
+
+TABLE: State
+Fields (3):
+  - StateProv
+  - StateName
+  - Country
+
+TABLE: StatusCode
+Fields (5):
+  - Description
+  - StatusCode
+  - StatusGroup
+  - SortOrder
+  - FullDesc
+
+TABLE: StdBOM
+Fields (15):
+  - BomItem
+  - LineNumber
+  - CompItem
+  - Source
+  - InvQtyReq
+  - CutQty
+  - Dimensions
+  - Standard
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - MiscData
+
+TABLE: StdBOMDef
+Fields (11):
+  - BomItem
+  - LineNumber
+  - LineDesc
+  - Requirement
+  - Activity
+  - Comments
+  - ApprStat
+  - ApprInit
+  - ApprDtTm
+  - CreateDtTm
+  - CreateInit
+
+TABLE: StdBTrans
+Fields (20):
+  - TransDate
+  - TransTime
+  - TransType
+  - BomItem
+  - OldLineNum
+  - LineNumber
+  - OldCompItem
+  - OldSource
+  - OldInvQtyReq
+  - OldCutQty
+  - OldDimension
+  - OldStandard
+  - CompItem
+  - Source
+  - InvQtyReq
+  - CutQty
+  - Dimensions
+  - Standard
+  - Notes
+  - Initials
+
+TABLE: StdCost
+Fields (3):
+  - Item
+  - Cell-Value
+  - Quote-Value
+
+TABLE: StdCostLog
+Fields (8):
+  - Item
+  - CostType
+  - EffectDate
+  - CostValue
+  - LastValue
+  - CostSource
+  - CreateDate
+  - CreateInit
+
+TABLE: StdOptDesc
+Fields (11):
+  - DescID
+  - Description
+  - OptionGrpID
+  - SortOrder
+  - EditActivity
+  - PickActivity
+  - ApprStat
+  - ApprInit
+  - ApprDtTm
+  - CreateDtTm
+  - CreateInit
+
+TABLE: StdOption
+Fields (11):
+  - BomItem
+  - LineNumber
+  - CompItem
+  - Description
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - DescID
+
+TABLE: StdRevision
+Fields (12):
+  - BomItem
+  - CompItem
+  - CutQty
+  - Dimensions
+  - InvQtyReq
+  - LineNumber
+  - Source
+  - Standard
+  - BomRevision
+  - CompRevision
+  - Effective
+  - Obsolete
+
+TABLE: StdRouter
+Fields (17):
+  - BomItem
+  - Sequence
+  - Primary
+  - Operation
+  - StdTime
+  - StdOPCost
+  - CostExpDate
+  - StdOPVendor
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - QtOPCost
+  - QtUpdated
+  - QtUpdateInit
+
+TABLE: StdRTrans
+Fields (24):
+  - TransDate
+  - TransTime
+  - TransType
+  - BomItem
+  - OldSequence
+  - Sequence
+  - OldPrimary
+  - Primary
+  - OldOperation
+  - OldStdTime
+  - OldStdOPVend
+  - OldStdOPCost
+  - OldCstExpDt
+  - OldStdLabCst
+  - OldOperCmp
+  - Operation
+  - StdTime
+  - StdOPVendor
+  - StdOPCost
+  - CostExpDate
+  - Initials
+  - StdLaborCost
+  - OperComplete
+  - Notes
+
+TABLE: StdRtrDesc
+Fields (10):
+  - BomItem
+  - Sequence
+  - Operation
+  - Description
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: StdTerms
+Fields (9):
+  - Event
+  - EventType
+  - EventReference
+  - EventOffset
+  - InvoiceType
+  - Standard
+  - CreateDate
+  - CreateInit
+  - NotToExceed
+
+TABLE: TaxFlags
+Fields (8):
+  - LinkType
+  - LinkKey
+  - TaxFlag
+  - Certificate
+  - DateEntered
+  - UserEntered
+  - TaxRateAdj
+  - ExpiresOn
+
+TABLE: TaxGroup
+Fields (10):
+  - ZoneGroup
+  - LocExemptFlags
+  - JobExemptFlags
+  - BOMExemptFlags
+  - FreightTaxable
+  - ServiceTaxable
+  - PermissionType
+  - InvoiceMsg
+  - TaxAcctId
+  - CodeType
+
+TABLE: TaxZone
+Fields (9):
+  - TZID
+  - Country
+  - State
+  - County
+  - City
+  - ZoneName
+  - ZoneGroup
+  - ZoneType
+  - GlCode
+
+TABLE: TaxZoneRate
+Fields (5):
+  - TZID
+  - TaxRate
+  - StartDate
+  - EndDate
+  - Flags
+
+TABLE: tb_AppMessages
+Fields (4):
+  - in_MsgNumber
+  - ch_Language
+  - ch_Message
+  - ch_AdditionalInformation
+
+TABLE: TeleList
+Fields (4):
+  - Ext
+  - PCNum
+  - EmpNum
+  - Descr
+
+TABLE: TimeShtType
+Fields (9):
+  - EntryType
+  - Production
+  - Description
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: TimezoneCode
+Fields (1):
+  - ZipTimeZone
+
+TABLE: TOCImpact
+Fields (2):
+  - Publication
+  - ImpPublication
+
+TABLE: TOCManual
+Fields (2):
+  - ManualId
+  - ManualName
+
+TABLE: TOCPub
+Fields (10):
+  - Publication
+  - PubVersion
+  - DocumentName
+  - IsDocument
+  - RevisedBy
+  - RevisedOn
+  - Notes
+  - RevisionType
+  - PublicationName
+  - CurrentVersion
+
+TABLE: TOCSection
+Fields (3):
+  - SectionId
+  - SectionName
+  - SectionQualifier
+
+TABLE: TOCStd
+Fields (5):
+  - ManualId
+  - SectionId
+  - SubSectionId
+  - LineNumber
+  - Publication
+
+TABLE: ValueList
+Fields (9):
+  - ValueID
+  - ListID
+  - VarValue
+  - SortOrder
+  - Comment
+  - CreateDate
+  - CreateInit
+  - ValueActivity
+  - ValueStatus
+
+TABLE: ValueListType
+Fields (6):
+  - ListID
+  - ListName
+  - CreateDate
+  - CreateInit
+  - ListStatus
+  - ListActivity
+
+TABLE: ValueMatrix
+Fields (7):
+  - MatrixID
+  - VarID
+  - ValueID
+  - RefVarID
+  - RefValueID
+  - CreateDate
+  - CreateInit
+
+TABLE: VarDef
+Fields (8):
+  - VarID
+  - VarName
+  - VarFormat
+  - VarViewAs
+  - ListID
+  - Comment
+  - CreateDate
+  - CreateInit
+
+TABLE: VarGroup
+Fields (7):
+  - GroupID
+  - GroupName
+  - DisplayHeader
+  - ShowHeader
+  - CreateDate
+  - CreateInit
+  - GroupActivity
+
+TABLE: VarGroupMember
+Fields (7):
+  - MemID
+  - GroupID
+  - MemberType
+  - MemberID
+  - CreateDate
+  - CreateInit
+  - SortOrder
+
+TABLE: VarProperty
+Fields (7):
+  - PropID
+  - TableName
+  - TableKey
+  - VarID
+  - ValueID
+  - CreateDate
+  - CreateInit
+
+TABLE: VendItemGroup
+Fields (12):
+  - VendorNumber
+  - Item
+  - Type
+  - Operation
+  - VendorStatus
+  - Notes
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: VendorIndex
+Fields (8):
+  - VendIdx
+  - GlCode
+  - VendType
+  - VendorNumber
+  - SpecificItems
+  - Include
+  - CreateDate
+  - CreateInit
+
+TABLE: VendorItem
+Fields (16):
+  - VendorNumber
+  - Item
+  - VendorItem#
+  - Type
+  - Operation
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - StdCstQtyCst
+  - StdInvQtyCst
+  - LstCstQtyCst
+  - LstInvQtyCst
+  - LeadTime
+
+TABLE: VendorMaster
+Fields (34):
+  - VendorNumber
+  - VendorName
+  - Address1
+  - Address2
+  - City
+  - State
+  - ZipCode
+  - PhoneNumber
+  - Contact1
+  - Contact2
+  - DocumentGrp
+  - VendorClass
+  - TermsCode
+  - GLGroup
+  - Perm-Temp
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - FaxNumber
+  - LateNotice
+  - MailCode
+  - Contact3
+  - Notes
+  - VendEMail
+  - VendStatus
+  - VendType
+  - Keyinfo
+  - Y2kContact
+  - Y2kPhoneNumber
+  - Y2kCompliant
+  - Country
+
+TABLE: VendorPerf
+Fields (10):
+  - VPRId
+  - VendorNumber
+  - Orders
+  - Invoices
+  - Contactname
+  - Buyer
+  - EntryDate
+  - Problem
+  - Solution
+  - ProblemTypes
+
+TABLE: VendorTypes
+Fields (1):
+  - VendType
+
+TABLE: VPRTypes
+Fields (3):
+  - TypeId
+  - ProblemText
+  - SortOrder
+
+TABLE: Warehouse
+Fields (8):
+  - Warehouse#
+  - Name
+  - Address1
+  - Address2
+  - City
+  - State
+  - ZipCode
+  - PhoneNumber
+
+TABLE: WorkBookMap
+Fields (6):
+  - MapID
+  - WorkBookID
+  - PropName
+  - CellRef
+  - CreateDtTm
+  - CreateInit
+
+TABLE: WorkBookType
+Fields (8):
+  - WorkBookID
+  - WorkBookType
+  - WorkBookRev
+  - SignatureCell
+  - SignatureValue
+  - CellFormat
+  - CreateDtTm
+  - CreateInit
+
+TABLE: Workcell
+Fields (2):
+  - Workcell
+  - Description
+
+TABLE: WorkSchedule
+Fields (7):
+  - WorkDate
+  - EmpNum
+  - DivisionId
+  - JobNumber
+  - JobSuffix
+  - JobCode
+  - TechDesc
+
+TABLE: ZipCode
+Fields (10):
+  - ZipCode
+  - City
+  - StateProv
+  - Country
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: ZipData
+Fields (16):
+  - ZipCode
+  - ZipType
+  - PrimaryCity
+  - StateProv
+  - County
+  - AccCity
+  - UnAccCity
+  - ZipTimeZone
+  - AreaCodes
+  - Latitude
+  - Longitude
+  - WorldRegion
+  - Country
+  - Decommissioned
+  - EstPopulation
+  - Notes
+
+
+=== FIELD INDEX ===
+ADPXRef.CompCode
+ADPXRef.EmpNum
+ADPXRef.File#
+ADPXRef.StartDate
+AHTimeSheet.CreateDate
+AHTimeSheet.CreateInit
+AHTimeSheet.EmpNum
+AHTimeSheet.EndTime
+AHTimeSheet.ModifyDate
+AHTimeSheet.ModifyInit
+AHTimeSheet.PrevModDate
+AHTimeSheet.PrevModInit
+AHTimeSheet.StartTime
+AHTimeSheet.Ticket
+AHTimeSheet.WorkDate
+AXCapability.Capability
+AXCapability.Level
+AXCapability.Mandatory
+AXCapability.OperationCode
+AXDimenType.DimenCode
+AXDimenType.Dimension
+AXDimenValue.DimenCode
+AXDimenValue.DimenName
+AXDimenValue.DimenValue
+AXInvoice.Account
+AXInvoice.ConfirmedTotal
+AXInvoice.CreateDate
+AXInvoice.CreateInit
+AXInvoice.CreateTime
+AXInvoice.Credit
+AXInvoice.Debit
+AXInvoice.Freight
+AXInvoice.InvTotal
+AXInvoice.Inventoried
+AXInvoice.Invoice
+AXInvoice.InvoiceStatus
+AXInvoice.SalesTax
+AXInvoice.TransDate
+AXInvoice.Txt
+AXInvoice.Variance
+AXInvoice.VendorName
+AXInvoiceDist.Account
+AXInvoiceDist.AcctCombined
+AXInvoiceDist.Credit
+AXInvoiceDist.Debit
+AXInvoiceDist.Inventoried
+AXInvoiceDist.Invoice
+AXInvoiceDist.LinePriority
+AXInvoiceDist.Txt
+AXInvoiceRcpt.Account
+AXInvoiceRcpt.Invoice
+AXInvoiceRcpt.RcptNumber
+AXInvoiceRcpt.RefNumber
+AXInvoiceRcpt.RefType
+AXItemDim.AXItem
+AXItemDim.AXProductType
+AXItemDim.HasConfig
+AXItemDim.HasSize
+AXItemExport.AXConfig
+AXItemExport.AXItem
+AXItemExport.AXProductType
+AXItemExport.AXSize
+AXItemExport.Description
+AXItemExport.Exported
+AXItemExport.Item
+AXJournalBatch.BatchNumber
+AXJournalBatch.BatchStatus
+AXJournalBatch.CreateDate
+AXJournalBatch.CreateInit
+AXJournalBatch.Description
+AXJournalLine.Account
+AXJournalLine.AccountType
+AXJournalLine.BatchNumber
+AXJournalLine.BusinessUnit
+AXJournalLine.CostCenter
+AXJournalLine.Credit
+AXJournalLine.Debit
+AXJournalLine.Department
+AXJournalLine.Description
+AXJournalLine.DueDate
+AXJournalLine.Employee
+AXJournalLine.InventoryGroup
+AXJournalLine.Invoice
+AXJournalLine.Location
+AXJournalLine.PONumber
+AXJournalLine.PaymentMethod
+AXJournalLine.PaymentTerms
+AXJournalLine.ProfitCenter
+AXJournalLine.ProfitType
+AXJournalLine.Reference
+AXJournalLine.RowOrder
+AXJournalLine.TransDate
+AXMainAccount.AccountType
+AXMainAccount.AcctStruct
+AXMainAccount.MainAccount
+AXMainAccount.Name
+AXOperation.CostResource
+AXOperation.Exported
+AXOperation.MainAccount
+AXOperation.Occurrence
+AXOperation.Operation
+AXOperation.OperationCode
+AXOperation.OperationName
+AXOperation.ResourceID
+AXOperation.ResourceType
+AXResGroup.Exported
+AXResGroup.Name
+AXResGroup.ProcessCategoryID
+AXResGroup.QtyCategoryID
+AXResGroup.ResourceID
+AXResGroup.SetupCategoryID
+AXResReq.Capability
+AXResReq.Item
+AXResReq.Level
+AXResReq.OperationCode
+AXResource.Exported
+AXResource.Name
+AXResource.ProcessCategoryID
+AXResource.QtyCategoryID
+AXResource.ResGroupID
+AXResource.ResourceID
+AXResource.SetupCategoryID
+AXResource.Type
+AXRoute.AccError
+AXRoute.ErrorPct
+AXRoute.Exported
+AXRoute.JobPayType
+AXRoute.Level
+AXRoute.LinkType
+AXRoute.OprId
+AXRoute.OprNum
+AXRoute.OprNumNext
+AXRoute.OprPriority
+AXRoute.RouteID
+AXRouteOpr.ConfigID
+AXRouteOpr.DimColor
+AXRouteOpr.DimConfig
+AXRouteOpr.DimSize
+AXRouteOpr.DimStyle
+AXRouteOpr.Exported
+AXRouteOpr.FormulaFactor1
+AXRouteOpr.ItemCode
+AXRouteOpr.ItemRelation
+AXRouteOpr.Level
+AXRouteOpr.OprId
+AXRouteOpr.ProcessCategoryID
+AXRouteOpr.ProcessPerQty
+AXRouteOpr.ProcessTime
+AXRouteOpr.QtyCategoryID
+AXRouteOpr.QueueTimeAfter
+AXRouteOpr.QueueTimeBefore
+AXRouteOpr.ResourceID
+AXRouteOpr.ResourceType
+AXRouteOpr.RouteCode
+AXRouteOpr.RouteGroupID
+AXRouteOpr.RouteRelation
+AXRouteOpr.RouteType
+AXRouteOpr.SetupCategoryID
+AXRouteOpr.SetupRequired
+AXRouteOpr.SetupTime
+AXRouteOpr.SiteID
+AXRouteOpr.TranspTime
+AXRouteOpr.WrkCtrIDCost
+AXRouteTable.Exported
+AXRouteTable.ItemGroupID
+AXRouteTable.Name
+AXRouteTable.RouteID
+AXRouteTable.Route_APNumber
+AXRouteTable.Route_Approved
+AXRouteVersion.Active
+AXRouteVersion.Budget_Approved
+AXRouteVersion.Budget_Approver
+AXRouteVersion.DimColor
+AXRouteVersion.DimConfig
+AXRouteVersion.DimSize
+AXRouteVersion.DimStyle
+AXRouteVersion.Exported
+AXRouteVersion.FromDate
+AXRouteVersion.InventDimID
+AXRouteVersion.InventSiteID
+AXRouteVersion.ItemID
+AXRouteVersion.Name
+AXRouteVersion.RouteID
+AXRouteVersion.RouteVersion_APN
+AXRouteVersion.Route_APN
+AXRouteVersion.Route_Approved
+AXRouteVersion.ToDate
+AccountType.AccountType
+Address.Address1
+Address.Address2
+Address.Address3
+Address.AddressName
+Address.Address_ID
+Address.BillToId
+Address.BillToNum
+Address.CanBill
+Address.CanShip
+Address.City
+Address.Company_ID
+Address.Country
+Address.CreateDate
+Address.CreateInit
+Address.Directions
+Address.EmailInvoiceTo
+Address.FaxPhoneNum
+Address.InvoiceSubject
+Address.ModifyDate
+Address.ModifyInit
+Address.Notes
+Address.OriginalVia
+Address.PhoneNumber
+Address.PrevModDate
+Address.PrevModInit
+Address.ShipInstr
+Address.State
+Address.SystemNotes
+Address.TaxID
+Address.ZipCode
+AfterHours.BillingEmail
+AfterHours.Comments
+AfterHours.Company_ID
+AfterHours.Complaint
+AfterHours.ContactEmail
+AfterHours.ContactName
+AfterHours.CreateDate
+AfterHours.CreateInit
+AfterHours.CustomerName
+AfterHours.InitCallDate
+AfterHours.InitCallTime
+AfterHours.IssueResolved
+AfterHours.JobNumber
+AfterHours.ModifyDate
+AfterHours.ModifyInit
+AfterHours.PaymentMethod
+AfterHours.PhoneNumber
+AfterHours.PrevModDate
+AfterHours.PrevModInit
+AfterHours.Problem
+AfterHours.RefJobNumber
+AfterHours.ServiceReport
+AfterHours.ServiceType
+AfterHours.Ticket
+AfterHours.TicketComplete
+AfterHours.TktCompDate
+AfterHours.TktCompInit
+AfterHours.TktResDate
+AfterHours.TktResInit
+AssemblyCode.ApprStatus
+AssemblyCode.AssemblyCode
+AssemblyCode.CreateDate
+AssemblyCode.CreateInit
+AssemblyCode.Item
+AssemblyGroup.ApprStatus
+AssemblyGroup.AssemblyCode
+AssemblyGroup.CreateDate
+AssemblyGroup.CreateInit
+AssemblyGroup.MachineLink
+AssemblyMach.ApprStatus
+AssemblyMach.CreateDate
+AssemblyMach.CreateInit
+AssemblyMach.Description
+AssemblyMach.MachineLink
+AssemblyName.ApprStatus
+AssemblyName.AssemblyCode
+AssemblyName.CreateDate
+AssemblyName.CreateInit
+AssemblyName.Description
+AttrFile.AttrFormat
+AttrFile.AttrId
+AttrFile.AttrModifier
+AttrFile.AttrName
+AttrFile.AttrSecurity
+AttrFile.AttrSize
+AttrFile.AttrType
+AttrFile.SystemLevel
+AttrFile.ValueList
+AttrFile.ValueRequired
+AttrFile.WidgetAttr
+AttrFile.WidgetType
+AttrGroup.AttrModifier
+AttrGroup.AttrSecurity
+AttrGroup.GroupDesc
+BizRule.Condition
+BizRule.CreateDtTm
+BizRule.CreateInit
+BizRule.EvalOrder
+BizRule.FieldLabel
+BizRule.ParentRuleID
+BizRule.PropName
+BizRule.PropType
+BizRule.RuleID
+BizRule.RuleStatus
+BizRule.RuleType
+BizRule.SortOrder
+BizRule.ValueList
+BizRuleLink.CreateDtTm
+BizRuleLink.CreateInit
+BizRuleLink.EvalOrder
+BizRuleLink.LinkID
+BizRuleLink.RuleID
+BizRuleLink.TableKey
+BizRuleLink.TableName
+BomImpTrans.Adjust
+BomImpTrans.AdjustCutQty
+BomImpTrans.AdjustInvQty
+BomImpTrans.BomItem
+BomImpTrans.CompItem
+BomImpTrans.Dimensions
+BomImpTrans.ImpactedBom
+BomImpTrans.ImpactedComp
+BomImpTrans.ImpactedLine
+BomImpTrans.Initials
+BomImpTrans.LineNumber
+BomImpTrans.Notes
+BomImpTrans.OldAdjCutQty
+BomImpTrans.OldAdjInvQty
+BomImpTrans.OldAdjust
+BomImpTrans.OldDimension
+BomImpTrans.OldImpComp
+BomImpTrans.OldImpLine
+BomImpTrans.OldSource
+BomImpTrans.Source
+BomImpTrans.TransDate
+BomImpTrans.TransTime
+BomImpTrans.TransType
+BomOptImpact.Adjust
+BomOptImpact.AdjustCutQty
+BomOptImpact.AdjustInvQty
+BomOptImpact.BomItem
+BomOptImpact.CompItem
+BomOptImpact.CreateDate
+BomOptImpact.CreateInit
+BomOptImpact.Dimensions
+BomOptImpact.ImpactedBom
+BomOptImpact.ImpactedComp
+BomOptImpact.ImpactedLine
+BomOptImpact.LineNumber
+BomOptImpact.ModifyDate
+BomOptImpact.ModifyInit
+BomOptImpact.PrevModDate
+BomOptImpact.PrevModInit
+BomOptImpact.Source
+CNCFixture.FixtureID
+CNCFixture.FixtureLoc
+CNCFixture.FixtureName
+CNCFtoM.FixtureID
+CNCFtoM.MachineID
+CNCMachine.MachineDescr
+CNCMachine.MachineID
+CNCPart.PartDescription
+CNCPart.PartNumber
+CNCPtoF.FixtureID
+CNCPtoF.FixtureStatus
+CNCPtoF.PartNumber
+COAStructType.AcctStruct
+Cadfile.CheckedOut
+Cadfile.EditDate
+Cadfile.FileExt
+Cadfile.FileStat
+Cadfile.FileSys
+Cadfile.Filename
+Cadfile.Notes
+Cadfile.Pathname
+CallDetail.CallDate
+CallDetail.CallOwner
+CallDetail.CallRefNum
+CallDetail.CallStatus
+CallDetail.CallTime
+CallDetail.CallType
+CallDetail.CloseDate
+CallDetail.CloseTime
+CallDetail.CustComments
+CallDetail.FollowupDate
+CallDetail.FollowupTime
+CallDetail.OurComments
+CallHistory.Address_ID
+CallHistory.CallDate
+CallHistory.CallOwner
+CallHistory.CallRefNum
+CallHistory.CallStatus
+CallHistory.CallTime
+CallHistory.CallType
+CallHistory.CloseDate
+CallHistory.CloseTime
+CallHistory.Company_ID
+CallHistory.Contactname
+CallHistory.CustComments
+CallHistory.CustEmail
+CallHistory.FaxNumber
+CallHistory.FollowupDate
+CallHistory.FollowupTime
+CallHistory.Issues
+CallHistory.OurComments
+CallHistory.PhoneNumber
+CallHistory.RefEquipment
+CallHistory.RefSerial#
+CallHistory.Resolution
+CallHistory.ServiceCodes
+CallHistory.StdEffected
+CallHistory.StdUpdated
+Capability.Capability
+CardCredit.Amount
+CardCredit.ApprovalAmount
+CardCredit.ApprovalCode
+CardCredit.ApprovedBy
+CardCredit.ApprovedOn
+CardCredit.ApprovedTime
+CardCredit.CHAddress
+CardCredit.CHAddress2
+CardCredit.CHCity
+CardCredit.CHEmail
+CardCredit.CHName
+CardCredit.CHPhone
+CardCredit.CHState
+CardCredit.CHZip
+CardCredit.CVV2
+CardCredit.CardNoMask
+CardCredit.CardNumber
+CardCredit.CardOrder
+CardCredit.CardStatus
+CardCredit.CardType
+CardCredit.Comment
+CardCredit.Company_ID
+CardCredit.DivisionId
+CardCredit.EncodedCheck
+CardCredit.ExpDate
+CardCredit.PONo
+CardCredit.ReceiptAddr
+CardCredit.ReceiptFax
+CardCredit.ReceiptType
+CardCredit.RefCode
+CardCredit.RefType
+CardCredit.TakenBy
+CardCredit.TakenOn
+CardCredit.TakenTime
+CardCredit.Tax
+ChangeLog.AfterValue
+ChangeLog.BeforeValue
+ChangeLog.FieldChanged
+ChangeLog.ModInit
+ChangeLog.TableKey
+ChangeLog.TableName
+ChangeLog.TransDate
+ChangeLog.TransTime
+ChangeRequest.Cost
+ChangeRequest.Date
+ChangeRequest.EmpNum
+ChangeRequest.FileAttach
+ChangeRequest.InvLevel
+ChangeRequest.InvNotes
+ChangeRequest.Mod-ItemNum
+ChangeRequest.ModInv
+ChangeRequest.ModParts
+ChangeRequest.New-ItemNum
+ChangeRequest.Notes
+ChangeRequest.Processed
+ChangeRequest.RevDesc
+ChangeRequest.StockAdd
+ChangeRequest.StockDelete
+ChangeRequest.Type
+ChangeRequest.UseInv
+ComGroup.GroupDesc
+ComGroup.GroupName
+ComGrp.CommCode
+ComGrp.GroupName
+CommDesc.CommCode
+CommDesc.PatternId
+CommDesc.PatternOrder
+Commodity.AttrList
+Commodity.CommCode
+Commodity.Description
+Company.AcctBalance
+Company.Active
+Company.BalanceDate
+Company.BillToExt
+Company.BillToPhone
+Company.Classification
+Company.CoeRSM
+Company.Company_ID
+Company.CreateDate
+Company.CreateInit
+Company.CreditLimit
+Company.CreditNote
+Company.CreditStatus
+Company.CustDlrName
+Company.CustType
+Company.Dealer
+Company.Discounted
+Company.Exported
+Company.IsDealer
+Company.IsExcDealer
+Company.LastCreditStat
+Company.ModifyDate
+Company.ModifyInit
+Company.Notes
+Company.OffHoldBy
+Company.OffHoldDate
+Company.OnHoldBy
+Company.OnHoldDate
+Company.PrevModDate
+Company.PrevModInit
+Company.ShipInstr
+Company.SystemNotes
+Company.TaxID
+Company.TermsCode
+CompanyAKA.Addr_Id
+CompanyAKA.Name
+CompanyAKA.Type
+CompanyKey.Addr_Id
+CompanyKey.NameKey
+CompanyKey.Type
+CompanyMaster.CompanyName
+CompanyMaster.CreateDate
+CompanyMaster.CreateInit
+CompanyMaster.MasterStatus
+CompanyMaster.Master_Id
+CompanyMaster.Notes
+CompanyMaster.Type
+CompanyXRef.Company_ID
+CompanyXRef.Master_Id
+ConstantValue.DateValue
+ConstantValue.DecimalValue
+ConstantValue.EndDate
+ConstantValue.IntegerValue
+ConstantValue.KeyName
+ConstantValue.KeyType
+ConstantValue.LogicalValue
+ConstantValue.StDate
+ConstantValue.StringValue
+Constants.CDesc
+Constants.CName
+Constants.CType
+Constants.CValue
+ContactGroup.Address_ID
+ContactGroup.Company_ID
+ContactGroup.Cont_ID
+ContactGroup.ContactGroup
+ContactGroup.CreateDate
+ContactGroup.CreateInit
+ContactGroup.ID
+Contacts.Address_ID
+Contacts.AltDesc
+Contacts.AltPhone
+Contacts.Company_ID
+Contacts.ConTitle
+Contacts.Cont_Id
+Contacts.CreateDate
+Contacts.CreateInit
+Contacts.Email
+Contacts.FaxPhoneNum
+Contacts.FirstName
+Contacts.LastName
+Contacts.ModifyDate
+Contacts.ModifyInit
+Contacts.MoreAddress
+Contacts.Notes
+Contacts.PhoneExt
+Contacts.PhoneNumber
+Contacts.PrevModDate
+Contacts.PrevModInit
+Contacts.Type
+Contacts.Website
+Country.CallingCode
+Country.Country
+Country.CountryCode
+Country.ZipCodeFormat
+County.Country
+County.County
+County.State
+CreditCard.Address
+CreditCard.ApprovalAmount
+CreditCard.ApprovalCode
+CreditCard.ApprovedBy
+CreditCard.ApprovedOn
+CreditCard.ApprovedTime
+CreditCard.CardExpDate
+CreditCard.CardHolder
+CreditCard.CardNotes
+CreditCard.CardNumber
+CreditCard.CardStatus
+CreditCard.CardType
+CreditCard.RefCode
+CreditCard.SpecialRequest
+CreditCard.TakenBy
+CreditCard.TakenOn
+CreditCard.TakenTime
+CreditCard.ZipCode
+CreditHistory.Company_ID
+CreditHistory.CreateDate
+CreditHistory.CreateInit
+CreditHistory.CreditLimit
+CreditHistory.CreditStatus
+CreditHistory.EndDate
+CreditHistory.Notes
+CreditHistory.StartDate
+CustomerItem.Company_ID
+CustomerItem.CustomerItem
+CustomerItem.Item
+DaysAllotted.AllottedNotes
+DaysAllotted.AuthDate
+DaysAllotted.AuthInit
+DaysAllotted.CreateInit
+DaysAllotted.CreatedAt
+DaysAllotted.DayType
+DaysAllotted.DaysAllotted
+DaysAllotted.EmpNum
+DaysAllotted.ExpDate
+DaysTaken.CreateInit
+DaysTaken.CreatedAt
+DaysTaken.DateTaken
+DaysTaken.DayTaken
+DaysTaken.DayType
+DaysTaken.EmpNum
+DaysTaken.Flags
+DaysTaken.Notes
+DefBreakTime.DeptCode
+DefBreakTime.EmpNum
+DefBreakTime.EndDate
+DefBreakTime.StartDate
+DemographMap.Category
+DemographMap.FieldName
+Demographic.Category
+Demographic.Description
+Demographic.Parent_Category
+Demographic.Parent_Description
+Demographic.SortOrder
+Demographic.Use_Status
+DeptArea.DeptArea
+DeptArea.DeptList
+DeptArea.DispOrder
+DeptAreaTarget.CreateDate
+DeptAreaTarget.CreateInit
+DeptAreaTarget.DeptArea
+DeptAreaTarget.ProdTarget
+DeptAreaTarget.StDate
+DescTemplate.Pattern
+DescTemplate.PatternId
+DescTemplate.PatternName
+Division.Address1
+Division.Address2
+Division.City
+Division.DBDirectory
+Division.DivisionId
+Division.DivisionName
+Division.FaxPhoneNum
+Division.LogoFile
+Division.PhoneNumber
+Division.Remote_Connect
+Division.Self_Connect
+Division.Shortname
+Division.State
+Division.TaxID#
+Division.ZipCode
+DocLink.DocID
+DocLink.TableKey
+DocLink.TableName
+Document.CreateDate
+Document.CreateInit
+Document.DeleteOn
+Document.DocClass
+Document.DocDesc
+Document.DocID
+Document.DocMemo
+Document.DocName
+DynamicFile.FileName
+DynamicFile.KeyFields
+DynamicFile.RawData
+EmpHistory.DeptCode
+EmpHistory.DivisionId
+EmpHistory.EmpNum
+EmpHistory.LaborRateClass
+EmpHistory.Salaried
+EmpHistory.ShiftPrem
+EmpHistory.StDate
+EmpHistory.WorkShift
+EmpHoursTarget.CreateDate
+EmpHoursTarget.CreateInit
+EmpHoursTarget.EmpNum
+EmpHoursTarget.HoursTarget
+EmpHoursTarget.StDate
+EmpMgr.EmpNum
+EmpMgr.MgrNum
+EmpTarget.CreateDate
+EmpTarget.CreateInit
+EmpTarget.EmpNum
+EmpTarget.ProdTarget
+EmpTarget.StDate
+Employee.Address1
+Employee.Address2
+Employee.Address3
+Employee.City
+Employee.ClientNums
+Employee.Country
+Employee.CreateDate
+Employee.CreateInit
+Employee.DefaultInfo
+Employee.DeptCode
+Employee.DirectPhone
+Employee.DivisionId
+Employee.EffectDate
+Employee.EmpFaxPhone
+Employee.EmpFirstName
+Employee.EmpInitials
+Employee.EmpLastName
+Employee.EmpMiddleInt
+Employee.EmpNum
+Employee.Emptitle
+Employee.HireDate
+Employee.HomePhone
+Employee.LabelOrder
+Employee.LaborRate
+Employee.LaborRateClass
+Employee.MobilePhone
+Employee.ModifyDate
+Employee.ModifyInit
+Employee.Password
+Employee.PayrollInfo
+Employee.PayrollTermDate
+Employee.Permissions
+Employee.PinCode
+Employee.PrevLabRate
+Employee.PrevModDate
+Employee.PrevModInit
+Employee.Salaried
+Employee.ShiftPrem
+Employee.StartDate
+Employee.State
+Employee.TermDate
+Employee.UserAsMain
+Employee.UserMenu
+Employee.VacDate
+Employee.VacationDays
+Employee.VendorNumber
+Employee.WorkShift
+Employee.ZipCode
+EmployeeType.Description
+EmployeeType.EmpType
+EmployeeType.Payroll
+ExpCategory.BSMainAccount
+ExpCategory.COGSAccount
+ExpCategory.Description
+ExpCategory.ExtendedField
+ExpCategory.MainAccount
+ExpCategory.SortOrder
+ExpReport.APStatus
+ExpReport.Comment
+ExpReport.DatePrepared
+ExpReport.DeptCode
+ExpReport.EntryStatus
+ExpReport.ExpReportNum
+ExpReport.ExpStatus
+ExpReport.SubmitBy
+ExpReport.VendorNumber
+ExpReportDtl.ExpReportNum
+ExpReportDtl.ExpVoucher
+ExpenseTrans.APApprBy
+ExpenseTrans.APApprDate
+ExpenseTrans.APStatus
+ExpenseTrans.Amount
+ExpenseTrans.BSAccount
+ExpenseTrans.DeptCode
+ExpenseTrans.Description
+ExpenseTrans.EnterBy
+ExpenseTrans.EnterDate
+ExpenseTrans.EntryStatus
+ExpenseTrans.ExpAccount
+ExpenseTrans.ExpCategory
+ExpenseTrans.ExpStatus
+ExpenseTrans.ExpTransDate
+ExpenseTrans.ExpVoucher
+ExpenseTrans.MgrApprBy
+ExpenseTrans.MgrApprDate
+ExpenseTrans.MileRate
+ExpenseTrans.Mileage
+ExpenseTrans.OtherAccount
+ExpenseTrans.PaymentCode
+ExpenseTrans.PostDate
+ExpenseTrans.TransDate
+ExpenseTrans.VendorNumber
+ExpenseTrans.WasExpensed
+ExtProp.CreateDate
+ExtProp.CreateInit
+ExtProp.DateValue
+ExtProp.DecimalValue
+ExtProp.IntegerValue
+ExtProp.LogicalValue
+ExtProp.PropKey
+ExtProp.PropName
+ExtProp.PropType
+ExtProp.StringValue
+FaxStatus.CurStatus
+FaxStatus.Destination
+FaxStatus.FaxId
+FaxStatus.LoadDate
+FaxStatus.Sender
+FaxStatus.TotalPages
+FaxStatus.Tries
+FaxStatus.XmitTime
+FaxStatus.XmittedOn
+Funnel.ActionDate
+Funnel.Address_ID
+Funnel.ChanceToWin
+Funnel.City
+Funnel.Company_ID
+Funnel.Competition
+Funnel.CreateDate
+Funnel.DealerNumber
+Funnel.DecisionTime
+Funnel.DlrId
+Funnel.FunnelID
+Funnel.FunnelStatus
+Funnel.Industry
+Funnel.LeadName
+Funnel.LeadSource
+Funnel.ModifyDate
+Funnel.Notes
+Funnel.NumDaysCycle
+Funnel.OppStage
+Funnel.OppStartDate
+Funnel.OppValue
+Funnel.OutcomeYear
+Funnel.PORcvdDate
+Funnel.ProbSubDate
+Funnel.ProjectName
+Funnel.QuoteNum
+Funnel.RSMHelped
+Funnel.RSMInitiated
+Funnel.RSMTerritory
+Funnel.ReasonWonLost
+Funnel.SortOrder
+Funnel.State
+Funnel.TargetAccount
+Funnel.TypeOfLine
+Funnel.WklyInter
+GLMap.AcctCombined
+GLMap.GlCode
+GLMap.MainAccount
+GLMap.Reversible
+GeoRegions.Abbrev
+GeoRegions.AreaName
+GeoRegions.Country
+GeoRegions.DispName
+GeoRegions.RegionStatus
+GeoRegions.StateProv
+GlCodes.Active
+GlCodes.Capital
+GlCodes.Description
+GlCodes.GLFlags
+GlCodes.GlCode
+GlCodes.Inventoried
+HelpContext.DataFile
+HelpContext.Datafield
+HelpContext.HelpProg
+HelpContext.IsMenu
+HelpContext.OSContext
+HelpContext.RunPersist
+HelpKey.Action
+HelpKey.Context
+HelpKey.KeyName
+HelpKey.OSContext
+Holiday.Description
+Holiday.HolidayDate
+HoursMapEmp.AcctCombined
+HoursMapEmp.BSAcctCombined
+HoursMapEmp.EmpNum
+HoursMapEmp.EndDate
+HoursMapEmp.HoursType
+HoursMapEmp.StartDate
+HoursType.HoursType
+HoursType.MainAccount
+HoursType.TypeName
+HoursTypeMap.AcctCombined
+HoursTypeMap.BSAcctCombined
+HoursTypeMap.EndDate
+HoursTypeMap.HoursType
+HoursTypeMap.StartDate
+ImportLog.FileName
+ImportLog.FileType
+ImportLog.ImportDtTm
+ImportLog.ImportInit
+InstallDesc.CreateDate
+InstallDesc.CreateInit
+InstallDesc.Descr
+InstallDesc.EqPos
+InstallDesc.ID
+InstallDesc.ModifyDate
+InstallDesc.ModifyInit
+InstallDesc.Name
+InstallDesc.PrevModDate
+InstallDesc.PrevModInit
+InstallList.CustInst
+InstallList.EqPos
+InstallList.EquGroup
+InstallList.ID
+InstallList.MfgInst
+InstallList.ThirdInst
+InvClass.ClassDescr
+InvClass.InvClass
+InvClass.Inventoried
+ItemBlanketNote.CreateDate
+ItemBlanketNote.CreateInit
+ItemBlanketNote.Item
+ItemBlanketNote.Note
+ItemBlanketNote.SortOrder
+ItemBlanketNote.VendorNumber
+ItemChange.CreateDate
+ItemChange.CreateInit
+ItemChange.DateComplete
+ItemChange.DivisionList
+ItemChange.NewItem
+ItemChange.OldItem
+ItemGroup.ItemGroup
+ItemGroup.MainAccount
+ItemLength.Item
+ItemLength.Lengths
+ItemLocation.Comment
+ItemLocation.CreateDate
+ItemLocation.CreateInit
+ItemLocation.DivisionId
+ItemLocation.Frequency
+ItemLocation.FromLocation
+ItemLocation.Item
+ItemLocation.LastCheckBy
+ItemLocation.LastChecked
+ItemLocation.Location
+ItemLocation.MaxStockLvl
+ItemLocation.MinStockLvl
+ItemLocation.OrderMethod
+ItemLocation.ReOrderQty
+ItemLog.DateTimeIn
+ItemLog.DateTimeOut
+ItemLog.Dimensions
+ItemLog.InvJobNumber
+ItemLog.InvJobSuffix
+ItemLog.Item
+ItemLog.JobNumber
+ItemLog.JobSuffix
+ItemLog.KitInfo
+ItemLog.Location
+ItemLog.Notes
+ItemLog.PurposeCode
+ItemLog.Quantity
+ItemLog.UserIn
+ItemLog.UserOut
+ItemMaster.AttrList
+ItemMaster.AttrValue
+ItemMaster.BOMApproved
+ItemMaster.BomRevision
+ItemMaster.CommCode
+ItemMaster.ConvFactor
+ItemMaster.CostExpDate
+ItemMaster.CostUM
+ItemMaster.CreateDate
+ItemMaster.CreateInit
+ItemMaster.CyclePriority
+ItemMaster.DescrLine2
+ItemMaster.Description
+ItemMaster.DivisionId
+ItemMaster.Documents
+ItemMaster.FirstJob
+ItemMaster.FirstSfx
+ItemMaster.FirstUsed
+ItemMaster.Fixture
+ItemMaster.GlCode
+ItemMaster.InvClass
+ItemMaster.InvUM
+ItemMaster.Item
+ItemMaster.ItemStatus
+ItemMaster.LastCounted
+ItemMaster.LastUsed
+ItemMaster.LeadTime
+ItemMaster.LeadUpdated
+ItemMaster.LstCstQtyCst
+ItemMaster.LstInvQtyCst
+ItemMaster.MadeToPrint
+ItemMaster.ManualDescr
+ItemMaster.MaxStockLvl
+ItemMaster.MfgNotes
+ItemMaster.MinReOrdrQty
+ItemMaster.MinStockLvl
+ItemMaster.MinUpdated
+ItemMaster.MinVendorOrder
+ItemMaster.MiscData
+ItemMaster.ModifyDate
+ItemMaster.ModifyInit
+ItemMaster.OldPartNum
+ItemMaster.OrderUM
+ItemMaster.PONotes
+ItemMaster.PatternId
+ItemMaster.PrevModDate
+ItemMaster.PrevModInit
+ItemMaster.PrimInvLoc
+ItemMaster.PrintNumber
+ItemMaster.PrintSize
+ItemMaster.PurchNotes
+ItemMaster.PurchaseType
+ItemMaster.QtCstQtyCst
+ItemMaster.QtInvQtyCst
+ItemMaster.QtUpdateInit
+ItemMaster.QtUpdated
+ItemMaster.RouterApprvd
+ItemMaster.SalesDescr
+ItemMaster.SellingPrice
+ItemMaster.SetUpDescr
+ItemMaster.Source
+ItemMaster.SparePart
+ItemMaster.SpecialRtr
+ItemMaster.StdCstQtyCst
+ItemMaster.StdCutCharge
+ItemMaster.StdInvQtyCst
+ItemMaster.StdVendor
+ItemMaster.Symbol
+ItemMaster.VendorStocked
+ItemMaster.Workcell
+ItemReminder.CreateDate
+ItemReminder.CreateInit
+ItemReminder.FieldName
+ItemReminder.Item
+ItemReminder.Notes
+ItemReminder.ReviewDate
+ItemReminder.ReviewStatus
+ItemSubClass.ClassSubClss
+ItemSubClass.ClassType
+ItemSubClass.Construction
+ItemSubClass.CreateDate
+ItemSubClass.CreateInit
+ItemSubClass.GlCode
+ItemSubClass.ItemGroup
+ItemSubClass.Model#Prefix
+ItemSubClass.ModifyDate
+ItemSubClass.ModifyInit
+ItemSubClass.PrevModDate
+ItemSubClass.PrevModInit
+ItemSubClass.PriceMult
+ItemSubClass.SubClassDesc
+ItemTimeEst.BenchFactor
+ItemTimeEst.EstBy
+ItemTimeEst.EstDate
+ItemTimeEst.EstNotes
+ItemTimeEst.Item
+ItemTimeEst.MinPerBench
+ItemTimeEst.MinPerCut
+ItemToModel.CreateDate
+ItemToModel.CreateInit
+ItemToModel.Item
+ItemToModel.Model
+ItemToModel.ModifyDate
+ItemToModel.ModifyInit
+ItemToModel.Options
+ItemToModel.PrevModDate
+ItemToModel.PrevModInit
+ItemTran.Changes
+ItemTran.FieldChanged
+ItemTran.Initials
+ItemTran.Item
+ItemTran.TransDate
+JobType.BomReqd
+JobType.JobType
+JobType.Production
+JobType.TypeName
+Journey.Action_Date
+Journey.Address_ID
+Journey.Anticipated_Visit_Date
+Journey.Chance_To_Secure_order
+Journey.City
+Journey.Company_ID
+Journey.Competition
+Journey.Country
+Journey.CreateDT
+Journey.CreateInit
+Journey.Date_Lost
+Journey.Date_PO_Received
+Journey.Dealer
+Journey.Dealer_Contact
+Journey.Deleted
+Journey.Equipment_Type
+Journey.Expected_Decision_Date
+Journey.ID
+Journey.Industry
+Journey.Journey_Stage
+Journey.Journey_Start_Date
+Journey.Journey_Status
+Journey.Journey_Type
+Journey.Journey_Value
+Journey.Lead_Source
+Journey.Main_Contact_ID
+Journey.Next_Steps
+Journey.Notes
+Journey.OEM
+Journey.Other_Dealer
+Journey.Other_Industry
+Journey.Presentation_Method
+Journey.Presentation_Method_OK
+Journey.Priority
+Journey.ProducedBy
+Journey.Project_Models
+Journey.Project_Name
+Journey.Project_Notes
+Journey.Qty_of_Items
+Journey.Quote_Completed_Date
+Journey.Quote_Key_Value
+Journey.Quote_Number
+Journey.Quote_Presentation_Date
+Journey.Quote_Type
+Journey.RFQ_Complete
+Journey.RSM
+Journey.RSM_Helped
+Journey.RSM_Territory
+Journey.Reason_Lost
+Journey.Reason_Won
+Journey.Reason_Won_Lost
+Journey.Service_Tech
+Journey.State_Province
+Journey.Target_Account
+Journey.Visit_Date
+Journey.Visit_Outcome
+Journey_Contact.Contact_Email
+Journey_Contact.Contact_Mobile
+Journey_Contact.Contact_Name
+Journey_Contact.Contact_Note
+Journey_Contact.Contact_Office
+Journey_Contact.Contact_Position
+Journey_Contact.CreateDtTm
+Journey_Contact.CreateInit
+Journey_Contact.ID
+Journey_Contact.IsPrimary
+Journey_Contact.Jrn_ID
+Journey_Log.Action
+Journey_Log.CreateDtTm
+Journey_Log.CreateInit
+Journey_Log.ID
+Journey_Log.Jrn_ID
+Journey_Note.Activity
+Journey_Note.CreateDtTm
+Journey_Note.CreateInit
+Journey_Note.ID
+Journey_Note.Jrn_ID
+Journey_Note.Note
+KeyJobDate.Calculated
+KeyJobDate.DateDesc
+KeyJobDate.DateName
+KeyJobDate.Days
+KeyJobDate.EndDate
+KeyJobDate.SortOrder
+KeyJobDate.StartDate
+MailList.AppliesTo
+MailList.Frequency
+MailList.ListDesc
+MailList.ListID
+MailList.NextDate
+MailTo.Body
+MailTo.FileAttach
+MailTo.SendDate
+MailTo.SendTo
+MailTo.SentDate
+MailTo.SentFrom
+MailTo.Subject
+MailxRef.AddressID
+MailxRef.AddressType
+MailxRef.AuthInit
+MailxRef.ContactID
+MailxRef.ListId
+MenuAccess.AccessCount
+MenuAccess.Activity
+MenuAccess.MenuVersion
+MenuAccess.UserInits
+MenuChange.Activity
+MenuChange.ChangesMade
+MenuChange.LinesChanged
+MenuChange.MenuVersion
+MenuChange.TransDate
+MenuDetail.CreateDate
+MenuDetail.CreateInit
+MenuDetail.HelpDescr
+MenuDetail.LineNumber
+MenuDetail.MenuDescr
+MenuDetail.MenuName
+MenuDetail.ModifyDate
+MenuDetail.ModifyInit
+MenuDetail.Parameters
+MenuDetail.PrevModDate
+MenuDetail.PrevModInit
+MenuDetail.ProgDesc
+MenuDetail.ProgName
+MenuHeader.CreateDate
+MenuHeader.CreateInit
+MenuHeader.MenuName
+MenuHeader.MenuOwner
+MenuHeader.MenuTitle
+MenuHeader.MenuVersion
+MenuHeader.ModifyDate
+MenuHeader.ModifyInit
+MenuHeader.OSContext
+MenuHeader.PrevModDate
+MenuHeader.PrevModInit
+MenuShortcut.Parameters
+MenuShortcut.ProgName
+MenuShortcut.Shortcut
+MenuShortcut.UserInits
+MileageRate.CentsPerMile
+MileageRate.SellPerMile
+MileageRate.StartDate
+ModelDtl.CustPfx
+ModelDtl.Family-Pos
+ModelDtl.IsGroup
+ModelDtl.Model-Descr
+ModelDtl.Model-Idx
+ModelDtl.Model-Order
+OneStep.BrokerHost
+OneStep.BrokerPort
+OneStep.LicenseKey
+OneStep.Password
+OneStep.Profile
+OneStep.SerialNo
+OneStep.UserName
+OperListToRoute.Item
+OperListToRoute.OperList
+OperListToRoute.RouteID
+Operation.Abbrev
+Operation.CreateDate
+Operation.CreateInit
+Operation.DeptCode
+Operation.Flags
+Operation.ModifyDate
+Operation.ModifyInit
+Operation.OpGlCode
+Operation.OperDesc
+Operation.Operation
+Operation.OutsideProc
+Operation.PrevModDate
+Operation.PrevModInit
+Operation.Resource
+Operation.SetUpRework
+Operation.StdOPVendor
+Operation.WorkCtr
+OptGroupDef.GroupDesc
+OptGroupDef.RangeMax
+OptGroupDef.RangeMin
+OptGroupDef.SortOrder
+OptionOrder.Comments
+OptionOrder.Description
+OptionOrder.OrderId
+OptionOrder.RangeMax
+OptionOrder.RangeMin
+OptionOrder.SortOrder
+PalletInfo.Comments
+PalletInfo.CreateDateTm
+PalletInfo.CreateUser
+PalletInfo.DateTimeIn
+PalletInfo.Destination
+PalletInfo.Location
+PalletInfo.Pallet
+PalletInfo.PalletPurpose
+PalletInfo.PalletStatus
+PalletInfo.PalletType
+PalletInfo.UserIn
+PalletLink.BOMItem
+PalletLink.CompItem
+PalletLink.DateTimeIn
+PalletLink.Dimensions
+PalletLink.Inventoried
+PalletLink.JobNumber
+PalletLink.JobSuffix
+PalletLink.KitInfo
+PalletLink.LineNumber
+PalletLink.Pallet
+PalletLink.Quantity
+PalletLink.UserIn
+PalletLog.BOMItem
+PalletLog.DateTimeIn
+PalletLog.DateTimeOut
+PalletLog.JobNumber
+PalletLog.JobSuffix
+PalletLog.Location
+PalletLog.LogSeq
+PalletLog.LogType
+PalletLog.Pallet
+PalletLog.PurposeCode
+PalletLog.UserIn
+PalletLog.UserOut
+PalletPurpose.BOMItem
+PalletPurpose.DateTimeIn
+PalletPurpose.JobNumber
+PalletPurpose.JobSuffix
+PalletPurpose.Pallet
+PalletPurpose.PalletStatus
+PalletPurpose.PurposeCode
+PalletPurpose.UserIn
+PayPremium.CreateDate
+PayPremium.CreateInit
+PayPremium.EmpNum
+PayPremium.HoursCodes
+PayPremium.ModifyDate
+PayPremium.ModifyInit
+PayPremium.PrevModDate
+PayPremium.PrevModInit
+PayPremium.WorkDate
+Permission.Activity
+Permission.Can-Run
+Permission.CreateDate
+Permission.CreateInit
+Permission.DistGroup
+Permission.ModifyDate
+Permission.ModifyInit
+Permission.PermType
+Permission.Permissions
+Permission.PrevModDate
+Permission.PrevModInit
+Permission.Purpose
+Permission.Recursive
+PrintGrp.PrintGrp
+PrintGrp.Printnum
+PrintNumber.CreateDate
+PrintNumber.CreateInit
+PrintNumber.Description
+PrintNumber.PrintNumber
+PrintNumber.RefInformation
+PrintUsrGrp.EmpNum
+PrintUsrGrp.Printnum
+Printers.PrintDesc
+Printers.PrintName
+Printers.PrintPerm
+Printers.PrintType
+Printers.Printnum
+ProjectEst.Date
+ProjectEst.EstEffDate
+ProjectEst.EstNotes
+ProjectEst.EstOrgCost
+ProjectEst.EstOrgHrs
+ProjectEst.EstRevCost
+ProjectEst.EstRevHrs
+ProjectEst.EstTime
+ProjectEst.Estimator
+ProjectEst.ProjID
+ProjectEst.RevEffDate
+ProjectEst.Source
+ProjectLink.CreateDate
+ProjectLink.CreateInit
+ProjectLink.ProjID
+ProjectLink.TableKey
+ProjectLink.TableName
+ProjectRev.AuthorizedBy
+ProjectRev.EstRevCost
+ProjectRev.EstRevHrs
+ProjectRev.Notes
+ProjectRev.ProjID
+ProjectRev.RevDate
+ProjectRev.RevEffDate
+ProjectRev.RevInit
+ProjectRev.RevTime
+PublicItem.Item
+PublicItem.Publication
+PurposeCode.Description
+PurposeCode.PurposeCode
+QRevService.CreateInit
+QRevService.CreatedAt
+QRevService.ID
+QRevService.QNum
+QRevService.QRev
+QRevService.QYear
+QRevService.QuoteID
+RSMActivity.Activity
+RSMActivity.Cnt
+RSMActivity.PeriodStart
+RSMActivity.PeriodType
+RSMActivity.RSM
+ReqForm.EmpNum
+ReqForm.FinishDate
+ReqForm.MISActTime
+ReqForm.MISNotesEd
+ReqForm.MISStatus
+ReqForm.MISTime
+ReqForm.ParentId
+ReqForm.Phase
+ReqForm.Predecessors
+ReqForm.Priority
+ReqForm.ProgLoc
+ReqForm.ProjectId
+ReqForm.ReqDate
+ReqForm.ReqID
+ReqForm.ReqType
+ReqForm.RequestEd
+ReqForm.RequestOrder
+ReqForm.Resources
+ReqForm.StartDate
+ReqForm.TaskModule
+ReqForm.TaskName
+ReqForm.WBSCode
+ReqTimeSheet.Accomplished
+ReqTimeSheet.BOMItem
+ReqTimeSheet.CreateDate
+ReqTimeSheet.CreateInit
+ReqTimeSheet.EmpNum
+ReqTimeSheet.EndTime
+ReqTimeSheet.Hours
+ReqTimeSheet.JobNumber
+ReqTimeSheet.JobSuffix
+ReqTimeSheet.Operation
+ReqTimeSheet.Quantity
+ReqTimeSheet.ReqId
+ReqTimeSheet.RouterSeq#
+ReqTimeSheet.ShiftNote
+ReqTimeSheet.StartTime
+ReqTimeSheet.WorkDate
+ResourceAssignment.AssignBy
+ResourceAssignment.AssignOn
+ResourceAssignment.DailyHours
+ResourceAssignment.EndDate
+ResourceAssignment.HasChanged
+ResourceAssignment.Hours
+ResourceAssignment.ProdHours
+ResourceAssignment.ProdPerc
+ResourceAssignment.Resource
+ResourceAssignment.ResourceID
+ResourceAssignment.StartDate
+ResourceLink.DailyHours
+ResourceLink.EndDate
+ResourceLink.Hours
+ResourceLink.ProdHours
+ResourceLink.ProdPerc
+ResourceLink.Resource
+ResourceLink.ResourceID
+ResourceLink.StartDate
+ResourceName.Description
+ResourceName.IsActive
+ResourceName.ResourceCode
+ResourceName.ResourceID
+ResourceName.ResourceType
+ResourcePeriod.AssignBy
+ResourcePeriod.AssignOn
+ResourcePeriod.Days
+ResourcePeriod.Hours
+ResourcePeriod.HrsPerDay
+ResourcePeriod.People
+ResourcePeriod.PeriodStart
+ResourcePeriod.Resource
+RootFileSys.FileSys
+RootFileSys.Flags
+RootFileSys.RebuiltAt
+RootFileSys.RebuiltOn
+RootFileSys.RootDirectory
+RootFileSys.SearchOrder
+RtrImpTrans.Adjust
+RtrImpTrans.AdjustOPCost
+RtrImpTrans.AdjustTime
+RtrImpTrans.BomItem
+RtrImpTrans.CompItem
+RtrImpTrans.ImpactedBom
+RtrImpTrans.ImpactedSeq
+RtrImpTrans.Initials
+RtrImpTrans.LineNumber
+RtrImpTrans.Notes
+RtrImpTrans.OldAdjOPCost
+RtrImpTrans.OldAdjTime
+RtrImpTrans.OldAdjust
+RtrImpTrans.OldImpSeq
+RtrImpTrans.OldOperation
+RtrImpTrans.OldStdVendor
+RtrImpTrans.Operation
+RtrImpTrans.StdOPVendor
+RtrImpTrans.TransDate
+RtrImpTrans.TransTime
+RtrImpTrans.TransType
+RtrOptImpact.Adjust
+RtrOptImpact.AdjustOPCost
+RtrOptImpact.AdjustTime
+RtrOptImpact.BomItem
+RtrOptImpact.CompItem
+RtrOptImpact.CreateDate
+RtrOptImpact.CreateInit
+RtrOptImpact.ImpactedBom
+RtrOptImpact.ImpactedSeq
+RtrOptImpact.LineNumber
+RtrOptImpact.ModifyDate
+RtrOptImpact.ModifyInit
+RtrOptImpact.Operation
+RtrOptImpact.PrevModDate
+RtrOptImpact.PrevModInit
+RtrOptImpact.StdOPVendor
+RwkProblem.DeptCode
+RwkProblem.ProblemItem
+SalesCode.CodeType
+SalesCode.Description
+SalesCode.DivisionId
+SalesCode.GlCode
+ScanMenu.MenuDescription
+ScanMenu.MenuName
+ScanMenuItem.Action
+ScanMenuItem.Description
+ScanMenuItem.LineNumber
+ScanMenuItem.MenuName
+ServiceCampaign.CampaignID
+ServiceCampaign.Description
+ServiceCampaign.ItemList
+ServiceCampaign.Notes
+ServiceCampaign.StartDate
+ServiceCampaign.StatusCode
+ServiceEstimate.CreateInit
+ServiceEstimate.CreatedAt
+ServiceEstimate.CustomerInfo
+ServiceEstimate.ID
+ServiceEstimate.InstallCategory
+ServiceEstimate.LevelOfService
+ServiceEstimate.ManualScope
+ServiceEstimate.QuoteDate
+ServiceEstimate.QuoteID
+ServiceEstimate.QuotedAmount
+ServiceEstimate.QuotedBy
+ServiceEstimate.QuotedCost
+ServiceEstimate.ReferenceInfo
+ServiceEstimate.Scope
+ServiceEstimateTrip.CreateInit
+ServiceEstimateTrip.CreatedAt
+ServiceEstimateTrip.ID
+ServiceEstimateTrip.Order
+ServiceEstimateTrip.QuoteID
+ServiceEstimateTrip.TripID
+ServiceTrip.AdminMarkup
+ServiceTrip.Airfare
+ServiceTrip.AirfareCharge
+ServiceTrip.ChargePerMile
+ServiceTrip.CompanyCarCost
+ServiceTrip.CompanyCarPerDay
+ServiceTrip.CompanyFuelCost
+ServiceTrip.CompanyMPG
+ServiceTrip.CreateInit
+ServiceTrip.CreatedAt
+ServiceTrip.CustomerInfo
+ServiceTrip.DailyWorkHours
+ServiceTrip.Description
+ServiceTrip.DesiredMargin
+ServiceTrip.DoubleTimeCost
+ServiceTrip.DoubleTimeHours
+ServiceTrip.DoubleTimeHoursCharge
+ServiceTrip.DoubleTimeRate
+ServiceTrip.EffectDate
+ServiceTrip.FuelCost
+ServiceTrip.GasPerGal
+ServiceTrip.HotelCharge
+ServiceTrip.HotelNights
+ServiceTrip.HotelPerDay
+ServiceTrip.HoursByDay
+ServiceTrip.ID
+ServiceTrip.InPlantDays
+ServiceTrip.IncludeCar
+ServiceTrip.IncludeHotel
+ServiceTrip.LeaveOnWeekday
+ServiceTrip.LocalTrip
+ServiceTrip.MPH
+ServiceTrip.MaxHoursPerDay
+ServiceTrip.MileageCharge
+ServiceTrip.MileageCost
+ServiceTrip.Miles
+ServiceTrip.MilesCoeToHotel
+ServiceTrip.MilesCompanyCar
+ServiceTrip.MilesHotelToPlant
+ServiceTrip.MilesPersonalCar
+ServiceTrip.MilesRentalCar
+ServiceTrip.MilesToAirport
+ServiceTrip.MilesToHotel
+ServiceTrip.NumOfTrips
+ServiceTrip.OneWayTrip
+ServiceTrip.OvertimeCost
+ServiceTrip.OvertimeHours
+ServiceTrip.OvertimeHoursCharge
+ServiceTrip.OvertimeRate
+ServiceTrip.PerDiem
+ServiceTrip.PerDiemType
+ServiceTrip.PlantDriveTime
+ServiceTrip.PlantMiles
+ServiceTrip.ReferenceInfo
+ServiceTrip.RegularCost
+ServiceTrip.RegularHours
+ServiceTrip.RegularHoursCharge
+ServiceTrip.RegularRate
+ServiceTrip.RentalCarCharge
+ServiceTrip.RentalCarCost
+ServiceTrip.RentalCarPerDay
+ServiceTrip.RentalMPG
+ServiceTrip.TechCount
+ServiceTrip.TechVisitCost
+ServiceTrip.TechVisitQuote
+ServiceTrip.TravelCharge
+ServiceTrip.TravelDayAfter
+ServiceTrip.TravelDayBefore
+ServiceTrip.TravelFirstDay
+ServiceTrip.TravelHours
+ServiceTrip.TravelLastDay
+ServiceTrip.TravelPerDiem
+ServiceTrip.TripDriveTime
+ServiceTrip.TripFlightTime
+ServiceTrip.TripHoursAtAirport
+ServiceTrip.TripID
+ServiceTrip.TripMiles
+ServiceTrip.TripTravelTime
+ServiceTrip.TypeOfTechnician
+ServiceTrip.VehicleType
+ServiceTrip.WorkSaturday
+ServiceTrip.WorkSunday
+ServiceTripSpecial.Charge
+ServiceTripSpecial.CreateInit
+ServiceTripSpecial.CreatedAt
+ServiceTripSpecial.Description
+ServiceTripSpecial.ID
+ServiceTripSpecial.MarkupMethod
+ServiceTripSpecial.MarkupRate
+ServiceTripSpecial.Order
+ServiceTripSpecial.Quantity
+ServiceTripSpecial.TripID
+ServiceTripSpecial.UnitCost
+ServiceTripSpecial.UnitRate
+ShipCarrier.Carrier
+ShipCarrier.InsuranceRate
+ShipCarrier.LastTrackId
+ShipCarrier.ShipService
+ShipCarrier.SortOrder
+SparePartRef.AddedBy
+SparePartRef.BOMItem
+SparePartRef.Item
+SparePartRef.LinkStatus
+SparePartRef.LinkType
+SparePartRef.SuggestQty
+SrvCampIssue.CampaignID
+SrvCampIssue.Description
+SrvCampIssue.Notes
+SrvCampLoc.Address_ID
+SrvCampLoc.CampaignID
+SrvCampLoc.Company_ID
+SrvCampLoc.SalesNotes
+SrvCampLoc.ServiceNotes
+SrvCampLoc.StatusCode
+SrvCampXref.Address_ID
+SrvCampXref.BOMInfo
+SrvCampXref.CampaignID
+SrvCampXref.Company_ID
+SrvCampXref.Completion
+SrvCampXref.DivisionId
+SrvCampXref.ItemList
+SrvCampXref.JobNumber
+SrvCampXref.JobSuffix
+StartupParams.FileName
+StartupParams.ParamName
+State.Country
+State.StateName
+State.StateProv
+StatusCode.Description
+StatusCode.FullDesc
+StatusCode.SortOrder
+StatusCode.StatusCode
+StatusCode.StatusGroup
+StdBOM.BomItem
+StdBOM.CompItem
+StdBOM.CreateDate
+StdBOM.CreateInit
+StdBOM.CutQty
+StdBOM.Dimensions
+StdBOM.InvQtyReq
+StdBOM.LineNumber
+StdBOM.MiscData
+StdBOM.ModifyDate
+StdBOM.ModifyInit
+StdBOM.PrevModDate
+StdBOM.PrevModInit
+StdBOM.Source
+StdBOM.Standard
+StdBOMDef.Activity
+StdBOMDef.ApprDtTm
+StdBOMDef.ApprInit
+StdBOMDef.ApprStat
+StdBOMDef.BomItem
+StdBOMDef.Comments
+StdBOMDef.CreateDtTm
+StdBOMDef.CreateInit
+StdBOMDef.LineDesc
+StdBOMDef.LineNumber
+StdBOMDef.Requirement
+StdBTrans.BomItem
+StdBTrans.CompItem
+StdBTrans.CutQty
+StdBTrans.Dimensions
+StdBTrans.Initials
+StdBTrans.InvQtyReq
+StdBTrans.LineNumber
+StdBTrans.Notes
+StdBTrans.OldCompItem
+StdBTrans.OldCutQty
+StdBTrans.OldDimension
+StdBTrans.OldInvQtyReq
+StdBTrans.OldLineNum
+StdBTrans.OldSource
+StdBTrans.OldStandard
+StdBTrans.Source
+StdBTrans.Standard
+StdBTrans.TransDate
+StdBTrans.TransTime
+StdBTrans.TransType
+StdCost.Cell-Value
+StdCost.Item
+StdCost.Quote-Value
+StdCostLog.CostSource
+StdCostLog.CostType
+StdCostLog.CostValue
+StdCostLog.CreateDate
+StdCostLog.CreateInit
+StdCostLog.EffectDate
+StdCostLog.Item
+StdCostLog.LastValue
+StdOptDesc.ApprDtTm
+StdOptDesc.ApprInit
+StdOptDesc.ApprStat
+StdOptDesc.CreateDtTm
+StdOptDesc.CreateInit
+StdOptDesc.DescID
+StdOptDesc.Description
+StdOptDesc.EditActivity
+StdOptDesc.OptionGrpID
+StdOptDesc.PickActivity
+StdOptDesc.SortOrder
+StdOption.BomItem
+StdOption.CompItem
+StdOption.CreateDate
+StdOption.CreateInit
+StdOption.DescID
+StdOption.Description
+StdOption.LineNumber
+StdOption.ModifyDate
+StdOption.ModifyInit
+StdOption.PrevModDate
+StdOption.PrevModInit
+StdRTrans.BomItem
+StdRTrans.CostExpDate
+StdRTrans.Initials
+StdRTrans.Notes
+StdRTrans.OldCstExpDt
+StdRTrans.OldOperCmp
+StdRTrans.OldOperation
+StdRTrans.OldPrimary
+StdRTrans.OldSequence
+StdRTrans.OldStdLabCst
+StdRTrans.OldStdOPCost
+StdRTrans.OldStdOPVend
+StdRTrans.OldStdTime
+StdRTrans.OperComplete
+StdRTrans.Operation
+StdRTrans.Primary
+StdRTrans.Sequence
+StdRTrans.StdLaborCost
+StdRTrans.StdOPCost
+StdRTrans.StdOPVendor
+StdRTrans.StdTime
+StdRTrans.TransDate
+StdRTrans.TransTime
+StdRTrans.TransType
+StdRevision.BomItem
+StdRevision.BomRevision
+StdRevision.CompItem
+StdRevision.CompRevision
+StdRevision.CutQty
+StdRevision.Dimensions
+StdRevision.Effective
+StdRevision.InvQtyReq
+StdRevision.LineNumber
+StdRevision.Obsolete
+StdRevision.Source
+StdRevision.Standard
+StdRouter.BomItem
+StdRouter.CostExpDate
+StdRouter.CreateDate
+StdRouter.CreateInit
+StdRouter.ModifyDate
+StdRouter.ModifyInit
+StdRouter.Operation
+StdRouter.PrevModDate
+StdRouter.PrevModInit
+StdRouter.Primary
+StdRouter.QtOPCost
+StdRouter.QtUpdateInit
+StdRouter.QtUpdated
+StdRouter.Sequence
+StdRouter.StdOPCost
+StdRouter.StdOPVendor
+StdRouter.StdTime
+StdRtrDesc.BomItem
+StdRtrDesc.CreateDate
+StdRtrDesc.CreateInit
+StdRtrDesc.Description
+StdRtrDesc.ModifyDate
+StdRtrDesc.ModifyInit
+StdRtrDesc.Operation
+StdRtrDesc.PrevModDate
+StdRtrDesc.PrevModInit
+StdRtrDesc.Sequence
+StdTerms.CreateDate
+StdTerms.CreateInit
+StdTerms.Event
+StdTerms.EventOffset
+StdTerms.EventReference
+StdTerms.EventType
+StdTerms.InvoiceType
+StdTerms.NotToExceed
+StdTerms.Standard
+TOCImpact.ImpPublication
+TOCImpact.Publication
+TOCManual.ManualId
+TOCManual.ManualName
+TOCPub.CurrentVersion
+TOCPub.DocumentName
+TOCPub.IsDocument
+TOCPub.Notes
+TOCPub.PubVersion
+TOCPub.Publication
+TOCPub.PublicationName
+TOCPub.RevisedBy
+TOCPub.RevisedOn
+TOCPub.RevisionType
+TOCSection.SectionId
+TOCSection.SectionName
+TOCSection.SectionQualifier
+TOCStd.LineNumber
+TOCStd.ManualId
+TOCStd.Publication
+TOCStd.SectionId
+TOCStd.SubSectionId
+TaxFlags.Certificate
+TaxFlags.DateEntered
+TaxFlags.ExpiresOn
+TaxFlags.LinkKey
+TaxFlags.LinkType
+TaxFlags.TaxFlag
+TaxFlags.TaxRateAdj
+TaxFlags.UserEntered
+TaxGroup.BOMExemptFlags
+TaxGroup.CodeType
+TaxGroup.FreightTaxable
+TaxGroup.InvoiceMsg
+TaxGroup.JobExemptFlags
+TaxGroup.LocExemptFlags
+TaxGroup.PermissionType
+TaxGroup.ServiceTaxable
+TaxGroup.TaxAcctId
+TaxGroup.ZoneGroup
+TaxZone.City
+TaxZone.Country
+TaxZone.County
+TaxZone.GlCode
+TaxZone.State
+TaxZone.TZID
+TaxZone.ZoneGroup
+TaxZone.ZoneName
+TaxZone.ZoneType
+TaxZoneRate.EndDate
+TaxZoneRate.Flags
+TaxZoneRate.StartDate
+TaxZoneRate.TZID
+TaxZoneRate.TaxRate
+TeleList.Descr
+TeleList.EmpNum
+TeleList.Ext
+TeleList.PCNum
+TimeShtType.CreateDate
+TimeShtType.CreateInit
+TimeShtType.Description
+TimeShtType.EntryType
+TimeShtType.ModifyDate
+TimeShtType.ModifyInit
+TimeShtType.PrevModDate
+TimeShtType.PrevModInit
+TimeShtType.Production
+TimezoneCode.ZipTimeZone
+VPRTypes.ProblemText
+VPRTypes.SortOrder
+VPRTypes.TypeId
+ValueList.Comment
+ValueList.CreateDate
+ValueList.CreateInit
+ValueList.ListID
+ValueList.SortOrder
+ValueList.ValueActivity
+ValueList.ValueID
+ValueList.ValueStatus
+ValueList.VarValue
+ValueListType.CreateDate
+ValueListType.CreateInit
+ValueListType.ListActivity
+ValueListType.ListID
+ValueListType.ListName
+ValueListType.ListStatus
+ValueMatrix.CreateDate
+ValueMatrix.CreateInit
+ValueMatrix.MatrixID
+ValueMatrix.RefValueID
+ValueMatrix.RefVarID
+ValueMatrix.ValueID
+ValueMatrix.VarID
+VarDef.Comment
+VarDef.CreateDate
+VarDef.CreateInit
+VarDef.ListID
+VarDef.VarFormat
+VarDef.VarID
+VarDef.VarName
+VarDef.VarViewAs
+VarGroup.CreateDate
+VarGroup.CreateInit
+VarGroup.DisplayHeader
+VarGroup.GroupActivity
+VarGroup.GroupID
+VarGroup.GroupName
+VarGroup.ShowHeader
+VarGroupMember.CreateDate
+VarGroupMember.CreateInit
+VarGroupMember.GroupID
+VarGroupMember.MemID
+VarGroupMember.MemberID
+VarGroupMember.MemberType
+VarGroupMember.SortOrder
+VarProperty.CreateDate
+VarProperty.CreateInit
+VarProperty.PropID
+VarProperty.TableKey
+VarProperty.TableName
+VarProperty.ValueID
+VarProperty.VarID
+VendItemGroup.CreateDate
+VendItemGroup.CreateInit
+VendItemGroup.Item
+VendItemGroup.ModifyDate
+VendItemGroup.ModifyInit
+VendItemGroup.Notes
+VendItemGroup.Operation
+VendItemGroup.PrevModDate
+VendItemGroup.PrevModInit
+VendItemGroup.Type
+VendItemGroup.VendorNumber
+VendItemGroup.VendorStatus
+VendorIndex.CreateDate
+VendorIndex.CreateInit
+VendorIndex.GlCode
+VendorIndex.Include
+VendorIndex.SpecificItems
+VendorIndex.VendIdx
+VendorIndex.VendType
+VendorIndex.VendorNumber
+VendorItem.CreateDate
+VendorItem.CreateInit
+VendorItem.Item
+VendorItem.LeadTime
+VendorItem.LstCstQtyCst
+VendorItem.LstInvQtyCst
+VendorItem.ModifyDate
+VendorItem.ModifyInit
+VendorItem.Operation
+VendorItem.PrevModDate
+VendorItem.PrevModInit
+VendorItem.StdCstQtyCst
+VendorItem.StdInvQtyCst
+VendorItem.Type
+VendorItem.VendorItem#
+VendorItem.VendorNumber
+VendorMaster.Address1
+VendorMaster.Address2
+VendorMaster.City
+VendorMaster.Contact1
+VendorMaster.Contact2
+VendorMaster.Contact3
+VendorMaster.Country
+VendorMaster.CreateDate
+VendorMaster.CreateInit
+VendorMaster.DocumentGrp
+VendorMaster.FaxNumber
+VendorMaster.GLGroup
+VendorMaster.Keyinfo
+VendorMaster.LateNotice
+VendorMaster.MailCode
+VendorMaster.ModifyDate
+VendorMaster.ModifyInit
+VendorMaster.Notes
+VendorMaster.Perm-Temp
+VendorMaster.PhoneNumber
+VendorMaster.PrevModDate
+VendorMaster.PrevModInit
+VendorMaster.State
+VendorMaster.TermsCode
+VendorMaster.VendEMail
+VendorMaster.VendStatus
+VendorMaster.VendType
+VendorMaster.VendorClass
+VendorMaster.VendorName
+VendorMaster.VendorNumber
+VendorMaster.Y2kCompliant
+VendorMaster.Y2kContact
+VendorMaster.Y2kPhoneNumber
+VendorMaster.ZipCode
+VendorPerf.Buyer
+VendorPerf.Contactname
+VendorPerf.EntryDate
+VendorPerf.Invoices
+VendorPerf.Orders
+VendorPerf.Problem
+VendorPerf.ProblemTypes
+VendorPerf.Solution
+VendorPerf.VPRId
+VendorPerf.VendorNumber
+VendorTypes.VendType
+Warehouse.Address1
+Warehouse.Address2
+Warehouse.City
+Warehouse.Name
+Warehouse.PhoneNumber
+Warehouse.State
+Warehouse.Warehouse#
+Warehouse.ZipCode
+WorkBookMap.CellRef
+WorkBookMap.CreateDtTm
+WorkBookMap.CreateInit
+WorkBookMap.MapID
+WorkBookMap.PropName
+WorkBookMap.WorkBookID
+WorkBookType.CellFormat
+WorkBookType.CreateDtTm
+WorkBookType.CreateInit
+WorkBookType.SignatureCell
+WorkBookType.SignatureValue
+WorkBookType.WorkBookID
+WorkBookType.WorkBookRev
+WorkBookType.WorkBookType
+WorkSchedule.DivisionId
+WorkSchedule.EmpNum
+WorkSchedule.JobCode
+WorkSchedule.JobNumber
+WorkSchedule.JobSuffix
+WorkSchedule.TechDesc
+WorkSchedule.WorkDate
+Workcell.Description
+Workcell.Workcell
+ZipCode.City
+ZipCode.Country
+ZipCode.CreateDate
+ZipCode.CreateInit
+ZipCode.ModifyDate
+ZipCode.ModifyInit
+ZipCode.PrevModDate
+ZipCode.PrevModInit
+ZipCode.StateProv
+ZipCode.ZipCode
+ZipData.AccCity
+ZipData.AreaCodes
+ZipData.Country
+ZipData.County
+ZipData.Decommissioned
+ZipData.EstPopulation
+ZipData.Latitude
+ZipData.Longitude
+ZipData.Notes
+ZipData.PrimaryCity
+ZipData.StateProv
+ZipData.UnAccCity
+ZipData.WorldRegion
+ZipData.ZipCode
+ZipData.ZipTimeZone
+ZipData.ZipType
+ccDist.Amount
+ccDist.InvoiceNumber
+ccDist.PostStatus
+ccDist.TransNo
+ccTrans.AVSResult
+ccTrans.AccountNo
+ccTrans.Action
+ccTrans.Amount
+ccTrans.ApprCode
+ccTrans.AuthAmount
+ccTrans.AuthDate
+ccTrans.AuthDetails
+ccTrans.AuthStatus
+ccTrans.AuthTime
+ccTrans.BatchNo
+ccTrans.CHAddress
+ccTrans.CHAddress2
+ccTrans.CHCity
+ccTrans.CHEmail
+ccTrans.CHName
+ccTrans.CHPhone
+ccTrans.CHState
+ccTrans.CHZip
+ccTrans.CVV2
+ccTrans.CardNo
+ccTrans.CardNoMask
+ccTrans.CardOrder
+ccTrans.CardType
+ccTrans.Comment
+ccTrans.Company_ID
+ccTrans.CurrencyCode
+ccTrans.DivisionId
+ccTrans.EnteredBy
+ccTrans.ExpDate
+ccTrans.OSCID
+ccTrans.PONo
+ccTrans.ReceiptAddr
+ccTrans.ReceiptFax
+ccTrans.ReceiptType
+ccTrans.RefCode
+ccTrans.RefType
+ccTrans.ReqDate
+ccTrans.ReqTime
+ccTrans.RoutingNo
+ccTrans.SettleDate
+ccTrans.SettleTime
+ccTrans.Source
+ccTrans.SubmitDate
+ccTrans.SubmitTime
+ccTrans.Tax
+ccTrans.TrackData
+ccTrans.TransNo
+ccTrans.doRetry
+ccTrans.numTries
+newTerritory.Active
+newTerritory.Address_ID
+newTerritory.AreaName
+newTerritory.Company_Id
+newTerritory.EndDate
+newTerritory.IsExclusive
+newTerritory.IsLocation
+newTerritory.StartDate
+tb_AppMessages.ch_AdditionalInformation
+tb_AppMessages.ch_Language
+tb_AppMessages.ch_Message
+tb_AppMessages.in_MsgNumber

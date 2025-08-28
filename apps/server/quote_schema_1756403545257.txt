@@ -1,0 +1,1593 @@
+DATABASE SCHEMA ANALYSIS - QUOTE
+========================
+
+Total Tables: 63
+Generated: 2025-08-28T17:52:25.256Z
+
+TABLE: Advertisment
+Fields (5):
+  - Ad_ID
+  - Name
+  - Inquiries
+  - Orders
+  - LastCleared
+
+TABLE: CoilType
+Fields (5):
+  - CoilDesc
+  - CoilID
+  - CoilMult
+  - SortOrder
+  - IsArchived
+
+TABLE: EquCost
+Fields (4):
+  - ID
+  - Model
+  - Cell-Value
+  - Quote-Value
+
+TABLE: EquGroupInfo
+Fields (9):
+  - EquGroup
+  - GroupDesc
+  - Desc1
+  - Desc2
+  - ImageLoc
+  - ImageX
+  - ImageY
+  - EquFamily
+  - EquipType
+
+TABLE: EquipList
+Fields (33):
+  - Model
+  - MaxWidth
+  - MaxThick
+  - Ratio
+  - MaxSpeed
+  - Accel
+  - Price
+  - Description
+  - StdCost
+  - PerMrg
+  - RollDiam
+  - RollNum
+  - MinThick
+  - RollType
+  - LoopLength
+  - EquGroup
+  - CoilOD
+  - CoilWeight
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - AirDiam
+  - PinchDiam
+  - Stroke
+  - SPM
+  - Comm
+  - QuoteMode
+  - PlusRatio
+  - PlusMaxSpeed
+  - EquipType
+
+TABLE: EquipOpt
+Fields (12):
+  - ID
+  - Model
+  - Price
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - QuoteMode
+  - HideOption
+  - Flags
+
+TABLE: EquToBOM
+Fields (4):
+  - ID
+  - Model
+  - BOMID
+  - ImpactType
+
+TABLE: Forcast
+Fields (3):
+  - Item
+  - CastMonth
+  - CastQty
+
+TABLE: IDChangeLog
+Fields (10):
+  - ID
+  - IDType
+  - Model
+  - ChangeType
+  - TableName
+  - FieldChanged
+  - BeforeValue
+  - AfterValue
+  - TransDtTm
+  - ModInit
+
+TABLE: ItemToJob
+Fields (3):
+  - Item
+  - JobNumber
+  - JobSuffix
+
+TABLE: JobOpts
+Fields (9):
+  - JobNumber
+  - JobSuffix
+  - ID
+  - IsStd
+  - Price
+  - Stat
+  - Model
+  - EqPosition
+  - HideOption
+
+TABLE: JobSpecials
+Fields (9):
+  - JobNumber
+  - JobSuffix
+  - Name
+  - Descr
+  - Price
+  - EqPosition
+  - IsStd
+  - Stat
+  - Model
+
+TABLE: JobToQuote
+Fields (20):
+  - JobNumber
+  - QYear
+  - QNum
+  - QRev
+  - JobSuffix
+  - Model
+  - EstPrice
+  - BasePrice
+  - OrigPrice
+  - Disc-Promo
+  - Stat
+  - CoilType
+  - IsMaxThick
+  - Thickness
+  - Width
+  - PayOff
+  - Yield
+  - Sfx
+  - Tensile
+  - ShowTensile
+
+TABLE: LeadTime
+Fields (2):
+  - Model
+  - Lead
+
+TABLE: Login
+Fields (5):
+  - EmpInit
+  - Login
+  - Logout
+  - Touch
+  - WinHdl
+
+TABLE: Menus
+Fields (14):
+  - EmpInit
+  - MenuName
+  - FrameBG
+  - FrameFG
+  - PriTitle
+  - SecTitle
+  - Programs
+  - ProgLabels
+  - Permissions
+  - BtnX
+  - BtnY
+  - BtnWidth
+  - BtnHeight
+  - Parameters
+
+TABLE: ModelToJob
+Fields (4):
+  - Model
+  - JobNumber
+  - JobSuffix
+  - BOMType
+
+TABLE: Notes
+Fields (14):
+  - NoteType
+  - NoteIndex
+  - NoteTime
+  - NoteDate
+  - NoteSubject
+  - NoteBody
+  - NoteCreater
+  - NoteAlert
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: OldLogs
+Fields (4):
+  - QNum
+  - CustName
+  - Equip
+  - TtlCost
+
+TABLE: OptBOM
+Fields (11):
+  - BOMID
+  - Description
+  - JobNumber
+  - JobSuffix
+  - BOMItem
+  - LineNumber
+  - CompItem
+  - Cell-Value
+  - Quote-Value
+  - StdUpdated
+  - QtUpdated
+
+TABLE: OptGroup
+Fields (9):
+  - GrpID
+  - GrpName
+  - GrpDescription
+  - GrpOrder
+  - Mandatory
+  - Multiple
+  - Flags
+  - CreateDtTm
+  - CreateInit
+
+TABLE: OptGrp
+Fields (5):
+  - ID
+  - Model
+  - GrpID
+  - CreateDtTm
+  - CreateInit
+
+TABLE: OptHelp
+Fields (5):
+  - HelpID
+  - ID
+  - Notes
+  - CreateDtTm
+  - CreateInit
+
+TABLE: OptLink
+Fields (10):
+  - LinkID
+  - ID
+  - DescID
+  - Comment
+  - Condition
+  - ApprStat
+  - ApprInit
+  - ApprDtTm
+  - CreateDtTm
+  - CreateInit
+
+TABLE: OptPic
+Fields (9):
+  - PicID
+  - Description
+  - Filename
+  - XPos
+  - YPos
+  - Width
+  - Height
+  - CreateDate
+  - CreateInit
+
+TABLE: OtherEqu
+Fields (14):
+  - QYear
+  - QNum
+  - QRev
+  - CreateDate
+  - EqName
+  - CreateInit
+  - EqDesc
+  - Model
+  - EqPrice
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - Sfx
+
+TABLE: PageLayout
+Fields (10):
+  - CoeRSM
+  - Program
+  - TitleName
+  - FieldName
+  - FieldRow
+  - FieldColumn
+  - FieldWidth
+  - FieldHeight
+  - FieldInclude
+  - FieldIndex
+
+TABLE: Photo_Lib
+Fields (13):
+  - EquGroup
+  - Description
+  - FileName
+  - ReltPath
+  - CreateDate
+  - ModifyDate
+  - CreateInit
+  - ModifyInit
+  - PhotoStatus
+  - XPos
+  - YPos
+  - Width
+  - Height
+
+TABLE: Photo_xRef
+Fields (6):
+  - FileName
+  - Model
+  - CreateDate
+  - ModifyDate
+  - CreateInit
+  - ModifyInit
+
+TABLE: PkgDef
+Fields (6):
+  - PkgID
+  - PkgName
+  - PkgDesc
+  - SortOrder
+  - CreateDtTm
+  - CreateInit
+
+TABLE: PkgModel
+Fields (7):
+  - PkgID
+  - ModelGroup
+  - Model
+  - Requirement
+  - PkgModelID
+  - CreateDtTm
+  - CreateInit
+
+TABLE: PkgOpt
+Fields (6):
+  - PkgOptID
+  - PkgID
+  - Stage
+  - ID
+  - CreateDtTm
+  - CreateInit
+
+TABLE: PriceHist
+Fields (4):
+  - Changed
+  - Model
+  - StdCost
+  - PerMrg
+
+TABLE: PrintQuote
+Fields (30):
+  - QYear
+  - QNum
+  - QRev
+  - cvrltr
+  - xTerms
+  - Delivery
+  - Valid
+  - isLine
+  - BillToDeal
+  - IncDeal
+  - Comments
+  - QuoteToCust
+  - xInc_Train
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - ShipServ
+  - ShipCost
+  - Budgetary
+  - InstallLetterID
+  - InstallScope
+  - EstDelDate1
+  - EstDelDate2
+  - EstDelivery
+  - FOB
+  - Freight
+  - WarrantyType
+
+TABLE: ProgRpt
+Fields (7):
+  - EmpNum
+  - ReptDate
+  - ProgReport
+  - StartTime
+  - EndTime
+  - LunchIn
+  - LunchOut
+
+TABLE: Prospect
+Fields (23):
+  - FirstName
+  - LastName
+  - Pros_Id
+  - Address1
+  - Address2
+  - ZipCode
+  - Phone
+  - Fax
+  - Dealer
+  - CoeRSM
+  - Ad_ID
+  - LastDate
+  - NextDate
+  - Company
+  - CreateDate
+  - CreateID
+  - City
+  - State
+  - Country
+  - Division
+  - Email
+  - PhoneExt
+  - Website
+
+TABLE: Prospect_Address
+Fields (10):
+  - Pros_ID
+  - Address_ID
+  - Address1
+  - Address2
+  - City
+  - State
+  - Country
+  - ZipCode
+  - CreateDate
+  - CreateID
+
+TABLE: Prospect_Contacts
+Fields (14):
+  - Pros_ID
+  - Division
+  - Cont_ID
+  - Address_ID
+  - FirstName
+  - LastName
+  - PhoneNumber
+  - PhoneExt
+  - FaxPhoneNum
+  - Email
+  - Website
+  - CreateDate
+  - AD_ID
+  - CreateID
+
+TABLE: PSModel
+Fields (3):
+  - PSModel
+  - Model
+  - OptionList
+
+TABLE: QData
+Fields (26):
+  - QYear
+  - QNum
+  - CoeRSM
+  - C_Company
+  - C_Contact
+  - D_Company
+  - D_Contact
+  - Canceled
+  - Shipped
+  - Priority
+  - OrderDate
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - PhotoName
+  - Division
+  - LostToComp
+  - C_Address
+  - D_Address
+  - Confidence
+  - EstPODate
+  - ProducedBy
+  - Lead_Source
+
+TABLE: QOptCostSheet
+Fields (19):
+  - CostEstimate
+  - CreateDate
+  - CreateInit
+  - Description
+  - HideLinePrice
+  - LineItem
+  - LineOrder
+  - LineType
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - PriceText
+  - QNum
+  - QRev
+  - Quantity
+  - QYear
+  - SalesPrice
+  - ShowOnQuote
+
+TABLE: QOpts
+Fields (11):
+  - QYear
+  - QNum
+  - QRev
+  - xModel
+  - ID
+  - IsStd
+  - Price
+  - Sfx
+  - EqPosition
+  - HideOption
+  - PicID
+
+TABLE: QRev
+Fields (31):
+  - QYear
+  - QNum
+  - QRev
+  - Model
+  - QDate
+  - EstAmt
+  - Disc-Promo
+  - Options
+  - EstShip
+  - EstPrice
+  - BasePrice
+  - Equ-Notes
+  - CreateDate
+  - Lead
+  - OrigPrice
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - Thickness
+  - Width
+  - CoilType
+  - IsMaxThick
+  - Sfx
+  - PhotoName
+  - PayOff
+  - Yield
+  - OptionalStatus
+  - Tensile
+  - ShowTensile
+
+TABLE: QRevCostSheet
+Fields (19):
+  - QYear
+  - QNum
+  - QRev
+  - LineOrder
+  - LineType
+  - Description
+  - Quantity
+  - SalesPrice
+  - CostEstimate
+  - HideLinePrice
+  - ShowOnQuote
+  - LineItem
+  - PriceText
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+
+TABLE: QRevInstList
+Fields (9):
+  - QYear
+  - QNum
+  - QRev
+  - Sfx
+  - ID
+  - CustInst
+  - MfgInst
+  - ThirdInst
+  - EqPos
+
+TABLE: QSpecs
+Fields (19):
+  - QYear
+  - QNum
+  - QRev
+  - CoilType
+  - MinThick
+  - MaxThick
+  - MinWidth
+  - MaxWidth
+  - Length
+  - PayOff
+  - CoilOD
+  - xNest
+  - xPinch
+  - xLinePrice
+  - JobDisc
+  - FullThick
+  - FullWidth
+  - xInc-Train
+  - xTrain
+
+TABLE: QtAlarm
+Fields (8):
+  - QYear
+  - QNum
+  - QRev
+  - CoeRSM
+  - AlarmDue
+  - AlarmTime
+  - AlarmInfo
+  - CreateDate
+
+TABLE: QtNotes
+Fields (7):
+  - QYear
+  - QNum
+  - QRev
+  - CoeRSM
+  - NoteDate
+  - NoteTime
+  - Note
+
+TABLE: QtTerms
+Fields (14):
+  - QYear
+  - DueOrder
+  - Percent
+  - Event
+  - NetDays
+  - Verbage
+  - Amount
+  - InvoiceType
+  - DateReference
+  - QNum
+  - QRev
+  - DateOffSet
+  - CustomTerms
+  - NotToExceed
+
+TABLE: QuoteRequest
+Fields (39):
+  - Firstname
+  - LastName
+  - JobTitle
+  - Company
+  - Address1
+  - Address2
+  - City
+  - State
+  - ZipCode
+  - Telephone
+  - Fax
+  - CuttoLength
+  - PressFeed
+  - OtherEqu
+  - Matrl
+  - CreateDate
+  - CoilWeight
+  - MaxOD
+  - MinOD
+  - MaxID
+  - MinID
+  - MaxWidth
+  - MinWidth
+  - MaxThick
+  - MinThick
+  - FullThick
+  - FullWidth
+  - MaxLength
+  - MinLength
+  - MaxLenPM
+  - MinLenPM
+  - FeedDir
+  - Voltage
+  - Phase
+  - Hertz
+  - Air
+  - Water
+  - InstallDate
+  - Request_ID
+
+TABLE: RefQuoteInfo
+Fields (6):
+  - QYear
+  - QNum
+  - QRev
+  - Sfx
+  - RefJobNumber
+  - RefJobSuffix
+
+TABLE: RollParms
+Fields (23):
+  - QYear
+  - QNum
+  - QRev
+  - Num
+  - Diam
+  - Width
+  - Acceleration
+  - MaxSpeed
+  - Length2
+  - A180
+  - A240
+  - Ratio
+  - Length
+  - xModel
+  - Parmtitles
+  - Sfx
+  - PressBedLength
+  - TableTitles
+  - FeedLength
+  - SPM1
+  - FPM1
+  - SPM2
+  - FPM2
+
+TABLE: Security
+Fields (2):
+  - SecGroup
+  - SecUser
+
+TABLE: SescoEquipmemt
+Fields (3):
+  - EqModel
+  - EqTitle
+  - EqDesc
+
+TABLE: SescoProducts
+Fields (6):
+  - PdModel
+  - PdTitle
+  - PdDesc
+  - PDCustSpecs
+  - PDEquSpecs
+  - PDModel-Raw
+
+TABLE: Specials
+Fields (11):
+  - QYear
+  - QNum
+  - QRev
+  - xModel
+  - Name
+  - Descr
+  - EqPosition
+  - Price
+  - IsStd
+  - Sfx
+  - PicID
+
+TABLE: Startup
+Fields (22):
+  - QYear
+  - QNum
+  - QRev
+  - Days
+  - Techs
+  - Type
+  - Amount
+  - Notes
+  - Description
+  - Manpower
+  - Scope
+  - StartupCompany
+  - ReturnStatus
+  - Contact1
+  - Phone1
+  - Email1
+  - Contact2
+  - Phone2
+  - Email2
+  - FaxNumber
+  - QuoteStatus
+  - QuotedBy
+
+TABLE: StdEqu
+Fields (10):
+  - ID
+  - Model
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - QuoteMode
+  - HideOption
+
+TABLE: StdEquGroup
+Fields (7):
+  - StdEquGrpID
+  - GrpName
+  - GrpDescription
+  - GrpType
+  - GrpOrder
+  - CreateDtTm
+  - CreateInit
+
+TABLE: StdEquip
+Fields (16):
+  - ID
+  - CreateDate
+  - CreateInit
+  - ModifyDate
+  - Name
+  - Descr
+  - EqPosition
+  - ModifyInit
+  - PrevModDate
+  - PrevModInit
+  - QuoteMode
+  - Application
+  - PicID
+  - OptionGrpID
+  - HideOption
+  - Flags
+
+TABLE: StdEquLink
+Fields (6):
+  - StdEquLinkID
+  - ID
+  - RefID
+  - Relationship
+  - CreateDtTm
+  - CreateInit
+
+TABLE: StdExcluded
+Fields (7):
+  - ID
+  - QYear
+  - QNum
+  - QRev
+  - Sfx
+  - JobNumber
+  - JobSuffix
+
+TABLE: TaskList
+Fields (6):
+  - EmpNum
+  - TaskID
+  - TaskDesc
+  - Complete
+  - TaskDate
+  - TaskStatus
+
+
+=== FIELD INDEX ===
+Advertisment.Ad_ID
+Advertisment.Inquiries
+Advertisment.LastCleared
+Advertisment.Name
+Advertisment.Orders
+CoilType.CoilDesc
+CoilType.CoilID
+CoilType.CoilMult
+CoilType.IsArchived
+CoilType.SortOrder
+EquCost.Cell-Value
+EquCost.ID
+EquCost.Model
+EquCost.Quote-Value
+EquGroupInfo.Desc1
+EquGroupInfo.Desc2
+EquGroupInfo.EquFamily
+EquGroupInfo.EquGroup
+EquGroupInfo.EquipType
+EquGroupInfo.GroupDesc
+EquGroupInfo.ImageLoc
+EquGroupInfo.ImageX
+EquGroupInfo.ImageY
+EquToBOM.BOMID
+EquToBOM.ID
+EquToBOM.ImpactType
+EquToBOM.Model
+EquipList.Accel
+EquipList.AirDiam
+EquipList.CoilOD
+EquipList.CoilWeight
+EquipList.Comm
+EquipList.CreateDate
+EquipList.CreateInit
+EquipList.Description
+EquipList.EquGroup
+EquipList.EquipType
+EquipList.LoopLength
+EquipList.MaxSpeed
+EquipList.MaxThick
+EquipList.MaxWidth
+EquipList.MinThick
+EquipList.Model
+EquipList.ModifyDate
+EquipList.ModifyInit
+EquipList.PerMrg
+EquipList.PinchDiam
+EquipList.PlusMaxSpeed
+EquipList.PlusRatio
+EquipList.PrevModDate
+EquipList.PrevModInit
+EquipList.Price
+EquipList.QuoteMode
+EquipList.Ratio
+EquipList.RollDiam
+EquipList.RollNum
+EquipList.RollType
+EquipList.SPM
+EquipList.StdCost
+EquipList.Stroke
+EquipOpt.CreateDate
+EquipOpt.CreateInit
+EquipOpt.Flags
+EquipOpt.HideOption
+EquipOpt.ID
+EquipOpt.Model
+EquipOpt.ModifyDate
+EquipOpt.ModifyInit
+EquipOpt.PrevModDate
+EquipOpt.PrevModInit
+EquipOpt.Price
+EquipOpt.QuoteMode
+Forcast.CastMonth
+Forcast.CastQty
+Forcast.Item
+IDChangeLog.AfterValue
+IDChangeLog.BeforeValue
+IDChangeLog.ChangeType
+IDChangeLog.FieldChanged
+IDChangeLog.ID
+IDChangeLog.IDType
+IDChangeLog.ModInit
+IDChangeLog.Model
+IDChangeLog.TableName
+IDChangeLog.TransDtTm
+ItemToJob.Item
+ItemToJob.JobNumber
+ItemToJob.JobSuffix
+JobOpts.EqPosition
+JobOpts.HideOption
+JobOpts.ID
+JobOpts.IsStd
+JobOpts.JobNumber
+JobOpts.JobSuffix
+JobOpts.Model
+JobOpts.Price
+JobOpts.Stat
+JobSpecials.Descr
+JobSpecials.EqPosition
+JobSpecials.IsStd
+JobSpecials.JobNumber
+JobSpecials.JobSuffix
+JobSpecials.Model
+JobSpecials.Name
+JobSpecials.Price
+JobSpecials.Stat
+JobToQuote.BasePrice
+JobToQuote.CoilType
+JobToQuote.Disc-Promo
+JobToQuote.EstPrice
+JobToQuote.IsMaxThick
+JobToQuote.JobNumber
+JobToQuote.JobSuffix
+JobToQuote.Model
+JobToQuote.OrigPrice
+JobToQuote.PayOff
+JobToQuote.QNum
+JobToQuote.QRev
+JobToQuote.QYear
+JobToQuote.Sfx
+JobToQuote.ShowTensile
+JobToQuote.Stat
+JobToQuote.Tensile
+JobToQuote.Thickness
+JobToQuote.Width
+JobToQuote.Yield
+LeadTime.Lead
+LeadTime.Model
+Login.EmpInit
+Login.Login
+Login.Logout
+Login.Touch
+Login.WinHdl
+Menus.BtnHeight
+Menus.BtnWidth
+Menus.BtnX
+Menus.BtnY
+Menus.EmpInit
+Menus.FrameBG
+Menus.FrameFG
+Menus.MenuName
+Menus.Parameters
+Menus.Permissions
+Menus.PriTitle
+Menus.ProgLabels
+Menus.Programs
+Menus.SecTitle
+ModelToJob.BOMType
+ModelToJob.JobNumber
+ModelToJob.JobSuffix
+ModelToJob.Model
+Notes.CreateDate
+Notes.CreateInit
+Notes.ModifyDate
+Notes.ModifyInit
+Notes.NoteAlert
+Notes.NoteBody
+Notes.NoteCreater
+Notes.NoteDate
+Notes.NoteIndex
+Notes.NoteSubject
+Notes.NoteTime
+Notes.NoteType
+Notes.PrevModDate
+Notes.PrevModInit
+OldLogs.CustName
+OldLogs.Equip
+OldLogs.QNum
+OldLogs.TtlCost
+OptBOM.BOMID
+OptBOM.BOMItem
+OptBOM.Cell-Value
+OptBOM.CompItem
+OptBOM.Description
+OptBOM.JobNumber
+OptBOM.JobSuffix
+OptBOM.LineNumber
+OptBOM.QtUpdated
+OptBOM.Quote-Value
+OptBOM.StdUpdated
+OptGroup.CreateDtTm
+OptGroup.CreateInit
+OptGroup.Flags
+OptGroup.GrpDescription
+OptGroup.GrpID
+OptGroup.GrpName
+OptGroup.GrpOrder
+OptGroup.Mandatory
+OptGroup.Multiple
+OptGrp.CreateDtTm
+OptGrp.CreateInit
+OptGrp.GrpID
+OptGrp.ID
+OptGrp.Model
+OptHelp.CreateDtTm
+OptHelp.CreateInit
+OptHelp.HelpID
+OptHelp.ID
+OptHelp.Notes
+OptLink.ApprDtTm
+OptLink.ApprInit
+OptLink.ApprStat
+OptLink.Comment
+OptLink.Condition
+OptLink.CreateDtTm
+OptLink.CreateInit
+OptLink.DescID
+OptLink.ID
+OptLink.LinkID
+OptPic.CreateDate
+OptPic.CreateInit
+OptPic.Description
+OptPic.Filename
+OptPic.Height
+OptPic.PicID
+OptPic.Width
+OptPic.XPos
+OptPic.YPos
+OtherEqu.CreateDate
+OtherEqu.CreateInit
+OtherEqu.EqDesc
+OtherEqu.EqName
+OtherEqu.EqPrice
+OtherEqu.Model
+OtherEqu.ModifyDate
+OtherEqu.ModifyInit
+OtherEqu.PrevModDate
+OtherEqu.PrevModInit
+OtherEqu.QNum
+OtherEqu.QRev
+OtherEqu.QYear
+OtherEqu.Sfx
+PSModel.Model
+PSModel.OptionList
+PSModel.PSModel
+PageLayout.CoeRSM
+PageLayout.FieldColumn
+PageLayout.FieldHeight
+PageLayout.FieldInclude
+PageLayout.FieldIndex
+PageLayout.FieldName
+PageLayout.FieldRow
+PageLayout.FieldWidth
+PageLayout.Program
+PageLayout.TitleName
+Photo_Lib.CreateDate
+Photo_Lib.CreateInit
+Photo_Lib.Description
+Photo_Lib.EquGroup
+Photo_Lib.FileName
+Photo_Lib.Height
+Photo_Lib.ModifyDate
+Photo_Lib.ModifyInit
+Photo_Lib.PhotoStatus
+Photo_Lib.ReltPath
+Photo_Lib.Width
+Photo_Lib.XPos
+Photo_Lib.YPos
+Photo_xRef.CreateDate
+Photo_xRef.CreateInit
+Photo_xRef.FileName
+Photo_xRef.Model
+Photo_xRef.ModifyDate
+Photo_xRef.ModifyInit
+PkgDef.CreateDtTm
+PkgDef.CreateInit
+PkgDef.PkgDesc
+PkgDef.PkgID
+PkgDef.PkgName
+PkgDef.SortOrder
+PkgModel.CreateDtTm
+PkgModel.CreateInit
+PkgModel.Model
+PkgModel.ModelGroup
+PkgModel.PkgID
+PkgModel.PkgModelID
+PkgModel.Requirement
+PkgOpt.CreateDtTm
+PkgOpt.CreateInit
+PkgOpt.ID
+PkgOpt.PkgID
+PkgOpt.PkgOptID
+PkgOpt.Stage
+PriceHist.Changed
+PriceHist.Model
+PriceHist.PerMrg
+PriceHist.StdCost
+PrintQuote.BillToDeal
+PrintQuote.Budgetary
+PrintQuote.Comments
+PrintQuote.CreateDate
+PrintQuote.CreateInit
+PrintQuote.Delivery
+PrintQuote.EstDelDate1
+PrintQuote.EstDelDate2
+PrintQuote.EstDelivery
+PrintQuote.FOB
+PrintQuote.Freight
+PrintQuote.IncDeal
+PrintQuote.InstallLetterID
+PrintQuote.InstallScope
+PrintQuote.ModifyDate
+PrintQuote.ModifyInit
+PrintQuote.PrevModDate
+PrintQuote.PrevModInit
+PrintQuote.QNum
+PrintQuote.QRev
+PrintQuote.QYear
+PrintQuote.QuoteToCust
+PrintQuote.ShipCost
+PrintQuote.ShipServ
+PrintQuote.Valid
+PrintQuote.WarrantyType
+PrintQuote.cvrltr
+PrintQuote.isLine
+PrintQuote.xInc_Train
+PrintQuote.xTerms
+ProgRpt.EmpNum
+ProgRpt.EndTime
+ProgRpt.LunchIn
+ProgRpt.LunchOut
+ProgRpt.ProgReport
+ProgRpt.ReptDate
+ProgRpt.StartTime
+Prospect.Ad_ID
+Prospect.Address1
+Prospect.Address2
+Prospect.City
+Prospect.CoeRSM
+Prospect.Company
+Prospect.Country
+Prospect.CreateDate
+Prospect.CreateID
+Prospect.Dealer
+Prospect.Division
+Prospect.Email
+Prospect.Fax
+Prospect.FirstName
+Prospect.LastDate
+Prospect.LastName
+Prospect.NextDate
+Prospect.Phone
+Prospect.PhoneExt
+Prospect.Pros_Id
+Prospect.State
+Prospect.Website
+Prospect.ZipCode
+Prospect_Address.Address1
+Prospect_Address.Address2
+Prospect_Address.Address_ID
+Prospect_Address.City
+Prospect_Address.Country
+Prospect_Address.CreateDate
+Prospect_Address.CreateID
+Prospect_Address.Pros_ID
+Prospect_Address.State
+Prospect_Address.ZipCode
+Prospect_Contacts.AD_ID
+Prospect_Contacts.Address_ID
+Prospect_Contacts.Cont_ID
+Prospect_Contacts.CreateDate
+Prospect_Contacts.CreateID
+Prospect_Contacts.Division
+Prospect_Contacts.Email
+Prospect_Contacts.FaxPhoneNum
+Prospect_Contacts.FirstName
+Prospect_Contacts.LastName
+Prospect_Contacts.PhoneExt
+Prospect_Contacts.PhoneNumber
+Prospect_Contacts.Pros_ID
+Prospect_Contacts.Website
+QData.C_Address
+QData.C_Company
+QData.C_Contact
+QData.Canceled
+QData.CoeRSM
+QData.Confidence
+QData.CreateDate
+QData.CreateInit
+QData.D_Address
+QData.D_Company
+QData.D_Contact
+QData.Division
+QData.EstPODate
+QData.Lead_Source
+QData.LostToComp
+QData.ModifyDate
+QData.ModifyInit
+QData.OrderDate
+QData.PhotoName
+QData.PrevModDate
+QData.PrevModInit
+QData.Priority
+QData.ProducedBy
+QData.QNum
+QData.QYear
+QData.Shipped
+QOptCostSheet.CostEstimate
+QOptCostSheet.CreateDate
+QOptCostSheet.CreateInit
+QOptCostSheet.Description
+QOptCostSheet.HideLinePrice
+QOptCostSheet.LineItem
+QOptCostSheet.LineOrder
+QOptCostSheet.LineType
+QOptCostSheet.ModifyDate
+QOptCostSheet.ModifyInit
+QOptCostSheet.PrevModDate
+QOptCostSheet.PrevModInit
+QOptCostSheet.PriceText
+QOptCostSheet.QNum
+QOptCostSheet.QRev
+QOptCostSheet.QYear
+QOptCostSheet.Quantity
+QOptCostSheet.SalesPrice
+QOptCostSheet.ShowOnQuote
+QOpts.EqPosition
+QOpts.HideOption
+QOpts.ID
+QOpts.IsStd
+QOpts.PicID
+QOpts.Price
+QOpts.QNum
+QOpts.QRev
+QOpts.QYear
+QOpts.Sfx
+QOpts.xModel
+QRev.BasePrice
+QRev.CoilType
+QRev.CreateDate
+QRev.CreateInit
+QRev.Disc-Promo
+QRev.Equ-Notes
+QRev.EstAmt
+QRev.EstPrice
+QRev.EstShip
+QRev.IsMaxThick
+QRev.Lead
+QRev.Model
+QRev.ModifyDate
+QRev.ModifyInit
+QRev.OptionalStatus
+QRev.Options
+QRev.OrigPrice
+QRev.PayOff
+QRev.PhotoName
+QRev.PrevModDate
+QRev.PrevModInit
+QRev.QDate
+QRev.QNum
+QRev.QRev
+QRev.QYear
+QRev.Sfx
+QRev.ShowTensile
+QRev.Tensile
+QRev.Thickness
+QRev.Width
+QRev.Yield
+QRevCostSheet.CostEstimate
+QRevCostSheet.CreateDate
+QRevCostSheet.CreateInit
+QRevCostSheet.Description
+QRevCostSheet.HideLinePrice
+QRevCostSheet.LineItem
+QRevCostSheet.LineOrder
+QRevCostSheet.LineType
+QRevCostSheet.ModifyDate
+QRevCostSheet.ModifyInit
+QRevCostSheet.PrevModDate
+QRevCostSheet.PrevModInit
+QRevCostSheet.PriceText
+QRevCostSheet.QNum
+QRevCostSheet.QRev
+QRevCostSheet.QYear
+QRevCostSheet.Quantity
+QRevCostSheet.SalesPrice
+QRevCostSheet.ShowOnQuote
+QRevInstList.CustInst
+QRevInstList.EqPos
+QRevInstList.ID
+QRevInstList.MfgInst
+QRevInstList.QNum
+QRevInstList.QRev
+QRevInstList.QYear
+QRevInstList.Sfx
+QRevInstList.ThirdInst
+QSpecs.CoilOD
+QSpecs.CoilType
+QSpecs.FullThick
+QSpecs.FullWidth
+QSpecs.JobDisc
+QSpecs.Length
+QSpecs.MaxThick
+QSpecs.MaxWidth
+QSpecs.MinThick
+QSpecs.MinWidth
+QSpecs.PayOff
+QSpecs.QNum
+QSpecs.QRev
+QSpecs.QYear
+QSpecs.xInc-Train
+QSpecs.xLinePrice
+QSpecs.xNest
+QSpecs.xPinch
+QSpecs.xTrain
+QtAlarm.AlarmDue
+QtAlarm.AlarmInfo
+QtAlarm.AlarmTime
+QtAlarm.CoeRSM
+QtAlarm.CreateDate
+QtAlarm.QNum
+QtAlarm.QRev
+QtAlarm.QYear
+QtNotes.CoeRSM
+QtNotes.Note
+QtNotes.NoteDate
+QtNotes.NoteTime
+QtNotes.QNum
+QtNotes.QRev
+QtNotes.QYear
+QtTerms.Amount
+QtTerms.CustomTerms
+QtTerms.DateOffSet
+QtTerms.DateReference
+QtTerms.DueOrder
+QtTerms.Event
+QtTerms.InvoiceType
+QtTerms.NetDays
+QtTerms.NotToExceed
+QtTerms.Percent
+QtTerms.QNum
+QtTerms.QRev
+QtTerms.QYear
+QtTerms.Verbage
+QuoteRequest.Address1
+QuoteRequest.Address2
+QuoteRequest.Air
+QuoteRequest.City
+QuoteRequest.CoilWeight
+QuoteRequest.Company
+QuoteRequest.CreateDate
+QuoteRequest.CuttoLength
+QuoteRequest.Fax
+QuoteRequest.FeedDir
+QuoteRequest.Firstname
+QuoteRequest.FullThick
+QuoteRequest.FullWidth
+QuoteRequest.Hertz
+QuoteRequest.InstallDate
+QuoteRequest.JobTitle
+QuoteRequest.LastName
+QuoteRequest.Matrl
+QuoteRequest.MaxID
+QuoteRequest.MaxLenPM
+QuoteRequest.MaxLength
+QuoteRequest.MaxOD
+QuoteRequest.MaxThick
+QuoteRequest.MaxWidth
+QuoteRequest.MinID
+QuoteRequest.MinLenPM
+QuoteRequest.MinLength
+QuoteRequest.MinOD
+QuoteRequest.MinThick
+QuoteRequest.MinWidth
+QuoteRequest.OtherEqu
+QuoteRequest.Phase
+QuoteRequest.PressFeed
+QuoteRequest.Request_ID
+QuoteRequest.State
+QuoteRequest.Telephone
+QuoteRequest.Voltage
+QuoteRequest.Water
+QuoteRequest.ZipCode
+RefQuoteInfo.QNum
+RefQuoteInfo.QRev
+RefQuoteInfo.QYear
+RefQuoteInfo.RefJobNumber
+RefQuoteInfo.RefJobSuffix
+RefQuoteInfo.Sfx
+RollParms.A180
+RollParms.A240
+RollParms.Acceleration
+RollParms.Diam
+RollParms.FPM1
+RollParms.FPM2
+RollParms.FeedLength
+RollParms.Length
+RollParms.Length2
+RollParms.MaxSpeed
+RollParms.Num
+RollParms.Parmtitles
+RollParms.PressBedLength
+RollParms.QNum
+RollParms.QRev
+RollParms.QYear
+RollParms.Ratio
+RollParms.SPM1
+RollParms.SPM2
+RollParms.Sfx
+RollParms.TableTitles
+RollParms.Width
+RollParms.xModel
+Security.SecGroup
+Security.SecUser
+SescoEquipmemt.EqDesc
+SescoEquipmemt.EqModel
+SescoEquipmemt.EqTitle
+SescoProducts.PDCustSpecs
+SescoProducts.PDEquSpecs
+SescoProducts.PDModel-Raw
+SescoProducts.PdDesc
+SescoProducts.PdModel
+SescoProducts.PdTitle
+Specials.Descr
+Specials.EqPosition
+Specials.IsStd
+Specials.Name
+Specials.PicID
+Specials.Price
+Specials.QNum
+Specials.QRev
+Specials.QYear
+Specials.Sfx
+Specials.xModel
+Startup.Amount
+Startup.Contact1
+Startup.Contact2
+Startup.Days
+Startup.Description
+Startup.Email1
+Startup.Email2
+Startup.FaxNumber
+Startup.Manpower
+Startup.Notes
+Startup.Phone1
+Startup.Phone2
+Startup.QNum
+Startup.QRev
+Startup.QYear
+Startup.QuoteStatus
+Startup.QuotedBy
+Startup.ReturnStatus
+Startup.Scope
+Startup.StartupCompany
+Startup.Techs
+Startup.Type
+StdEqu.CreateDate
+StdEqu.CreateInit
+StdEqu.HideOption
+StdEqu.ID
+StdEqu.Model
+StdEqu.ModifyDate
+StdEqu.ModifyInit
+StdEqu.PrevModDate
+StdEqu.PrevModInit
+StdEqu.QuoteMode
+StdEquGroup.CreateDtTm
+StdEquGroup.CreateInit
+StdEquGroup.GrpDescription
+StdEquGroup.GrpName
+StdEquGroup.GrpOrder
+StdEquGroup.GrpType
+StdEquGroup.StdEquGrpID
+StdEquLink.CreateDtTm
+StdEquLink.CreateInit
+StdEquLink.ID
+StdEquLink.RefID
+StdEquLink.Relationship
+StdEquLink.StdEquLinkID
+StdEquip.Application
+StdEquip.CreateDate
+StdEquip.CreateInit
+StdEquip.Descr
+StdEquip.EqPosition
+StdEquip.Flags
+StdEquip.HideOption
+StdEquip.ID
+StdEquip.ModifyDate
+StdEquip.ModifyInit
+StdEquip.Name
+StdEquip.OptionGrpID
+StdEquip.PicID
+StdEquip.PrevModDate
+StdEquip.PrevModInit
+StdEquip.QuoteMode
+StdExcluded.ID
+StdExcluded.JobNumber
+StdExcluded.JobSuffix
+StdExcluded.QNum
+StdExcluded.QRev
+StdExcluded.QYear
+StdExcluded.Sfx
+TaskList.Complete
+TaskList.EmpNum
+TaskList.TaskDate
+TaskList.TaskDesc
+TaskList.TaskID
+TaskList.TaskStatus
