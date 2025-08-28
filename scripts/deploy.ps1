@@ -59,34 +59,29 @@ function Deploy-Fanuc {
 }
 
 function Deploy-Server {
-    Write-Host "`n🚀 Deploying Server..."
+   Write-Host "`n🚀 Deploying Server..."
 
-    $serverProject = Join-Path $scriptDir "..\apps\server"
-    $serverBuild   = "$serverProject\*"
+   $serverProject = Join-Path $scriptDir "..\apps\server"
+   
+   # Step 0: Build locally
+   Write-Host "Building server locally..."
+   pushd $serverProject
+   npm run build
+   popd
 
-    # Step 0: Install production deps
-    Write-Host "Installing server dependencies..."
-    pushd $serverProject
-    npm ci --omit=dev
-    popd
+   # Step 1: Reset remote
+   Write-Host "Resetting $serverRoot..."
+   ssh "$($linuxUser)@$($linuxHost)" "rm -rf $serverRoot && mkdir -p $serverRoot"
 
-    # Step 1: Reset remote
-    Write-Host "Resetting $serverRoot..."
-    ssh "$($linuxUser)@$($linuxHost)" "rm -rf $serverRoot && mkdir -p $serverRoot"
+   # Step 2: Copy entire server folder
+   Write-Host "Copying entire server folder..."
+   scp -r "$serverProject/*" "$($linuxUser)@$($linuxHost):$serverRoot/"
 
-    # Step 2: Copy files
-    Write-Host "Copying server files..."
-    scp -r $serverBuild "$($linuxUser)@$($linuxHost):$serverRoot/"
+   # Step 3: Install deps and start
+   Write-Host "Installing dependencies and starting server..."
+   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && npm ci && npm start"
 
-    # Step 3: Permissions
-    Write-Host "Setting permissions..."
-    ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && chmod -R 755 ."
-
-    # Step 4: Restart service
-    Write-Host "Restarting server.service..."
-    # ssh "$($linuxUser)@$($linuxHost)" "sudo systemctl daemon-reload && sudo systemctl restart server.service"
-
-    Write-Host "✅ Server deployment complete. Running from $serverRoot"
+   Write-Host "✅ Server deployment complete."
 }
 
 # -------------------------------
