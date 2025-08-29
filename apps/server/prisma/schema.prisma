@@ -899,7 +899,7 @@ model QuoteTerms {
   id             String   @id @default(uuid())
   quoteDetailsId String
   percentage     Int?     // from Percent
-  netDays        Int      // from NetDays  
+  netDays        Int     @default(0) // from NetDays  
   amount         Decimal? // from Amount
   verbiage       String?  // from Verbiage
   dueOrder       Int?     // from DueOrder (for multiple terms ordering)

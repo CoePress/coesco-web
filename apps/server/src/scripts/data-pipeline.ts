@@ -4,8 +4,10 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { env } from "@/config/env";
-import { legacyService } from "@/services";
+import { LegacyService } from "@/services/business/legacy.service";
 import { logger } from "@/utils/logger";
+
+const legacyService = new LegacyService();
 
 export const mainDatabase = new PrismaClient({
   datasources: {
@@ -13,6 +15,8 @@ export const mainDatabase = new PrismaClient({
       url: env.DATABASE_URL,
     },
   },
+  log: ["warn", "error"],
+  errorFormat: "pretty",
 });
 
 export async function closeDatabaseConnections() {
@@ -38,6 +42,7 @@ interface TableMapping {
   afterSave?: (savedRecord: any, originalRecord: any) => Promise<void>;
   batchSize?: number; // For Prisma operations
   legacyFetchSize?: number; // For legacy DB fetch operations
+  concurrency?: number; // Number of batches to process in parallel
   skipDuplicates?: boolean;
   duplicateCheck?: (mappedData: any) => any;
 }
@@ -95,79 +100,131 @@ export async function enrichMigratedData(
 
       logger.info(`Processing enrichment batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
 
-      // Process each source record
+      // Group source records by match value for batch processing
+      const matchValueMap = new Map<any, any[]>();
       for (const sourceRecord of sourceRecords) {
-        try {
-          const matchValue = (sourceRecord as any)[matchField.source];
-          if (!matchValue)
-            continue;
+        const matchValue = (sourceRecord as any)[matchField.source];
+        if (!matchValue)
+          continue;
 
-          // Find target record to update
-          // Handle nested path in matchField.target (e.g., "legacy.masterId")
-          const targetPathParts = matchField.target.split(".");
+        if (!matchValueMap.has(matchValue)) {
+          matchValueMap.set(matchValue, []);
+        }
+        matchValueMap.get(matchValue)!.push(sourceRecord);
+      }
 
-          const targetRecord = targetPathParts.length > 1
-            ? await (mainDatabase as any)[targetTable].findMany().then((records: any[]) => {
-                return records.find((r: any) => {
-                  let value = r;
-                  for (const part of targetPathParts) {
-                    value = value?.[part];
-                  }
-                  return value === matchValue;
-                });
-              })
-            : await (mainDatabase as any)[targetTable].findFirst({
-                where: { [matchField.target]: matchValue },
-              });
+      if (matchValueMap.size === 0) {
+        logger.info(`No records with valid match values in batch ${currentBatch}`);
+        continue;
+      }
 
+      // Batch fetch all target records
+      const matchValues = Array.from(matchValueMap.keys());
+      const targetPathParts = matchField.target.split(".");
+
+      let targetRecords: any[] = [];
+      if (targetPathParts.length > 1) {
+        // For nested paths, we need multiple queries or raw SQL
+        // For now, fall back to individual queries but batch them
+        const promises = matchValues.map(async (matchValue) => {
+          const jsonPath = `$.${targetPathParts.slice(1).join(".")}`;
+          return await (mainDatabase as any)[targetTable].findFirst({
+            where: {
+              [targetPathParts[0]]: {
+                path: jsonPath,
+                equals: matchValue,
+              },
+            },
+          });
+        });
+
+        const results = await Promise.all(promises);
+        targetRecords = results.filter(Boolean);
+      }
+      else {
+        targetRecords = await (mainDatabase as any)[targetTable].findMany({
+          where: { [matchField.target]: { in: matchValues } },
+        });
+      }
+
+      // Create a map for quick lookup
+      const targetRecordMap = new Map();
+      for (const targetRecord of targetRecords) {
+        let keyValue;
+        if (targetPathParts.length > 1) {
+          let value = targetRecord;
+          for (const part of targetPathParts) {
+            value = value?.[part];
+          }
+          keyValue = value;
+        }
+        else {
+          keyValue = targetRecord[matchField.target];
+        }
+        if (keyValue !== undefined) {
+          targetRecordMap.set(keyValue, targetRecord);
+        }
+      }
+
+      // Process updates in batches
+      await mainDatabase.$transaction(async (tx) => {
+        for (const [matchValue, sourceRecords] of matchValueMap.entries()) {
+          const targetRecord = targetRecordMap.get(matchValue);
           if (!targetRecord) {
             logger.debug(`No matching record found for ${matchField.source}=${matchValue}`);
             continue;
           }
 
-          // Build update data
-          const updateData: any = {};
-          for (const mapping of enrichmentMappings) {
-            const sourceValue = sourceRecord[mapping.sourceField];
-            const transformedValue = mapping.transform ? mapping.transform(sourceValue) : sourceValue;
+          for (const sourceRecord of sourceRecords) {
+            try {
+              // Build update data
+              const updateData: any = {};
+              for (const mapping of enrichmentMappings) {
+                const sourceValue = sourceRecord[mapping.sourceField];
+                const transformedValue = mapping.transform ? mapping.transform(sourceValue) : sourceValue;
 
-            // Handle nested paths (e.g., "legacy.companyId")
-            const pathParts = mapping.targetPath.split(".");
-            if (pathParts.length > 1) {
-              let current = updateData;
-              for (let i = 0; i < pathParts.length - 1; i++) {
-                if (!current[pathParts[i]]) {
-                // Get existing value for JSON fields
-                  if (pathParts[i] === "legacy" && targetRecord.legacy) {
-                    current[pathParts[i]] = { ...targetRecord.legacy };
+                // Handle nested paths (e.g., "legacy.companyId")
+                const pathParts = mapping.targetPath.split(".");
+                if (pathParts.length > 1) {
+                  let current = updateData;
+                  for (let i = 0; i < pathParts.length - 1; i++) {
+                    if (!current[pathParts[i]]) {
+                    // Get existing value for JSON fields
+                      if (pathParts[i] === "legacy" && targetRecord.legacy) {
+                        current[pathParts[i]] = { ...targetRecord.legacy };
+                      }
+                      else {
+                        current[pathParts[i]] = {};
+                      }
+                    }
+                    current = current[pathParts[i]];
                   }
-                  else {
-                    current[pathParts[i]] = {};
-                  }
+                  current[pathParts[pathParts.length - 1]] = transformedValue;
                 }
-                current = current[pathParts[i]];
+                else {
+                  updateData[mapping.targetPath] = transformedValue;
+                }
               }
-              current[pathParts[pathParts.length - 1]] = transformedValue;
+
+              // Update the record using the transaction
+              await (tx as any)[targetTable].update({
+                where: { id: targetRecord.id },
+                data: updateData,
+              });
+
+              result.updated++;
+              logger.debug(`Updated record ${targetRecord.id} with enrichment data`);
             }
-            else {
-              updateData[mapping.targetPath] = transformedValue;
+            catch (error) {
+              logger.error(`Error enriching record ${targetRecord.id}:`, error.message);
+              result.errors++;
             }
           }
-
-          // Update the record
-          await (mainDatabase as any)[targetTable].update({
-            where: { id: targetRecord.id },
-            data: updateData,
-          });
-
-          result.updated++;
-          logger.debug(`Updated record ${targetRecord.id} with enrichment data`);
         }
-        catch (error) {
-          logger.error(`Error enriching record:`, error);
-          result.errors++;
-        }
-      }
+      }, {
+        maxWait: 10000,
+        timeout: 30000,
+      });
 
       // Update pagination parameters
       hasMore = paginatedResult.hasMore;
@@ -179,7 +236,7 @@ export async function enrichMigratedData(
     logger.info(`Enrichment complete: ${result.updated} updated, ${result.errors} errors from ${totalProcessed} total records`);
   }
   catch (error) {
-    logger.error(`Fatal error during enrichment:`, error);
+    logger.error(`Fatal error during enrichment ${sourceTable}:`, error.message);
     throw error;
   }
 
@@ -238,104 +295,26 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
       // Process records in smaller batches for createMany
       const createBatchSize = 1000;
       const recordBatches = [];
-      
+
       for (let i = 0; i < sourceRecords.length; i += createBatchSize) {
         recordBatches.push(sourceRecords.slice(i, i + createBatchSize));
       }
 
-      for (const batchRecords of recordBatches) {
-        const recordsToCreate = [];
-        
-        for (const record of batchRecords) {
-          try {
-            // Apply filter if provided
-            if (mapping.filter && !mapping.filter(record)) {
-              result.skipped++;
-              continue;
-            }
-
-            // Map fields
-            const mappedData: any = {};
-            let skipRecord = false;
-
-            for (const fieldMap of mapping.fieldMappings) {
-              const sourceValue = record[fieldMap.from];
-
-              // Check required fields
-              if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
-                logger.warn(`Required field ${fieldMap.from} is missing in record`);
-                skipRecord = true;
-                break;
-              }
-
-              // Apply transformation or use default value
-              let targetValue;
-              if (fieldMap.transform) {
-                targetValue = fieldMap.transform(sourceValue, record);
-              }
-              else if (sourceValue !== null && sourceValue !== undefined) {
-                targetValue = sourceValue;
-              }
-              else if (fieldMap.defaultValue !== undefined) {
-                targetValue = fieldMap.defaultValue;
-              }
-              else {
-                targetValue = null;
-              }
-
-              mappedData[fieldMap.to] = targetValue;
-            }
-
-            if (skipRecord) {
-              result.skipped++;
-              continue;
-            }
-
-            // Apply beforeSave hook if provided
-            const dataToSave = mapping.beforeSave
-              ? await mapping.beforeSave(mappedData, record)
-              : mappedData;
-
-            // Skip if beforeSave returned null (e.g., missing references)
-            if (dataToSave === null) {
-              result.skipped++;
-              continue;
-            }
-
-            // Clean up any temporary fields that start with _temp
-            const cleanedData = Object.fromEntries(
-              Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
-            );
-
-            recordsToCreate.push(cleanedData);
-          }
-          catch (error) {
-            logger.error(`Error processing record:`, error);
-            result.errors++;
-            result.errorDetails.push({ record, error });
-          }
-        }
-
-        // Individual inserts with error handling for duplicates
-        for (const data of recordsToCreate) {
-          try {
-            await (mainDatabase as any)[mapping.targetTable].create({ data });
-            result.created++;
-          }
-          catch (err) {
-            const error = err as any;
-            if (error.code === 'P2002') {
-              // Unique constraint violation - treat as duplicate
-              result.skipped++;
-            } else {
-              result.errors++;
-              logger.error(`Error creating record:`, err);
-            }
-          }
-        }
-        
-        if (recordsToCreate.length > 0) {
-          logger.info(`Processed ${recordsToCreate.length} records in batch`);
+      // Process batches in parallel if concurrency is specified
+      const concurrency = mapping.concurrency || 1;
+      if (concurrency > 1 && recordBatches.length > 1) {
+        await processBatchesInParallel(
+          recordBatches,
+          async (batchRecords, batchIndex) => {
+            await processSingleBatch(batchRecords, mapping, result, batchIndex);
+          },
+          Math.min(concurrency, recordBatches.length),
+        );
+      }
+      else {
+        // Sequential processing
+        for (let i = 0; i < recordBatches.length; i++) {
+          await processSingleBatch(recordBatches[i], mapping, result, i);
         }
       }
 
@@ -352,11 +331,118 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
     );
   }
   catch (error) {
-    logger.error(`Fatal error during migration:`, error);
+    logger.error(`Fatal error during migration ${mapping.sourceTable}:`, error.message);
     throw error;
   }
 
   return result;
+}
+
+async function processSingleBatch(
+  batchRecords: any[],
+  mapping: TableMapping,
+  result: MigrationResult,
+  batchIndex: number,
+): Promise<void> {
+  // First, process and prepare all records
+  const recordsToCreate = [];
+
+  for (const record of batchRecords) {
+    try {
+      // Apply filter if provided
+      if (mapping.filter && !mapping.filter(record)) {
+        result.skipped++;
+        continue;
+      }
+
+      // Map fields
+      const mappedData: any = {};
+      let skipRecord = false;
+
+      for (const fieldMap of mapping.fieldMappings) {
+        const sourceValue = record[fieldMap.from];
+
+        // Check required fields
+        if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
+          logger.warn(`Required field ${fieldMap.from} is missing in record`);
+          skipRecord = true;
+          break;
+        }
+
+        // Apply transformation or use default value
+        let targetValue;
+        if (fieldMap.transform) {
+          targetValue = fieldMap.transform(sourceValue, record);
+        }
+        else if (sourceValue !== null && sourceValue !== undefined) {
+          targetValue = sourceValue;
+        }
+        else if (fieldMap.defaultValue !== undefined) {
+          targetValue = fieldMap.defaultValue;
+        }
+        else {
+          targetValue = null;
+        }
+
+        mappedData[fieldMap.to] = targetValue;
+      }
+
+      if (skipRecord) {
+        result.skipped++;
+        continue;
+      }
+
+      // Apply beforeSave hook if provided
+      const dataToSave = mapping.beforeSave
+        ? await mapping.beforeSave(mappedData, record)
+        : mappedData;
+
+      // Skip if beforeSave returned null (e.g., missing references)
+      if (dataToSave === null) {
+        result.skipped++;
+        continue;
+      }
+
+      // Clean up any temporary fields that start with _temp
+      const cleanedData = Object.fromEntries(
+        Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
+      );
+
+      recordsToCreate.push(cleanedData);
+    }
+    catch (error) {
+      logger.error(`Error processing record in batch ${batchIndex}:`, error.message);
+      result.errors++;
+      result.errorDetails.push({ record: { id: record.id }, error: error.message });
+    }
+  }
+
+  // Insert all records using bulk createMany
+  if (recordsToCreate.length > 0) {
+    try {
+      await mainDatabase.$transaction(async (tx) => {
+        const createResult = await (tx as any)[mapping.targetTable].createMany({
+          data: recordsToCreate,
+          skipDuplicates: mapping.skipDuplicates || false,
+        });
+        result.created += createResult.count;
+
+        // If we skipped any, calculate how many
+        const expectedTotal = recordsToCreate.length;
+        const actualCreated = createResult.count;
+        result.skipped += (expectedTotal - actualCreated);
+      }, {
+        maxWait: 10000,
+        timeout: 30000,
+      });
+
+      logger.debug(`Bulk processed ${recordsToCreate.length} records in batch ${batchIndex}`);
+    }
+    catch (bulkError) {
+      logger.error(`Bulk insert failed in batch ${batchIndex}:`, bulkError.message);
+      result.errors += recordsToCreate.length;
+    }
+  }
 }
 
 export async function cleanOrderGaps(
@@ -479,6 +565,32 @@ export function replaceInternalWhitespace(input: string): string {
   return input.replace(/\s+/g, "-");
 }
 
+async function processBatchesInParallel<T>(
+  batches: T[][],
+  processor: (batch: T[], batchIndex: number) => Promise<void>,
+  concurrency: number = 3,
+): Promise<void> {
+  const semaphore = new Array(concurrency).fill(null);
+  let currentIndex = 0;
+
+  const processBatch = async (): Promise<void> => {
+    while (currentIndex < batches.length) {
+      const batchIndex = currentIndex++;
+      const batch = batches[batchIndex];
+
+      try {
+        await processor(batch, batchIndex);
+      }
+      catch (error) {
+        logger.error(`Error processing batch ${batchIndex}:`, error);
+        throw error;
+      }
+    }
+  };
+
+  await Promise.all(semaphore.map(() => processBatch()));
+}
+
 export async function findReferencedRecord(
   targetTable: string,
   whereCondition: any,
@@ -493,6 +605,67 @@ export async function findReferencedRecord(
     logger.error(`Error finding referenced record in ${targetTable}:`, error);
     return null;
   }
+}
+
+export async function bulkUpsert(
+  tableName: string,
+  data: any[],
+  uniqueFields: string[],
+  batchSize: number = 1000,
+): Promise<{ created: number; updated: number; errors: number }> {
+  const result = { created: 0, updated: 0, errors: 0 };
+
+  if (!data.length)
+    return result;
+
+  // Process in batches
+  for (let i = 0; i < data.length; i += batchSize) {
+    const batch = data.slice(i, i + batchSize);
+
+    await mainDatabase.$transaction(async (tx) => {
+      for (const record of batch) {
+        try {
+          // Build unique constraint check
+          const whereClause: any = {};
+          for (const field of uniqueFields) {
+            whereClause[field] = record[field];
+          }
+
+          // Try to find existing record
+          const existing = await (tx as any)[tableName].findFirst({
+            where: whereClause,
+          });
+
+          if (existing) {
+            // Update existing record
+            await (tx as any)[tableName].update({
+              where: { id: existing.id },
+              data: record,
+            });
+            result.updated++;
+          }
+          else {
+            // Create new record
+            await (tx as any)[tableName].create({
+              data: record,
+            });
+            result.created++;
+          }
+        }
+        catch (error) {
+          logger.error(`Error in bulk upsert for ${tableName}:`, error);
+          result.errors++;
+        }
+      }
+    }, {
+      maxWait: 15000,
+      timeout: 60000,
+    });
+
+    logger.debug(`Bulk upsert batch ${Math.floor(i / batchSize) + 1}: ${batch.length} records processed`);
+  }
+
+  return result;
 }
 
 // Migrations
@@ -538,6 +711,7 @@ export async function migrateCoilTypes(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -592,6 +766,7 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
       name: data.name,
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -660,6 +835,7 @@ export async function migrateModels(): Promise<MigrationResult> {
       model: data.model,
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -694,6 +870,7 @@ export async function migrateCompanies(): Promise<MigrationResult> {
       name: data.name,
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -793,6 +970,7 @@ export async function migrateQuotes(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -833,15 +1011,11 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
       // Store the ID for duplicate check (will be accessed via closure)
       data._tempQuoteHeaderId = quoteHeader.id;
 
-      data.quoteHeader = {
-        connect: { id: quoteHeader.id },
-      };
+      data.quoteHeaderId = quoteHeader.id;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
       data.updatedById = original.ModifyInit?.toLowerCase() || "system";
-
-      logger.debug(`Setting quoteHeaderId: ${quoteHeader.id} for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev}`);
 
       return data;
     },
@@ -857,6 +1031,7 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -878,7 +1053,6 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
         from: "NetDays",
         to: "netDays",
         transform: value => Number.parseInt(value) || 0,
-        required: true,
       },
       {
         from: "Amount",
@@ -931,9 +1105,7 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
 
       data._tempQuoteDetailsId = quote.id;
 
-      data.quote = {
-        connect: { id: quote.id },
-      };
+      data.quoteDetailsId = quote.id;
       data.createdAt = new Date();
       data.updatedAt = new Date();
 
@@ -948,6 +1120,7 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
+    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -1002,13 +1175,16 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
 //     skipDuplicates: true,
 //     duplicateCheck: data => ({ email: data.email }),
 //     batchSize: 100,
+//     concurrency: 3,
 //   };
 
 //   return await migrateWithMapping(mapping);
 // }
 
 async function main() {
+  const startTime = Date.now();
   try {
+    logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
 
     // const schema = await extractDatabaseSchema("std");
@@ -1020,12 +1196,13 @@ async function main() {
     const quotes = await migrateQuoteRevisions();
     const quoteTerms = await migrateQuoteTerms();
 
-    logger.info("Migration Results:", {
-      quoteHeaders,
-      quotes,
-      quoteTerms,
-      // schema,
-    });
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    logger.info(`Migration Results (${duration}s):`);
+    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
   }
   catch (error) {
     logger.error("Error in main:", error);
