@@ -36,7 +36,8 @@ interface TableMapping {
   filter?: (record: any) => boolean;
   beforeSave?: (mappedData: any, originalRecord: any) => any;
   afterSave?: (savedRecord: any, originalRecord: any) => Promise<void>;
-  batchSize?: number;
+  batchSize?: number; // For Prisma operations
+  legacyFetchSize?: number; // For legacy DB fetch operations
   skipDuplicates?: boolean;
   duplicateCheck?: (mappedData: any) => any;
 }
@@ -47,6 +48,142 @@ interface MigrationResult {
   skipped: number;
   errors: number;
   errorDetails: Array<{ record: any; error: any }>;
+}
+
+export async function enrichMigratedData(
+  targetTable: string,
+  sourceDatabase: "quote" | "std" | "job",
+  sourceTable: string,
+  matchField: { target: string; source: string },
+  enrichmentMappings: Array<{ sourceField: string; targetPath: string; transform?: (value: any) => any }>,
+): Promise<{ updated: number; errors: number }> {
+  const result = { updated: 0, errors: 0 };
+
+  try {
+    logger.info(`Starting enrichment: ${sourceDatabase}.${sourceTable} → ${targetTable}`);
+
+    const params = {
+      filter: null,
+      sort: null,
+      order: null,
+      offset: 0,
+    };
+
+    // Get total count first
+    const totalCount = await legacyService.getCount(sourceDatabase, sourceTable, params);
+    const legacyFetchSize = 5000;
+    const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
+
+    logger.info(`Found ${totalCount} enrichment records, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
+
+    let hasMore = true;
+    let totalProcessed = 0;
+    let currentBatch = 0;
+
+    while (hasMore) {
+      // Get paginated source records for enrichment
+      const paginatedResult = await legacyService.getAllPaginated(sourceDatabase, sourceTable, params, legacyFetchSize);
+
+      if (!paginatedResult.records || paginatedResult.records.length === 0) {
+        logger.warn(`No more enrichment records found in ${sourceTable}`);
+        break;
+      }
+
+      const sourceRecords = paginatedResult.records;
+      totalProcessed += sourceRecords.length;
+      currentBatch++;
+
+      logger.info(`Processing enrichment batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
+
+      // Process each source record
+      for (const sourceRecord of sourceRecords) {
+        try {
+          const matchValue = (sourceRecord as any)[matchField.source];
+          if (!matchValue)
+            continue;
+
+          // Find target record to update
+          // Handle nested path in matchField.target (e.g., "legacy.masterId")
+          const targetPathParts = matchField.target.split(".");
+
+          const targetRecord = targetPathParts.length > 1
+            ? await (mainDatabase as any)[targetTable].findMany().then((records: any[]) => {
+                return records.find((r: any) => {
+                  let value = r;
+                  for (const part of targetPathParts) {
+                    value = value?.[part];
+                  }
+                  return value === matchValue;
+                });
+              })
+            : await (mainDatabase as any)[targetTable].findFirst({
+                where: { [matchField.target]: matchValue },
+              });
+
+          if (!targetRecord) {
+            logger.debug(`No matching record found for ${matchField.source}=${matchValue}`);
+            continue;
+          }
+
+          // Build update data
+          const updateData: any = {};
+          for (const mapping of enrichmentMappings) {
+            const sourceValue = sourceRecord[mapping.sourceField];
+            const transformedValue = mapping.transform ? mapping.transform(sourceValue) : sourceValue;
+
+            // Handle nested paths (e.g., "legacy.companyId")
+            const pathParts = mapping.targetPath.split(".");
+            if (pathParts.length > 1) {
+              let current = updateData;
+              for (let i = 0; i < pathParts.length - 1; i++) {
+                if (!current[pathParts[i]]) {
+                // Get existing value for JSON fields
+                  if (pathParts[i] === "legacy" && targetRecord.legacy) {
+                    current[pathParts[i]] = { ...targetRecord.legacy };
+                  }
+                  else {
+                    current[pathParts[i]] = {};
+                  }
+                }
+                current = current[pathParts[i]];
+              }
+              current[pathParts[pathParts.length - 1]] = transformedValue;
+            }
+            else {
+              updateData[mapping.targetPath] = transformedValue;
+            }
+          }
+
+          // Update the record
+          await (mainDatabase as any)[targetTable].update({
+            where: { id: targetRecord.id },
+            data: updateData,
+          });
+
+          result.updated++;
+          logger.debug(`Updated record ${targetRecord.id} with enrichment data`);
+        }
+        catch (error) {
+          logger.error(`Error enriching record:`, error);
+          result.errors++;
+        }
+      }
+
+      // Update pagination parameters
+      hasMore = paginatedResult.hasMore;
+      params.offset = paginatedResult.nextOffset;
+
+      logger.info(`Enrichment batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}, Updated: ${result.updated}, Errors: ${result.errors}`);
+    }
+
+    logger.info(`Enrichment complete: ${result.updated} updated, ${result.errors} errors from ${totalProcessed} total records`);
+  }
+  catch (error) {
+    logger.error(`Fatal error during enrichment:`, error);
+    throw error;
+  }
+
+  return result;
 }
 
 export async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResult> {
@@ -63,36 +200,42 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
 
     const params = {
       filter: null,
-      limit: null,
       sort: null,
       order: null,
+      offset: 0,
     };
 
-    const sourceRecords: any = await legacyService.getAll(
-      mapping.sourceDatabase,
-      mapping.sourceTable,
-      params,
-    );
+    // Get total count first
+    const totalCount = await legacyService.getCount(mapping.sourceDatabase, mapping.sourceTable, params);
+    const legacyFetchSize = mapping.legacyFetchSize || 5000;
+    const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
 
-    if (!sourceRecords || sourceRecords.length === 0) {
-      logger.warn(`No records found in ${mapping.sourceTable}`);
-      return result;
-    }
+    logger.info(`Found ${totalCount} records, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
 
-    result.total = sourceRecords.length;
-    logger.info(`Found ${result.total} records to migrate`);
+    let hasMore = true;
+    let totalProcessed = 0;
+    let currentBatch = 0;
 
-    const batchSize = mapping.batchSize || 100;
-    const batches = Math.ceil(sourceRecords.length / batchSize);
+    while (hasMore) {
+      const paginatedResult = await legacyService.getAllPaginated(
+        mapping.sourceDatabase,
+        mapping.sourceTable,
+        params,
+        legacyFetchSize,
+      );
 
-    for (let batch = 0; batch < batches; batch++) {
-      const start = batch * batchSize;
-      const end = Math.min(start + batchSize, sourceRecords.length);
-      const batchRecords = sourceRecords.slice(start, end);
+      if (!paginatedResult.records || paginatedResult.records.length === 0) {
+        logger.warn(`No more records found in ${mapping.sourceTable}`);
+        break;
+      }
 
-      logger.info(`Processing batch ${batch + 1}/${batches} (records ${start + 1}-${end})`);
+      const sourceRecords = paginatedResult.records;
+      totalProcessed += sourceRecords.length;
+      currentBatch++;
 
-      for (const record of batchRecords) {
+      logger.info(`Processing batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
+
+      for (const record of sourceRecords) {
         try {
           // Apply filter if provided
           if (mapping.filter && !mapping.filter(record)) {
@@ -142,6 +285,12 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
             ? mapping.beforeSave(mappedData, record)
             : mappedData;
 
+          // Skip if beforeSave returned null (e.g., missing references)
+          if (dataToSave === null) {
+            result.skipped++;
+            continue;
+          }
+
           // Check for duplicates if configured
           if (mapping.skipDuplicates) {
             const duplicateCheck = mapping.duplicateCheck
@@ -160,6 +309,7 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
           }
 
           // Save to database
+          logger.debug(`About to create ${mapping.targetTable} with data:`, JSON.stringify(dataToSave, null, 2));
           const savedRecord = await (mainDatabase as any)[mapping.targetTable].create({
             data: dataToSave,
           });
@@ -179,10 +329,17 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
           result.errorDetails.push({ record, error });
         }
       }
+
+      // Update pagination parameters
+      hasMore = paginatedResult.hasMore;
+      params.offset = paginatedResult.nextOffset;
+
+      logger.info(`Batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}, Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
     }
 
+    result.total = totalProcessed;
     logger.info(
-      `Migration complete: ${result.created} created, ${result.skipped} skipped, ${result.errors} errors`,
+      `Migration complete: ${result.created} created, ${result.skipped} skipped, ${result.errors} errors from ${result.total} total records`,
     );
   }
   catch (error) {
@@ -305,6 +462,14 @@ export async function extractDatabaseSchema(database: "quote" | "std" | "job"): 
   }
 }
 
+export function trimWhitespace(input: string): string {
+  return input.trim();
+}
+
+export function replaceInternalWhitespace(input: string): string {
+  return input.replace(/\s+/g, "-");
+}
+
 export async function migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
@@ -319,21 +484,26 @@ export async function migrateCoilTypes(): Promise<MigrationResult> {
       {
         from: "CoilMult",
         to: "multiplier",
-        transform: (value) => value || 1,
+        transform: value => value || 1,
       },
       {
         from: "SortOrder",
         to: "sortOrder",
-        transform: (value) => Number.parseInt(value) || 999,
+        transform: value => Number.parseInt(value) || 999,
       },
       {
         from: "IsArchived",
         to: "isArchived",
-        transform: (value) => value === "1",
+        transform: value => value === "1",
+      },
+      {
+        from: "CoilID",
+        to: "legacyId",
+        transform: value => value?.toString(),
       },
     ],
     skipDuplicates: true,
-    duplicateCheck: (data) => ({
+    duplicateCheck: data => ({
       AND: [
         { description: data.description },
         { multiplier: data.multiplier },
@@ -341,15 +511,14 @@ export async function migrateCoilTypes(): Promise<MigrationResult> {
         { isArchived: data.isArchived },
       ],
     }),
-    batchSize: 50,
+    batchSize: 100,
   };
 
   const result = await migrateWithMapping(mapping);
 
-  // Clean up order gaps after migration
-  if (result.created > 0) {
-    await cleanOrderGaps("coilType", "sortOrder");
-  }
+  // if (result.created > 0) {
+  //   await cleanOrderGaps("coilType", "sortOrder");
+  // }
 
   return result;
 }
@@ -362,13 +531,13 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
     fieldMappings: [
       {
         from: "GrpID",
-        to: "oldId",
-        transform: (value) => value?.toString(),
+        to: "legacyId",
+        transform: value => value?.toString(),
       },
       {
         from: "GrpName",
         to: "name",
-        transform: (value) => value?.trim(),
+        transform: value => value?.trim(),
         required: true,
       },
       {
@@ -379,31 +548,24 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
       {
         from: "Multiple",
         to: "multiple",
-        transform: (value) => value?.toLowerCase() === "multiple",
+        transform: value => value?.toLowerCase() === "multiple",
       },
       {
         from: "Mandatory",
         to: "mandatory",
-        transform: (value) => value?.toLowerCase() === "mandatory",
+        transform: value => value?.toLowerCase() === "mandatory",
       },
       {
         from: "GrpOrder",
         to: "order",
-        transform: (value) => Number.parseInt(value) || 0,
+        transform: value => Number.parseInt(value) || 0,
       },
     ],
     skipDuplicates: true,
-    duplicateCheck: (data) => ({
-      AND: [
-        { name: data.name },
-        { description: data.description },
-        { multiple: data.multiple },
-        { mandatory: data.mandatory },
-        { order: data.order },
-        { oldId: data.oldId },
-      ],
+    duplicateCheck: data => ({
+      name: data.name,
     }),
-    batchSize: 50,
+    batchSize: 100,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -416,73 +578,348 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
   return result;
 }
 
-// Example: Create a custom migration with complex transformations
-export async function migrateCustomTable(): Promise<MigrationResult> {
+export async function migrateModels(): Promise<MigrationResult> {
   const mapping: TableMapping = {
-    sourceDatabase: "std",
-    sourceTable: "OldCustomers",
-    targetTable: "customers",
+    sourceDatabase: "quote",
+    sourceTable: "EquipList",
+    targetTable: "model",
     fieldMappings: [
       {
-        from: "CustID",
-        to: "id",
-        transform: (value) => Number.parseInt(value),
+        from: "Model",
+        to: "model",
+        transform: (value) => {
+          return replaceInternalWhitespace(trimWhitespace(value));
+        },
       },
       {
-        from: "CustName",
-        to: "name",
-        transform: (value) => value?.trim().toUpperCase(),
-        required: true,
-      },
-      {
-        from: "CustEmail",
-        to: "email",
-        transform: (value) => value?.toLowerCase().trim(),
-      },
-      {
-        from: "Active",
-        to: "isActive",
-        transform: (value) => value === "Y" || value === "1",
-        defaultValue: true,
+        from: "Description",
+        to: "description",
       },
     ],
-    // Filter out inactive records during migration
-    filter: (record) => record.Active !== "N" && record.Active !== "0",
-    // Enrich data before saving
     beforeSave: (data, original) => {
-      data.createdAt = new Date();
-      data.updatedAt = new Date();
-      data.legacyId = original.CustID;
+      data.data = {
+        maxWidth: original.MaxWidth,
+        minThickness: original.MinThick,
+        maxThickness: original.MaxThick,
+        ratio: original.Ratio,
+        plusRatio: original.PlusRatio,
+        maxSpeed: original.MaxSpeed,
+        plusMaxSpeed: original.PlusMaxSpeed,
+        acceleration: original.Accel,
+        rollDiameter: original.RollDiam,
+        airDiameter: original.AirDiam,
+        pinchDiameter: original.PinchDiam,
+        rollNumber: original.RollNum,
+        rollType: original.RollType,
+        loopLength: original.LoopLength,
+        coilOutsideDiameter: original.CoilOD,
+        coilWeight: original.CoilWeight,
+        stroke: original.Stroke,
+        strokesPerMinute: original.SPM,
+        standardCost: original.StdCost,
+        percentMargin: original.PerMrg,
+        price: original.Price,
+        equipmentType: original.EquipType,
+        commission: original.Comm,
+        leadTime: 112,
+      };
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate);
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
+      data.createdById = original.CreateInit.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit.toLowerCase() || "system";
       return data;
     },
-    // Post-processing after save
-    afterSave: async (saved, original) => {
-      // Log successful migrations to audit table
-      logger.info(`Migrated customer ${original.CustID} to ${saved.id}`);
-    },
     skipDuplicates: true,
-    duplicateCheck: (data) => ({ email: data.email }),
+    duplicateCheck: data => ({
+      model: data.model,
+    }),
     batchSize: 100,
   };
 
-  return await migrateWithMapping(mapping);
+  const result = await migrateWithMapping(mapping);
+
+  return result;
 }
+
+export async function migrateCompanies(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "CompanyMaster",
+    targetTable: "company",
+    fieldMappings: [
+      {
+        from: "CompanyName",
+        to: "name",
+        required: true,
+      },
+    ],
+    beforeSave: (data, original) => {
+      data.legacy = {
+        masterId: original.Master_Id,
+      };
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate);
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      name: data.name,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  // Enrich with CompanyXRef data
+  if (result.created > 0) {
+    logger.info("Enriching companies with CompanyXRef data...");
+
+    const enrichmentResult = await enrichMigratedData(
+      "company",
+      "std",
+      "CompanyXRef",
+      { target: "legacy.masterId", source: "Master_Id" },
+      [
+        { sourceField: "Company_ID", targetPath: "legacy.companyId", transform: value => value?.toString() },
+      ],
+    );
+
+    logger.info(`Company enrichment complete: ${enrichmentResult.updated} records updated`);
+  }
+
+  return result;
+}
+
+export async function migrateQuotes(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "QData",
+    targetTable: "quoteHeader",
+    fieldMappings: [
+      {
+        from: "QYear",
+        to: "year",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "QNum",
+        to: "number",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "CoeRSM",
+        to: "rsmId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "C_Company",
+        to: "customerId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "C_Contact",
+        to: "customerContactId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "C_Address",
+        to: "customerAddressId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "D_Company",
+        to: "dealerId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "D_Contact",
+        to: "dealerContactId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "D_Address",
+        to: "dealerAddressId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "Priority",
+        to: "priority",
+      },
+      {
+        from: "Confidence",
+        to: "confidence",
+      },
+    ],
+    beforeSave: (data, original) => {
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate);
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
+      data.createdById = original.CreateInit.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit.toLowerCase() || "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { year: data.year },
+        { number: data.number },
+      ],
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  return result;
+}
+
+export async function findReferencedRecord(
+  targetTable: string,
+  whereCondition: any,
+): Promise<any> {
+  try {
+    const record = await (mainDatabase as any)[targetTable].findFirst({
+      where: whereCondition,
+    });
+    return record;
+  }
+  catch (error) {
+    logger.error(`Error finding referenced record in ${targetTable}:`, error);
+    return null;
+  }
+}
+
+export async function migrateQuoteRevisions(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "QRev",
+    targetTable: "quoteDetails",
+    fieldMappings: [
+      {
+        from: "QRev",
+        to: "revision",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+      {
+        from: "QDate",
+        to: "quoteDate",
+        transform: value => new Date(value),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const quoteHeader = await findReferencedRecord("quoteHeader", {
+        year: original.QYear?.toString(),
+        number: original.QNum?.toString(),
+      });
+
+      if (!quoteHeader) {
+        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+        return null;
+      }
+
+      data.quoteHeaderId = quoteHeader.id;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      logger.debug(`Setting quoteHeaderId: ${data.quoteHeaderId} for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev}`);
+      
+      return data;
+    },
+    filter: (record) => {
+      // Only process records with valid QYear, QNum, and QRev
+      return record.QYear && record.QNum && record.QRev;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { quoteHeaderId: data.quoteHeaderId },
+        { revision: data.revision },
+      ],
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+  return result;
+}
+
+// Example: Create a custom migration with complex transformations
+// export async function migrateCustomTable(): Promise<MigrationResult> {
+//   const mapping: TableMapping = {
+//     sourceDatabase: "std",
+//     sourceTable: "OldCustomers",
+//     targetTable: "customers",
+//     fieldMappings: [
+//       {
+//         from: "CustID",
+//         to: "id",
+//         transform: value => Number.parseInt(value),
+//       },
+//       {
+//         from: "CustName",
+//         to: "name",
+//         transform: value => value?.trim().toUpperCase(),
+//         required: true,
+//       },
+//       {
+//         from: "CustEmail",
+//         to: "email",
+//         transform: value => value?.toLowerCase().trim(),
+//       },
+//       {
+//         from: "Active",
+//         to: "isActive",
+//         transform: value => value === "Y" || value === "1",
+//         defaultValue: true,
+//       },
+//     ],
+//     // Filter out inactive records during migration
+//     filter: record => record.Active !== "N" && record.Active !== "0",
+//     // Enrich data before saving
+//     beforeSave: (data, original) => {
+//       data.createdAt = new Date();
+//       data.updatedAt = new Date();
+//       data.legacyId = original.CustID;
+//       return data;
+//     },
+//     // Post-processing after save
+//     afterSave: async (saved, original) => {
+//       // Log successful migrations to audit table
+//       logger.info(`Migrated customer ${original.CustID} to ${saved.id}`);
+//     },
+//     skipDuplicates: true,
+//     duplicateCheck: data => ({ email: data.email }),
+//     batchSize: 100,
+//   };
+
+//   return await migrateWithMapping(mapping);
+// }
 
 async function main() {
   try {
     await legacyService.initialize();
 
-    // Example usage:
-    // const schemaResult = await extractDatabaseSchema("quote");
-    const coilResult = await migrateCoilTypes();
-    const optionResult = await migrateOptionCategories();
-    // const customResult = await migrateCustomTable();
+    // const schema = await extractDatabaseSchema("std");
+    // const coilResult = await migrateCoilTypes();
+    // const optionResult = await migrateOptionCategories();
+    // const modelResult = await migrateModels();
+    // const companyResult = await migrateCompanies();
+    const quoteResult = await migrateQuotes();
+    const quoteRevisionResult = await migrateQuoteRevisions();
 
-    // Log results
     logger.info("Migration Results:", {
-      coilTypes: coilResult,
-      optionCategories: optionResult,
-      // custom: customResult,
+      // coilTypes: coilResult,
+      // optionCategories: optionResult,
+      // models: modelResult,
+      quotes: quoteResult,
+      quoteRevisions: quoteRevisionResult,
+      // companies: companyResult,
+      // schema,
     });
   }
   catch (error) {

@@ -106,6 +106,84 @@ export class LegacyService {
     }
   }
 
+  async getCount(database: string, table: string, params: any): Promise<number> {
+    let whereClause = "";
+    if (params.filter) {
+      const [field, value] = params.filter.split("=");
+      const comparator = "=";
+      whereClause = `WHERE ${field} ${comparator} ${value}`;
+    }
+
+    const query = `
+    SELECT COUNT(*) as total
+    FROM PUB.${table}
+    ${whereClause}
+  `;
+
+    try {
+      logger.info(`Count query: ${query.trim()}`);
+      const result: any = await this.getDatabaseConnection(database)?.query(query);
+      logger.info(`Count result:`, result);
+
+      // Handle different possible result formats
+      const count = result?.[0]?.total
+        ?? result?.[0]?.TOTAL
+        ?? result?.[0]?.Total
+        ?? 0;
+      return Number(count) || 0;
+    }
+    catch (err) {
+      logger.error("Error getting count:", err);
+      return 0;
+    }
+  }
+
+  async getAllPaginated(
+    database: string,
+    table: string,
+    params: any,
+    batchSize: number = 1000,
+  ): Promise<{ records: any[]; hasMore: boolean; nextOffset: number }> {
+    const offset = params.offset || 0;
+    const limit = `OFFSET ${offset} ROWS FETCH FIRST ${batchSize} ROWS ONLY`;
+
+    let whereClause = "";
+    if (params.filter) {
+      const [field, value] = params.filter.split("=");
+      const comparator = "=";
+      whereClause = `WHERE ${field} ${comparator} ${value}`;
+    }
+
+    const query = `
+    SELECT *
+    FROM PUB.${table}
+    ${whereClause}
+    ${this.buildOrderQuery(params)}
+    ${limit}
+  `;
+
+    try {
+      const result = await this.getDatabaseConnection(database)?.query(query);
+      const records = result || [];
+      const hasMore = records.length === batchSize;
+      const nextOffset = offset + batchSize;
+
+      return {
+        records,
+        hasMore,
+        nextOffset,
+      };
+    }
+    catch (err) {
+      logger.log("Error fetching paginated data:", err);
+      return {
+        records: [],
+        hasMore: false,
+        nextOffset: offset,
+      };
+    }
+  }
+
   async getById(database: string, table: string, id: string, fields?: string[] | null) {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
 

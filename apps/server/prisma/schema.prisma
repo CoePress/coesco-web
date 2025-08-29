@@ -148,22 +148,23 @@ model PermissionException {
 model Company {
   id            String        @id @default(uuid())
   name          String
-  website       String?
-  email         String?
-  phone         String?
-  fax           String?
-  industry      Industry?
-  yearFounded   Int?
-  revenue       Int?
-  employeeCount String?
-  customerSince DateTime?
-  paymentTerms  String?
-  creditLimit   Int?
-  taxId         String?
-  logoUrl       String?
-  notes         String?
-  tags          String[]
-  status        CompanyStatus @default(ACTIVE)
+  // website       String?
+  // email         String?
+  // phone         String?
+  // fax           String?
+  // industry      Industry?
+  // yearFounded   Int?
+  // revenue       Int?
+  // employeeCount String?
+  // customerSince DateTime?
+  // paymentTerms  String?
+  // creditLimit   Int?
+  // taxId         String?
+  // logoUrl       String?
+  // notes         String?
+  // tags          String[]
+  // status        CompanyStatus @default(ACTIVE)
+  legacy Json @default("{}") 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   deletedAt     DateTime?
@@ -325,7 +326,6 @@ model MachineStatus {
 }
 
 // Misc
-
 model PerformanceSheetVersion {
   id          String    @id @default(uuid())
   sections    Json      @default("[]")
@@ -463,24 +463,7 @@ model Quote {
   @@map("quotes")
 }
 
-model ProductClassOptionCategory {
-  productClassId   String
-  optionCategoryId String
-  displayOrder     Int       @default(0)
-  isRequired       Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
-  createdById      String
-  updatedById      String
 
-  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
-  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
-
-  @@id([productClassId, optionCategoryId])
-  @@index([createdById])
-  @@map("product_class_option_categories")
-}
 
 model OptionHeader {
   id          String    @id @default(uuid())
@@ -638,8 +621,6 @@ model Item {
   @@map("items")
 }
 
-
-
 model NtfyDevice {
   id                String    @id @default(uuid())
   name              String
@@ -777,13 +758,16 @@ enum UserRole {
   ADMIN
 }
 
-// CoilType
+// Quote
+
+// CoilType - Done
 model CoilType {
   id String @id @default(uuid())
   description String?
   multiplier Decimal @default(1)
   sortOrder Int @default(999)
   isArchived Boolean @default(false)
+  legacyId String?
 
   @@map("coil_types")
 }
@@ -813,7 +797,7 @@ model ProductClass {
   @@map("product_classes")
 }
 
-// OptGroup
+// OptGroup - Done
 model OptionCategory {
   id            String    @id @default(uuid())
   name          String    @unique
@@ -821,7 +805,7 @@ model OptionCategory {
   multiple      Boolean   @default(false)
   mandatory     Boolean   @default(false)
   order Int
-  oldId String
+  legacyId String?
 
   optionHeaders                OptionHeader[]
   productClassOptionCategories ProductClassOptionCategory[]
@@ -829,14 +813,39 @@ model OptionCategory {
   @@map("option_categories")
 }
 
-// EquipList + LeadTime (112 default)
-model ModelSpecs {
+// OptGrp
+model ProductClassOptionCategory {
+  productClassId   String
+  optionCategoryId String
+  displayOrder     Int       @default(0)
+  isRequired       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
+
+  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
+  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([productClassId, optionCategoryId])
+  @@index([createdById])
+  @@map("product_class_option_categories")
+}
+
+// EquipList + LeadTime (112 default) - Might migrate into product classes
+model Model {
   id String @id @default(uuid())
-  productClassId String @unique
+  model String
   description String?
   data Json @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
-  @@map("model_specs")
+  @@map("models")
 }
 
 // QData
@@ -846,22 +855,24 @@ model QuoteHeader {
   year String
   number String
   rsmId String?
-  companyId String?
-  companyContactId String?
-  companyAddressId String?
+  customerId String?
+  customerContactId String?
+  customerAddressId String?
   dealerId String?
   dealerContactId String?
   dealerAddressId String?
-  priority String @default("D")
+  priority String @default("C")
   confidence Int @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
   createdById String
   updatedById String
+  legacy Json @default("{}")
 
   quotes QuoteDetails[]
 
+  @@unique([year, number])
   @@map("quote_headers")
 }
 
@@ -869,9 +880,8 @@ model QuoteHeader {
 model QuoteDetails {
   id String @id @default(uuid())
   quoteHeaderId String
-  revision String
-  quoteDate DateTime
-  leadTime Int
+  revision String @default("A")
+  quoteDate DateTime?
   status QuoteStatus @default(DRAFT)
   approvedById String?
   sentById String?
@@ -881,6 +891,7 @@ model QuoteDetails {
   items      QuoteItem[]
   terms      QuoteTerms[]
 
+  @@unique([quoteHeaderId, revision])
   @@map("quote_details")
 }
 
