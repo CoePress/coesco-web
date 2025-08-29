@@ -34,7 +34,7 @@ interface TableMapping {
   targetTable: string;
   fieldMappings: FieldMapping[];
   filter?: (record: any) => boolean;
-  beforeSave?: (mappedData: any, originalRecord: any) => any;
+  beforeSave?: (mappedData: any, originalRecord: any) => any | Promise<any>;
   afterSave?: (savedRecord: any, originalRecord: any) => Promise<void>;
   batchSize?: number; // For Prisma operations
   legacyFetchSize?: number; // For legacy DB fetch operations
@@ -282,7 +282,7 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
 
           // Apply beforeSave hook if provided
           const dataToSave = mapping.beforeSave
-            ? mapping.beforeSave(mappedData, record)
+            ? await mapping.beforeSave(mappedData, record)
             : mappedData;
 
           // Skip if beforeSave returned null (e.g., missing references)
@@ -308,10 +308,15 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
             }
           }
 
+          // Clean up any temporary fields that start with _temp
+          const cleanedData = Object.fromEntries(
+            Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
+          );
+
           // Save to database
-          logger.debug(`About to create ${mapping.targetTable} with data:`, JSON.stringify(dataToSave, null, 2));
+          logger.debug(`About to create ${mapping.targetTable} with data:`, JSON.stringify(cleanedData, null, 2));
           const savedRecord = await (mainDatabase as any)[mapping.targetTable].create({
-            data: dataToSave,
+            data: cleanedData,
           });
 
           result.created++;
@@ -470,6 +475,23 @@ export function replaceInternalWhitespace(input: string): string {
   return input.replace(/\s+/g, "-");
 }
 
+export async function findReferencedRecord(
+  targetTable: string,
+  whereCondition: any,
+): Promise<any> {
+  try {
+    const record = await (mainDatabase as any)[targetTable].findFirst({
+      where: whereCondition,
+    });
+    return record;
+  }
+  catch (error) {
+    logger.error(`Error finding referenced record in ${targetTable}:`, error);
+    return null;
+  }
+}
+
+// Migrations
 export async function migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
@@ -774,22 +796,6 @@ export async function migrateQuotes(): Promise<MigrationResult> {
   return result;
 }
 
-export async function findReferencedRecord(
-  targetTable: string,
-  whereCondition: any,
-): Promise<any> {
-  try {
-    const record = await (mainDatabase as any)[targetTable].findFirst({
-      where: whereCondition,
-    });
-    return record;
-  }
-  catch (error) {
-    logger.error(`Error finding referenced record in ${targetTable}:`, error);
-    return null;
-  }
-}
-
 export async function migrateQuoteRevisions(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
@@ -820,14 +826,19 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
         return null;
       }
 
-      data.quoteHeaderId = quoteHeader.id;
+      // Store the ID for duplicate check (will be accessed via closure)
+      data._tempQuoteHeaderId = quoteHeader.id;
+
+      data.quoteHeader = {
+        connect: { id: quoteHeader.id },
+      };
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
       data.updatedById = original.ModifyInit?.toLowerCase() || "system";
 
-      logger.debug(`Setting quoteHeaderId: ${data.quoteHeaderId} for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev}`);
-      
+      logger.debug(`Setting quoteHeaderId: ${quoteHeader.id} for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev}`);
+
       return data;
     },
     filter: (record) => {
@@ -837,7 +848,7 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteHeaderId: data.quoteHeaderId },
+        { quoteHeaderId: data._tempQuoteHeaderId },
         { revision: data.revision },
       ],
     }),
@@ -845,6 +856,67 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
   };
 
   const result = await migrateWithMapping(mapping);
+  return result;
+}
+
+export async function migrateQuoteNotes(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "QtNotes",
+    targetTable: "quoteNote",
+    fieldMappings: [
+      {
+        from: "Note",
+        to: "note",
+        transform: value => trimWhitespace(value),
+      },
+    ],
+    beforeSave: async (data, original) => {
+      // First find the quoteHeader
+      const quoteHeader = await findReferencedRecord("quoteHeader", {
+        year: original.QYear?.toString(),
+        number: original.QNum?.toString(),
+      });
+
+      if (!quoteHeader) {
+        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+        return null;
+      }
+
+      // Then find the specific quoteDetails by quoteHeaderId and revision
+      const quote = await findReferencedRecord("quoteDetails", {
+        quoteHeaderId: quoteHeader.id,
+        revision: original.QRev?.toString() || "A",
+      });
+
+      if (!quote) {
+        logger.warn(`No quoteDetails found for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev || "A"}`);
+        return null;
+      }
+
+      data._tempQuoteDetailsId = quote.id;
+
+      data.quote = {
+        connect: { id: quote.id },
+      };
+      data.createdAt = new Date(original.NoteDate);
+      data.updatedAt = new Date(original.NoteDate);
+      data.createdById = original.CoeRSM.toString() || "system";
+      data.updatedById = original.CoeRSM.toString() || "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { quoteDetailsId: data._tempQuoteDetailsId },
+        { note: data.note },
+      ],
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
   return result;
 }
 
@@ -909,16 +981,14 @@ async function main() {
     // const optionResult = await migrateOptionCategories();
     // const modelResult = await migrateModels();
     // const companyResult = await migrateCompanies();
-    const quoteResult = await migrateQuotes();
-    const quoteRevisionResult = await migrateQuoteRevisions();
+    const quoteHeaders = await migrateQuotes();
+    const quotes = await migrateQuoteRevisions();
+    const quoteNotes = await migrateQuoteNotes();
 
     logger.info("Migration Results:", {
-      // coilTypes: coilResult,
-      // optionCategories: optionResult,
-      // models: modelResult,
-      quotes: quoteResult,
-      quoteRevisions: quoteRevisionResult,
-      // companies: companyResult,
+      quoteHeaders,
+      quotes,
+      quoteNotes,
       // schema,
     });
   }

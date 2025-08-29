@@ -48,9 +48,6 @@ model Employee {
   journeys         Journey[] @relation("RsmJourneys")
   createdCompanies Company[] @relation("CustomerCreatedBy")
   createdJourneys  Journey[] @relation("JourneyCreatedBy")
-  createdQuotes    Quote[]   @relation("QuoteCreatedBy")
-  approvedQuotes   Quote[]   @relation("QuoteApprovedBy")
-  ownedQuotes      Quote[]   @relation("QuoteOwnedBy")
   chats  Chat[]
 
   @@index([number])
@@ -260,7 +257,6 @@ model Journey {
   dealerContact   Contact?             @relation("JourneyDealerContact", fields: [dealerContactId], references: [id])
   createdBy       Employee?            @relation("JourneyCreatedBy", fields: [createdById], references: [id])
   interactions    JourneyInteraction[] @relation("JourneyInteractions")
-  quotes          Quote[]              @relation("JourneyQuotes")
 
   @@index([createdById])
   @@map("journeys")
@@ -436,34 +432,6 @@ model Message {
   @@map("messages")
 }
 
-model Quote {
-  id           String      @id @default(uuid())
-  journeyId    String?
-  year         Int
-  number       String
-  revision     String
-  status       QuoteStatus
-  ownerId      String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  approvedAt   DateTime?
-  deletedAt    DateTime?
-  createdById  String
-  updatedById  String
-  approvedById String?
-
-  journey    Journey?    @relation("JourneyQuotes", fields: [journeyId], references: [id])
-  owner      Employee?   @relation("QuoteOwnedBy", fields: [ownerId], references: [id])
-  createdBy  Employee?   @relation("QuoteCreatedBy", fields: [createdById], references: [id])
-  approvedBy Employee?   @relation("QuoteApprovedBy", fields: [approvedById], references: [id])
-
-  @@unique([number, revision])
-  @@index([createdById])
-  @@index([approvedById])
-  @@map("quotes")
-}
-
-
 
 model OptionHeader {
   id          String    @id @default(uuid())
@@ -600,25 +568,6 @@ model ConfigurationOption {
   @@id([configurationId, optionId])
   @@index([createdById])
   @@map("configuration_options")
-}
-
-model Item {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  unitPrice   Float     @default(0)
-  type        String
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
-
-  quoteItems QuoteItem[]
-
-  @@index([createdById])
-  @@map("items")
 }
 
 model NtfyDevice {
@@ -833,6 +782,25 @@ model ProductClassOptionCategory {
   @@map("product_class_option_categories")
 }
 
+model Item {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  unitPrice   Float     @default(0)
+  type        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  quoteItems QuoteItem[]
+
+  @@index([createdById])
+  @@map("items")
+}
+
 // EquipList + LeadTime (112 default) - Might migrate into product classes
 model Model {
   id String @id @default(uuid())
@@ -885,11 +853,16 @@ model QuoteDetails {
   status QuoteStatus @default(DRAFT)
   approvedById String?
   sentById String?
-  notes String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   quoteHeader QuoteHeader? @relation(fields: [quoteHeaderId], references: [id])
   items      QuoteItem[]
   terms      QuoteTerms[]
+  notes      QuoteNote[]
 
   @@unique([quoteHeaderId, revision])
   @@map("quote_details")
@@ -923,16 +896,20 @@ model QuoteItem {
   @@map("quote_items")
 }
 
-// QtTerms
 model QuoteTerms {
-  id String @id @default(uuid())
+  id             String   @id @default(uuid())
   quoteDetailsId String
-  percentage Int
-  netDays Int
-  verbiage String
-  amount Decimal
-
-  quotes         QuoteDetails  @relation(fields: [quoteDetailsId], references: [id])
+  percentage     Int?     // from Percent
+  netDays        Int      // from NetDays  
+  amount         Decimal? // from Amount
+  verbiage       String?  // from Verbiage
+  dueOrder       Int?     // from DueOrder (for multiple terms ordering)
+  customTerms    String?  // from CustomTerms (free-form override text)
+  notToExceed    Decimal? // from NotToExceed (maximum cap)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  quote QuoteDetails @relation(fields: [quoteDetailsId], references: [id], onDelete: Cascade)
 
   @@map("quote_terms")
 }
