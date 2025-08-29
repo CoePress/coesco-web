@@ -96,6 +96,7 @@ class roll_str_backbend_input(BaseModel):
     thickness: float
     width: float
     material_type: str
+    material_thickness: float
     str_model: str
     num_str_rolls: int
 

@@ -29,15 +29,19 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  const successColor = 'var(--color-success)';
+  const errorColor = 'var(--color-error)';
+  const warningColor = 'var(--color-warning)';
+
   // Checks
-  const requiredForceCheck = data.strUtility?.straightener?.required?.jackForceCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const pinchRollCheck = data.strUtility?.straightener?.required?.pinchRollCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const strRollCheck = data.strUtility?.straightener?.required?.strRollCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const horsepowerCheck = data.strUtility?.straightener?.required?.horsepowerCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const backupRollsCheck = data.strUtility?.straightener?.required?.backupRollsCheck === "OK" ? "var(--color-success)" : "var(--color-warning)";
-  const fpmCheck = data.strUtility?.straightener?.required?.fpmCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const yieldMet = data.reelDrive?.reel?.reelDriveOK === "OK" ? "var(--color-success)" : "var(--color-error)";
-  const feedRateCheck = data.strUtility?.straightener?.required?.feedRateCheck === "OK" ? "var(--color-success)" : "var(--color-error)";  
+  let requiredForceCheck = data.strUtility?.straightener?.required?.jackForceCheck === 'OK' ? successColor : errorColor;
+  let pinchRollCheck = data.strUtility?.straightener?.required?.pinchRollCheck === 'OK' ? successColor : errorColor;
+  let strRollCheck = data.strUtility?.straightener?.required?.strRollCheck === 'OK' ? successColor : errorColor;
+  let horsepowerCheck = data.strUtility?.straightener?.required?.horsepowerCheck === 'OK' ? successColor : errorColor;
+  let backupRollsCheck = data.strUtility?.straightener?.required?.backupRollsCheck === 'Back Up Rolls Recommended' ? successColor : warningColor;
+  let fpmCheck = data.strUtility?.straightener?.required?.fpmCheck === 'FPM SUFFICIENT' ? successColor : errorColor;
+  let yieldMet = data.reelDrive?.reel?.reelDriveOK === 'OK' ? successColor : errorColor;
+  let feedRateCheck = data.strUtility?.straightener?.required?.feedRateCheck === 'OK' ? successColor : errorColor;
 
   // Status calculation functions
   const statusCalculations = useMemo(() => {
@@ -421,6 +425,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
+              style={{ backgroundColor: requiredForceCheck }}
             />
             <Input
               label="Rated Force (lbs)"
@@ -436,7 +441,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.pinch.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              style={{ backgroundColor: pinchRollCheck }}
             />
             <Input
               label="Pinch Roll Rated Torque"
@@ -452,7 +457,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.straightener.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              style={{ backgroundColor: strRollCheck }}
             />
             <Input
               label="Str. Roll Rated Torque"
@@ -468,7 +473,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.horsepower"
               value={localData.strUtility?.straightener?.required?.horsepower?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              style={{ backgroundColor: horsepowerCheck }}
             />
           </div>
         </div>
@@ -532,36 +537,21 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
       </Text>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className={`p-3 rounded text-center font-medium ${
-          statusCalculations.jackForce.isOk ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          backupRollsCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
         }`}>
           <Text className="text-sm">{statusCalculations.jackForce.status}</Text>
           <Text className="text-xs mt-1">Back Up Rolls Recommended</Text>
         </div>
         <div className={`p-3 rounded text-center font-medium ${
-          statusCalculations.pinchGear.isOk ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
-          <Text className="text-sm">{statusCalculations.pinchGear.status}</Text>
-        </div>
-        <div className={`p-3 rounded text-center font-medium ${
-          statusCalculations.strGear.isOk ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
-          <Text className="text-sm">{statusCalculations.strGear.status}</Text>
-        </div>
-        <div className={`p-3 rounded text-center font-medium ${
-          statusCalculations.hp.isOk ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
-          <Text className="text-sm">{statusCalculations.hp.status}</Text>
-        </div>
-        <div className={`p-3 rounded text-center font-medium ${
-          statusCalculations.fpm.isOk ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          fpmCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
         }`}>
           <Text className="text-sm">{statusCalculations.fpm.status}</Text>
         </div>
         <div className={`p-3 rounded text-center font-medium ${
-          Object.values(statusCalculations).every(calc => calc.isOk) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          yieldMet ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
         }`}>
           <Text className="text-sm">
-            {Object.values(statusCalculations).every(calc => calc.isOk) ? "All Str. Utility OK" : "Review Required"}
+            {feedRateCheck ? "All Str. Utility OK" : "Review Required"}
           </Text>
         </div>
       </div>

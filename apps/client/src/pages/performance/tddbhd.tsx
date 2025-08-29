@@ -34,15 +34,18 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  const successColor = 'var(--color-success)';
+  const errorColor = 'var(--color-error)';
+
   // Checks
-  const minMaterialWidthCheck = data.tddbhd?.reel?.checks?.minMaterialWidthCheck === "PASS" ? "var(--color-success)" : "var(--color-error)";
-  const airPressureCheck = data.tddbhd?.reel?.checks?.airPressureCheck === "PASS" ? "var(--color-success)" : "var(--color-error)";
-  const rewindTorqueCheck = data.tddbhd?.reel?.checks?.rewindTorqueCheck === "PASS" ? "var(--color-success)" : "var(--color-error)";
-  const holdDownForceCheck = data.tddbhd?.reel?.checks?.holdDownForceCheck === "PASS" ? "var(--color-success)" : "var(--color-error)";
-  const brakePressCheck = data.tddbhd?.reel?.checks?.brakePressCheck === "PASS" ? "var(--color-success)" : "var(--color-eroor)";
-  const torqueRequiredCheck = data.tddbhd?.reel?.checks?.torqueRequiredCheck === "PASS" ? "var(--color-success)" : "var(--color-error)";
-  const tddbhdCheck = data.tddbhd?.reel?.checks?.tddbhdCheck === "OK" ? "var(--color-success)" : "var(--color-error)";
-  
+  let minMaterialWidthCheck = data.tddbhd?.reel?.checks?.minMaterialWidthCheck === "PASS" ? successColor : errorColor;
+  let airPressureCheck = data.tddbhd?.reel?.checks?.airPressureCheck === "PASS" ? successColor : errorColor;
+  let rewindTorqueCheck = data.tddbhd?.reel?.checks?.rewindTorqueCheck === "PASS" ? successColor : errorColor;
+  let holdDownForceCheck = data.tddbhd?.reel?.checks?.holdDownForceCheck === "PASS" ? successColor : errorColor;
+  let brakePressCheck = data.tddbhd?.reel?.checks?.brakePressCheck === "PASS" ? successColor : errorColor;
+  let torqueRequiredCheck = data.tddbhd?.reel?.checks?.torqueRequiredCheck === "PASS" ? successColor : errorColor;
+  let tddbhdCheck = data.tddbhd?.reel?.checks?.tddbhdCheck === "OK" ? successColor : errorColor;
+
   // Customer and Date Section
   const customerDateSection = useMemo(() => (
     <Card className="mb-4 p-4">

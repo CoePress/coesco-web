@@ -29,8 +29,10 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
 
 // Common interfaces that are shared across pages
 export interface RollDetail {
-  height?: number;
+  height?: string;
+  heightCheck?: string;
   forceRequired?: number;
+  forceRequiredCheck?: string;
   numberOfYieldStrainsAtSurface?: number;
   up?: {
     resultingRadius?: number;
@@ -363,14 +365,14 @@ export interface ReelDriveData {
         torque?: number; // Calculated
         horsepowerRequired?: number; // Calculated
         horsepowerCheck?: string; // Calculated
-        regen?: string; // Calculated
+        regen?: number; // Calculated
         regenCheck?: string; // Calculated
       };
       full?: {
         torque?: number; // Calculated
         horsepowerRequired?: number; // Calculated
         horsepowerCheck?: string; // Calculated
-        regen?: string; // Calculated
+        regen?: number; // Calculated
         regenCheck?: string; // Calculated
       };
     };
@@ -482,11 +484,13 @@ export interface RollStrBackbendData {
           depthRequiredCheck?: string; // Calculated
           forceRequired?: number; // Calculated
           forceRequiredCheck?: string; // Calculated
+          percentYieldCheck?: string; // Calculated
           first?: RollDetail;
           middle?: RollDetail & { [key: number]: RollDetail };
           last?: {
             height?: number;
             forceRequired?: number;
+            forceRequiredCheck?: string;
             numberOfYieldStrainsAtSurface?: number;
             up?: {
               resultingRadius?: number;
@@ -528,19 +532,26 @@ export interface FeedData {
     regen?: number; // Calculated
     reflInertia?: number; // Calculated
     match?: number; // Calculated
+    matchCheck?: string; // Calculated
     materialInLoop?: number; // Calculated
+    feedCheck?: string; // Calculated
     torque?: {
       motorPeak?: number; // Calculated
       peak?: number; // Calculated
+      peakCheck?: string; // Calculated
       frictional?: number; // Calculated
       loop?: number; // Calculated
       settle?: number; // Calculated
       rms?: {
         motor?: number; // Calculated
+        motorCheck?: string; // Calculated
         feedAngle1?: number; // Calculated
+        feedAngle1Check?: string; // Calculated
         feedAngle2?: number; // Calculated
+        feedAngle2Check?: string; // Calculated
       };
       acceleration?: number; // Calculated
+      accelerationCheck?: string; // Calculated
     };
     pullThru?: {
       isPullThru?: string;
@@ -613,6 +624,7 @@ export interface ShearData {
           tons?: number;
         };
         requiredToShear?: number;
+        requiredToShearCheck?: string;
       };
       safetyFactor?: number;
       perMinute?: {
@@ -945,14 +957,14 @@ const initialPerformanceData: PerformanceData = {
           torque: 0,
           horsepowerRequired: 0,
           horsepowerCheck: "",
-          regen: "",
+          regen: 0,
           regenCheck: "",
         },
         full: {
           torque: 0,
           horsepowerRequired: 0,
           horsepowerCheck: "",
-          regen: "",
+          regen: 0,
           regenCheck: "",
         },
       },
@@ -1056,8 +1068,9 @@ const initialPerformanceData: PerformanceData = {
             depthRequiredCheck: "",
             forceRequired: 0,
             forceRequiredCheck: "",
+            percentYieldCheck: "",
             first: {
-              height: 0,
+              height: "",
               forceRequired: 0,
               numberOfYieldStrainsAtSurface: 0,
               up: {
@@ -1080,7 +1093,7 @@ const initialPerformanceData: PerformanceData = {
               },
             },
             middle: {
-              height: 0,
+              height: "",
               forceRequired: 0,
               numberOfYieldStrainsAtSurface: 0,
               up: {
@@ -1144,19 +1157,26 @@ const initialPerformanceData: PerformanceData = {
       regen: 0,
       reflInertia: 0,
       match: 0,
+      matchCheck: "",
       materialInLoop: 0,
+      feedCheck: "",
       torque: {
         motorPeak: 0,
         peak: 0,
+        peakCheck: "",
         frictional: 0,
         loop: 0,
         settle: 0,
         rms: {
           motor: 0,
+          motorCheck: "",
           feedAngle1: 0,
+          feedAngle1Check: "",
           feedAngle2: 0,
+          feedAngle2Check: "",
         },
         acceleration: 0,
+        accelerationCheck: "",
       },
       pullThru: {
         isPullThru: "",
@@ -1217,6 +1237,7 @@ const initialPerformanceData: PerformanceData = {
             tons: 0,
           },
           requiredToShear: 0,
+          requiredToShearCheck: "",
         },
         safetyFactor: 0,
         perMinute: {

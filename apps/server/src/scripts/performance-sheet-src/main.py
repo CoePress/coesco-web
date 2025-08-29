@@ -245,6 +245,7 @@ def main():
         "thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
         "width": parse_float_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
         "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
+        "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
         "str_model": parse_str_with_default(data, ["common", "equipment", "straightener", "model"], "straightener", "model"),
         "num_str_rolls": parse_int_with_default(data, ["common", "equipment", "straightener", "numberOfRolls"], "straightener", "number_of_rolls"),
     }

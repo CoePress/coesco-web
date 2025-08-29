@@ -56,6 +56,11 @@ def calculate_hyd_shear(data: hyd_shear_input, spec_type: str = "single_rake"):
         area_of_cut = (data.material_thickness * length_of_init_cut) / 2
         actual_opening_above_max_material = data.stroke - min_stroke_for_blade
 
+    if total_force_applied_lbs > (force_req_to_shear * 1.15):
+        force_req_to_shear_check = "OK"
+    else:
+        force_req_to_shear_check = "NOT OK"
+
     return {
         "shear_strength": shear_strength,
 
@@ -74,6 +79,7 @@ def calculate_hyd_shear(data: hyd_shear_input, spec_type: str = "single_rake"):
         "force_per_cylinder": force_per_cylinder,
         "total_force_applied_lbs": total_force_applied_lbs,
         "force_req_to_shear": force_req_to_shear,
+        "force_req_to_shear_check": force_req_to_shear_check,
         "total_force_applied_tons": total_forve_applied_tons,
         "safety_factor": safety_factor,
         "instant_gallons_per_minute_req": instant_gallons_per_minute_req,

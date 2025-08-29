@@ -558,13 +558,16 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequired', rollStrResults.roller_depth_required);
     }
     if (rollStrResults.roller_depth_required_check !== undefined) {
-      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.yieldMet', rollStrResults.roller_depth_required_check === "OK" ? "Yes" : "No");
+      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.yieldMet', rollStrResults.roller_depth_required_check);
     }
     if (rollStrResults.roller_force_required !== undefined) {
       setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired', rollStrResults.roller_force_required);
     }
     if (rollStrResults.roller_force_required_check !== undefined) {
-      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck', rollStrResults.roller_force_required_check === "OK" ? "Yes" : "No");
+      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck', rollStrResults.roller_force_required_check);
+    }
+    if (rollStrResults.percent_yield_check !== undefined) {
+      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck', rollStrResults.percent_yield_check);
     }
     
     // Map first roller calculations - UP direction
@@ -593,6 +596,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       }
       if (firstUp.force_required_first_up !== undefined) {
         setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequired', firstUp.force_required_first_up);
+      }
+      if (firstUp.force_required_check_first_up !== undefined) {
+        setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequiredCheck', firstUp.force_required_check_first_up);
       }
       if (firstUp.percent_yield_first_up !== undefined) {
         setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.first.up.percentOfThicknessYielded', firstUp.percent_yield_first_up === "NONE" ? 0 : firstUp.percent_yield_first_up);
@@ -672,6 +678,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
         if (midUp.force_required_mid_up !== undefined) {
           setNestedValue(updatedResults, `rollStrBackbend.straightener.rolls.backbend.rollers.${rollerPath}.forceRequired`, midUp.force_required_mid_up);
         }
+        if (midUp.force_required_check_mid_up !== undefined) {
+          setNestedValue(updatedResults, `rollStrBackbend.straightener.rolls.backbend.rollers.${rollerPath}.up.forceRequiredCheck`, midUp.force_required_check_mid_up);
+        }
         if (midUp.percent_yield_mid_up !== undefined) {
           setNestedValue(updatedResults, `rollStrBackbend.straightener.rolls.backbend.rollers.${rollerPath}.up.percentOfThicknessYielded`, midUp.percent_yield_mid_up === "NONE" ? 0 : midUp.percent_yield_mid_up);
         }
@@ -737,6 +746,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       if (last.force_required_last !== undefined) {
         setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired', last.force_required_last);
       }
+      if (last.force_required_check_last !== undefined) {
+        setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequiredCheck', last.force_required_check_last);
+      }
       if (last.percent_yield_last !== undefined) {
         setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.last.up.percentOfThicknessYielded', last.percent_yield_last === "NONE" ? 0 : last.percent_yield_last);
       }
@@ -774,6 +786,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     if (feedResults.motor_rms_torque !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.rms.motor', feedResults.motor_rms_torque);
     }
+    if (feedResults.motor_rms_torque_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.torque.rms.motorCheck', feedResults.motor_rms_torque_check);
+    }
     if (feedResults.frictiaonal_torque !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.frictional', feedResults.frictiaonal_torque);
     }
@@ -786,14 +801,26 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     if (feedResults.peak_torque !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.peak', feedResults.peak_torque);
     }
+    if (feedResults.peak_torque_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.torque.peakCheck', feedResults.peak_torque_check);
+    }
     if (feedResults.acceleration_torque !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.acceleration', feedResults.acceleration_torque);
+    }
+    if (feedResults.acceleration_torque_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.torque.accelerationCheck', feedResults.acceleration_torque_check);
     }
     if (feedResults.rms_torque_fa1 !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.rms.feedAngle1', feedResults.rms_torque_fa1);
     }
+    if (feedResults.rms_torque_fa1_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.torque.rms.feedAngle1Check', feedResults.rms_torque_fa1_check);
+    }
     if (feedResults.rms_torque_fa2 !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.torque.rms.feedAngle2', feedResults.rms_torque_fa2);
+    }
+    if (feedResults.rms_torque_fa2_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.torque.rms.feedAngle2Check', feedResults.rms_torque_fa2_check);
     }
     
     // Map inertia and match calculations
@@ -802,6 +829,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     }
     if (feedResults.match !== undefined) {
       setNestedValue(updatedResults, 'feed.feed.match', feedResults.match);
+    }
+    if (feedResults.match_check !== undefined) {
+      setNestedValue(updatedResults, 'feed.feed.matchCheck', feedResults.match_check);
     }
     
     // Map regenerative power
@@ -895,6 +925,9 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     }
     if (shearResults.force_req_to_shear !== undefined) {
       setNestedValue(updatedResults, 'shear.shear.conclusions.force.requiredToShear', shearResults.force_req_to_shear);
+    }
+    if (shearResults.force_req_to_shear_check !== undefined) {
+      setNestedValue(updatedResults, 'shear.shear.conclusions.force.requiredToShearCheck', shearResults.force_req_to_shear_check);
     }
     if (shearResults.total_force_applied_tons !== undefined) {
       setNestedValue(updatedResults, 'shear.shear.conclusions.force.totalApplied.tons', shearResults.total_force_applied_tons);

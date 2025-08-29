@@ -408,9 +408,11 @@
             "depthRequiredCheck": "",
             "forceRequired": 0,
             "forceRequiredCheck": "",
+            "percentYieldCheck": "",
             "first": {
-              "height": 0,
+              "height": "",
               "forceRequired": 0,
+              "forceRequiredCheck": "",
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -434,6 +436,7 @@
             "middle": {
               "height": 0,
               "forceRequired": 0,
+              "forceRequiredCheck": "",
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -457,6 +460,7 @@
             "last": {
               "height": 0,
               "forceRequired": 0,
+              "forceRequiredCheck": "",
               "numberOfYieldStrainsAtSurface": 0,
               "up": {
                 "resultingRadius": 0,
@@ -496,19 +500,26 @@
       "regen": 0,
       "reflInertia": 0,
       "match": 0,
+      "matchCheck": "NOT OK",
       "materialInLoop": 283,
+      "feedCheck": "NOT OK",
       "torque": {
         "motorPeak": 0,
         "peak": 0,
+        "peakCheck": "NOT OK",
         "frictional": 0,
         "loop": 0,
         "settle": 0,
         "rms": {
           "motor": 0,
+          "motorCheck": "NOT OK",
           "feedAngle1": 0,
-          "feedAngle2": 0
+          "feedAngle1Check": "NOT OK",
+          "feedAngle2": 0,
+          "feedAngle2Check": "NOT OK"
         },
-        "acceleration": 0
+        "acceleration": 0,
+        "accelerationCheck": "NOT OK"
       },
       "pullThru": {
         "isPullThru": "No",
@@ -568,7 +579,8 @@
             "lbs": 0,
             "tons": 0
           },
-          "requiredToShear": 0
+          "requiredToShear": 0,
+          "requiredToShearCheck": "NOT OK"
         },
         "safetyFactor": 0,
         "perMinute": {
