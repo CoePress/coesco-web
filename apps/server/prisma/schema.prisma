@@ -862,7 +862,6 @@ model QuoteDetails {
   quoteHeader QuoteHeader? @relation(fields: [quoteHeaderId], references: [id])
   items      QuoteItem[]
   terms      QuoteTerms[]
-  notes      QuoteNote[]
 
   @@unique([quoteHeaderId, revision])
   @@map("quote_details")

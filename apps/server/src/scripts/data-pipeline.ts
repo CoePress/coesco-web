@@ -235,103 +235,107 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
 
       logger.info(`Processing batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
 
-      for (const record of sourceRecords) {
-        try {
-          // Apply filter if provided
-          if (mapping.filter && !mapping.filter(record)) {
-            result.skipped++;
-            continue;
-          }
+      // Process records in smaller batches for createMany
+      const createBatchSize = 1000;
+      const recordBatches = [];
+      
+      for (let i = 0; i < sourceRecords.length; i += createBatchSize) {
+        recordBatches.push(sourceRecords.slice(i, i + createBatchSize));
+      }
 
-          // Map fields
-          const mappedData: any = {};
-          let skipRecord = false;
-
-          for (const fieldMap of mapping.fieldMappings) {
-            const sourceValue = record[fieldMap.from];
-
-            // Check required fields
-            if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
-              logger.warn(`Required field ${fieldMap.from} is missing in record`);
-              skipRecord = true;
-              break;
-            }
-
-            // Apply transformation or use default value
-            let targetValue;
-            if (fieldMap.transform) {
-              targetValue = fieldMap.transform(sourceValue, record);
-            }
-            else if (sourceValue !== null && sourceValue !== undefined) {
-              targetValue = sourceValue;
-            }
-            else if (fieldMap.defaultValue !== undefined) {
-              targetValue = fieldMap.defaultValue;
-            }
-            else {
-              targetValue = null;
-            }
-
-            mappedData[fieldMap.to] = targetValue;
-          }
-
-          if (skipRecord) {
-            result.skipped++;
-            continue;
-          }
-
-          // Apply beforeSave hook if provided
-          const dataToSave = mapping.beforeSave
-            ? await mapping.beforeSave(mappedData, record)
-            : mappedData;
-
-          // Skip if beforeSave returned null (e.g., missing references)
-          if (dataToSave === null) {
-            result.skipped++;
-            continue;
-          }
-
-          // Check for duplicates if configured
-          if (mapping.skipDuplicates) {
-            const duplicateCheck = mapping.duplicateCheck
-              ? mapping.duplicateCheck(dataToSave)
-              : dataToSave;
-
-            const existingRecord = await (mainDatabase as any)[mapping.targetTable].findFirst({
-              where: duplicateCheck,
-            });
-
-            if (existingRecord) {
-              logger.debug(`Skipping duplicate record: ${JSON.stringify(duplicateCheck)}`);
+      for (const batchRecords of recordBatches) {
+        const recordsToCreate = [];
+        
+        for (const record of batchRecords) {
+          try {
+            // Apply filter if provided
+            if (mapping.filter && !mapping.filter(record)) {
               result.skipped++;
               continue;
             }
+
+            // Map fields
+            const mappedData: any = {};
+            let skipRecord = false;
+
+            for (const fieldMap of mapping.fieldMappings) {
+              const sourceValue = record[fieldMap.from];
+
+              // Check required fields
+              if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
+                logger.warn(`Required field ${fieldMap.from} is missing in record`);
+                skipRecord = true;
+                break;
+              }
+
+              // Apply transformation or use default value
+              let targetValue;
+              if (fieldMap.transform) {
+                targetValue = fieldMap.transform(sourceValue, record);
+              }
+              else if (sourceValue !== null && sourceValue !== undefined) {
+                targetValue = sourceValue;
+              }
+              else if (fieldMap.defaultValue !== undefined) {
+                targetValue = fieldMap.defaultValue;
+              }
+              else {
+                targetValue = null;
+              }
+
+              mappedData[fieldMap.to] = targetValue;
+            }
+
+            if (skipRecord) {
+              result.skipped++;
+              continue;
+            }
+
+            // Apply beforeSave hook if provided
+            const dataToSave = mapping.beforeSave
+              ? await mapping.beforeSave(mappedData, record)
+              : mappedData;
+
+            // Skip if beforeSave returned null (e.g., missing references)
+            if (dataToSave === null) {
+              result.skipped++;
+              continue;
+            }
+
+            // Clean up any temporary fields that start with _temp
+            const cleanedData = Object.fromEntries(
+              Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
+            );
+
+            recordsToCreate.push(cleanedData);
           }
-
-          // Clean up any temporary fields that start with _temp
-          const cleanedData = Object.fromEntries(
-            Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
-          );
-
-          // Save to database
-          logger.debug(`About to create ${mapping.targetTable} with data:`, JSON.stringify(cleanedData, null, 2));
-          const savedRecord = await (mainDatabase as any)[mapping.targetTable].create({
-            data: cleanedData,
-          });
-
-          result.created++;
-
-          // Apply afterSave hook if provided
-          if (mapping.afterSave) {
-            await mapping.afterSave(savedRecord, record);
+          catch (error) {
+            logger.error(`Error processing record:`, error);
+            result.errors++;
+            result.errorDetails.push({ record, error });
           }
-
-          logger.debug(`Created record ${result.created}/${result.total}`);
         }
-        catch (error) {
-          logger.error(`Error processing record:`, error);
-          result.errors++;
-          result.errorDetails.push({ record, error });
+
+        // Individual inserts with error handling for duplicates
+        for (const data of recordsToCreate) {
+          try {
+            await (mainDatabase as any)[mapping.targetTable].create({ data });
+            result.created++;
+          }
+          catch (err) {
+            const error = err as any;
+            if (error.code === 'P2002') {
+              // Unique constraint violation - treat as duplicate
+              result.skipped++;
+            } else {
+              result.errors++;
+              logger.error(`Error creating record:`, err);
+            }
+          }
+        }
+        
+        if (recordsToCreate.length > 0) {
+          logger.info(`Processed ${recordsToCreate.length} records in batch`);
         }
       }
 
@@ -859,16 +863,47 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
   return result;
 }
 
-export async function migrateQuoteNotes(): Promise<MigrationResult> {
+export async function migrateQuoteTerms(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
-    sourceTable: "QtNotes",
-    targetTable: "quoteNote",
+    sourceTable: "QtTerms",
+    targetTable: "quoteTerms",
     fieldMappings: [
       {
-        from: "Note",
-        to: "note",
-        transform: value => trimWhitespace(value),
+        from: "Percent",
+        to: "percentage",
+        transform: value => value ? Number.parseInt(value) : null,
+      },
+      {
+        from: "NetDays",
+        to: "netDays",
+        transform: value => Number.parseInt(value) || 0,
+        required: true,
+      },
+      {
+        from: "Amount",
+        to: "amount",
+        transform: value => value ? Number.parseFloat(value) : null,
+      },
+      {
+        from: "Verbiage",
+        to: "verbiage",
+        transform: value => value?.trim() || null,
+      },
+      {
+        from: "DueOrder",
+        to: "dueOrder",
+        transform: value => value ? Number.parseInt(value) : null,
+      },
+      {
+        from: "CustomTerms",
+        to: "customTerms",
+        transform: value => value?.trim() || null,
+      },
+      {
+        from: "NotToExceed",
+        to: "notToExceed",
+        transform: value => value ? Number.parseFloat(value) : null,
       },
     ],
     beforeSave: async (data, original) => {
@@ -886,7 +921,7 @@ export async function migrateQuoteNotes(): Promise<MigrationResult> {
       // Then find the specific quoteDetails by quoteHeaderId and revision
       const quote = await findReferencedRecord("quoteDetails", {
         quoteHeaderId: quoteHeader.id,
-        revision: original.QRev?.toString() || "A",
+        revision: original.QRev?.toString().toUpperCase() || "A",
       });
 
       if (!quote) {
@@ -899,17 +934,17 @@ export async function migrateQuoteNotes(): Promise<MigrationResult> {
       data.quote = {
         connect: { id: quote.id },
       };
-      data.createdAt = new Date(original.NoteDate);
-      data.updatedAt = new Date(original.NoteDate);
-      data.createdById = original.CoeRSM.toString() || "system";
-      data.updatedById = original.CoeRSM.toString() || "system";
+      data.createdAt = new Date();
+      data.updatedAt = new Date();
+
       return data;
     },
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
         { quoteDetailsId: data._tempQuoteDetailsId },
-        { note: data.note },
+        { netDays: data.netDays },
+        { dueOrder: data.dueOrder },
       ],
     }),
     batchSize: 100,
@@ -983,12 +1018,12 @@ async function main() {
     // const companyResult = await migrateCompanies();
     const quoteHeaders = await migrateQuotes();
     const quotes = await migrateQuoteRevisions();
-    const quoteNotes = await migrateQuoteNotes();
+    const quoteTerms = await migrateQuoteTerms();
 
     logger.info("Migration Results:", {
       quoteHeaders,
       quotes,
-      quoteNotes,
+      quoteTerms,
       // schema,
     });
   }
