@@ -1,153 +1,75 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 
+import { quotingService } from "@/services";
 import { asyncWrapper } from "@/utils";
 
 export class QuoteController {
-  // Quote Items
-  async createQuoteItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createQuote = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await quotingService.createQuote(req.body);
+    res.status(201).json(result);
+  });
 
-  async getQuoteItems(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getQuoteItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async updateQuoteItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteQuoteItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  // Actions
-  approveQuote = asyncWrapper(async (_req: Request, _res: Response) => {
-    const result = "Quote approved";
+  getQuotes = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.getAllQuotesWithLatestRevision(req.query);
     return result;
   });
 
-  async reviseQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.getQuoteWithDetails(req.params.id);
+    return result;
+  });
 
-  async acceptQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.updateQuote(req.params.id, req.body);
+    return result;
+  });
 
-  async rejectQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteQuote = asyncWrapper(async (req: Request, res: Response) => {
+    await quotingService.deleteQuote(req.params.id);
+    res.status(204).send();
+  });
 
-  async cancelQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  // Revision Management
+  createRevision = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await quotingService.createQuoteRevision(req.params.id, req.body);
+    res.status(201).json(result);
+  });
 
-  async expireQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRevisions = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.getQuoteRevisions(req.params.id);
+    return result;
+  });
 
-  async sendQuote(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  // Actions
+  approveQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.approveQuote(req.params.id);
+    return result;
+  });
 
-  async exportPDF(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  reviseQuote = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await quotingService.createQuoteRevision(req.params.id, req.body);
+    res.status(201).json(result);
+  });
 
-  // Relations
-  async setOwner(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  acceptQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.acceptQuote(req.params.id);
+    return result;
+  });
 
-  async setJourney(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = "";
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  rejectQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.rejectQuote(req.params.id);
+    return result;
+  });
+
+  sendQuote = asyncWrapper(async (req: Request, _res: Response) => {
+    const result = await quotingService.sendQuote(req.params.id, req.body);
+    return result;
+  });
+
+  exportPDF = asyncWrapper(async (req: Request, res: Response) => {
+    const pdfBuffer = await quotingService.exportQuotePDF(req.params.id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=quote-${req.params.id}.pdf`);
+    res.send(pdfBuffer);
+  });
 }
