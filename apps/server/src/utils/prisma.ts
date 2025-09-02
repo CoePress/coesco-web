@@ -122,14 +122,15 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
 }
 
 export function buildQuery(params: IQueryParams<any>, searchFields?: Array<string | { field: string; weight: number }>): IQueryBuilderResult {
+  const page = typeof params.page === "string" ? Number.parseInt(params.page, 10) : (params.page || 1);
   const result: IQueryBuilderResult = {
     where: {},
-    page: params.page || 1,
+    page,
   };
 
   if (params.limit !== undefined) {
-    result.take = params.limit;
-    result.skip = ((result.page || 1) - 1) * result.take;
+    result.take = typeof params.limit === "string" ? Number.parseInt(params.limit, 10) : params.limit;
+    result.skip = (page - 1) * result.take;
   }
 
   const normalizedSearch = normalizeSearchFields(searchFields);

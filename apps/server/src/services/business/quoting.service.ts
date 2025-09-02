@@ -62,7 +62,16 @@ export class QuotingService {
       );
     }
 
-    return { header: headerResult.data, details: detailsResult.data };
+    return { 
+      success: true, 
+      data: { 
+        ...headerResult.data, 
+        latestRevision: detailsResult.data,
+        revision: detailsResult.data.revision,
+        status: detailsResult.data.status,
+        totalAmount: detailsResult.data.totalAmount || 0,
+      } 
+    };
   }
 
   async createQuoteRevision(quoteHeaderId: string, data: any) {
@@ -116,7 +125,16 @@ export class QuotingService {
     const headersResult = await quoteHeaderService.getAll(params);
 
     if (!headersResult.success || !headersResult.data?.length) {
-      return headersResult;
+      return {
+        success: true,
+        data: [],
+        meta: headersResult.meta || {
+          page: 1,
+          limit: 25,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     }
 
     const quotesWithRevisions = await Promise.all(
@@ -128,16 +146,22 @@ export class QuotingService {
           limit: 1,
         });
 
+        const latestRevision = latestRevisionResult.data?.[0] || null;
+        
         return {
           ...header,
-          latestRevision: latestRevisionResult.data?.[0] || null,
+          revision: latestRevision?.revision || "A",
+          status: latestRevision?.status || "DRAFT",
+          totalAmount: latestRevision?.totalAmount || 0,
+          latestRevision,
         };
       }),
     );
 
     return {
-      ...headersResult,
+      success: true,
       data: quotesWithRevisions,
+      meta: headersResult.meta,
     };
   }
 

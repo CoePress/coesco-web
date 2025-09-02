@@ -9,19 +9,19 @@ export class QuoteController {
     res.status(201).json(result);
   });
 
-  getQuotes = asyncWrapper(async (req: Request, _res: Response) => {
+  getQuotes = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.getAllQuotesWithLatestRevision(req.query);
-    return result;
+    res.status(200).json(result);
   });
 
-  getQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  getQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.getQuoteWithDetails(req.params.id);
-    return result;
+    res.status(200).json(result);
   });
 
-  updateQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  updateQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.updateQuote(req.params.id, req.body);
-    return result;
+    res.status(200).json(result);
   });
 
   deleteQuote = asyncWrapper(async (req: Request, res: Response) => {
@@ -35,15 +35,15 @@ export class QuoteController {
     res.status(201).json(result);
   });
 
-  getRevisions = asyncWrapper(async (req: Request, _res: Response) => {
+  getRevisions = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.getQuoteRevisions(req.params.id);
-    return result;
+    res.status(200).json(result);
   });
 
   // Actions
-  approveQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  approveQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.approveQuote(req.params.id);
-    return result;
+    res.status(200).json(result);
   });
 
   reviseQuote = asyncWrapper(async (req: Request, res: Response) => {
@@ -51,19 +51,19 @@ export class QuoteController {
     res.status(201).json(result);
   });
 
-  acceptQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  acceptQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.acceptQuote(req.params.id);
-    return result;
+    res.status(200).json(result);
   });
 
-  rejectQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  rejectQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.rejectQuote(req.params.id);
-    return result;
+    res.status(200).json(result);
   });
 
-  sendQuote = asyncWrapper(async (req: Request, _res: Response) => {
+  sendQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.sendQuote(req.params.id, req.body);
-    return result;
+    res.status(200).json(result);
   });
 
   exportPDF = asyncWrapper(async (req: Request, res: Response) => {

@@ -19,7 +19,7 @@ const Quotes = () => {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const include = useMemo(
-    () => ["journey", "journey.customer", "createdBy"],
+    () => ["journey", "journey.customer"],
     []
   );
 
