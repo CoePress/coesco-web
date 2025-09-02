@@ -14,6 +14,7 @@ router.delete("/:id", quoteController.deleteQuote);
 // Revisions
 router.post("/:id/revisions", quoteController.createRevision);
 router.get("/:id/revisions", quoteController.getRevisions);
+router.get("/:id/revisions/:revisionId", quoteController.getRevision);
 
 // Actions
 router.post("/:id/approve", quoteController.approveQuote);

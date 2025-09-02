@@ -288,6 +288,46 @@ export class QuotingService {
     return revisionsResult;
   }
 
+  async getQuoteRevision(quoteHeaderId: string, revisionId: string) {
+    const revisionResult = await quoteDetailsService.getById(revisionId);
+
+    if (!revisionResult.success || !revisionResult.data) {
+      throw new Error("Quote revision not found");
+    }
+
+    // Verify the revision belongs to the quote
+    if (revisionResult.data.quoteHeaderId !== quoteHeaderId) {
+      throw new Error("Quote revision not found");
+    }
+
+    // Get header info
+    const headerResult = await quoteHeaderService.getById(quoteHeaderId);
+    if (!headerResult.success || !headerResult.data) {
+      throw new Error("Quote not found");
+    }
+
+    // Get items and terms for this revision
+    const [itemsResult, termsResult] = await Promise.all([
+      quoteItemService.getAll({ filter: { quoteDetailsId: revisionId } }),
+      quoteTermsService.getAll({ filter: { quoteDetailsId: revisionId } }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        ...headerResult.data,
+        latestRevision: {
+          ...revisionResult.data,
+          items: itemsResult.data || [],
+          terms: termsResult.data || [],
+        },
+        revision: revisionResult.data.revision,
+        status: revisionResult.data.status,
+        totalAmount: revisionResult.data.totalAmount || 0,
+      },
+    };
+  }
+
   async approveQuote(id: string) {
     const quoteResult = await this.getQuoteWithDetails(id);
     if (!quoteResult.success || !quoteResult.data.latestRevision) {

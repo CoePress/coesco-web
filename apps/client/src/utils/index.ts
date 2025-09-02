@@ -117,8 +117,8 @@ export const instance = axios.create({
   },
 });
 
-export function formatQuoteNumber(year: string, quoteNumber: string, revision: string) {
+export function formatQuoteNumber(year: string, quoteNumber: string, revision?: string) {
   const yearSuffix = year.toString().slice(-2);
   const paddedQuoteNumber = quoteNumber.toString().padStart(5, '0');
-  return `${yearSuffix}-${paddedQuoteNumber}-${revision}`;
+  return revision ? `${yearSuffix}-${paddedQuoteNumber}-${revision}` : `${yearSuffix}-${paddedQuoteNumber}`;
 }

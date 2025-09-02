@@ -40,6 +40,11 @@ export class QuoteController {
     res.status(200).json(result);
   });
 
+  getRevision = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await quotingService.getQuoteRevision(req.params.id, req.params.revisionId);
+    res.status(200).json(result);
+  });
+
   // Actions
   approveQuote = asyncWrapper(async (req: Request, res: Response) => {
     const result = await quotingService.approveQuote(req.params.id);

@@ -18,7 +18,7 @@ import {
   Table,
   Tabs,
 } from "@/components";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
@@ -261,7 +261,9 @@ const QuoteDetails = () => {
   const customer = quoteOverview?.customer || null;
   const dealer = quoteOverview?.dealer || null;
 
-  const pageTitle = `${quoteOverview?.quote?.number} (${quoteOverview?.quote?.revision})`;
+  const pageTitle = quoteOverview?.year && quoteOverview?.number && quoteOverview?.revision 
+    ? formatQuoteNumber(quoteOverview.year, quoteOverview.number, quoteOverview.revision)
+    : `${quoteOverview?.number || "Q-2024-001"} (${quoteOverview?.revision || "A"})`;
   const pageDescription = `${quoteItems.reduce(
     (acc: number, item: any) => acc + item.quantity,
     0
@@ -396,15 +398,17 @@ const QuoteDetails = () => {
               <div className="space-y-1">
                 <div className="text-xs text-text-muted">Number</div>
                 <div className="text-sm font-medium text-text">
-                  {quoteOverview?.quote?.number || "Q-2024-001"}
+                  {quoteOverview?.year && quoteOverview?.number 
+                    ? formatQuoteNumber(quoteOverview.year, quoteOverview.number)
+                    : "25-00001"}
                 </div>
                 <div className="text-xs text-text-muted">Revision</div>
                 <div className="text-sm text-text">
-                  {quoteOverview?.quote?.revision || "A"}
+                  {quoteOverview?.revision || "A"}
                 </div>
                 <div className="text-xs text-text-muted">Status</div>
                 <div className="text-sm font-medium text-text">
-                  {quoteOverview?.quote?.status || "DRAFT"}
+                  {quoteOverview?.status || "DRAFT"}
                 </div>
               </div>
 
