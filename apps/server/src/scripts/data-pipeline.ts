@@ -897,7 +897,7 @@ async function migrateQuoteNotes(): Promise<MigrationResult> {
     targetTable: "quoteNote",
     fieldMappings: [
       {
-        from: "notebody",
+        from: "NoteBody",
         to: "body",
         transform: value => value?.toString().trim(),
         required: true,
@@ -917,8 +917,10 @@ async function migrateQuoteNotes(): Promise<MigrationResult> {
       }
 
       let year = parts[0];
-      const number = parts[1];
+      let number = parts[1];
       const revision = parts[2] || "A";
+
+      number = Number.parseInt(number).toString();
 
       if (year === "0000") {
         year = "2000";
@@ -948,7 +950,7 @@ async function migrateQuoteNotes(): Promise<MigrationResult> {
         return null;
       }
 
-      const timestamp = createDateFromSeconds(original.notedate, original.notetime);
+      const timestamp = createDateFromSeconds(original.NoteDate, original.NoteTime);
 
       data._tempQuoteDetailsId = quoteDetails.id;
 
@@ -998,8 +1000,8 @@ async function main() {
     // const models = await migrateModels();
     const quoteHeaders = await migrateQuotes();
     const quotes = await migrateQuoteRevisions();
-    const quoteItems = await migrateQuoteItems();
-    const quoteTerms = await migrateQuoteTerms();
+    // const quoteItems = await migrateQuoteItems();
+    // const quoteTerms = await migrateQuoteTerms();
     const quoteNotes = await migrateQuoteNotes();
 
     const endTime = Date.now();
@@ -1008,8 +1010,8 @@ async function main() {
     logger.info(`Migration Results (${duration}s):`);
     logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
-    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
-    logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
+    // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
     logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }
   catch (error) {
