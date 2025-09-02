@@ -3,7 +3,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuoteNumber } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
@@ -13,7 +13,7 @@ import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
+  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("year");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
@@ -85,7 +85,7 @@ const Quotes = () => {
       header: "Quote Number",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>{row.year}-{row.number}-{row.revision}</Link>
+        <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number, row.revision)}</Link>
       ),
     },
     {

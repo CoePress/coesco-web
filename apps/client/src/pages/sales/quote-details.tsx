@@ -181,25 +181,68 @@ const QuoteDetails = () => {
 
   const [quoteOverview, setQuoteOverview] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState<boolean>(true);
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
   const { get: getQuoteOverview } = useApi<IApiResponse<any>>();
+  const { get: getRevisions } = useApi<IApiResponse<any[]>>();
   
   const fetchQuoteOverview = async () => {
     if (!quoteId) return;
     setOverviewLoading(true);
-    const response = await getQuoteOverview(`/quotes/${quoteId}/overview`);
+    const response = await getQuoteOverview(`/quotes/${quoteId}`);
     if (response?.success) {
       setQuoteOverview(response.data);
     }
     setOverviewLoading(false);
   };
+
+  const fetchRevisionOverview = async (revisionId: string) => {
+    if (!quoteId) return;
+    setOverviewLoading(true);
+    const response = await getQuoteOverview(`/quotes/${quoteId}/revisions/${revisionId}`);
+    if (response?.success) {
+      setQuoteOverview(response.data);
+    }
+    setOverviewLoading(false);
+  };
+
+  const fetchRevisions = async () => {
+    if (!quoteId) return;
+    const response = await getRevisions(`/quotes/${quoteId}/revisions`);
+    if (response?.success) {
+      setRevisions(response.data || []);
+      // Set the current revision as selected if not already set
+      if (!selectedRevisionId && response.data && response.data.length > 0) {
+        const currentRevision = response.data.find((r: any) => r.isCurrent) || response.data[0];
+        setSelectedRevisionId(currentRevision.id);
+      }
+    }
+  };
   
   const refreshQuote = () => {
-    fetchQuoteOverview();
+    if (selectedRevisionId) {
+      fetchRevisionOverview(selectedRevisionId);
+    } else {
+      fetchQuoteOverview();
+    }
+    fetchRevisions();
+  };
+
+  const handleRevisionChange = (revisionId: string) => {
+    setSelectedRevisionId(revisionId);
+    fetchRevisionOverview(revisionId);
   };
   
   useEffect(() => {
     fetchQuoteOverview();
+    fetchRevisions();
   }, [quoteId]);
+
+  useEffect(() => {
+    if (selectedRevisionId) {
+      fetchRevisionOverview(selectedRevisionId);
+    }
+  }, [selectedRevisionId]);
 
   const { patch: updateLineNumberApi } = useApi<IApiResponse<any>>();
   
@@ -239,6 +282,28 @@ const QuoteDetails = () => {
 
   const Actions = () => {
     const actions = [];
+
+    // Add Revision Dropdown
+    if (revisions.length > 1) {
+      actions.push(
+        <div key="revision-dropdown" className="relative">
+          <select
+            value={selectedRevisionId || ""}
+            onChange={(e) => handleRevisionChange(e.target.value)}
+            className="appearance-none bg-surface border border-border rounded px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+            {revisions.map((revision) => (
+              <option key={revision.id} value={revision.id}>
+                Revision {revision.revision} {revision.isCurrent ? "(Current)" : ""}
+              </option>
+            ))}
+          </select>
+          <ChevronDown 
+            size={16} 
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" 
+          />
+        </div>
+      );
+    }
 
     // Add Customer/Dealer buttons for DRAFT quotes
     if (quoteOverview?.quote?.status === "DRAFT") {
