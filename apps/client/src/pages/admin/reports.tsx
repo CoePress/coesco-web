@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { FileText, Mail, Clock, Send } from "lucide-react";
 
 import { Button, Card, PageHeader, Modal } from "@/components";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { instance } from "@/utils";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 
 const Reports = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -19,11 +19,26 @@ const Reports = () => {
   const [timezone, setTimezone] = useState("America/New_York");
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
 
-  const {
-    entities: templates,
-    loading,
-    error,
-  } = useGetEntities("/email/templates");
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { get } = useApi<IApiResponse<any[]>>();
+  
+  const fetchTemplates = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await get("/email/templates");
+    if (response?.success) {
+      setTemplates(response.data || []);
+    } else {
+      setError(response?.error || "Failed to fetch templates");
+    }
+    setLoading(false);
+  };
+  
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
   const timezones = [
     "America/New_York",
@@ -75,14 +90,18 @@ const Reports = () => {
     },
   ];
 
+  const { get: getTemplate } = useApi<IApiResponse<{ html: string }>>();
+  
   useEffect(() => {
     const fetchTemplateHtml = async () => {
       if (selectedTemplate) {
         try {
-          const { data } = await instance.get(
-            `/email/templates/${selectedTemplate}`
-          );
-          setTemplateHtml(data.data.html);
+          const response = await getTemplate(`/email/templates/${selectedTemplate}`);
+          if (response?.success) {
+            setTemplateHtml(response.data.html);
+          } else {
+            setTemplateHtml(null);
+          }
         } catch (error) {
           console.error("Error fetching template HTML:", error);
           setTemplateHtml(null);

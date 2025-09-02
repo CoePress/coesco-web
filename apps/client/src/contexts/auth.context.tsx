@@ -1,5 +1,3 @@
-import { env } from "@/config/env";
-import axios from "axios";
 import {
   createContext,
   useState,
@@ -9,6 +7,8 @@ import {
   useRef,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 
 
 interface IAuthContextType {
@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false);
+  const { get } = useApi<IApiResponse<{ user: any; employee: any }>>();
 
   const setUser = (user: any, employee: any) => {
     setUserState(user);
@@ -54,15 +55,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       try {
-        const { data } = await axios.get(`${env.VITE_API_URL}/auth/session`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        });
-
-        setUserState(data.user);
-        setEmployeeState(data.employee);
+        const response = await get("/auth/session");
+        
+        // Handle both IApiResponse format and direct format
+        if (response?.success && response.data) {
+          // IApiResponse format
+          setUserState(response.data.user);
+          setEmployeeState(response.data.employee);
+        } else if (response?.user && response?.employee) {
+          // Direct format (legacy)
+          setUserState(response.user);
+          setEmployeeState(response.employee);
+        } else {
+          throw new Error("Session check failed");
+        }
         hasCheckedSession.current = true;
       } catch (error: any) {
         console.log("Session check failed:", error.response?.status);

@@ -1,5 +1,5 @@
 import { BeakerIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   StatusBadge,
@@ -10,7 +10,8 @@ import {
   Modal,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import { format } from "date-fns";
 
 interface IDevice {
@@ -36,6 +37,17 @@ const Devices = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<IDevice | null>(null);
+
+  // Data state
+  const [devices, setDevices] = useState<IDevice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 1,
+    total: 0,
+    limit: 25,
+  });
 
   // Form state
   const [deviceName, setDeviceName] = useState("");
@@ -118,18 +130,38 @@ const Devices = () => {
     },
   ];
 
-  const {
-    entities: devices,
-    loading,
-    error,
-    pagination,
-    refresh,
-  } = useGetEntities<IDevice>("/admin/devices", {
-    page,
-    limit,
-    sort,
-    order,
-  });
+  const { get, post, put } = useApi<IApiResponse<IDevice[]>>();
+
+  const fetchDevices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await get("/admin/devices", {
+        page,
+        limit,
+        sort,
+        order,
+      });
+
+      if (response?.success && response.data) {
+        setDevices(response.data as unknown as IDevice[]);
+        setPagination(prev => ({
+          ...prev,
+          ...response.meta,
+        }));
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch devices");
+      setDevices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDevices();
+  }, [page, limit, sort, order]);
 
   const resetForm = () => {
     setDeviceName("");
@@ -149,32 +181,14 @@ const Devices = () => {
 
     try {
       if (selectedDevice) {
-        // Update existing device
-        const response = await fetch(`http://localhost:8080/api/admin/devices/${selectedDevice.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(deviceData),
-          credentials: 'include', 
-        });
-        if (response.ok) {
-          setIsEditModalOpen(false);
-          resetForm();
-          refresh();
-        }
+        await put(`/admin/devices/${selectedDevice.id}`, deviceData);
+        setIsEditModalOpen(false);
       } else {
-        // Create new device
-        const response = await fetch("http://localhost:8080/api/admin/devices", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(deviceData),
-          credentials: 'include', 
-        });
-        if (response.ok) {
-          setIsAddModalOpen(false);
-          resetForm();
-          refresh();
-        }
+        await post("/admin/devices", deviceData);
+        setIsAddModalOpen(false);
       }
+      resetForm();
+      fetchDevices();
     } catch (error) {
       console.error("Error saving device:", error);
     }
@@ -187,21 +201,11 @@ const Devices = () => {
 
   const handleTest = async () => {
     try {
-        // Update existing device
-        const response = await fetch(`http://localhost:8080/api/admin/test-ntfy`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: 'include', 
-        });
-        if (response.ok) {
-          setIsEditModalOpen(false);
-          resetForm();
-          refresh();
-        }
+      await post("/admin/test-ntfy", {});
     } catch (error) {
-      console.error("Error saving device:", error);
+      console.error("Error testing notification:", error);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -224,7 +228,7 @@ const Devices = () => {
         <Button onClick={handleCreateClick}>
           <PlusIcon size={16} /> New Device
         </Button>
-        <Button onClick={refresh} variant="secondary-outline">
+        <Button onClick={fetchDevices} variant="secondary-outline">
           <RefreshCcwIcon size={16} /> Refresh
         </Button>
       </div>

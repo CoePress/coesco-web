@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EllipsisIcon } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
-import api from "@/utils/axios";
 import Button from "../ui/button";
 
 type Chat = {
@@ -34,7 +33,7 @@ export default function ChatSidebar() {
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
   
-  const { get } = useApi<IApiResponse<Chat[]>>();
+  const { get, delete: deleteChat, patch: patchChat } = useApi<IApiResponse<Chat[]>>();
   
   const refresh = () => setRefreshToggle(prev => !prev);
   
@@ -70,7 +69,7 @@ export default function ChatSidebar() {
   const handleDeleteChat = async (chatId: string) => {
     try {
       if (!chatId) throw new Error("Missing chat id");
-      await api.delete<{ success: boolean; data?: Chat }>(`/chat/${chatId}`);
+      await deleteChat(`/chat/${chatId}`);
       if (routeId === chatId) navigate("/chat");
     } catch (e) {
       console.error((e as any)?.message || "Failed to delete chat");
@@ -89,7 +88,7 @@ export default function ChatSidebar() {
   const saveEditing = async () => {
     if (!editingChatId) return;
     try {
-      await api.patch<{ success: boolean; data?: Chat }>(`/chat/${editingChatId}`, {
+      await patchChat(`/chat/${editingChatId}`, {
         name: editingName.trim(),
       });
     } catch (e) {
