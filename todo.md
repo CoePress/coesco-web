@@ -2,7 +2,6 @@
 
 ## To Do
 
-- Clean up hooks & api instance
 - Setup CI/CD with artifact transfer using rsync
 - Create shared package for prisma types
 - Randomize ports for ALL services

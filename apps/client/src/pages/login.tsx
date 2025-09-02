@@ -1,7 +1,7 @@
 import { Button, Input, Card } from "@/components";
 import { AuthContext } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import useLogin from "@/hooks/auth/use-login";
+import { useApi } from "@/hooks/use-api";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -44,7 +44,7 @@ const BackgroundImage = () => {
 };
 
 const Login = () => {
-  const { login, loading: loginLoading, error: loginError } = useLogin();
+  const { get, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
   const { user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,6 +52,13 @@ const Login = () => {
   const errorMessage = getErrorMessage(errorParam) || loginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
+  const login = async () => {
+    const response = await get("/auth/microsoft/login");
+    if (response?.url) {
+      window.location.href = response.url;
+    }
+  };
 
   const { isSystemConnected, subscribeToSystemStatus, unsubscribeFromSystemStatus } = useSocket();
 

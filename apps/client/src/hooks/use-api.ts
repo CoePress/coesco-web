@@ -1,6 +1,7 @@
 import { AxiosError, AxiosRequestConfig } from "axios";
 import { useState } from "react";
 import { instance } from "@/utils";
+import { IQueryParams } from "@/utils/types";
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -59,9 +60,27 @@ export const useApi = <T = any>() => {
     }
   };
 
-  // Convenience methods
-  const get = (endpoint: string, config?: AxiosRequestConfig) =>
-    request("GET", endpoint, undefined, config);
+  const get = (
+    endpoint: string, 
+    params?: IQueryParams | Record<string, any>, 
+    config?: AxiosRequestConfig
+  ) => {
+    let queryParams = {};
+    
+    if (params) {
+      queryParams = { ...params };
+      if ('include' in queryParams && queryParams.include && typeof queryParams.include !== 'string') {
+        queryParams.include = JSON.stringify(queryParams.include);
+      }
+    }
+    
+    const finalConfig = {
+      ...config,
+      params: queryParams
+    };
+    
+    return request("GET", endpoint, undefined, finalConfig);
+  };
 
   const post = (endpoint: string, data?: any, config?: AxiosRequestConfig) =>
     request("POST", endpoint, data, config);

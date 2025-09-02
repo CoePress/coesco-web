@@ -5,8 +5,8 @@ import { Link } from "react-router-dom";
 import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useCreateEntity } from "@/hooks/_base/use-create-entity";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
@@ -15,24 +15,69 @@ const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [_, setPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
+  const [createLoading, setCreateLoading] = useState<boolean>(false);
+  
+  const { get, post } = useApi<IApiResponse<any[]>>();
 
   const include = useMemo(
-    () => ["journey", "journey.customer"],
+    () => [],
     []
   );
 
-  const {
-    entities: quotes,
-    refresh,
-    pagination,
-  } = useGetEntities("/quotes", {
-    include,
-  });
+  const fetchQuotes = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await get("/quotes", {
+      include,
+      sort,
+      order,
+      page,
+      limit,
+    });
+    
+    if (response?.success) {
+      setQuotes(response.data || []);
+      if (response.meta) {
+        setPagination({
+          total: response.meta.total || 0,
+          totalPages: response.meta.totalPages || 0,
+          page: response.meta.page || 1,
+          limit: response.meta.limit || 25,
+        });
+      }
+    } else {
+      setError(response?.error || "Failed to fetch quotes");
+    }
+    setLoading(false);
+  };
   
-  const { createEntity: createQuote, loading: createLoading } =
-    useCreateEntity("/quotes");
+  const refresh = () => {
+    fetchQuotes();
+  };
+  
+  const createQuote = async (params: any) => {
+    setCreateLoading(true);
+    const response = await post("/quotes", params);
+    setCreateLoading(false);
+    return response?.success ? response.data : null;
+  };
+  
+  useEffect(() => {
+    fetchQuotes();
+  }, [include, sort, order, page, limit]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -40,12 +85,8 @@ const Quotes = () => {
       header: "Quote Number",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>{row.number}</Link>
+        <Link to={`/sales/quotes/${row.id}`}>{row.year}-{row.number}-{row.revision}</Link>
       ),
-    },
-    {
-      key: "revision",
-      header: "Revision",
     },
     {
       key: "status",
@@ -207,24 +248,10 @@ const Quotes = () => {
   ]
 
   const filteredQuotes = useMemo(() => {
-    if (!quotes) return []
-    
-    return quotes.filter((quote: any) => {
-      if (filterValues.status && quote.status !== filterValues.status) {
-        return false
-      }
-      
-      if (filterValues.revision) {
-        if (filterValues.revision === '3+' && quote.revision < 3) {
-          return false
-        } else if (filterValues.revision !== '3+' && quote.revision !== parseInt(filterValues.revision)) {
-          return false
-        }
-      }
-      
-      return true
-    })
-  }, [quotes, filterValues])
+    // For now, just return quotes as-is since filtering should be done server-side
+    // TODO: Implement server-side filtering by passing filterValues to useGetEntities
+    return quotes || []
+  }, [quotes])
 
   return (
     <div className="w-full flex flex-1 flex-col">
@@ -254,7 +281,7 @@ const Quotes = () => {
         <Table
           columns={columns}
           data={filteredQuotes}
-          total={filteredQuotes.length}
+          total={pagination.total}
           idField="id"
           pagination
           currentPage={pagination.page}
@@ -312,10 +339,37 @@ const CreateQuoteModal = ({
   const customerRef = useRef<HTMLDivElement>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
 
-  const { entities: companies, refresh: refreshCompanies } =
-    useGetEntities("/crm/companies");
-  const { entities: journeys, refresh: refreshJourneys } =
-    useGetEntities("/crm/journeys");
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [journeys, setJourneys] = useState<any[]>([]);
+  const { get: getCompanies } = useApi<IApiResponse<any[]>>();
+  const { get: getJourneys } = useApi<IApiResponse<any[]>>();
+  
+  const fetchCompanies = async () => {
+    const response = await getCompanies("/crm/companies");
+    if (response?.success) {
+      setCompanies(response.data || []);
+    }
+  };
+  
+  const fetchJourneys = async () => {
+    const response = await getJourneys("/crm/journeys");
+    if (response?.success) {
+      setJourneys(response.data || []);
+    }
+  };
+  
+  const refreshCompanies = () => {
+    fetchCompanies();
+  };
+  
+  const refreshJourneys = () => {
+    fetchJourneys();
+  };
+  
+  useEffect(() => {
+    fetchCompanies();
+    fetchJourneys();
+  }, []);
 
   const customerOptions = useMemo(
     () =>

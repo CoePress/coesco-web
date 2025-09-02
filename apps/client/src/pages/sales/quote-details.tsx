@@ -20,15 +20,8 @@ import {
 } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
-import useGetQuoteOverview from "@/hooks/sales/use-get-quote-overview";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { useCreateEntity } from "@/hooks/_base/use-create-entity";
-import { useDeleteEntity } from "@/hooks/_base/use-delete-entity";
-import { useApproveQuote } from "@/hooks/sales/use-approve-quote";
-import { useSendQuote } from "@/hooks/sales/use-send-quote";
-import { useCreateQuoteRevision } from "@/hooks/sales/use-create-quote-revision";
-import { useUpdateLineNumber } from "@/hooks/sales/use-update-linenumber";
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 
 const QuoteDetails = () => {
@@ -186,12 +179,40 @@ const QuoteDetails = () => {
     setEditingValue("");
   };
 
-  const { quoteOverview, refresh: refreshQuote } = useGetQuoteOverview({
-    quoteId: quoteId || "",
-  });
+  const [quoteOverview, setQuoteOverview] = useState<any>(null);
+  const [overviewLoading, setOverviewLoading] = useState<boolean>(true);
+  const { get: getQuoteOverview } = useApi<IApiResponse<any>>();
+  
+  const fetchQuoteOverview = async () => {
+    if (!quoteId) return;
+    setOverviewLoading(true);
+    const response = await getQuoteOverview(`/quotes/${quoteId}/overview`);
+    if (response?.success) {
+      setQuoteOverview(response.data);
+    }
+    setOverviewLoading(false);
+  };
+  
+  const refreshQuote = () => {
+    fetchQuoteOverview();
+  };
+  
+  useEffect(() => {
+    fetchQuoteOverview();
+  }, [quoteId]);
 
-  const { updateLineNumber } = useUpdateLineNumber();
-  const { updateEntity: updateQuoteItem } = useUpdateEntity(`/quotes/items`);
+  const { patch: updateLineNumberApi } = useApi<IApiResponse<any>>();
+  
+  const updateLineNumber = async (itemId: string, lineNumber: number) => {
+    const response = await updateLineNumberApi(`/quotes/items/${itemId}/line-number`, { lineNumber });
+    return response?.success ? response.data : null;
+  };
+  const { patch: updateQuoteItemApi } = useApi<IApiResponse<any>>();
+  
+  const updateQuoteItem = async (id: string, data: any) => {
+    const response = await updateQuoteItemApi(`/quotes/items/${id}`, data);
+    return response?.success ? response.data : null;
+  };
 
   const quoteItems = quoteOverview?.quoteItems || [];
   const customer = quoteOverview?.customer || null;
@@ -837,11 +858,22 @@ const AddItemModal = ({
   >({});
   const [activeTab, setActiveTab] = useState("machines");
 
-  const {
-    loading: addItemLoading,
-    error: addItemError,
-    createEntity: createQuoteItem,
-  } = useCreateEntity(`/quotes/${quoteId}/items`);
+  const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
+  const [addItemError, setAddItemError] = useState<string | null>(null);
+  const { post: createQuoteItemApi } = useApi<IApiResponse<any>>();
+  
+  const createQuoteItem = async (data: any) => {
+    setAddItemLoading(true);
+    setAddItemError(null);
+    const response = await createQuoteItemApi(`/quotes/${quoteId}/items`, data);
+    setAddItemLoading(false);
+    if (response?.success) {
+      return response.data;
+    } else {
+      setAddItemError(response?.error || "Failed to create quote item");
+      return null;
+    }
+  };
 
   const handleAddItem = async (item: any) => {
     setSelectedItem(item);
@@ -1038,11 +1070,26 @@ const ItemsTab = ({
   setSelectedQuantity: (quantity: Record<string, number>) => void;
   filter?: Record<string, any>;
 }) => {
-  const {
-    entities: items,
-    loading: itemsLoading,
-    error: itemsError,
-  } = useGetEntities("/items", { filter });
+  const [items, setItems] = useState<any[]>([]);
+  const [itemsLoading, setItemsLoading] = useState<boolean>(true);
+  const [itemsError, setItemsError] = useState<string | null>(null);
+  const { get: getItems } = useApi<IApiResponse<any[]>>();
+  
+  const fetchItems = async () => {
+    setItemsLoading(true);
+    setItemsError(null);
+    const response = await getItems("/items", { filter });
+    if (response?.success) {
+      setItems(response.data || []);
+    } else {
+      setItemsError(response?.error || "Failed to fetch items");
+    }
+    setItemsLoading(false);
+  };
+  
+  useEffect(() => {
+    fetchItems();
+  }, [filter]);
 
   return (
     <div className="h-full flex flex-col">
@@ -1124,11 +1171,26 @@ const MachinesTab = ({
   selectedQuantity: Record<string, number>;
   setSelectedQuantity: (quantity: Record<string, number>) => void;
 }) => {
-  const {
-    entities: configurations,
-    loading: configurationsLoading,
-    error: configurationsError,
-  } = useGetEntities("/configurations");
+  const [configurations, setConfigurations] = useState<any[]>([]);
+  const [configurationsLoading, setConfigurationsLoading] = useState<boolean>(true);
+  const [configurationsError, setConfigurationsError] = useState<string | null>(null);
+  const { get: getConfigurations } = useApi<IApiResponse<any[]>>();
+  
+  const fetchConfigurations = async () => {
+    setConfigurationsLoading(true);
+    setConfigurationsError(null);
+    const response = await getConfigurations("/configurations");
+    if (response?.success) {
+      setConfigurations(response.data || []);
+    } else {
+      setConfigurationsError(response?.error || "Failed to fetch configurations");
+    }
+    setConfigurationsLoading(false);
+  };
+  
+  useEffect(() => {
+    fetchConfigurations();
+  }, []);
 
   return (
     <div className="h-full flex flex-col">
@@ -1213,7 +1275,19 @@ const SelectCompanyModal = ({
   type: "customer" | "dealer";
 }) => {
   const navigate = useNavigate();
-  const { entities: companies } = useGetEntities("/companies");
+  const [companies, setCompanies] = useState<any[]>([]);
+  const { get: getCompanies } = useApi<IApiResponse<any[]>>();
+  
+  const fetchCompanies = async () => {
+    const response = await getCompanies("/companies");
+    if (response?.success) {
+      setCompanies(response.data || []);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
 
   const handleSelectCompany = async () => {
     console.log(`Selected ${type}:`, quoteId);
@@ -1325,11 +1399,22 @@ const ApproveQuoteModal = ({
     }
   }, [isOpen, quoteItems]);
 
-  const {
-    loading: approveQuoteLoading,
-    error: approveQuoteError,
-    approveQuote,
-  } = useApproveQuote();
+  const [approveQuoteLoading, setApproveQuoteLoading] = useState<boolean>(false);
+  const [approveQuoteError, setApproveQuoteError] = useState<string | null>(null);
+  const { post: approveQuoteApi } = useApi<IApiResponse<any>>();
+  
+  const approveQuote = async (quoteId: string) => {
+    setApproveQuoteLoading(true);
+    setApproveQuoteError(null);
+    const response = await approveQuoteApi(`/quotes/${quoteId}/approve`);
+    setApproveQuoteLoading(false);
+    if (response?.success) {
+      return response.data;
+    } else {
+      setApproveQuoteError(response?.error || "Failed to approve quote");
+      return null;
+    }
+  };
 
   const allItemsConfirmed = useMemo(() => {
     return (
@@ -1425,11 +1510,22 @@ const SendQuoteModal = ({
   quoteId: string;
   onSuccess: () => void;
 }) => {
-  const {
-    loading: sendQuoteLoading,
-    error: sendQuoteError,
-    sendQuote,
-  } = useSendQuote();
+  const [sendQuoteLoading, setSendQuoteLoading] = useState<boolean>(false);
+  const [sendQuoteError, setSendQuoteError] = useState<string | null>(null);
+  const { post: sendQuoteApi } = useApi<IApiResponse<any>>();
+  
+  const sendQuote = async (quoteId: string) => {
+    setSendQuoteLoading(true);
+    setSendQuoteError(null);
+    const response = await sendQuoteApi(`/quotes/${quoteId}/send`);
+    setSendQuoteLoading(false);
+    if (response?.success) {
+      return response.data;
+    } else {
+      setSendQuoteError(response?.error || "Failed to send quote");
+      return null;
+    }
+  };
 
   const handleSend = async () => {
     if (!quoteId) return;
@@ -1485,11 +1581,22 @@ const CreateRevisionModal = ({
   quoteId: string;
   onSuccess: () => void;
 }) => {
-  const {
-    loading: createRevisionLoading,
-    error: createRevisionError,
-    createQuoteRevision,
-  } = useCreateQuoteRevision();
+  const [createRevisionLoading, setCreateRevisionLoading] = useState<boolean>(false);
+  const [createRevisionError, setCreateRevisionError] = useState<string | null>(null);
+  const { post: createRevisionApi } = useApi<IApiResponse<any>>();
+  
+  const createQuoteRevision = async (quoteId: string) => {
+    setCreateRevisionLoading(true);
+    setCreateRevisionError(null);
+    const response = await createRevisionApi(`/quotes/${quoteId}/revision`);
+    setCreateRevisionLoading(false);
+    if (response?.success) {
+      return response.data;
+    } else {
+      setCreateRevisionError(response?.error || "Failed to create quote revision");
+      return null;
+    }
+  };
 
   const handleCreateRevision = async () => {
     if (!quoteId) return;
@@ -1547,19 +1654,30 @@ const DeleteItemModal = ({
   item: any;
   onSuccess: () => void;
 }) => {
-  const {
-    loading: deleteItemLoading,
-    error: deleteItemError,
-    success: deleteItemSuccess,
-    deleteEntity: deleteQuoteItem,
-  } = useDeleteEntity(`/quotes/items`);
+  const [deleteItemLoading, setDeleteItemLoading] = useState<boolean>(false);
+  const [deleteItemError, setDeleteItemError] = useState<string | null>(null);
+  const [deleteItemSuccess, setDeleteItemSuccess] = useState<boolean>(false);
+  const { delete: deleteQuoteItemApi } = useApi<IApiResponse<any>>();
+  
+  const deleteQuoteItem = async (id: string) => {
+    setDeleteItemLoading(true);
+    setDeleteItemError(null);
+    setDeleteItemSuccess(false);
+    const response = await deleteQuoteItemApi(`/quotes/items/${id}`);
+    setDeleteItemLoading(false);
+    if (response?.success) {
+      setDeleteItemSuccess(true);
+    } else {
+      setDeleteItemError(response?.error || "Failed to delete quote item");
+    }
+  };
 
   const handleDelete = async () => {
     if (!quoteId || !item) return;
 
     console.log(item);
 
-    await deleteQuoteItem(`${item.id}`);
+    await deleteQuoteItem(item.id);
   };
 
   // Close modal and refresh on successful delete

@@ -1,5 +1,5 @@
 import { RefreshCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import {
   StatusBadge,
@@ -10,10 +10,8 @@ import {
   Modal,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import useSyncEmployees from "@/hooks/admin/use-sync-employees";
-import useUpdateEmployee from "@/hooks/admin/use-update-employee";
-import { IEmployee } from "@/utils/types";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse, IEmployee } from "@/utils/types";
 import { format } from "date-fns";
 
 const Employees = () => {
@@ -25,14 +23,20 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("USER");
   const [isActive, setIsActive] = useState<boolean>(true);
-
-  const {
-    syncEmployees,
-    loading: syncLoading,
-    error: syncError,
-  } = useSyncEmployees();
-
-  const { updateEmployee, loading: updateLoading } = useUpdateEmployee();
+  
+  const [employees, setEmployees] = useState<IEmployee[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
+  const [syncLoading, setSyncLoading] = useState<boolean>(false);
+  const [updateLoading, setUpdateLoading] = useState<boolean>(false);
+  
+  const { get, post, patch } = useApi<IApiResponse<IEmployee[]>>();
 
   const columns: TableColumn<any>[] = [
     {
@@ -99,19 +103,56 @@ const Employees = () => {
 
   const include = useMemo(() => ["user"], []);
 
-  const {
-    entities: employees,
-    loading,
-    error,
-    pagination,
-    refresh,
-  } = useGetEntities("/admin/employees", {
-    page,
-    limit,
-    sort,
-    order,
-    include,
-  });
+  const fetchEmployees = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await get("/admin/employees", {
+      page,
+      limit,
+      sort,
+      order,
+      include,
+    });
+    
+    if (response?.success) {
+      setEmployees(response.data || []);
+      if (response.meta) {
+        setPagination({
+          total: response.meta.total || 0,
+          totalPages: response.meta.totalPages || 0,
+          page: response.meta.page || 1,
+          limit: response.meta.limit || 25,
+        });
+      }
+    } else {
+      setError(response?.error || "Failed to fetch employees");
+    }
+    setLoading(false);
+  };
+  
+  const refresh = () => {
+    fetchEmployees();
+  };
+  
+  const syncEmployees = async () => {
+    setSyncLoading(true);
+    const response = await post("/employees/sync");
+    setSyncLoading(false);
+    if (response?.success) {
+      refresh();
+    }
+  };
+  
+  const updateEmployee = async (employeeId: string, employeeData: any) => {
+    setUpdateLoading(true);
+    const response = await patch(`/employees/${employeeId}`, employeeData);
+    setUpdateLoading(false);
+    return response?.success ? response.data : null;
+  };
+  
+  useEffect(() => {
+    fetchEmployees();
+  }, [page, limit, sort, order, include]);
 
   if (loading || syncLoading) {
     return (
@@ -121,7 +162,7 @@ const Employees = () => {
     );
   }
 
-  if (error || syncError) {
+  if (error) {
     return <div>Error</div>;
   }
 

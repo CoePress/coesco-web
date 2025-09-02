@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
-import { useGetEntities } from "@/hooks/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import ThemeToggle from "@/components/feature/theme-toggle";
 import MessageBox from "@/components/_old/message-box";
+import { IApiResponse } from "@/utils/types";
 
 type Message = {
   id: string;
@@ -28,18 +29,43 @@ export default function ChatPage() {
   const { employee } = useAuth();
   const { id: routeId } = useParams<{ id?: string }>();
 
-  const messagesEndpoint = selectedChatId ? `/chat/${selectedChatId}/messages` : null;
-  const {
-    entities: messages,
-    loading: messagesLoading,
-    error: messagesError,
-    refresh: refreshMessages,
-  } = useGetEntities<Message>(messagesEndpoint, {
-    sort: "createdAt",
-    order: "desc",
-    page: 1,
-    limit: 30,
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+  
+  const { get } = useApi<IApiResponse<Message[]>>();
+  
+  const refreshMessages = () => setRefreshToggle(prev => !prev);
+  
+  useEffect(() => {
+    if (!selectedChatId) {
+      setMessages([]);
+      return;
+    }
+
+    const fetchMessages = async () => {
+      setMessagesLoading(true);
+      setMessagesError(null);
+      
+      const response = await get(`/chat/${selectedChatId}/messages`, {
+        sort: "createdAt",
+        order: "desc",
+        page: 1,
+        limit: 30,
+      });
+
+      if (response?.success) {
+        setMessages(response.data || []);
+      } else {
+        setMessagesError(response?.error || "Failed to load messages");
+      }
+      
+      setMessagesLoading(false);
+    };
+
+    fetchMessages();
+  }, [selectedChatId, refreshToggle, get]);
 
   const orderedMessages = useMemo(() => {
     const base = (messages ?? []).slice().reverse();

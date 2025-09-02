@@ -30,10 +30,9 @@ import {
   StatusBadge,
 } from "@/components";
 import { useSocket } from "@/contexts/socket.context";
-import useGetOverview from "@/hooks/production/use-get-overview";
-import useGetTimeline from "@/hooks/production/use-get-timeline";
+import { useApi } from "@/hooks/use-api";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
-import { IOverviewAlarm, IOverviewMachine } from "@/utils/types";
+import { IApiResponse, IOverviewAlarm, IOverviewMachine, IMachineOverview, IMachineTimeline } from "@/utils/types";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 
 type ExpandedMachine = IOverviewMachine & {
@@ -138,10 +137,30 @@ type MachineTimelineProps = {
 };
 
 const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
-  const { timeline, loading, error } = useGetTimeline({
-    startDate: startDate.toISOString().slice(0, 10),
-    endDate: endDate.toISOString().slice(0, 10),
-  });
+  const { get } = useApi<IApiResponse<IMachineTimeline>>();
+  const [timeline, setTimeline] = useState<IMachineTimeline | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTimeline = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await get("/machines/timeline", {
+      startDate: startDate.toISOString().slice(0, 10),
+      endDate: endDate.toISOString().slice(0, 10),
+    });
+    
+    if (response?.success) {
+      setTimeline(response.data || null);
+    } else {
+      setError(response?.error || "Failed to fetch timeline");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchTimeline();
+  }, [startDate, endDate]);
 
   const intervals = Array.from({ length: 24 }, (_, i) => {
     return `${i.toString().padStart(2, "0")}:00`;
@@ -372,17 +391,36 @@ const ProductionDashboard = () => {
   
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { overview, loading, error, refresh } = useGetOverview({
-    startDate: dateRange.start.toISOString().slice(0, 10),
-    endDate: dateRange.end.toISOString().slice(0, 10),
-    view: chartView,
-    filter: chartView !== "all" ? chartView : undefined,
-  }) as {
-    overview: IOverview | null;
-    loading: boolean;
-    error: any;
-    refresh: () => void;
+  const { get } = useApi<IApiResponse<IMachineOverview>>();
+  const [overview, setOverview] = useState<IOverview | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchOverview = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await get("/production/overview", {
+      startDate: dateRange.start.toISOString().slice(0, 10),
+      endDate: dateRange.end.toISOString().slice(0, 10),
+      view: chartView,
+      filter: chartView !== "all" ? chartView : undefined,
+    });
+    
+    if (response?.success) {
+      setOverview(response.data as unknown as IOverview || null);
+    } else {
+      setError(response?.error || "Failed to fetch overview");
+    }
+    setLoading(false);
   };
+
+  const refresh = () => {
+    fetchOverview();
+  };
+
+  useEffect(() => {
+    fetchOverview();
+  }, [dateRange.start, dateRange.end, chartView]);
 
   const [selectedMachine, setSelectedMachine] = useState<any | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);

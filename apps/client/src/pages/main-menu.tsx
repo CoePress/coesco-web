@@ -3,15 +3,16 @@ import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
 import { Moon, Sun, LogOut, Code, MessageCircle } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
-import { useAuth } from "@/contexts/auth.context";
-import useLogout from "@/hooks/auth/use-logout";
-import { useState } from "react";
+import { useAuth, AuthContext } from "@/contexts/auth.context";
+import { useApi } from "@/hooks/use-api";
+import { useState, useContext } from "react";
 import { __dev__ } from "@/config/env";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, employee } = useAuth();
-  const { logout } = useLogout();
+  const { setUser } = useContext(AuthContext)!;
+  const { post } = useApi();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const navigate = useNavigate()
@@ -20,8 +21,9 @@ const MainMenu = () => {
     setIsLogoutModalOpen(true);
   };
 
-  const confirmLogout = () => {
-    logout();
+  const confirmLogout = async () => {
+    await post("/auth/logout");
+    setUser(null, null);
     setIsLogoutModalOpen(false);
   };
 

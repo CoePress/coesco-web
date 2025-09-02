@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { Edit, Plus, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import useGetJourneyOverview from "@/hooks/sales/use-get-journey-overview";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 
 const sampleJourney = {
   id: "journey-001",
@@ -460,9 +461,27 @@ const JourneyDetailsPage = () => {
 
   const journeyId = useParams().id;
 
-  const { journeyOverview, loading, error } = useGetJourneyOverview({
-    journeyId: journeyId || "",
-  });
+  const [journeyOverview, setJourneyOverview] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { get } = useApi<IApiResponse<any>>();
+  
+  const fetchJourneyOverview = async () => {
+    if (!journeyId) return;
+    setLoading(true);
+    setError(null);
+    const response = await get(`/journeys/${journeyId}/overview`);
+    if (response?.success) {
+      setJourneyOverview(response.data);
+    } else {
+      setError(response?.error || "Failed to fetch journey overview");
+    }
+    setLoading(false);
+  };
+  
+  useEffect(() => {
+    fetchJourneyOverview();
+  }, [journeyId]);
 
   if (loading) {
     return <div>Loading...</div>;

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EllipsisIcon } from "lucide-react";
-import { useGetEntities } from "@/hooks/use-get-entities";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import api from "@/utils/axios";
 import Button from "../ui/button";
 
@@ -22,22 +23,44 @@ export default function ChatSidebar() {
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+  
   const editInputRef = useRef<HTMLInputElement | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
+  
+  const { get } = useApi<IApiResponse<Chat[]>>();
+  
+  const refresh = () => setRefreshToggle(prev => !prev);
+  
+  // Fetch chats
+  useEffect(() => {
+    const fetchChats = async () => {
+      setLoading(true);
+      setError(null);
+      
+      const response = await get("/chat", {
+        sort: "createdAt",
+        order: "desc",
+        limit: 100,
+      });
 
-  const {
-    entities: chats,
-    loading,
-    error,
-    refresh,
-  } = useGetEntities<Chat>("/chat", {
-    sort: "createdAt",
-    order: "desc",
-    limit: 100,
-  });
+      if (response?.success) {
+        setChats(response.data || []);
+      } else {
+        setError(response?.error || "Failed to load chats");
+      }
+      
+      setLoading(false);
+    };
+
+    fetchChats();
+  }, [refreshToggle, get]);
 
   const isActive = (id: string) =>
     trimmer(location.pathname) === trimmer(`/chat/${id}`);
