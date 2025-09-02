@@ -908,7 +908,7 @@ model QuoteTerms {
   @@map("quote_terms")
 }
 
-model QuoteNotes {
+model QuoteNote {
   id String @id @default(uuid())
   quoteDetailsId String
   body String

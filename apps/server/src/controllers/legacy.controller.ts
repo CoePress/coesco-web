@@ -40,8 +40,8 @@ export class LegacyController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { database, table, id } = req.params;
-      const result = await legacyService.update(database, table, id);
+      const { database, table, field, id } = req.params;
+      const result = await legacyService.update(database, table,  id);
       res.status(200).json(result);
     }
     catch (error) {

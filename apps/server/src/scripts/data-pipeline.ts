@@ -972,7 +972,8 @@ async function migrateQuoteNotes(): Promise<MigrationResult> {
 
       return record.NoteType === "Quote"
         && record.NoteIndex
-        && !excludedSubjects.some(excluded => record.NoteSubject?.includes(excluded));
+        && !excludedSubjects.some(excluded => record.NoteSubject?.includes(excluded))
+        && !record.NoteBody?.includes("Original Values");
     },
     skipDuplicates: true,
     duplicateCheck: data => ({
