@@ -18,6 +18,7 @@ import {
   Table,
   Tabs,
 } from "@/components";
+import Select from "@/components/ui/select";
 import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
@@ -65,7 +66,7 @@ const QuoteDetails = () => {
   }, []);
 
   const handleDragStart = (itemId: string) => {
-    if (quoteOverview?.quote?.status !== "DRAFT") return;
+    if (quoteOverview?.status !== "DRAFT") return;
     setDraggedItemId(itemId);
   };
 
@@ -142,7 +143,7 @@ const QuoteDetails = () => {
     field: "quantity" | "unitPrice" | "discount" | "tax",
     currentValue: any
   ) => {
-    if (quoteOverview?.quote?.status !== "DRAFT") return;
+    if (quoteOverview?.status !== "DRAFT") return;
     setEditingItemId(itemId);
     setEditingField(field);
     setEditingValue(currentValue.toString());
@@ -182,7 +183,9 @@ const QuoteDetails = () => {
   const [quoteOverview, setQuoteOverview] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState<boolean>(true);
   const [revisions, setRevisions] = useState<any[]>([]);
+  const [sortedRevisions, setSortedRevisions] = useState<any[]>([]);
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { get: getQuoteOverview } = useApi<IApiResponse<any>>();
   const { get: getRevisions } = useApi<IApiResponse<any[]>>();
   
@@ -210,12 +213,28 @@ const QuoteDetails = () => {
     if (!quoteId) return;
     const response = await getRevisions(`/quotes/${quoteId}/revisions`);
     if (response?.success) {
-      setRevisions(response.data || []);
-      // Set the current revision as selected if not already set
-      if (!selectedRevisionId && response.data && response.data.length > 0) {
-        const currentRevision = response.data.find((r: any) => r.isCurrent) || response.data[0];
-        setSelectedRevisionId(currentRevision.id);
-      }
+      const fetchedRevisions = response.data || [];
+      setRevisions(fetchedRevisions);
+      
+      // Create a static sorted list that never changes
+      const staticSorted = [...fetchedRevisions].sort((a: any, b: any) => {
+        const aRev = a.revision;
+        const bRev = b.revision;
+        
+        // Handle numeric revisions
+        if (/^\d+$/.test(aRev) && /^\d+$/.test(bRev)) {
+          return parseInt(bRev) - parseInt(aRev);
+        }
+        
+        // Handle alphabetic revisions (A-Z, AA-ZZ, etc.)
+        if (aRev.length !== bRev.length) {
+          return bRev.length - aRev.length; // Longer strings are later (AA > Z)
+        }
+        
+        // Same length, compare lexicographically in reverse (Z > A)
+        return bRev.localeCompare(aRev);
+      });
+      setSortedRevisions(staticSorted);
     }
   };
   
@@ -229,8 +248,15 @@ const QuoteDetails = () => {
   };
 
   const handleRevisionChange = (revisionId: string) => {
-    setSelectedRevisionId(revisionId);
-    fetchRevisionOverview(revisionId);
+    const latestRevision = sortedRevisions[0]; // First in sorted list is latest
+    if (revisionId === latestRevision?.id) {
+      // User selected latest revision
+      setSelectedRevisionId(null);
+      fetchQuoteOverview();
+    } else {
+      setSelectedRevisionId(revisionId);
+      fetchRevisionOverview(revisionId);
+    }
   };
   
   useEffect(() => {
@@ -238,11 +264,6 @@ const QuoteDetails = () => {
     fetchRevisions();
   }, [quoteId]);
 
-  useEffect(() => {
-    if (selectedRevisionId) {
-      fetchRevisionOverview(selectedRevisionId);
-    }
-  }, [selectedRevisionId]);
 
   const { patch: updateLineNumberApi } = useApi<IApiResponse<any>>();
   
@@ -280,35 +301,46 @@ const QuoteDetails = () => {
         (acc: number, item: any) => acc + (Number(item.taxAmount) || 0),
         0
       )
-  )} • ${quoteOverview?.quote?.status}`;
+  )} • ${quoteOverview?.status}`;
 
   const Actions = () => {
     const actions = [];
 
     // Add Revision Dropdown
-    if (revisions.length > 1) {
+    if (sortedRevisions.length > 1) {
       actions.push(
-        <div key="revision-dropdown" className="relative">
-          <select
-            value={selectedRevisionId || ""}
-            onChange={(e) => handleRevisionChange(e.target.value)}
-            className="appearance-none bg-surface border border-border rounded px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
-            {revisions.map((revision) => (
-              <option key={revision.id} value={revision.id}>
-                Revision {revision.revision} {revision.isCurrent ? "(Current)" : ""}
-              </option>
-            ))}
-          </select>
+<div key="revision-dropdown" className="relative">
+          <div
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="appearance-none bg-surface border border-border rounded px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer min-w-40">
+            Revision {quoteOverview?.revision} {!selectedRevisionId ? " (Latest)" : ""}
+          </div>
           <ChevronDown 
             size={16} 
             className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" 
           />
+          {isDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 bg-surface border border-border rounded mt-1 shadow-lg z-50">
+              {sortedRevisions.map((revision) => (
+                <div
+                  key={revision.id}
+                  onClick={() => {
+                    handleRevisionChange(revision.id);
+                    setIsDropdownOpen(false);
+                  }}
+                  className="px-3 py-2 text-sm text-text hover:bg-foreground cursor-pointer flex items-center justify-between">
+                  <span>Revision {revision.revision}</span>
+                  {revision.revision === quoteOverview?.revision && <Check size={16} />}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
 
     // Add Customer/Dealer buttons for DRAFT quotes
-    if (quoteOverview?.quote?.status === "DRAFT") {
+    if (quoteOverview?.status === "DRAFT") {
       if (!customer) {
         actions.push(
           <Button
@@ -343,7 +375,7 @@ const QuoteDetails = () => {
       );
     }
 
-    switch (quoteOverview?.quote?.status) {
+    switch (quoteOverview?.status) {
       case "DRAFT":
         actions.push(
           <Button
@@ -499,7 +531,7 @@ const QuoteDetails = () => {
               <Button
                 onClick={() => setIsModalOpen(true)}
                 size="sm"
-                disabled={quoteOverview?.quote?.status !== "DRAFT"}
+                disabled={quoteOverview?.status !== "DRAFT"}
                 variant="secondary-outline">
                 <Plus size={16} />
                 Add Item
@@ -512,11 +544,11 @@ const QuoteDetails = () => {
                 className="grid p-2 text-xs font-medium text-text-muted uppercase"
                 style={{
                   gridTemplateColumns:
-                    quoteOverview?.quote?.status === "DRAFT"
+                    quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                       : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div className="truncate whitespace-nowrap">Line</div>
                 <div className="truncate whitespace-nowrap">Item</div>
                 <div className="truncate whitespace-nowrap">Description</div>
@@ -558,11 +590,11 @@ const QuoteDetails = () => {
                       className={`grid items-center p-2 border-b border-border hover:bg-foreground/50 transition-opacity ${draggedItemId && draggedItemId !== item.id ? "opacity-50" : ""}`}
                       style={{
                         gridTemplateColumns:
-                          quoteOverview?.quote?.status === "DRAFT"
+                          quoteOverview?.status === "DRAFT"
                             ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                             : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                       }}>
-                      {quoteOverview?.quote?.status === "DRAFT" && (
+                      {quoteOverview?.status === "DRAFT" && (
                         <div className="flex items-center">
                           <GripVertical
                             size={16}
@@ -687,7 +719,7 @@ const QuoteDetails = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (quoteOverview?.quote?.status === "DRAFT") {
+                            if (quoteOverview?.status === "DRAFT") {
                               setSelectedItem(item);
                               setIsDeleteItemModalOpen(true);
                             }
@@ -710,11 +742,11 @@ const QuoteDetails = () => {
                 className="grid p-2"
                 style={{
                   gridTemplateColumns:
-                    quoteOverview?.quote?.status === "DRAFT"
+                    quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                       : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
                 <div></div>
@@ -737,11 +769,11 @@ const QuoteDetails = () => {
                 className="grid p-2"
                 style={{
                   gridTemplateColumns:
-                    quoteOverview?.quote?.status === "DRAFT"
+                    quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                       : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
                 <div></div>
@@ -772,11 +804,11 @@ const QuoteDetails = () => {
                 className="grid p-2"
                 style={{
                   gridTemplateColumns:
-                    quoteOverview?.quote?.status === "DRAFT"
+                    quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                       : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
                 <div></div>
@@ -800,11 +832,11 @@ const QuoteDetails = () => {
                 className="grid p-2 border-t border-border"
                 style={{
                   gridTemplateColumns:
-                    quoteOverview?.quote?.status === "DRAFT"
+                    quoteOverview?.status === "DRAFT"
                       ? "32px 48px 2fr 3fr 64px 96px 96px 96px 96px 80px"
                       : "48px 2fr 3fr 64px 96px 96px 96px 96px 80px",
                 }}>
-                {quoteOverview?.quote?.status === "DRAFT" && <div></div>}
+                {quoteOverview?.status === "DRAFT" && <div></div>}
                 <div></div>
                 <div></div>
                 <div></div>

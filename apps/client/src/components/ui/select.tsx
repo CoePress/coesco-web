@@ -34,7 +34,7 @@ const Select = ({
   error,
 }: SelectProps) => {
   return (
-    <div className="w-full">
+    <div>
       {label && (
         <label
           htmlFor={id}

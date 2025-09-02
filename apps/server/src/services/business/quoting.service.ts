@@ -172,36 +172,39 @@ export class QuotingService {
       throw new Error("Quote not found");
     }
 
-    const revisionsResult = await quoteDetailsService.getAll({
+    // Get the latest revision
+    const latestRevisionResult = await quoteDetailsService.getAll({
       filter: { quoteHeaderId: id },
       sort: "revision",
       order: "desc",
+      limit: 1,
     });
 
-    const revisions = revisionsResult.data || [];
+    const latestRevision = latestRevisionResult.data?.[0] || null;
 
-    // Get items and terms for each revision
-    const revisionsWithDetails = await Promise.all(
-      revisions.map(async (revision: QuoteDetails) => {
-        const [itemsResult, termsResult] = await Promise.all([
-          quoteItemService.getAll({ filter: { quoteDetailsId: revision.id } }),
-          quoteTermsService.getAll({ filter: { quoteDetailsId: revision.id } }),
-        ]);
+    if (!latestRevision) {
+      throw new Error("No revisions found for quote");
+    }
 
-        return {
-          ...revision,
-          items: itemsResult.data || [],
-          terms: termsResult.data || [],
-        };
-      }),
-    );
+    // Get items and terms for the latest revision
+    const [itemsResult, termsResult] = await Promise.all([
+      quoteItemService.getAll({ filter: { quoteDetailsId: latestRevision.id } }),
+      quoteTermsService.getAll({ filter: { quoteDetailsId: latestRevision.id } }),
+    ]);
 
     return {
       success: true,
       data: {
         ...headerResult.data,
-        revisions: revisionsWithDetails,
-        latestRevision: revisionsWithDetails[0] || null,
+        latestRevision: {
+          ...latestRevision,
+          items: itemsResult.data || [],
+          terms: termsResult.data || [],
+        },
+        revision: latestRevision.revision,
+        status: latestRevision.status,
+        totalAmount: latestRevision.totalAmount || 0,
+        quoteItems: itemsResult.data || [],
       },
     };
   }
