@@ -143,7 +143,7 @@ export class LegacyService {
     table: string,
     params: any,
     batchSize: number = 1000,
-  ): Promise<{ records: any[]; hasMore: boolean; nextOffset: number }> {
+  ): Promise<{ records: any[]; hasMore: boolean; nextOffset: number; totalCount?: number }> {
     const offset = params.offset || 0;
     const limit = `OFFSET ${offset} ROWS FETCH FIRST ${batchSize} ROWS ONLY`;
 
@@ -165,13 +165,21 @@ export class LegacyService {
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
       const records = result || [];
+      
+      // More accurate pagination check: if we got fewer records than requested,
+      // we've reached the end. Only set hasMore to true if we got exactly
+      // the batch size AND we know there could be more records
       const hasMore = records.length === batchSize;
-      const nextOffset = offset + batchSize;
+      const nextOffset = offset + records.length;
+
+      // Include total count if provided in params (passed from data-pipeline)
+      const totalCount = params.totalCount;
 
       return {
         records,
         hasMore,
         nextOffset,
+        totalCount,
       };
     }
     catch (err) {

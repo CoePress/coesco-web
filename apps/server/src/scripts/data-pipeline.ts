@@ -81,13 +81,13 @@ export async function enrichMigratedData(
 
     logger.info(`Found ${totalCount} enrichment records, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
 
-    let hasMore = true;
     let totalProcessed = 0;
     let currentBatch = 0;
 
-    while (hasMore) {
+    // Continue until we've processed all records based on the total count
+    while (totalProcessed < totalCount) {
       // Get paginated source records for enrichment
-      const paginatedResult = await legacyService.getAllPaginated(sourceDatabase, sourceTable, params, legacyFetchSize);
+      const paginatedResult = await legacyService.getAllPaginated(sourceDatabase, sourceTable, { ...params, totalCount }, legacyFetchSize);
 
       if (!paginatedResult.records || paginatedResult.records.length === 0) {
         logger.warn(`No more enrichment records found in ${sourceTable}`);
@@ -215,7 +215,7 @@ export async function enrichMigratedData(
               result.updated++;
               logger.debug(`Updated record ${targetRecord.id} with enrichment data`);
             }
-            catch (error) {
+            catch (error: any) {
               logger.error(`Error enriching record ${targetRecord.id}:`, error.message);
               result.errors++;
             }
@@ -227,15 +227,20 @@ export async function enrichMigratedData(
       });
 
       // Update pagination parameters
-      hasMore = paginatedResult.hasMore;
       params.offset = paginatedResult.nextOffset;
 
-      logger.info(`Enrichment batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}, Updated: ${result.updated}, Errors: ${result.errors}`);
+      // Double-check: stop if we've processed all records or got no records
+      if (paginatedResult.records.length === 0) {
+        logger.info(`No more enrichment records to process. Breaking pagination loop.`);
+        break;
+      }
+
+      logger.info(`Enrichment batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}/${totalCount}, Updated: ${result.updated}, Errors: ${result.errors}`);
     }
 
     logger.info(`Enrichment complete: ${result.updated} updated, ${result.errors} errors from ${totalProcessed} total records`);
   }
-  catch (error) {
+  catch (error: any) {
     logger.error(`Fatal error during enrichment ${sourceTable}:`, error.message);
     throw error;
   }
@@ -269,15 +274,15 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
 
     logger.info(`Found ${totalCount} records, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
 
-    let hasMore = true;
     let totalProcessed = 0;
     let currentBatch = 0;
 
-    while (hasMore) {
+    // Continue until we've processed all records based on the total count
+    while (totalProcessed < totalCount) {
       const paginatedResult = await legacyService.getAllPaginated(
         mapping.sourceDatabase,
         mapping.sourceTable,
-        params,
+        { ...params, totalCount }, // Pass totalCount for reference
         legacyFetchSize,
       );
 
@@ -300,29 +305,21 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
         recordBatches.push(sourceRecords.slice(i, i + createBatchSize));
       }
 
-      // Process batches in parallel if concurrency is specified
-      const concurrency = mapping.concurrency || 1;
-      if (concurrency > 1 && recordBatches.length > 1) {
-        await processBatchesInParallel(
-          recordBatches,
-          async (batchRecords, batchIndex) => {
-            await processSingleBatch(batchRecords, mapping, result, batchIndex);
-          },
-          Math.min(concurrency, recordBatches.length),
-        );
-      }
-      else {
-        // Sequential processing
-        for (let i = 0; i < recordBatches.length; i++) {
-          await processSingleBatch(recordBatches[i], mapping, result, i);
-        }
+      // Sequential processing only - no parallel concurrency
+      for (let i = 0; i < recordBatches.length; i++) {
+        await processSingleBatch(recordBatches[i], mapping, result, i);
       }
 
       // Update pagination parameters
-      hasMore = paginatedResult.hasMore;
       params.offset = paginatedResult.nextOffset;
 
-      logger.info(`Batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}, Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+      // Double-check: stop if we've processed all records or got no records
+      if (paginatedResult.records.length === 0) {
+        logger.info(`No more records to process. Breaking pagination loop.`);
+        break;
+      }
+
+      logger.info(`Batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}/${totalCount}, Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
     }
 
     result.total = totalProcessed;
@@ -330,7 +327,7 @@ export async function migrateWithMapping(mapping: TableMapping): Promise<Migrati
       `Migration complete: ${result.created} created, ${result.skipped} skipped, ${result.errors} errors from ${result.total} total records`,
     );
   }
-  catch (error) {
+  catch (error: any) {
     logger.error(`Fatal error during migration ${mapping.sourceTable}:`, error.message);
     throw error;
   }
@@ -345,7 +342,7 @@ async function processSingleBatch(
   batchIndex: number,
 ): Promise<void> {
   // First, process and prepare all records
-  const recordsToCreate = [];
+  const recordsToCreate: any = [];
 
   for (const record of batchRecords) {
     try {
@@ -410,7 +407,7 @@ async function processSingleBatch(
 
       recordsToCreate.push(cleanedData);
     }
-    catch (error) {
+    catch (error: any) {
       logger.error(`Error processing record in batch ${batchIndex}:`, error.message);
       result.errors++;
       result.errorDetails.push({ record: { id: record.id }, error: error.message });
@@ -447,21 +444,22 @@ async function processSingleBatch(
           maxWait: 5000, // Shorter wait to fail faster on deadlocks
           timeout: 20000,
         });
-        
+
         success = true;
         logger.debug(`Bulk processed ${recordsToCreate.length} records in batch ${batchIndex}`);
       }
       catch (bulkError) {
         attempt++;
         const errorMessage = (bulkError as any).message || bulkError;
-        
+
         // Check if it's a deadlock error
-        const isDeadlock = errorMessage.includes('deadlock') || errorMessage.includes('40P01');
-        
+        const isDeadlock = errorMessage.includes("deadlock") || errorMessage.includes("40P01");
+
         if (isDeadlock && attempt < maxRetries) {
           logger.warn(`Deadlock detected in batch ${batchIndex}, retrying (${attempt}/${maxRetries})`);
           continue;
-        } else {
+        }
+        else {
           logger.error(`Bulk insert failed in batch ${batchIndex} after ${attempt} attempts:`, errorMessage);
           result.errors += recordsToCreate.length;
           break;
@@ -591,31 +589,7 @@ export function replaceInternalWhitespace(input: string): string {
   return input.replace(/\s+/g, "-");
 }
 
-async function processBatchesInParallel<T>(
-  batches: T[][],
-  processor: (batch: T[], batchIndex: number) => Promise<void>,
-  concurrency: number = 3,
-): Promise<void> {
-  const semaphore = new Array(concurrency).fill(null);
-  let currentIndex = 0;
-
-  const processBatch = async (): Promise<void> => {
-    while (currentIndex < batches.length) {
-      const batchIndex = currentIndex++;
-      const batch = batches[batchIndex];
-
-      try {
-        await processor(batch, batchIndex);
-      }
-      catch (error) {
-        logger.error(`Error processing batch ${batchIndex}:`, error);
-        throw error;
-      }
-    }
-  };
-
-  await Promise.all(semaphore.map(() => processBatch()));
-}
+// Removed parallel processing function - using sequential only
 
 export async function findReferencedRecord(
   targetTable: string,
@@ -737,7 +711,6 @@ export async function migrateCoilTypes(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -792,7 +765,6 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
       name: data.name,
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -861,7 +833,6 @@ export async function migrateModels(): Promise<MigrationResult> {
       model: data.model,
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -896,7 +867,6 @@ export async function migrateCompanies(): Promise<MigrationResult> {
       name: data.name,
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -996,7 +966,6 @@ export async function migrateQuotes(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -1057,7 +1026,6 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
@@ -1086,7 +1054,7 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
         transform: value => value ? Number.parseFloat(value) : null,
       },
       {
-        from: "Verbiage",
+        from: "Verbage",
         to: "verbiage",
         transform: value => value?.trim() || null,
       },
@@ -1146,7 +1114,6 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
       ],
     }),
     batchSize: 100,
-    concurrency: 3,
   };
 
   const result = await migrateWithMapping(mapping);
