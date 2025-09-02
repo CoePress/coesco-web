@@ -19,8 +19,8 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  employee Employee?
-  roles   RoleAssignment[]
+  employee          Employee?
+  roles             RoleAssignment[]
   customPermissions PermissionException[]
 
   @@map("users")
@@ -48,7 +48,7 @@ model Employee {
   journeys         Journey[] @relation("RsmJourneys")
   createdCompanies Company[] @relation("CustomerCreatedBy")
   createdJourneys  Journey[] @relation("JourneyCreatedBy")
-  chats  Chat[]
+  chats            Chat[]
 
   @@index([number])
   @@index([createdById])
@@ -56,30 +56,30 @@ model Employee {
 }
 
 model Permission {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   resource    String
   action      String
   description String?
-  condition   Json?            // optional ABAC-ish guard your app can evaluate
+  condition   Json? // optional ABAC-ish guard your app can evaluate
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  rolePermissions   RolePermission[]
-  exceptionGrants   PermissionException[]
+  rolePermissions RolePermission[]
+  exceptionGrants PermissionException[]
 
   @@unique([resource, action])
   @@map("permissions")
 }
 
 model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   description String?
-  isSystem    Boolean  @default(false)
+  isSystem    Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   permissions RolePermission[]
   assignments RoleAssignment[]
@@ -88,12 +88,12 @@ model Role {
 }
 
 model RolePermission {
-  id            String     @id @default(uuid())
-  roleId        String
-  permissionId  String
-  condition     Json?             // optional, e.g. {"field":"status","in":["DRAFT"]}
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+  condition    Json? // optional, e.g. {"field":"status","in":["DRAFT"]}
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -103,35 +103,35 @@ model RolePermission {
 }
 
 model RoleAssignment {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   roleId      String
-  scope       Json               // e.g., {"plant":"DET"} — keep keys predictable
-  scopeKey    String             // canonical string for indexing, e.g. "plant=DET"
+  scope       Json // e.g., {"plant":"DET"} — keep keys predictable
+  scopeKey    String // canonical string for indexing, e.g. "plant=DET"
   expiresAt   DateTime?
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role  Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, roleId, scopeKey])
   @@index([userId])
   @@index([roleId])
-  @@unique([userId, roleId, scopeKey])
   @@map("role_assignments")
 }
 
 model PermissionException {
-  id            String   @id @default(uuid())
-  userId        String
-  permissionId  String
-  scope         Json
-  scopeKey      String
-  reason        String?
-  expiresAt     DateTime?
-  createdById   String?
-  createdAt     DateTime @default(now())
+  id           String    @id @default(uuid())
+  userId       String
+  permissionId String
+  scope        Json
+  scopeKey     String
+  reason       String?
+  expiresAt    DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -143,8 +143,8 @@ model PermissionException {
 
 // CRM
 model Company {
-  id            String        @id @default(uuid())
-  name          String
+  id          String    @id @default(uuid())
+  name        String
   // website       String?
   // email         String?
   // phone         String?
@@ -161,12 +161,12 @@ model Company {
   // notes         String?
   // tags          String[]
   // status        CompanyStatus @default(ACTIVE)
-  legacy Json @default("{}") 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime?
-  createdById   String
-  updatedById   String
+  legacy      Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
   addresses        Address[]
@@ -280,19 +280,19 @@ model JourneyInteraction {
 
 // Production
 model Machine {
-  id              String                @id @default(uuid())
-  slug            String                @unique
-  name            String
-  type            MachineType
-  controllerType  MachineControllerType
-  connectionUrl   String?
-  enabled       Boolean               @default(false)
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  deletedAt       DateTime?
-  createdById     String
-  updatedById     String
-  deletedById     String?
+  id             String                @id @default(uuid())
+  slug           String                @unique
+  name           String
+  type           MachineType
+  controllerType MachineControllerType
+  connectionUrl  String?
+  enabled        Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+  deletedById    String?
 
   statuses MachineStatus[]
 
@@ -412,26 +412,25 @@ model Chat {
   createdById String
   updatedById String
 
-  employee    Employee  @relation(fields: [employeeId], references: [id])
-  messages    Message[]
+  employee Employee  @relation(fields: [employeeId], references: [id])
+  messages Message[]
 
   @@map("chats")
 }
 
 model Message {
-  id          String    @id @default(uuid())
-  chatId      String
-  role        String
-  content     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  fileUrl     String?
+  id        String   @id @default(uuid())
+  chatId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fileUrl   String?
 
-  chat        Chat      @relation(fields: [chatId], references: [id])
+  chat Chat @relation(fields: [chatId], references: [id])
 
   @@map("messages")
 }
-
 
 model OptionHeader {
   id          String    @id @default(uuid())
@@ -571,21 +570,21 @@ model ConfigurationOption {
 }
 
 model NtfyDevice {
-  id                String    @id @default(uuid())
-  name              String
-  host              String
-  pingIntervalSec   Int       @default(30)
-  maxMissedPings    Int       @default(3)
-  currentMissedPings Int      @default(0)
-  enabled           Boolean   @default(true)
-  lastPingTime      DateTime?
-  lastPingSuccess   Boolean?
-  isDown            Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  id                 String    @id @default(uuid())
+  name               String
+  host               String
+  pingIntervalSec    Int       @default(30)
+  maxMissedPings     Int       @default(3)
+  currentMissedPings Int       @default(0)
+  enabled            Boolean   @default(true)
+  lastPingTime       DateTime?
+  lastPingSuccess    Boolean?
+  isDown             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  createdById        String
+  updatedById        String
 
   @@map("ntfy_devices")
 }
@@ -711,30 +710,30 @@ enum UserRole {
 
 // CoilType - Done
 model CoilType {
-  id String @id @default(uuid())
+  id          String  @id @default(uuid())
   description String?
-  multiplier Decimal @default(1)
-  sortOrder Int @default(999)
-  isArchived Boolean @default(false)
-  legacyId String?
+  multiplier  Decimal @default(1)
+  sortOrder   Int     @default(999)
+  isArchived  Boolean @default(false)
+  legacyId    String?
 
   @@map("coil_types")
 }
 
 model ProductClass {
-  id          String    @id @default(uuid())
-  code        String    @unique
-  name        String
+  id           String    @id @default(uuid())
+  code         String    @unique
+  name         String
   description1 String?
   description2 String?
-  parentId    String?
-  depth       Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  parentId     String?
+  depth        Int       @default(0)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
 
   parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children                     ProductClass[]               @relation("ProductClassHierarchy")
@@ -748,13 +747,13 @@ model ProductClass {
 
 // OptGroup - Done
 model OptionCategory {
-  id            String    @id @default(uuid())
-  name          String    @unique
-  description   String?
-  multiple      Boolean   @default(false)
-  mandatory     Boolean   @default(false)
-  order Int
-  legacyId String?
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  multiple    Boolean @default(false)
+  mandatory   Boolean @default(false)
+  order       Int
+  legacyId    String?
 
   optionHeaders                OptionHeader[]
   productClassOptionCategories ProductClassOptionCategory[]
@@ -803,10 +802,10 @@ model Item {
 
 // EquipList + LeadTime (112 default) - Might migrate into product classes
 model Model {
-  id String @id @default(uuid())
-  model String
+  id          String    @id @default(uuid())
+  model       String
   description String?
-  data Json @default("{}")
+  data        Json      @default("{}")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -818,25 +817,25 @@ model Model {
 
 // QData
 model QuoteHeader {
-  id String @id @default(uuid())
-  journeyId    String?
-  year String
-  number String
-  rsmId String?
-  customerId String?
+  id                String    @id @default(uuid())
+  journeyId         String?
+  year              String
+  number            String
+  rsmId             String?
+  customerId        String?
   customerContactId String?
   customerAddressId String?
-  dealerId String?
-  dealerContactId String?
-  dealerAddressId String?
-  priority String @default("C")
-  confidence Int @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
-  legacy Json @default("{}")
+  dealerId          String?
+  dealerContactId   String?
+  dealerAddressId   String?
+  priority          String    @default("C")
+  confidence        Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  createdById       String
+  updatedById       String
+  legacy            Json      @default("{}")
 
   quotes QuoteDetails[]
 
@@ -846,22 +845,22 @@ model QuoteHeader {
 
 // QRev + QtNotes
 model QuoteDetails {
-  id String @id @default(uuid())
+  id            String      @id @default(uuid())
   quoteHeaderId String
-  revision String @default("A")
-  quoteDate DateTime?
-  status QuoteStatus @default(DRAFT)
-  approvedById String?
-  sentById String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  revision      String      @default("A")
+  quoteDate     DateTime?
+  status        QuoteStatus @default(DRAFT)
+  approvedById  String?
+  sentById      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
 
   quoteHeader QuoteHeader? @relation(fields: [quoteHeaderId], references: [id])
-  items      QuoteItem[]
-  terms      QuoteTerms[]
+  items       QuoteItem[]
+  terms       QuoteTerms[]
 
   @@unique([quoteHeaderId, revision])
   @@map("quote_details")
@@ -870,24 +869,20 @@ model QuoteDetails {
 // Catalog Items, Parts, Services, Configs or Custom Items
 model QuoteItem {
   id              String    @id @default(uuid())
-  quoteDetailsId         String
+  quoteDetailsId  String
   configurationId String?
   itemId          String?
-  name String?
-  description String?
-  modelNumber String?
-  quantity        Int
+  description     String?
+  quantity        Int       @default(1)
   unitPrice       Decimal
-  totalPrice      Decimal
   lineNumber      Int
-  type ItemType
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
   createdById     String
   updatedById     String
 
-  quotes         QuoteDetails  @relation(fields: [quoteDetailsId], references: [id])
+  quotes        QuoteDetails   @relation(fields: [quoteDetailsId], references: [id])
   configuration Configuration? @relation(fields: [configurationId], references: [id])
   item          Item?          @relation(fields: [itemId], references: [id])
 
@@ -898,23 +893,30 @@ model QuoteItem {
 model QuoteTerms {
   id             String   @id @default(uuid())
   quoteDetailsId String
-  percentage     Int?     // from Percent
-  netDays        Int     @default(0) // from NetDays  
-  amount         Decimal? // from Amount
-  verbiage       String?  // from Verbiage
-  dueOrder       Int?     // from DueOrder (for multiple terms ordering)
-  customTerms    String?  // from CustomTerms (free-form override text)
-  notToExceed    Decimal? // from NotToExceed (maximum cap)
+  percentage     Int?
+  netDays        Int      @default(0)
+  amount         Decimal?
+  verbiage       String?
+  dueOrder       Int?
+  customTerms    String?
+  notToExceed    Decimal?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
+
   quote QuoteDetails @relation(fields: [quoteDetailsId], references: [id], onDelete: Cascade)
 
   @@map("quote_terms")
 }
 
-enum ItemType {
-  CONFIGURATION
-  CATALOG  
-  CUSTOM
+model QuoteNotes {
+  id String @id @default(uuid())
+  quoteDetailsId String
+  body String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
+
+  @@map("quote_notes")
 }

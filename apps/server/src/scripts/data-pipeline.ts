@@ -9,7 +9,7 @@ import { logger } from "@/utils/logger";
 
 const legacyService = new LegacyService();
 
-export const mainDatabase = new PrismaClient({
+const mainDatabase = new PrismaClient({
   datasources: {
     db: {
       url: env.DATABASE_URL,
@@ -18,11 +18,6 @@ export const mainDatabase = new PrismaClient({
   log: ["warn", "error"],
   errorFormat: "pretty",
 });
-
-export async function closeDatabaseConnections() {
-  await mainDatabase.$disconnect();
-  await legacyService.close();
-}
 
 interface FieldMapping {
   from: string;
@@ -55,200 +50,12 @@ interface MigrationResult {
   errorDetails: Array<{ record: any; error: any }>;
 }
 
-export async function enrichMigratedData(
-  targetTable: string,
-  sourceDatabase: "quote" | "std" | "job",
-  sourceTable: string,
-  matchField: { target: string; source: string },
-  enrichmentMappings: Array<{ sourceField: string; targetPath: string; transform?: (value: any) => any }>,
-): Promise<{ updated: number; errors: number }> {
-  const result = { updated: 0, errors: 0 };
-
-  try {
-    logger.info(`Starting enrichment: ${sourceDatabase}.${sourceTable} → ${targetTable}`);
-
-    const params = {
-      filter: null,
-      sort: null,
-      order: null,
-      offset: 0,
-    };
-
-    // Get total count first
-    const totalCount = await legacyService.getCount(sourceDatabase, sourceTable, params);
-    const legacyFetchSize = 5000;
-    const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
-
-    logger.info(`Found ${totalCount} enrichment records, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
-
-    let totalProcessed = 0;
-    let currentBatch = 0;
-
-    // Continue until we've processed all records based on the total count
-    while (totalProcessed < totalCount) {
-      // Get paginated source records for enrichment
-      const paginatedResult = await legacyService.getAllPaginated(sourceDatabase, sourceTable, { ...params, totalCount }, legacyFetchSize);
-
-      if (!paginatedResult.records || paginatedResult.records.length === 0) {
-        logger.warn(`No more enrichment records found in ${sourceTable}`);
-        break;
-      }
-
-      const sourceRecords = paginatedResult.records;
-      totalProcessed += sourceRecords.length;
-      currentBatch++;
-
-      logger.info(`Processing enrichment batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
-
-      // Group source records by match value for batch processing
-      const matchValueMap = new Map<any, any[]>();
-      for (const sourceRecord of sourceRecords) {
-        const matchValue = (sourceRecord as any)[matchField.source];
-        if (!matchValue)
-          continue;
-
-        if (!matchValueMap.has(matchValue)) {
-          matchValueMap.set(matchValue, []);
-        }
-        matchValueMap.get(matchValue)!.push(sourceRecord);
-      }
-
-      if (matchValueMap.size === 0) {
-        logger.info(`No records with valid match values in batch ${currentBatch}`);
-        continue;
-      }
-
-      // Batch fetch all target records
-      const matchValues = Array.from(matchValueMap.keys());
-      const targetPathParts = matchField.target.split(".");
-
-      let targetRecords: any[] = [];
-      if (targetPathParts.length > 1) {
-        // For nested paths, we need multiple queries or raw SQL
-        // For now, fall back to individual queries but batch them
-        const promises = matchValues.map(async (matchValue) => {
-          const jsonPath = `$.${targetPathParts.slice(1).join(".")}`;
-          return await (mainDatabase as any)[targetTable].findFirst({
-            where: {
-              [targetPathParts[0]]: {
-                path: jsonPath,
-                equals: matchValue,
-              },
-            },
-          });
-        });
-
-        const results = await Promise.all(promises);
-        targetRecords = results.filter(Boolean);
-      }
-      else {
-        targetRecords = await (mainDatabase as any)[targetTable].findMany({
-          where: { [matchField.target]: { in: matchValues } },
-        });
-      }
-
-      // Create a map for quick lookup
-      const targetRecordMap = new Map();
-      for (const targetRecord of targetRecords) {
-        let keyValue;
-        if (targetPathParts.length > 1) {
-          let value = targetRecord;
-          for (const part of targetPathParts) {
-            value = value?.[part];
-          }
-          keyValue = value;
-        }
-        else {
-          keyValue = targetRecord[matchField.target];
-        }
-        if (keyValue !== undefined) {
-          targetRecordMap.set(keyValue, targetRecord);
-        }
-      }
-
-      // Process updates in batches
-      await mainDatabase.$transaction(async (tx) => {
-        for (const [matchValue, sourceRecords] of matchValueMap.entries()) {
-          const targetRecord = targetRecordMap.get(matchValue);
-          if (!targetRecord) {
-            logger.debug(`No matching record found for ${matchField.source}=${matchValue}`);
-            continue;
-          }
-
-          for (const sourceRecord of sourceRecords) {
-            try {
-              // Build update data
-              const updateData: any = {};
-              for (const mapping of enrichmentMappings) {
-                const sourceValue = sourceRecord[mapping.sourceField];
-                const transformedValue = mapping.transform ? mapping.transform(sourceValue) : sourceValue;
-
-                // Handle nested paths (e.g., "legacy.companyId")
-                const pathParts = mapping.targetPath.split(".");
-                if (pathParts.length > 1) {
-                  let current = updateData;
-                  for (let i = 0; i < pathParts.length - 1; i++) {
-                    if (!current[pathParts[i]]) {
-                    // Get existing value for JSON fields
-                      if (pathParts[i] === "legacy" && targetRecord.legacy) {
-                        current[pathParts[i]] = { ...targetRecord.legacy };
-                      }
-                      else {
-                        current[pathParts[i]] = {};
-                      }
-                    }
-                    current = current[pathParts[i]];
-                  }
-                  current[pathParts[pathParts.length - 1]] = transformedValue;
-                }
-                else {
-                  updateData[mapping.targetPath] = transformedValue;
-                }
-              }
-
-              // Update the record using the transaction
-              await (tx as any)[targetTable].update({
-                where: { id: targetRecord.id },
-                data: updateData,
-              });
-
-              result.updated++;
-              logger.debug(`Updated record ${targetRecord.id} with enrichment data`);
-            }
-            catch (error: any) {
-              logger.error(`Error enriching record ${targetRecord.id}:`, error.message);
-              result.errors++;
-            }
-          }
-        }
-      }, {
-        maxWait: 10000,
-        timeout: 30000,
-      });
-
-      // Update pagination parameters
-      params.offset = paginatedResult.nextOffset;
-
-      // Double-check: stop if we've processed all records or got no records
-      if (paginatedResult.records.length === 0) {
-        logger.info(`No more enrichment records to process. Breaking pagination loop.`);
-        break;
-      }
-
-      logger.info(`Enrichment batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}/${totalCount}, Updated: ${result.updated}, Errors: ${result.errors}`);
-    }
-
-    logger.info(`Enrichment complete: ${result.updated} updated, ${result.errors} errors from ${totalProcessed} total records`);
-  }
-  catch (error: any) {
-    logger.error(`Fatal error during enrichment ${sourceTable}:`, error.message);
-    throw error;
-  }
-
-  return result;
+async function closeDatabaseConnections() {
+  await mainDatabase.$disconnect();
+  await legacyService.close();
 }
 
-export async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResult> {
+async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResult> {
   const result: MigrationResult = {
     total: 0,
     created: 0,
@@ -469,7 +276,7 @@ async function processSingleBatch(
   }
 }
 
-export async function cleanOrderGaps(
+async function cleanOrderGaps(
   tableName: string,
   orderField: string,
   whereCondition?: any,
@@ -512,7 +319,7 @@ export async function cleanOrderGaps(
   }
 }
 
-export async function extractDatabaseSchema(database: "quote" | "std" | "job"): Promise<void> {
+async function extractDatabaseSchema(database: "quote" | "std" | "job"): Promise<void> {
   try {
     const tables = await legacyService.getTables(database);
     logger.info(`Found ${tables?.length || 0} tables in ${database} database`);
@@ -581,17 +388,22 @@ export async function extractDatabaseSchema(database: "quote" | "std" | "job"): 
   }
 }
 
-export function trimWhitespace(input: string): string {
+function trimWhitespace(input: string): string {
   return input.trim();
 }
 
-export function replaceInternalWhitespace(input: string): string {
+function replaceInternalWhitespace(input: string): string {
   return input.replace(/\s+/g, "-");
 }
 
-// Removed parallel processing function - using sequential only
+function createDateFromSeconds(baseDate: Date | string, secondsSinceMidnight: number): string {
+  const date = new Date(baseDate);
+  date.setHours(0, 0, 0, 0);
+  date.setSeconds(secondsSinceMidnight);
+  return date.toISOString();
+}
 
-export async function findReferencedRecord(
+async function findReferencedRecord(
   targetTable: string,
   whereCondition: any,
 ): Promise<any> {
@@ -607,69 +419,8 @@ export async function findReferencedRecord(
   }
 }
 
-export async function bulkUpsert(
-  tableName: string,
-  data: any[],
-  uniqueFields: string[],
-  batchSize: number = 1000,
-): Promise<{ created: number; updated: number; errors: number }> {
-  const result = { created: 0, updated: 0, errors: 0 };
-
-  if (!data.length)
-    return result;
-
-  // Process in batches
-  for (let i = 0; i < data.length; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-
-    await mainDatabase.$transaction(async (tx) => {
-      for (const record of batch) {
-        try {
-          // Build unique constraint check
-          const whereClause: any = {};
-          for (const field of uniqueFields) {
-            whereClause[field] = record[field];
-          }
-
-          // Try to find existing record
-          const existing = await (tx as any)[tableName].findFirst({
-            where: whereClause,
-          });
-
-          if (existing) {
-            // Update existing record
-            await (tx as any)[tableName].update({
-              where: { id: existing.id },
-              data: record,
-            });
-            result.updated++;
-          }
-          else {
-            // Create new record
-            await (tx as any)[tableName].create({
-              data: record,
-            });
-            result.created++;
-          }
-        }
-        catch (error) {
-          logger.error(`Error in bulk upsert for ${tableName}:`, error);
-          result.errors++;
-        }
-      }
-    }, {
-      maxWait: 15000,
-      timeout: 60000,
-    });
-
-    logger.debug(`Bulk upsert batch ${Math.floor(i / batchSize) + 1}: ${batch.length} records processed`);
-  }
-
-  return result;
-}
-
 // Migrations
-export async function migrateCoilTypes(): Promise<MigrationResult> {
+async function migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "CoilType",
@@ -715,14 +466,14 @@ export async function migrateCoilTypes(): Promise<MigrationResult> {
 
   const result = await migrateWithMapping(mapping);
 
-  // if (result.created > 0) {
-  //   await cleanOrderGaps("coilType", "sortOrder");
-  // }
+  if (result.created > 0) {
+    await cleanOrderGaps("coilType", "sortOrder");
+  }
 
   return result;
 }
 
-export async function migrateOptionCategories(): Promise<MigrationResult> {
+async function migrateOptionCategories(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "OptGroup",
@@ -769,7 +520,6 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
 
   const result = await migrateWithMapping(mapping);
 
-  // Clean up order gaps after migration
   if (result.created > 0) {
     await cleanOrderGaps("optionCategory", "order");
   }
@@ -777,7 +527,7 @@ export async function migrateOptionCategories(): Promise<MigrationResult> {
   return result;
 }
 
-export async function migrateModels(): Promise<MigrationResult> {
+async function migrateModels(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
@@ -786,9 +536,7 @@ export async function migrateModels(): Promise<MigrationResult> {
       {
         from: "Model",
         to: "model",
-        transform: (value) => {
-          return replaceInternalWhitespace(trimWhitespace(value));
-        },
+        transform: value => replaceInternalWhitespace(trimWhitespace(value)),
       },
       {
         from: "Description",
@@ -840,58 +588,7 @@ export async function migrateModels(): Promise<MigrationResult> {
   return result;
 }
 
-export async function migrateCompanies(): Promise<MigrationResult> {
-  const mapping: TableMapping = {
-    sourceDatabase: "std",
-    sourceTable: "CompanyMaster",
-    targetTable: "company",
-    fieldMappings: [
-      {
-        from: "CompanyName",
-        to: "name",
-        required: true,
-      },
-    ],
-    beforeSave: (data, original) => {
-      data.legacy = {
-        masterId: original.Master_Id,
-      };
-      data.createdAt = new Date(original.CreateDate || original.ModifyDate);
-      data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
-      data.createdById = original.CreateInit?.toLowerCase() || "system";
-      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
-      return data;
-    },
-    skipDuplicates: true,
-    duplicateCheck: data => ({
-      name: data.name,
-    }),
-    batchSize: 100,
-  };
-
-  const result = await migrateWithMapping(mapping);
-
-  // Enrich with CompanyXRef data
-  if (result.created > 0) {
-    logger.info("Enriching companies with CompanyXRef data...");
-
-    const enrichmentResult = await enrichMigratedData(
-      "company",
-      "std",
-      "CompanyXRef",
-      { target: "legacy.masterId", source: "Master_Id" },
-      [
-        { sourceField: "Company_ID", targetPath: "legacy.companyId", transform: value => value?.toString() },
-      ],
-    );
-
-    logger.info(`Company enrichment complete: ${enrichmentResult.updated} records updated`);
-  }
-
-  return result;
-}
-
-export async function migrateQuotes(): Promise<MigrationResult> {
+async function migrateQuotes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QData",
@@ -973,7 +670,7 @@ export async function migrateQuotes(): Promise<MigrationResult> {
   return result;
 }
 
-export async function migrateQuoteRevisions(): Promise<MigrationResult> {
+async function migrateQuoteRevisions(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QRev",
@@ -1003,7 +700,6 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
         return null;
       }
 
-      // Store the ID for duplicate check (will be accessed via closure)
       data._tempQuoteHeaderId = quoteHeader.id;
 
       data.quoteHeaderId = quoteHeader.id;
@@ -1015,7 +711,6 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
       return data;
     },
     filter: (record) => {
-      // Only process records with valid QYear, QNum, and QRev
       return record.QYear && record.QNum && record.QRev;
     },
     skipDuplicates: true,
@@ -1032,7 +727,83 @@ export async function migrateQuoteRevisions(): Promise<MigrationResult> {
   return result;
 }
 
-export async function migrateQuoteTerms(): Promise<MigrationResult> {
+async function migrateQuoteItems(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "QRev",
+    targetTable: "quoteItem",
+    fieldMappings: [
+      {
+        from: "Model",
+        to: "description",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+      {
+        from: "BasePrice",
+        to: "unitPrice",
+        transform: value => Number.parseFloat(value) || 0,
+        required: true,
+      },
+      {
+        from: "Sfx",
+        to: "lineNumber",
+        transform: value => Number.parseInt(value) || 1,
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const quoteHeader = await findReferencedRecord("quoteHeader", {
+        year: original.QYear?.toString(),
+        number: original.QNum?.toString(),
+      });
+
+      if (!quoteHeader) {
+        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+        return null;
+      }
+
+      const quoteDetails = await findReferencedRecord("quoteDetails", {
+        quoteHeaderId: quoteHeader.id,
+        revision: original.QRev?.toString().trim(),
+      });
+
+      if (!quoteDetails) {
+        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${original.QRev}`);
+        return null;
+      }
+
+      data._tempQuoteDetailsId = quoteDetails.id;
+      data._tempLineNumber = data.lineNumber;
+
+      data.quoteDetailsId = quoteDetails.id;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      // TODO: Add logic to map itemId
+
+      return data;
+    },
+    filter: (record) => {
+      return record.QYear && record.QNum && record.QRev && record.Sfx && record.Model?.toString().trim();
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { quoteDetailsId: data._tempQuoteDetailsId },
+        { lineNumber: data._tempLineNumber },
+      ],
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+  return result;
+}
+
+async function migrateQuoteTerms(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QtTerms",
@@ -1075,7 +846,6 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
-      // First find the quoteHeader
       const quoteHeader = await findReferencedRecord("quoteHeader", {
         year: original.QYear?.toString(),
         number: original.QNum?.toString(),
@@ -1086,7 +856,6 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
         return null;
       }
 
-      // Then find the specific quoteDetails by quoteHeaderId and revision
       const quote = await findReferencedRecord("quoteDetails", {
         quoteHeaderId: quoteHeader.id,
         revision: original.QRev?.toString().toUpperCase() || "A",
@@ -1121,58 +890,102 @@ export async function migrateQuoteTerms(): Promise<MigrationResult> {
   return result;
 }
 
-// Example: Create a custom migration with complex transformations
-// export async function migrateCustomTable(): Promise<MigrationResult> {
-//   const mapping: TableMapping = {
-//     sourceDatabase: "std",
-//     sourceTable: "OldCustomers",
-//     targetTable: "customers",
-//     fieldMappings: [
-//       {
-//         from: "CustID",
-//         to: "id",
-//         transform: value => Number.parseInt(value),
-//       },
-//       {
-//         from: "CustName",
-//         to: "name",
-//         transform: value => value?.trim().toUpperCase(),
-//         required: true,
-//       },
-//       {
-//         from: "CustEmail",
-//         to: "email",
-//         transform: value => value?.toLowerCase().trim(),
-//       },
-//       {
-//         from: "Active",
-//         to: "isActive",
-//         transform: value => value === "Y" || value === "1",
-//         defaultValue: true,
-//       },
-//     ],
-//     // Filter out inactive records during migration
-//     filter: record => record.Active !== "N" && record.Active !== "0",
-//     // Enrich data before saving
-//     beforeSave: (data, original) => {
-//       data.createdAt = new Date();
-//       data.updatedAt = new Date();
-//       data.legacyId = original.CustID;
-//       return data;
-//     },
-//     // Post-processing after save
-//     afterSave: async (saved, original) => {
-//       // Log successful migrations to audit table
-//       logger.info(`Migrated customer ${original.CustID} to ${saved.id}`);
-//     },
-//     skipDuplicates: true,
-//     duplicateCheck: data => ({ email: data.email }),
-//     batchSize: 100,
-//     concurrency: 3,
-//   };
+async function migrateQuoteNotes(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "notes",
+    targetTable: "quoteNote",
+    fieldMappings: [
+      {
+        from: "notebody",
+        to: "body",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const noteIndex = original.NoteIndex?.toString().trim();
+      if (!noteIndex) {
+        logger.warn("Missing NoteIndex");
+        return null;
+      }
 
-//   return await migrateWithMapping(mapping);
-// }
+      const parts = noteIndex.split("-");
+      if (parts.length < 2) {
+        logger.warn(`Invalid NoteIndex format: ${noteIndex}`);
+        return null;
+      }
+
+      let year = parts[0];
+      const number = parts[1];
+      const revision = parts[2] || "A";
+
+      if (year === "0000") {
+        year = "2000";
+      }
+      else if (year.startsWith("00") && year.length === 4) {
+        const yearNum = Number.parseInt(year);
+        year = yearNum < 50 ? `20${year.slice(2)}` : `19${year.slice(2)}`;
+      }
+
+      const quoteHeader = await findReferencedRecord("quoteHeader", {
+        year,
+        number,
+      });
+
+      if (!quoteHeader) {
+        logger.warn(`No quoteHeader found for year: ${year}, number: ${number}`);
+        return null;
+      }
+
+      const quoteDetails = await findReferencedRecord("quoteDetails", {
+        quoteHeaderId: quoteHeader.id,
+        revision,
+      });
+
+      if (!quoteDetails) {
+        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${revision}`);
+        return null;
+      }
+
+      const timestamp = createDateFromSeconds(original.notedate, original.notetime);
+
+      data._tempQuoteDetailsId = quoteDetails.id;
+
+      data.quoteDetailsId = quoteDetails.id;
+      data.createdAt = timestamp || new Date();
+      data.updatedAt = timestamp || new Date();
+      data.createdById = original.NoteCreater?.toString() || "system";
+      data.updatedById = original.NoteCreater?.toString() || "system";
+
+      return data;
+    },
+    filter: (record) => {
+      const excludedSubjects = [
+        "New Quotation Created",
+        "Quotation Previewed",
+        "Quotation Printed",
+        "Quotation Exported to Word",
+      ];
+
+      return record.NoteType === "Quote"
+        && record.NoteIndex
+        && !excludedSubjects.some(excluded => record.NoteSubject?.includes(excluded));
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { quoteDetailsId: data._tempQuoteDetailsId },
+        { body: data.body },
+        { createdAt: data.createdAt },
+      ],
+    }),
+    batchSize: 50,
+  };
+
+  const result = await migrateWithMapping(mapping);
+  return result;
+}
 
 async function main() {
   const startTime = Date.now();
@@ -1180,14 +993,14 @@ async function main() {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
 
-    // const schema = await extractDatabaseSchema("std");
-    // const coilResult = await migrateCoilTypes();
-    // const optionResult = await migrateOptionCategories();
-    // const modelResult = await migrateModels();
-    // const companyResult = await migrateCompanies();
+    // const coilTypes = await migrateCoilTypes();
+    // const optionCategories = await migrateOptionCategories();
+    // const models = await migrateModels();
     const quoteHeaders = await migrateQuotes();
     const quotes = await migrateQuoteRevisions();
+    const quoteItems = await migrateQuoteItems();
     const quoteTerms = await migrateQuoteTerms();
+    const quoteNotes = await migrateQuoteNotes();
 
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
@@ -1195,7 +1008,9 @@ async function main() {
     logger.info(`Migration Results (${duration}s):`);
     logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
     logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
+    logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }
   catch (error) {
     logger.error("Error in main:", error);
