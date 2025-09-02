@@ -417,30 +417,56 @@ async function processSingleBatch(
     }
   }
 
-  // Insert all records using bulk createMany
+  // Insert all records using bulk createMany with retry logic
   if (recordsToCreate.length > 0) {
-    try {
-      await mainDatabase.$transaction(async (tx) => {
-        const createResult = await (tx as any)[mapping.targetTable].createMany({
-          data: recordsToCreate,
-          skipDuplicates: mapping.skipDuplicates || false,
+    const maxRetries = 3;
+    let attempt = 0;
+    let success = false;
+
+    while (attempt < maxRetries && !success) {
+      try {
+        // Add random delay for retries to reduce collision probability
+        if (attempt > 0) {
+          const delay = Math.random() * 1000 + (attempt * 500); // 500-1500ms increasing delay
+          await new Promise(resolve => setTimeout(resolve, delay));
+          logger.debug(`Retrying batch ${batchIndex}, attempt ${attempt + 1}/${maxRetries} after ${delay.toFixed(0)}ms delay`);
+        }
+
+        await mainDatabase.$transaction(async (tx) => {
+          const createResult = await (tx as any)[mapping.targetTable].createMany({
+            data: recordsToCreate,
+            skipDuplicates: mapping.skipDuplicates || false,
+          });
+          result.created += createResult.count;
+
+          // If we skipped any, calculate how many
+          const expectedTotal = recordsToCreate.length;
+          const actualCreated = createResult.count;
+          result.skipped += (expectedTotal - actualCreated);
+        }, {
+          maxWait: 5000, // Shorter wait to fail faster on deadlocks
+          timeout: 20000,
         });
-        result.created += createResult.count;
-
-        // If we skipped any, calculate how many
-        const expectedTotal = recordsToCreate.length;
-        const actualCreated = createResult.count;
-        result.skipped += (expectedTotal - actualCreated);
-      }, {
-        maxWait: 10000,
-        timeout: 30000,
-      });
-
-      logger.debug(`Bulk processed ${recordsToCreate.length} records in batch ${batchIndex}`);
-    }
-    catch (bulkError) {
-      logger.error(`Bulk insert failed in batch ${batchIndex}:`, bulkError.message);
-      result.errors += recordsToCreate.length;
+        
+        success = true;
+        logger.debug(`Bulk processed ${recordsToCreate.length} records in batch ${batchIndex}`);
+      }
+      catch (bulkError) {
+        attempt++;
+        const errorMessage = (bulkError as any).message || bulkError;
+        
+        // Check if it's a deadlock error
+        const isDeadlock = errorMessage.includes('deadlock') || errorMessage.includes('40P01');
+        
+        if (isDeadlock && attempt < maxRetries) {
+          logger.warn(`Deadlock detected in batch ${batchIndex}, retrying (${attempt}/${maxRetries})`);
+          continue;
+        } else {
+          logger.error(`Bulk insert failed in batch ${batchIndex} after ${attempt} attempts:`, errorMessage);
+          result.errors += recordsToCreate.length;
+          break;
+        }
+      }
     }
   }
 }

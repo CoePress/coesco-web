@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 import {
   addMilliseconds,
   differenceInDays,
@@ -137,5 +139,23 @@ export function buildQueryParams<T>(query: any): IQueryParams<T> {
     search: query.search as string,
     filter: query.filter as Partial<T>,
     include: query.include ? JSON.parse(query.include as string) : undefined,
+  };
+}
+
+type AsyncController = (req: Request, res: Response, next: NextFunction) => Promise<any>;
+
+export function asyncWrapper(controller: AsyncController) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await controller(req, res, next);
+
+      // Only send response if controller didn't handle it manually
+      if (!res.headersSent && result !== undefined) {
+        res.json(result);
+      }
+    }
+    catch (error) {
+      next(error);
+    }
   };
 }
