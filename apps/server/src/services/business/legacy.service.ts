@@ -49,10 +49,12 @@ export class LegacyService {
   }
 
   private buildOrderQuery(params: any) {
-    const order = params.order == null ? "" : params.order;
-    const sort = (params.sort ? `ORDER BY ${params.sort} ${params.order === "" ? "" : params.order}` : "");
+    if (!params.sort) {
+      return "";
+    }
 
-    return sort;
+    const order = params.order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
+    return `ORDER BY ${params.sort} ${order}`;
   }
 
   async initialize() {
@@ -62,6 +64,7 @@ export class LegacyService {
   }
 
   async create(database: string, table: string, data: any) {
+    return;
     const query = `
       INSERT INTO PUB.${table} 
       (ID) VALUES (${data})
@@ -165,7 +168,7 @@ export class LegacyService {
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
       const records = result || [];
-      
+
       // More accurate pagination check: if we got fewer records than requested,
       // we've reached the end. Only set hasMore to true if we got exactly
       // the batch size AND we know there could be more records
@@ -211,10 +214,29 @@ export class LegacyService {
     }
   }
 
-  async update(database: string, table: string, field: string, id: string, newValue: string) {
+  async update(database: string, table: string, id: string, data: Record<string, any>) {
+    return;
+    if (!data || Object.keys(data).length === 0) {
+      return false;
+    }
+
+    const setClause = Object.entries(data)
+      .map(([field, value]) => {
+        if (value === null) {
+          return `${field} = NULL`;
+        }
+        else if (typeof value === "string") {
+          return `${field} = '${value.replace(/'/g, "''")}'`;
+        }
+        else {
+          return `${field} = ${value}`;
+        }
+      })
+      .join(", ");
+
     const query = `
       UPDATE PUB.${table}
-      SET ${field} = '${newValue}'
+      SET ${setClause}
       WHERE ID = '${id}'
     `;
 

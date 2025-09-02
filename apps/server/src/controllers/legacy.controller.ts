@@ -40,8 +40,8 @@ export class LegacyController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { database, table, field, id } = req.params;
-      const result = await legacyService.update(database, table,  id);
+      const { database, table, id } = req.params;
+      const result = await legacyService.update(database, table, id, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -63,7 +63,7 @@ export class LegacyController {
   async getTables(req: Request, res: Response, next: NextFunction) {
     try {
       const { database } = req.params;
-      const result = await legacyService.getTables(database);
+      const result = await legacyService.getTables(database as "job" | "quote" | "std");
       res.status(200).json(result);
     }
     catch (error) {

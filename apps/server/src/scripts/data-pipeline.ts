@@ -319,7 +319,7 @@ async function cleanOrderGaps(
   }
 }
 
-async function extractDatabaseSchema(database: "quote" | "std" | "job"): Promise<void> {
+async function _extractDatabaseSchema(database: "quote" | "std" | "job"): Promise<void> {
   try {
     const tables = await legacyService.getTables(database);
     logger.info(`Found ${tables?.length || 0} tables in ${database} database`);
@@ -420,7 +420,7 @@ async function findReferencedRecord(
 }
 
 // Migrations
-async function migrateCoilTypes(): Promise<MigrationResult> {
+async function _migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "CoilType",
@@ -473,7 +473,7 @@ async function migrateCoilTypes(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateOptionCategories(): Promise<MigrationResult> {
+async function _migrateOptionCategories(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "OptGroup",
@@ -527,7 +527,7 @@ async function migrateOptionCategories(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateModels(): Promise<MigrationResult> {
+async function _migrateModels(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
@@ -727,7 +727,7 @@ async function migrateQuoteRevisions(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateQuoteItems(): Promise<MigrationResult> {
+async function _migrateQuoteItems(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QRev",
@@ -803,7 +803,7 @@ async function migrateQuoteItems(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateQuoteTerms(): Promise<MigrationResult> {
+async function _migrateQuoteTerms(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QtTerms",
