@@ -32,12 +32,12 @@ model Employee {
   number      String    @unique
   firstName   String
   lastName    String
+  initials    String
   email       String?   @unique
   phoneNumber String?
-  isActive    Boolean   @default(true)
+  title    String
   hireDate    DateTime?
-  jobTitle    String
-  initials    String?
+  isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -145,22 +145,22 @@ model PermissionException {
 model Company {
   id          String    @id @default(uuid())
   name        String
-  // website       String?
-  // email         String?
-  // phone         String?
-  // fax           String?
-  // industry      Industry?
-  // yearFounded   Int?
-  // revenue       Int?
-  // employeeCount String?
-  // customerSince DateTime?
-  // paymentTerms  String?
-  // creditLimit   Int?
-  // taxId         String?
-  // logoUrl       String?
-  // notes         String?
-  // tags          String[]
-  // status        CompanyStatus @default(ACTIVE)
+  website       String?
+  email         String?
+  phone         String?
+  fax           String?
+  industry      Industry?
+  yearFounded   Int?
+  revenue       Int?
+  employeeCount String?
+  customerSince DateTime?
+  paymentTerms  String?
+  creditLimit   Int?
+  taxId         String?
+  logoUrl       String?
+  notes         String?
+  tags          String[]
+  status        CompanyStatus @default(ACTIVE)
   legacy      Json      @default("{}")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

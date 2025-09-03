@@ -586,7 +586,7 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
     ],
     beforeSave: async (data, original) => {
       const equFamily = original.EquFamily?.toString().trim() || "";
-      
+
       if (equFamily === "") {
         return null; // Skip - no EquFamily
       }
@@ -609,18 +609,19 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
       // Create missing parent if not found
       if (!parent) {
         logger.warn(`Creating missing parent: Code="${parentCode}"`);
-        
+
         try {
           parent = await mainDatabase.productClass.create({
             data: {
               code: parentCode,
               name: parentCode, // Use code as name
-              description: "",  // No description
+              description: "", // No description
               depth: 0,
               parentId: null,
             },
           });
-        } catch (error) {
+        }
+        catch (error) {
           logger.error(`Failed to create parent ${parentCode}: ${error}`);
           return null;
         }
@@ -1118,15 +1119,171 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+async function _migrateEmployees(): Promise<MigrationResult> {
+  const userMapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "Employee",
+    targetTable: "user",
+    fieldMappings: [],
+    beforeSave: async (data, original) => {
+      if (!original.EmpInitials || original.EmpInitials.trim() === "") {
+        return null;
+      }
+
+      const username = original.EmpInitials.toLowerCase();
+
+      const existingUser = await findReferencedRecord("user", { username });
+      if (existingUser) {
+        logger.info(`User exists: ${username}`);
+        return null;
+      }
+
+      data.username = username;
+      data.password = null;
+      data.microsoftId = null;
+      data.role = "USER";
+      data.isActive = true;
+      return data;
+    },
+    skipDuplicates: true,
+    batchSize: 100,
+  };
+
+  logger.info("Creating users for employees...");
+  const userResult = await migrateWithMapping(userMapping);
+
+  const employeeMapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "Employee",
+    targetTable: "employee",
+    fieldMappings: [
+      {
+        from: "EmpNum",
+        to: "number",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+      {
+        from: "EmpFirstName",
+        to: "firstName",
+        transform: value => value?.trim(),
+        required: true,
+      },
+      {
+        from: "EmpLastName",
+        to: "lastName",
+        transform: value => value?.trim(),
+        required: true,
+      },
+      {
+        from: "EmpInitials",
+        to: "initials",
+        transform: value => value?.trim(),
+        required: true,
+      },
+      {
+        from: "Emptitle",
+        to: "title",
+        transform: value => value?.trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      if (!original.EmpInitials || original.EmpInitials.trim() === "") {
+        return null;
+      }
+
+      const username = original.EmpInitials.toLowerCase();
+
+      const user = await findReferencedRecord("user", { username });
+      if (!user) {
+        logger.error(`No user found for employee: ${username}`);
+        return null;
+      }
+
+      data.userId = user.id;
+      data.email = `${original.EmpInitials}@cpec.com`;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      number: data.number,
+    }),
+    batchSize: 100,
+  };
+
+  logger.info("Creating employees...");
+  const employeeResult = await migrateWithMapping(employeeMapping);
+
+  // Third pass: Update all createdById/updatedById references
+  logger.info("Updating employee references...");
+  const allEmployees = await mainDatabase.employee.findMany({
+    select: { id: true, createdById: true, updatedById: true, initials: true },
+  });
+
+  // Create lookup map of initials -> employee ID
+  const initialsMap = new Map<string, string>();
+  for (const emp of allEmployees) {
+    if (emp.initials) {
+      initialsMap.set(emp.initials.toLowerCase(), emp.id);
+    }
+  }
+
+  let updatedCount = 0;
+  for (const employee of allEmployees) {
+    const updates: any = {};
+
+    if (employee.createdById && employee.createdById !== "system") {
+      const createdByEmployeeId = initialsMap.get(employee.createdById);
+      if (createdByEmployeeId) {
+        updates.createdById = createdByEmployeeId;
+      }
+    }
+
+    if (employee.updatedById && employee.updatedById !== "system") {
+      const updatedByEmployeeId = initialsMap.get(employee.updatedById);
+      if (updatedByEmployeeId) {
+        updates.updatedById = updatedByEmployeeId;
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await mainDatabase.employee.update({
+        where: { id: employee.id },
+        data: updates,
+      });
+      updatedCount++;
+    }
+  }
+
+  logger.info(`Updated ${updatedCount} employee references`);
+
+  // Combine results
+  const result: MigrationResult = {
+    total: userResult.total + employeeResult.total,
+    created: userResult.created + employeeResult.created,
+    skipped: userResult.skipped + employeeResult.skipped,
+    errors: userResult.errors + employeeResult.errors,
+    errorDetails: [...userResult.errorDetails, ...employeeResult.errorDetails],
+  };
+
+  return result;
+}
+
 async function main() {
   const startTime = Date.now();
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
 
+    const employees = await _migrateEmployees();
     // const coilTypes = await _migrateCoilTypes();
     // const optionCategories = await _migrateOptionCategories();
-    const productClasses = await _migrateProductClasses();
+    // const productClasses = await _migrateProductClasses();
     // const equipmentItems = await _migrateEquipListToItems();
     // const quoteHeaders = await _migrateQuotes();
     // const quotes = await _migrateQuoteRevisions();
@@ -1138,9 +1295,10 @@ async function main() {
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
+    logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
     // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
     // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
     // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
