@@ -305,6 +305,7 @@ const QuoteDetails = () => {
 
   const Actions = () => {
     const actions = [];
+    const isLatestRevision = !selectedRevisionId;
 
     // Add Revision Dropdown
     if (sortedRevisions.length > 1) {
@@ -340,7 +341,7 @@ const QuoteDetails = () => {
     }
 
     // Add Customer/Dealer buttons for DRAFT quotes
-    if (quoteOverview?.status === "DRAFT") {
+    if (quoteOverview?.status === "DRAFT" && isLatestRevision) {
       if (!customer) {
         actions.push(
           <Button
@@ -375,38 +376,40 @@ const QuoteDetails = () => {
       );
     }
 
-    switch (quoteOverview?.status) {
-      case "DRAFT":
-        actions.push(
-          <Button
-            key="approve"
-            variant="primary"
-            disabled={quoteItems.length === 0}
-            onClick={() => setIsApprovalModalOpen(true)}>
-            <CheckCircle size={16} /> Approve Quote
-          </Button>
-        );
-        break;
-      case "APPROVED":
-        actions.push(
-          <Button
-            key="send"
-            variant="primary"
-            onClick={() => setIsSendConfirmationOpen(true)}>
-            <Send size={16} /> Send Quote
-          </Button>
-        );
-        break;
-      case "SENT":
-        actions.push(
-          <Button
-            key="revise"
-            variant="primary"
-            onClick={() => setIsRevisionConfirmationOpen(true)}>
-            <Plus size={16} /> Create Revision
-          </Button>
-        );
-        break;
+    if (isLatestRevision) {
+      switch (quoteOverview?.status) {
+        case "DRAFT":
+          actions.push(
+            <Button
+              key="approve"
+              variant="primary"
+              disabled={quoteItems.length === 0}
+              onClick={() => setIsApprovalModalOpen(true)}>
+              <CheckCircle size={16} /> Approve Quote
+            </Button>
+          );
+          break;
+        case "APPROVED":
+          actions.push(
+            <Button
+              key="send"
+              variant="primary"
+              onClick={() => setIsSendConfirmationOpen(true)}>
+              <Send size={16} /> Send Quote
+            </Button>
+          );
+          break;
+        case "SENT":
+          actions.push(
+            <Button
+              key="revise"
+              variant="primary"
+              onClick={() => setIsRevisionConfirmationOpen(true)}>
+              <Plus size={16} /> Create Revision
+            </Button>
+          );
+          break;
+      }
     }
 
     return <div className="flex gap-2">{actions}</div>;

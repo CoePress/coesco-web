@@ -1,0 +1,3 @@
+- What statuses can a quote be in? (Draft, Open, Approved, Sent, Rejected, Approved)
+- Should we include tags for things like lost-to-customer
+- what year are the 0000 quotes? 

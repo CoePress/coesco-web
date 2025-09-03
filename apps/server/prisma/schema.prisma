@@ -708,7 +708,7 @@ enum UserRole {
 
 // Quote
 
-// CoilType - Done
+// CoilType
 model CoilType {
   id          String  @id @default(uuid())
   description String?
@@ -724,16 +724,10 @@ model ProductClass {
   id           String    @id @default(uuid())
   code         String    @unique
   name         String
-  description1 String?
-  description2 String?
+  description  String?
   parentId     String?
   depth        Int       @default(0)
   isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  createdById  String
-  updatedById  String
 
   parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children                     ProductClass[]               @relation("ProductClassHierarchy")
@@ -741,11 +735,10 @@ model ProductClass {
   configurations               Configuration[]
   productClassOptionCategories ProductClassOptionCategory[]
 
-  @@index([createdById])
   @@map("product_classes")
 }
 
-// OptGroup - Done
+// OptGroup
 model OptionCategory {
   id          String  @id @default(uuid())
   name        String  @unique
@@ -782,17 +775,20 @@ model ProductClassOptionCategory {
 }
 
 model Item {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  unitPrice   Float     @default(0)
-  type        String
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  id             String    @id @default(uuid())
+  modelNumber    String?
+  name           String?
+  description    String?
+  specifications Json      @default("{}")
+  unitPrice      Float     @default(0)
+  leadTime       Int?       
+  type           ItemType
+  isActive       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
 
   quoteItems QuoteItem[]
 
@@ -800,19 +796,10 @@ model Item {
   @@map("items")
 }
 
-// EquipList + LeadTime (112 default) - Might migrate into product classes
-model Model {
-  id          String    @id @default(uuid())
-  model       String
-  description String?
-  data        Json      @default("{}")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
-
-  @@map("models")
+enum ItemType {
+  Equipment
+  Parts
+  Service
 }
 
 // QData
@@ -909,14 +896,14 @@ model QuoteTerms {
 }
 
 model QuoteNote {
-  id String @id @default(uuid())
+  id             String    @id @default(uuid())
   quoteDetailsId String
-  body String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-  createdById     String
-  updatedById     String
+  body           String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
 
   @@map("quote_notes")
 }

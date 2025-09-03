@@ -1,4 +1,6 @@
 /* eslint-disable node/prefer-global/process */
+import type { ItemType } from "@prisma/client";
+
 import { PrismaClient } from "@prisma/client";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -40,6 +42,8 @@ interface TableMapping {
   concurrency?: number; // Number of batches to process in parallel
   skipDuplicates?: boolean;
   duplicateCheck?: (mappedData: any) => any;
+  sort?: string | string[]; // Sort field(s) for source table
+  order?: "ASC" | "DESC"; // Sort order (default ASC)
 }
 
 interface MigrationResult {
@@ -69,8 +73,8 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
 
     const params = {
       filter: null,
-      sort: null,
-      order: null,
+      sort: mapping.sort || null,
+      order: mapping.order || null,
       offset: 0,
     };
 
@@ -527,15 +531,138 @@ async function _migrateOptionCategories(): Promise<MigrationResult> {
   return result;
 }
 
-async function _migrateModels(): Promise<MigrationResult> {
+async function _migrateProductClasses(): Promise<MigrationResult> {
+  const parentMapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "EquGroupInfo",
+    targetTable: "productClass",
+    fieldMappings: [
+      {
+        from: "GroupDesc",
+        to: "name",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const equFamily = original.EquFamily?.toString().trim() || "";
+      const equGroup = original.EquGroup?.toString().trim() || "";
+
+      if (equFamily !== "") {
+        return null; // Skip - has EquFamily
+      }
+
+      const code = equGroup || original.GroupDesc?.toString().replace(/\s+/g, "-").toUpperCase();
+      logger.info(`PARENT: Group="${equGroup}" -> Code="${code}"`);
+
+      data.code = code;
+      data.description = original.Desc1 || original.GroupDesc || "";
+      data.depth = 0;
+      data.parentId = null;
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      code: data.code,
+      parentId: null,
+    }),
+    batchSize: 100,
+  };
+
+  logger.info("Migrating parent product classes...");
+  const parentResult = await migrateWithMapping(parentMapping);
+
+  const childMapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "EquGroupInfo",
+    targetTable: "productClass",
+    fieldMappings: [
+      {
+        from: "GroupDesc",
+        to: "name",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const equFamily = original.EquFamily?.toString().trim() || "";
+      
+      if (equFamily === "") {
+        return null; // Skip - no EquFamily
+      }
+
+      // Skip n/a records
+      if (equFamily.toLowerCase() === "n/a") {
+        return null;
+      }
+
+      const cleanFamily = replaceInternalWhitespace(equFamily);
+      const segments = cleanFamily.split("-");
+      const parentCode = segments[0];
+      const currentCode = segments[1] || segments[0];
+
+      let parent = await findReferencedRecord("productClass", {
+        code: parentCode,
+        parentId: null,
+      });
+
+      // Create missing parent if not found
+      if (!parent) {
+        logger.warn(`Creating missing parent: Code="${parentCode}"`);
+        
+        try {
+          parent = await mainDatabase.productClass.create({
+            data: {
+              code: parentCode,
+              name: parentCode, // Use code as name
+              description: "",  // No description
+              depth: 0,
+              parentId: null,
+            },
+          });
+        } catch (error) {
+          logger.error(`Failed to create parent ${parentCode}: ${error}`);
+          return null;
+        }
+      }
+
+      data.code = currentCode;
+      data.parentId = parent.id;
+      data.depth = 1;
+      data.description = original.Desc2 || "";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      code: data.code,
+      parentId: data.parentId,
+    }),
+    batchSize: 100,
+  };
+
+  logger.info("Migrating child product classes...");
+  const childResult = await migrateWithMapping(childMapping);
+
+  const result: MigrationResult = {
+    total: parentResult.total + childResult.total,
+    created: parentResult.created + childResult.created,
+    skipped: parentResult.skipped + childResult.skipped,
+    errors: parentResult.errors + childResult.errors,
+    errorDetails: [...parentResult.errorDetails, ...childResult.errorDetails],
+  };
+
+  return result;
+}
+
+async function _migrateEquipListToItems(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
-    targetTable: "model",
+    targetTable: "item",
     fieldMappings: [
       {
         from: "Model",
-        to: "model",
+        to: "modelNumber",
         transform: value => replaceInternalWhitespace(trimWhitespace(value)),
       },
       {
@@ -544,7 +671,7 @@ async function _migrateModels(): Promise<MigrationResult> {
       },
     ],
     beforeSave: (data, original) => {
-      data.data = {
+      data.specifications = {
         maxWidth: original.MaxWidth,
         minThickness: original.MinThick,
         maxThickness: original.MaxThick,
@@ -568,8 +695,9 @@ async function _migrateModels(): Promise<MigrationResult> {
         price: original.Price,
         equipmentType: original.EquipType,
         commission: original.Comm,
-        leadTime: 112,
       };
+      data.leadTime = 112;
+      data.type = "Equipment" as ItemType;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
       data.createdById = original.CreateInit.toLowerCase() || "system";
@@ -588,7 +716,7 @@ async function _migrateModels(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateQuotes(): Promise<MigrationResult> {
+async function _migrateQuotes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QData",
@@ -670,7 +798,7 @@ async function migrateQuotes(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateQuoteRevisions(): Promise<MigrationResult> {
+async function _migrateQuoteRevisions(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QRev",
@@ -890,7 +1018,7 @@ async function _migrateQuoteTerms(): Promise<MigrationResult> {
   return result;
 }
 
-async function migrateQuoteNotes(): Promise<MigrationResult> {
+async function _migrateQuoteNotes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "notes",
@@ -996,24 +1124,29 @@ async function main() {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
 
-    // const coilTypes = await migrateCoilTypes();
-    // const optionCategories = await migrateOptionCategories();
-    // const models = await migrateModels();
-    const quoteHeaders = await migrateQuotes();
-    const quotes = await migrateQuoteRevisions();
-    // const quoteItems = await migrateQuoteItems();
-    // const quoteTerms = await migrateQuoteTerms();
-    const quoteNotes = await migrateQuoteNotes();
+    // const coilTypes = await _migrateCoilTypes();
+    // const optionCategories = await _migrateOptionCategories();
+    const productClasses = await _migrateProductClasses();
+    // const equipmentItems = await _migrateEquipListToItems();
+    // const quoteHeaders = await _migrateQuotes();
+    // const quotes = await _migrateQuoteRevisions();
+    // const quoteItems = await _migrateQuoteItems();
+    // const quoteTerms = await _migrateQuoteTerms();
+    // const quoteNotes = await _migrateQuoteNotes();
 
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
-    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
-    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
+    // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
     // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
-    logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
+    // logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }
   catch (error) {
     logger.error("Error in main:", error);
