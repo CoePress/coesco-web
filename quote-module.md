@@ -8,3 +8,7 @@
 
 - can Startup be moved to the revision?
 - cant PrintQuote be moved to revision?
+
+- Do we want the data from QtNotes? seems to be replaced by Notes
+
+- OtherEqu vs Specials - specials are per an OPTION

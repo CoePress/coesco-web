@@ -551,6 +551,69 @@ async function _migrateOptionCategories(): Promise<MigrationResult> {
   return result;
 }
 
+async function _migrateOptions(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "StdEquip",
+    targetTable: "optionHeader",
+    fieldMappings: [
+      {
+        from: "ID",
+        to: "legacyId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "Name",
+        to: "name",
+        transform: value => value?.trim(),
+      },
+      {
+        from: "Descr",
+        to: "description",
+        transform: value => value?.trim(),
+      },
+      {
+        from: "Application",
+        to: "application",
+        transform: value => value?.trim(),
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const optionCategory = await findReferencedRecord("optionCategory", {
+        legacyId: original.OptionGrpID?.toString(),
+      });
+
+      if (!optionCategory) {
+        logger.warn(`No optionCategory found for legacyId: ${original.OptionGrpID}`);
+        return null;
+      }
+
+      // TODO: Handle HideOption -> isActive
+
+      data.optionCategoryId = optionCategory.id;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      legacyId: data.legacyId,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  if (result.created > 0) {
+    await cleanOrderGaps("optionCategory", "order");
+  }
+
+  return result;
+}
+
 async function _migrateProductClasses(): Promise<MigrationResult> {
   const parentMapping: TableMapping = {
     sourceDatabase: "quote",
@@ -1387,12 +1450,13 @@ async function main() {
     const employees = await _migrateEmployees();
     const coilTypes = await _migrateCoilTypes();
     const optionCategories = await _migrateOptionCategories();
+    const options = await _migrateOptions();
     const productClasses = await _migrateProductClasses();
-    const equipmentItems = await _migrateEquipListToItems();
-    const quoteHeaders = await _migrateQuotes();
-    const quotes = await _migrateQuoteRevisions();
-    const quoteItems = await _migrateQuoteItems();
-    const customQuoteItems = await _migrateCustomQuoteItems();
+    // const equipmentItems = await _migrateEquipListToItems();
+    // const quoteHeaders = await _migrateQuotes();
+    // const quotes = await _migrateQuoteRevisions();
+    // const quoteItems = await _migrateQuoteItems();
+    // const customQuoteItems = await _migrateCustomQuoteItems();
     // const quoteTerms = await _migrateQuoteTerms();
     // const quoteNotes = await _migrateQuoteNotes();
 
@@ -1403,12 +1467,13 @@ async function main() {
     logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
     logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    logger.info(`Option: ${options.created} created, ${options.skipped} skipped, ${options.errors} errors`);
     logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
-    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
-    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
-    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
-    logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
+    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    // logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
     // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
     // logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }

@@ -434,50 +434,6 @@ model Message {
   @@map("messages")
 }
 
-model OptionHeader {
-  id          String    @id @default(uuid())
-  categoryId  String
-  name        String
-  code        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
-
-  category             OptionCategory        @relation(fields: [categoryId], references: [id])
-  optionDetails        OptionDetails[]
-  optionRuleTargets    OptionRuleTarget[]
-  optionRuleTriggers   OptionRuleTrigger[]
-  configurationOptions ConfigurationOption[]
-
-  @@index([createdById])
-  @@map("option_headers")
-}
-
-model OptionDetails {
-  id             String    @id @default(uuid())
-  productClassId String
-  optionHeaderId String
-  price          Decimal
-  displayOrder   Int       @default(0)
-  isActive       Boolean   @default(true)
-  isDefault      Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-  createdById    String
-  updatedById    String
-
-  productClass ProductClass @relation(fields: [productClassId], references: [id])
-  optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
-
-  @@unique([productClassId, optionHeaderId])
-  @@index([createdById])
-  @@map("option_details")
-}
-
 model OptionRule {
   id          String           @id @default(uuid())
   name        String
@@ -776,6 +732,53 @@ model ProductClassOptionCategory {
   @@index([createdById])
   @@map("product_class_option_categories")
 }
+
+model OptionHeader {
+  id          String    @id @default(uuid())
+  optionCategoryId  String
+  name        String
+  description String?
+  application String?
+  legacyId    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
+
+  category             OptionCategory        @relation(fields: [optionCategoryId], references: [id])
+  optionDetails        OptionDetails[]
+  optionRuleTargets    OptionRuleTarget[]
+  optionRuleTriggers   OptionRuleTrigger[]
+  configurationOptions ConfigurationOption[]
+
+  @@index([createdById])
+  @@map("option_headers")
+}
+
+model OptionDetails {
+  id             String    @id @default(uuid())
+  productClassId String
+  optionHeaderId String
+  price          Decimal
+  displayOrder   Int       @default(0)
+  isActive       Boolean   @default(true)
+  isDefault      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String
+  updatedById    String
+
+  productClass ProductClass @relation(fields: [productClassId], references: [id])
+  optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
+
+  @@unique([productClassId, optionHeaderId])
+  @@index([createdById])
+  @@map("option_details")
+}
+
 
 model Item {
   id             String    @id @default(uuid())
