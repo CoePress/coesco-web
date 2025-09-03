@@ -423,6 +423,26 @@ async function findReferencedRecord(
   }
 }
 
+async function findEmployeeByNumberOrInitials(identifier: string): Promise<any> {
+  try {
+    let employee = await mainDatabase.employee.findFirst({
+      where: { number: identifier },
+    });
+
+    if (!employee) {
+      employee = await mainDatabase.employee.findFirst({
+        where: { initials: identifier.toUpperCase() },
+      });
+    }
+
+    return employee;
+  }
+  catch (error) {
+    logger.error(`Error finding employee by identifier ${identifier}:`, error);
+    return null;
+  }
+}
+
 // Migrations
 async function _migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
@@ -864,7 +884,7 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
     fieldMappings: [
       {
         from: "Model",
-        to: "description",
+        to: "model",
         transform: value => value?.toString().trim(),
         required: true,
       },
@@ -917,6 +937,93 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
     },
     filter: (record) => {
       return record.QYear && record.QNum && record.QRev && record.Sfx && record.Model?.toString().trim();
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      AND: [
+        { quoteDetailsId: data._tempQuoteDetailsId },
+        { lineNumber: data._tempLineNumber },
+      ],
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+  return result;
+}
+
+async function _migrateCustomQuoteItems(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "OtherEqu",
+    targetTable: "quoteItem",
+    fieldMappings: [
+
+      {
+        from: "EqName",
+        to: "name",
+        transform: value => value?.toString().trim(),
+      },
+      {
+        from: "EqDesc",
+        to: "description",
+        transform: value => value?.toString().trim(),
+      },
+      {
+        from: "Model",
+        to: "model",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+      {
+        from: "EqPrice",
+        to: "unitPrice",
+        transform: value => Number.parseFloat(value) || 0,
+      },
+      {
+        from: "Sfx",
+        to: "lineNumber",
+        transform: value => Number.parseInt(value),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const quoteHeader = await findReferencedRecord("quoteHeader", {
+        year: original.QYear?.toString(),
+        number: original.QNum?.toString(),
+      });
+
+      if (!quoteHeader) {
+        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+        return null;
+      }
+
+      const quoteDetails = await findReferencedRecord("quoteDetails", {
+        quoteHeaderId: quoteHeader.id,
+        revision: original.QRev?.toString().trim(),
+      });
+
+      if (!quoteDetails) {
+        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${original.QRev}`);
+        return null;
+      }
+
+      data._tempQuoteDetailsId = quoteDetails.id;
+      data._tempLineNumber = data.lineNumber;
+
+      data.quoteDetailsId = quoteDetails.id;
+      data.isCustom = true;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      // TODO: Add logic to map itemId
+
+      return data;
+    },
+    filter: (record) => {
+      return record.QYear && record.QNum && record.QRev && record.Sfx;
     },
     skipDuplicates: true,
     duplicateCheck: data => ({
@@ -1219,13 +1326,11 @@ async function _migrateEmployees(): Promise<MigrationResult> {
   logger.info("Creating employees...");
   const employeeResult = await migrateWithMapping(employeeMapping);
 
-  // Third pass: Update all createdById/updatedById references
   logger.info("Updating employee references...");
   const allEmployees = await mainDatabase.employee.findMany({
     select: { id: true, createdById: true, updatedById: true, initials: true },
   });
 
-  // Create lookup map of initials -> employee ID
   const initialsMap = new Map<string, string>();
   for (const emp of allEmployees) {
     if (emp.initials) {
@@ -1262,7 +1367,6 @@ async function _migrateEmployees(): Promise<MigrationResult> {
 
   logger.info(`Updated ${updatedCount} employee references`);
 
-  // Combine results
   const result: MigrationResult = {
     total: userResult.total + employeeResult.total,
     created: userResult.created + employeeResult.created,
@@ -1281,13 +1385,14 @@ async function main() {
     await legacyService.initialize();
 
     const employees = await _migrateEmployees();
-    // const coilTypes = await _migrateCoilTypes();
-    // const optionCategories = await _migrateOptionCategories();
-    // const productClasses = await _migrateProductClasses();
-    // const equipmentItems = await _migrateEquipListToItems();
-    // const quoteHeaders = await _migrateQuotes();
-    // const quotes = await _migrateQuoteRevisions();
-    // const quoteItems = await _migrateQuoteItems();
+    const coilTypes = await _migrateCoilTypes();
+    const optionCategories = await _migrateOptionCategories();
+    const productClasses = await _migrateProductClasses();
+    const equipmentItems = await _migrateEquipListToItems();
+    const quoteHeaders = await _migrateQuotes();
+    const quotes = await _migrateQuoteRevisions();
+    const quoteItems = await _migrateQuoteItems();
+    const customQuoteItems = await _migrateCustomQuoteItems();
     // const quoteTerms = await _migrateQuoteTerms();
     // const quoteNotes = await _migrateQuoteNotes();
 
@@ -1296,13 +1401,14 @@ async function main() {
 
     logger.info(`Migration Results (${duration}s):`);
     logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
-    // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
-    // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
-    // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
-    // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
-    // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
+    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
     // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
     // logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }

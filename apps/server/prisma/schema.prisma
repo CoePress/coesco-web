@@ -37,6 +37,8 @@ model Employee {
   phoneNumber String?
   title    String
   hireDate    DateTime?
+  startDate    DateTime?
+  terminationDate    DateTime?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -745,6 +747,7 @@ model OptionCategory {
   description String?
   multiple    Boolean @default(false)
   mandatory   Boolean @default(false)
+  standard    Boolean @default(false)
   order       Int
   legacyId    String?
 
@@ -853,16 +856,19 @@ model QuoteDetails {
   @@map("quote_details")
 }
 
-// Catalog Items, Parts, Services, Configs or Custom Items
+// QRev & OtherEqu
 model QuoteItem {
   id              String    @id @default(uuid())
   quoteDetailsId  String
   configurationId String?
   itemId          String?
+  model           String?
+  name            String?
   description     String?
   quantity        Int       @default(1)
   unitPrice       Decimal
   lineNumber      Int
+  isCustom          Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
