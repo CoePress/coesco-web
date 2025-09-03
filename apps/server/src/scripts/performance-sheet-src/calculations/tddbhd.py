@@ -1,7 +1,3 @@
-"""
-TDDBHD Calculation Module
-
-"""
 from models import tddbhd_input
 from math import pi, sqrt
 import re
@@ -9,242 +5,217 @@ import re
 from utils.shared import (
     NUM_BRAKEPADS, BRAKE_DISTANCE, CYLINDER_ROD, STATIC_FRICTION, rfq_state
 )
-# Import your lookup functions
 from utils.lookup_tables import (
     get_cylinder_bore, get_hold_down_matrix_label, get_material_density, get_material_modulus, get_reel_max_weight, 
     get_pressure_psi, get_holddown_force_available, get_min_material_width, get_type_of_line, get_drive_key, get_drive_torque 
-    )
+)
 
-def calculate_tbdbhd(data: tddbhd_input):
-    """
-    Calculate TDDBHD values based on the provided input data.
+# --- Lookup Wrappers ---
+def lookup_density(material_type):
+    return get_material_density(material_type)
 
-    Args: \n
-        data (TDDBHDInput): Input data for TDDBHD calculations.
+def lookup_max_weight(reel_model):
+    return get_reel_max_weight(reel_model)
 
-    Returns: \n
-        TDDBHDOutput: Calculated results including web tension, coil weight, 
-                      coil OD, torque required, and brake press required.
+def lookup_modulus(material_type):
+    return get_material_modulus(material_type)
 
-    Raises: \n
-        HTTPException: If any input data is invalid or if calculations fail.
+def lookup_cylinder_bore(brake_model):
+    return get_cylinder_bore(brake_model)
 
-    """
-    num_brakepads = NUM_BRAKEPADS
-    brake_dist = BRAKE_DISTANCE
-    cyl_rod = CYLINDER_ROD
-    static_friction = STATIC_FRICTION
+def lookup_holddown_matrix_key(reel_model, hold_down_assy, cylinder):
+    return get_hold_down_matrix_label(reel_model, hold_down_assy, cylinder)
 
-    # Lookups
-    # density, max weight, friction, modulus, cylinder bore, holddown pressure, holddown force available
-    try:
-        density_lookup = get_material_density(data.material_type)
-    except Exception as e:
-        return f"ERROR: get_material_density failed for '{data.material_type}': {str(e)}"
-    
-    try:
-        reel_max_weight = get_reel_max_weight(data.reel_model)
-    except Exception as e:
-        return f"ERROR: get_reel_max_weight failed for '{data.reel_model}': {str(e)}"
-    
-    try:
-        modulus_lookup = get_material_modulus(data.material_type)
-    except Exception as e:
-        return f"ERROR: get_material_modulus failed for '{data.material_type}': {str(e)}"
-    
-    try:
-        cylinder_bore_lookup = get_cylinder_bore(data.brake_model)
-    except Exception as e:
-        return f"ERROR: get_cylinder_bore failed for '{data.brake_model}': {str(e)}"
-    
-    try:
-        holddown_matrix_key = get_hold_down_matrix_label(data.reel_model, data.hold_down_assy, data.cylinder)
-    except Exception as e:
-        return f"ERROR: get_hold_down_matrix_label failed for reel='{data.reel_model}', assy='{data.hold_down_assy}', cylinder='{data.cylinder}': {str(e)}"
-    
-    try:
-        holddown_pressure_calc = get_pressure_psi(holddown_matrix_key, data.air_pressure)
-    except Exception as e:
-        return f"ERROR: get_pressure_psi failed for key='{holddown_matrix_key}', pressure='{data.air_pressure}': {str(e)}"
-    
-    try:
-        hold_down_force_available = get_holddown_force_available(holddown_matrix_key, holddown_pressure_calc)
-    except Exception as e:
-        return f"ERROR: get_holddown_force_available failed for key='{holddown_matrix_key}', pressure='{holddown_pressure_calc}': {str(e)}"
-    
-    try:
-        min_material_width_lookup = get_min_material_width(holddown_matrix_key)
-    except Exception as e:
-        return f"ERROR: get_min_material_width failed for key='{holddown_matrix_key}': {str(e)}"
-    
-    try:
-        reel_type_lookup = get_type_of_line(data.type_of_line)
-    except Exception as e:
-        return f"ERROR: get_type_of_line failed for '{data.type_of_line}': {str(e)}"
-    
-    try:
-        air_clutch = "Yes" if data.air_clutch else "No"
-        drive_key_lookup = get_drive_key(data.reel_model, air_clutch, data.hyd_threading_drive)
-    except Exception as e:
-        return f"ERROR: get_drive_key failed for reel='{data.reel_model}', clutch='{data.air_clutch}', drive='{data.hyd_threading_drive}': {str(e)}"
-    
-    try:
-        drive_torque_lookup = get_drive_torque(drive_key_lookup)
-    except Exception as e:
-        return f"ERROR: get_drive_torque failed for key='{drive_key_lookup}': {str(e)}"
+def lookup_holddown_pressure(matrix_key, air_pressure):
+    return get_pressure_psi(matrix_key, air_pressure)
 
-    density = density_lookup
-    max_weight = reel_max_weight
-    friction = data.friction
-    modulus = modulus_lookup
-    cylinder_bore = cylinder_bore_lookup
-    holddown_pressure = holddown_pressure_calc
-    min_material_width = min_material_width_lookup
-    reel_type = reel_type_lookup
-    drive_torque = drive_torque_lookup
+def lookup_hold_down_force(matrix_key, holddown_pressure):
+    return get_holddown_force_available(matrix_key, holddown_pressure)
 
-    # Precalculation for needed values
-    M = (modulus * data.width * data.thickness**3) / (12 * (data.coil_id/2))
-    My = (data.width * data.thickness**2 * data.yield_strength) / 6
-    y = (data.thickness * (data.coil_id/2)) / (2 * ((data.thickness * modulus) / (2 * data.yield_strength)))
+def lookup_min_material_width(matrix_key):
+    return get_min_material_width(matrix_key)
 
-    # Web Tension
-    web_tension_psi = data.yield_strength / 800
-    web_tension_lbs = data.thickness * data.width * web_tension_psi
+def lookup_reel_type(type_of_line):
+    return get_type_of_line(type_of_line)
 
-    # Coil Weight Calculation
-    # Check that density and width are not zero.
-    if density == 0 or data.width == 0:
-        return "ERROR: TDDBHD density or width are 0."
-    calculated_cw = (((data.coil_od**2) - data.coil_id**2) / 4) * pi * data.width * density
-    coil_weight = min(calculated_cw, max_weight)
+def lookup_drive_key(reel_model, air_clutch, hyd_threading_drive):
+    return get_drive_key(reel_model, air_clutch, hyd_threading_drive)
 
-    # Coil OD Calculation
-    try:
-        od_denominator = density * data.width * pi
-        if od_denominator == 0:
-            raise ZeroDivisionError
-        od_calc = sqrt(((4 * coil_weight) / od_denominator) + (data.coil_id**2))
-    except ZeroDivisionError:
-        return "ERROR: TDDBHD coilOD zero division."
-    coil_od = min(od_calc, data.coil_od) 
+def lookup_drive_torque(drive_key):
+    return get_drive_torque(drive_key)
 
-    # Display Reel Motor (simulate mapping)
-    if data.hyd_threading_drive != "None":
-        match = re.match(r"\d+", data.hyd_threading_drive)
+# --- Calculations ---
+def calc_M(modulus, width, thickness, coil_id):
+    return (modulus * width * thickness**3) / (12 * (coil_id/2))
+
+def calc_My(width, thickness, yield_strength):
+    return (width * thickness**2 * yield_strength) / 6
+
+def calc_y(thickness, coil_id, modulus, yield_strength):
+    return (thickness * (coil_id/2)) / (2 * ((thickness * modulus) / (2 * yield_strength)))
+
+def calc_web_tension_psi(yield_strength):
+    return yield_strength / 800
+
+def calc_web_tension_lbs(thickness, width, web_tension_psi):
+    return thickness * width * web_tension_psi
+
+def calc_coil_weight(coil_od, coil_id, width, density, max_weight):
+    calculated_cw = (((coil_od**2) - coil_id**2) / 4) * pi * width * density
+    return min(calculated_cw, max_weight)
+
+def calc_coil_od(coil_weight, density, width, coil_id, input_coil_od):
+    od_denominator = density * width * pi
+    if od_denominator == 0:
+        raise ZeroDivisionError("coilOD zero division.")
+    od_calc = sqrt(((4 * coil_weight) / od_denominator) + (coil_id**2))
+    return min(od_calc, input_coil_od)
+
+def calc_disp_reel_mtr(hyd_threading_drive):
+    if hyd_threading_drive != "None":
+        match = re.match(r"\d+", hyd_threading_drive)
         if not match:
-            return "ERROR: TDDBHD hyd threading drive."
-
+            raise ValueError("hyd threading drive.")
         hyd_drive_number = int(match.group())
-        disp_reel_mtr = {22: 22.6, 38: 38, 60: 60}.get(hyd_drive_number, hyd_drive_number)
-    else:
-        disp_reel_mtr = 0
+        return {22: 22.6, 38: 38, 60: 60}.get(hyd_drive_number, hyd_drive_number)
+    return 0
 
-    # Torque At Mandrel
+def calc_torque_at_mandrel(reel_type, drive_torque, reel_drive_tqempty):
     if reel_type.upper() == "PULLOFF":
-        torque_at_mandrel = drive_torque
-    else: 
-        torque_at_mandrel = data.reel_drive_tqempty
+        return drive_torque
+    return reel_drive_tqempty
 
-    # Rewind Torque Calculation
-    rewind_torque = web_tension_lbs * coil_od / 2
+def calc_rewind_torque(web_tension_lbs, coil_od):
+    return web_tension_lbs * coil_od / 2
 
-    # Holddown Force Required Calculation
-    # Denom for hold down force: friction * (coil_id/2)
-    hold_down_denominator = static_friction * (data.coil_id / 2)
-    if hold_down_denominator == 0:
-        return "ERROR: TDDBHD holddown denominator 0."
+def calc_hold_down_denominator(static_friction, coil_id):
+    return static_friction * (coil_id / 2)
 
-    # Additional check for thickness in the else clause:
-    if M >= My and data.thickness == 0:
-        return "ERROR: TDDBHD thickness check."
-
+def calc_hold_down_force_req(M, My, width, thickness, yield_strength, y, hold_down_denominator):
     if M < My:
-        hold_down_force_req = M / hold_down_denominator
+        return M / hold_down_denominator
     else:
-        hold_down_force_req = (((data.width * data.thickness**2) / 4) * data.yield_strength * (1 - (1/3) * (y / (data.thickness / 2))**2)) / hold_down_denominator
+        return (((width * thickness**2) / 4) * yield_strength * (1 - (1/3) * (y / (thickness / 2))**2)) / hold_down_denominator
 
-    # Torque Required Calculation
-    # Check that coil_od isn't zero.
+def calc_torque_required(decel, coil_weight, coil_od, coil_id, rewind_torque):
     if coil_od == 0:
-        return "ERROR: TDDBHD coilOD 0."
-    torque_required = ((3 * data.decel * coil_weight * (coil_od**2 + data.coil_id**2)) / (386 * coil_od)) + rewind_torque
+        raise ZeroDivisionError("coilOD 0.")
+    return ((3 * decel * coil_weight * (coil_od**2 + coil_id**2)) / (386 * coil_od)) + rewind_torque
 
-    # Brake Press Required Calculation
+def calc_brake_press_required(torque_required, friction, brake_dist, num_brakepads, brake_model, cylinder_bore, cyl_rod, brake_qty):
     numerator = 4 * torque_required
-    partial_denominator = pi * friction * brake_dist * num_brakepads 
-    if data.brake_model == "Single Stage" or data.brake_model == "Failsafe - Single Stage":
+    partial_denominator = pi * friction * brake_dist * num_brakepads
+    if brake_model == "Single Stage" or brake_model == "Failsafe - Single Stage":
         last = (cylinder_bore ** 2)
-    elif data.brake_model == "Double Stage" or data.brake_model == "Failsafe - Double Stage":
+    elif brake_model == "Double Stage" or brake_model == "Failsafe - Double Stage":
         last = (2 * (cylinder_bore ** 2) - (cyl_rod ** 2))
-    elif data.brake_model == "Triple Stage":
+    elif brake_model == "Triple Stage":
         last = (3 * (cylinder_bore ** 2) - 2 * (cyl_rod ** 2))
     else:
-        return "ERROR: TDDBHD brake press invalid."
-
+        raise ValueError("brake press invalid.")
     denominator = partial_denominator * last
     press_required = numerator / denominator
-    brake_press_required = press_required / data.brake_qty
+    return press_required / brake_qty
 
-    # Brake Press Holding Force Calculation
-    if data.brake_model == "Failsafe - Single Stage":
+def calc_failsafe_holding_force(brake_model, friction, num_brakepads, brake_dist, brake_qty):
+    if brake_model == "Failsafe - Single Stage":
         hold_force = 1000
-    elif data.brake_model == "Failsafe - Double Stage":
+    elif brake_model == "Failsafe - Double Stage":
         hold_force = 2385
     else:
         hold_force = 0
+    return hold_force * friction * num_brakepads * brake_dist * brake_qty
 
-    if data.brake_qty < 1 or data.brake_qty > 4:
-        return "ERROR: TDDBHD brake quantity invalid."
+# --- Checks ---
+def check_min_material_width(min_material_width, width):
+    return "PASS" if min_material_width <= width else "FAIL"
 
-    failsafe_holding_force = hold_force * friction * num_brakepads * brake_dist * data.brake_qty 
-    
-    # Checks
-    if min_material_width <= data.width:
-        min_material_width_check = "PASS"
-    else:
-        min_material_width_check = "FAIL"
+def check_air_pressure(air_pressure):
+    return "PASS" if air_pressure <= 120 else "FAIL"
 
-    if data.air_pressure <= 120:
-        air_pressure_check = "PASS"
-    else:
-        air_pressure_check = "FAIL"
+def check_rewind_torque(rewind_torque, torque_at_mandrel):
+    return "PASS" if rewind_torque < torque_at_mandrel else "FAIL"
 
-    if rewind_torque <= torque_at_mandrel:
-        rewind_torque_check = "PASS"
-    else:
-        rewind_torque_check = "FAIL"
+def check_hold_down_force(hold_down_force_req, hold_down_force_available):
+    return "PASS" if hold_down_force_req < hold_down_force_available else "FAIL"
 
-    if hold_down_force_req <= hold_down_force_available:
-        hold_down_force_check = "PASS"
-    else:
-        hold_down_force_check = "FAIL"
+def check_brake_press(brake_press_required, air_pressure):
+    return "PASS" if brake_press_required < air_pressure else "FAIL"
 
-    if brake_press_required <= data.air_pressure:
-        brake_press_check = "PASS"
-    else:
-        brake_press_check = "FAIL"
+def check_torque_required(torque_required, failsafe_holding_force):
+    return "PASS" if torque_required < failsafe_holding_force or failsafe_holding_force == 0 else "FAIL"
 
-    if torque_required <= failsafe_holding_force:
-        torque_required_check = "PASS"
-    else:
-        torque_required_check = "FAIL"
-
+def check_tddbhd(reel_type, min_material_width_check, confirmed_min_width, rewind_torque_check, hold_down_force_check, brake_press_check, torque_required_check, hold_down_force_available):
     if reel_type.upper() == "PULLOFF":
-        if ((min_material_width_check == "PASS" or data.confirmed_min_width == True) and 
+        if ((min_material_width_check == "PASS" or confirmed_min_width == True) and 
             rewind_torque_check == "PASS" and
             hold_down_force_check == "PASS" and
             brake_press_check == "PASS" and
             (torque_required_check == "PASS" or hold_down_force_available == 0)
             ):
-            tddbhd_check = "OK"
+            return "OK"
         else:
-            tddbhd_check = "NOT OK"
+            return "NOT OK"
     else:
-        tddbhd_check = "USE MOTORIZED"
+        return "USE MOTORIZED"
+
+# --- Main Calculation ---
+def calculate_tbdbhd(data: tddbhd_input):
+    try:
+        density = lookup_density(data.material_type)
+        max_weight = lookup_max_weight(data.reel_model)
+        modulus = lookup_modulus(data.material_type)
+        cylinder_bore = lookup_cylinder_bore(data.brake_model)
+        holddown_matrix_key = lookup_holddown_matrix_key(data.reel_model, data.hold_down_assy, data.cylinder)
+        holddown_pressure = lookup_holddown_pressure(holddown_matrix_key, data.air_pressure)
+        hold_down_force_available = lookup_hold_down_force(holddown_matrix_key, holddown_pressure)
+        min_material_width = lookup_min_material_width(holddown_matrix_key)
+        reel_type = lookup_reel_type(data.type_of_line)
+        air_clutch = "Yes" if data.air_clutch else "No"
+        drive_key = lookup_drive_key(data.reel_model, air_clutch, data.hyd_threading_drive)
+        drive_torque = lookup_drive_torque(drive_key)
+    except Exception as e:
+        return f"ERROR: Lookup failed: {str(e)}"
+
+    try:
+        M = calc_M(modulus, data.width, data.thickness, data.coil_id)
+        My = calc_My(data.width, data.thickness, data.yield_strength)
+        y = calc_y(data.thickness, data.coil_id, modulus, data.yield_strength)
+        web_tension_psi = calc_web_tension_psi(data.yield_strength)
+        web_tension_lbs = calc_web_tension_lbs(data.thickness, data.width, web_tension_psi)
+        coil_weight = calc_coil_weight(data.coil_od, data.coil_id, data.width, density, max_weight)
+        coil_od = calc_coil_od(coil_weight, density, data.width, data.coil_id, data.coil_od)
+        disp_reel_mtr = calc_disp_reel_mtr(data.hyd_threading_drive)
+        torque_at_mandrel = calc_torque_at_mandrel(reel_type, drive_torque, data.reel_drive_tqempty)
+        rewind_torque = calc_rewind_torque(web_tension_lbs, coil_od)
+        hold_down_denominator = calc_hold_down_denominator(STATIC_FRICTION, data.coil_id)
+        hold_down_force_req = calc_hold_down_force_req(M, My, data.width, data.thickness, data.yield_strength, y, hold_down_denominator)
+        torque_required = calc_torque_required(data.decel, coil_weight, coil_od, data.coil_id, rewind_torque)
+        brake_press_required = calc_brake_press_required(
+            torque_required, data.friction, BRAKE_DISTANCE, NUM_BRAKEPADS,
+            data.brake_model, cylinder_bore, CYLINDER_ROD, data.brake_qty
+        )
+        failsafe_holding_force = calc_failsafe_holding_force(
+            data.brake_model, data.friction, NUM_BRAKEPADS, BRAKE_DISTANCE, data.brake_qty
+        )
+    except Exception as e:
+        return f"ERROR: Calculation failed: {str(e)}"
+
+    # Checks
+    min_material_width_check = check_min_material_width(min_material_width, data.width)
+    air_pressure_check = check_air_pressure(data.air_pressure)
+    rewind_torque_check = check_rewind_torque(rewind_torque, torque_at_mandrel)
+    hold_down_force_check = check_hold_down_force(hold_down_force_req, hold_down_force_available)
+    brake_press_check = check_brake_press(brake_press_required, data.air_pressure)
+    torque_required_check = check_torque_required(torque_required, failsafe_holding_force)
+    tddbhd_check = check_tddbhd(
+        reel_type, min_material_width_check, data.confirmed_min_width,
+        rewind_torque_check, hold_down_force_check, brake_press_check,
+        torque_required_check, hold_down_force_available
+    )
 
     return {
-        "friction": round(friction, 3),
+        "friction": round(data.friction, 3),
         "web_tension_psi": round(web_tension_psi, 3),
         "web_tension_lbs": round(web_tension_lbs, 3),
         "calculated_coil_weight": round(coil_weight, 3),

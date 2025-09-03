@@ -46,6 +46,33 @@ lookup_ab_feed = LOOKUP_DATA.get("lookup_ab_feed", {})
 ######
 # TDDBHD methods
 ######
+## Reel Models
+def get_reel_models():
+    """Return a list of available reel models."""
+    return list(lookup_reel_dimensions.keys())
+
+## Hold Down Assemblies
+def get_hold_down_assys():
+    """Return a list of available hold down assemblies."""
+    return list(lookup_holddown_sort.keys())
+
+## Cylinders
+def get_cylinders():
+    """Return a list of available cylinders."""
+    # If you have a lookup for cylinders, use it; otherwise, extract from holddown_matrix or another source
+    cylinders = set()
+    for entry in lookup_holddown_matrix:
+        # Assuming cylinder is the last part of the key
+        key_parts = entry["key"].split("+")
+        if len(key_parts) >= 4:
+            cylinders.add(key_parts[-1])
+    return sorted(cylinders)
+
+## Brake Models
+def get_brake_models():
+    """Return a list of available brake models."""
+    return list(lookup_brake_type.keys())
+
 ## Material Density
 def get_material_density(material: str) -> float:
     """Return the density for a given material from the JSON lookup."""
