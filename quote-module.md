@@ -13,6 +13,5 @@
 
 - OtherEqu vs Specials - specials are an OPTION
 
-StdEquip.ID -> OptGrp.ID
-OptGrp.GrpID -> OptGroup.GrpID
+
 
