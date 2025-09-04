@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.prisma.io)"
+      "WebFetch(domain:www.prisma.io)",
+      "Read(/C:\\Users\\jar\\Code\\coesco-web\\apps\\server\\src\\services\\business/**)"
     ],
     "deny": [],
     "ask": []

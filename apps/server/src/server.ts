@@ -3,7 +3,7 @@ import process from "node:process";
 
 import { server } from "./app";
 import { env } from "./config/env";
-import { cacheService, initializeServices } from "./services";
+import { cacheService, initializeServices, legacyService } from "./services";
 import { logger } from "./utils/logger";
 import { prisma } from "./utils/prisma";
 
@@ -28,11 +28,14 @@ async function shutdown() {
   });
   await prisma.$disconnect();
   await cacheService.stop();
+  await legacyService.close();
   process.exit(0);
 }
 
 async function handleFatal(err: unknown) {
   logger.error("Fatal error:", err);
   await prisma.$disconnect();
+  await cacheService.stop();
+  await legacyService.close();
   process.exit(1);
 }

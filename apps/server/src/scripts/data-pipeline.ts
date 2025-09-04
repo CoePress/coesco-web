@@ -552,6 +552,24 @@ async function _migrateOptionCategories(): Promise<MigrationResult> {
 }
 
 async function _migrateOptions(): Promise<MigrationResult> {
+  // First, ensure we have an "Archived" option category for unmapped options
+  let archivedCategory = await findReferencedRecord("optionCategory", {
+    name: "Archived",
+  });
+
+  if (!archivedCategory) {
+    logger.info("Creating 'Archived' option category for unmapped options");
+    archivedCategory = await mainDatabase.optionCategory.create({
+      data: {
+        name: "Archived",
+        description: "Options without category mapping from legacy system",
+        multiple: false,
+        mandatory: false,
+        order: 9999, // Put it at the end
+      },
+    });
+  }
+
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "StdEquip",
@@ -582,35 +600,42 @@ async function _migrateOptions(): Promise<MigrationResult> {
       // Follow the relationship chain: StdEquip.ID -> OptGrp.ID -> OptGrp.GrpID
       // First, find the OptGrp record where OptGrp.ID matches StdEquip.ID
       const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
-        filter: { ID: original.ID },
+        filter: `ID=${original.ID}`,
       });
+
+      let optionCategoryId = null;
 
       if (!optGrpRecords || optGrpRecords.length === 0) {
-        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}`);
-        return null;
+        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}, using Archived category`);
+        optionCategoryId = archivedCategory.id;
       }
+      else {
+        const optGrp: any = optGrpRecords[0];
+        const grpId = optGrp.GrpID?.toString();
 
-      const optGrp: any = optGrpRecords[0];
-      const grpId = optGrp.GrpID?.toString();
+        if (!grpId) {
+          logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}, using Archived category`);
+          optionCategoryId = archivedCategory.id;
+        }
+        else {
+          // Now find the optionCategory using the GrpID
+          const optionCategory = await findReferencedRecord("optionCategory", {
+            legacyId: grpId,
+          });
 
-      if (!grpId) {
-        logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}`);
-        return null;
-      }
-
-      // Now find the optionCategory using the GrpID
-      const optionCategory = await findReferencedRecord("optionCategory", {
-        legacyId: grpId,
-      });
-
-      if (!optionCategory) {
-        logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}`);
-        return null;
+          if (!optionCategory) {
+            logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}, using Archived category`);
+            optionCategoryId = archivedCategory.id;
+          }
+          else {
+            optionCategoryId = optionCategory.id;
+          }
+        }
       }
 
       // TODO: Handle HideOption -> isActive
 
-      data.optionCategoryId = optionCategory.id;
+      data.optionCategoryId = optionCategoryId;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
