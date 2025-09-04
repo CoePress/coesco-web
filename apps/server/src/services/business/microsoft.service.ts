@@ -22,8 +22,8 @@ export class MicrosoftService {
       const microsoftUsers = await this.getMicrosoftUsers();
       logger.info(`Found ${microsoftUsers.length} Microsoft users`);
 
-      let added = 0;
       let updated = 0;
+      let skipped = 0;
 
       for (const microsoftUser of microsoftUsers) {
         if (blacklistedEmails.includes(microsoftUser.mail)) {
@@ -40,56 +40,42 @@ export class MicrosoftService {
 
         const existingEmployee = await prisma.employee.findFirst({
           where: { email: microsoftUser.mail },
+          include: { user: true },
         });
+
+        if (!existingEmployee) {
+          logger.debug(`No employee found for email: ${microsoftUser.mail}`);
+          skipped++;
+          continue;
+        }
 
         const isAdmin = microsoftUser.department === "MIS";
 
-        const user = await prisma.user.upsert({
-          where: { microsoftId: microsoftUser.id },
-          create: {
-            username: microsoftUser.mail,
-            role: isAdmin ? UserRole.ADMIN : UserRole.USER,
-            isActive: !!isAdmin,
+        await prisma.user.update({
+          where: { id: existingEmployee.userId },
+          data: {
             microsoftId: microsoftUser.id,
-          },
-          update: {
-            username: microsoftUser.mail,
             role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+            isActive: true,
           },
         });
 
-        await prisma.employee.upsert({
-          where: { email: microsoftUser.mail },
-          create: {
-            firstName: microsoftUser.givenName || "Unknown",
-            lastName: microsoftUser.surname || "User",
-            email: microsoftUser.mail,
-            jobTitle: microsoftUser.jobTitle || "Employee",
-            number: microsoftUser.mail.split("@")[0].toUpperCase(),
-            userId: user.id,
-            createdById: "system",
-            updatedById: "system",
-          },
-          update: {
-            firstName: microsoftUser.givenName || "Unknown",
-            lastName: microsoftUser.surname || "User",
-            email: microsoftUser.mail,
-            jobTitle: microsoftUser.jobTitle || "Employee",
+        await prisma.employee.update({
+          where: { id: existingEmployee.id },
+          data: {
+            firstName: microsoftUser.givenName || existingEmployee.firstName,
+            lastName: microsoftUser.surname || existingEmployee.lastName,
+            title: microsoftUser.jobTitle || existingEmployee.title,
           },
         });
 
-        if (existingEmployee) {
-          updated++;
-        }
-        else {
-          added++;
-        }
+        updated++;
       }
 
       logger.info(
-        `Sync completed: ${added} added, ${updated} updated, ${microsoftUsers.length} total`,
+        `Sync completed: ${updated} updated, ${skipped} skipped, ${microsoftUsers.length} total`,
       );
-      return { added, updated, total: microsoftUsers.length };
+      return { updated, skipped, total: microsoftUsers.length };
     }
     catch (error: any) {
       logger.error("Sync failed with error:", {

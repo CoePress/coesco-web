@@ -5,7 +5,7 @@ export interface EmployeeContext {
   firstName: string;
   lastName: string;
   email: string;
-  jobTitle: string;
+  title: string;
   number: string;
 }
 

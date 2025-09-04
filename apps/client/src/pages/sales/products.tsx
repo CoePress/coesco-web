@@ -26,44 +26,19 @@ const Products = () => {
 
   const columns: TableColumn<any>[] = [
     {
-      key: "sku",
-      header: "SKU",
-      className: "font-mono text-xs",
+      key: "modelNumber",
+      header: "Model #",
     },
     {
-      key: "name",
-      header: "Product Name",
-      className: "text-primary hover:underline font-medium",
-      render: (_, row) => (
-        <Link to={`/sales/products/${row.id}`}>{row.name}</Link>
-      ),
-    },
-    {
-      key: "category",
-      header: "Category",
-    },
-    {
-      key: "brand",
-      header: "Brand",
+      key: "description",
+      header: "Description",
     },
     {
       key: "price",
       header: "Price",
-      render: (value) => formatCurrency(value as number),
-    },
-    {
-      key: "stock",
-      header: "Stock",
-      render: (value) => (
-        <span className={`font-medium ${value < 10 ? 'text-error' : value < 50 ? 'text-warning' : 'text-success'}`}>
-          {value}
-        </span>
+      render: (_, row) => (
+      <Link to={`/sales/quotes/${row.id}`}>{formatCurrency(row.specifications.price)}</Link>
       ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (value) => <StatusBadge label={value as string} />,
     },
   ];
 

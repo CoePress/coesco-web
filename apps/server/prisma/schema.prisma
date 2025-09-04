@@ -689,7 +689,7 @@ model ProductClass {
   children                     ProductClass[]               @relation("ProductClassHierarchy")
   options                OptionDetails[]
   configurations               Configuration[]
-  // productClassOptionCategories ProductClassOptionCategory[]
+  productClassOptionCategories ProductClassOptionCategory[]
 
   @@map("product_classes")
 }
@@ -706,30 +706,30 @@ model OptionCategory {
   legacyId    String?
 
   optionHeaders                OptionHeader[]
-  // productClassOptionCategories ProductClassOptionCategory[]
+  productClassOptionCategories ProductClassOptionCategory[]
 
   @@map("option_categories")
 }
 
 // OptGrp
-// model ProductClassOptionCategory {
-//   productClassId   String
-//   optionCategoryId String
-//   displayOrder     Int       @default(0)
-//   isRequired       Boolean   @default(false)
-//   createdAt        DateTime  @default(now())
-//   updatedAt        DateTime  @updatedAt
-//   deletedAt        DateTime?
-//   createdById      String
-//   updatedById      String
+model ProductClassOptionCategory {
+  productClassId   String
+  optionCategoryId String
+  displayOrder     Int       @default(0)
+  isRequired       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
 
-//   productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
-//   optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
+  productClass   ProductClass   @relation(fields: [productClassId], references: [id], onDelete: Cascade)
+  optionCategory OptionCategory @relation(fields: [optionCategoryId], references: [id], onDelete: Cascade)
 
-//   @@id([productClassId, optionCategoryId])
-//   @@index([createdById])
-//   @@map("product_class_option_categories")
-// }
+  @@id([productClassId, optionCategoryId])
+  @@index([createdById])
+  @@map("product_class_option_categories")
+}
 
 model OptionHeader {
   id          String    @id @default(uuid())
