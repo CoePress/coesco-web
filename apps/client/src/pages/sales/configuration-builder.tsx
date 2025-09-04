@@ -1035,22 +1035,26 @@ const ConfigurationBuilder = () => {
                       }
                       className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none">
                       <div className="flex items-center gap-2 min-w-0">
-                        {getStatusIcon(categoryStatus)}
+                        <div className="flex-shrink-0">
+                          {getStatusIcon(categoryStatus)}
+                        </div>
                         <span className="text-sm font-medium text-text-muted truncate">
                           {category.name} {category.isRequired && "*"}
                         </span>
                       </div>
-                      {expandedCategories.includes(category.id) ? (
-                        <ChevronDown
-                          size={16}
-                          className="text-text-muted"
-                        />
-                      ) : (
-                        <ChevronRight
-                          size={16}
-                          className="text-text-muted"
-                        />
-                      )}
+                      <div className="flex-shrink-0">
+                        {expandedCategories.includes(category.id) ? (
+                          <ChevronDown
+                            size={16}
+                            className="text-text-muted"
+                          />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className="text-text-muted"
+                          />
+                        )}
+                      </div>
                     </button>
 
                     {expandedCategories.includes(category.id) && (
