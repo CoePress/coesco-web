@@ -402,11 +402,11 @@ const ConfigurationBuilder = () => {
       : "";
   const effectiveProductClassId =
     selectedProductClass || productClasses?.[0]?.id;
-  const [availableOptions, setAvailableOptions] = useState<any[]>([]);
-  const [availableOptionsLoading, setAvailableOptionsLoading] = useState(false);
+  const [optionCategories, setOptionCategories] = useState<any[]>([]);
+  const [optionCategoriesLoading, setOptionCategoriesLoading] = useState(false);
 
-  const sortedCategories = availableOptions
-    ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)
+  const sortedCategories = optionCategories
+    ? [...optionCategories].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];
 
   const getOptionsForLevel = (
@@ -437,25 +437,18 @@ const ConfigurationBuilder = () => {
   const visibleProductClassLevels = productClassSelections.length + 1;
 
   const getOptionsForCategory = (categoryId: string) => {
-    if (!availableOptions) return [];
-
-    const category = availableOptions.find((cat) => cat.id === categoryId);
-    return category?.options || [];
+    // For now, return empty array since we're only displaying categories
+    return [];
   };
 
   const getOptionById = (optionId: string) => {
-    if (!availableOptions) return null;
-
-    for (const category of availableOptions) {
-      const option = category.options?.find((opt: any) => opt.id === optionId);
-      if (option) return option;
-    }
+    // For now, return null since we're only displaying categories
     return null;
   };
 
   const getCategoryById = (categoryId: string) => {
-    if (!availableOptions) return null;
-    return availableOptions.find((cat) => cat.id === categoryId);
+    if (!optionCategories) return null;
+    return optionCategories.find((cat) => cat.id === categoryId);
   };
 
   const isOptionSelected = (optionId: string) => {
@@ -587,19 +580,8 @@ const ConfigurationBuilder = () => {
   };
 
   const getDefaultOptions = () => {
-    if (!availableOptions) return [];
-
-    const defaultOptions: string[] = [];
-    for (const category of availableOptions) {
-      if (category.options) {
-        for (const option of category.options) {
-          if (option.isDefault && !shouldDisableOption(option.id)) {
-            defaultOptions.push(option.id);
-          }
-        }
-      }
-    }
-    return defaultOptions;
+    // For now, return empty array since we're only displaying categories
+    return [];
   };
 
   const handleOptionSelect = (
@@ -725,12 +707,10 @@ const ConfigurationBuilder = () => {
   };
 
   const handleErrorBannerClick = (categoryName: string) => {
-    // Find the category by name
     const targetCategory = sortedCategories.find(
       (cat) => cat.name === categoryName
     );
     if (targetCategory) {
-      // Collapse all categories except the target one
       setExpandedCategories([targetCategory.id]);
     }
   };
@@ -738,14 +718,12 @@ const ConfigurationBuilder = () => {
   const validateConfiguration = () => {
     const results: ValidationResult[] = [];
 
-    // Log selected options
     const selectedOptionNames = selectedOptions.map((opt) => {
       const option = getOptionById(opt.optionId);
       return `${option?.name} (${option?.code})`;
     });
     console.log("SELECTED:", selectedOptionNames.join(", "));
 
-    // Debug: Log all rules and their conditions
     if (optionRules) {
       console.log(
         "ALL RULES:",
@@ -760,7 +738,6 @@ const ConfigurationBuilder = () => {
       );
     }
 
-    // Check for required categories
     for (const category of sortedCategories) {
       if (category.isRequired) {
         const hasSelection = selectedOptions.some((opt) => {
@@ -779,7 +756,6 @@ const ConfigurationBuilder = () => {
       }
     }
 
-    // Check for required options based on rules (only if there's a selection in the category)
     const requiredOptions = getRequiredOptions();
     console.log(
       "REQUIRED OPTIONS:",
@@ -793,7 +769,6 @@ const ConfigurationBuilder = () => {
       if (!isOptionSelected(optionId)) {
         const option = getOptionById(optionId);
         if (option) {
-          // Only show rule violation if there's a selection in this category
           const category = getCategoryById(option.categoryId);
           if (category) {
             const hasSelectionInCategory = selectedOptions.some((opt) => {
@@ -815,7 +790,6 @@ const ConfigurationBuilder = () => {
       }
     }
 
-    // Check for disabled options that are selected
     const disabledOptions = getDisabledOptions();
     console.log(
       "DISABLED OPTIONS:",
@@ -855,7 +829,6 @@ const ConfigurationBuilder = () => {
     return results;
   };
 
-  // Load product classes
   useEffect(() => {
     const loadProductClasses = async () => {
       setProductClassesLoading(true);
@@ -868,7 +841,6 @@ const ConfigurationBuilder = () => {
     loadProductClasses();
   }, []);
 
-  // Load option rules
   useEffect(() => {
     const loadOptionRules = async () => {
       setOptionRulesLoading(true);
@@ -881,27 +853,26 @@ const ConfigurationBuilder = () => {
     loadOptionRules();
   }, []);
 
-  // Load available options when product class changes
   useEffect(() => {
-    const loadAvailableOptions = async () => {
+    const loadOptionCategories = async () => {
       if (!effectiveProductClassId) {
-        setAvailableOptions([]);
+        setOptionCategories([]);
         return;
       }
-      setAvailableOptionsLoading(true);
-      const response = await api.get(`/configurations/classes/${effectiveProductClassId}/options`);
+      setOptionCategoriesLoading(true);
+      const response = await api.get('/catalog/option-categories');
       if (response && response.data) {
-        setAvailableOptions(response.data);
+        setOptionCategories(response.data);
       }
-      setAvailableOptionsLoading(false);
+      setOptionCategoriesLoading(false);
     };
-    loadAvailableOptions();
+    loadOptionCategories();
   }, [effectiveProductClassId]);
 
   useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
-  }, [selectedOptions, selectedProductClass, availableOptions, optionRules]);
+  }, [selectedOptions, selectedProductClass, optionCategories, optionRules]);
 
   useEffect(() => {
     if (
@@ -916,64 +887,17 @@ const ConfigurationBuilder = () => {
     }
   }, [productClasses, productClassSelections.length]);
 
-  // Reset selected options when product class changes
   useEffect(() => {
-    if (!availableOptions || availableOptions.length === 0) return;
+    if (!optionCategories || optionCategories.length === 0) return;
 
-    // Collapse all category dropdowns
     setExpandedCategories([]);
 
-    // Get all default options for the current product class
-    const defaultOptions = getDefaultOptions();
-
-    // Create new selected options array with only the default options that are not disabled
-    const newSelectedOptions: SelectedOption[] = [];
-
-    for (const optionId of defaultOptions) {
-      const option = getOptionById(optionId);
-      if (option && !shouldDisableOption(optionId)) {
-        newSelectedOptions.push({ optionId, quantity: 1 });
-      }
-    }
-
-    // Set the new selected options
-    setSelectedOptions(newSelectedOptions);
-  }, [selectedProductClass, availableOptions, optionRules]);
+    setSelectedOptions([]);
+  }, [selectedProductClass, optionCategories, optionRules]);
 
   useEffect(() => {
-    if (selectedOptions.length > 0 && availableOptions) {
-      const brandOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_brand";
-      });
-
-      const tierOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_tier";
-      });
-
-      const sizeOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_size";
-      });
-
-      const brand = brandOption
-        ? getOptionById(brandOption.optionId)?.name
-        : "";
-      const tier = tierOption ? getOptionById(tierOption.optionId)?.name : "";
-      const size = sizeOption ? getOptionById(sizeOption.optionId)?.name : "";
-
-      if (brand && tier && size) {
-        setConfigName(`${brand} ${tier} ${size}`);
-      } else if (brand && tier) {
-        setConfigName(`${brand} ${tier}`);
-      } else if (brand) {
-        setConfigName(`${brand} Configuration`);
-      }
-    } else {
-      setConfigName("Untitled Configuration");
-    }
-  }, [selectedOptions, availableOptions]);
+    setConfigName("Untitled Configuration");
+  }, [selectedOptions, optionCategories]);
 
   const totalPrice = calculateTotalPrice();
   const pageTitle = configName;
@@ -990,19 +914,6 @@ const ConfigurationBuilder = () => {
   };
 
   const handleSelectAllDefaults = () => {
-    if (!availableOptions) return;
-
-    const defaultOptions: SelectedOption[] = [];
-    for (const category of availableOptions) {
-      if (category.options) {
-        for (const option of category.options) {
-          if (option.isDefault && !shouldDisableOption(option.id)) {
-            defaultOptions.push({ optionId: option.id, quantity: 1 });
-          }
-        }
-      }
-    }
-    setSelectedOptions(defaultOptions);
   };
 
   const handleDeselectAll = () => {
@@ -1012,12 +923,9 @@ const ConfigurationBuilder = () => {
   const handleApplyRequirements = (requirements: Record<string, number>) => {
     setAppliedRequirements(requirements);
     console.log("Applied requirements:", requirements);
-    // Here you would apply rules based on the requirements
-    // For now, just log them
   };
 
-  // Show loading state
-  if (productClassesLoading || availableOptionsLoading || optionRulesLoading) {
+  if (productClassesLoading || optionCategoriesLoading || optionRulesLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
         <Loader />
@@ -1036,7 +944,11 @@ const ConfigurationBuilder = () => {
         <div className="w-80 border-r bg-foreground flex flex-col min-h-0 text-sm">
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
-            <div className="mt-2 space-y-2">
+            <div className={`mt-2 grid gap-2 ${(() => {
+              const dropdownsWithOptions = Array.from({ length: visibleProductClassLevels })
+                .filter((_, level) => getOptionsForLevel(level).length > 0).length;
+              return dropdownsWithOptions === 1 ? 'grid-cols-1' : 'grid-cols-2';
+            })()}`}>
               {Array.from({ length: visibleProductClassLevels }).map(
                 (_, level) => {
                   const options = getOptionsForLevel(level);
@@ -1109,8 +1021,6 @@ const ConfigurationBuilder = () => {
                 const categoryStatus = getCategoryStatus(category.id);
                 const options = getOptionsForCategory(category.id);
 
-                if (options.length === 0) return null;
-
                 return (
                   <div
                     key={category.id}
@@ -1124,9 +1034,9 @@ const ConfigurationBuilder = () => {
                         )
                       }
                       className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         {getStatusIcon(categoryStatus)}
-                        <span className="text-sm font-medium text-text-muted">
+                        <span className="text-sm font-medium text-text-muted truncate">
                           {category.name} {category.isRequired && "*"}
                         </span>
                       </div>
@@ -1145,97 +1055,9 @@ const ConfigurationBuilder = () => {
 
                     {expandedCategories.includes(category.id) && (
                       <div className="pl-4 pr-2 py-2 space-y-2">
-                        {options.map((option: any) => {
-                          const isDisabled = shouldDisableOption(option.id);
-                          const isSelected = isOptionSelected(option.id);
-                          const quantity = getOptionQuantity(option.id);
-
-                          return (
-                            <div
-                              key={option.id}
-                              className={`text-sm ${
-                                isDisabled ? "opacity-50" : ""
-                              }`}>
-                              <button
-                                onClick={() =>
-                                  !isDisabled &&
-                                  handleOptionSelect(
-                                    option.id,
-                                    category.id,
-                                    !isSelected
-                                  )
-                                }
-                                disabled={isDisabled}
-                                className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer select-none">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    className="rounded border border-border"
-                                    checked={isSelected}
-                                    disabled={isDisabled}
-                                    onChange={(e) =>
-                                      handleOptionSelect(
-                                        option.id,
-                                        category.id,
-                                        e.target.checked
-                                      )
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <span className="flex-1 text-text-muted group-hover:text-text">
-                                    {option.name}
-                                  </span>
-                                </div>
-
-                                {(option.description || option.price > 0) && (
-                                  <div className="pl-6 mt-1 text-xs text-text-muted group-hover:text-text">
-                                    {option.price > 0 && (
-                                      <span className="font-medium">
-                                        {formatCurrency(option.price)}
-                                      </span>
-                                    )}
-                                    {option.price > 0 && option.description && (
-                                      <span className="mx-1">•</span>
-                                    )}
-                                    {option.description && (
-                                      <span className="italic">
-                                        {option.description}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {isSelected && option.allowQuantity && (
-                                  <div className="pl-6 mt-2 flex items-center gap-2">
-                                    <label className="text-xs text-text-muted group-hover:text-text">
-                                      Quantity:
-                                    </label>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={100}
-                                      value={quantity}
-                                      onChange={(e) =>
-                                        handleQuantityChange(
-                                          option.id,
-                                          parseInt(e.target.value) || 1
-                                        )
-                                      }
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="w-16 p-1 border rounded text-xs"
-                                    />
-                                  </div>
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-
-                        {options.length === 0 && (
-                          <div className="text-sm text-text-muted">
-                            No options available for this category
-                          </div>
-                        )}
+                        <div className="text-sm text-text-muted">
+                          No options available yet - showing categories only
+                        </div>
                       </div>
                     )}
                   </div>
