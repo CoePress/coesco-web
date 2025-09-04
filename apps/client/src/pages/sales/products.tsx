@@ -50,7 +50,7 @@ const Products = () => {
   }
 
   return (
-    <div className="w-full flex-1 flex flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Product Catalog"
         description={`${products?.length || 0} products in catalog`}
@@ -61,9 +61,9 @@ const Products = () => {
         }
       />
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
-        <div className="grid grid-cols-4 gap-2 flex-1">
-          <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border h-full overflow-y-auto">
+      <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
+        <div className="grid grid-cols-4 gap-2 flex-1 overflow-hidden">
+          <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border overflow-y-auto">
             <div className="flex gap-1 mb-2 bg-surface p-1 rounded">
               <button
                 onClick={() => setProductType('machines')}
@@ -197,7 +197,7 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="col-span-3">
+          <div className="col-span-3 overflow-hidden">
             <Table
               columns={columns}
               data={products || []}

@@ -934,14 +934,14 @@ const ConfigurationBuilder = () => {
   }
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex flex-1 flex-col overflow-hidden">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
       />
 
-      <div className="flex flex-1 min-h-0">
-        <div className="w-80 border-r bg-foreground flex flex-col min-h-0 text-sm">
+      <div className="p-2 gap-2 flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-80 border border-border bg-foreground rounded flex flex-col text-sm overflow-hidden">
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
             <div className={`mt-2 grid gap-2 ${(() => {
@@ -1071,98 +1071,113 @@ const ConfigurationBuilder = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-2 border-b bg-foreground">
+        <div className="flex-1 border border-border bg-background rounded flex flex-col min-h-0">
+          <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">
               Current Configuration
             </h2>
           </div>
 
-          {validationResults.length > 0 && (
-            <div className="p-2 space-y-2">
-              {validationResults.map((result, index) => (
-                <div
-                  key={index}
-                  onClick={() =>
-                    result.categoryName &&
-                    handleErrorBannerClick(result.categoryName)
-                  }
-                  className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
-                    result.type === "error"
-                      ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
-                      : result.type === "warning"
-                        ? "bg-warning/10 text-warning border-warning hover:bg-warning/20 cursor-pointer"
-                        : result.type === "success"
-                          ? "bg-success/10 text-success border-success"
-                          : "bg-info/10 text-info border-info"
-                  }`}>
-                  {result.type === "error" && <AlertCircle size={16} />}
-                  {result.type === "warning" && <CircleX size={16} />}
-                  {result.type === "success" && <CheckCircle size={16} />}
-                  <span>{result.message}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="px-2">
-            <div className="space-y-2">
-              {sortedCategories.map((category) => {
-                const selectedCategoryOptions = selectedOptions
-                  .filter((so) => {
-                    const option = getOptionById(so.optionId);
-                    return option?.categoryId === category.id;
-                  })
-                  .map((so) => {
-                    const option = getOptionById(so.optionId);
-                    return {
-                      ...so,
-                      option,
-                    };
-                  });
-
-                if (selectedCategoryOptions.length === 0) return null;
-
-                return (
+          <div className="flex-1 overflow-y-auto">
+            {validationResults.length > 0 && (
+              <div className="p-2 space-y-2">
+                {validationResults.map((result, index) => (
                   <div
-                    key={category.id}
-                    className="p-2 bg-foreground border rounded">
-                    <h3 className="font-medium text-text-muted mb-2">
-                      {category.name}
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedCategoryOptions.map(
-                        ({ optionId, quantity, option }) => (
-                          <div
-                            key={optionId}
-                            className="flex items-center justify-between">
-                            <div className="text-sm text-text-muted">
-                              {option?.name}{" "}
-                              {quantity > 1 ? `(x${quantity})` : ""}
-                            </div>
-                            <div className="text-sm font-medium text-text-muted">
-                              {formatCurrency(
-                                option ? option.price * quantity : 0
-                              )}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+                    key={index}
+                    onClick={() =>
+                      result.categoryName &&
+                      handleErrorBannerClick(result.categoryName)
+                    }
+                    className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
+                      result.type === "error"
+                        ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
+                        : result.type === "warning"
+                          ? "bg-warning/10 text-warning border-warning hover:bg-warning/20 cursor-pointer"
+                          : result.type === "success"
+                            ? "bg-success/10 text-success border-success"
+                            : "bg-info/10 text-info border-info"
+                    }`}>
+                    {result.type === "error" && <AlertCircle size={16} />}
+                    {result.type === "warning" && <CircleX size={16} />}
+                    {result.type === "success" && <CheckCircle size={16} />}
+                    <span>{result.message}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+            )}
 
-              <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
-                <div className="text-text-muted">Total</div>
-                <div className="text-text-muted">
-                  {formatCurrency(totalPrice)}
+            <div className="p-2">
+              <div className="space-y-2">
+                {sortedCategories.map((category) => {
+                  const selectedCategoryOptions = selectedOptions
+                    .filter((so) => {
+                      const option = getOptionById(so.optionId);
+                      return option?.categoryId === category.id;
+                    })
+                    .map((so) => {
+                      const option = getOptionById(so.optionId);
+                      return {
+                        ...so,
+                        option,
+                      };
+                    });
+
+                  if (selectedCategoryOptions.length === 0) return null;
+
+                  return (
+                    <div
+                      key={category.id}
+                      className="p-2 bg-foreground border rounded">
+                      <h3 className="font-medium text-text-muted mb-2">
+                        {category.name}
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedCategoryOptions.map(
+                          ({ optionId, quantity, option }) => (
+                            <div
+                              key={optionId}
+                              className="flex items-center justify-between">
+                              <div className="text-sm text-text-muted">
+                                {option?.name}{" "}
+                                {quantity > 1 ? `(x${quantity})` : ""}
+                              </div>
+                              <div className="text-sm font-medium text-text-muted">
+                                {formatCurrency(
+                                  option ? option.price * quantity : 0
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
+                  <div className="text-text-muted">Total</div>
+                  <div className="text-text-muted">
+                    {formatCurrency(totalPrice)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+
+      {/* <div className="flex flex-1 bg-red-500 gap-2 p-2 overflow-hidden">
+        <div className="w-80 bg-blue-500 flex flex-col overflow-hidden">
+          <div className="p-2 bg-green-500 flex-shrink-0">Header</div>
+          <div className="flex-1 overflow-y-auto bg-yellow-500">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <div key={i} className="p-2 border-b">Item {i + 1}</div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 bg-blue-500"></div>
+      </div> */}
 
       <SaveConfigModal
         isOpen={isSaveModalOpen}
