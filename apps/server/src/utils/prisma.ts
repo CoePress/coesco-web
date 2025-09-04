@@ -166,9 +166,10 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
       result.where.createdAt.lte = new Date(params.dateTo);
   }
 
-  const sort = params.sort || "createdAt";
-  const order = params.order || "desc";
-  result.orderBy ??= { [sort]: order };
+  if (params.sort) {
+    const order = params.order || "asc";
+    result.orderBy = { [params.sort]: order };
+  }
 
   buildSelectOrInclude(params, result);
 

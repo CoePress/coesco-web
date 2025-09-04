@@ -22,7 +22,7 @@ import {
 } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { RuleCondition, SelectedOption, ValidationResult } from "@/utils/types";
 
 const SaveConfigModal = ({
@@ -390,8 +390,11 @@ const ConfigurationBuilder = () => {
     Record<string, number>
   >({});
 
-  const { entities: productClasses, loading: productClassesLoading } = useGetEntities("/catalog/product-classes");
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities("/catalog/option-rules");
+  const [productClasses, setProductClasses] = useState<any[]>([]);
+  const [optionRules, setOptionRules] = useState<any[]>([]);
+  const [productClassesLoading, setProductClassesLoading] = useState(true);
+  const [optionRulesLoading, setOptionRulesLoading] = useState(true);
+  const api = useApi();
 
   const selectedProductClass =
     productClassSelections.length > 0
@@ -399,12 +402,8 @@ const ConfigurationBuilder = () => {
       : "";
   const effectiveProductClassId =
     selectedProductClass || productClasses?.[0]?.id;
-  const { entities: availableOptions, loading: availableOptionsLoading } =
-    useGetEntities(
-      effectiveProductClassId
-        ? `/configurations/classes/${effectiveProductClassId}/options`
-        : null
-    );
+  const [availableOptions, setAvailableOptions] = useState<any[]>([]);
+  const [availableOptionsLoading, setAvailableOptionsLoading] = useState(false);
 
   const sortedCategories = availableOptions
     ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)
@@ -856,6 +855,49 @@ const ConfigurationBuilder = () => {
     return results;
   };
 
+  // Load product classes
+  useEffect(() => {
+    const loadProductClasses = async () => {
+      setProductClassesLoading(true);
+      const response = await api.get("/catalog/product-classes");
+      if (response && response.data) {
+        setProductClasses(response.data);
+      }
+      setProductClassesLoading(false);
+    };
+    loadProductClasses();
+  }, []);
+
+  // Load option rules
+  useEffect(() => {
+    const loadOptionRules = async () => {
+      setOptionRulesLoading(true);
+      const response = await api.get("/catalog/option-rules");
+      if (response && response.data) {
+        setOptionRules(response.data);
+      }
+      setOptionRulesLoading(false);
+    };
+    loadOptionRules();
+  }, []);
+
+  // Load available options when product class changes
+  useEffect(() => {
+    const loadAvailableOptions = async () => {
+      if (!effectiveProductClassId) {
+        setAvailableOptions([]);
+        return;
+      }
+      setAvailableOptionsLoading(true);
+      const response = await api.get(`/configurations/classes/${effectiveProductClassId}/options`);
+      if (response && response.data) {
+        setAvailableOptions(response.data);
+      }
+      setAvailableOptionsLoading(false);
+    };
+    loadAvailableOptions();
+  }, [effectiveProductClassId]);
+
   useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
@@ -1014,7 +1056,7 @@ const ConfigurationBuilder = () => {
                         <option
                           key={option.id}
                           value={option.id}>
-                          {option.name}
+                          {option.code}
                         </option>
                       ))}
                     </select>
