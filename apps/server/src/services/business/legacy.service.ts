@@ -308,6 +308,8 @@ export class LegacyService {
   async close() {
     try {
       await this.stdConnection?.close();
+      await this.jobConnection?.close();
+      await this.quoteConnection?.close();
     }
     catch (err) {
       logger.error(err);

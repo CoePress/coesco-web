@@ -11,4 +11,8 @@
 
 - Do we want the data from QtNotes? seems to be replaced by Notes
 
-- OtherEqu vs Specials - specials are per an OPTION
+- OtherEqu vs Specials - specials are an OPTION
+
+StdEquip.ID -> OptGrp.ID
+OptGrp.GrpID -> OptGroup.GrpID
+

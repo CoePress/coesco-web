@@ -423,7 +423,7 @@ async function findReferencedRecord(
   }
 }
 
-async function findEmployeeByNumberOrInitials(identifier: string): Promise<any> {
+async function _findEmployeeByNumberOrInitials(identifier: string): Promise<any> {
   try {
     let employee = await mainDatabase.employee.findFirst({
       where: { number: identifier },
@@ -579,12 +579,32 @@ async function _migrateOptions(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
+      // Follow the relationship chain: StdEquip.ID -> OptGrp.ID -> OptGrp.GrpID
+      // First, find the OptGrp record where OptGrp.ID matches StdEquip.ID
+      const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
+        filter: { ID: original.ID },
+      });
+
+      if (!optGrpRecords || optGrpRecords.length === 0) {
+        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}`);
+        return null;
+      }
+
+      const optGrp: any = optGrpRecords[0];
+      const grpId = optGrp.GrpID?.toString();
+
+      if (!grpId) {
+        logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}`);
+        return null;
+      }
+
+      // Now find the optionCategory using the GrpID
       const optionCategory = await findReferencedRecord("optionCategory", {
-        legacyId: original.OptionGrpID?.toString(),
+        legacyId: grpId,
       });
 
       if (!optionCategory) {
-        logger.warn(`No optionCategory found for legacyId: ${original.OptionGrpID}`);
+        logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}`);
         return null;
       }
 
@@ -632,7 +652,7 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
       const equGroup = original.EquGroup?.toString().trim() || "";
 
       if (equFamily !== "") {
-        return null; // Skip - has EquFamily
+        return null;
       }
 
       const code = equGroup || original.GroupDesc?.toString().replace(/\s+/g, "-").toUpperCase();
