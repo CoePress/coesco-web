@@ -124,11 +124,8 @@ export class LegacyService {
   `;
 
     try {
-      logger.info(`Count query: ${query.trim()}`);
       const result: any = await this.getDatabaseConnection(database)?.query(query);
-      logger.info(`Count result:`, result);
 
-      // Handle different possible result formats
       const count = result?.[0]?.total
         ?? result?.[0]?.TOTAL
         ?? result?.[0]?.Total
