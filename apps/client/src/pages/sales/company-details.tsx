@@ -7,10 +7,17 @@ import {
   Phone,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button } from "@/components";
+import { formatCurrency, formatDate } from "@/utils";
 
 const CompanyDetails = () => {
+  const { id } = useParams();
+  const [company, setCompany] = useState<any>(null);
+  const [companyContacts, setCompanyContacts] = useState<any[]>([]);
+  const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<{
     type: string;
     isOpen: boolean;
@@ -46,6 +53,221 @@ const CompanyDetails = () => {
     { id: 2, name: "Jane Smith", email: "jane@example.com" },
     { id: 3, name: "Bob Johnson", email: "bob@example.com" },
   ];
+
+  // Journey adaptation logic (from pipeline.tsx)
+  const mapLegacyStageToId = (stage: any): number => {
+    const s = String(stage ?? "").toLowerCase();
+    if (!s) return 1;
+    if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover")) return 2;
+    if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote")) return 3;
+    if (s.includes("negot")) return 4;
+    if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order")) return 5;
+    if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin")) return 6;
+    if (s.includes("lead") || s.includes("open") || s.includes("new")) return 1;
+    return 1;
+  };
+
+  const normalizeDate = (d: any) => {
+    if (!d) return undefined;
+    const s = String(d);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00`;
+    return s.includes(" ") ? s.replace(" ", "T") : s;
+  };
+
+  const parseConfidence = (v: any) => {
+    if (v == null || v === "") return undefined;
+    const m = String(v).match(/\d+/);
+    return m ? Math.min(100, Math.max(0, Number(m[0]))) : undefined;
+  };
+
+  const normalizePriority = (v: any): string => {
+    const s = String(v ?? "").toUpperCase().trim();
+    if (s === "A" || s === "B" || s === "C" || s === "D") return s;
+    if (s.startsWith("H")) return "A";
+    if (s.startsWith("L")) return "D";
+    if (s.startsWith("M")) return "C";
+    return "C";
+  };
+
+  const adaptLegacyJourney = (raw: any) => {
+    const id = raw.ID;
+    const name = raw.Project_Name && String(raw.Project_Name).trim()
+      ? raw.Project_Name
+      : (raw.Target_Account || `Journey ${raw.ID}`);
+
+    const stage = mapLegacyStageToId(raw.Journey_Stage);
+    const value = Number(raw.Journey_Value ?? 0);
+    const priority = normalizePriority(raw.Priority);
+
+    const closeDate =
+      normalizeDate(raw.Expected_Decision_Date) ??
+      normalizeDate(raw.Quote_Presentation_Date) ??
+      normalizeDate(raw.Date_PO_Received) ??
+      normalizeDate(raw.Journey_Start_Date) ??
+      normalizeDate(raw.CreateDT) ??
+      new Date().toISOString();
+
+    const updatedAt =
+      normalizeDate(raw.Action_Date) ??
+      normalizeDate(raw.CreateDT) ??
+      new Date().toISOString();
+
+    const customerId = String(raw.Company_ID ?? "");
+    const companyName = raw.Target_Account || undefined;
+    const confidence = parseConfidence(raw.Chance_To_Secure_order);
+
+    return {
+      id,
+      name,
+      stage,
+      value,
+      priority,
+      closeDate,
+      updatedAt,
+      customerId,
+      companyName,
+      confidence,
+      Project_Name: raw.Project_Name,
+      Target_Account: raw.Target_Account,
+      Journey_Stage: raw.Journey_Stage,
+      Journey_Type: raw.Journey_Type,
+      Journey_Value: raw.Journey_Value,
+      Priority: raw.Priority,
+      Lead_Source: raw.Lead_Source,
+      Equipment_Type: raw.Equipment_Type,
+      Quote_Type: raw.Quote_Type,
+      RSM: raw.RSM,
+      RSM_Territory: raw.RSM_Territory,
+      Quote_Number: raw.Quote_Number,
+      Qty_of_Items: raw.Qty_of_Items,
+      CreateDT: raw.CreateDT,
+      Quote_Presentation_Date: raw.Quote_Presentation_Date,
+      Expected_Decision_Date: raw.Expected_Decision_Date,
+      Action_Date: raw.Action_Date,
+      Journey_Status: raw.Journey_Status,
+      Notes: raw.Notes,
+      Industry: raw.Industry,
+      Chance_To_Secure_order: raw.Chance_To_Secure_order,
+    };
+  };
+
+  // Data fetching logic
+  useEffect(() => {
+    console.log("Company ID from URL:", id, "Type:", typeof id); // Debug log
+    if (!id || id === "undefined" || id === "null") {
+      console.error("No valid company ID provided in URL");
+      setLoading(false);
+      return;
+    }
+    
+    let cancelled = false;
+    const fetchCompanyData = async () => {
+      setLoading(true);
+      try {
+        
+        // Use new custom ID API endpoints for proper server-side filtering
+        const [companyResponse, contactsResponse, journeysResponse] = await Promise.all([
+          // Get company by Company_ID using custom ID endpoint
+          fetch(`http://localhost:8080/api/legacy/std/Company/custom/${id}?idField=Company_ID`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }),
+          // Get contacts filtered by Company_ID
+          fetch(`http://localhost:8080/api/legacy/std/Contacts/filter/custom?filterField=Company_ID&filterValue=${id}&limit=100`, {
+            method: "GET", 
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }),
+          // Get journeys filtered by Company_ID
+          fetch(`http://localhost:8080/api/legacy/std/Journey/filter/custom?filterField=Company_ID&filterValue=${id}&limit=100`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          })
+        ]);
+
+        // Process contacts data
+        let contactsData = [];
+        if (contactsResponse.ok) {
+          const rawContacts = await contactsResponse.json();
+          contactsData = Array.isArray(rawContacts) ? rawContacts : [];
+          if (!cancelled) setCompanyContacts(contactsData);
+        } else {
+          console.error("Contacts fetch failed:", contactsResponse.status);
+        }
+
+        // Process journeys data
+        let journeysData = [];
+        if (journeysResponse.ok) {
+          const rawJourneys = await journeysResponse.json();
+          journeysData = Array.isArray(rawJourneys) ? rawJourneys.map(adaptLegacyJourney) : [];
+          if (!cancelled) setCompanyJourneys(journeysData);
+        } else {
+          console.error("Journeys fetch failed:", journeysResponse.status);
+        }
+
+        // Process company data
+        if (companyResponse.ok) {
+          const rawCompanyData = await companyResponse.json();
+          // Custom ID endpoint returns array, get first item
+          const companyData = Array.isArray(rawCompanyData) ? rawCompanyData[0] : rawCompanyData;
+          
+          if (companyData && !cancelled) {
+            // Find primary contact
+            const primaryContact = contactsData.find(contact => contact.Type === 'A') || contactsData[0];
+            
+            const adaptedCompany = {
+              id: companyData.Company_ID,
+              name: companyData.CustDlrName || `Company ${companyData.Company_ID}`,
+              phone: primaryContact?.PhoneNumber || companyData.BillToPhone || "",
+              email: primaryContact?.Email || "",
+              website: primaryContact?.Website || "",
+              dealer: companyData.Dealer,
+              active: companyData.Active,
+              isDealer: companyData.IsDealer,
+              isExcDealer: companyData.IsExcDealer,
+              creditStatus: companyData.CreditStatus,
+              creditNote: companyData.CreditNote,
+              onHoldBy: companyData.OnHoldBy,
+              onHoldDate: companyData.OnHoldDate,
+              offHoldBy: companyData.OffHoldBy,
+              offHoldDate: companyData.OffHoldDate,
+              classification: companyData.Classification,
+              custType: companyData.CustType,
+              lastCreditStat: companyData.LastCreditStat,
+              coeRSM: companyData.CoeRSM,
+              discounted: companyData.Discounted,
+              notes: companyData.Notes,
+              shipInstr: companyData.ShipInstr,
+              billToExt: companyData.BillToExt,
+              creditLimit: companyData.CreditLimit,
+              acctBalance: companyData.AcctBalance,
+              balanceDate: companyData.BalanceDate,
+              termsCode: companyData.TermsCode,
+              exported: companyData.Exported,
+              systemNotes: companyData.SystemNotes,
+            };
+            setCompany(adaptedCompany);
+          } else {
+            console.warn(`No company found with ID ${id}`);
+          }
+        } else {
+          console.error("Company fetch failed:", companyResponse.status);
+          if (companyResponse.status === 404) {
+            console.warn(`Company with ID ${id} not found`);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+    return () => { cancelled = true; };
+  }, [id]);
 
   const handleOpenModal = (type: string) => {
     setActiveModal({ type, isOpen: true });
@@ -494,19 +716,41 @@ const CompanyDetails = () => {
     setMentionDropdownIndex(0);
   }, [showMentionDropdown, mentionSearch]);
 
+  if (loading) {
+    return (
+      <div className="flex flex-1 bg-background items-center justify-center">
+        <div className="text-text">Loading company details...</div>
+      </div>
+    );
+  }
+
+  if (!company) {
+    return (
+      <div className="flex flex-1 bg-background items-center justify-center">
+        <div className="text-text">Company not found</div>
+      </div>
+    );
+  }
+
+  const companyInitial = company.name ? company.name.charAt(0).toUpperCase() : 'C';
+  
   return (
     <div className="flex flex-1 bg-background">
       <aside className="w-max bg-foreground flex flex-col border-r border-border">
         <div className="flex flex-col items-center py-4 border-b border-border">
           <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-2 border border-border">
-            <span className="text-primary text-2xl font-bold">H</span>
+            <span className="text-primary text-2xl font-bold">{companyInitial}</span>
           </div>
-          <h2 className="text-xl font-bold text-text">HubSpot</h2>
-          <a
-            href="https://hubspot.com"
-            className="text-text-muted text-sm hover:underline mb-2">
-            hubspot.com
-          </a>
+          <h2 className="text-xl font-bold text-text px-2">{company.name}</h2>
+          {company.website && (
+            <a
+              href={company.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-muted text-sm hover:underline mb-2">
+              {company.website}
+            </a>
+          )}
 
           <div className="flex items-center justify-center gap-2 px-2">
             <div className="flex flex-col items-center gap-1">
@@ -563,82 +807,92 @@ const CompanyDetails = () => {
         <div className="p-2 flex-1 overflow-y-auto">
           <div className="space-y-2 text-sm">
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Company domain name</span>
+              <span className="text-text-muted">Company ID</span>
               <input
                 type="text"
-                defaultValue="hubspot.com"
+                value={company.id || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Industry</span>
+              <span className="text-text-muted">Customer Type</span>
               <input
                 type="text"
-                placeholder="Enter industry"
+                value={company.custType || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Company owner</span>
+              <span className="text-text-muted">Active Status</span>
               <input
                 type="text"
-                placeholder="Enter owner"
+                value={company.active ? "Active" : "Inactive"}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Type</span>
+              <span className="text-text-muted">Is Dealer</span>
               <input
                 type="text"
-                placeholder="Enter type"
+                value={company.isDealer ? "Yes" : "No"}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">City</span>
+              <span className="text-text-muted">Credit Status</span>
               <input
                 type="text"
-                placeholder="Enter city"
+                value={company.creditStatus || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">State/Region</span>
+              <span className="text-text-muted">Credit Limit</span>
               <input
                 type="text"
-                placeholder="Enter state"
+                value={company.creditLimit ? formatCurrency(company.creditLimit) : ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Postal code</span>
+              <span className="text-text-muted">Account Balance</span>
               <input
                 type="text"
-                placeholder="Enter postal code"
+                value={company.acctBalance ? formatCurrency(company.acctBalance) : ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Number of employees</span>
+              <span className="text-text-muted">Terms Code</span>
               <input
-                type="number"
-                placeholder="Enter number"
+                type="text"
+                value={company.termsCode || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Annual revenue</span>
+              <span className="text-text-muted">COE RSM</span>
               <input
                 type="text"
-                placeholder="Enter revenue"
+                value={company.coeRSM || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Time zone</span>
+              <span className="text-text-muted">Classification</span>
               <input
                 type="text"
-                placeholder="Entertimezone"
+                value={company.classification || ""}
+                readOnly
                 className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
               />
             </div>
@@ -664,20 +918,22 @@ const CompanyDetails = () => {
               className="bg-foreground rounded-lg border border-border p-4 flex justify-between"
               style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
               <div>
-                <div className="text-xs text-text-muted">CREATE DATE</div>
+                <div className="text-xs text-text-muted">CREDIT STATUS</div>
                 <div className="font-semibold text-text">
-                  06/09/2025 3:16 PM EDT
+                  {company.creditStatus || "--"}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">LIFECYCLE STAGE</div>
-                <div className="font-semibold text-text">Opportunity</div>
+                <div className="text-xs text-text-muted">ACCOUNT BALANCE</div>
+                <div className="font-semibold text-text">
+                  {company.acctBalance ? formatCurrency(company.acctBalance) : "--"}
+                </div>
               </div>
               <div>
-                <div className="text-xs text-text-muted">
-                  LAST ACTIVITY DATE
+                <div className="text-xs text-text-muted">BALANCE DATE</div>
+                <div className="font-semibold text-text">
+                  {company.balanceDate ? formatDate(company.balanceDate) : "--"}
                 </div>
-                <div className="font-semibold text-text">--</div>
               </div>
             </div>
             {/* Recent Activities */}
@@ -722,7 +978,7 @@ const CompanyDetails = () => {
               className="bg-foreground rounded-lg border border-border p-4"
               style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-text">Contacts</h4>
+                <h4 className="font-semibold text-text">Contacts ({companyContacts.length})</h4>
                 <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                   + Add
                 </button>
@@ -741,48 +997,58 @@ const CompanyDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-border">
-                    <td className="py-2 flex items-center">
-                      <span className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
-                        <svg
-                          className="w-4 h-4 text-primary"
-                          fill="currentColor"
-                          viewBox="0 0 24 24">
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                          />
-                        </svg>
-                      </span>
-                      <span className="text-text">
-                        Maria Johnson (Sample Contact)
-                      </span>
-                    </td>
-                    <td className="py-2 text-info">emailmaria@hubspot.com</td>
-                    <td className="py-2 text-text">--</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 flex items-center">
-                      <span className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
-                        <svg
-                          className="w-4 h-4 text-primary"
-                          fill="currentColor"
-                          viewBox="0 0 24 24">
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                          />
-                        </svg>
-                      </span>
-                      <span className="text-text">
-                        Brian Halligan (Sample Contact)
-                      </span>
-                    </td>
-                    <td className="py-2 text-info">bh@hubspot.com</td>
-                    <td className="py-2 text-text">--</td>
-                  </tr>
+                  {companyContacts.length > 0 ? (
+                    companyContacts.map((contact, index) => {
+                      const fullName = `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
+                      const contactInitial = fullName ? fullName.charAt(0).toUpperCase() : 'C';
+                      const uniqueKey = `contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
+                      
+                      return (
+                        <tr key={uniqueKey} className="border-b border-border">
+                          <td className="py-2 flex items-center">
+                            <span className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
+                              <span className="text-primary text-xs font-bold">{contactInitial}</span>
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-text">
+                                {fullName || "Unnamed Contact"}
+                              </span>
+                              {contact.ConTitle && (
+                                <span className="text-xs text-text-muted">
+                                  {contact.ConTitle}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2">
+                            {contact.Email ? (
+                              <a href={`mailto:${contact.Email}`} className="text-info hover:underline">
+                                {contact.Email}
+                              </a>
+                            ) : (
+                              <span className="text-text">--</span>
+                            )}
+                          </td>
+                          <td className="py-2">
+                            {contact.PhoneNumber ? (
+                              <a href={`tel:${contact.PhoneNumber}`} className="text-text hover:underline">
+                                {contact.PhoneNumber}
+                                {contact.PhoneExt && ` ext. ${contact.PhoneExt}`}
+                              </a>
+                            ) : (
+                              <span className="text-text">--</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="py-4 text-center text-text-muted">
+                        No contacts found for this company
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -796,98 +1062,162 @@ const CompanyDetails = () => {
           className="bg-foreground rounded-lg border border-border p-4"
           style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Company summary</h4>
-            <span className="bg-primary/20 text-primary text-xs px-2 py-1 rounded font-bold">
-              +AI
-            </span>
+            <h4 className="font-semibold text-text">Company Information</h4>
           </div>
-          <div className="text-xs text-text-muted mb-2">
-            Generated Jun 10, 2025
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-text-muted">Status: </span>
+              <span className={`font-medium ${company.active ? 'text-green-600' : 'text-red-600'}`}>
+                {company.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            
+            {company.isDealer && (
+              <div>
+                <span className="text-text-muted">Type: </span>
+                <span className="text-text font-medium">Dealer</span>
+              </div>
+            )}
+            
+            {company.creditNote && (
+              <div>
+                <span className="text-text-muted">Credit Note: </span>
+                <span className="text-text">{company.creditNote}</span>
+              </div>
+            )}
+            
+            {(company.onHoldBy || company.onHoldDate) && (
+              <div className="bg-yellow-50 border border-yellow-200 p-2 rounded">
+                <div className="text-yellow-800 text-xs font-medium">Account On Hold</div>
+                {company.onHoldBy && (
+                  <div className="text-yellow-700 text-xs">By: {company.onHoldBy}</div>
+                )}
+                {company.onHoldDate && (
+                  <div className="text-yellow-700 text-xs">Date: {formatDate(company.onHoldDate)}</div>
+                )}
+              </div>
+            )}
+            
+            {company.notes && (
+              <div>
+                <span className="text-text-muted">Notes: </span>
+                <div className="text-text mt-1 p-2 bg-background rounded border text-xs">
+                  {company.notes}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="text-text text-sm mb-4">
-            There are no activities associated with this company, and further
-            details are needed to provide a comprehensive summary.
-          </div>
-          <button className="text-primary border border-primary rounded px-3 py-1 text-xs hover:bg-primary/10">
-            + Ask a question
-          </button>
         </div>
         {/* Contacts Panel */}
         <div
           className="bg-foreground rounded-lg border border-border p-4"
           style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Contacts (2)</h4>
+            <h4 className="font-semibold text-text">Contacts ({companyContacts.length})</h4>
             <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
               + Add
             </button>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-surface p-3 rounded">
-              <div>
-                <div className="font-semibold text-sm text-text">
-                  Maria Johnson (Sample Contact)
-                </div>
-                <div className="text-xs text-text-muted">
-                  Salesperson at HubSpot
-                </div>
-                <div className="text-xs text-info">emailmaria@hubspot.com</div>
+            {companyContacts.length > 0 ? (
+              companyContacts.slice(0, 3).map((contact, index) => {
+                const fullName = `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
+                const contactInitial = fullName ? fullName.charAt(0).toUpperCase() : 'C';
+                const uniqueKey = `sidebar-contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
+                
+                return (
+                  <div key={uniqueKey} className="flex items-center justify-between bg-surface p-3 rounded">
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-text">
+                        {fullName || "Unnamed Contact"}
+                      </div>
+                      {contact.ConTitle && (
+                        <div className="text-xs text-text-muted">
+                          {contact.ConTitle}
+                        </div>
+                      )}
+                      {contact.Email && (
+                        <div className="text-xs text-info">{contact.Email}</div>
+                      )}
+                      {contact.PhoneNumber && (
+                        <div className="text-xs text-text-muted">
+                          {contact.PhoneNumber}
+                          {contact.PhoneExt && ` ext. ${contact.PhoneExt}`}
+                        </div>
+                      )}
+                    </div>
+                    <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-primary text-sm font-bold">{contactInitial}</span>
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-4 text-text-muted">
+                No contacts found for this company
               </div>
-              <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="currentColor"
-                  viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                  />
-                </svg>
-              </span>
-            </div>
-            <div className="flex items-center justify-between bg-surface p-3 rounded">
-              <div>
-                <div className="font-semibold text-sm text-text">
-                  Brian Halligan (Sample Contact)
-                </div>
-                <div className="text-xs text-text-muted">
-                  Executive Chairperson at HubSpot
-                </div>
-                <div className="text-xs text-info">bh@hubspot.com</div>
-              </div>
-              <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="currentColor"
-                  viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                  />
-                </svg>
-              </span>
-            </div>
+            )}
           </div>
-          <button className="mt-4 text-xs text-info hover:underline">
-            View associated Contacts
-          </button>
+          {companyContacts.length > 3 && (
+            <button className="mt-4 text-xs text-info hover:underline">
+              View all {companyContacts.length} contacts
+            </button>
+          )}
         </div>
         {/* Deals Panel */}
         <div
           className="bg-foreground rounded-lg border border-border p-4"
           style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Deals (1)</h4>
+            <h4 className="font-semibold text-text">Journeys ({companyJourneys.length})</h4>
+            <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+              + Add
+            </button>
           </div>
-          <div className="bg-surface p-3 rounded">
-            <div className="font-semibold text-sm text-text">Sample Deal</div>
-            <div className="text-xs text-text-muted">Amount: $5,000.00</div>
-            <div className="text-xs text-text-muted">
-              Close date: June 30, 2025
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {companyJourneys.length > 0 ? (
+              companyJourneys.map((journey, index) => {
+                const uniqueKey = `journey-${journey.id || journey.customerId}-${index}`;
+                return (
+                  <div key={uniqueKey} className="bg-surface p-3 rounded">
+                    <div className="font-semibold text-sm text-text mb-1">{journey.name}</div>
+                    <div className="text-xs text-text-muted mb-1">
+                      Amount: {formatCurrency(journey.value)}
+                    </div>
+                    <div className="text-xs text-text-muted mb-1">
+                      Close date: {formatDate(journey.closeDate)}
+                    </div>
+                    <div className="text-xs text-text-muted mb-1">
+                      Stage: {journey.Journey_Stage || `Stage ${journey.stage}`}
+                    </div>
+                    {journey.confidence && (
+                      <div className="text-xs text-text-muted mb-1">
+                        Confidence: {journey.confidence}%
+                      </div>
+                    )}
+                    {journey.Priority && (
+                      <div className="flex items-center mt-2">
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          Priority {journey.Priority}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-4 text-text-muted">
+                No journeys found for this company
+              </div>
+            )}
+          </div>
+          {companyJourneys.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-border">
+              <div className="text-xs text-text-muted">
+                Total Pipeline Value: {formatCurrency(companyJourneys.reduce((sum, j) => sum + (j.value || 0), 0))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 

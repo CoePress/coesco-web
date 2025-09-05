@@ -1574,12 +1574,12 @@ async function main() {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
     const employees = await _migrateEmployees();
-    const coilTypes = await _migrateCoilTypes();
-    const productClasses = await _migrateProductClasses();
-    const equipmentItems = await _migrateEquipListToItems();
-    const optionCategories = await _migrateOptionCategories();
-    const optionHeaders = await _migrateOptionHeaders();
-    const optionDetails = await _migrateOptionDetails();
+    // const coilTypes = await _migrateCoilTypes();
+    // const productClasses = await _migrateProductClasses();
+    // const equipmentItems = await _migrateEquipListToItems();
+    // const optionCategories = await _migrateOptionCategories();
+    // const optionHeaders = await _migrateOptionHeaders();
+    // const optionDetails = await _migrateOptionDetails();
     // const quoteHeaders = await _migrateQuotes();
     // const quotes = await _migrateQuoteRevisions();
     // const quoteItems = await _migrateQuoteItems();
@@ -1592,12 +1592,12 @@ async function main() {
 
     logger.info(`Migration Results (${duration}s):`);
     logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
-    logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
-    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
-    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
-    logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
+    // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
+    // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
+    // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
     // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);

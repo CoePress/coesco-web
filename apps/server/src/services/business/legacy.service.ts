@@ -211,6 +211,33 @@ export class LegacyService {
     }
   }
 
+  async getAllByCustomFilter(database: string, table: string, filterField: string, filterValue: string, params?: any) {
+    const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
+    const escapedField = filterField.replace(/[^a-zA-Z0-9_]/g, ""); // Sanitize field name
+    const escapedValue = filterValue.replace(/'/g, "''");
+
+    const whereClause = `WHERE ${escapedField} = '${escapedValue}'`;
+
+    const query = `
+      SELECT *
+      FROM PUB.${table}
+      ${whereClause}
+      ${params ? this.buildOrderQuery(params) : ""}
+      ${limit}
+    `;
+
+    try {
+      const result = await this.getDatabaseConnection(database)?.query(query);
+      return result;   
+
+    } catch(err) {
+      console.error(`Error fetching ${table} where ${escapedField} = ${escapedValue}:`, err);
+      return null;
+
+    } finally {
+    }
+  }
+
   async update(database: string, table: string, id: string, data: Record<string, any>) {
     return;
     if (!data || Object.keys(data).length === 0) {

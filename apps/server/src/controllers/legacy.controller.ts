@@ -30,7 +30,29 @@ export class LegacyController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { database, table, id } = req.params;
-      const result = await legacyService.getById(database, table, id);
+
+      const fieldsParam = req.query.fields as string | undefined;
+      const fields = fieldsParam ? fieldsParam.split(",") : null;
+
+      const result = await legacyService.getById(database, table, id, fields);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllByCustomFilter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { database, table } = req.params;
+      const { filterField, filterValue } = req.query;
+
+      if (!filterField || !filterValue) {
+        return res.status(400).json({ error: "filterField and filterValue query parameters are required" });
+      }
+
+      const params = buildQueryParams<any>(req.query);
+      const result = await legacyService.getAllByCustomFilter(database, table, String(filterField), String(filterValue), params);
       res.status(200).json(result);
     }
     catch (error) {
