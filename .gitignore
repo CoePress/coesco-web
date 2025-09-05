@@ -80,3 +80,8 @@ secrets.json
 # Other
 launchSettings.json
 .claude/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
