@@ -664,8 +664,6 @@ enum UserRole {
   ADMIN
 }
 
-// Quote
-
 // CoilType
 model CoilType {
   id          String  @id @default(uuid())
@@ -689,7 +687,7 @@ model ProductClass {
 
   parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children                     ProductClass[]               @relation("ProductClassHierarchy")
-  optionDetails                OptionDetails[]
+  options                OptionDetails[]
   configurations               Configuration[]
   productClassOptionCategories ProductClassOptionCategory[]
 
@@ -704,7 +702,7 @@ model OptionCategory {
   multiple    Boolean @default(false)
   mandatory   Boolean @default(false)
   standard    Boolean @default(false)
-  order       Int
+  displayOrder       Int
   legacyId    String?
 
   optionHeaders                OptionHeader[]
@@ -740,6 +738,7 @@ model OptionHeader {
   description String?
   application String?
   legacyId    String?
+  displayOrder   Int       @default(0)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -759,29 +758,29 @@ model OptionHeader {
 
 model OptionDetails {
   id             String    @id @default(uuid())
-  productClassId String
   optionHeaderId String
+  productClassId String?
+  itemId         String?
   price          Decimal
-  displayOrder   Int       @default(0)
   isActive       Boolean   @default(true)
-  isDefault      Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
   createdById    String
   updatedById    String
 
-  productClass ProductClass @relation(fields: [productClassId], references: [id])
   optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
+  productClass ProductClass? @relation(fields: [productClassId], references: [id])
+  item Item? @relation(fields: [itemId], references: [id])
 
   @@unique([productClassId, optionHeaderId])
   @@index([createdById])
   @@map("option_details")
 }
 
-
 model Item {
   id             String    @id @default(uuid())
+  productClassId String? 
   modelNumber    String?
   name           String?
   description    String?
@@ -796,6 +795,7 @@ model Item {
   createdById    String
   updatedById    String
 
+  options OptionDetails[]
   quoteItems QuoteItem[]
 
   @@index([createdById])

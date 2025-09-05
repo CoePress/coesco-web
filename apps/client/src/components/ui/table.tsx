@@ -78,10 +78,10 @@ const Table = <T extends Record<string, any>>({
     <div className={`flex-1 flex flex-col h-full ${className}`}>
       <div className="flex-1 overflow-auto relative">
         <table
-          className={`min-w-full divide-y divide-border text-text-muted text-sm ${
+          className={`min-w-full text-text-muted text-sm ${
             !loading && data.length === 0 ? 'h-full' : ''
           }`}>
-          <thead className="bg-foreground">
+          <thead className="bg-foreground sticky top-0 z-10" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
             <tr>
               {selectable && (
                 <th

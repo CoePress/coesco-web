@@ -28,7 +28,7 @@ export interface AuthenticatedRequest extends Request {
     firstName: string;
     lastName: string;
     email?: string;
-    jobTitle: string;
+    title: string;
     number: string;
     initials?: string;
   };
@@ -45,7 +45,7 @@ export const protect = asyncHandler(
           number: "SYS",
           firstName: "System",
           lastName: "Account",
-          jobTitle: "System",
+          title: "System",
           email: "",
         },
         () => next(),
@@ -83,7 +83,7 @@ export const protect = asyncHandler(
         firstName: emp.firstName,
         lastName: emp.lastName,
         email: emp.email!,
-        jobTitle: emp.jobTitle,
+        title: emp.title,
         number: emp.number,
       };
 
@@ -93,7 +93,7 @@ export const protect = asyncHandler(
         firstName: emp.firstName,
         lastName: emp.lastName,
         email: emp.email ?? undefined,
-        jobTitle: emp.jobTitle,
+        title: emp.title,
         number: emp.number,
         initials: emp.initials ?? undefined,
       };

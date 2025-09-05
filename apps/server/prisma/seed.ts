@@ -1,11 +1,13 @@
 /* eslint-disable node/prefer-global/process */
 import { MachineControllerType, MachineType } from "@prisma/client";
 
-import { microsoftService } from "@/services";
+import { MicrosoftService } from "@/services/business/microsoft.service";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 // contextStorage.enterWith(SYSTEM_CONTEXT);
+
+const microsoftService = new MicrosoftService();
 
 const machines = [
   {

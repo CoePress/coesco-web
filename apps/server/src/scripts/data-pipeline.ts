@@ -37,13 +37,13 @@ interface TableMapping {
   filter?: (record: any) => boolean;
   beforeSave?: (mappedData: any, originalRecord: any) => any | Promise<any>;
   afterSave?: (savedRecord: any, originalRecord: any) => Promise<void>;
-  batchSize?: number; // For Prisma operations
-  legacyFetchSize?: number; // For legacy DB fetch operations
-  concurrency?: number; // Number of batches to process in parallel
+  batchSize?: number;
+  legacyFetchSize?: number;
+  concurrency?: number;
   skipDuplicates?: boolean;
   duplicateCheck?: (mappedData: any) => any;
-  sort?: string | string[]; // Sort field(s) for source table
-  order?: "ASC" | "DESC"; // Sort order (default ASC)
+  sort?: string | string[];
+  order?: "ASC" | "DESC";
 }
 
 interface MigrationResult {
@@ -78,7 +78,6 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
       offset: 0,
     };
 
-    // Get total count first
     const totalCount = await legacyService.getCount(mapping.sourceDatabase, mapping.sourceTable, params);
     const legacyFetchSize = mapping.legacyFetchSize || 5000;
     const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
@@ -88,12 +87,11 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
     let totalProcessed = 0;
     let currentBatch = 0;
 
-    // Continue until we've processed all records based on the total count
     while (totalProcessed < totalCount) {
       const paginatedResult = await legacyService.getAllPaginated(
         mapping.sourceDatabase,
         mapping.sourceTable,
-        { ...params, totalCount }, // Pass totalCount for reference
+        { ...params, totalCount },
         legacyFetchSize,
       );
 
@@ -108,7 +106,6 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
 
       logger.info(`Processing batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
 
-      // Process records in smaller batches for createMany
       const createBatchSize = 1000;
       const recordBatches = [];
 
@@ -116,15 +113,12 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
         recordBatches.push(sourceRecords.slice(i, i + createBatchSize));
       }
 
-      // Sequential processing only - no parallel concurrency
       for (let i = 0; i < recordBatches.length; i++) {
         await processSingleBatch(recordBatches[i], mapping, result, i);
       }
 
-      // Update pagination parameters
       params.offset = paginatedResult.nextOffset;
 
-      // Double-check: stop if we've processed all records or got no records
       if (paginatedResult.records.length === 0) {
         logger.info(`No more records to process. Breaking pagination loop.`);
         break;
@@ -288,7 +282,6 @@ async function cleanOrderGaps(
   try {
     logger.info(`Cleaning order gaps in ${tableName}.${orderField}...`);
 
-    // Get all records ordered by the order field
     const records = await (mainDatabase as any)[tableName].findMany({
       where: whereCondition || {},
       orderBy: { [orderField]: "asc" },
@@ -299,7 +292,6 @@ async function cleanOrderGaps(
       return;
     }
 
-    // Update each record with sequential order
     let updateCount = 0;
     for (let i = 0; i < records.length; i++) {
       const newOrder = i + 1;
@@ -497,168 +489,6 @@ async function _migrateCoilTypes(): Promise<MigrationResult> {
   return result;
 }
 
-async function _migrateOptionCategories(): Promise<MigrationResult> {
-  const mapping: TableMapping = {
-    sourceDatabase: "quote",
-    sourceTable: "OptGroup",
-    targetTable: "optionCategory",
-    fieldMappings: [
-      {
-        from: "GrpID",
-        to: "legacyId",
-        transform: value => value?.toString(),
-      },
-      {
-        from: "GrpName",
-        to: "name",
-        transform: value => value?.trim(),
-        required: true,
-      },
-      {
-        from: "GrpDescription",
-        to: "description",
-        defaultValue: null,
-      },
-      {
-        from: "Multiple",
-        to: "multiple",
-        transform: value => value?.toLowerCase() === "multiple",
-      },
-      {
-        from: "Mandatory",
-        to: "mandatory",
-        transform: value => value?.toLowerCase() === "mandatory",
-      },
-      {
-        from: "GrpOrder",
-        to: "order",
-        transform: value => Number.parseInt(value) || 0,
-      },
-    ],
-    skipDuplicates: true,
-    duplicateCheck: data => ({
-      name: data.name,
-    }),
-    batchSize: 100,
-  };
-
-  const result = await migrateWithMapping(mapping);
-
-  if (result.created > 0) {
-    await cleanOrderGaps("optionCategory", "order");
-  }
-
-  return result;
-}
-
-async function _migrateOptions(): Promise<MigrationResult> {
-  // First, ensure we have an "Archived" option category for unmapped options
-  let archivedCategory = await findReferencedRecord("optionCategory", {
-    name: "Archived",
-  });
-
-  if (!archivedCategory) {
-    logger.info("Creating 'Archived' option category for unmapped options");
-    archivedCategory = await mainDatabase.optionCategory.create({
-      data: {
-        name: "Archived",
-        description: "Options without category mapping from legacy system",
-        multiple: false,
-        mandatory: false,
-        order: 9999, // Put it at the end
-      },
-    });
-  }
-
-  const mapping: TableMapping = {
-    sourceDatabase: "quote",
-    sourceTable: "StdEquip",
-    targetTable: "optionHeader",
-    fieldMappings: [
-      {
-        from: "ID",
-        to: "legacyId",
-        transform: value => value?.toString(),
-      },
-      {
-        from: "Name",
-        to: "name",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Descr",
-        to: "description",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Application",
-        to: "application",
-        transform: value => value?.trim(),
-      },
-    ],
-    beforeSave: async (data, original) => {
-      // Follow the relationship chain: StdEquip.ID -> OptGrp.ID -> OptGrp.GrpID
-      // First, find the OptGrp record where OptGrp.ID matches StdEquip.ID
-      const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
-        filter: `ID=${original.ID}`,
-      });
-
-      let optionCategoryId = null;
-
-      if (!optGrpRecords || optGrpRecords.length === 0) {
-        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}, using Archived category`);
-        optionCategoryId = archivedCategory.id;
-      }
-      else {
-        const optGrp: any = optGrpRecords[0];
-        const grpId = optGrp.GrpID?.toString();
-
-        if (!grpId) {
-          logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}, using Archived category`);
-          optionCategoryId = archivedCategory.id;
-        }
-        else {
-          // Now find the optionCategory using the GrpID
-          const optionCategory = await findReferencedRecord("optionCategory", {
-            legacyId: grpId,
-          });
-
-          if (!optionCategory) {
-            logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}, using Archived category`);
-            optionCategoryId = archivedCategory.id;
-          }
-          else {
-            optionCategoryId = optionCategory.id;
-          }
-        }
-      }
-
-      // TODO: Handle HideOption -> isActive
-
-      data.optionCategoryId = optionCategoryId;
-      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
-      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
-      data.createdById = original.CreateInit?.toLowerCase() || "system";
-      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
-
-      return data;
-    },
-    skipDuplicates: true,
-    duplicateCheck: data => ({
-      legacyId: data.legacyId,
-    }),
-    batchSize: 100,
-  };
-
-  const result = await migrateWithMapping(mapping);
-
-  if (result.created > 0) {
-    await cleanOrderGaps("optionCategory", "order");
-  }
-
-  return result;
-}
-
 async function _migrateProductClasses(): Promise<MigrationResult> {
   const parentMapping: TableMapping = {
     sourceDatabase: "quote",
@@ -727,7 +557,7 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
       const cleanFamily = replaceInternalWhitespace(equFamily);
       const segments = cleanFamily.split("-");
       const parentCode = segments[0];
-      const currentCode = segments[1] || segments[0];
+      const childCode = segments[1] || segments[0];
 
       let parent = await findReferencedRecord("productClass", {
         code: parentCode,
@@ -755,7 +585,10 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
         }
       }
 
-      data.code = currentCode;
+      // Combine parent and child codes to create the full code path
+      const fullCode = `${parentCode}-${childCode}`;
+
+      data.code = fullCode;
       data.parentId = parent.id;
       data.depth = 1;
       data.description = original.Desc2 || "";
@@ -779,6 +612,255 @@ async function _migrateProductClasses(): Promise<MigrationResult> {
     errors: parentResult.errors + childResult.errors,
     errorDetails: [...parentResult.errorDetails, ...childResult.errorDetails],
   };
+
+  return result;
+}
+
+async function _migrateOptionCategories(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "OptGroup",
+    targetTable: "optionCategory",
+    fieldMappings: [
+      {
+        from: "GrpID",
+        to: "legacyId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "GrpName",
+        to: "name",
+        transform: value => value?.trim(),
+        required: true,
+      },
+      {
+        from: "GrpDescription",
+        to: "description",
+        defaultValue: null,
+      },
+      {
+        from: "Multiple",
+        to: "multiple",
+        transform: value => value?.toLowerCase() === "multiple",
+      },
+      {
+        from: "Mandatory",
+        to: "mandatory",
+        transform: value => value?.toLowerCase() === "mandatory",
+      },
+      {
+        from: "GrpOrder",
+        to: "displayOrder",
+        transform: value => Number.parseInt(value) || 0,
+      },
+    ],
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      name: data.name,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  if (result.created > 0) {
+    await cleanOrderGaps("optionCategory", "displayOrder");
+  }
+
+  return result;
+}
+
+async function _migrateOptionHeaders(): Promise<MigrationResult> {
+  let archivedCategory = await findReferencedRecord("optionCategory", {
+    name: "Archived",
+  });
+
+  if (!archivedCategory) {
+    logger.info("Creating 'Archived' option category for unmapped options");
+    archivedCategory = await mainDatabase.optionCategory.create({
+      data: {
+        name: "Archived",
+        description: "Options without category mapping from legacy system",
+        multiple: false,
+        mandatory: false,
+        displayOrder: 9999,
+      },
+    });
+  }
+
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "StdEquip",
+    targetTable: "optionHeader",
+    fieldMappings: [
+      {
+        from: "ID",
+        to: "legacyId",
+        transform: value => value?.toString(),
+      },
+      {
+        from: "Name",
+        to: "name",
+        transform: value => value?.trim(),
+      },
+      {
+        from: "Descr",
+        to: "description",
+        transform: value => value?.trim(),
+      },
+      {
+        from: "Application",
+        to: "application",
+        transform: value => value?.trim(),
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
+        filter: `ID=${original.ID}`,
+      });
+
+      let optionCategoryId = null;
+
+      if (!optGrpRecords || optGrpRecords.length === 0) {
+        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}, using Archived category`);
+        optionCategoryId = archivedCategory.id;
+      }
+      else {
+        const optGrp: any = optGrpRecords[0];
+        const grpId = optGrp.GrpID?.toString();
+
+        if (!grpId) {
+          logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}, using Archived category`);
+          optionCategoryId = archivedCategory.id;
+        }
+        else {
+          const optionCategory = await findReferencedRecord("optionCategory", {
+            legacyId: grpId,
+          });
+
+          if (!optionCategory) {
+            logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}, using Archived category`);
+            optionCategoryId = archivedCategory.id;
+          }
+          else {
+            optionCategoryId = optionCategory.id;
+          }
+        }
+      }
+
+      // TODO: Handle HideOption -> isActive
+
+      data.optionCategoryId = optionCategoryId;
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      legacyId: data.legacyId,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  return result;
+}
+
+async function _migrateOptionDetails(): Promise<MigrationResult> {
+  const mapping: TableMapping = {
+    sourceDatabase: "quote",
+    sourceTable: "EquipOpt",
+    targetTable: "optionDetails",
+    fieldMappings: [
+      {
+        from: "Price",
+        to: "price",
+        transform: value => value ? Number.parseFloat(value) : 0,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const modelNumber = replaceInternalWhitespace(trimWhitespace(original.Model));
+
+      const optionHeader = await findReferencedRecord("optionHeader", {
+        legacyId: original.ID?.toString(),
+      });
+
+      if (!optionHeader) {
+        logger.warn(`No optionHeader found for EquipOpt.ID: ${original.ID}`);
+        return null;
+      }
+
+      data.optionHeaderId = optionHeader.id;
+
+      const item = await findReferencedRecord("item", {
+        modelNumber,
+      });
+
+      if (item) {
+        data.itemId = item.id;
+        data.productClassId = null;
+        logger.debug(`Found item for model: ${modelNumber}`);
+      }
+      else {
+        let productClass = await findReferencedRecord("productClass", {
+          code: modelNumber,
+        });
+
+        if (!productClass) {
+          productClass = await findReferencedRecord("productClass", {
+            code: modelNumber,
+            parentId: null,
+          });
+        }
+
+        if (productClass) {
+          data.productClassId = productClass.id;
+          data.itemId = null;
+          logger.debug(`Found product class for model: ${modelNumber}`);
+        }
+        else {
+          logger.warn(`No item or product class found for model: ${modelNumber} in EquipOpt.ID: ${original.ID}`);
+          return null;
+        }
+      }
+
+      data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
+      data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
+
+      return data;
+    },
+    filter: (record) => {
+      // Only process records that have both an ID and Model
+      return record.ID && record.Model;
+    },
+    skipDuplicates: true,
+    duplicateCheck: (data) => {
+      // Create unique check based on which type of relation exists
+      if (data.itemId) {
+        return {
+          optionHeaderId: data.optionHeaderId,
+          itemId: data.itemId,
+          productClassId: null,
+        };
+      }
+      else {
+        return {
+          optionHeaderId: data.optionHeaderId,
+          productClassId: data.productClassId,
+          itemId: null,
+        };
+      }
+    },
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
 
   return result;
 }
@@ -1491,13 +1573,13 @@ async function main() {
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
-
     const employees = await _migrateEmployees();
     const coilTypes = await _migrateCoilTypes();
-    const optionCategories = await _migrateOptionCategories();
-    const options = await _migrateOptions();
     const productClasses = await _migrateProductClasses();
-    // const equipmentItems = await _migrateEquipListToItems();
+    const equipmentItems = await _migrateEquipListToItems();
+    const optionCategories = await _migrateOptionCategories();
+    const optionHeaders = await _migrateOptionHeaders();
+    const optionDetails = await _migrateOptionDetails();
     // const quoteHeaders = await _migrateQuotes();
     // const quotes = await _migrateQuoteRevisions();
     // const quoteItems = await _migrateQuoteItems();
@@ -1511,10 +1593,11 @@ async function main() {
     logger.info(`Migration Results (${duration}s):`);
     logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
     logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
-    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    logger.info(`Option: ${options.created} created, ${options.skipped} skipped, ${options.errors} errors`);
     logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
+    logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
     // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);

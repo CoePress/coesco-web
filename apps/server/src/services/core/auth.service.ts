@@ -77,7 +77,7 @@ export class AuthService {
         firstName: user.employee.firstName,
         lastName: user.employee.lastName,
         email: user.employee.email,
-        jobTitle: user.employee.jobTitle,
+        title: user.employee.title,
       },
     };
   }
@@ -146,7 +146,7 @@ export class AuthService {
         firstName: user.employee.firstName,
         lastName: user.employee.lastName,
         email: user.employee.email,
-        jobTitle: user.employee.jobTitle,
+        title: user.employee.title,
       },
     };
   }
@@ -209,8 +209,9 @@ export class AuthService {
         data: {
           firstName: "Sample",
           lastName: "Employee",
+          initials: "sys",
           email: "sample@example.com",
-          jobTitle: "Sales Manager",
+          title: "Sales Manager",
           number: randomUUID().slice(0, 6),
           user: {
             create: {
@@ -257,7 +258,7 @@ export class AuthService {
         firstName: employee.firstName,
         lastName: employee.lastName,
         email: employee.email,
-        jobTitle: employee.jobTitle,
+        title: employee.title,
       },
     };
   }

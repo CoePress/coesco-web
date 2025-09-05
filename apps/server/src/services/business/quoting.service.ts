@@ -1,5 +1,5 @@
 /* eslint-disable node/prefer-global/buffer */
-import type { QuoteDetails, QuoteHeader, QuoteItem, QuoteTerms } from "@prisma/client";
+import type { QuoteHeader, QuoteItem, QuoteTerms } from "@prisma/client";
 
 import type { IQueryParams } from "@/types";
 
@@ -12,7 +12,6 @@ export class QuotingService {
 
     const quoteNumber = await this.getNextQuoteNumber(isDraft);
 
-    // Create quote header
     const headerResult = await quoteHeaderService.create({
       ...data,
       year: currentYear,
@@ -26,7 +25,6 @@ export class QuotingService {
       throw new Error("Failed to create quote header");
     }
 
-    // Create quote details
     const detailsResult = await quoteDetailsService.create({
       ...data,
       quoteHeaderId: headerResult.data.id,
@@ -38,7 +36,6 @@ export class QuotingService {
       throw new Error("Failed to create quote details");
     }
 
-    // Create items if provided
     if (data.items?.length) {
       await Promise.all(
         data.items.map((item: any) =>
@@ -50,7 +47,6 @@ export class QuotingService {
       );
     }
 
-    // Create terms if provided
     if (data.terms?.length) {
       await Promise.all(
         data.terms.map((term: any) =>
@@ -62,15 +58,15 @@ export class QuotingService {
       );
     }
 
-    return { 
-      success: true, 
-      data: { 
-        ...headerResult.data, 
+    return {
+      success: true,
+      data: {
+        ...headerResult.data,
         latestRevision: detailsResult.data,
         revision: detailsResult.data.revision,
         status: detailsResult.data.status,
         totalAmount: detailsResult.data.totalAmount || 0,
-      } 
+      },
     };
   }
 
@@ -94,7 +90,6 @@ export class QuotingService {
       throw new Error("Failed to create quote revision");
     }
 
-    // Create items if provided
     if (data.items?.length) {
       await Promise.all(
         data.items.map((item: any) =>
@@ -106,7 +101,6 @@ export class QuotingService {
       );
     }
 
-    // Create terms if provided
     if (data.terms?.length) {
       await Promise.all(
         data.terms.map((term: any) =>
@@ -147,7 +141,7 @@ export class QuotingService {
         });
 
         const latestRevision = latestRevisionResult.data?.[0] || null;
-        
+
         return {
           ...header,
           revision: latestRevision?.revision || "A",

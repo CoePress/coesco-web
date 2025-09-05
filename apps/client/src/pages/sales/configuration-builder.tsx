@@ -22,7 +22,7 @@ import {
 } from "@/components";
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { RuleCondition, SelectedOption, ValidationResult } from "@/utils/types";
 
 const SaveConfigModal = ({
@@ -390,8 +390,11 @@ const ConfigurationBuilder = () => {
     Record<string, number>
   >({});
 
-  const { entities: productClasses, loading: productClassesLoading } = useGetEntities("/catalog/product-classes");
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities("/catalog/option-rules");
+  const [productClasses, setProductClasses] = useState<any[]>([]);
+  const [optionRules, setOptionRules] = useState<any[]>([]);
+  const [productClassesLoading, setProductClassesLoading] = useState(true);
+  const [optionRulesLoading, setOptionRulesLoading] = useState(true);
+  const api = useApi();
 
   const selectedProductClass =
     productClassSelections.length > 0
@@ -399,15 +402,11 @@ const ConfigurationBuilder = () => {
       : "";
   const effectiveProductClassId =
     selectedProductClass || productClasses?.[0]?.id;
-  const { entities: availableOptions, loading: availableOptionsLoading } =
-    useGetEntities(
-      effectiveProductClassId
-        ? `/configurations/classes/${effectiveProductClassId}/options`
-        : null
-    );
+  const [optionCategories, setOptionCategories] = useState<any[]>([]);
+  const [optionCategoriesLoading, setOptionCategoriesLoading] = useState(false);
 
-  const sortedCategories = availableOptions
-    ? [...availableOptions].sort((a, b) => a.displayOrder - b.displayOrder)
+  const sortedCategories = optionCategories
+    ? [...optionCategories].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];
 
   const getOptionsForLevel = (
@@ -438,25 +437,18 @@ const ConfigurationBuilder = () => {
   const visibleProductClassLevels = productClassSelections.length + 1;
 
   const getOptionsForCategory = (categoryId: string) => {
-    if (!availableOptions) return [];
-
-    const category = availableOptions.find((cat) => cat.id === categoryId);
-    return category?.options || [];
+    // For now, return empty array since we're only displaying categories
+    return [];
   };
 
   const getOptionById = (optionId: string) => {
-    if (!availableOptions) return null;
-
-    for (const category of availableOptions) {
-      const option = category.options?.find((opt: any) => opt.id === optionId);
-      if (option) return option;
-    }
+    // For now, return null since we're only displaying categories
     return null;
   };
 
   const getCategoryById = (categoryId: string) => {
-    if (!availableOptions) return null;
-    return availableOptions.find((cat) => cat.id === categoryId);
+    if (!optionCategories) return null;
+    return optionCategories.find((cat) => cat.id === categoryId);
   };
 
   const isOptionSelected = (optionId: string) => {
@@ -588,19 +580,8 @@ const ConfigurationBuilder = () => {
   };
 
   const getDefaultOptions = () => {
-    if (!availableOptions) return [];
-
-    const defaultOptions: string[] = [];
-    for (const category of availableOptions) {
-      if (category.options) {
-        for (const option of category.options) {
-          if (option.isDefault && !shouldDisableOption(option.id)) {
-            defaultOptions.push(option.id);
-          }
-        }
-      }
-    }
-    return defaultOptions;
+    // For now, return empty array since we're only displaying categories
+    return [];
   };
 
   const handleOptionSelect = (
@@ -726,12 +707,10 @@ const ConfigurationBuilder = () => {
   };
 
   const handleErrorBannerClick = (categoryName: string) => {
-    // Find the category by name
     const targetCategory = sortedCategories.find(
       (cat) => cat.name === categoryName
     );
     if (targetCategory) {
-      // Collapse all categories except the target one
       setExpandedCategories([targetCategory.id]);
     }
   };
@@ -739,14 +718,12 @@ const ConfigurationBuilder = () => {
   const validateConfiguration = () => {
     const results: ValidationResult[] = [];
 
-    // Log selected options
     const selectedOptionNames = selectedOptions.map((opt) => {
       const option = getOptionById(opt.optionId);
       return `${option?.name} (${option?.code})`;
     });
     console.log("SELECTED:", selectedOptionNames.join(", "));
 
-    // Debug: Log all rules and their conditions
     if (optionRules) {
       console.log(
         "ALL RULES:",
@@ -761,7 +738,6 @@ const ConfigurationBuilder = () => {
       );
     }
 
-    // Check for required categories
     for (const category of sortedCategories) {
       if (category.isRequired) {
         const hasSelection = selectedOptions.some((opt) => {
@@ -780,7 +756,6 @@ const ConfigurationBuilder = () => {
       }
     }
 
-    // Check for required options based on rules (only if there's a selection in the category)
     const requiredOptions = getRequiredOptions();
     console.log(
       "REQUIRED OPTIONS:",
@@ -794,7 +769,6 @@ const ConfigurationBuilder = () => {
       if (!isOptionSelected(optionId)) {
         const option = getOptionById(optionId);
         if (option) {
-          // Only show rule violation if there's a selection in this category
           const category = getCategoryById(option.categoryId);
           if (category) {
             const hasSelectionInCategory = selectedOptions.some((opt) => {
@@ -816,7 +790,6 @@ const ConfigurationBuilder = () => {
       }
     }
 
-    // Check for disabled options that are selected
     const disabledOptions = getDisabledOptions();
     console.log(
       "DISABLED OPTIONS:",
@@ -857,9 +830,49 @@ const ConfigurationBuilder = () => {
   };
 
   useEffect(() => {
+    const loadProductClasses = async () => {
+      setProductClassesLoading(true);
+      const response = await api.get("/catalog/product-classes");
+      if (response && response.data) {
+        setProductClasses(response.data);
+      }
+      setProductClassesLoading(false);
+    };
+    loadProductClasses();
+  }, []);
+
+  useEffect(() => {
+    const loadOptionRules = async () => {
+      setOptionRulesLoading(true);
+      const response = await api.get("/catalog/option-rules");
+      if (response && response.data) {
+        setOptionRules(response.data);
+      }
+      setOptionRulesLoading(false);
+    };
+    loadOptionRules();
+  }, []);
+
+  useEffect(() => {
+    const loadOptionCategories = async () => {
+      if (!effectiveProductClassId) {
+        setOptionCategories([]);
+        return;
+      }
+      setOptionCategoriesLoading(true);
+      const response = await api.get('/catalog/option-categories');
+      if (response && response.data) {
+        setOptionCategories(response.data);
+      }
+      setOptionCategoriesLoading(false);
+    };
+    loadOptionCategories();
+  }, [effectiveProductClassId]);
+
+  useEffect(() => {
     const results = validateConfiguration();
     setValidationResults(results);
-  }, [selectedOptions, selectedProductClass, availableOptions, optionRules]);
+  }, [selectedOptions, selectedProductClass, optionCategories, optionRules]);
 
   useEffect(() => {
     if (
@@ -874,64 +887,17 @@ const ConfigurationBuilder = () => {
     }
   }, [productClasses, productClassSelections.length]);
 
-  // Reset selected options when product class changes
   useEffect(() => {
-    if (!availableOptions || availableOptions.length === 0) return;
+    if (!optionCategories || optionCategories.length === 0) return;
 
-    // Collapse all category dropdowns
     setExpandedCategories([]);
 
-    // Get all default options for the current product class
-    const defaultOptions = getDefaultOptions();
-
-    // Create new selected options array with only the default options that are not disabled
-    const newSelectedOptions: SelectedOption[] = [];
-
-    for (const optionId of defaultOptions) {
-      const option = getOptionById(optionId);
-      if (option && !shouldDisableOption(optionId)) {
-        newSelectedOptions.push({ optionId, quantity: 1 });
-      }
-    }
-
-    // Set the new selected options
-    setSelectedOptions(newSelectedOptions);
-  }, [selectedProductClass, availableOptions, optionRules]);
+    setSelectedOptions([]);
+  }, [selectedProductClass, optionCategories, optionRules]);
 
   useEffect(() => {
-    if (selectedOptions.length > 0 && availableOptions) {
-      const brandOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_brand";
-      });
-
-      const tierOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_tier";
-      });
-
-      const sizeOption = selectedOptions.find((so) => {
-        const opt = getOptionById(so.optionId);
-        return opt?.categoryId === "cat_size";
-      });
-
-      const brand = brandOption
-        ? getOptionById(brandOption.optionId)?.name
-        : "";
-      const tier = tierOption ? getOptionById(tierOption.optionId)?.name : "";
-      const size = sizeOption ? getOptionById(sizeOption.optionId)?.name : "";
-
-      if (brand && tier && size) {
-        setConfigName(`${brand} ${tier} ${size}`);
-      } else if (brand && tier) {
-        setConfigName(`${brand} ${tier}`);
-      } else if (brand) {
-        setConfigName(`${brand} Configuration`);
-      }
-    } else {
-      setConfigName("Untitled Configuration");
-    }
-  }, [selectedOptions, availableOptions]);
+    setConfigName("Untitled Configuration");
+  }, [selectedOptions, optionCategories]);
 
   const totalPrice = calculateTotalPrice();
   const pageTitle = configName;
@@ -948,19 +914,6 @@ const ConfigurationBuilder = () => {
   };
 
   const handleSelectAllDefaults = () => {
-    if (!availableOptions) return;
-
-    const defaultOptions: SelectedOption[] = [];
-    for (const category of availableOptions) {
-      if (category.options) {
-        for (const option of category.options) {
-          if (option.isDefault && !shouldDisableOption(option.id)) {
-            defaultOptions.push({ optionId: option.id, quantity: 1 });
-          }
-        }
-      }
-    }
-    setSelectedOptions(defaultOptions);
   };
 
   const handleDeselectAll = () => {
@@ -970,12 +923,9 @@ const ConfigurationBuilder = () => {
   const handleApplyRequirements = (requirements: Record<string, number>) => {
     setAppliedRequirements(requirements);
     console.log("Applied requirements:", requirements);
-    // Here you would apply rules based on the requirements
-    // For now, just log them
   };
 
-  // Show loading state
-  if (productClassesLoading || availableOptionsLoading || optionRulesLoading) {
+  if (productClassesLoading || optionCategoriesLoading || optionRulesLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
         <Loader />
@@ -984,17 +934,21 @@ const ConfigurationBuilder = () => {
   }
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex flex-1 flex-col overflow-hidden">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
       />
 
-      <div className="flex flex-1 min-h-0">
-        <div className="w-80 border-r bg-foreground flex flex-col min-h-0 text-sm">
+      <div className="p-2 gap-2 flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-80 border border-border bg-foreground rounded flex flex-col text-sm overflow-hidden">
           <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">Product Class</h2>
-            <div className="mt-2 space-y-2">
+            <div className={`mt-2 grid gap-2 ${(() => {
+              const dropdownsWithOptions = Array.from({ length: visibleProductClassLevels })
+                .filter((_, level) => getOptionsForLevel(level).length > 0).length;
+              return dropdownsWithOptions === 1 ? 'grid-cols-1' : 'grid-cols-2';
+            })()}`}>
               {Array.from({ length: visibleProductClassLevels }).map(
                 (_, level) => {
                   const options = getOptionsForLevel(level);
@@ -1014,7 +968,7 @@ const ConfigurationBuilder = () => {
                         <option
                           key={option.id}
                           value={option.id}>
-                          {option.name}
+                          {option.code}
                         </option>
                       ))}
                     </select>
@@ -1067,8 +1021,6 @@ const ConfigurationBuilder = () => {
                 const categoryStatus = getCategoryStatus(category.id);
                 const options = getOptionsForCategory(category.id);
 
-                if (options.length === 0) return null;
-
                 return (
                   <div
                     key={category.id}
@@ -1082,118 +1034,34 @@ const ConfigurationBuilder = () => {
                         )
                       }
                       className="w-full px-4 py-2 flex items-center justify-between hover:bg-surface cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(categoryStatus)}
-                        <span className="text-sm font-medium text-text-muted">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex-shrink-0">
+                          {getStatusIcon(categoryStatus)}
+                        </div>
+                        <span className="text-sm font-medium text-text-muted truncate">
                           {category.name} {category.isRequired && "*"}
                         </span>
                       </div>
-                      {expandedCategories.includes(category.id) ? (
-                        <ChevronDown
-                          size={16}
-                          className="text-text-muted"
-                        />
-                      ) : (
-                        <ChevronRight
-                          size={16}
-                          className="text-text-muted"
-                        />
-                      )}
+                      <div className="flex-shrink-0">
+                        {expandedCategories.includes(category.id) ? (
+                          <ChevronDown
+                            size={16}
+                            className="text-text-muted"
+                          />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className="text-text-muted"
+                          />
+                        )}
+                      </div>
                     </button>
 
                     {expandedCategories.includes(category.id) && (
                       <div className="pl-4 pr-2 py-2 space-y-2">
-                        {options.map((option: any) => {
-                          const isDisabled = shouldDisableOption(option.id);
-                          const isSelected = isOptionSelected(option.id);
-                          const quantity = getOptionQuantity(option.id);
-
-                          return (
-                            <div
-                              key={option.id}
-                              className={`text-sm ${
-                                isDisabled ? "opacity-50" : ""
-                              }`}>
-                              <button
-                                onClick={() =>
-                                  !isDisabled &&
-                                  handleOptionSelect(
-                                    option.id,
-                                    category.id,
-                                    !isSelected
-                                  )
-                                }
-                                disabled={isDisabled}
-                                className="w-full text-left hover:text-text disabled:opacity-75 disabled:cursor-not-allowed group cursor-pointer select-none">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    className="rounded border border-border"
-                                    checked={isSelected}
-                                    disabled={isDisabled}
-                                    onChange={(e) =>
-                                      handleOptionSelect(
-                                        option.id,
-                                        category.id,
-                                        e.target.checked
-                                      )
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <span className="flex-1 text-text-muted group-hover:text-text">
-                                    {option.name}
-                                  </span>
-                                </div>
-
-                                {(option.description || option.price > 0) && (
-                                  <div className="pl-6 mt-1 text-xs text-text-muted group-hover:text-text">
-                                    {option.price > 0 && (
-                                      <span className="font-medium">
-                                        {formatCurrency(option.price)}
-                                      </span>
-                                    )}
-                                    {option.price > 0 && option.description && (
-                                      <span className="mx-1">•</span>
-                                    )}
-                                    {option.description && (
-                                      <span className="italic">
-                                        {option.description}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {isSelected && option.allowQuantity && (
-                                  <div className="pl-6 mt-2 flex items-center gap-2">
-                                    <label className="text-xs text-text-muted group-hover:text-text">
-                                      Quantity:
-                                    </label>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={100}
-                                      value={quantity}
-                                      onChange={(e) =>
-                                        handleQuantityChange(
-                                          option.id,
-                                          parseInt(e.target.value) || 1
-                                        )
-                                      }
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="w-16 p-1 border rounded text-xs"
-                                    />
-                                  </div>
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-
-                        {options.length === 0 && (
-                          <div className="text-sm text-text-muted">
-                            No options available for this category
-                          </div>
-                        )}
+                        <div className="text-sm text-text-muted">
+                          No options available yet - showing categories only
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1203,98 +1071,113 @@ const ConfigurationBuilder = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-2 border-b bg-foreground">
+        <div className="flex-1 border border-border bg-background rounded flex flex-col min-h-0">
+          <div className="p-2 border-b bg-foreground flex-shrink-0">
             <h2 className="font-semibold text-text-muted">
               Current Configuration
             </h2>
           </div>
 
-          {validationResults.length > 0 && (
-            <div className="p-2 space-y-2">
-              {validationResults.map((result, index) => (
-                <div
-                  key={index}
-                  onClick={() =>
-                    result.categoryName &&
-                    handleErrorBannerClick(result.categoryName)
-                  }
-                  className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
-                    result.type === "error"
-                      ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
-                      : result.type === "warning"
-                        ? "bg-warning/10 text-warning border-warning hover:bg-warning/20 cursor-pointer"
-                        : result.type === "success"
-                          ? "bg-success/10 text-success border-success"
-                          : "bg-info/10 text-info border-info"
-                  }`}>
-                  {result.type === "error" && <AlertCircle size={16} />}
-                  {result.type === "warning" && <CircleX size={16} />}
-                  {result.type === "success" && <CheckCircle size={16} />}
-                  <span>{result.message}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="px-2">
-            <div className="space-y-2">
-              {sortedCategories.map((category) => {
-                const selectedCategoryOptions = selectedOptions
-                  .filter((so) => {
-                    const option = getOptionById(so.optionId);
-                    return option?.categoryId === category.id;
-                  })
-                  .map((so) => {
-                    const option = getOptionById(so.optionId);
-                    return {
-                      ...so,
-                      option,
-                    };
-                  });
-
-                if (selectedCategoryOptions.length === 0) return null;
-
-                return (
+          <div className="flex-1 overflow-y-auto">
+            {validationResults.length > 0 && (
+              <div className="p-2 space-y-2">
+                {validationResults.map((result, index) => (
                   <div
-                    key={category.id}
-                    className="p-2 bg-foreground border rounded">
-                    <h3 className="font-medium text-text-muted mb-2">
-                      {category.name}
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedCategoryOptions.map(
-                        ({ optionId, quantity, option }) => (
-                          <div
-                            key={optionId}
-                            className="flex items-center justify-between">
-                            <div className="text-sm text-text-muted">
-                              {option?.name}{" "}
-                              {quantity > 1 ? `(x${quantity})` : ""}
-                            </div>
-                            <div className="text-sm font-medium text-text-muted">
-                              {formatCurrency(
-                                option ? option.price * quantity : 0
-                              )}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+                    key={index}
+                    onClick={() =>
+                      result.categoryName &&
+                      handleErrorBannerClick(result.categoryName)
+                    }
+                    className={`p-2 rounded flex items-center gap-2 text-sm border select-none ${
+                      result.type === "error"
+                        ? "bg-error/10 text-error border-error hover:bg-error/20 cursor-pointer"
+                        : result.type === "warning"
+                          ? "bg-warning/10 text-warning border-warning hover:bg-warning/20 cursor-pointer"
+                          : result.type === "success"
+                            ? "bg-success/10 text-success border-success"
+                            : "bg-info/10 text-info border-info"
+                    }`}>
+                    {result.type === "error" && <AlertCircle size={16} />}
+                    {result.type === "warning" && <CircleX size={16} />}
+                    {result.type === "success" && <CheckCircle size={16} />}
+                    <span>{result.message}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+            )}
 
-              <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
-                <div className="text-text-muted">Total</div>
-                <div className="text-text-muted">
-                  {formatCurrency(totalPrice)}
+            <div className="p-2">
+              <div className="space-y-2">
+                {sortedCategories.map((category) => {
+                  const selectedCategoryOptions = selectedOptions
+                    .filter((so) => {
+                      const option = getOptionById(so.optionId);
+                      return option?.categoryId === category.id;
+                    })
+                    .map((so) => {
+                      const option = getOptionById(so.optionId);
+                      return {
+                        ...so,
+                        option,
+                      };
+                    });
+
+                  if (selectedCategoryOptions.length === 0) return null;
+
+                  return (
+                    <div
+                      key={category.id}
+                      className="p-2 bg-foreground border rounded">
+                      <h3 className="font-medium text-text-muted mb-2">
+                        {category.name}
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedCategoryOptions.map(
+                          ({ optionId, quantity, option }) => (
+                            <div
+                              key={optionId}
+                              className="flex items-center justify-between">
+                              <div className="text-sm text-text-muted">
+                                {option?.name}{" "}
+                                {quantity > 1 ? `(x${quantity})` : ""}
+                              </div>
+                              <div className="text-sm font-medium text-text-muted">
+                                {formatCurrency(
+                                  option ? option.price * quantity : 0
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="flex justify-between p-2 bg-foreground border rounded font-semibold">
+                  <div className="text-text-muted">Total</div>
+                  <div className="text-text-muted">
+                    {formatCurrency(totalPrice)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+
+      {/* <div className="flex flex-1 bg-red-500 gap-2 p-2 overflow-hidden">
+        <div className="w-80 bg-blue-500 flex flex-col overflow-hidden">
+          <div className="p-2 bg-green-500 flex-shrink-0">Header</div>
+          <div className="flex-1 overflow-y-auto bg-yellow-500">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <div key={i} className="p-2 border-b">Item {i + 1}</div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 bg-blue-500"></div>
+      </div> */}
 
       <SaveConfigModal
         isOpen={isSaveModalOpen}
