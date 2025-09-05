@@ -24,6 +24,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   const { state, handleFieldChange, saveImmediately } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  const textColor = 'var(--color-text)';
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
   const warningColor = 'var(--color-warning)';
@@ -188,19 +189,19 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Total Depth Required (in)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired?.toString() || ""}
           disabled
-          style={{ backgroundColor: depthRequiredCheck }}
+          style={{ backgroundColor: depthRequiredCheck, color: textColor }}
         />
         <Input
           label="Total Force Required (lbs)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired?.toString() || ""}
           disabled
-          style={{ backgroundColor: forceRequiredCheck }}
+          style={{ backgroundColor: forceRequiredCheck, color: textColor }}
         />
         <Input
           label="Yield Requirements Met"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || "Not Calculated"}
           disabled
-          style={{ backgroundColor: yieldMetCheck }}  
+          style={{ backgroundColor: yieldMetCheck, color: textColor }}  
         />
       </div>
     </Card>
@@ -267,7 +268,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
               disabled
-              style={{ backgroundColor: firstHeightColor }}
+              style={{ backgroundColor: firstHeightColor, color: textColor }}
             />
             <Input
               label="Resulting Radius (in)"
@@ -309,7 +310,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded?.toString() || ""}
               disabled
-              style={{ backgroundColor: percentYieldCheck }}
+              style={{ backgroundColor: percentYieldCheck, color: textColor }}
             />
             <Input
               label="Yield Strains at Surface"

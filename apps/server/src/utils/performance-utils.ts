@@ -493,11 +493,11 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
     if (strUtilityResults.feed_rate_check !== undefined) {
       setNestedValue(updatedResults, 'strUtility.straightener.required.feedRateCheck', strUtilityResults.feed_rate_check);
     }
-    if (strUtilityResults.pinch_rolls_recommended !== undefined) {
-      setNestedValue(updatedResults, 'strUtility.straightener.required.pinchRollsCheck', strUtilityResults.pinch_rolls_recommended);
+    if (strUtilityResults.pinch_roll_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.pinchRollCheck', strUtilityResults.pinch_roll_check);
     }
-    if (strUtilityResults.str_rolls_recommended !== undefined) {
-      setNestedValue(updatedResults, 'strUtility.straightener.required.strRollsCheck', strUtilityResults.str_rolls_recommended);
+    if (strUtilityResults.str_roll_check !== undefined) {
+      setNestedValue(updatedResults, 'strUtility.straightener.required.strRollCheck', strUtilityResults.str_roll_check);
     }
     if (strUtilityResults.fpm_check !== undefined) {
       setNestedValue(updatedResults, 'strUtility.straightener.required.fpmCheck', strUtilityResults.fpm_check);
@@ -558,7 +558,7 @@ export function updateResultsWithParsedData(originalResults: any, parsedData: an
       setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequired', rollStrResults.roller_depth_required);
     }
     if (rollStrResults.roller_depth_required_check !== undefined) {
-      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.yieldMet', rollStrResults.roller_depth_required_check);
+      setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck', rollStrResults.roller_depth_required_check);
     }
     if (rollStrResults.roller_force_required !== undefined) {
       setNestedValue(updatedResults, 'rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired', rollStrResults.roller_force_required);

@@ -28,6 +28,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, updateField } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  const textColor = 'var(--color-text)';
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
   const warningColor = 'var(--color-warning)';
@@ -140,7 +141,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedCheck || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
-          style={{ backgroundColor: feedCheck }}
+          style={{ backgroundColor: feedCheck, color: textColor }}
         />
       </div>
 
@@ -419,7 +420,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.match?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: matchCheck }}
+          style={{ backgroundColor: matchCheck, color: textColor }}
         />
         <Input 
           label="Peak Torque (lbs-in)"
@@ -427,7 +428,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.peak?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: peakTorqueCheck }}
+          style={{ backgroundColor: peakTorqueCheck, color: textColor }}
         />
         <Input
           label="RMS Torque (FA1) (lbs-in)"
@@ -435,7 +436,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: rmsTorqueFA1Check }}
+          style={{ backgroundColor: rmsTorqueFA1Check, color: textColor }}
         />
         <Input
           label="RMS Torque (FA2) (lbs-in)"
@@ -443,7 +444,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: rmsTorqueFA2Check }}
+          style={{ backgroundColor: rmsTorqueFA2Check, color: textColor }}
         />
         <Input
           label="Acceleration Torque (lbs-in)"
@@ -451,7 +452,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: accelerationCheck }}
+          style={{ backgroundColor: accelerationCheck, color: textColor }}
         />
       </div>
     </div>
