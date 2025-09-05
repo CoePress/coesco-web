@@ -11,13 +11,14 @@ import { useParams } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
+import { useApi } from "@/hooks/use-api";
 
 const CompanyDetails = () => {
   const { id } = useParams();
+  const api = useApi();
   const [company, setCompany] = useState<any>(null);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<{
     type: string;
     isOpen: boolean;
@@ -156,112 +157,88 @@ const CompanyDetails = () => {
     console.log("Company ID from URL:", id, "Type:", typeof id); // Debug log
     if (!id || id === "undefined" || id === "null") {
       console.error("No valid company ID provided in URL");
-      setLoading(false);
       return;
     }
     
     let cancelled = false;
     const fetchCompanyData = async () => {
-      setLoading(true);
       try {
-        
-        // Use new custom ID API endpoints for proper server-side filtering
-        const [companyResponse, contactsResponse, journeysResponse] = await Promise.all([
-          // Get company by Company_ID using custom ID endpoint
-          fetch(`http://localhost:8080/api/legacy/std/Company/custom/${id}?idField=Company_ID`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+        // Use filter/custom API endpoints for proper server-side filtering
+        const [companyData, contactsData, journeysData] = await Promise.all([
+          // Get company by Company_ID using filter/custom endpoint
+          api.get(`/legacy/std/Company/filter/custom`, { 
+            filterField: 'Company_ID', 
+            filterValue: id, 
+            limit: 1 
           }),
           // Get contacts filtered by Company_ID
-          fetch(`http://localhost:8080/api/legacy/std/Contacts/filter/custom?filterField=Company_ID&filterValue=${id}&limit=100`, {
-            method: "GET", 
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+          api.get(`/legacy/std/Contacts/filter/custom`, { 
+            filterField: 'Company_ID', 
+            filterValue: id, 
+            limit: 100 
           }),
           // Get journeys filtered by Company_ID
-          fetch(`http://localhost:8080/api/legacy/std/Journey/filter/custom?filterField=Company_ID&filterValue=${id}&limit=100`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+          api.get(`/legacy/std/Journey/filter/custom`, { 
+            filterField: 'Company_ID', 
+            filterValue: id, 
+            limit: 100 
           })
         ]);
 
-        // Process contacts data
-        let contactsData = [];
-        if (contactsResponse.ok) {
-          const rawContacts = await contactsResponse.json();
-          contactsData = Array.isArray(rawContacts) ? rawContacts : [];
-          if (!cancelled) setCompanyContacts(contactsData);
-        } else {
-          console.error("Contacts fetch failed:", contactsResponse.status);
-        }
+        if (!cancelled) {
+          // Process contacts data
+          const processedContacts = Array.isArray(contactsData) ? contactsData : [];
+          setCompanyContacts(processedContacts);
 
-        // Process journeys data
-        let journeysData = [];
-        if (journeysResponse.ok) {
-          const rawJourneys = await journeysResponse.json();
-          journeysData = Array.isArray(rawJourneys) ? rawJourneys.map(adaptLegacyJourney) : [];
-          if (!cancelled) setCompanyJourneys(journeysData);
-        } else {
-          console.error("Journeys fetch failed:", journeysResponse.status);
-        }
+          // Process journeys data
+          const processedJourneys = Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : [];
+          setCompanyJourneys(processedJourneys);
 
-        // Process company data
-        if (companyResponse.ok) {
-          const rawCompanyData = await companyResponse.json();
-          // Custom ID endpoint returns array, get first item
-          const companyData = Array.isArray(rawCompanyData) ? rawCompanyData[0] : rawCompanyData;
+          // Process company data
+          const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
           
-          if (companyData && !cancelled) {
+          if (processedCompanyData) {
             // Find primary contact
-            const primaryContact = contactsData.find(contact => contact.Type === 'A') || contactsData[0];
+            const primaryContact = processedContacts.find(contact => contact.Type === 'A') || processedContacts[0];
             
             const adaptedCompany = {
-              id: companyData.Company_ID,
-              name: companyData.CustDlrName || `Company ${companyData.Company_ID}`,
-              phone: primaryContact?.PhoneNumber || companyData.BillToPhone || "",
+              id: processedCompanyData.Company_ID,
+              name: processedCompanyData.CustDlrName || `Company ${processedCompanyData.Company_ID}`,
+              phone: primaryContact?.PhoneNumber || processedCompanyData.BillToPhone || "",
               email: primaryContact?.Email || "",
               website: primaryContact?.Website || "",
-              dealer: companyData.Dealer,
-              active: companyData.Active,
-              isDealer: companyData.IsDealer,
-              isExcDealer: companyData.IsExcDealer,
-              creditStatus: companyData.CreditStatus,
-              creditNote: companyData.CreditNote,
-              onHoldBy: companyData.OnHoldBy,
-              onHoldDate: companyData.OnHoldDate,
-              offHoldBy: companyData.OffHoldBy,
-              offHoldDate: companyData.OffHoldDate,
-              classification: companyData.Classification,
-              custType: companyData.CustType,
-              lastCreditStat: companyData.LastCreditStat,
-              coeRSM: companyData.CoeRSM,
-              discounted: companyData.Discounted,
-              notes: companyData.Notes,
-              shipInstr: companyData.ShipInstr,
-              billToExt: companyData.BillToExt,
-              creditLimit: companyData.CreditLimit,
-              acctBalance: companyData.AcctBalance,
-              balanceDate: companyData.BalanceDate,
-              termsCode: companyData.TermsCode,
-              exported: companyData.Exported,
-              systemNotes: companyData.SystemNotes,
+              dealer: processedCompanyData.Dealer,
+              active: processedCompanyData.Active,
+              isDealer: processedCompanyData.IsDealer,
+              isExcDealer: processedCompanyData.IsExcDealer,
+              creditStatus: processedCompanyData.CreditStatus,
+              creditNote: processedCompanyData.CreditNote,
+              onHoldBy: processedCompanyData.OnHoldBy,
+              onHoldDate: processedCompanyData.OnHoldDate,
+              offHoldBy: processedCompanyData.OffHoldBy,
+              offHoldDate: processedCompanyData.OffHoldDate,
+              classification: processedCompanyData.Classification,
+              custType: processedCompanyData.CustType,
+              lastCreditStat: processedCompanyData.LastCreditStat,
+              coeRSM: processedCompanyData.CoeRSM,
+              discounted: processedCompanyData.Discounted,
+              notes: processedCompanyData.Notes,
+              shipInstr: processedCompanyData.ShipInstr,
+              billToExt: processedCompanyData.BillToExt,
+              creditLimit: processedCompanyData.CreditLimit,
+              acctBalance: processedCompanyData.AcctBalance,
+              balanceDate: processedCompanyData.BalanceDate,
+              termsCode: processedCompanyData.TermsCode,
+              exported: processedCompanyData.Exported,
+              systemNotes: processedCompanyData.SystemNotes,
             };
             setCompany(adaptedCompany);
           } else {
             console.warn(`No company found with ID ${id}`);
           }
-        } else {
-          console.error("Company fetch failed:", companyResponse.status);
-          if (companyResponse.status === 404) {
-            console.warn(`Company with ID ${id} not found`);
-          }
         }
       } catch (error) {
         console.error("Error fetching company data:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     };
 
@@ -716,7 +693,7 @@ const CompanyDetails = () => {
     setMentionDropdownIndex(0);
   }, [showMentionDropdown, mentionSearch]);
 
-  if (loading) {
+  if (api.loading) {
     return (
       <div className="flex flex-1 bg-background items-center justify-center">
         <div className="text-text">Loading company details...</div>

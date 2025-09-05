@@ -13,4 +13,6 @@ router.get("/:database/:table/:id", legacyController.getById);
 router.patch("/:database/:table/:id", legacyController.update);
 router.delete("/:database/:table/:id", legacyController.delete);
 
+router.get("/:database/:table/filter/custom", legacyController.getAllByCustomFilter);
+
 export default router;
