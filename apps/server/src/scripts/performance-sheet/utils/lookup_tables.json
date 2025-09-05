@@ -1,0 +1,2319 @@
+{
+  "lookup_material": {
+    "ALUMINUM": {
+      "yield": 20000,
+      "modulus": 10600000,
+      "density": 0.0980
+    },
+    "BERYL COPPER": {
+      "yield": 30000,
+      "modulus": 19000000,
+      "density": 0.3000
+    },
+    "BRASS": {
+      "yield": 20000,
+      "modulus": 15000000,
+      "density": 0.3100
+    },
+    "COLD ROLLED STEEL": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "DUAL PHASE": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "GALVANIZED": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "HOT ROLLED STEEL": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "HS STEEL": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "STAINLESS STEEL": {
+      "yield": 90000,
+      "modulus": 27600000,
+      "density": 0.2900
+    },
+    "STEEL": {
+      "yield": 60000,
+      "modulus": 29000000,
+      "density": 0.2830
+    },
+    "TITANIUM": {
+      "yield": 80000,
+      "modulus": 15500000,
+      "density": 0.1630
+    }
+  }, 
+  "lookup_fpm_buffer": {
+    "DEFAULT": 1.2
+  },
+  "lookup_type_of_line": {
+    "Compact":  {
+      "application": "Press Feed",
+      "reel_type": "Motorized",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Compact CTL": {
+      "application": "Cut To Length",
+      "reel_type": "Motorized",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "Yes",
+      "stacker_used": "Yes",
+      "shear_used": "Yes"
+    },
+    "Conventional": {
+      "application": "Press Feed",
+      "reel_type": "PullOff",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Conventional CTL": {
+      "application": "Cut To Length",
+      "reel_type": "PullOff",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "Yes",
+      "stacker_used": "Yes",
+      "shear_used": "Yes"
+    },
+    "Feed": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "No",
+      "reel_used": "No",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Feed-Pull Through": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "Yes",
+      "reel_used": "No",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Feed-Pull Through-Shear": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "Yes",
+      "reel_used": "No",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "Yes"
+    },
+    "Feed-Shear": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "No",
+      "reel_used": "No",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "Yes"
+    },
+    "Other": {
+      "application": "Press Feed",
+      "reel_type": "PullOff",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "Yes"
+    },
+    "Pull Through": {
+    "application": "Press Feed",
+      "reel_type": "Motorized",
+      "pull_thru_used": "Yes",
+      "reel_used": "Yes",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Pull Through Compact": {
+      "application": "Press Feed",
+      "reel_type": "Motorized",
+      "pull_thru_used": "Yes",
+      "reel_used": "Yes",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Pull Through CTL": {
+      "application": "Cut To Length",
+      "reel_type": "Motorized",
+      "pull_thru_used": "Yes",
+      "reel_used": "Yes",
+      "str_used": "No",
+      "feed_used": "Yes",
+      "stacker_used": "No",
+      "shear_used": "Yes"
+    },
+    "Reel-Motorized": {
+      "application": "Press Feed",
+      "reel_type": "Motorized",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "No",
+      "feed_used": "No",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Reel-Pull Off": {
+      "application": "Press Feed",
+      "reel_type": "PullOff",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "No",
+      "feed_used": "No",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Straightener": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "No",
+      "reel_used": "No",
+      "str_used": "Yes",
+      "feed_used": "No",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Straightener-Reel Combination": {
+      "application": "Press Feed",
+      "reel_type": "PullOff",
+      "pull_thru_used": "No",
+      "reel_used": "Yes",
+      "str_used": "Yes",
+      "feed_used": "No",
+      "stacker_used": "No",
+      "shear_used": "No"
+    },
+    "Threading Table": {
+      "application": "Press Feed",
+      "reel_type": "NoReel",
+      "pull_thru_used": "No",
+      "reel_used": "No",
+      "str_used": "No",
+      "feed_used": "No",
+      "stacker_used": "No",
+      "shear_used": "No"
+    }
+  },
+  "lookup_application": [
+    "Cut to Length",
+    "Press Feed"
+  ],
+  "lookup_controls": {
+    "Allen Bradley Basic": 2,
+    "Allen Bradley Plus": 3,
+    "Fully Automatic": 4,
+    "IP Indexer Basic": 2,
+    "IP Indexer Plus": 3,
+    "Mini-Drive System": 0,
+    "Relay Machine": 0,
+    "SyncMaster": 1,
+    "SyncMaster Plus": 3
+  },
+  "lookup_brake_type": {
+    "Double Stage": {
+      "cylinder_bore": 4
+    },
+    "Failsafe - Double Stage": {
+      "cylinder_bore": 5
+    },
+    "Failsafe - Single Stage": {
+      "cylinder_bore": 5
+    },
+    "Single Stage": {
+      "cylinder_bore": 4
+    },
+    "Triple Stage": {
+      "cylinder_bore": 4
+    }
+  },
+  "lookup_brake_qty": [
+    1,
+    2,
+    3
+  ],
+  "lookup_holddown": {
+    "D14473_XXD": 23.8761,
+    "T4361_LD": 3.67,
+    "T4362_MD": 3.9666,
+    "T4365_HD": 7.2266,
+    "T4366_XD": 10.5093,
+    "T4696_STANDARD": null,
+    "T4696_NARROW": null,
+    "T4696_MOTORIZED": null
+  },
+  "lookup_holddown_matrix": [
+    {
+      "key": "H3+J+XD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "J",
+      "Name": "XD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 10.5093,
+      "MinWidth": 16.625,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H3+K+XXD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "K",
+      "Name": "XXD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 23.8761,
+      "MinWidth": 22.5,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H1+A+None+Air",
+      "HolddownFamily": "H1",
+      "Sort": "A",
+      "Name": "None",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 1.25,
+      "MinWidth": 0.0,
+      "MaxPSI": 80
+    },
+    {
+      "key": "H1+B+LD_STANDARD+4in Air",
+      "HolddownFamily": "H1",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.8125,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H1+B+LD_STANDARD+5in Air",
+      "HolddownFamily": "H1",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "5in Air",
+      "PressureLabel": "psi Air 5in",
+      "PSI": 80.0,
+      "ForceFactor": 5.825,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H1+C+LD_NARROW+4in Air",
+      "HolddownFamily": "H1",
+      "Sort": "C",
+      "Name": "LD_NARROW",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.673,
+      "MinWidth": 1.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+A+None+Air",
+      "HolddownFamily": "H2",
+      "Sort": "A",
+      "Name": "None",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 1.25,
+      "MinWidth": 0.0,
+      "MaxPSI": 80
+    },
+    {
+      "key": "H2+B+LD_STANDARD+4in Air",
+      "HolddownFamily": "H2",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.8125,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+B+LD_STANDARD+5in Air",
+      "HolddownFamily": "H2",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "5in Air",
+      "PressureLabel": "psi Air 5in",
+      "PSI": 80.0,
+      "ForceFactor": 5.825,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+B+LD_STANDARD+8in Air",
+      "HolddownFamily": "H2",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "8in Air",
+      "PressureLabel": "psi Air 8in",
+      "PSI": 80.0,
+      "ForceFactor": 15.6329,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+C+LD_NARROW+4in Air",
+      "HolddownFamily": "H2",
+      "Sort": "C",
+      "Name": "LD_NARROW",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.673,
+      "MinWidth": 1.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+D+LD_MOTORIZED+4in Air",
+      "HolddownFamily": "H2",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.725,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+D+LD_MOTORIZED+5in Air",
+      "HolddownFamily": "H2",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "5in Air",
+      "PressureLabel": "psi Air 5in",
+      "PSI": 80.0,
+      "ForceFactor": 5.825,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H2+D+LD_MOTORIZED+Hydraulic",
+      "HolddownFamily": "H2",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 350.0,
+      "ForceFactor": 3.725,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H3+E+SD+Air",
+      "HolddownFamily": "H3",
+      "Sort": "E",
+      "Name": "SD",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 3.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H3+E+SD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "E",
+      "Name": "SD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 350.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 3.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H3+F+SD_MOTORIZED+Air",
+      "HolddownFamily": "H3",
+      "Sort": "F",
+      "Name": "SD_MOTORIZED",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 4.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H3+F+SD_MOTORIZED+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "F",
+      "Name": "SD_MOTORIZED",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 350.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 4.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H3+G+MD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "G",
+      "Name": "MD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 3.9666,
+      "MinWidth": 12.4,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H3+H+HD_Single+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "H",
+      "Name": "HD_Single",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 11.0,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H3+I+HD_Dual+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "I",
+      "Name": "HD_Dual",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 16.625,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H3+J+XD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "J",
+      "Name": "XD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 10.5093,
+      "MinWidth": 16.625,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H3+K+XXD+Hydraulic",
+      "HolddownFamily": "H3",
+      "Sort": "K",
+      "Name": "XXD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 23.8761,
+      "MinWidth": 22.5,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+E+SD+Air",
+      "HolddownFamily": "H4",
+      "Sort": "E",
+      "Name": "SD",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 3.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H4+E+SD+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "E",
+      "Name": "SD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 350.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 3.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H4+F+SD_MOTORIZED+Air",
+      "HolddownFamily": "H4",
+      "Sort": "F",
+      "Name": "SD_MOTORIZED",
+      "CylinderType": "Air",
+      "PressureLabel": "psi Air",
+      "PSI": 80.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 4.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H4+F+SD_MOTORIZED+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "F",
+      "Name": "SD_MOTORIZED",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 350.0,
+      "ForceFactor": 3.67,
+      "MinWidth": 4.5,
+      "MaxPSI": 350
+    },
+    {
+      "key": "H4+G+MD+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "G",
+      "Name": "MD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 3.9666,
+      "MinWidth": 12.4,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+H+HD_Single+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "H",
+      "Name": "HD_Single",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 11.0,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+H+HD_Single+Hydraulic 1000",
+      "HolddownFamily": "H4",
+      "Sort": "H",
+      "Name": "HD_Single",
+      "CylinderType": "Hydraulic 1000",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 1000.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 11.0,
+      "MaxPSI": 1000
+    },
+    {
+      "key": "H4+I+HD_Dual+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "I",
+      "Name": "HD_Dual",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 16.625,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+I+HD_Dual+Hydraulic 1000",
+      "HolddownFamily": "H4",
+      "Sort": "I",
+      "Name": "HD_Dual",
+      "CylinderType": "Hydraulic 1000",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 1000.0,
+      "ForceFactor": 7.2266,
+      "MinWidth": 16.625,
+      "MaxPSI": 1000
+    },
+    {
+      "key": "H4+J+XD+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "J",
+      "Name": "XD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 10.5093,
+      "MinWidth": 16.625,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+J+XD+Hydraulic 1000",
+      "HolddownFamily": "H4",
+      "Sort": "J",
+      "Name": "XD",
+      "CylinderType": "Hydraulic 1000",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 1000.0,
+      "ForceFactor": 10.5093,
+      "MinWidth": 16.625,
+      "MaxPSI": 1000
+    },
+    {
+      "key": "H4+K+XXD+Hydraulic",
+      "HolddownFamily": "H4",
+      "Sort": "K",
+      "Name": "XXD",
+      "CylinderType": "Hydraulic",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 750.0,
+      "ForceFactor": 23.8761,
+      "MinWidth": 22.5,
+      "MaxPSI": 750
+    },
+    {
+      "key": "H4+K+XXD+Hydraulic 1000",
+      "HolddownFamily": "H4",
+      "Sort": "K",
+      "Name": "XXD",
+      "CylinderType": "Hydraulic 1000",
+      "PressureLabel": "psi Hydraulic",
+      "PSI": 1000.0,
+      "ForceFactor": 23.8761,
+      "MinWidth": 22.5,
+      "MaxPSI": 1000
+    },
+    {
+      "key": "HX+B+LD_STANDARD+8in Air",
+      "HolddownFamily": "HX",
+      "Sort": "B",
+      "Name": "LD_STANDARD",
+      "CylinderType": "8in Air",
+      "PressureLabel": "psi Air 8in",
+      "PSI": 80.0,
+      "ForceFactor": 15.6329,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "HX+D+LD_MOTORIZED+4in Air",
+      "HolddownFamily": "HX",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "4in Air",
+      "PressureLabel": "psi Air 4in",
+      "PSI": 80.0,
+      "ForceFactor": 3.725,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "HX+D+LD_MOTORIZED+5in Air",
+      "HolddownFamily": "HX",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "5in Air",
+      "PressureLabel": "psi Air 5in",
+      "PSI": 80.0,
+      "ForceFactor": 5.825,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    },
+    {
+      "key": "HX+D+LD_MOTORIZED+8in Air",
+      "HolddownFamily": "HX",
+      "Sort": "D",
+      "Name": "LD_MOTORIZED",
+      "CylinderType": "8in Air",
+      "PressureLabel": "psi Air 8in",
+      "PSI": 80.0,
+      "ForceFactor": 15.3174,
+      "MinWidth": 4.0,
+      "MaxPSI": 350
+    }
+  ],
+  "lookup_motor_inertia": {
+    "1": {
+      "motor_inertia": 1
+    },
+    "2": {
+      "motor_inertia": 0.078
+    },
+    "3": {
+      "motor_inertia": 0.112
+    },
+    "5": {
+      "motor_inertia": 0.142
+    },
+    "7.5": {
+      "motor_inertia": 0.32
+    },
+    "10": {
+      "motor_inertia": 0.44
+    },
+    "15": {
+      "motor_inertia": 0.686
+    },
+    "15_old": {
+      "motor_inertia": 0.8932
+    },
+    "20": {
+      "motor_inertia": 0.846
+    },
+    "20_old": {
+      "motor_inertia": 1.0718
+    },
+    "25": {
+      "motor_inertia": 1.662
+    },
+    "25_old": {
+      "motor_inertia": 1.9157
+    },
+    "30": {
+      "motor_inertia": 1.778
+    },
+    "30_old": {
+      "motor_inertia": 1.9955
+    },
+    "40": {
+      "motor_inertia": 3.179
+    },
+    "40_old": {
+      "motor_inertia": 2.945
+    },
+    "50": {
+      "motor_inertia": 3.876
+    },
+    "50_old": {
+      "motor_inertia": 3.436
+    },
+    "60": {
+      "motor_inertia": 5.337
+    },
+    "75": {
+      "motor_inertia": 5.855
+    },
+    "75_old": {
+      "motor_inertia": 6.5393
+    },
+    "100": {
+      "motor_inertia": 9.716
+    },
+    "125": {
+      "motor_inertia": 14.907
+    }
+  },
+  "lookup_str_model": {
+    "CPPS-175": {
+      "roll_diameter": 1.75,
+      "center_distance": 2.5,
+      "pinch_roll_dia": 2.25,
+      "jack_force_avail": 1780,
+      "min_roll_depth": -0.38,
+      "top": 0.794,
+      "bottom": 0.75,
+      "pr_teeth": 18,
+      "proll_dp": 10,
+      "sroll_teeth": 14,
+      "sroll_dp": 10,
+      "face_width": 1.25,
+      "str_gear_torq": 1,
+      "gear_options": [
+        "6",
+        "12",
+        "18",
+        "24",
+        "30"
+      ]
+    },
+    "CPPS-250": {
+      "roll_diameter": 2.5,
+      "center_distance": 3.75,
+      "pinch_roll_dia": 3.472,
+      "jack_force_avail": 4000,
+      "min_roll_depth": -0.75,
+      "top": 0.51,
+      "bottom": 0.48,
+      "pr_teeth": 25,
+      "proll_dp": 8,
+      "sroll_teeth": 18,
+      "sroll_dp": 8,
+      "face_width": 1.5,
+      "str_gear_torq": 1,
+      "gear_options": [
+        "6",
+        "12",
+        "18",
+        "24",
+        "30",
+        "36",
+        "42",
+        "48"
+      ]
+    },
+    "CPPS-306": {
+      "roll_diameter": 3,
+      "center_distance": 4.75,
+      "pinch_roll_dia": 6,
+      "jack_force_avail": 12000,
+      "min_roll_depth": -1,
+      "top": 0.38,
+      "bottom": 0.38,
+      "pr_teeth": 32,
+      "proll_dp": 6,
+      "sroll_teeth": 16,
+      "sroll_dp": 6,
+      "face_width": 3.5,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "12",
+        "18",
+        "24",
+        "30",
+        "36",
+        "42",
+        "48",
+        "54",
+        "60"
+      ]
+    },
+    "CPPS-350": {
+      "roll_diameter": 3.5,
+      "center_distance": 5.25,
+      "pinch_roll_dia": 5,
+      "jack_force_avail": 8000,
+      "min_roll_depth": -0.75,
+      "top": 0.36,
+      "bottom": 0.36,
+      "pr_teeth": 20,
+      "proll_dp": 5,
+      "sroll_teeth": 14,
+      "sroll_dp": 5,
+      "face_width": 3,
+      "str_gear_torq": 1,
+      "gear_options": [
+        "18",
+        "24",
+        "30",
+        "36",
+        "42",
+        "48",
+        "54",
+        "60",
+        "66",
+        "72"
+      ]
+    },
+    "CPPS-406": {
+      "roll_diameter": 4,
+      "center_distance": 6.5,
+      "pinch_roll_dia": 6.29,
+      "jack_force_avail": 20000,
+      "min_roll_depth": -1.035,
+      "top": 0.27,
+      "bottom": 0.265,
+      "pr_teeth": 22,
+      "proll_dp": 4,
+      "sroll_teeth": 14,
+      "sroll_dp": 4,
+      "face_width": 3.5,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "24",
+        "30",
+        "36",
+        "42",
+        "48",
+        "54",
+        "60",
+        "66",
+        "72",
+        "78"
+      ]
+    },
+    "CPPS-406 OLD": {
+      "roll_diameter": 4,
+      "center_distance": 6.5,
+      "pinch_roll_dia": 6.2857,
+      "jack_force_avail": 12000,
+      "min_roll_depth": 0.75,
+      "top": 0.18,
+      "bottom": 0.18,
+      "pr_teeth": 22,
+      "proll_dp": 4,
+      "sroll_teeth": 14,
+      "sroll_dp": 4,
+      "face_width": 3.5,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "36",
+        "42",
+        "48",
+        "54",
+        "60",
+        "66",
+        "72",
+        "78"
+      ]
+    },
+    "CPPS-506": {
+      "roll_diameter": 5,
+      "center_distance": 9.552,
+      "pinch_roll_dia": 6.667,
+      "jack_force_avail": 40000,
+      "min_roll_depth": -1.063,
+      "top": 0.18,
+      "bottom": 0.18,
+      "pr_teeth": 24,
+      "proll_dp": 4,
+      "sroll_teeth": 18,
+      "sroll_dp": 4,
+      "face_width": 4,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "24",
+        "30",
+        "36",
+        "42",
+        "48",
+        "54",
+        "60",
+        "66",
+        "72",
+        "78"
+      ]
+    },
+    "CPPS-507": {
+      "roll_diameter": 5,
+      "center_distance": 9,
+      "pinch_roll_dia": 6.667,
+      "jack_force_avail": 60000,
+      "min_roll_depth": -1.25,
+      "top": 0.18,
+      "bottom": 0.18,
+      "pr_teeth": 24,
+      "proll_dp": 4,
+      "sroll_teeth": 18,
+      "sroll_dp": 4,
+      "face_width": 4,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "24",
+        "30",
+        "36",
+        "42",
+        "48",
+        "54",
+        "60",
+        "66",
+        "72",
+        "78"
+      ]
+    },
+    "SPGPS-306": {
+      "roll_diameter": 3,
+      "center_distance": 5.5,
+      "pinch_roll_dia": null,
+      "jack_force_avail": 30000,
+      "min_roll_depth": -0.734,
+      "top": 0.38,
+      "bottom": 0.38,
+      "pr_teeth": 2,
+      "proll_dp": null,
+      "sroll_teeth": null,
+      "sroll_dp": null,
+      "face_width": null,
+      "str_gear_torq": null,
+      "gear_options": [
+        "42",
+        "48",
+        "72"
+      ]
+    },
+    "SPGPS-508": {
+      "roll_diameter": 5.61,
+      "center_distance": 8,
+      "pinch_roll_dia": 7.856,
+      "jack_force_avail": 40000,
+      "min_roll_depth": -0.625,
+      "top": null,
+      "bottom": null,
+      "pr_teeth": 28,
+      "proll_dp": 4,
+      "sroll_teeth": 20,
+      "sroll_dp": 4,
+      "face_width": 3.5,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "42",
+        "48",
+        "66",
+        "78"
+      ]
+    },
+    "SPGPS-810": {
+      "roll_diameter": 7.87,
+      "center_distance": 11,
+      "pinch_roll_dia": 9.908,
+      "jack_force_avail": 100000,
+      "min_roll_depth": -0.625,
+      "top": null,
+      "bottom": null,
+      "pr_teeth": 34,
+      "proll_dp": 4,
+      "sroll_teeth": 27,
+      "sroll_dp": 4,
+      "face_width": 5,
+      "str_gear_torq": 2,
+      "gear_options": [
+        "24",
+        "48",
+        "52",
+        "60",
+        "78"
+      ]
+    }
+  },
+  "lookup_str_rollers": [
+    7,
+    9,
+    11
+  ],
+  "lookup_str_backbend": [
+    7,
+    9,
+    11
+  ],
+  "lookup_pt_str_rollers": [
+    5,
+    7
+  ],
+  "lookup_yes_no": {
+    "YES": "Y",
+    "NO": "N"
+  },
+  "lookup_spinch": {
+    "Yes (2)": 2,
+    "No (0)": 0
+  },
+  "lookup_drive_key": {
+    "D1+No+None": {
+      "family": "D1",
+      "air_clutch": "No",
+      "drive": "None",
+      "torque": 1000
+    },
+    "D2+No+22 cu in (D-15125)": {
+      "family": "D2",
+      "air_clutch": "No",
+      "drive": "22 cu in (D-15125)",
+      "torque": 6500
+    },
+    "D2+No+38 cu in (D-15125)": {
+      "family": "D2",
+      "air_clutch": "No",
+      "drive": "38 cu in (D-15125)",
+      "torque": 12025
+    },
+    "D2+No+None": {
+      "family": "D2",
+      "air_clutch": "No",
+      "drive": "None",
+      "torque": 1000
+    },
+    "D2+Yes+22 cu in (D-15125)": {
+      "family": "D2",
+      "air_clutch": "Yes",
+      "drive": "22 cu in (D-15125)",
+      "torque": 6500
+    },
+    "D2+Yes+38 cu in (D-15125)": {
+      "family": "D2",
+      "air_clutch": "Yes",
+      "drive": "38 cu in (D-15125)",
+      "torque": 11452
+    },
+    "D3+No+22 cu in (D-12689)": {
+      "family": "D3",
+      "air_clutch": "No",
+      "drive": "22 cu in (D-12689)",
+      "torque": 12627
+    },
+    "D3+No+38 cu in (D-13374)": {
+      "family": "D3",
+      "air_clutch": "No",
+      "drive": "38 cu in (D-13374)",
+      "torque": 22151
+    },
+    "D3+No+60 cu in (D-13374)": {
+      "family": "D3",
+      "air_clutch": "No",
+      "drive": "60 cu in (D-13374)",
+      "torque": 37883
+    },
+    "D3+Yes+22 cu in (D-12689)": {
+      "family": "D3",
+      "air_clutch": "Yes",
+      "drive": "22 cu in (D-12689)",
+      "torque": 10260
+    },
+    "D3+Yes+38 cu in (D-13374)": {
+      "family": "D3",
+      "air_clutch": "Yes",
+      "drive": "38 cu in (D-13374)",
+      "torque": 15156
+    },
+    "D3+Yes+60 cu in (D-13374)": {
+      "family": "D3",
+      "air_clutch": "Yes",
+      "drive": "60 cu in (D-13374)",
+      "torque": 25920
+    },
+    "D3+Yes+60 cu in (D-13382)": {
+      "family": "D3",
+      "air_clutch": "Yes",
+      "drive": "60 cu in (D-13382)",
+      "torque": 54720
+    }
+  },
+  "lookup_press_required": {
+    "Single Stage": {
+      "pressure_required": 112.42,
+      "fs_spring_force": "0000 lbs"
+    },
+    "Double Stage": {
+      "pressure_required": 57.36,
+      "fs_spring_force": "0000 lbs"
+    },
+    "Triple Stage": {
+      "pressure_required": 38.50,
+      "fs_spring_force": "0000 lbs"
+    },
+    "Failsafe - Single Stage": {
+      "pressure_required": 112.42,
+      "fs_spring_force": "1000 lbs"
+    },
+    "Failsafe - Double Stage": {
+      "pressure_required": 57.36,
+      "fs_spring_force": "2385 lbs"
+    }
+  },
+  "lookup_sigma5_feed": {
+    "CPRF-S1": {
+      "ratio": 3.0,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.0022,
+      "mot_peak_torque": 160,
+      "mot_rms_tq": 56.3,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "YASKAWA SGMSV-20DDA61",
+      "amp": "YASKAWA SGDV-8R4DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "fric_torque": 0
+    },
+    "CPRF-S1 Plus": {
+      "ratio": 3.733,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.0022,
+      "mot_peak_torque": 160,
+      "mot_rms_tq": 56.3,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "YASKAWA SGMSV-20DDA61",
+      "amp": "YASKAWA SGDV-8R4DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "fric_torque": 0
+    },
+    "CPRF-S2": {
+      "ratio": 2.368,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.00623,
+      "mot_peak_torque": 240,
+      "mot_rms_tq": 87,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "YASKAWA SGMSV-30DDA61",
+      "amp": "YASKAWA SGDV-120DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "fric_torque": 0
+    },
+    "CPRF-S2 Plus": {
+      "ratio": 2.947,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.00623,
+      "mot_peak_torque": 240,
+      "mot_rms_tq": 87,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "YASKAWA SGMSV-30DDA61",
+      "amp": "YASKAWA SGDV-120DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "fric_torque": 0
+    },
+    "CPRF-S3": {
+      "ratio": 3.214,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.06007,
+      "mot_peak_torque": 630,
+      "mot_rms_tq": 248,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.000,
+      "l_roll": 3.000,
+      "motor": "YASKAWA SGMSV-44DDA61",
+      "amp": "YASKAWA SGDV-170DE1A000000300",
+      "ec": 50,
+      "watts_lost": 200,
+      "fric_torque": 0
+    },
+    "CPRF-S3 Plus": {
+      "ratio": 4.000,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.06007,
+      "mot_peak_torque": 630,
+      "mot_rms_tq": 248,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.000,
+      "l_roll": 3.000,
+      "motor": "YASKAWA SGMSV-44DDA61",
+      "amp": "YASKAWA SGDV-170DE1A000000300",
+      "ec": 50,
+      "watts_lost": 200,
+      "fric_torque": 0
+    },
+    "CPRF-S4": {
+      "ratio": 2.647,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.11124,
+      "mot_peak_torque": 1200,
+      "mot_rms_tq": 462,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.000,
+      "l_roll": 4.000,
+      "motor": "YASKAWA SGMSV-55DDA61",
+      "amp": "YASKAWA SGDV-210DE1A000000300",
+      "ec": 80,
+      "watts_lost": 250,
+      "fric_torque": 0
+    },
+    "CPRF-S4 Plus": {
+      "ratio": 3.294,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.11124,
+      "mot_peak_torque": 1211,
+      "mot_rms_tq": 462,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.000,
+      "l_roll": 4.000,
+      "motor": "YASKAWA SGMSV-55DDA61",
+      "amp": "YASKAWA SGDV-210DE1A000000300",
+      "ec": 80,
+      "watts_lost": 250,
+      "fric_torque": 0
+    },
+    "CPRF-S5": {
+      "ratio": 4.800,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.21535,
+      "mot_peak_torque": 1406,
+      "mot_rms_tq": 620,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 5.000,
+      "l_roll": 5.000,
+      "motor": "YASKAWA SGMSV-1ADDA61",
+      "amp": "YASKAWA SGDV-280DE1A000000300",
+      "ec": 235,
+      "watts_lost": 250,
+      "fric_torque": 9.8
+    },
+    "CPRF-S6": {
+      "ratio": 6.940,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.21535,
+      "mot_peak_torque": 1406,
+      "mot_rms_tq": 620,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 6.00,
+      "l_roll": 6.00,
+      "motor": "YASKAWA SGMSV-1ADDA61",
+      "amp": "YASKAWA SGDV-280DE1A000000300",
+      "ec": 235,
+      "watts_lost": 250,
+      "fric_torque": 9.8
+    },
+    "CPRF-S7": {
+      "ratio": 8.330,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.26964,
+      "mot_peak_torque": 1800,
+      "mot_rms_tq": 797,
+      "settle_tor": 50,
+      "settle_time": 0.055,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 7.00,
+      "l_roll": 7.00,
+      "motor": "YASKAWA SGMSV-1EDDA61",
+      "amp": "YASKAWA SGDV-370DE1A000000300",
+      "ec": 235,
+      "watts_lost": 260,
+      "fric_torque": 11.4
+    },
+    "CPRF-S8": {
+      "ratio": 11.111,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.26964,
+      "mot_peak_torque": 1800,
+      "mot_rms_tq": 797,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 8.00,
+      "l_roll": 8.00,
+      "motor": "YASKAWA SGMSV-1EDDA61",
+      "amp": "YASKAWA SGDV-370DE1A000000300",
+      "ec": 235,
+      "watts_lost": 260,
+      "fric_torque": 11.4
+    }
+  },
+  "lookup_sigma5_feed_pt": {
+    "CPRF-S1 ES": {
+      "ratio": 3.0,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.00283,
+      "mot_peak_torque": 169,
+      "mot_rms_tq": 56.4,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "YASKAWA SGMSV-20DDA61",
+      "amp": "YASKAWA SGDV-8R4DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "cent_dist": 4.5
+    },
+    "CPRF-S1 ES Plus": {
+      "ratio": 3.733,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.0022,
+      "mot_peak_torque": 160,
+      "mot_rms_tq": 56.3,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "YASKAWA SGMSV-20DDA61",
+      "amp": "YASKAWA SGDV-8R4DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "cent_dist": 4.5
+    },
+    "CPRF-S2 ES": {
+      "ratio": 2.368,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.00623,
+      "mot_peak_torque": 240,
+      "mot_rms_tq": 87,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "YASKAWA SGMSV-30DDA61",
+      "amp": "YASKAWA SGDV-120DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "cent_dist": 4.5
+    },
+    "CPRF-S2 ES Plus": {
+      "ratio": 2.947,
+      "max_mtr_torque": 2000,
+      "mot_inertia": 0.00623,
+      "mot_peak_torque": 240,
+      "mot_rms_tq": 87,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "YASKAWA SGMSV-30DDA61",
+      "amp": "YASKAWA SGDV-120DE1A000000300",
+      "ec": 45,
+      "watts_lost": 100,
+      "cent_dist": 4.5
+    },
+    "CPRF-S3 ES": {
+      "ratio": 3.214,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.0598,
+      "mot_peak_torque": 630,
+      "mot_rms_tq": 252,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "YASKAWA SGMGV-44DDA61",
+      "amp": "YASKAWA SGDV-170DE1A000000300",
+      "ec": 50,
+      "watts_lost": 200,
+      "cent_dist": 4.5
+    },
+    "CPRF-S3 RS": {
+      "ratio": 3.214,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.06007,
+      "mot_peak_torque": 630,
+      "mot_rms_tq": 248,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "YASKAWA SGMGV-44DDA61",
+      "amp": "YASKAWA SGDV-170DE1A000000300",
+      "ec": 50,
+      "watts_lost": 200,
+      "cent_dist": 6
+    },
+    "CPRF-S3 RS Plus": {
+      "ratio": 4.0,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.06007,
+      "mot_peak_torque": 630,
+      "mot_rms_tq": 248,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "YASKAWA SGMGV-44DDA61",
+      "amp": "YASKAWA SGDV-170DE1A000000300",
+      "ec": 50,
+      "watts_lost": 200,
+      "cent_dist": 6
+    },
+    "CPRF-S4 HS": {
+      "ratio": 2.647,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.1112,
+      "mot_peak_torque": 1200,
+      "mot_rms_tq": 462,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "YASKAWA SGMGV-55DDB61",
+      "amp": "YASKAWA SGDV-210DE1A000000300",
+      "ec": 80,
+      "watts_lost": 250,
+      "cent_dist": 7
+    },
+    "CPRF-S4 HS Plus": {
+      "ratio": 3.294,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.1112,
+      "mot_peak_torque": 1211,
+      "mot_rms_tq": 465,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "YASKAWA SGMGH-55QCB-YAXX",
+      "amp": "YASKAWA SGDH-60DE",
+      "ec": 80,
+      "watts_lost": 250,
+      "cent_dist": 7
+    },
+    "CPRF-S4 RS": {
+      "ratio": 2.647,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.1112,
+      "mot_peak_torque": 1200,
+      "mot_rms_tq": 462,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "YASKAWA SGMGV-55DDB61",
+      "amp": "YASKAWA SGDV-210DE1A000000300",
+      "ec": 80,
+      "watts_lost": 250,
+      "cent_dist": 6
+    },
+    "CPRF-S4 RS Plus": {
+      "ratio": 3.294,
+      "max_mtr_torque": 1000,
+      "mot_inertia": 0.1112,
+      "mot_peak_torque": 1211,
+      "mot_rms_tq": 465,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "YASKAWA SGMGH-55QCB-YAXX",
+      "amp": "YASKAWA SGDH-60DE",
+      "ec": 80,
+      "watts_lost": 250,
+      "cent_dist": 6
+    },
+    "CPRF-S5-350": {
+      "ratio": 4.8,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.21535,
+      "mot_peak_torque": 1406,
+      "mot_rms_tq": 620,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 1,
+      "u_roll": 5.0,
+      "l_roll": 5.0,
+      "motor": "YASKAWA SGMGV-1ADDA61",
+      "amp": "YASKAWA SGDV-280DE1A000000300",
+      "ec": 235,
+      "watts_lost": 250,
+      "cent_dist": 7
+    },
+    "CPRF-S6-350": {
+      "ratio": 6.944,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.25,
+      "mot_peak_torque": 1550,
+      "mot_rms_tq": 620,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 6.0,
+      "l_roll": 6.0,
+      "motor": "YASKAWA SGMGH-1ADCA61",
+      "amp": "YASKAWA SGDH-1ADE",
+      "ec": 235,
+      "watts_lost": 250,
+      "cent_dist": 7
+    },
+    "CPRF-S6-500": {
+      "ratio": 6.944,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.25,
+      "mot_peak_torque": 1550,
+      "mot_rms_tq": 620,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 6.0,
+      "l_roll": 6.0,
+      "motor": "YASKAWA SGMGH-1ADCA61",
+      "amp": "YASKAWA SGDH-1ADE",
+      "ec": 235,
+      "watts_lost": 250,
+      "cent_dist": 10
+    },
+    "CPRF-S7-350": {
+      "ratio": 8.333,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.355,
+      "mot_peak_torque": 1984,
+      "mot_rms_tq": 845,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 7.0,
+      "l_roll": 7.0,
+      "motor": "YASKAWA SGMGH-1EDCA61",
+      "amp": "YASKAWA SGDH-1EDE",
+      "ec": 235,
+      "watts_lost": 260,
+      "cent_dist": 7
+    },
+    "CPRF-S7-500": {
+      "ratio": 8.333,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.355,
+      "mot_peak_torque": 1984,
+      "mot_rms_tq": 845,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 7.0,
+      "l_roll": 7.0,
+      "motor": "YASKAWA SGMGH-1EDCA61",
+      "amp": "YASKAWA SGDH-1EDE",
+      "ec": 235,
+      "watts_lost": 260,
+      "cent_dist": 10
+    },
+    "CPRF-S8-500": {
+      "ratio": 11.111,
+      "max_mtr_torque": 1500,
+      "mot_inertia": 0.355,
+      "mot_peak_torque": 1984,
+      "mot_rms_tq": 845,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 8.0,
+      "l_roll": 8.0,
+      "motor": "YASKAWA SGMGH-1EDCA61",
+      "amp": "YASKAWA SGDH-1EDE",
+      "ec": 235,
+      "watts_lost": 260,
+      "cent_dist": 10
+    }
+  },
+  "lookup_ab_feed": {
+    "CPRF-S1 MPL": {
+      "ratio": 3.0,
+      "max_mtr_rpm": 2000,
+      "mot_inertia": 0.0036,
+      "mot_peak_torque": 160,
+      "mot_rms_tq": 66,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 1,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "AB MPL-B4530F",
+      "amp": "AB 2098-XXX-HV050",
+      "fric_torque": 0
+    },
+    "CPRF-S2 MPL": {
+      "ratio": 3.0,
+      "max_mtr_rpm": 2000,
+      "mot_inertia": 0.0046,
+      "mot_peak_torque": 200,
+      "mot_rms_tq": 78,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 1,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "AB MPL-B4540F",
+      "amp": "AB 2098-XXX-HV100",
+      "fric_torque": 0
+    },
+    "CPRF-S3 MPL": {
+      "ratio": 3.214,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.023,
+      "mot_peak_torque": 451,
+      "mot_rms_tq": 256,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "AB MPL-B580F",
+      "amp": "AB 2094-BC04 + 2094-M03 w/ Int SHUNT",
+      "fric_torque": 0
+    },
+    "CPRF-S3 MPM": {
+      "ratio": 3.214,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.07103,
+      "mot_peak_torque": 600,
+      "mot_rms_tq": 237,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "AB MPM-B1653C",
+      "amp": "AB 2094-BC04 + 2094-M03 w/ Int SHUNT",
+      "fric_torque": 0
+    },
+    "CPRF-S4 MPL": {
+      "ratio": 3.214,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.0685,
+      "mot_peak_torque": 955,
+      "mot_rms_tq": 460,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "AB MPL-B680D",
+      "amp": "AB 2095 BC04 + 2094-M03 + 2094-BSP2 + 1394 SR9AF",
+      "fric_torque": 0
+    },
+    "CPRF-S5 MPL": {
+      "ratio": 4.8,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.15,
+      "mot_peak_torque": 1070,
+      "mot_rms_tq": 590,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "gb_ratio": 1,
+      "u_roll": 5.0,
+      "l_roll": 5.0,
+      "motor": "AB MPL-B860D",
+      "amp": "AB 2094-BC07 + 2094-M05 + 1394-SR36A",
+      "fric_torque": 0
+    },
+    "CPRF-S6 MPL": {
+      "ratio": 6.51,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.15,
+      "mot_peak_torque": 1070,
+      "mot_rms_tq": 590,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 6.0,
+      "l_roll": 6.0,
+      "motor": "AB MPL-B860D",
+      "amp": "AB 2094-BC07 + 2094-BM05 + 1394-SR36A",
+      "fric_torque": 0
+    },
+    "CPRF-S7 MPL": {
+      "ratio": 6.974,
+      "max_mtr_rpm": 1250,
+      "mot_inertia": 0.313,
+      "mot_peak_torque": 1250,
+      "mot_rms_tq": 1000,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 5,
+      "u_roll": 7.0,
+      "l_roll": 7.0,
+      "motor": "AB MPL-B980C",
+      "amp": "AB 2094-BC07 + 2094 M05 + 2094-BSP2 + 1394 SR36A",
+      "fric_torque": 0
+    },
+    "CPRF-S8 MPL": {
+      "ratio": 9.861,
+      "max_mtr_rpm": 1250,
+      "mot_inertia": 0.313,
+      "mot_peak_torque": 1328,
+      "mot_rms_tq": 930,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "gb_ratio": 6,
+      "u_roll": 8.0,
+      "l_roll": 8.0,
+      "motor": "AB MPL-B980C",
+      "amp": "AB 2094-BM05 + 2094 BC07 +1394 SR36A",
+      "fric_torque": 1
+    },
+    "225_AB_MPL-B4530F": {
+      "ratio": 3.0,
+      "max_mtr_rpm": 2000,
+      "mot_inertia": 0.0036,
+      "mot_peak_torque": 160,
+      "mot_rms_tq": 66,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.013,
+      "gb_ratio": 0,
+      "u_roll": 2.25,
+      "l_roll": 2.25,
+      "motor": "AB MPL-B4530F",
+      "amp": "AB 2098-xxx-HV050",
+      "fric_torque": 0
+    },
+    "263_AB_MPL-B4540F": {
+      "ratio": 2.368,
+      "max_mtr_rpm": 2000,
+      "mot_inertia": 0.0046,
+      "mot_peak_torque": 200,
+      "mot_rms_tq": 78,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.019,
+      "gb_ratio": 0,
+      "u_roll": 2.625,
+      "l_roll": 2.625,
+      "motor": "AB MPL-B4540F",
+      "amp": "AB 2098-xxx-HV100",
+      "fric_torque": 0
+    },
+    "300_AB_MPM1651F": {
+      "ratio": 4.0,
+      "max_mtr_rpm": 3000,
+      "mot_inertia": 0.0597,
+      "mot_peak_torque": 205,
+      "mot_rms_tq": 95,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.088,
+      "gb_ratio": 0,
+      "u_roll": 3.0,
+      "l_roll": 3.0,
+      "motor": "AB MPM-B1651F",
+      "amp": "*",
+      "fric_torque": 0
+    },
+    "400_AB_MPL w/ 300 mot": {
+      "ratio": 4.0,
+      "max_mtr_rpm": 1000,
+      "mot_inertia": 0.023,
+      "mot_peak_torque": 451,
+      "mot_rms_tq": 256,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.123,
+      "gb_ratio": 0,
+      "u_roll": 4.0,
+      "l_roll": 4.0,
+      "motor": "AB MPL-B580F",
+      "amp": "AB 2092-xxx-HV100 + w/ no ext. shunt",
+      "fric_torque": 0
+    },
+    "450_Hollow_AB_MPL420P": {
+      "ratio": 10.0,
+      "max_mtr_rpm": 2000,
+      "mot_inertia": 0.0023,
+      "mot_peak_torque": 120,
+      "mot_rms_tq": 42,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.092,
+      "gb_ratio": 0,
+      "u_roll": 4.5,
+      "l_roll": 4.5,
+      "motor": "AB MPL-B420P",
+      "amp": "*",
+      "fric_torque": 0
+    },
+    "500_AB_MPL-B680P": {
+      "ratio": 4.8,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.15,
+      "mot_peak_torque": 1070,
+      "mot_rms_tq": 590,
+      "settle_tor": 20,
+      "settle_time": 0.035,
+      "efficiency": 1.0,
+      "ref_inert": 0.507,
+      "gb_ratio": 0,
+      "u_roll": 5.0,
+      "l_roll": 5.0,
+      "motor": "AB MPL-B860D",
+      "amp": "AB 2094-BC07 + 2094-M05 + 1394-SR36A",
+      "fric_torque": 0
+    },
+    "600_AB_Special_MPL_B680D": {
+      "ratio": 6.51,
+      "max_mtr_rpm": 1500,
+      "mot_inertia": 0.0685,
+      "mot_peak_torque": 890,
+      "mot_rms_tq": 445,
+      "settle_tor": 50,
+      "settle_time": 0.035,
+      "efficiency": 0.97,
+      "ref_inert": 0.49,
+      "gb_ratio": 5,
+      "u_roll": 6.0,
+      "l_roll": 6.0,
+      "motor": "AB MPL-B680D",
+      "amp": "AB 2094-BC07 + 2094-BM05 + 1394-SR36A",
+      "fric_torque": 0
+    }
+  },
+  "lookup_feed_type": [
+    {
+      "feed_style": "Allen Bradley MPL - Feed",
+      "sheet_name": "Allen Bradley MPL - Feed (1)",
+      "application": "Press Feed",
+      "model": "0",
+      "width": 0,
+      "loop_pit": "Y",
+      "full_width_rolls": "Y",
+      "feed_angle_1": 180,
+      "feed_angle_2": 240,
+      "pt_str_rolls": "N/A",
+      "pt_pinch_rolls": "N/A",
+      "passed_test": "#N/A",
+      "press_bed_length": 48,
+      "max_velocity": "#N/A",
+      "ratio": "#N/A",
+      "fa1_label": "Feed Angle 1",
+      "fa2_label": "Feed Angle 2",
+      "fa1_units": "Deg.",
+      "fa2_units": "Deg.",
+      "accel": 80
+    },
+    {
+      "feed_style": "Sigma 5 Feed",
+      "sheet_name": "Sigma 5 Feed (1)",
+      "application": "Press Feed",
+      "model": "CPRF-S8",
+      "width": 42,
+      "loop_pit": "N",
+      "full_width_rolls": "Y",
+      "feed_angle_1": 180,
+      "feed_angle_2": 240,
+      "pt_str_rolls": "N/A",
+      "pt_pinch_rolls": "N/A",
+      "passed_test": "OK",
+      "press_bed_length": 48,
+      "max_velocity": 282.7461663,
+      "ratio": 11.111,
+      "fa1_label": "Feed Angle 1",
+      "fa2_label": "Feed Angle 2",
+      "fa1_units": "Deg.",
+      "fa2_units": "Deg.",
+      "accel": 25
+    },
+    {
+      "feed_style": "Sigma 5 Feed with Pull Thru",
+      "sheet_name": "Sigma 5 Feed with Pull Thru (1)",
+      "application": "Press Feed",
+      "model": "0",
+      "width": 0,
+      "loop_pit": "N",
+      "full_width_rolls": "Y",
+      "feed_angle_1": 180,
+      "feed_angle_2": 240,
+      "pt_str_rolls": "5",
+      "pt_pinch_rolls": "2",
+      "passed_test": "#N/A",
+      "press_bed_length": 24,
+      "max_velocity": "#N/A",
+      "ratio": "#N/A",
+      "fa1_label": "Feed Angle 1",
+      "fa2_label": "Feed Angle 2",
+      "fa1_units": "Deg.",
+      "fa2_units": "Deg.",
+      "accel": 80
+    }
+  ],
+  "FPMBuffer": 1.2,
+  "BackbendMin": 0.4,
+  "BackbendMax": 0.7,
+  "BackbendConfirm": 0.55,
+  "BackbendOKText": "OK",
+  "BackbendNCText": "BACKBEND YIELD NOT CONFIRMED",
+  "BackbendNOText": "BACKBEND YIELD NOT OK",
+  "lookup_model_families": {
+    "CPR-040": {
+      "drive_family": "D1",
+      "holddown_family": "H1",
+      "brake_family": "B1"
+    },
+    "CPR-060": {
+      "drive_family": "D2",
+      "holddown_family": "H2",
+      "brake_family": "B2"
+    },
+    "CPR-080": {
+      "drive_family": "D2",
+      "holddown_family": "H2",
+      "brake_family": "B2"
+    },
+    "CPR-100": {
+      "drive_family": "D3",
+      "holddown_family": "H3",
+      "brake_family": "B2"
+    },
+    "CPR-150": {
+      "drive_family": "D3",
+      "holddown_family": "H3",
+      "brake_family": "B2"
+    },
+    "CPR-200": {
+      "drive_family": "D3",
+      "holddown_family": "H3",
+      "brake_family": "B2"
+    },
+    "CPR-300": {
+      "drive_family": "D3",
+      "holddown_family": "H3",
+      "brake_family": "B2"
+    },
+    "CPR-400": {
+      "drive_family": "D3",
+      "holddown_family": "H3",
+      "brake_family": "B2"
+    },
+    "CPR-500": {
+      "drive_family": "D3",
+      "holddown_family": "H4",
+      "brake_family": "B2"
+    },
+    "CPR-600": {
+      "drive_family": "D3",
+      "holddown_family": "H4",
+      "brake_family": "B2"
+    }
+  },
+  "lookup_holddown_sort": {
+    "HD_Single": {
+      "sort": "H"
+    },
+    "HD_Dual": {
+      "sort": "I"
+    },
+    "LD_MOTORIZED": {
+      "sort": "D"
+    },
+    "LD_NARROW": {
+      "sort": "C"
+    },
+    "MD": {
+      "sort": "G"
+    },
+    "SD_MOTORIZED": {
+      "sort": "F"
+    },
+    "SD": {
+      "sort": "E"
+    },
+    "XD": {
+      "sort": "J"
+    },
+    "XXD": {
+      "sort": "K"
+    },
+    "None": {
+      "sort": "A"
+    }
+  },
+  "lookup_hyd_thd_drive_disp": [
+    {
+      "hyd_thd_drive_disp": 22.6,
+      "end_whl_od": 10,
+      "sprkt_red_end_wheel": 2.909,
+      "sprk_red_reel": 4.75,
+      "sprk_red_hold_up_wheel": null,
+      "pd_end_wheel": 2.898,
+      "pd_reel": 3.236
+    },
+    {
+      "hyd_thd_drive_disp": 40.6,
+      "end_whl_od": 10,
+      "sprkt_red_end_wheel": 2.9,
+      "sprk_red_reel": 3.42,
+      "sprk_red_hold_up_wheel": null,
+      "pd_end_wheel": 2.898,
+      "pd_reel": 3.236
+    },
+    {
+      "hyd_thd_drive_disp": 57.4,
+      "end_whl_od": 14.75,
+      "sprkt_red_end_wheel": 3.8,
+      "sprk_red_reel": 6.909,
+      "sprk_red_hold_up_wheel": 2.9,
+      "pd_end_wheel": 3.236,
+      "pd_reel": 4.437
+    },
+    {
+      "hyd_thd_drive_disp": 60,
+      "end_whl_od": 11.85,
+      "sprkt_red_end_wheel": 4.23,
+      "sprk_red_reel": 6.909,
+      "sprk_red_hold_up_wheel": null,
+      "pd_end_wheel": 2.898,
+      "pd_reel": 3.236
+    }
+  ],
+  "lookup_reel_dimensions": {
+    "CPR-040": {
+      "bearing_dist": 7,
+      "fbearing_dia": 4.5,
+      "rbearing_dia": 4.5,
+      "coil_weight": 4000,
+      "mandrel_dia": 3.75,
+      "backplate": 23,
+      "full_od_backplate": 23,
+      "backplate_thickness": 0.625
+    },
+    "CPR-060": {
+      "bearing_dist": 10.5,
+      "fbearing_dia": 6,
+      "rbearing_dia": 6,
+      "coil_weight": 6000,
+      "mandrel_dia": 5,
+      "backplate": 23,
+      "full_od_backplate": 23,
+      "backplate_thickness": 1
+    },
+    "CPR-080": {
+      "bearing_dist": 10.5,
+      "fbearing_dia": 6,
+      "rbearing_dia": 6,
+      "coil_weight": 8000,
+      "mandrel_dia": 5,
+      "backplate": 23,
+      "full_od_backplate": 23,
+      "backplate_thickness": 1
+    },
+    "CPR-100": {
+      "bearing_dist": 24.69,
+      "fbearing_dia": 8.23,
+      "rbearing_dia": 8.23,
+      "coil_weight": 10000,
+      "mandrel_dia": 7,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-150": {
+      "bearing_dist": 24.69,
+      "fbearing_dia": 9.02,
+      "rbearing_dia": 8.23,
+      "coil_weight": 15000,
+      "mandrel_dia": 7.5,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-200": {
+      "bearing_dist": 24.69,
+      "fbearing_dia": 11.26,
+      "rbearing_dia": 11.26,
+      "coil_weight": 20000,
+      "mandrel_dia": 9.5,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-300" :  {
+      "bearing_dist": 29.8,
+      "fbearing_dia": 13.19,
+      "rbearing_dia": 11.65,
+      "coil_weight": 30000,
+      "mandrel_dia": 10.5,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-400":  {
+      "bearing_dist": 29.8,
+      "fbearing_dia": 15.43,
+      "rbearing_dia": 12.68,
+      "coil_weight": 40000,
+      "mandrel_dia": 11.5,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-500": {
+      "bearing_dist": 29.8,
+      "fbearing_dia": 15.35,
+      "rbearing_dia": 13.19,
+      "coil_weight": 50000,
+      "mandrel_dia": 11.5,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    },
+    "CPR-600":  {
+      "bearing_dist": 29.8,
+      "fbearing_dia": 15.35,
+      "rbearing_dia": 13.19,
+      "coil_weight": 60000,
+      "mandrel_dia": 13,
+      "backplate": 27,
+      "full_od_backplate": 72,
+      "backplate_thickness": 1.5
+    }
+  }
+}
