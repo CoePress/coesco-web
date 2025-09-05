@@ -11,7 +11,5 @@
 
 - Do we want the data from QtNotes? seems to be replaced by Notes
 
-- OtherEqu vs Specials - specials are an OPTION
-
-
-
+what is the use case for optlink?
+what is the use case for startup?

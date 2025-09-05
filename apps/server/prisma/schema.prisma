@@ -780,6 +780,7 @@ model OptionDetails {
 
 model Item {
   id             String    @id @default(uuid())
+  productClassId String? 
   modelNumber    String?
   name           String?
   description    String?
