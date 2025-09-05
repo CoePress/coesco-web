@@ -246,11 +246,15 @@ const PipelineHeader = ({ searchTerm, setSearchTerm, rsmFilterDisplay, setRsmFil
             setRsmFilterDisplay(e.target.value);
           }
         }}
-        options={[
-          { value: "", label: "All RSMs" },
-          { value: "my-journeys", label: "My Journeys" },
-          ...availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ value: rsm, label: rsm }))
-        ]}
+        options={(() => {
+          const baseOptions = [
+            { value: "", label: "All RSMs" },
+            { value: "my-journeys", label: "My Journeys" }
+          ];
+          const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ value: rsm, label: rsm }));
+          console.log('RSM Dropdown Debug:', { availableRsms, rsmOptions });
+          return [...baseOptions, ...rsmOptions];
+        })()}
         className="w-48"
       />
     </div>
@@ -274,6 +278,7 @@ const Pipeline = () => {
 
   const { user, employee } = useAuth();
   const { put, get } = useApi();
+  const rsmApi = useApi(); // Separate API instance for RSM fetching
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
 
@@ -283,23 +288,22 @@ const Pipeline = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
-        get('/journeys'),
-        get('/companies')
+        get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 1600 }),
+        get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
       
       if (journeysData) {
-        // Handle both array response and entities property
-        setJourneys(Array.isArray(journeysData) ? journeysData : journeysData.entities || []);
+        // Apply the same mapping as the working fetch
+        setJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
       }
       
       if (customersData) {
-        // Handle both array response and entities property
-        setCustomers(Array.isArray(customersData) ? customersData : customersData.entities || []);
+        setCustomers(Array.isArray(customersData) ? customersData : []);
       }
     };
     
     fetchData();
-  }, [get]);
+  }, []);
 
   const refetchLegacyJourneys = async () => {
     try {
@@ -446,25 +450,15 @@ const Pipeline = () => {
       } catch (error) {
         console.error("Error fetching Journeys:", error);
       }
-      try {
-        const response = await fetch(
-          `http://localhost:8080/api/legacy/getrsms`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-        if (response.ok) {
-          const raw = await response.json();
-          if (!cancelled && Array.isArray(raw)) {
-            setAvailableRsms(raw);
-          }
-        } else {
-          console.error("RSM fetch failed:", response.status, await response.text());
-        }
-      } catch (error) {
-        console.error("Error fetching RSMS:", error);
+
+      const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
+        filterField: 'Category',
+        filterValue: 'RSM'
+      });
+      
+      if (!cancelled && Array.isArray(rsmData)) {
+        const rsmValues = rsmData.map(item => item.Name || item.Value || item.Description).filter(Boolean);
+        setAvailableRsms(rsmValues);
       }
     })();
     return () => { cancelled = true; };
@@ -947,7 +941,7 @@ const Pipeline = () => {
       }
     } else {
       try {
-        await put(`/journeys/${updatedJourney.id}`, { stage: toStage });
+        await put(`/legacy/base/Journey/${updatedJourney.id}`, { Journey_Stage: toStage });
       } catch (error) {
         console.error("Failed to update journey stage:", error);
       }
@@ -1065,52 +1059,57 @@ const Pipeline = () => {
     },
   ];
 
-  const headerActions = [
-    {
-      type: "button" as const,
-      label: "Card",
-      variant: viewMode === "kanban" ? "secondary" : "secondary-outline",
-      icon: <Layout size={16} />,
-      onClick: () => setViewMode("kanban"),
-    },
-    {
-      type: "button" as const,
-      label: "List",
-      variant: viewMode === "list" ? "secondary" : "secondary-outline",
-      icon: <ListIcon size={16} />,
-      onClick: () => setViewMode("list"),
-    },
-    {
-      type: "button" as const,
-      label: "Projections",
-      variant: viewMode === "projections" ? "secondary" : "secondary-outline",
-      icon: <BarChart3 size={16} />,
-      onClick: () => setViewMode("projections"),
-    },
-    {
-      type: "button" as const,
-      label: "Export",
-      variant: "secondary-outline" as const,
-      icon: <Download size={16} />,
-      
-    },
-    {
-      type: "button" as const,
-      label: "Add Journey",
-      variant: "primary" as const,
-      icon: <Plus size={16} />,
-      onClick: () => {
-        toggleJourneyModal();
-      },
-    },
-  ];
+  const HeaderActions = () => (
+    <div className="flex gap-2">
+      <Button
+        variant={viewMode === "kanban" ? "secondary" : "secondary-outline"}
+        size="sm"
+        onClick={() => setViewMode("kanban")}
+      >
+        <Layout size={16} />
+        Card
+      </Button>
+      <Button
+        variant={viewMode === "list" ? "secondary" : "secondary-outline"}
+        size="sm"
+        onClick={() => setViewMode("list")}
+      >
+        <ListIcon size={16} />
+        List
+      </Button>
+      <Button
+        variant={viewMode === "projections" ? "secondary" : "secondary-outline"}
+        size="sm"
+        onClick={() => setViewMode("projections")}
+      >
+        <BarChart3 size={16} />
+        Projections
+      </Button>
+      <Button
+        variant="secondary-outline"
+        size="sm"
+        onClick={() => {}}
+      >
+        <Download size={16} />
+        Export
+      </Button>
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => toggleJourneyModal()}
+      >
+        <Plus size={16} />
+        Add Journey
+      </Button>
+    </div>
+  );
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={headerActions}
+        actions={<HeaderActions />}
       />
       
       {/* Pipeline Value Summary - Only show for kanban and list views */}

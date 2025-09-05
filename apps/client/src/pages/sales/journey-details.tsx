@@ -967,7 +967,7 @@ const JourneyDetailsPage = () => {
   useEffect(() => {
     if (shouldFetchFromAPI && journeyId) {
       const fetchJourneyData = async () => {
-        const data = await get(`/api/journeys/${journeyId}`);
+        const data = await get(`/legacy/base/Journey/${journeyId}`);
         if (data) {
           setJourneyOverview(data);
         }

@@ -194,11 +194,21 @@ export class LegacyService {
 
   async getById(database: string, table: string, id: string, fields?: string[] | null) {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
+    
+    // To help prevent bullshit temporarily
+    let idField = "ID";
+    if (table.toLowerCase() === "journey") {
+      idField = "Journey_ID";
+    } else if (table.toLowerCase() === "company") {
+      idField = "Company_ID";
+    } else if (table.toLowerCase() === "contacts") {
+      idField = "Contact_ID";
+    }
 
     const query = `
       SELECT ${fieldSelection}
       FROM PUB.${table}
-      WHERE ID = '${id}'
+      WHERE ${idField} = '${id}'
     `;
 
     try {
@@ -239,9 +249,18 @@ export class LegacyService {
   }
 
   async update(database: string, table: string, id: string, data: Record<string, any>) {
-    return;
     if (!data || Object.keys(data).length === 0) {
       return false;
+    }
+
+    // Determine the correct ID field name based on the table
+    let idField = "ID";
+    if (table.toLowerCase() === "journey") {
+      idField = "Journey_ID";
+    } else if (table.toLowerCase() === "company") {
+      idField = "Company_ID";
+    } else if (table.toLowerCase() === "contacts") {
+      idField = "Contact_ID";
     }
 
     const setClause = Object.entries(data)
@@ -261,7 +280,7 @@ export class LegacyService {
     const query = `
       UPDATE PUB.${table}
       SET ${setClause}
-      WHERE ID = '${id}'
+      WHERE ${idField} = '${id}'
     `;
 
     try {
