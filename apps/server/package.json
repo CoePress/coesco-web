@@ -7,20 +7,16 @@
   "license": "ISC",
   "keywords": [],
   "main": "server.js",
-  "scripts": {
+"scripts": {
+    "db:generate": "npx prisma generate && tsx src/scripts/service-generator.ts && npm run lint:fix",
+    "db:reset": "npx prisma db push --force-reset",
+    "pipeline": "tsx src/scripts/data-pipeline.ts",
     "swagger": "tsx src/utils/swagger.ts",
-    "generate": "tsx src/scripts/service-generator.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "db:generate": "npx prisma generate",
-    "db:reset": "npx prisma db push --force-reset",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:seed:prod": "node dist/prisma/seed.js",
-    "db:fresh": "npm run db:generate && npm run db:reset",
     "dev": "nodemon src/server.ts",
     "build": "npm run db:generate && tsc && tsc-alias",
-    "start": "npm run build && node dist/src/server.js",
-    "pipeline": "tsx src/scripts/data-pipeline.ts"
+    "start": "npm run build && node dist/src/server.js"
   },
   "dependencies": {
     "@azure/msal-node": "^3.7.1",

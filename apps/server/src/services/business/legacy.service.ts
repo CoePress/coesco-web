@@ -194,14 +194,16 @@ export class LegacyService {
 
   async getById(database: string, table: string, id: string, fields?: string[] | null) {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
-    
+
     // To help prevent bullshit temporarily
     let idField = "ID";
     if (table.toLowerCase() === "journey") {
       idField = "Journey_ID";
-    } else if (table.toLowerCase() === "company") {
+    }
+    else if (table.toLowerCase() === "company") {
       idField = "Company_ID";
-    } else if (table.toLowerCase() === "contacts") {
+    }
+    else if (table.toLowerCase() === "contacts") {
       idField = "Contact_ID";
     }
 
@@ -223,7 +225,7 @@ export class LegacyService {
 
   async getAllByCustomFilter(database: string, table: string, filterField: string, filterValue: string, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
-    const escapedField = filterField.replace(/[^a-zA-Z0-9_]/g, ""); // Sanitize field name
+    const escapedField = filterField.replace(/\W/g, ""); // Sanitize field name
     const escapedValue = filterValue.replace(/'/g, "''");
 
     const whereClause = `WHERE ${escapedField} = '${escapedValue}'`;
@@ -238,13 +240,13 @@ export class LegacyService {
 
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
-      return result;   
-
-    } catch(err) {
+      return result;
+    }
+    catch (err) {
       console.error(`Error fetching ${table} where ${escapedField} = ${escapedValue}:`, err);
       return null;
-
-    } finally {
+    }
+    finally {
     }
   }
 
@@ -257,9 +259,11 @@ export class LegacyService {
     let idField = "ID";
     if (table.toLowerCase() === "journey") {
       idField = "Journey_ID";
-    } else if (table.toLowerCase() === "company") {
+    }
+    else if (table.toLowerCase() === "company") {
       idField = "Company_ID";
-    } else if (table.toLowerCase() === "contacts") {
+    }
+    else if (table.toLowerCase() === "contacts") {
       idField = "Contact_ID";
     }
 
