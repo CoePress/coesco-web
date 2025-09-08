@@ -6,6 +6,7 @@ import MainMenu from "./pages/main-menu";
 import NotFound from "./pages/not-found";
 import Login from "./pages/login";
 import ChatPage from "./pages/utility/chat";
+import { Resources } from "./pages";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -82,7 +83,11 @@ const App = () => {
           element={<ChatPage />}
         />
         <Route
-          path="/chat/:id"
+          path="/chat/resources"
+          element={<Resources />}
+        />
+        <Route
+          path="/chat/c/:id"
           element={<ChatPage />}
         />
         {modules

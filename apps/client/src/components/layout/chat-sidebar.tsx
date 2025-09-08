@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { EllipsisIcon } from "lucide-react";
+import { EllipsisIcon, Plus, FileText, MessageCircle } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
-import Button from "../ui/button";
+import Loader from "../ui/loader";
 
 type Chat = {
   id: string;
@@ -18,7 +18,13 @@ type Chat = {
 
 const trimmer = (path: string) => path.replace(/\/$/, "");
 
-export default function ChatSidebar() {
+type ChatSidebarProps = {
+  isOpen: boolean;
+  onTooltipMouseEnter?: (e: React.MouseEvent, text: string) => void;
+  onTooltipMouseLeave?: () => void;
+};
+
+export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMouseLeave }: ChatSidebarProps) {
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -59,7 +65,7 @@ export default function ChatSidebar() {
     };
 
     fetchChats();
-  }, [refreshToggle, get]);
+  }, [refreshToggle]);
 
   const isActive = (id: string) =>
     trimmer(location.pathname) === trimmer(`/chat/${id}`);
@@ -115,51 +121,60 @@ export default function ChatSidebar() {
   return (
     <div className="flex flex-col h-full">
       <div className="space-y-2">
-        <Button
+        <button
           onClick={() => navigate("/chat")}
-          variant="secondary-outline"
-          className="w-full"
+          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "New Chat")}
+          onMouseLeave={onTooltipMouseLeave}
+          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
         >
-          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
-            <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
-          </svg>
-          <span className="font-medium text-sm">New Chat</span>
-        </Button>
-        <Button
+          <Plus size={18} className="flex-shrink-0" />
+          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}>New Chat</span>
+        </button>
+        <button
           onClick={() => navigate("/chat/resources")}
-          variant="secondary-outline"
-          className="w-full"
+          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Resources")}
+          onMouseLeave={onTooltipMouseLeave}
+          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
         >
-          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
-            <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
-          </svg>
-          <span className="font-medium text-sm">Resources</span>
-        </Button>
+          <FileText size={18} className="flex-shrink-0" />
+          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}>Resources</span>
+        </button>
+        <button
+          onClick={() => navigate("/chat")}
+          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Chats")}
+          onMouseLeave={onTooltipMouseLeave}
+          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
+        >
+          <MessageCircle size={18} className="flex-shrink-0" />
+          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}>Chats</span>
+        </button>
 
-        <div>
-          <label htmlFor="chat-search" className="sr-only">
-            Search chats
-          </label>
-          <input
-            id="chat-search"
-            type="text"
-            placeholder="Search chats..."
-            className="w-full rounded border border-border bg-background
-                       px-3 py-2 text-sm text-text
-                       focus:outline-none focus:ring-0 focus:border-primary"
-          />
-        </div>
-
-        <nav className="space-y-1 text-sm">
+        {isOpen && (
+          <nav className="space-y-1 text-sm">
+          <h2 className="text-text-muted text-xs">Recent</h2>
           {loading && (
-            <div className="px-4 py-2 text-text-muted">Loading…</div>
+            <div className="px-4 py-2 flex items-center justify-center">
+              <Loader size="sm" />
+            </div>
           )}
           {!loading && error && (
             <div className="px-4 py-2 text-red-600">Error: {error}</div>
           )}
+          {!loading && !error && chats.length === 0 && (
+            <div className="px-4 py-2 text-text-muted text-center text-nowrap">
+              No recent chats
+            </div>
+          )}
           {!loading &&
             !error &&
-            (chats ?? []).map((c) => (
+            chats.length > 0 &&
+            chats.map((c) => (
               <button
                 key={c.id}
                 onClick={() => handleSelectChat(c.id)}
@@ -233,7 +248,8 @@ export default function ChatSidebar() {
                 )}
               </button>
             ))}
-        </nav>
+          </nav>
+        )}
       </div>
     </div>
   );

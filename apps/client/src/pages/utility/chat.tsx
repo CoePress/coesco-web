@@ -65,7 +65,7 @@ export default function ChatPage() {
     };
 
     fetchMessages();
-  }, [selectedChatId, refreshToggle, get]);
+  }, [selectedChatId, refreshToggle]);
 
   const orderedMessages = useMemo(() => {
     const base = (messages ?? []).slice().reverse();

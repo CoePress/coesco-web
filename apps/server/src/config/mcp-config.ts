@@ -1,5 +1,7 @@
 import type { IQueryParams, ISchema, ITool } from "@/types";
 
+import { logger } from "@/utils/logger";
+
 const serviceMap: Record<string, string> = {
   "address": "addressService",
   "audit-log": "auditLogService",
@@ -62,17 +64,17 @@ async function getById(entity: string, id: string, _include?: string[] | Record<
   return service.getById(id);
 }
 
-async function create(entity: string, data: any) {
+async function _create(entity: string, data: any) {
   const service = await getServiceForEntity(entity);
   return service.create(data);
 }
 
-async function update(entity: string, id: string, data: any) {
+async function _update(entity: string, id: string, data: any) {
   const service = await getServiceForEntity(entity);
   return service.update(id, data);
 }
 
-async function deleteRecord(entity: string, id: string) {
+async function _deleteRecord(entity: string, id: string) {
   const service = await getServiceForEntity(entity);
   return service.delete(id);
 }
@@ -129,7 +131,8 @@ export const TOOLS: ITool[] = [
       },
       required: ["entity", "data"],
     },
-    handler: async params => create(params.entity, params.data),
+    // handler: async params => create(params.entity, params.data),
+    handler: async () => logger.info("Create entity called by AI"),
   },
   {
     name: "update",
@@ -143,7 +146,8 @@ export const TOOLS: ITool[] = [
       },
       required: ["entity", "id", "data"],
     },
-    handler: async params => update(params.entity, params.id, params.data),
+    // handler: async params => update(params.entity, params.id, params.data),
+    handler: async () => logger.info("Update entity called by AI"),
   },
   {
     name: "delete",
@@ -156,7 +160,14 @@ export const TOOLS: ITool[] = [
       },
       required: ["entity", "id"],
     },
-    handler: async params => deleteRecord(params.entity, params.id),
+    // handler: async params => deleteRecord(params.entity, params.id),
+    handler: async () => logger.info("Delete entity called by AI"),
+  },
+  {
+    name: "get_machine_states",
+    description: "Get live machine states",
+    inputSchema: {},
+    handler: async () => { },
   },
 ];
 

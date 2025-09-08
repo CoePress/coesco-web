@@ -26,6 +26,9 @@ const envSchema = z.object({
   FANUC_ADAPTER_HOST: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
 
+  OPENAI_API_KEY: z.string(),
+  ANTHROPIC_API_KEY: z.string(),
+
   ODBC_DRIVER: z.string().default("Progress OpenEdge 12.8 Driver"),
   PROSQL_USER: z.string().default("sqltst"),
   PROSQL_PASSWORD: z.string().default("password"),

@@ -71,7 +71,11 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
         </div>
           <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
             {location.pathname.startsWith("/chat") ? (
-              <ChatSidebar />
+              <ChatSidebar 
+                isOpen={isOpen} 
+                onTooltipMouseEnter={onTooltipMouseEnter}
+                onTooltipMouseLeave={onTooltipMouseLeave}
+              />
             ) : (
               <div className="flex flex-col gap-2">
                 {currentModule?.pages?.map((page) => {

@@ -87,19 +87,19 @@ export class SocketService {
         socket.leave(chatId);
       });
 
-      socket.on("message:send", async (payload, ack?: any) => {
+      socket.on("message:user", async (payload, ack?: any) => {
         try {
-          const { chatId, text } = payload;
-          if (!chatId || !text) {
-            ack?.({ ok: false, error: "Invalid payload" });
+          const { chatId, text, employeeId } = payload;
+          if (!chatId || !text || !employeeId) {
+            ack?.({ ok: false, error: "Missing required fields: chatId, text, employeeId" });
             return;
           }
 
-          const { userMsg, assistantMsg } = await agentService.receiveMessage(chatId, text);
-          chat.to(chatId).emit("message:new", userMsg);
-          chat.to(chatId).emit("message:new", assistantMsg);
+          const systemMessage = await agentService.processMessage(employeeId, chatId, text);
 
-          ack?.({ ok: true });
+          chat.to(chatId).emit("message:system", systemMessage);
+
+          ack?.({ ok: true, message: systemMessage });
         }
         catch (err) {
           logger.error(`Error processing message for socket ${socket.id}`, err);

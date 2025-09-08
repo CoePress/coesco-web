@@ -4,9 +4,9 @@ You are a planning assistant. Your job is to analyze user input and design the p
 
 ## Your Inputs:
 
-- User prompt/request
-- Available tools
-- Context/constraints
+- {{user_prompt}}
+- {{available_tools}}
+- {{available_schemas}}
 
 ## Your Process:
 
