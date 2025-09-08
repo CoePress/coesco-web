@@ -54,7 +54,7 @@ interface MigrationResult {
   errorDetails: Array<{ record: any; error: any }>;
 }
 
-async function closeDatabaseConnections() {
+export async function closeDatabaseConnections() {
   await mainDatabase.$disconnect();
   await legacyService.close();
 }
@@ -1416,7 +1416,10 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
-async function _migrateEmployees(): Promise<MigrationResult> {
+export async function _migrateEmployees(): Promise<MigrationResult> {
+  // Initialize legacy service if not already initialized
+  await legacyService.initialize();
+
   const userMapping: TableMapping = {
     sourceDatabase: "std",
     sourceTable: "Employee",
@@ -1573,7 +1576,6 @@ async function main() {
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
-    const employees = await _migrateEmployees();
     // const coilTypes = await _migrateCoilTypes();
     // const productClasses = await _migrateProductClasses();
     // const equipmentItems = await _migrateEquipListToItems();
@@ -1591,7 +1593,6 @@ async function main() {
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
-    logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
     // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
     // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
@@ -1614,4 +1615,6 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}

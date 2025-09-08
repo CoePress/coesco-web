@@ -1,6 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import { MachineControllerType, MachineType } from "@prisma/client";
 
+import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
@@ -76,6 +77,33 @@ const machines = [
   },
 ];
 
+async function seedEmployees() {
+  try {
+    const employeeCount = await prisma.employee.count();
+
+    if (employeeCount === 0) {
+      await _migrateEmployees();
+      await closeDatabaseConnections();
+      await microsoftService.sync();
+    }
+    else {
+      const usersWithoutEmployees = await prisma.user.findMany({
+        where: {
+          employee: null,
+          microsoftId: { not: null },
+        },
+      });
+
+      if (usersWithoutEmployees.length > 0) {
+        await microsoftService.sync();
+      }
+    }
+  }
+  catch (error) {
+    logger.error("Error during employee seeding:", error);
+  }
+}
+
 async function seedMachines() {
   try {
     for (const machine of machines) {
@@ -91,7 +119,6 @@ async function seedMachines() {
             updatedById: "system",
           },
         });
-        logger.info(`Machine ${machine.slug} created`);
       }
     }
   }
@@ -100,15 +127,21 @@ async function seedMachines() {
   }
 }
 
-async function seed() {
-  await microsoftService.sync();
+export async function seedDatabase() {
+  await seedEmployees();
   await seedMachines();
 
   logger.info("All seeding completed successfully");
-  process.exit(0);
 }
 
-seed().catch((error) => {
-  logger.error("Fatal error during seeding:", error);
-  process.exit(1);
-});
+// Only exit process if running as standalone script
+if (require.main === module) {
+  seedDatabase()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error("Fatal error during seeding:", error);
+      process.exit(1);
+    });
+}
