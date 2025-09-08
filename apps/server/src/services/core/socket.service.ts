@@ -95,7 +95,7 @@ export class SocketService {
             return;
           }
 
-          const { userMsg, assistantMsg } = await agentService.processMessage(chatId, text);
+          const { userMsg, assistantMsg } = await agentService.receiveMessage(chatId, text);
           chat.to(chatId).emit("message:new", userMsg);
           chat.to(chatId).emit("message:new", assistantMsg);
 

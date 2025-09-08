@@ -1,0 +1,354 @@
+{
+  "tools": [
+    {
+      "name": "get_all",
+      "description": "Get all records for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "filter": {
+            "type": [
+              "object",
+              "string"
+            ]
+          },
+          "search": {
+            "type": "string"
+          },
+          "searchFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dateFrom": {
+            "type": "string"
+          },
+          "dateTo": {
+            "type": "string"
+          },
+          "include": {
+            "type": [
+              "array",
+              "object",
+              "string"
+            ]
+          },
+          "select": {
+            "type": [
+              "array",
+              "object",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "entity"
+        ]
+      }
+    },
+    {
+      "name": "get_by_id",
+      "description": "Get record by ID for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "include": {
+            "type": [
+              "array",
+              "object",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "entity",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "create",
+      "description": "Create a new record for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "entity",
+          "data"
+        ]
+      }
+    },
+    {
+      "name": "update",
+      "description": "Update a record by ID for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "entity",
+          "id",
+          "data"
+        ]
+      }
+    },
+    {
+      "name": "delete",
+      "description": "Delete a record by ID for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity",
+          "id"
+        ]
+      }
+    }
+  ],
+  "schemas": [
+    {
+      "name": "address",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "audit-log",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "chat",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "coil-type",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "company",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "configuration",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "configuration-option",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "contact",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "draft",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "employee",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "item",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "journey",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "journey-interaction",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "machine",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "machine-status",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "message",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "ntfy-device",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-category",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-details",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-header",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-rule",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-rule-target",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "option-rule-trigger",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "performance-sheet",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "performance-sheet-link",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "performance-sheet-version",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "permission",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "permission-exception",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "product-class",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "product-class-option-category",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "quote-details",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "quote-header",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "quote-item",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "quote-note",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "quote-terms",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "role",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "role-assignment",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "role-permission",
+      "description": "",
+      "schema": {}
+    },
+    {
+      "name": "user",
+      "description": "",
+      "schema": {}
+    }
+  ]
+}
