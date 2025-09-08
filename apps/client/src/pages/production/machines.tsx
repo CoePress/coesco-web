@@ -61,7 +61,7 @@ const Machines = () => {
     },
   ];
 
-    const Actions = () => {
+  const Actions = () => {
     return (
       <div className="flex gap-2">
         <Button onClick={() => { }} variant="primary">
