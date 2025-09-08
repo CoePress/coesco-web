@@ -1,15 +1,16 @@
-import { Search, Wrench } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Search, Wrench, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import { Button, PageHeader, StatusBadge, Table, Select } from "@/components";
+import { Button, PageHeader, Table, Select } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 
 const Products = () => {
   const navigate = useNavigate();
-  const [productType, setProductType] = useState<'machines' | 'parts' | 'services'>('machines');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>('equipment');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     category: '',
@@ -17,6 +18,48 @@ const Products = () => {
     stock: '',
     priceRange: ''
   });
+
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type && ['parts', 'services'].includes(type)) {
+      setProductType(type as 'parts' | 'services');
+    } else {
+      setProductType('equipment');
+    }
+
+    const search = searchParams.get('search') || '';
+    setSearchQuery(search);
+  }, [searchParams]);
+
+  const handleProductTypeChange = (type: 'equipment' | 'parts' | 'services') => {
+    setProductType(type);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      if (type === 'equipment') {
+        newParams.delete('type');
+      } else {
+        newParams.set('type', type);
+      }
+      return newParams;
+    });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      if (value.trim()) {
+        newParams.set('search', value.trim());
+      } else {
+        newParams.delete('search');
+      }
+      return newParams;
+    });
+  };
+
+  const clearSearch = () => {
+    handleSearchChange('');
+  };
 
   const {
     entities: products,
@@ -61,23 +104,44 @@ const Products = () => {
         }
       />
 
-      <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
-        <div className="grid grid-cols-4 gap-2 flex-1 overflow-hidden">
+      <div className="p-2 flex flex-col flex-1 overflow-hidden">
+        <div className="grid grid-cols-5 gap-2 flex-1 overflow-hidden">
           <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border overflow-y-auto">
+            <div className="relative mb-2">
+              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-text-muted" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search products..."
+                className="block w-full pl-8 pr-8 py-1.5 border border-border rounded-sm leading-5 bg-surface placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-text-muted"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-text-muted hover:text-text"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             <div className="flex gap-1 mb-2 bg-surface p-1 rounded">
               <button
-                onClick={() => setProductType('machines')}
-                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
-                  productType === 'machines' 
+                onClick={() => handleProductTypeChange('equipment')}
+                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                  productType === 'equipment' 
                     ? 'bg-primary text-background' 
                     : 'text-text-muted hover:text-text'
                 }`}
               >
-                Machines
+                Equipment
               </button>
               <button
-                onClick={() => setProductType('parts')}
-                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
+                onClick={() => handleProductTypeChange('parts')}
+                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
                   productType === 'parts' 
                     ? 'bg-primary text-background' 
                     : 'text-text-muted hover:text-text'
@@ -86,8 +150,8 @@ const Products = () => {
                 Parts
               </button>
               <button
-                onClick={() => setProductType('services')}
-                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
+                onClick={() => handleProductTypeChange('services')}
+                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
                   productType === 'services' 
                     ? 'bg-primary text-background' 
                     : 'text-text-muted hover:text-text'
@@ -96,21 +160,8 @@ const Products = () => {
                 Services
               </button>
             </div>
-
-            <div className="relative mb-2">
-              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-text-muted" />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="block w-full pl-8 pr-2 py-1.5 border border-border rounded-sm leading-5 bg-surface placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-text-muted"
-              />
-            </div>
             
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
                 <label className="text-sm font-medium text-text-muted block mb-2">Category</label>
                 <Select
@@ -184,10 +235,10 @@ const Products = () => {
                 Clear Filters
               </Button>
 
-              {productType === 'machines' && (
+              {productType === 'equipment' && (
                 <Button 
                   variant="primary" 
-                  className="w-full mt-4"
+                  className="w-full mt-2"
                   onClick={() => navigate('/sales/products/configuration-builder')}
                 >
                   <Wrench size={16} />
@@ -197,7 +248,7 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="col-span-3 overflow-hidden">
+          <div className="col-span-4 overflow-hidden">
             <Table
               columns={columns}
               data={products || []}
