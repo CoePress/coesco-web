@@ -1,24 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { X, Home, Sun, Moon, ChevronsRight } from "lucide-react";
+import { Home, Sun, Moon, ChevronsRight } from "lucide-react";
 
 import modules from "@/config/modules";
 import { useTheme } from "@/contexts/theme.context";
-import Button from "../ui/button";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
-import { useAuth } from "@/contexts/auth.context";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../_old/command-bar";
 
 type SidebarProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onTooltipMouseEnter: (e: React.MouseEvent, text: string) => void;
+  onTooltipMouseLeave: () => void;
 };
 
-const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
+const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -44,27 +45,31 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   return (
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${
-        isOpen ? "w-60 border-l" : "w-0"
+        isOpen ? "w-60" : "w-[50px]"
       } md:relative absolute z-50`}>
-      <div
-        className={`flex flex-col h-full transition-opacity duration-300 ${
-          isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
+      <div className="flex flex-col h-full">
+        <div className={`flex items-center h-[57px] border-b border-border px-2 ${
+          isOpen ? "justify-between" : "justify-center"
         }`}>
-        <div className="flex items-center justify-center h-[57px] border-b border-border relative">
-          <h1
-            className={`text-xl font-semibold text-primary ${
-              isOpen ? "opacity-100" : "opacity-0"
+          {isOpen && (
+            <h1 className="text-xl font-semibold text-primary">
+              {sidebarLabel}
+            </h1>
+          )}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`flex justify-center items-center p-2 rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer ${
+              isOpen ? "" : "w-full"
             }`}>
-            {sidebarLabel}
-          </h1>
-          <Button
-            variant="ghost"
-            onClick={() => setIsOpen(false)}
-            className="absolute right-4 md:hidden">
-            <X size={16} />
-          </Button>
+            <ChevronsRight
+              size={20}
+              className={`transition-transform duration-200 shrink-0 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
         </div>
-          <nav className="flex-1 overflow-y-auto p-2">
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
             {location.pathname.startsWith("/chat") ? (
               <ChatSidebar />
             ) : (
@@ -75,21 +80,48 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                     <Link
                       key={page.slug || "index"}
                       to={trimmer(fullPath)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded ${
-                        isOpen ? "opacity-100" : "opacity-0"
-                      } ${
+                      onMouseEnter={(e) => onTooltipMouseEnter(e, page.label)}
+                      onMouseLeave={onTooltipMouseLeave}
+                      className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
                         isActive(fullPath)
                           ? "bg-background text-primary"
                           : "text-text-muted hover:bg-surface"
                       }`}>
-                      {page.icon && <page.icon size={18} />}
-                      <span className="font-medium text-sm">{page.label}</span>
+                      {page.icon && <page.icon size={18} className="flex-shrink-0" />}
+                      <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                        isOpen ? "opacity-100" : "opacity-0"
+                      }`}>{page.label}</span>
                     </Link>
                   );
                 })}
               </div>
             )}
           </nav>
+          
+          <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
+            <button
+              onClick={toggleTheme}
+              onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
+              onMouseLeave={onTooltipMouseLeave}
+              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
+              {theme === "dark" ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
+              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                isOpen ? "opacity-100" : "opacity-0"
+              }`}>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+            </button>
+
+            <Link
+              key="main-menu"
+              to="/"
+              onMouseEnter={(e) => onTooltipMouseEnter(e, "Main Menu")}
+              onMouseLeave={onTooltipMouseLeave}
+              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
+              <Home size={18} className="flex-shrink-0" />
+              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                isOpen ? "opacity-100" : "opacity-0"
+              }`}>Main Menu</span>
+            </Link>
+          </div>
       </div>
     </div>
   );
@@ -101,14 +133,25 @@ type LayoutProps = {
 
 const Layout = ({ children }: LayoutProps) => {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{text: string, rect: DOMRect} | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
 
-  const { theme, toggleTheme } = useTheme();
+  const { toggleTheme } = useTheme();
 
   const { sidebarExpanded, toggleSidebar } = useAppContext();
+
+  const handleTooltipMouseEnter = (e: React.MouseEvent, text: string) => {
+    if (!sidebarExpanded) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setHoveredTooltip({ text, rect });
+    }
+  };
+
+  const handleTooltipMouseLeave = () => {
+    setHoveredTooltip(null);
+  };
 
   const handleCommandNavigation = (path: string) => {
     navigate(path);
@@ -201,67 +244,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
-      <div className="bg-foreground hidden md:flex flex-col">
-        <div className="flex items-center justify-center h-[57px] border-b border-border px-2">
-          <img
-            src="/images/logo-text.png"
-            alt="logo"
-            className="w-full object-contain max-w-12"
-          />
-        </div>
-        <div className="flex flex-col justify-between flex-1">
-          <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-            <button
-              onClick={toggleSidebar}
-              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
-              <ChevronsRight
-                size={20}
-                className={`transition-transform duration-200 ${
-                  sidebarExpanded ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {modules
-              .filter((module) => {
-                if (module.slug === "admin" && user?.role !== "ADMIN") {
-                  return false;
-                }
-                return true;
-              })
-              .map((module) => (
-                <Link
-                  key={module.slug}
-                  to={`/${module.slug}`}
-                  className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${
-                    location.pathname.startsWith(`/${module.slug}`)
-                      ? "bg-background text-primary"
-                      : "text-text-muted hover:bg-surface"
-                  }`}>
-                  <module.icon size={18} />
-                </Link>
-              ))}
-          </div>
-
-          <div className="flex flex-col items-center justify-center px-2 gap-2 py-2">
-            <button
-              onClick={toggleTheme}
-              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            <Link
-              key="main-menu"
-              to="/"
-              className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:bg-surface">
-              <Home size={18} />
-            </Link>
-          </div>
-        </div>
-      </div>
-
       <Sidebar
         isOpen={sidebarExpanded}
         setIsOpen={toggleSidebar}
+        onTooltipMouseEnter={handleTooltipMouseEnter}
+        onTooltipMouseLeave={handleTooltipMouseLeave}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         {isCommandBarOpen && (
@@ -280,6 +267,18 @@ const Layout = ({ children }: LayoutProps) => {
 
         <div className="flex-1 flex flex-col overflow-auto">{children}</div>
       </div>
+      
+      {hoveredTooltip && (
+        <div
+          className="fixed px-2 py-1 bg-surface border border-border text-text text-xs rounded whitespace-nowrap z-[999] pointer-events-none shadow-lg"
+          style={{
+            left: hoveredTooltip.rect.right + 8,
+            top: hoveredTooltip.rect.top + hoveredTooltip.rect.height / 2,
+            transform: 'translateY(-50%)'
+          }}>
+          {hoveredTooltip.text}
+        </div>
+      )}
     </div>
   );
 };
