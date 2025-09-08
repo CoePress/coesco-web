@@ -2,6 +2,7 @@ import { Button } from "@/components";
 import AddressAutocomplete from "@/components/_old/address-input";
 import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useToast } from "@/contexts/toast.context";
 
 // Type definitions
 interface Location {
@@ -57,6 +58,7 @@ const Sandbox = () => {
   const [markers, setMarkers] = useState<any[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
   const { notify } = useNotifications();
+  const { success, error, warning, info } = useToast();
 
   const GOOGLE_API_KEY = "AIzaSyAggNUxlA-WkP5yvP_l3kCIQckeQBPEyOU";
 
@@ -341,7 +343,53 @@ const Sandbox = () => {
               <strong>Selected:</strong> {selectedAddress.formatted_address}
             </div>
           )}
-          <Button onClick={notifyMe}>Notify Me</Button>
+        </div>
+
+        {/* Toast Testing Section */}
+        <div
+          className="bg-foreground rounded-lg p-4"
+          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+          <h3 className="text-lg font-semibold text-text mb-4">
+            Toast Testing
+          </h3>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <Button
+              onClick={() => success("Operation completed successfully!")}
+              variant="primary"
+              size="sm">
+              Success
+            </Button>
+            <Button
+              onClick={() => error("Something went wrong!")}
+              variant="destructive"
+              size="sm">
+              Error
+            </Button>
+            <Button
+              onClick={() => warning("Please check your input!")}
+              variant="secondary"
+              size="sm">
+              Warning
+            </Button>
+            <Button
+              onClick={() => info("Here's some helpful information.")}
+              variant="ghost"
+              size="sm">
+              Info
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => success("This is a toast with a title!", { title: "Success!" })}
+              variant="primary-outline"
+              size="sm"
+              className="flex-1">
+              With Title
+            </Button>
+            <Button onClick={notifyMe} variant="secondary-outline" size="sm" className="flex-1">
+              Browser Notification
+            </Button>
+          </div>
         </div>
 
         {/* Location Tracking Section */}

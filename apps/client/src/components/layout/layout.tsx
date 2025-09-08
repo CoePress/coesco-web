@@ -8,6 +8,8 @@ import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../_old/command-bar";
+import ToastContainer from "@/components/ui/toast-container";
+import { useToast } from "@/contexts/toast.context";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -143,8 +145,8 @@ const Layout = ({ children }: LayoutProps) => {
   const commandBarRef = useRef<HTMLDivElement>(null);
 
   const { toggleTheme } = useTheme();
-
   const { sidebarExpanded, toggleSidebar } = useAppContext();
+  const { toasts, removeToast } = useToast();
 
   const handleTooltipMouseEnter = (e: React.MouseEvent, text: string) => {
     if (!sidebarExpanded) {
@@ -283,6 +285,12 @@ const Layout = ({ children }: LayoutProps) => {
           {hoveredTooltip.text}
         </div>
       )}
+      
+      <ToastContainer 
+        toasts={toasts} 
+        onRemoveToast={removeToast}
+        position="bottom-right" 
+      />
     </div>
   );
 };

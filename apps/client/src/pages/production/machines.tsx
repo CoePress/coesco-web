@@ -1,5 +1,6 @@
 import { Button, Loader, PageHeader, Table } from "@/components";
 import { TableColumn } from "@/components/ui/table";
+import StatusBadge from "@/components/ui/status-badge";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -44,7 +45,10 @@ const Machines = () => {
       key: "enabled",
       header: "Status",
       render: (_, row) => (
-        row.enabled ? <div className="text-success">Enabled</div> : <div className="text-error">Disabled</div>
+        <StatusBadge 
+          label={row.enabled ? "Enabled" : "Disabled"}
+          variant={row.enabled ? "success" : "default"}
+        />
       )
     },
     {
