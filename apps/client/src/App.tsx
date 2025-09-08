@@ -6,7 +6,7 @@ import MainMenu from "./pages/main-menu";
 import NotFound from "./pages/not-found";
 import Login from "./pages/login";
 import ChatPage from "./pages/utility/chat";
-import { Resources } from "./pages";
+import { RecentChats, Resources } from "./pages";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -85,6 +85,10 @@ const App = () => {
         <Route
           path="/chat/resources"
           element={<Resources />}
+        />
+        <Route
+          path="/chat/all"
+          element={<RecentChats />}
         />
         <Route
           path="/chat/c/:id"

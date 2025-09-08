@@ -125,7 +125,7 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
           onClick={() => navigate("/chat")}
           onMouseEnter={(e) => onTooltipMouseEnter?.(e, "New Chat")}
           onMouseLeave={onTooltipMouseLeave}
-          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
+          className="flex items-center gap-3 p-2 rounded transition-all duration-300 hover:bg-primary/75 w-full cursor-pointer bg-primary text-background"
         >
           <Plus size={18} className="flex-shrink-0" />
           <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
@@ -133,26 +133,34 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
           }`}>New Chat</span>
         </button>
         <button
-          onClick={() => navigate("/chat/resources")}
-          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Resources")}
-          onMouseLeave={onTooltipMouseLeave}
-          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
-        >
-          <FileText size={18} className="flex-shrink-0" />
-          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
-            isOpen ? "opacity-100" : "opacity-0"
-          }`}>Resources</span>
-        </button>
-        <button
-          onClick={() => navigate("/chat")}
+          onClick={() => navigate("/chat/all")}
           onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Chats")}
           onMouseLeave={onTooltipMouseLeave}
-          className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full cursor-pointer"
+          className={`flex items-center gap-3 p-2 rounded transition-all duration-300 w-full cursor-pointer ${
+            trimmer(location.pathname) === "/chat/all"
+              ? "bg-background text-primary"
+              : "text-text-muted hover:bg-surface"
+          }`}
         >
           <MessageCircle size={18} className="flex-shrink-0" />
           <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
             isOpen ? "opacity-100" : "opacity-0"
           }`}>Chats</span>
+        </button>
+        <button
+          onClick={() => navigate("/chat/resources")}
+          onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Resources")}
+          onMouseLeave={onTooltipMouseLeave}
+          className={`flex items-center gap-3 p-2 rounded transition-all duration-300 w-full cursor-pointer ${
+            trimmer(location.pathname) === "/chat/resources"
+              ? "bg-background text-primary"
+              : "text-text-muted hover:bg-surface"
+          }`}
+        >
+          <FileText size={18} className="flex-shrink-0" />
+          <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}>Resources</span>
         </button>
 
         {isOpen && (

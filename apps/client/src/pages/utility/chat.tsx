@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth.context";
 import ThemeToggle from "@/components/feature/theme-toggle";
 import MessageBox from "@/components/_old/message-box";
 import { IApiResponse } from "@/utils/types";
+import { CircleAlertIcon } from "lucide-react";
 
 type Message = {
   id: string;
@@ -204,70 +205,80 @@ export default function ChatPage() {
 
         {/* Content */}
         {selectedChatId ? (
-          <>
-            <div className="flex-1 overflow-y-auto p-4" id="messages-container">
-              <div className="mx-auto max-w-5xl">
-                <div className="mb-2 text-xs text-text-muted text-center">
-                  Chat ID: {selectedChatId} • Socket: {isSocketConnected ? "connected" : "disconnected"}
+          !messagesLoading && !messagesError && orderedMessages.length === 0 ? (
+            <div className="flex-1 p-2 flex items-center justify-center">
+              <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
+                
+                <div>
+                  <p className="font-semibold flex gap justify-center"><CircleAlertIcon className="mr-2" size={18} />Chat not found</p>
+                  <p className="text-center">The chat you're looking for doesn't exist or has been deleted.</p>
                 </div>
+              </div>
+            </div>
+          ) : (
+            // Chat exists or loading - show normal chat interface
+            <>
+              <div className="flex-1 overflow-y-auto p-4" id="messages-container">
+                <div className="mx-auto max-w-5xl">
+                  <div className="mb-2 text-xs text-text-muted text-center">
+                    Chat ID: {selectedChatId} • Socket: {isSocketConnected ? "connected" : "disconnected"}
+                  </div>
 
-                {messagesLoading && <div className="px-3 py-2 text-text-muted">Loading messages…</div>}
-                {!messagesLoading && messagesError && (
-                  <div className="px-3 py-2 text-red-600">Error: {messagesError}</div>
-                )}
-                {!messagesLoading && !messagesError && orderedMessages.length === 0 && (
-                  <div className="px-3 py-2 text-text-muted">No messages yet.</div>
-                )}
+                  {messagesLoading && <div className="px-3 py-2 text-text-muted">Loading messages…</div>}
+                  {!messagesLoading && messagesError && (
+                    <div className="px-3 py-2 text-red-600">Error: {messagesError}</div>
+                  )}
 
-                {!messagesLoading &&
-                  !messagesError &&
-                  orderedMessages.map((m) => {
-                    const isSelf = m.role === "user";
-                    const bubbleSide = isSelf ? "chat-end" : "chat-start";
-                    const initials = isSelf
-                      ? `${employee?.firstName?.[0] ?? ""}${employee?.lastName?.[0] ?? ""}`
-                      : "AI";
+                  {!messagesLoading &&
+                    !messagesError &&
+                    orderedMessages.map((m) => {
+                      const isSelf = m.role === "user";
+                      const bubbleSide = isSelf ? "chat-end" : "chat-start";
+                      const initials = isSelf
+                        ? `${employee?.firstName?.[0] ?? ""}${employee?.lastName?.[0] ?? ""}`
+                        : "AI";
 
-                    return (
-                      <div key={m.id} className={`chat ${bubbleSide}`}>
-                        <div className="chat-image text-center flex items-center justify-center">
-                          <div className="w-9 h-9 rounded-full border bg-background grid place-items-center">
-                            <span className="text-xs font-semibold">{initials}</span>
+                      return (
+                        <div key={m.id} className={`chat ${bubbleSide}`}>
+                          <div className="chat-image text-center flex items-center justify-center">
+                            <div className="w-9 h-9 rounded-full border bg-background grid place-items-center">
+                              <span className="text-xs font-semibold">{initials}</span>
+                            </div>
+                          </div>
+
+                          <div className="chat-header flex items-center gap-2">
+                            {isSelf ? "You" : "Assistant"}
+                            <time className="text-xs opacity-50">
+                              {new Date(m.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </time>
+                          </div>
+
+                          <div
+                            className={`chat-bubble text-sm text-text ${
+                              isSelf ? "bg-surface" : "bg-foreground"
+                            }`}
+                          >
+                            {m.content}
                           </div>
                         </div>
+                      );
+                    })}
 
-                        <div className="chat-header flex items-center gap-2">
-                          {isSelf ? "You" : "Assistant"}
-                          <time className="text-xs opacity-50">
-                            {new Date(m.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </time>
-                        </div>
-
-                        <div
-                          className={`chat-bubble text-sm text-text ${
-                            isSelf ? "bg-surface" : "bg-foreground"
-                          }`}
-                        >
-                          {m.content}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
-            </div>
 
-            {/* Composer pinned at bottom when a chat is selected */}
-            <div className="sticky bottom-0 border-t bg-foreground p-4">
-              <div className="mx-auto max-w-5xl">
-                <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+              {/* Composer pinned at bottom when a chat is selected */}
+              <div className="sticky bottom-0 border-t bg-foreground p-4">
+                <div className="mx-auto max-w-5xl">
+                  <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+                </div>
               </div>
-            </div>
-          </>
+            </>
+          )
         ) : (
           // No chat selected: show MessageBox centered
           <div className="flex-1 p-4 flex items-center justify-center">
