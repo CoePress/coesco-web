@@ -1,8 +1,8 @@
 import type { NtfyDevice } from "@prisma/client";
 
 import axios from "axios";
-import ping from "ping";
 
+import { pingHost } from "@/utils";
 import { logger } from "@/utils/logger";
 
 import { ntfyDeviceService } from "../repository";
@@ -12,7 +12,6 @@ export class DeviceService {
   private isMonitoring = false;
   private defaultTopic = "deez_nuts";
 
-  // Ping Operations
   async pingDevice(deviceId: string): Promise<boolean> {
     const device = await ntfyDeviceService.getById(deviceId);
     if (!device.success || !device.data) {
@@ -20,10 +19,7 @@ export class DeviceService {
     }
 
     try {
-      const res = await ping.promise.probe(device.data.host, {
-        timeout: 5, // seconds
-      });
-
+      const res = await pingHost(device.data.host, 5);
       const isAlive = res.alive;
 
       await ntfyDeviceService.update(deviceId, {
@@ -63,7 +59,6 @@ export class DeviceService {
     await Promise.all(promises);
   }
 
-  // Status Management
   async handlePingSuccess(deviceId: string): Promise<void> {
     const device = await ntfyDeviceService.getById(deviceId);
     if (!device.success || !device.data)
@@ -99,7 +94,6 @@ export class DeviceService {
     }
   }
 
-  // Notification System
   async sendDownAlert(deviceId: string): Promise<void> {
     const device = await ntfyDeviceService.getById(deviceId);
     if (!device.success || !device.data)
@@ -126,13 +120,11 @@ export class DeviceService {
     });
   }
 
-  // Test notification method
   async sendTestNotification(message?: string): Promise<void> {
     const testMessage = message || `🧪 Test notification from CP Status Monitor - ${new Date().toISOString()}`;
     await this.sendToNtfy(this.defaultTopic, testMessage);
   }
 
-  // Monitoring Control
   async initialize(): Promise<void> {
     if (this.isMonitoring)
       return;

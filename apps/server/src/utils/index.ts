@@ -7,6 +7,9 @@ import {
   parse,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import { exec } from "node:child_process";
+import { platform } from "node:os";
+import { promisify } from "node:util";
 
 import type { IDateRange, IQueryParams } from "@/types";
 
@@ -149,7 +152,6 @@ export function asyncWrapper(controller: AsyncController) {
     try {
       const result = await controller(req, res, next);
 
-      // Only send response if controller didn't handle it manually
       if (!res.headersSent && result !== undefined) {
         res.json(result);
       }
@@ -158,4 +160,28 @@ export function asyncWrapper(controller: AsyncController) {
       next(error);
     }
   };
+}
+
+const execAsync = promisify(exec);
+
+interface PingResult {
+  alive: boolean;
+  time?: number;
+}
+
+export async function pingHost(host: string, timeoutSeconds: number = 5): Promise<PingResult> {
+  try {
+    const isWindows = platform() === "win32";
+    const command = isWindows
+      ? `ping -n 1 -w ${timeoutSeconds * 1000} ${host}`
+      : `ping -c 1 -W ${timeoutSeconds} ${host}`;
+
+    const { stdout } = await execAsync(command);
+    const timeMatch = stdout.match(/time[<=](\d+(?:\.\d+)?)/i);
+    const time = timeMatch ? Number.parseFloat(timeMatch[1]) : undefined;
+    return { alive: true, time };
+  }
+  catch {
+    return { alive: false };
+  }
 }
