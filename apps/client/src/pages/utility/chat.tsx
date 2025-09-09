@@ -4,8 +4,8 @@ import { io, Socket } from "socket.io-client";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import PageHeader from "@/components/layout/page-header";
-import ThemeToggle from "@/components/feature/theme-toggle";
 import MessageBox from "@/components/_old/message-box";
+import Loader from "@/components/ui/loader";
 import { IApiResponse } from "@/utils/types";
 import { CircleAlertIcon } from "lucide-react";
 
@@ -21,7 +21,8 @@ type Message = {
 };
 
 export default function ChatPage() {
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const { id: routeId } = useParams<{ id?: string }>();
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(routeId ?? null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
@@ -29,10 +30,9 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const { employee } = useAuth();
-  const { id: routeId } = useParams<{ id?: string }>();
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(!!routeId);
   const [messagesError, setMessagesError] = useState<string | null>(null);
   
   const { get } = useApi<IApiResponse<Message[]>>();
@@ -40,6 +40,7 @@ export default function ChatPage() {
   const fetchMessages = async (showLoading = true) => {
     if (!selectedChatId) {
       setMessages([]);
+      setMessagesLoading(false);
       return;
     }
 
@@ -69,9 +70,6 @@ export default function ChatPage() {
   const displayMessages = useMemo(() => {
     return (messages ?? []).slice().reverse();
   }, [messages]);
-
-  const initials =
-    ((employee?.firstName?.[0] ?? "") + (employee?.lastName?.[0] ?? "")).toUpperCase() || "??";
 
   const handleSend = async (payload: { message: string; files: File[]; audio?: Blob }) => {
     const chatId = selectedChatId;
@@ -149,7 +147,6 @@ export default function ChatPage() {
     socket.on("chat:url-update", ({ chatId }) => {
       window.history.pushState(null, '', `/chat/c/${chatId}`);
       setSelectedChatId(chatId);
-      // Dispatch custom event to trigger sidebar refresh
       window.dispatchEvent(new CustomEvent('chat:created', { detail: { chatId } }));
     });
 
@@ -222,7 +219,7 @@ export default function ChatPage() {
                 />
               ) : (
                 <div className="h-9 w-9 rounded grid place-items-center border text-sm font-medium">
-                  {initials}
+                  {employee.initials}
                 </div>
               )}
             </div>
@@ -230,16 +227,11 @@ export default function ChatPage() {
         />
 
         {selectedChatId ? (
-          !messagesLoading && !messagesError && displayMessages.length === 0 ? (
-            <div className="flex-1 p-2 flex items-center justify-center">
-              <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
-                <div>
-                  <p className="font-semibold flex gap justify-center"><CircleAlertIcon className="mr-2" size={18} />Chat not found</p>
-                  <p className="text-center">The chat you're looking for doesn't exist or has been deleted.</p>
-                </div>
-              </div>
+          messagesLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader />
             </div>
-          ) : !messagesLoading && messagesError ? (
+          ) : messagesError || displayMessages.length === 0 ? (
             <div className="flex-1 p-2 flex items-center justify-center">
               <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
                 <div>
@@ -256,60 +248,51 @@ export default function ChatPage() {
                     Socket: {isSocketConnected ? "connected" : "disconnected"}
                   </div>
 
-                  {messagesLoading && <div className="px-3 py-2 text-text-muted">Loading messages…</div>}
-                  {!messagesLoading && messagesError && (
-                    <div className="px-3 py-2 text-red-600">Error: {messagesError}</div>
-                  )}
+                  {displayMessages.map((m) => {
+                    const isSelf = m.role === "user";
+                    const bubbleSide = isSelf ? "chat-end" : "chat-start";
+                    const initials = isSelf
+                      ? `${employee?.firstName?.[0] ?? ""}${employee?.lastName?.[0] ?? ""}`
+                      : "AI";
 
-                  {!messagesLoading &&
-                    !messagesError &&
-                    displayMessages.map((m) => {
-                      const isSelf = m.role === "user";
-                      const bubbleSide = isSelf ? "chat-end" : "chat-start";
-                      const initials = isSelf
-                        ? `${employee?.firstName?.[0] ?? ""}${employee?.lastName?.[0] ?? ""}`
-                        : "AI";
-
-                      return (
-                        <div key={m.id} className={`chat ${bubbleSide}`}>
-                          <div className="chat-image text-center flex items-center justify-center">
-                            <div className="w-9 h-9 rounded-full border bg-background grid place-items-center">
-                              <span className="text-xs font-semibold">{initials}</span>
-                            </div>
-                          </div>
-
-                          <div className="chat-header flex items-center gap-2">
-                            {isSelf ? "You" : "Assistant"}
-                            <time className="text-xs opacity-50">
-                              {new Date(m.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </time>
-                          </div>
-
-                          <div
-                            className={`chat-bubble text-sm text-text ${
-                              isSelf ? "bg-surface" : "bg-foreground"
-                            }`}
-                          >
-                            {m.content}
+                    return (
+                      <div key={m.id} className={`chat ${bubbleSide}`}>
+                        <div className="chat-image text-center flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-full border bg-background grid place-items-center">
+                            <span className="text-xs font-semibold">{initials}</span>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        <div className="chat-header flex items-center gap-2">
+                          {isSelf ? "You" : "Assistant"}
+                          <time className="text-xs opacity-50">
+                            {new Date(m.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </time>
+                        </div>
+
+                        <div
+                          className={`chat-bubble text-sm text-text ${
+                            isSelf ? "bg-surface" : "bg-foreground"
+                          }`}
+                        >
+                          {m.content}
+                        </div>
+                      </div>
+                    );
+                  })}
 
                   <div ref={messagesEndRef} />
                 </div>
               </div>
 
-              {!messagesLoading && (
-                <div className="sticky bottom-2">
-                  <div className="mx-auto max-w-5xl">
-                    <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" disabled={isSending} />
-                  </div>
+              <div className="sticky bottom-2">
+                <div className="mx-auto max-w-5xl">
+                  <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" disabled={isSending} />
                 </div>
-              )}
+              </div>
             </>
           )
         ) : (

@@ -57,13 +57,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const response = await get("/auth/session");
         
-        // Handle both IApiResponse format and direct format
         if (response?.success && response.data) {
-          // IApiResponse format
           setUserState(response.data.user);
           setEmployeeState(response.data.employee);
         } else if (response?.user && response?.employee) {
-          // Direct format (legacy)
           setUserState(response.user);
           setEmployeeState(response.employee);
         } else {
