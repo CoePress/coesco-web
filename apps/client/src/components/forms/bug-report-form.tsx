@@ -4,9 +4,10 @@ import { Button } from "@/components";
 type BugReportFormProps = {
   onSubmit: (data: { title: string; description: string; email?: string }) => void;
   onCancel: () => void;
+  screenshot?: string | null;
 };
 
-const BugReportForm = ({ onSubmit, onCancel }: BugReportFormProps) => {
+const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
@@ -67,6 +68,21 @@ const BugReportForm = ({ onSubmit, onCancel }: BugReportFormProps) => {
           className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
+
+      {screenshot && (
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text">
+            Screenshot
+          </label>
+          <div className="border border-border rounded overflow-hidden">
+            <img 
+              src={screenshot} 
+              alt="Screenshot" 
+              className="w-full h-auto object-contain bg-surface"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 justify-end pt-2">
         <Button

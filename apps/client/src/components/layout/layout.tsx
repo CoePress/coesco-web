@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Moon, ChevronsRight, BugIcon } from "lucide-react";
+import { Home, Sun, Moon, ChevronsRight, BugIcon, Loader2 } from "lucide-react";
+import * as htmlToImage from "html-to-image";
 
 import modules from "@/config/modules";
 import { useTheme } from "@/contexts/theme.context";
@@ -18,13 +19,16 @@ type SidebarProps = {
   setIsOpen: (isOpen: boolean) => void;
   onTooltipMouseEnter: (e: React.MouseEvent, text: string) => void;
   onTooltipMouseLeave: () => void;
+  screenshotAreaRef: React.RefObject<HTMLDivElement>;
 };
 
-const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }: SidebarProps) => {
+const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, screenshotAreaRef }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -109,11 +113,28 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
           
           <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
             <button
-              onClick={() => setIsBugModalOpen(true)}
+              onClick={async () => {
+                try {
+                  if (!screenshotAreaRef.current) return;
+                  setIsCapturing(true);
+                  const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
+                  setScreenshot(dataUrl);
+                } catch (error) {
+                  console.warn('Screenshot failed:', error);
+                  setScreenshot(null);
+                } finally {
+                  setIsCapturing(false);
+                }
+                setIsBugModalOpen(true);
+              }}
               onMouseEnter={(e) => onTooltipMouseEnter(e, "Report Bug")}
               onMouseLeave={onTooltipMouseLeave}
               className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
-              <BugIcon size={18} className="flex-shrink-0"  />
+              {isCapturing ? (
+                <Loader2 size={18} className="flex-shrink-0 animate-spin" />
+              ) : (
+                <BugIcon size={18} className="flex-shrink-0" />
+              )}
               <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
                 isOpen ? "opacity-100" : "opacity-0"
               }`}>Report Bug</span>
@@ -153,6 +174,7 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
         <BugReportForm
           onSubmit={() => {}}
           onCancel={() => setIsBugModalOpen(false)}
+          screenshot={screenshot}
         />
       </Modal>
     </div>
@@ -169,6 +191,7 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
+  const screenshotAreaRef = useRef<HTMLDivElement>(null);
 
   const { toggleTheme } = useTheme();
   const { sidebarExpanded, toggleSidebar } = useAppContext();
@@ -275,12 +298,13 @@ const Layout = ({ children }: LayoutProps) => {
   const defaultModule = currentModule?.slug || "production";
 
   return (
-    <div className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
+    <div ref={screenshotAreaRef} className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
       <Sidebar
         isOpen={sidebarExpanded}
         setIsOpen={toggleSidebar}
         onTooltipMouseEnter={handleTooltipMouseEnter}
         onTooltipMouseLeave={handleTooltipMouseLeave}
+        screenshotAreaRef={screenshotAreaRef}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         {isCommandBarOpen && (
