@@ -22,7 +22,6 @@ type Message = {
 export default function ChatPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
-  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
 
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -33,45 +32,39 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState<string | null>(null);
-  const [refreshToggle, setRefreshToggle] = useState(false);
   
   const { get } = useApi<IApiResponse<Message[]>>();
   
-  const refreshMessages = () => setRefreshToggle(prev => !prev);
-  
-  useEffect(() => {
+  const fetchMessages = async () => {
     if (!selectedChatId) {
       setMessages([]);
       return;
     }
 
-    const fetchMessages = async () => {
-      setMessagesLoading(true);
-      setMessagesError(null);
-      
-      const response = await get(`/chat/${selectedChatId}/messages`, {
-        sort: "createdAt",
-        order: "desc",
-        page: 1,
-        limit: 30,
-      });
+    setMessagesLoading(true);
+    setMessagesError(null);
+    
+    const response = await get(`/chat/${selectedChatId}/messages`, {
+      page: 1,
+      limit: 25,
+    });
 
-      if (response?.success) {
-        setMessages(response.data || []);
-      } else {
-        setMessagesError(response?.error || "Failed to load messages");
-      }
-      
-      setMessagesLoading(false);
-    };
+    if (response?.success) {
+      setMessages(response.data || []);
+    } else {
+      setMessagesError(response?.error || "Failed to load messages");
+    }
+    
+    setMessagesLoading(false);
+  };
 
+  useEffect(() => {
     fetchMessages();
-  }, [selectedChatId, refreshToggle]);
+  }, [selectedChatId]);
 
-  const orderedMessages = useMemo(() => {
-    const base = (messages ?? []).slice().reverse();
-    return [...base, ...liveMessages];
-  }, [messages, liveMessages]);
+  const displayMessages = useMemo(() => {
+    return (messages ?? []).slice().reverse();
+  }, [messages]);
 
   const initials =
     ((employee?.firstName?.[0] ?? "") + (employee?.lastName?.[0] ?? "")).toUpperCase() || "??";
@@ -81,9 +74,29 @@ export default function ChatPage() {
 
     const socket = socketRef.current;
     if (socket && socket.connected) {
-      socket.emit("message:user", { employeeId: employee.id, chatId, message: payload.message }, (ack?: { ok?: boolean }) => {
-        if (!ack?.ok) {
+      const tempUserMessage: Message = {
+        id: `temp-${Date.now()}`,
+        chatId: chatId || '',
+        role: "user",
+        content: payload.message,
+        createdAt: new Date().toISOString(),
+        createdById: employee.id,
+      };
+      
+      // Add temp message to messages immediately
+      setMessages(prev => [tempUserMessage, ...prev]);
+      
+      socket.emit("message:user", { employeeId: employee.id, chatId, message: payload.message }, (ack?: { ok?: boolean; chatId?: string }) => {
+        if (ack?.ok) {
+          if (ack.chatId && ack.chatId !== selectedChatId) {
+            setSelectedChatId(ack.chatId);
+          } else {
+            fetchMessages();
+          }
+        } else {
           console.warn("message:user not acknowledged");
+          // Remove temp message on failure
+          setMessages(prev => prev.filter(m => m.id !== tempUserMessage.id));
         }
       });
     } else {
@@ -108,7 +121,7 @@ export default function ChatPage() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [orderedMessages]);
+  }, [displayMessages]);
 
   // Socket setup
   useEffect(() => {
@@ -135,6 +148,7 @@ export default function ChatPage() {
 
     socket.on("chat:url-update", ({ chatId }) => {
       window.history.pushState(null, '', `/chat/c/${chatId}`);
+      setSelectedChatId(chatId);
     });
 
 
@@ -164,18 +178,29 @@ export default function ChatPage() {
     const socket = socketRef.current;
     if (!socket) return;
 
-    const onMessageNew = (msg: Message) => {
-      if (msg.chatId === selectedChatId) {
-        setLiveMessages((prev) => [...prev, msg]);
-        refreshMessages();
-      }
+    const onSystemMessage = (content: string) => {
+      const tempSystemMessage: Message = {
+        id: `temp-system-${Date.now()}`,
+        chatId: selectedChatId || '',
+        role: "assistant",
+        content,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Add system message temporarily
+      setMessages(prev => [tempSystemMessage, ...prev]);
+      
+      // Refresh to get the real message from server
+      setTimeout(() => {
+        fetchMessages();
+      }, 100);
     };
 
-    socket.on("message:new", onMessageNew);
+    socket.on("message:system", onSystemMessage);
     return () => {
-      socket.off("message:new", onMessageNew);
+      socket.off("message:system", onSystemMessage);
     };
-  }, [selectedChatId, refreshMessages]);
+  }, [selectedChatId]);
 
   return (
     <div className="min-h-[100dvh] bg-background text-text flex">
@@ -208,10 +233,18 @@ export default function ChatPage() {
         </header>
 
         {selectedChatId ? (
-          !messagesLoading && !messagesError && orderedMessages.length === 0 ? (
+          !messagesLoading && !messagesError && displayMessages.length === 0 ? (
             <div className="flex-1 p-2 flex items-center justify-center">
               <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
-                
+                <div>
+                  <p className="font-semibold flex gap justify-center"><CircleAlertIcon className="mr-2" size={18} />Chat not found</p>
+                  <p className="text-center">The chat you're looking for doesn't exist or has been deleted.</p>
+                </div>
+              </div>
+            </div>
+          ) : !messagesLoading && messagesError ? (
+            <div className="flex-1 p-2 flex items-center justify-center">
+              <div className="bg-error/10 border border-error/20 text-error text-sm p-2 rounded flex items-start">
                 <div>
                   <p className="font-semibold flex gap justify-center"><CircleAlertIcon className="mr-2" size={18} />Chat not found</p>
                   <p className="text-center">The chat you're looking for doesn't exist or has been deleted.</p>
@@ -233,7 +266,7 @@ export default function ChatPage() {
 
                   {!messagesLoading &&
                     !messagesError &&
-                    orderedMessages.map((m) => {
+                    displayMessages.map((m) => {
                       const isSelf = m.role === "user";
                       const bubbleSide = isSelf ? "chat-end" : "chat-start";
                       const initials = isSelf
@@ -273,11 +306,13 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              <div className="sticky bottom-0 border-t bg-foreground p-4">
-                <div className="mx-auto max-w-5xl">
-                  <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+              {!messagesLoading && (
+                <div className="sticky bottom-0 border-t bg-foreground p-4">
+                  <div className="mx-auto max-w-5xl">
+                    <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )
         ) : (

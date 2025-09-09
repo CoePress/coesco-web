@@ -11,7 +11,6 @@ type BugReportFormProps = {
 const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [email, setEmail] = useState("");
   const [annotatedScreenshot, setAnnotatedScreenshot] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -21,7 +20,6 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
     onSubmit({
       title: title.trim(),
       description: description.trim(),
-      email: email.trim() || undefined,
     });
   };
 
@@ -54,20 +52,6 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
           rows={6}
           className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical"
           required
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="bug-email" className="text-sm font-medium text-text">
-          Email (optional)
-        </label>
-        <input
-          id="bug-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Your email for follow-up"
-          className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
 

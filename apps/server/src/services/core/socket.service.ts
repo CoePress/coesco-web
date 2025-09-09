@@ -3,6 +3,8 @@ import type { Server, Socket } from "socket.io";
 import { agentService } from "@/services";
 import { logger } from "@/utils/logger";
 
+import { chatService, messageService } from "../repository";
+
 export class SocketService {
   private io: Server | null = null;
 
@@ -95,20 +97,37 @@ export class SocketService {
             return;
           }
 
+          let actualChatId = chatId;
+
           if (!chatId) {
-            const newChatId = "17af62b0-4ed7-4a74-9cb8-e9b0cd846aa8";
+            const newChat = await chatService.create({
+              employeeId,
+              name: `Chat ${new Date().toISOString()}`,
+              createdById: employeeId,
+              updatedById: employeeId,
+            });
 
-            socket.emit("chat:url-update", { chatId: newChatId });
-
-            ack?.({ ok: true, chatId: newChatId, message: "New chat created" });
-            return;
+            actualChatId = newChat.data.id;
+            socket.emit("chat:url-update", { chatId: actualChatId });
           }
 
-          const systemMessage = await agentService.processMessage(employeeId, chatId, message);
+          await messageService.create({
+            chatId: actualChatId,
+            role: "user",
+            content: message,
+          });
 
-          chat.to(chatId).emit("message:system", systemMessage);
+          const systemMessage = await agentService.processMessage(employeeId, actualChatId, message);
 
-          ack?.({ ok: true, message: systemMessage });
+          await messageService.create({
+            chatId: actualChatId,
+            role: "assistant",
+            content: "Hello World",
+          });
+
+          chat.to(actualChatId).emit("message:system", "Hello World");
+
+          ack?.({ ok: true, chatId: actualChatId, message: systemMessage });
         }
         catch (err) {
           logger.error(`Error processing message for socket ${socket.id}`, err);

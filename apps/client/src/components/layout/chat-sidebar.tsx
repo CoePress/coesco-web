@@ -68,9 +68,9 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
   }, [refreshToggle]);
 
   const isActive = (id: string) =>
-    trimmer(location.pathname) === trimmer(`/chat/${id}`);
+    trimmer(location.pathname) === trimmer(`/chat/c/${id}`);
 
-  const handleSelectChat = (id: string) => navigate(`/chat/${id}`);
+  const handleSelectChat = (id: string) => navigate(`/chat/c/${id}`);
 
   const handleDeleteChat = async (chatId: string) => {
     try {
