@@ -58,27 +58,57 @@ export class LegacyService {
   }
 
   async initialize() {
-    this.stdConnection = await odbc.connect(stdConnStr);
-    this.jobConnection = await odbc.connect(jobConnStr);
-    this.quoteConnection = await odbc.connect(quoteConnStr);
+    // Helper function to attempt connection with timeout
+    const connectWithTimeout = async (connStr: string, dbName: string, timeout = 3000) => {
+      try {
+        const connectionPromise = odbc.connect(connStr);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Connection timeout after ${timeout}ms`)), timeout),
+        );
+
+        const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
+        logger.info(`Successfully connected to ${dbName} database`);
+        return connection;
+      }
+      catch (err) {
+        logger.warn(`Failed to connect to ${dbName} database, continuing without it:`, err);
+        return undefined;
+      }
+    };
+
+    // Connect to all databases in parallel with 3 second timeout each
+    const [std, job, quote] = await Promise.all([
+      connectWithTimeout(stdConnStr, "STD", 3000),
+      connectWithTimeout(jobConnStr, "JOB", 3000),
+      connectWithTimeout(quoteConnStr, "QUOTE", 3000),
+    ]);
+
+    this.stdConnection = std;
+    this.jobConnection = job;
+    this.quoteConnection = quote;
   }
 
-  async create(database: string, table: string, data: any) {
-    return;
-    const query = `
-      INSERT INTO PUB.${table} 
-      (ID) VALUES (${data})
-    `;
+  async create(_database: string, _table: string, _data: any) {
 
-    try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
-      // logger.log(result?.[0].id);
-      return true;
-    }
-    catch (err) {
-      logger.log("Error creating data:", err);
-      return false;
-    }
+    // const query = `
+    //   INSERT INTO PUB.${table}
+    //   (ID) VALUES (${data})
+    // `;
+
+    // try {
+    //   const connection = this.getDatabaseConnection(database);
+    //   if (!connection) {
+    //     logger.warn(`No connection available for database: ${database}`);
+    //     return false;
+    //   }
+    //   const result = await connection.query(query);
+    //   // logger.log(result?.[0].id);
+    //   return true;
+    // }
+    // catch (err) {
+    //   logger.error("Error creating data:", err);
+    //   return false;
+    // }
   }
 
   async getAll(database: string, table: string, params: any) {
@@ -100,11 +130,16 @@ export class LegacyService {
   `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return null;
+      }
+      const result = await connection.query(query);
       return result;
     }
     catch (err) {
-      logger.log("Error fetching data:", err);
+      logger.error("Error fetching data:", err);
       return null;
     }
   }
@@ -124,7 +159,12 @@ export class LegacyService {
   `;
 
     try {
-      const result: any = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return 0;
+      }
+      const result: any = await connection.query(query);
 
       const count = result?.[0]?.total
         ?? result?.[0]?.TOTAL
@@ -163,7 +203,16 @@ export class LegacyService {
   `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return {
+          records: [],
+          hasMore: false,
+          nextOffset: offset,
+        };
+      }
+      const result = await connection.query(query);
       const records = result || [];
 
       // More accurate pagination check: if we got fewer records than requested,
@@ -183,7 +232,7 @@ export class LegacyService {
       };
     }
     catch (err) {
-      logger.log("Error fetching paginated data:", err);
+      logger.error("Error fetching paginated data:", err);
       return {
         records: [],
         hasMore: false,
@@ -214,11 +263,16 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return null;
+      }
+      const result = await connection.query(query);
       return result?.[0];
     }
     catch (err) {
-      logger.log("Error fetching data:", err);
+      logger.error("Error fetching data:", err);
       return null;
     }
   }
@@ -239,14 +293,17 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return null;
+      }
+      const result = await connection.query(query);
       return result;
     }
     catch (err) {
       console.error(`Error fetching ${table} where ${escapedField} = ${escapedValue}:`, err);
       return null;
-    }
-    finally {
     }
   }
 
@@ -288,7 +345,12 @@ export class LegacyService {
     `;
 
     try {
-      await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return false;
+      }
+      await connection.query(query);
       return true;
     }
     catch (err) {
@@ -298,21 +360,26 @@ export class LegacyService {
   }
 
   // Dangerous, unreachable code for now
-  async delete(database: string, table: string, id: string) {
-    return;
-    const query = `
-      DELETE FROM PUB.${table}
-      WHERE ID = '${id}'
-    `;
+  async delete(_database: string, _table: string, _id: string) {
 
-    try {
-      await this.getDatabaseConnection(database)?.query(query);
-      return true;
-    }
-    catch (err) {
-      logger.error("Error deleting record: ", err);
-      return false;
-    }
+    // const query = `
+    //   DELETE FROM PUB.${table}
+    //   WHERE ID = '${id}'
+    // `;
+
+    // try {
+    //   const connection = this.getDatabaseConnection(database);
+    //   if (!connection) {
+    //     logger.warn(`No connection available for database: ${database}`);
+    //     return false;
+    //   }
+    //   await connection.query(query);
+    //   return true;
+    // }
+    // catch (err) {
+    //   logger.error("Error deleting record: ", err);
+    //   return false;
+    // }
   }
 
   async getTables(database: "quote" | "std" | "job") {
@@ -324,7 +391,12 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return null;
+      }
+      const result = await connection.query(query);
       const tableNames = result?.map((row: any) => row["_File-Name"]);
 
       return tableNames;
@@ -342,7 +414,12 @@ export class LegacyService {
     `;
 
     try {
-      const result = await this.getDatabaseConnection(database)?.query(query);
+      const connection = this.getDatabaseConnection(database);
+      if (!connection) {
+        logger.warn(`No connection available for database: ${database}`);
+        return "";
+      }
+      const result = await connection.query(query);
 
       return result?.columns.map(col => col.name);
     }
