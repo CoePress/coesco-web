@@ -1,3 +1,4 @@
+/* eslint-disable node/no-process-env */
 import type { CookieOptions } from "express";
 
 import dotenv from "dotenv";
@@ -26,6 +27,9 @@ const envSchema = z.object({
   FANUC_ADAPTER_HOST: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
 
+  SMTP_HOST: z.string(),
+  SMTP_PORT: z.string(),
+
   OPENAI_API_KEY: z.string(),
   ANTHROPIC_API_KEY: z.string(),
 
@@ -46,7 +50,6 @@ const envSchema = z.object({
   QUOTE_DB: z.string().default("quotesys"),
 });
 
-// eslint-disable-next-line node/no-process-env
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
