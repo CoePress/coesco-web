@@ -833,6 +833,20 @@ const ProductionDashboard = () => {
                         value: entry.percentage,
                         color: getStatusColor(entry.state, theme)
                       }))}
+                      innerRadius={50}
+                      outerRadius={100}
+                      customTooltip={({ active, payload }: any) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-foreground border border-border rounded p-2 text-xs text-text-muted">
+                              <p className="font-medium">{data.name}</p>
+                              <p>Percentage: {data.value?.toFixed(1)}%</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
                   )}
                 </div>

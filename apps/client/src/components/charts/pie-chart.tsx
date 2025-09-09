@@ -21,7 +21,7 @@ const CustomPieChart = ({
   data,
   innerRadius = 40,
   outerRadius = 80,
-  paddingAngle = 2,
+  paddingAngle = 0,
   showLegend = true,
   showTooltip = true,
   customTooltip,
@@ -49,10 +49,10 @@ const CustomPieChart = ({
         {payload.map((entry: any, index: number) => (
           <li key={index} className="flex items-center gap-1">
             <span
-              className="w-3 h-3 rounded-full"
+              className="w-3 h-3 rounded-sm"
               style={{ backgroundColor: entry.color }}
             />
-            <span style={{ color: "var(--text-muted)" }}>{entry.value}</span>
+            <span className="text-text-muted">{entry.value}</span>
           </li>
         ))}
       </ul>
@@ -72,7 +72,7 @@ const CustomPieChart = ({
           dataKey="value"
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color || `hsl(${index * 45}, 70%, 50%)`} />
+            <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} />
           ))}
         </Pie>
         {showTooltip && <Tooltip content={customTooltip || defaultTooltip} />}
