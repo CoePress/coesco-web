@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components";
+import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
 
 type BugReportFormProps = {
   onSubmit: (data: { title: string; description: string; email?: string }) => void;
@@ -11,6 +12,7 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
+  const [annotatedScreenshot, setAnnotatedScreenshot] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,15 +74,12 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
       {screenshot && (
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-text">
-            Screenshot
+            Screenshot (Click and drag to highlight bugs)
           </label>
-          <div className="border border-border rounded overflow-hidden">
-            <img 
-              src={screenshot} 
-              alt="Screenshot" 
-              className="w-full h-auto object-contain bg-surface"
-            />
-          </div>
+          <ScreenshotAnnotator 
+            screenshot={screenshot}
+            onAnnotatedScreenshot={setAnnotatedScreenshot}
+          />
         </div>
       )}
 
