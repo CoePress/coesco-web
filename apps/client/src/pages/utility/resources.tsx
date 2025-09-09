@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button, PageHeader } from "@/components";
-import { DownloadIcon, EyeIcon, GridIcon, TableIcon, FileIcon, ImageIcon, FileTextIcon } from "lucide-react";
+import { DownloadIcon, EyeIcon, FileIcon, ImageIcon, FileTextIcon } from "lucide-react";
 import Table, { TableColumn } from "@/components/ui/table";
+import Modal from "@/components/ui/modal";
 
 type Resource = {
   id: string;
@@ -44,7 +45,7 @@ const Resources = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [previewResource, setPreviewResource] = useState<Resource | null>(null);
 
   const columns: TableColumn<Resource>[] = [
     {
@@ -89,7 +90,7 @@ const Resources = () => {
           <Button
             variant="secondary-outline"
             size="sm"
-            onClick={() => window.open(row.url, '_blank')}
+            onClick={() => setPreviewResource(row)}
           >
             <EyeIcon size={14} />
             View
@@ -124,78 +125,104 @@ const Resources = () => {
     return <FileIcon size={24} className="text-gray-500" />;
   };
 
-  const GridView = () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-      {mockResources.map((resource) => (
-        <div
-          key={resource.id}
-          className="bg-foreground border border-border rounded-lg p-4 hover:bg-surface cursor-pointer transition-colors"
-          onClick={() => window.open(resource.url, '_blank')}
-        >
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-3">
-              {getFileIcon(resource.type)}
-            </div>
-            <h3 className="font-medium text-sm mb-2 line-clamp-2">
-              {resource.name}
-            </h3>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {resource.tags.map(tag => (
-                <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => window.open(resource.url, '_blank')}
-              >
-                <EyeIcon size={12} />
-              </Button>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = resource.url;
-                  link.download = resource.name;
-                  link.click();
-                }}
-              >
-                <DownloadIcon size={12} />
-              </Button>
+  const recentResources = [...mockResources]
+    .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+    .slice(0, 6);
+
+  const RecentlyAdded = () => (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+        {recentResources.map((resource) => (
+          <div
+            key={resource.id}
+            className="bg-foreground border border-border rounded-lg p-4 hover:bg-surface cursor-pointer transition-colors"
+            onClick={() => setPreviewResource(resource)}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-3">
+                {getFileIcon(resource.type)}
+              </div>
+              <h3 className="font-medium text-sm mb-2 line-clamp-2">
+                {resource.name}
+              </h3>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {resource.tags.map(tag => (
+                  <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setPreviewResource(resource)}
+                >
+                  <EyeIcon size={12} />
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = resource.url;
+                    link.download = resource.name;
+                    link.click();
+                  }}
+                >
+                  <DownloadIcon size={12} />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
-  const Actions = () => {
-    return (
-      <div className="flex gap-2">
-        <Button
-          variant={viewMode === "table" ? "primary" : "secondary-outline"}
-          size="sm"
-          onClick={() => setViewMode("table")}
-        >
-          <TableIcon size={16} />
-          Table
-        </Button>
-        <Button
-          variant={viewMode === "grid" ? "primary" : "secondary-outline"}
-          size="sm"
-          onClick={() => setViewMode("grid")}
-        >
-          <GridIcon size={16} />
-          Grid
-        </Button>
-      </div>
-    );
+  const renderPreview = (resource: Resource) => {
+    if (resource.type.startsWith('image/')) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <img 
+            src={resource.url} 
+            alt={resource.name} 
+            className="max-w-full max-h-[60vh] object-contain"
+          />
+        </div>
+      );
+    } else if (resource.type.includes('pdf')) {
+      return (
+        <iframe
+          src={resource.url}
+          className="w-full h-[60vh] border-0"
+          title={resource.name}
+        />
+      );
+    } else {
+      return (
+        <div className="flex flex-col items-center justify-center h-[300px] gap-4">
+          <div className="mb-3">
+            {getFileIcon(resource.type)}
+          </div>
+          <p className="text-text-muted">Preview not available for this file type</p>
+          <Button
+            variant="primary"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = resource.url;
+              link.download = resource.name;
+              link.click();
+            }}
+          >
+            <DownloadIcon size={16} />
+            Download File
+          </Button>
+        </div>
+      );
+    }
   };
 
   return (
@@ -203,16 +230,17 @@ const Resources = () => {
       <PageHeader
         title="Resources"
         description="Manage and access your uploaded files"
-        actions={<Actions />}
       />
 
-      <div className="w-full flex flex-1 flex-col">
-        {viewMode === "table" ? (
+      <div className="w-full flex flex-1 flex-col p-2 gap-2">
+        <RecentlyAdded />
+        
+        <div className="flex flex-col flex-1">
           <Table<Resource>
             columns={columns}
             data={mockResources}
             total={mockResources.length}
-            selectable={true}
+            selectable={false}
             selectedItems={selectedResources}
             onSelectionChange={(ids) => setSelectedResources(ids as string[])}
             pagination={true}
@@ -223,11 +251,19 @@ const Resources = () => {
             order={sortOrder}
             onSortChange={handleSortChange}
             emptyMessage="No resources found"
+            className="border rounded overflow-clip"
           />
-        ) : (
-          <GridView />
-        )}
+        </div>
       </div>
+
+      <Modal
+        isOpen={!!previewResource}
+        onClose={() => setPreviewResource(null)}
+        title={previewResource?.name || ""}
+        size="lg"
+      >
+        {previewResource && renderPreview(previewResource)}
+      </Modal>
     </div>
   );
 };

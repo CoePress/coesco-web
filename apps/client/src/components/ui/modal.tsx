@@ -28,8 +28,8 @@ const Modal = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 text-white/80 px-4">
       <Card
-        className={`max-h-[90vh] md:max-h-[70vh] overflow-hidden ${sizeClass[size]}`}>
-        <div className="flex items-center justify-between mb-2">
+        className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}>
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <h2 className="font-medium">{title}</h2>
           <Button
             variant="secondary-outline"
@@ -38,7 +38,7 @@ const Modal = ({
             <X size={16} />
           </Button>
         </div>
-        <div className="flex flex-col gap-2">{children}</div>
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1">{children}</div>
       </Card>
     </div>
   );

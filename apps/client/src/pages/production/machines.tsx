@@ -1,6 +1,8 @@
 import { Button, Loader, PageHeader, Table } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/status-badge";
+import Modal from "@/components/ui/modal";
+import MachineForm from "@/components/forms/machine-form";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -10,6 +12,8 @@ const Machines = () => {
   const [limit] = useState(25);
   const [sort, setSort] = useState("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMachine, setSelectedMachine] = useState<any>(null);
 
   const { entities: machines, loading, error, pagination } = useGetEntities("/production/machines", {page, limit});
 
@@ -54,11 +58,14 @@ const Machines = () => {
     {
       key: "actions",
       header: "",
-      render: () => (
+      render: (_, row) => (
         <Button
           variant="secondary-outline"
           size="sm"
-          onClick={() => {}}>
+          onClick={() => {
+            setSelectedMachine(row);
+            setIsModalOpen(true);
+          }}>
           Edit
         </Button>
       ),
@@ -68,11 +75,22 @@ const Machines = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={() => { }} variant="primary">
+        <Button 
+          onClick={() => {
+            setSelectedMachine(null);
+            setIsModalOpen(true);
+          }} 
+          variant="primary"
+        >
           <PlusIcon size={16} /> New Machine
         </Button>
       </div>
     );
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedMachine(null);
   };
 
   return (
@@ -101,6 +119,18 @@ const Machines = () => {
         }}
         />
       </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={selectedMachine ? "Edit Machine" : "New Machine"}
+        size="sm"
+      >
+        <MachineForm 
+          machine={selectedMachine}
+          onClose={handleCloseModal}
+        />
+      </Modal>
     </div>
   );
 };
