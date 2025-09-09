@@ -58,12 +58,12 @@ export class LegacyService {
   }
 
   async initialize() {
-    // Helper function to attempt connection with timeout
-    const connectWithTimeout = async (connStr: string, dbName: string, timeout = 3000) => {
+    // Helper function to attempt connection with 500ms timeout
+    const connectFast = async (connStr: string, dbName: string) => {
       try {
         const connectionPromise = odbc.connect(connStr);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Connection timeout after ${timeout}ms`)), timeout),
+          setTimeout(() => reject(new Error(`Connection timeout after 500ms`)), 500),
         );
 
         const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
@@ -71,16 +71,16 @@ export class LegacyService {
         return connection;
       }
       catch (err) {
-        logger.warn(`Failed to connect to ${dbName} database, continuing without it:`, err);
+        logger.warn(`Failed to connect to ${dbName} database, continuing without it`);
         return undefined;
       }
     };
 
-    // Connect to all databases in parallel with 3 second timeout each
+    // Connect to all databases in parallel with 500ms timeout each
     const [std, job, quote] = await Promise.all([
-      connectWithTimeout(stdConnStr, "STD", 3000),
-      connectWithTimeout(jobConnStr, "JOB", 3000),
-      connectWithTimeout(quoteConnStr, "QUOTE", 3000),
+      connectFast(stdConnStr, "STD"),
+      connectFast(jobConnStr, "JOB"),
+      connectFast(quoteConnStr, "QUOTE"),
     ]);
 
     this.stdConnection = std;

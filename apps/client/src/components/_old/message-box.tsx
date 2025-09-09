@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type MessageBoxProps = {
   placeholder?: string;
-  onSend: (payload: { text: string; files: File[]; audio?: Blob }) => void;
+  onSend: (payload: { message: string; files: File[]; audio?: Blob }) => void;
   disabled?: boolean;
   maxRows?: number;
   accept?: string;
@@ -16,7 +16,7 @@ export default function MessageBox({
   maxRows = 8,
   accept,
 }: MessageBoxProps) {
-  const [text, setText] = useState('');
+  const [message, setMessage] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -40,17 +40,17 @@ export default function MessageBox({
 
   useEffect(() => {
     autosize();
-  }, [text, autosize]);
+  }, [message, autosize]);
 
   const doSend = useCallback(
     (audio?: Blob) => {
-      const trimmed = text.trim();
+      const trimmed = message.trim();
       if (!trimmed && files.length === 0 && !audio) return;
-      onSend({ text: trimmed, files, audio });
-      setText('');
+      onSend({ message: trimmed, files, audio });
+      setMessage('');
       setFiles([]);
     },
-    [text, files, onSend]
+    [message, files, onSend]
   );
 
   const addFiles = (incoming: FileList | File[]) => {
@@ -171,8 +171,8 @@ export default function MessageBox({
       >
         <textarea
           ref={taRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={isDragging ? 'Drop files to attach…' : placeholder}
           rows={1}
@@ -215,7 +215,7 @@ export default function MessageBox({
 
           <button
             type="button"
-            disabled={disabled || (!text.trim() && files.length === 0)}
+            disabled={disabled || (!message.trim() && files.length === 0)}
             onClick={() => doSend()}
             className="p-2 cursor-pointer rounded-md bg-primary/90 text-white hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Send message"

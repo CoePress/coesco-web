@@ -76,15 +76,14 @@ export default function ChatPage() {
   const initials =
     ((employee?.firstName?.[0] ?? "") + (employee?.lastName?.[0] ?? "")).toUpperCase() || "??";
 
-  const handleSend = async (payload: { text: string; files: File[]; audio?: Blob }) => {
+  const handleSend = async (payload: { message: string; files: File[]; audio?: Blob }) => {
     const chatId = selectedChatId;
-    if (!chatId) return;
 
     const socket = socketRef.current;
     if (socket && socket.connected) {
-      socket.emit("message:send", { chatId, text: payload.text }, (ack?: { ok?: boolean }) => {
+      socket.emit("message:user", { employeeId: employee.id, chatId, message: payload.message }, (ack?: { ok?: boolean }) => {
         if (!ack?.ok) {
-          console.warn("message:send not acknowledged");
+          console.warn("message:user not acknowledged");
         }
       });
     } else {
@@ -133,6 +132,11 @@ export default function ChatPage() {
     socket.on("disconnect", () => setIsSocketConnected(false));
     socket.on("connect_error", (err) => console.error("socket connect_error", err));
     socket.on("error", (err) => console.error("socket error", err));
+
+    socket.on("chat:url-update", ({ chatId }) => {
+      window.history.pushState(null, '', `/chat/c/${chatId}`);
+    });
+
 
     return () => {
       socket.disconnect();
@@ -203,7 +207,6 @@ export default function ChatPage() {
           </div>
         </header>
 
-        {/* Content */}
         {selectedChatId ? (
           !messagesLoading && !messagesError && orderedMessages.length === 0 ? (
             <div className="flex-1 p-2 flex items-center justify-center">
@@ -216,7 +219,6 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            // Chat exists or loading - show normal chat interface
             <>
               <div className="flex-1 overflow-y-auto p-4" id="messages-container">
                 <div className="mx-auto max-w-5xl">
@@ -271,7 +273,6 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              {/* Composer pinned at bottom when a chat is selected */}
               <div className="sticky bottom-0 border-t bg-foreground p-4">
                 <div className="mx-auto max-w-5xl">
                   <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
@@ -280,7 +281,6 @@ export default function ChatPage() {
             </>
           )
         ) : (
-          // No chat selected: show MessageBox centered
           <div className="flex-1 p-4 flex items-center justify-center">
             <div className="w-full max-w-3xl">
               <div className="mb-6 text-center text-text-muted text-sm">

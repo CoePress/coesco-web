@@ -89,13 +89,22 @@ export class SocketService {
 
       socket.on("message:user", async (payload, ack?: any) => {
         try {
-          const { chatId, text, employeeId } = payload;
-          if (!chatId || !text || !employeeId) {
-            ack?.({ ok: false, error: "Missing required fields: chatId, text, employeeId" });
+          const { employeeId, chatId, message } = payload;
+          if (!message || !employeeId) {
+            ack?.({ ok: false, error: "Missing required fields: message, employeeId" });
             return;
           }
 
-          const systemMessage = await agentService.processMessage(employeeId, chatId, text);
+          if (!chatId) {
+            const newChatId = "17af62b0-4ed7-4a74-9cb8-e9b0cd846aa8";
+
+            socket.emit("chat:url-update", { chatId: newChatId });
+
+            ack?.({ ok: true, chatId: newChatId, message: "New chat created" });
+            return;
+          }
+
+          const systemMessage = await agentService.processMessage(employeeId, chatId, message);
 
           chat.to(chatId).emit("message:system", systemMessage);
 
