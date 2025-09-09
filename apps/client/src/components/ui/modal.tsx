@@ -26,7 +26,7 @@ const Modal = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 text-white/80 px-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-background/35 backdrop-blur-xs z-50 text-text px-4">
       <Card
         className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}>
         <div className="flex items-center justify-between mb-2 flex-shrink-0">

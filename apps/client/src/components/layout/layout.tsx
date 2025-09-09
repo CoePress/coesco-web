@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Moon, ChevronsRight } from "lucide-react";
+import { Home, Sun, Moon, ChevronsRight, BugIcon } from "lucide-react";
 
 import modules from "@/config/modules";
 import { useTheme } from "@/contexts/theme.context";
@@ -10,6 +10,8 @@ import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../_old/command-bar";
 import ToastContainer from "@/components/ui/toast-container";
 import { useToast } from "@/contexts/toast.context";
+import Modal from "@/components/ui/modal";
+import BugReportForm from "@/components/forms/bug-report-form";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -22,6 +24,7 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
   let sidebarLabel = "Dashboard";
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -106,6 +109,17 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
           
           <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
             <button
+              onClick={() => setIsBugModalOpen(true)}
+              onMouseEnter={(e) => onTooltipMouseEnter(e, "Report Bug")}
+              onMouseLeave={onTooltipMouseLeave}
+              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:text-text hover:bg-surface cursor-pointer w-full">
+              <BugIcon size={18} className="flex-shrink-0"  />
+              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                isOpen ? "opacity-100" : "opacity-0"
+              }`}>Report Bug</span>
+            </button>
+          
+            <button
               onClick={toggleTheme}
               onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
               onMouseLeave={onTooltipMouseLeave}
@@ -129,6 +143,18 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave }
             </Link>
           </div>
       </div>
+      
+      <Modal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+        title="Report Bug"
+        size="md"
+      >
+        <BugReportForm
+          onSubmit={() => {}}
+          onCancel={() => setIsBugModalOpen(false)}
+        />
+      </Modal>
     </div>
   );
 };
