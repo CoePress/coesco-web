@@ -87,7 +87,7 @@ const App = () => {
           element={<Resources />}
         />
         <Route
-          path="/chat/all"
+          path="/chat/recent"
           element={<RecentChats />}
         />
         <Route

@@ -133,11 +133,11 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
           }`}>New Chat</span>
         </button>
         <button
-          onClick={() => navigate("/chat/all")}
+          onClick={() => navigate("/chat/recent")}
           onMouseEnter={(e) => onTooltipMouseEnter?.(e, "Chats")}
           onMouseLeave={onTooltipMouseLeave}
           className={`flex items-center gap-3 p-2 rounded transition-all duration-300 w-full cursor-pointer ${
-            trimmer(location.pathname) === "/chat/all"
+            trimmer(location.pathname) === "/chat/recent"
               ? "bg-background text-primary"
               : "text-text-muted hover:bg-surface"
           }`}

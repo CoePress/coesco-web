@@ -1,57 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchIcon, MessageCircleIcon, PlusIcon, MoreVerticalIcon } from "lucide-react";
 import { PageHeader, Button } from "@/components";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
+import Loader from "@/components/ui/loader";
 
 type Chat = {
   id: string;
-  title: string;
-  lastMessage: string;
-  timestamp: string;
-  unread?: boolean;
+  employeeId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  createdById: string;
+  updatedById: string;
 };
 
-const mockChats: Chat[] = [
-  {
-    id: "1",
-    title: "Production Planning Discussion",
-    lastMessage: "Let's review the quarterly production targets and adjust schedules accordingly.",
-    timestamp: "2025-09-08T09:30:00Z",
-  },
-  {
-    id: "2", 
-    title: "Machine Maintenance Schedule",
-    lastMessage: "The CNC machine needs preventive maintenance next week.",
-    timestamp: "2025-09-07T15:45:00Z",
-  },
-  {
-    id: "3",
-    title: "Quality Control Meeting",
-    lastMessage: "We need to discuss the recent quality metrics and improvement plans.",
-    timestamp: "2025-09-06T11:20:00Z",
-  },
-  {
-    id: "4",
-    title: "Resource Allocation Review",
-    lastMessage: "Current resource allocation needs optimization for better efficiency.",
-    timestamp: "2025-09-05T14:15:00Z",
-  },
-  {
-    id: "5",
-    title: "Team Performance Analysis",
-    lastMessage: "Monthly performance review shows positive trends across departments.",
-    timestamp: "2025-09-04T10:00:00Z",
-  },
-];
 
 const RecentChats = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
   const navigate = useNavigate();
   
-  const filteredChats = mockChats.filter(chat =>
-    chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+  const { get, delete: deleteChat, patch: patchChat } = useApi<IApiResponse<Chat[]>>();
+  
+  const refresh = () => setRefreshToggle(prev => !prev);
+  
+  // Fetch chats
+  useEffect(() => {
+    const fetchChats = async () => {
+      setLoading(true);
+      setError(null);
+      
+      const response = await get("/chat", {
+        sort: "createdAt",
+        order: "desc",
+        limit: 100,
+      });
+
+      if (response?.success) {
+        setChats(response.data || []);
+      } else {
+        setError(response?.error || "Failed to load chats");
+      }
+      
+      setLoading(false);
+    };
+
+    fetchChats();
+  }, [refreshToggle]);
+
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatTimeAgo = (timestamp: string) => {
@@ -65,13 +70,23 @@ const RecentChats = () => {
     return `${Math.floor(diffInHours / 24)}d ago`;
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      if (!chatId) throw new Error("Missing chat id");
+      await deleteChat(`/chat/${chatId}`);
+      refresh();
+    } catch (e) {
+      console.error((e as any)?.message || "Failed to delete chat");
+    }
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Recent Chats"
         description="Continue your conversations"
         actions={
-          <Button onClick={() => {}}>
+          <Button onClick={() => {navigate("/chat")}}>
             <PlusIcon size={16} />
             New Chat
           </Button>
@@ -94,7 +109,16 @@ const RecentChats = () => {
           </div>
 
           <div className="flex-1 overflow-auto">
-            {filteredChats.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader size="lg" />
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <MessageCircleIcon size={32} className="text-red-500 mb-2" />
+                <p className="text-sm text-red-500">Error: {error}</p>
+              </div>
+            ) : filteredChats.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <MessageCircleIcon size={32} className="text-text-muted mb-2" />
                 <p className="text-sm text-text-muted">No chats found</p>
@@ -109,10 +133,10 @@ const RecentChats = () => {
                   >
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <span className="text-sm text-text-muted truncate">
-                        {chat.title}
+                        {chat.name}
                       </span>
                       <span className="text-xs text-text-muted">
-                        {formatTimeAgo(chat.timestamp)}
+                        {formatTimeAgo(chat.createdAt)}
                       </span>
                     </div>
                     <div className="relative flex-shrink-0 ml-4">
@@ -166,7 +190,7 @@ const RecentChats = () => {
                               className="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-surface cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log('Delete chat:', chat.id);
+                                handleDeleteChat(chat.id);
                                 setActiveDropdown(null);
                               }}
                             >
