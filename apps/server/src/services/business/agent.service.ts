@@ -20,25 +20,24 @@ interface ClaudeResponse {
 }
 
 export class AgentService {
-  async processMessage(employeeId: string, conversationId: string, content: string) {
-    const planPrompt = await this.plan(content);
+  async processMessage(employeeId: string, conversationId: string, message: string) {
+    const planPrompt = await this.plan(message);
 
     // TODO: Send planPrompt to LLM to get structured plan JSON
 
-    const message = {
-      id: Date.now().toString(),
+    const fullMessage = {
       conversationId,
       content: planPrompt,
       type: "plan",
       timestamp: new Date(),
       metadata: {
         employeeId,
-        originalRequest: content,
+        originalRequest: message,
         status: "planning",
       },
     };
 
-    return message;
+    return fullMessage;
   }
 
   async plan(userPrompt: string) {
