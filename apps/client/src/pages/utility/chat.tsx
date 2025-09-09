@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
+import PageHeader from "@/components/layout/page-header";
 import ThemeToggle from "@/components/feature/theme-toggle";
 import MessageBox from "@/components/_old/message-box";
 import { IApiResponse } from "@/utils/types";
@@ -22,6 +23,7 @@ type Message = {
 export default function ChatPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -35,13 +37,15 @@ export default function ChatPage() {
   
   const { get } = useApi<IApiResponse<Message[]>>();
   
-  const fetchMessages = async () => {
+  const fetchMessages = async (showLoading = true) => {
     if (!selectedChatId) {
       setMessages([]);
       return;
     }
 
-    setMessagesLoading(true);
+    if (showLoading) {
+      setMessagesLoading(true);
+    }
     setMessagesError(null);
     
     const response = await get(`/chat/${selectedChatId}/messages`, {
@@ -74,6 +78,7 @@ export default function ChatPage() {
 
     const socket = socketRef.current;
     if (socket && socket.connected) {
+      setIsSending(true);
       const tempUserMessage: Message = {
         id: `temp-${Date.now()}`,
         chatId: chatId || '',
@@ -83,7 +88,6 @@ export default function ChatPage() {
         createdById: employee.id,
       };
       
-      // Add temp message to messages immediately
       setMessages(prev => [tempUserMessage, ...prev]);
       
       socket.emit("message:user", { employeeId: employee.id, chatId, message: payload.message }, (ack?: { ok?: boolean; chatId?: string }) => {
@@ -91,39 +95,35 @@ export default function ChatPage() {
           if (ack.chatId && ack.chatId !== selectedChatId) {
             setSelectedChatId(ack.chatId);
           } else {
-            fetchMessages();
+            fetchMessages(false);
           }
         } else {
           console.warn("message:user not acknowledged");
-          // Remove temp message on failure
           setMessages(prev => prev.filter(m => m.id !== tempUserMessage.id));
         }
+        setIsSending(false);
       });
     } else {
       console.warn("Socket not connected; queued send/log only", payload);
     }
   };
 
-  // Set chat id from route
   useEffect(() => {
     setSelectedChatId(routeId ?? null);
   }, [routeId]);
 
-  // Scroll to bottom on chat change / initial load
   useLayoutEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
   }, [selectedChatId, messagesLoading]);
 
-  // Smooth scroll on new messages
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [displayMessages]);
 
-  // Socket setup
   useEffect(() => {
     if (socketRef.current) return;
 
@@ -149,6 +149,8 @@ export default function ChatPage() {
     socket.on("chat:url-update", ({ chatId }) => {
       window.history.pushState(null, '', `/chat/c/${chatId}`);
       setSelectedChatId(chatId);
+      // Dispatch custom event to trigger sidebar refresh
+      window.dispatchEvent(new CustomEvent('chat:created', { detail: { chatId } }));
     });
 
 
@@ -159,7 +161,6 @@ export default function ChatPage() {
     };
   }, [employee?.id, selectedChatId]);
 
-  // Join/leave room on chat change
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -173,7 +174,6 @@ export default function ChatPage() {
     };
   }, [selectedChatId]);
 
-  // Handle live messages
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -187,12 +187,10 @@ export default function ChatPage() {
         createdAt: new Date().toISOString(),
       };
       
-      // Add system message temporarily
       setMessages(prev => [tempSystemMessage, ...prev]);
       
-      // Refresh to get the real message from server
       setTimeout(() => {
-        fetchMessages();
+        fetchMessages(false);
       }, 100);
     };
 
@@ -205,12 +203,11 @@ export default function ChatPage() {
   return (
     <div className="min-h-[100dvh] bg-background text-text flex">
       <div className="flex-1 flex flex-col">
-        <header className="sticky top-0 z-20 h-14 bg-background/80 backdrop-blur border-b">
-          <div className="h-full px-2 flex items-center gap-2">
-            <div className="flex-1 font-semibold tracking-tight">Chat</div>
-
-            <div className="flex items-center gap-3 pl-2">
-              <ThemeToggle />
+        <PageHeader 
+          title="Chat"
+          description={selectedChatId ? `Chat ID: ${selectedChatId}` : "Start a new conversation"}
+          actions={
+            <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col items-end leading-tight">
                 <span className="text-sm font-medium">
                   {employee?.firstName} {employee?.lastName?.[0] || ""}
@@ -229,8 +226,8 @@ export default function ChatPage() {
                 </div>
               )}
             </div>
-          </div>
-        </header>
+          }
+        />
 
         {selectedChatId ? (
           !messagesLoading && !messagesError && displayMessages.length === 0 ? (
@@ -256,7 +253,7 @@ export default function ChatPage() {
               <div className="flex-1 overflow-y-auto p-4" id="messages-container">
                 <div className="mx-auto max-w-5xl">
                   <div className="mb-2 text-xs text-text-muted text-center">
-                    Chat ID: {selectedChatId} • Socket: {isSocketConnected ? "connected" : "disconnected"}
+                    Socket: {isSocketConnected ? "connected" : "disconnected"}
                   </div>
 
                   {messagesLoading && <div className="px-3 py-2 text-text-muted">Loading messages…</div>}
@@ -307,9 +304,9 @@ export default function ChatPage() {
               </div>
 
               {!messagesLoading && (
-                <div className="sticky bottom-0 border-t bg-foreground p-4">
+                <div className="sticky bottom-2">
                   <div className="mx-auto max-w-5xl">
-                    <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+                    <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" disabled={isSending} />
                   </div>
                 </div>
               )}
@@ -321,7 +318,7 @@ export default function ChatPage() {
               <div className="mb-6 text-center text-text-muted text-sm">
                 Start a new conversation
               </div>
-              <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" />
+              <MessageBox onSend={handleSend} accept="image/*,.pdf,.txt,.md,.json" disabled={isSending} />
             </div>
           </div>
         )}

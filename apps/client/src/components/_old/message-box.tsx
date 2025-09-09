@@ -10,7 +10,7 @@ type MessageBoxProps = {
 };
 
 export default function MessageBox({
-  placeholder = 'Send a message...',
+  placeholder = 'Send a message..',
   onSend,
   disabled = false,
   maxRows = 8,
@@ -42,6 +42,12 @@ export default function MessageBox({
     autosize();
   }, [message, autosize]);
 
+  useEffect(() => {
+    if (!disabled) {
+      taRef.current?.focus();
+    }
+  }, [disabled]);
+
   const doSend = useCallback(
     (audio?: Blob) => {
       const trimmed = message.trim();
@@ -49,6 +55,9 @@ export default function MessageBox({
       onSend({ message: trimmed, files, audio });
       setMessage('');
       setFiles([]);
+      setTimeout(() => {
+        taRef.current?.focus();
+      }, 0);
     },
     [message, files, onSend]
   );
@@ -165,7 +174,7 @@ export default function MessageBox({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          'relative w-full rounded-md border bg-background flex items-center p-2 shadow-sm',
+          'relative w-full rounded-md border bg-background/50 flex items-center p-1 shadow-sm',
           isDragging ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
         ].join(' ')}
       >
@@ -177,7 +186,7 @@ export default function MessageBox({
           placeholder={isDragging ? 'Drop files to attach…' : placeholder}
           rows={1}
           disabled={disabled}
-          className="block w-full resize-none bg- flex-1 outline-none placeholder-text-muted text-sm sm:text-base"
+          className="block w-full resize-none flex-1 outline-none placeholder-text-muted text-sm px-1"
           aria-label="Message input"
         />
 
@@ -221,9 +230,16 @@ export default function MessageBox({
             aria-label="Send message"
             title="Send"
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
-              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 14-7-4 14-3-5-7-2z" />
-            </svg>
+            {disabled ? (
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
+                <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 14-7-4 14-3-5-7-2z" />
+              </svg>
+            )}
           </button>
         </div>
 

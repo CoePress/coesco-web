@@ -118,6 +118,18 @@ export default function ChatSidebar({ isOpen, onTooltipMouseEnter, onTooltipMous
     return () => document.removeEventListener("click", onDocClick);
   }, [menuOpenFor]);
 
+  // Listen for new chat creation events
+  useEffect(() => {
+    const handleChatCreated = () => {
+      refresh();
+    };
+
+    window.addEventListener('chat:created', handleChatCreated);
+    return () => {
+      window.removeEventListener('chat:created', handleChatCreated);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col h-full">
       <div className="space-y-2">

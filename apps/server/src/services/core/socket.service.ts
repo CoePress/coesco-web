@@ -102,7 +102,7 @@ export class SocketService {
           if (!chatId) {
             const newChat = await chatService.create({
               employeeId,
-              name: `Chat ${new Date().toISOString()}`,
+              name: `New Chat`,
               createdById: employeeId,
               updatedById: employeeId,
             });
