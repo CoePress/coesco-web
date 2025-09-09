@@ -10,8 +10,17 @@ import { useGetEntities } from "@/hooks/_base/use-get-entities";
 const Products = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>('equipment');
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  const getInitialProductType = (): 'equipment' | 'parts' | 'services' => {
+    const type = searchParams.get('type');
+    if (type && ['parts', 'services'].includes(type)) {
+      return type as 'parts' | 'services';
+    }
+    return 'equipment';
+  };
+
+  const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>(getInitialProductType);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     category: '',
     status: '',
@@ -21,13 +30,12 @@ const Products = () => {
 
   useEffect(() => {
     const type = searchParams.get('type');
-    if (type && ['parts', 'services'].includes(type)) {
-      setProductType(type as 'parts' | 'services');
-    } else {
-      setProductType('equipment');
-    }
-
+    const newProductType: 'equipment' | 'parts' | 'services' = 
+      (type && ['parts', 'services'].includes(type)) ? type as 'parts' | 'services' : 'equipment';
+    
     const search = searchParams.get('search') || '';
+    
+    setProductType(newProductType);
     setSearchQuery(search);
   }, [searchParams]);
 
