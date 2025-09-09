@@ -8,7 +8,7 @@ import { useTheme } from "@/contexts/theme.context";
 import { useAppContext } from "@/contexts/app.context";
 import { __dev__ } from "@/config/env";
 import ChatSidebar from "./chat-sidebar";
-import CommandBar from "../_old/command-bar";
+import CommandBar from "../feature/command-bar";
 import ToastContainer from "@/components/ui/toast-container";
 import { useToast } from "@/contexts/toast.context";
 import Modal from "@/components/ui/modal";

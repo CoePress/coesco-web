@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { PerformanceData } from "@/contexts/performance.context";
 import { usePerformanceDataService } from "@/utils/performance-sheet";
 import { Card, Input, Text } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import Checkbox from "@/components/ui/checkbox";
 
 export interface SummaryReportProps {
   data: PerformanceData;

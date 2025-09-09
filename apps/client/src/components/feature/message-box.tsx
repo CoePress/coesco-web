@@ -198,7 +198,7 @@ export default function MessageBox({
             aria-label="Attach files"
             onClick={() => fileInputRef.current?.click()}
             className={[
-              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface text-text',
+              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface text-text-muted',
             ].join(' ')}
           >
             <FileIcon size={16}/>
@@ -212,7 +212,7 @@ export default function MessageBox({
             onClick={toggleRecording}
             className={[
               'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface',
-              recording ? 'text-red-500' : 'text-text',
+              recording ? 'text-red-500' : 'text-text-muted',
             ].join(' ')}
           >
             {recording ? (

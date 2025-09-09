@@ -12,7 +12,7 @@ import {
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
 import { Card, Input, Select, Text } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import Checkbox from "@/components/ui/checkbox";
 
 export interface RFQProps {
   data: PerformanceData;

@@ -4,7 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import PageHeader from "@/components/layout/page-header";
-import MessageBox from "@/components/_old/message-box";
+import MessageBox from "@/components/feature/message-box";
 import Loader from "@/components/ui/loader";
 import { IApiResponse } from "@/utils/types";
 import { CircleAlertIcon } from "lucide-react";
