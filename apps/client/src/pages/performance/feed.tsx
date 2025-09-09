@@ -19,7 +19,7 @@ export interface FeedProps {
 
 const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   // Use the performance data service
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, updateField } = dataService;
@@ -55,9 +55,9 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   // Handle feed type change
   const handleFeedTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFeedType = e.target.value;
-    
+
     if (!isEditing) return;
-    
+
     // Update relevant fields based on feed type
     updateField("feed.feed.pullThru.isPullThru", newFeedType === "sigma-5-pull-thru" ? "true" : "false");
 
@@ -99,7 +99,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const feedConfigSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">Feed Configuration</Text>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Select
           label="Feed Type"
@@ -138,7 +138,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedCheck || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
-          style={{ backgroundColor: feedCheck, color: textColor }}
+          className={` ${feedCheck} text-text`}
         />
       </div>
 
@@ -362,7 +362,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           disabled={true}
           className="bg-gray-50"
         />
-        
+
         <Input
           label="Motor Peak Torque (lbs-in)"
           name="feed.feed.torque.motorPeak"
@@ -403,7 +403,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           disabled={true}
           className="bg-gray-50"
         />
-        <Input 
+        <Input
           label="REF. Inertia (lbs-in-sec²)"
           name="feed.feed.reflInertia"
           type="number"
@@ -417,15 +417,15 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.match?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: matchCheck, color: textColor }}
+          className={` ${matchCheck} text-text`}
         />
-        <Input 
+        <Input
           label="Peak Torque (lbs-in)"
           name="feed.feed.torque.peak"
           type="number"
           value={localData.feed?.feed?.torque?.peak?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: peakTorqueCheck, color: textColor }}
+          className={` ${peakTorqueCheck} text-text`}
         />
         <Input
           label="RMS Torque (FA1) (lbs-in)"
@@ -433,7 +433,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: rmsTorqueFA1Check, color: textColor }}
+          className={` ${rmsTorqueFA1Check} text-text`}
         />
         <Input
           label="RMS Torque (FA2) (lbs-in)"
@@ -441,7 +441,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: rmsTorqueFA2Check, color: textColor }}
+          className={` ${rmsTorqueFA2Check} text-text`}
         />
         <Input
           label="Acceleration Torque (lbs-in)"
@@ -449,7 +449,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
           disabled={true}
-          style={{ backgroundColor: accelerationCheck, color: textColor }}
+          className={` ${accelerationCheck} text-text`}
         />
       </div>
     </div>
@@ -459,7 +459,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const pullThruFields = useMemo(() => (
     <div className="space-y-4">
       {sigma5Fields}
-      
+
       <Card className="mt-4 p-4">
         <Text as="h4" className="text-lg font-semibold mb-4">Pull-Through Configuration</Text>
         <div className="grid grid-cols-2 gap-4">
@@ -515,7 +515,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const feedSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h4" className="mb-4 text-lg font-medium">Feed Specifications</Text>
-      
+
       {feedType === "sigma-5" && sigma5Fields}
       {feedType === "sigma-5-pull-thru" && pullThruFields}
       {feedType === "allen-bradley" && allenBradleyFields}
@@ -526,7 +526,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const feedLengthTableSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h4" className="mb-4 text-lg font-medium">Feed Length & Speed Settings</Text>
-      
+
       <div className="grid grid-cols-3 gap-6">
         <div>
           <Text as="h4" className="font-medium mb-2">Average</Text>
@@ -681,7 +681,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -690,7 +690,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -699,7 +699,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

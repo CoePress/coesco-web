@@ -7,13 +7,13 @@ import RollStrBackbend from "./roll-str-backbend";
 import Feed from "./feed";
 import Shear from "./shear";
 import SummaryReport from "./summary-report";
-import { Save, Lock, Link } from "lucide-react";
-import { useGetEntity } from "@/hooks/_base/use-get-entity";
+import { Save, Lock, Link, RefreshCcw } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import RFQ from "./rfq";
+import { useApi } from "@/hooks/use-api";
 
 const PERFORMANCE_TABS = [
   { label: "RFQ", value: "rfq" },
@@ -60,10 +60,32 @@ const PerformanceSheet = () => {
     { entityType: "company", entityId: "789" },
   ]);
   const { id: performanceSheetId } = useParams();
-  const { entity: performanceSheet, loading, error, refresh } = useGetEntity(
-    `/performance/sheets`,
-    performanceSheetId
-  );
+  const api = useApi();
+  const [performanceSheet, setPerformanceSheet] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPerformanceSheet = async () => {
+      if (!performanceSheetId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get(`performance/sheets/${performanceSheetId}`);
+        if (response && response.data) {
+          setPerformanceSheet(response.data);
+        } else {
+          setPerformanceSheet(null);
+        }
+      } catch (err) {
+        setError("Failed to load performance sheet");
+        setPerformanceSheet(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPerformanceSheet();
+  }, [performanceSheetId]);
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
@@ -76,7 +98,7 @@ const PerformanceSheet = () => {
     { label: "Roll Str Backbend", value: "roll-str-backbend" },
     { label: "Feed", value: "feed" },
   ];
-  
+
   useEffect(() => {
     if (!performanceSheetId) return;
 
@@ -134,7 +156,7 @@ const PerformanceSheet = () => {
     // );
   };
 
-  const handleChange = () => {};
+  const handleChange = () => { };
 
   const getHeaderActions = () => {
     if (isEditing) {
@@ -157,7 +179,7 @@ const PerformanceSheet = () => {
           icon: <Lock size={16} />,
           variant: "secondary",
           disabled: true,
-          onClick: () => {},
+          onClick: () => { },
         },
       ];
     }
@@ -202,14 +224,6 @@ const PerformanceSheet = () => {
       isEditing
     };
 
-    const getActiveTabFromUrl = (): PerformanceTabValue => {
-      const pathSegments = location.pathname.split('/');
-      const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
-      
-      const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
-      return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
-    };
-
     if (loading) {
       return <div className="flex justify-center items-center h-64">Loading...</div>;
     }
@@ -222,6 +236,7 @@ const PerformanceSheet = () => {
       return <div className="flex justify-center items-center h-64">No data available</div>;
     }
 
+    console.log("Active Tab:", activeTab);
     switch (activeTab) {
       case "rfq":
         return <RFQ {...commonProps} />;
@@ -246,16 +261,22 @@ const PerformanceSheet = () => {
     }
   };
 
-  const handleTabChange = (tab: PerformanceTabValue) => {
-    navigate(`/performance/${performanceSheetId}/${tab}`);
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={() => { getHeaderActions() }}>
+          <RefreshCcw size={16} /> New Performance Sheet
+        </Button>
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Performance Details"
         description="Performance Details"
-        actions={getHeaderActions() as any}
+        actions={<Actions />}
       />
 
       <Tabs
@@ -264,7 +285,7 @@ const PerformanceSheet = () => {
         tabs={visibleTabs}
       />
 
-      <div className="tab-content">{renderTabContent()}</div>
+      <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
 
       <Modal
         isOpen={showLinksModal}

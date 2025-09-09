@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
 import { PerformanceData } from "@/contexts/performance.context";
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useApi } from "@/hooks/use-api";
 import React from "react";
 
 export const DAYS_PER_WEEK_OPTIONS = [
@@ -211,7 +211,7 @@ export const MATERIAL_TYPE_OPTIONS = [
 export const YES_NO_OPTIONS = [
   { value: "No", label: "No" },
   { value: "Yes", label: "Yes" },
-]; 
+];
 
 export const REEL_MODEL_OPTIONS = [
   { value: "CPR-040", label: "CPR-040" },
@@ -259,7 +259,7 @@ export const HOLD_DOWN_ASSY_OPTIONS = [
 ];
 
 export const HOLD_DOWN_CYLINDER_OPTIONS = [
-  { value: "hydraulic", label: "Hydraulic"},
+  { value: "hydraulic", label: "Hydraulic" },
 ];
 
 export const BRAKE_MODEL_OPTIONS = [
@@ -412,11 +412,11 @@ const setNestedValue = (obj: any, path: string, value: any) => {
   const keys = path.split(".");
   const result = { ...obj }; // Shallow copy of root
   let current = result;
-  
+
   // Navigate to the parent, creating shallow copies along the way
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    
+
     // If the property doesn't exist or isn't an object, create new object
     if (!current[key] || typeof current[key] !== 'object') {
       current[key] = {};
@@ -424,33 +424,33 @@ const setNestedValue = (obj: any, path: string, value: any) => {
       // Create shallow copy to maintain immutability
       current[key] = { ...current[key] };
     }
-    
+
     current = current[key];
   }
-  
+
   // Set the final value
   current[keys[keys.length - 1]] = value;
-  
+
   return result;
 };
 
 function deepMerge<T>(target: T, source: Partial<T>): T {
   const result = { ...target };
-  
+
   for (const key in source) {
     if (source.hasOwnProperty(key)) {
       const sourceValue = source[key];
       const targetValue = result[key];
-      
+
       if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
-          targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+        targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
         result[key] = deepMerge(targetValue, sourceValue);
       } else if (sourceValue !== undefined) {
         result[key] = sourceValue as T[typeof key];
       }
     }
   }
-  
+
   return result;
 }
 
@@ -469,7 +469,32 @@ export const usePerformanceDataService = (
   isEditing: boolean
 ) => {
   const endpoint = `/performance/sheets`;
-  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const api = useApi();
+  const [performanceSheet, setPerformanceSheet] = useState<any>(null);
+  const [updateLoading, setLoading] = useState<boolean>(true);
+  const [updateError, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPerformanceSheet = async () => {
+      if (!performanceSheetId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get(`${endpoint}/${performanceSheetId}`);
+        if (response && response.data) {
+          setPerformanceSheet(response.data);
+        } else {
+          setPerformanceSheet(null);
+        }
+      } catch (err) {
+        setError("Failed to load performance sheet");
+        setPerformanceSheet(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPerformanceSheet();
+  }, [performanceSheetId]);
 
   // Local state management
   const [localData, setLocalData] = useState<PerformanceData>(initialData);
@@ -502,10 +527,10 @@ export const usePerformanceDataService = (
         console.log("=== PERFORMANCE DATA SERVICE SAVE ===");
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
         console.log("1. Sending data to backend:", JSON.stringify(updatedData, null, 2));
-        
-        const response = await updateEntity(performanceSheetId, { data: updatedData });
+
+        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
         console.log("2. Backend response:", response);
-        
+
         // Handle calculated values from backend - merge the entire response
         if (response) {
           setLocalData(prevData => {
@@ -518,23 +543,23 @@ export const usePerformanceDataService = (
         setLastSaved(new Date());
         setIsDirty(false);
         pendingChangesRef.current = {};
-        
+
         // Clear any general errors on successful save
         setFieldErrors(prev => {
           const newErrors = { ...prev };
           delete newErrors._general;
           return newErrors;
         });
-        
+
       } catch (error) {
         console.error('Error saving performance data:', error);
-        setFieldErrors(prev => ({ 
-          ...prev, 
-          _general: 'Failed to save changes. Please try again.' 
+        setFieldErrors(prev => ({
+          ...prev,
+          _general: 'Failed to save changes. Please try again.'
         }));
       }
     }, 1000),
-    [performanceSheetId, updateEntity, isEditing]
+    [performanceSheetId, performanceSheet, isEditing]
   );
 
   // Change handler for form fields
@@ -585,8 +610,8 @@ export const usePerformanceDataService = (
 
     try {
       const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-      const response = await updateEntity(performanceSheetId, { data: updatedData });
-      
+      const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+
       if (response) {
         setLocalData(prevData => deepMerge(prevData, response));
       }
@@ -594,17 +619,17 @@ export const usePerformanceDataService = (
       setLastSaved(new Date());
       setIsDirty(false);
       pendingChangesRef.current = {};
-      
+
       return response;
     } catch (error) {
       console.error('Error saving performance data immediately:', error);
-      setFieldErrors(prev => ({ 
-        ...prev, 
-        _general: 'Failed to save changes. Please try again.' 
+      setFieldErrors(prev => ({
+        ...prev,
+        _general: 'Failed to save changes. Please try again.'
       }));
       throw error;
     }
-  }, [performanceSheetId, updateEntity, isEditing]);
+  }, [performanceSheetId, performanceSheet, isEditing]);
 
   // Update specific field programmatically
   const updateField = useCallback((fieldPath: string, value: any) => {
@@ -620,7 +645,7 @@ export const usePerformanceDataService = (
   const getFieldValue = useCallback((fieldPath: string) => {
     const keys = fieldPath.split('.');
     let current = localData;
-    
+
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {
         current = (current as any)[key];
@@ -628,7 +653,7 @@ export const usePerformanceDataService = (
         return undefined;
       }
     }
-    
+
     return current;
   }, [localData]);
 
@@ -750,89 +775,89 @@ export interface ISummaryReportData {
 }
 
 export function mapPerformanceToSummary(perf: PerformanceData): ISummaryReportData {
-    const matlSpecsTableString = {
-        coilWidth: perf?.common?.material?.coilWidth,
-        coilWeight: perf?.common?.material?.coilWeight,
-        materialThickness: perf?.common?.material?.materialThickness,
-        materialType: perf?.common?.material?.materialType,
-        yieldStrength: perf?.common?.material?.maxYieldStrength,
-        materialTensile: perf?.common?.material?.maxTensileStrength,
-        maxFpm: perf?.common?.material?.reqMaxFPM,
-        minBendRadius: perf?.materialSpecs?.material?.minBendRadius,
-        minLoopLength: perf?.materialSpecs?.material?.minLoopLength,
-        coilOD: perf?.common?.coil?.maxCoilOD,
-        coilID: perf?.common?.coil?.coilID,
-        coilODCalculated: perf?.materialSpecs?.material?.calculatedCoilOD,
-    }.toString();
+  const matlSpecsTableString = {
+    coilWidth: perf?.common?.material?.coilWidth,
+    coilWeight: perf?.common?.material?.coilWeight,
+    materialThickness: perf?.common?.material?.materialThickness,
+    materialType: perf?.common?.material?.materialType,
+    yieldStrength: perf?.common?.material?.maxYieldStrength,
+    materialTensile: perf?.common?.material?.maxTensileStrength,
+    maxFpm: perf?.common?.material?.reqMaxFPM,
+    minBendRadius: perf?.materialSpecs?.material?.minBendRadius,
+    minLoopLength: perf?.materialSpecs?.material?.minLoopLength,
+    coilOD: perf?.common?.coil?.maxCoilOD,
+    coilID: perf?.common?.coil?.coilID,
+    coilODCalculated: perf?.materialSpecs?.material?.calculatedCoilOD,
+  }.toString();
 
-    return {
-        AirClutch: perf?.tddbhd?.reel?.threadingDrive?.airClutch,
-        BackplateDiameter: perf?.common?.equipment?.reel?.backplate?.diameter,
-        BrakeModel: perf?.tddbhd?.reel?.dragBrake?.model,
-        BrakeQuantity: perf?.tddbhd?.reel?.dragBrake?.quantity,
-        ControlsLevel: perf?.common?.equipment?.feed?.controlsLevel,
-        Customer: perf?.common?.customer,
-        Date: perf?.rfq?.dates?.date,
-        FeedAccel: perf?.feed?.feed?.accelerationRate,
-        FeedAngle1: perf?.feed?.feed?.feedAngle1?.toString(),
-        FeedAngle2: perf?.feed?.feed?.feedAngle2?.toString(),
-        FeedAngleTable: perf?.feed?.feed?.tableValues?.toString(),
-        FeedApplication: perf?.feed?.feed?.application,
-        FeedControls: perf?.common?.equipment?.feed?.controlsLevel,
-        FeedDirection: perf?.common?.equipment?.feed?.direction,
-        FeedFullWidthRolls: perf?.feed?.feed?.fullWidthRolls,
-        FeedLoopPit: perf?.common?.equipment?.feed?.loopPit,
-        FeedMaxVelocity: perf?.common?.equipment?.feed?.maximumVelocity,
-        FeedModel: perf?.common?.equipment?.feed?.model,
-        FeedPullThruPinchRolls: perf?.feed?.feed?.pullThru?.pinchRolls,
-        FeedPullThruStrRolls: perf?.feed?.feed?.pullThru?.straightenerRolls,
-        FeedRatio: perf?.feed?.feed?.ratio,
-        FeedWidth: perf?.feed?.feed?.machineWidth,
-        HoldDownAssembly: perf?.tddbhd?.reel?.holddown?.assy,
-        HoldDownCylinder: perf?.tddbhd?.reel?.holddown?.cylinder,
-        HoldDownPressure: perf?.tddbhd?.reel?.holddown?.cylinderPressure,
-        HydraulicThreadDrive: perf?.tddbhd?.reel?.threadingDrive?.hydThreadingDrive,
-        LightGuage: perf?.common?.equipment?.feed?.lightGuageNonMarking,
-        MaterialWidth: perf?.common?.equipment?.straightener?.width,
-        MatlSpecsTable: matlSpecsTableString,
-        MotorizedReelModel: perf?.common?.equipment?.reel?.model,
-        MotorizedReelWidth: perf?.common?.equipment?.reel?.width,
-        NonMarking: perf?.common?.equipment?.feed?.nonMarking,
-        Passline: perf?.common?.equipment?.feed?.passline,
-        PressBedLength: perf?.common?.press?.bedLength,
-        ReelAcceleration: perf?.reelDrive?.reel?.motorization?.accelRate,
-        ReelBackplate: perf?.common?.equipment?.reel?.backplate?.diameter,
-        ReedDriveHP: perf?.reelDrive?.reel?.motorization?.driveHorsepower,
-        ReelModel: perf?.common?.equipment?.reel?.model,
-        ReelMotorized: perf?.reelDrive?.reel?.motorization?.isMotorized,
-        ReelRegen: perf?.reelDrive?.reel?.motorization?.regenRequired,
-        ReelSpeed: perf?.reelDrive?.reel?.motorization?.speed,
-        ReelStyle: perf?.materialSpecs?.reel?.style,
-        Reference: perf?.referenceNumber,
-        rfqAddress: perf?.common?.customerInfo?.streetAddress,
-        rfqBackplate: perf?.materialSpecs?.reel?.backplate?.type,
-        rfqCity: perf?.common?.customerInfo?.city,
-        rfqCoilCar: perf?.rfq?.coil?.requireCoilCar,
-        rfqCompany: perf?.common?.customer,
-        rfqCosmetic: perf?.rfq?.runningCosmeticMaterial,
-        rfqCountry: perf?.common?.customerInfo?.country,
-        rfqDealer: perf?.common?.customerInfo?.dealerName,
-        rfqDealerSalesman: perf?.common?.customerInfo?.dealerSalesman,
-        rfqEmail: perf?.common?.customerInfo?.email,
-        rfqPhone: perf?.common?.customerInfo?.phoneNumber,
-        rfqPosition: perf?.common?.customerInfo?.position,
-        rfqRequireGuarding: perf?.rfq?.requireGuarding,
-        rfqState: perf?.common?.customerInfo?.state,
-        rfqVoltage: perf?.rfq?.voltageRequired,
-        rfqZipCode: perf?.common?.customerInfo?.zip?.toString(),
-        StrAcceleration: perf?.strUtility?.straightener?.acceleration,
-        StrBackupRolls: perf?.strUtility?.straightener?.required?.backupRollsCheck,
-        StrFeedRate: perf?.strUtility?.straightener?.feedRate,
-        StrHP: perf?.strUtility?.straightener?.horsepower,
-        StrModel: perf?.common?.equipment?.straightener?.model,
-        StrPayoff: perf?.strUtility?.straightener?.payoff,
-        StrRollType: perf?.rollStrBackbend?.straightener?.rolls?.typeOfRoll,
-        StrWidth: perf?.common?.equipment?.straightener?.width,
-        TypeOfLine: perf?.common?.equipment?.feed?.typeOfLine,
-    };
+  return {
+    AirClutch: perf?.tddbhd?.reel?.threadingDrive?.airClutch,
+    BackplateDiameter: perf?.common?.equipment?.reel?.backplate?.diameter,
+    BrakeModel: perf?.tddbhd?.reel?.dragBrake?.model,
+    BrakeQuantity: perf?.tddbhd?.reel?.dragBrake?.quantity,
+    ControlsLevel: perf?.common?.equipment?.feed?.controlsLevel,
+    Customer: perf?.common?.customer,
+    Date: perf?.rfq?.dates?.date,
+    FeedAccel: perf?.feed?.feed?.accelerationRate,
+    FeedAngle1: perf?.feed?.feed?.feedAngle1?.toString(),
+    FeedAngle2: perf?.feed?.feed?.feedAngle2?.toString(),
+    FeedAngleTable: perf?.feed?.feed?.tableValues?.toString(),
+    FeedApplication: perf?.feed?.feed?.application,
+    FeedControls: perf?.common?.equipment?.feed?.controlsLevel,
+    FeedDirection: perf?.common?.equipment?.feed?.direction,
+    FeedFullWidthRolls: perf?.feed?.feed?.fullWidthRolls,
+    FeedLoopPit: perf?.common?.equipment?.feed?.loopPit,
+    FeedMaxVelocity: perf?.common?.equipment?.feed?.maximumVelocity,
+    FeedModel: perf?.common?.equipment?.feed?.model,
+    FeedPullThruPinchRolls: perf?.feed?.feed?.pullThru?.pinchRolls,
+    FeedPullThruStrRolls: perf?.feed?.feed?.pullThru?.straightenerRolls,
+    FeedRatio: perf?.feed?.feed?.ratio,
+    FeedWidth: perf?.feed?.feed?.machineWidth,
+    HoldDownAssembly: perf?.tddbhd?.reel?.holddown?.assy,
+    HoldDownCylinder: perf?.tddbhd?.reel?.holddown?.cylinder,
+    HoldDownPressure: perf?.tddbhd?.reel?.holddown?.cylinderPressure,
+    HydraulicThreadDrive: perf?.tddbhd?.reel?.threadingDrive?.hydThreadingDrive,
+    LightGuage: perf?.common?.equipment?.feed?.lightGuageNonMarking,
+    MaterialWidth: perf?.common?.equipment?.straightener?.width,
+    MatlSpecsTable: matlSpecsTableString,
+    MotorizedReelModel: perf?.common?.equipment?.reel?.model,
+    MotorizedReelWidth: perf?.common?.equipment?.reel?.width,
+    NonMarking: perf?.common?.equipment?.feed?.nonMarking,
+    Passline: perf?.common?.equipment?.feed?.passline,
+    PressBedLength: perf?.common?.press?.bedLength,
+    ReelAcceleration: perf?.reelDrive?.reel?.motorization?.accelRate,
+    ReelBackplate: perf?.common?.equipment?.reel?.backplate?.diameter,
+    ReedDriveHP: perf?.reelDrive?.reel?.motorization?.driveHorsepower,
+    ReelModel: perf?.common?.equipment?.reel?.model,
+    ReelMotorized: perf?.reelDrive?.reel?.motorization?.isMotorized,
+    ReelRegen: perf?.reelDrive?.reel?.motorization?.regenRequired,
+    ReelSpeed: perf?.reelDrive?.reel?.motorization?.speed,
+    ReelStyle: perf?.materialSpecs?.reel?.style,
+    Reference: perf?.referenceNumber,
+    rfqAddress: perf?.common?.customerInfo?.streetAddress,
+    rfqBackplate: perf?.materialSpecs?.reel?.backplate?.type,
+    rfqCity: perf?.common?.customerInfo?.city,
+    rfqCoilCar: perf?.rfq?.coil?.requireCoilCar,
+    rfqCompany: perf?.common?.customer,
+    rfqCosmetic: perf?.rfq?.runningCosmeticMaterial,
+    rfqCountry: perf?.common?.customerInfo?.country,
+    rfqDealer: perf?.common?.customerInfo?.dealerName,
+    rfqDealerSalesman: perf?.common?.customerInfo?.dealerSalesman,
+    rfqEmail: perf?.common?.customerInfo?.email,
+    rfqPhone: perf?.common?.customerInfo?.phoneNumber,
+    rfqPosition: perf?.common?.customerInfo?.position,
+    rfqRequireGuarding: perf?.rfq?.requireGuarding,
+    rfqState: perf?.common?.customerInfo?.state,
+    rfqVoltage: perf?.rfq?.voltageRequired,
+    rfqZipCode: perf?.common?.customerInfo?.zip?.toString(),
+    StrAcceleration: perf?.strUtility?.straightener?.acceleration,
+    StrBackupRolls: perf?.strUtility?.straightener?.required?.backupRollsCheck,
+    StrFeedRate: perf?.strUtility?.straightener?.feedRate,
+    StrHP: perf?.strUtility?.straightener?.horsepower,
+    StrModel: perf?.common?.equipment?.straightener?.model,
+    StrPayoff: perf?.strUtility?.straightener?.payoff,
+    StrRollType: perf?.rollStrBackbend?.straightener?.rolls?.typeOfRoll,
+    StrWidth: perf?.common?.equipment?.straightener?.width,
+    TypeOfLine: perf?.common?.equipment?.feed?.typeOfLine,
+  };
 }

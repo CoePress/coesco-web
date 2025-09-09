@@ -11,7 +11,7 @@ import {
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
-import { Card, Input, Select, Text } from "@/components";
+import { Card, Input, Select, Text, Textarea } from "@/components";
 import Checkbox from "@/components/_old/checkbox";
 
 export interface RFQProps {
@@ -21,7 +21,8 @@ export interface RFQProps {
 
 const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+  console.log("Rendering RFQ component");
+
   // Use the performance data service
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
@@ -965,7 +966,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -974,7 +975,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -983,7 +984,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

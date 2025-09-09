@@ -21,8 +21,6 @@ export { default as ConfigurationDetails } from "./sales/configuration-details"
 export { default as ConfigurationBuilder } from "./sales/configuration-builder"
 export { default as Journeys } from "./sales/journeys"
 export { default as JourneyDetails } from "./sales/journey-details"
-export { default as PerformanceSheets } from "./sales/performance-sheets"
-export { default as PerformanceSheet } from "./sales/performance-sheet-details"
 export { default as Pipeline } from "./sales/pipeline"
 export { default as Products } from "./sales/products"
 export { default as ProductDetails } from "./sales/product-details"
@@ -44,3 +42,7 @@ export { default as WarehouseDashboard } from "./warehouse/dashboard"
 export { default as Login } from "./login";
 export { default as MainMenu } from "./main-menu";
 export { default as NotFound } from "./not-found";
+
+// Performance
+export { default as PerformanceSheets } from "./performance/performance-sheets"
+export { default as PerformanceSheet } from "./performance/performance-sheet"

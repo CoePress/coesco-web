@@ -1,20 +1,20 @@
-import React, { 
+import React, {
   createContext, useContext, useState, ReactNode, useCallback,
-  useEffect, useRef 
+  useEffect, useRef
 } from "react";
 import { useParams } from "react-router-dom";
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useApi } from "@/hooks/use-api";
 
 function deepMerge<T>(target: T, source: Partial<T>): T {
   const result = { ...target };
-  
+
   for (const key in source) {
     if (source.hasOwnProperty(key)) {
       const sourceValue = source[key];
       const targetValue = result[key];
-      
+
       if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
-          targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+        targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
         // Recursively merge nested objects
         result[key] = deepMerge(targetValue, sourceValue);
       } else if (sourceValue !== undefined) {
@@ -23,7 +23,7 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
       }
     }
   }
-  
+
   return result;
 }
 
@@ -278,7 +278,7 @@ export interface TDDBHDData {
 export interface ReelDriveData {
   reel?: {
     size?: number;
-    maxWidth?: number; 
+    maxWidth?: number;
     bearing?: {
       distance?: number;
       diameter: {
@@ -1259,12 +1259,12 @@ const initialPerformanceData: PerformanceData = {
 // Create the context for performance sheet
 export const PerformanceSheetContext = createContext<
   | {
-      performanceData: PerformanceData;
-      setPerformanceData: React.Dispatch<React.SetStateAction<PerformanceData>>;
-      updatePerformanceData: (updates: Partial<PerformanceData>) => Promise<any>;
-      loading?: boolean;
-      error?: string | null;
-    }
+    performanceData: PerformanceData;
+    setPerformanceData: React.Dispatch<React.SetStateAction<PerformanceData>>;
+    updatePerformanceData: (updates: Partial<PerformanceData>) => Promise<any>;
+    loading?: boolean;
+    error?: string | null;
+  }
   | undefined
 >(undefined);
 
@@ -1273,14 +1273,14 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   const performanceDataRef = useRef(performanceData);
   const { id: performanceSheetId } = useParams();
   const endpoint = `/performance/${performanceSheetId}`;
-  
+
   // Keep ref in sync with state
   useEffect(() => {
     performanceDataRef.current = performanceData;
   }, [performanceData]);
-  
+
   // Use the performance-specific hook
-  const { updateEntity, loading, error } = useUpdateEntity(endpoint);
+  const api = useApi();
 
   const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = true) => {
     try {
@@ -1288,27 +1288,27 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
       // Always update local state first for immediate UI feedback
       const updatedData = deepMerge(performanceDataRef.current, updates);
       setPerformanceData(updatedData);
-      
+
       console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
-      
+
       if (shouldSave && performanceSheetId) {
         // Send updates to backend for calculations
-        const response = await updateEntity(performanceSheetId, updates);
-        
+        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+
         if (response) {
           console.log("Backend response:", response);
-          
+
           // Backend response should already be in PerformanceData format
           // Just deep merge it with our current data
           const finalData = deepMerge(updatedData, response);
           setPerformanceData(finalData);
-          
+
           console.log("Final merged data:", finalData);
-          
+
           return finalData;
         }
       }
-      
+
       return updatedData;
     } catch (error) {
       console.error('Error updating performance data:', error);
@@ -1316,16 +1316,14 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
       setPerformanceData(performanceDataRef.current);
       throw error;
     }
-  }, [performanceSheetId, updateEntity]);
+  }, [performanceSheetId, api]);
 
   return (
     <PerformanceSheetContext.Provider
-      value={{ 
+      value={{
         performanceData,
         setPerformanceData,
         updatePerformanceData,
-        loading,
-        error,
       }}
     >
       {children}

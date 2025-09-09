@@ -3,6 +3,7 @@ export { default as AddressInput } from "./_old/address-input";
 export { default as AdvancedDropdown } from "./_old/advanced-dropdown";
 export { default as DatePicker } from "./_old/date-picker";
 export { default as Text } from "./ui/text";
+export { default as Textarea } from "./ui/text-area";
 
 // Misc
 export { default as CommandBar } from "./_old/command-bar";

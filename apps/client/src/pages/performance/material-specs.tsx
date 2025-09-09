@@ -23,10 +23,12 @@ export interface MaterialSpecsProps {
 
 const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
+
+  console.log("MaterialSpecs render", { localData, fieldErrors, isDirty, lastSaved, isLoading, error });
 
   // Get coil width boundaries from the nested structure
   const coilWidthBounds = useMemo(() => {
@@ -285,7 +287,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -294,7 +296,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -303,7 +305,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

@@ -24,7 +24,7 @@ export interface TDDBHDProps {
 const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
   const textColor = "var(--color-text)"
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
@@ -150,7 +150,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           type="number"
           error={getFieldError("tddbhd.reel.airPressureAvailable")}
           disabled={!isEditing}
-          style={{ backgroundColor: airPressureCheck, color: textColor }}
+          className={` ${airPressureCheck} text-text`}
         />
         <Input
           label="Required Decel. Rate (ft/sec²)"
@@ -275,14 +275,14 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="tddbhd.reel.torque.rewindRequired"
           value={localData.tddbhd?.reel?.torque?.rewindRequired?.toString() || ""}
           type="number"
-          style={{ backgroundColor: rewindTorqueCheck, color: textColor }}
+          className={` ${rewindTorqueCheck} text-text`}
           disabled={true}
         />
         <Input
           label="Passed"
           name="tddbhd.reel.checks.tddbhdCheck"
           value={localData.tddbhd?.reel?.checks?.tddbhdCheck || "NOT OK"}
-          style={{ backgroundColor: tddbhdCheck, color: textColor }}
+          className={` ${tddbhdCheck} text-text`}
           disabled={true}
         />
       </div>
@@ -318,7 +318,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.force?.required?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: holdDownForceCheck, color: textColor }}
+          className={` ${holdDownForceCheck} text-text`}
         />
         <Input
           label="Hold Down Force Available (lbs)"
@@ -334,7 +334,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.minMaterialWidth?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: minMaterialWidthCheck, color: textColor }}
+          className={` ${minMaterialWidthCheck} text-text`}
         />
         <Checkbox
           label="Confirmed Min Width OK"
@@ -384,7 +384,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.psiAirRequired?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: brakePressCheck, color: textColor }}
+          className={` ${brakePressCheck} text-text`}
         />
         <Input
           label="Failsafe Holding Force (in. lbs.)"
@@ -392,7 +392,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.holdingForce?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: torqueRequiredCheck, color: textColor }}
+          className={` ${torqueRequiredCheck} text-text`}
         />
       </div>
     </Card>
@@ -408,7 +408,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -417,7 +417,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -426,7 +426,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -460,7 +460,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
       {customerDateSection}
       {reelMaterialSection}
       {coilBrakeSection}
-      
+
       {/* Threading Drive and Hold Down */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {threadingDriveSection}

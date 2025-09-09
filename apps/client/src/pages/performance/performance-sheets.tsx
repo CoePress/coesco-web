@@ -1,11 +1,12 @@
-import { Plus, Filter, MoreHorizontal, ChevronDown, Lock } from "lucide-react";
+import { Plus, Filter, MoreHorizontal, ChevronDown, Lock, RefreshCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Input, Modal, PageHeader, Table } from "@/components";
+import { Button, Input, Modal, PageHeader, Table } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useState, useEffect } from "react";
 import { instance } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
+import { set } from "date-fns";
 
 const PerformanceSheets = () => {
   const { entities: performanceSheets } = useGetEntities("/performance/sheets");
@@ -45,7 +46,7 @@ const PerformanceSheets = () => {
       header: "Name",
       className: "text-primary hover:underline",
       render: (_, row) => (
-        <Link to={`/sales/performance/${row.id}`}>
+        <Link to={`/sales/performance-sheets/${row.id}`}>
           {row.name ? row.name : "Untitled Performance Sheet"}
         </Link>
       ),
@@ -84,20 +85,23 @@ const PerformanceSheets = () => {
     ? `${performanceSheets?.length} total performance sheets`
     : "";
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={() => { setModalOpen(true) }}>
+          <RefreshCcw size={16} /> New Performance Sheet
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex flex-1 flex-col">
+
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "New Performance Sheet",
-            icon: <Plus size={16} />,
-            variant: "primary",
-            onClick: () => setModalOpen(true),
-          },
-        ]}
+        actions={<Actions />}
       />
 
       {/* <PageSearch
