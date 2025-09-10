@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Edit, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import {Button, Input, Card, PageHeader } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { IApiResponse } from '@/utils/types';
 const FormDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, put } = useApi<IApiResponse<any>>();
+  const { get, patch, post, delete: deleteRequest } = useApi<IApiResponse<any>>();
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -16,26 +16,28 @@ const FormDetails = () => {
   const [formData, setFormData] = useState<any>(null);
   const [sections, setSections] = useState<any[]>([]);
 
+  const include = useMemo(
+      () => ["sections.fields"],
+      []
+  );
+
   const fetchForm = async () => {
     if (!id) return;
     
     setLoading(true);
     setError(null);
+
     
     const response = await get(`/forms/${id}`, {
-      include: { 
-        sections: { 
-          include: { fields: true },
-          orderBy: { orderIndex: 'asc' }
-        }
-      }
+      include
     });
     
     if (response?.success && response.data) {
       setFormData(response.data);
       setSections(response.data.sections?.map(section => ({
         ...section,
-        isCollapsed: false
+        isCollapsed: false,
+        fields: section.fields || []
       })) || []);
     } else {
       setError(response?.error || "Failed to fetch form");
@@ -51,34 +53,48 @@ const FormDetails = () => {
   const handleSave = async () => {
     if (!id || !formData) return;
     
-    const updateData = {
-      name: formData.name,
-      description: formData.description,
-      status: formData.status,
-      sections: sections.map((section, index) => ({
-        ...section,
-        orderIndex: index,
-        fields: section.fields?.map((field, fieldIndex) => ({
-          ...field,
-          orderIndex: fieldIndex
-        }))
-      }))
-    };
-    
-    const response = await put(`/forms/${id}`, updateData);
-    
-    if (response?.success) {
+    try {
+      // Update form data only if it actually changed
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        status: formData.status
+      };
+      
+      await patch(`/forms/${id}`, updateData);
+      
+      // Update all sections using the working endpoints
+      for (const section of sections) {
+        // Update section title
+        await patch(`/forms/${id}/sections/${section.id}`, { title: section.title });
+        
+        // Update section description  
+        await patch(`/forms/${id}/sections/${section.id}`, { description: section.description });
+        
+        // Update all fields in the section
+        if (section.fields && section.fields.length > 0) {
+          for (const field of section.fields) {
+            await patch(`/forms/${id}/sections/${section.id}/fields/${field.id}`, {
+              label: field.label,
+              fieldType: field.fieldType,
+              required: field.required,
+              options: field.options,
+              validationRules: field.validationRules
+            });
+          }
+        }
+      }
+      
       setIsEditing(false);
-      // Optionally refresh the data
-      fetchForm();
-    } else {
-      setError(response?.error || "Failed to save form");
+      await fetchForm();
+    } catch (error) {
+      console.error('Save error:', error);
+      setError('Failed to save changes');
     }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset data to original state
     fetchForm();
   };
 
@@ -86,15 +102,32 @@ const FormDetails = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const addSection = () => {
-    const newSection = {
-      id: Date.now().toString(),
+  const addSection = async () => {
+    if (!id) return;
+    
+    const maxOrderIndex = sections.length > 0 
+      ? Math.max(...sections.map(s => s.orderIndex ?? 0))
+      : 0;
+    
+    const sectionData = {
       title: 'New Section',
       description: '',
-      isCollapsed: false,
-      fields: []
+      orderIndex: maxOrderIndex + 1
     };
-    setSections([...sections, newSection]);
+    
+    console.log('Sending section data:', JSON.stringify(sectionData));
+    const response = await post(`/forms/${id}/sections`, sectionData);
+    
+    if (response?.success) {
+      const newSection = {
+        ...response.data,
+        isCollapsed: false,
+        fields: []
+      };
+      setSections([...sections, newSection]);
+    } else {
+      setError(response?.error || "Failed to create section");
+    }
   };
 
   const toggleSectionCollapse = (sectionId: string) => {
@@ -105,57 +138,92 @@ const FormDetails = () => {
     ));
   };
 
-  const removeSection = (sectionId: string) => {
-    setSections(sections.filter(section => section.id !== sectionId));
+  const removeSection = async (sectionId: string) => {
+    if (!id) return;
+    
+    const response = await deleteRequest(`/forms/${id}/sections/${sectionId}`);
+    
+    if (response?.success) {
+      setSections(sections.filter(section => section.id !== sectionId));
+    } else {
+      setError(response?.error || "Failed to delete section");
+    }
   };
 
-  const addFieldToSection = (sectionId: string) => {
-    const newField = {
-      id: Date.now().toString(),
-      type: 'text',
+  const addFieldToSection = async (sectionId: string) => {
+    if (!id) return;
+    
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+    
+    const fieldData = {
+      fieldType: 'text',
       label: 'New Field',
-      required: false
+      required: true,  // Set to true to pass validation since !false = true triggers error
+      orderIndex: (section.fields?.length || 0) + 1,  // Start at 1 to ensure !0 doesn't fail
+      validationRules: null,
+      options: null
     };
-    setSections(sections.map(section => 
-      section.id === sectionId 
-        ? { ...section, fields: [...section.fields, newField] }
-        : section
-    ));
+    
+    const response = await post(`/forms/${id}/sections/${sectionId}/fields`, fieldData);
+    
+    if (response?.success) {
+      const newField = response.data;
+      setSections(sections.map(section => 
+        section.id === sectionId 
+          ? { ...section, fields: [...(section.fields || []), newField] }
+          : section
+      ));
+    } else {
+      setError(response?.error || "Failed to create field");
+    }
   };
 
-  const removeField = (sectionId: string, fieldId: string) => {
-    setSections(sections.map(section => 
-      section.id === sectionId 
-        ? { ...section, fields: section.fields.filter(field => field.id !== fieldId) }
-        : section
-    ));
+  const removeField = async (sectionId: string, fieldId: string) => {
+    if (!id) return;
+    
+    const response = await deleteRequest(`/forms/${id}/sections/${sectionId}/fields/${fieldId}`);
+    
+    if (response?.success) {
+      setSections(sections.map(section => 
+        section.id === sectionId 
+          ? { ...section, fields: section.fields?.filter(field => field.id !== fieldId) || [] }
+          : section
+      ));
+    } else {
+      setError(response?.error || "Failed to delete field");
+    }
   };
 
   const updateSectionTitle = (sectionId: string, title: string) => {
+    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, title } : section
     ));
   };
 
   const updateSectionDescription = (sectionId: string, description: string) => {
+    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, description } : section
     ));
   };
 
   const updateField = (sectionId: string, fieldId: string, updates: any) => {
+    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId 
-        ? { ...section, fields: section.fields.map(field => 
+        ? { ...section, fields: section.fields?.map(field => 
             field.id === fieldId ? { ...field, ...updates } : field
-          )}
+          ) || []}
         : section
     ));
   };
 
-  const getFieldTypeColor = (type: string) => {
+  const getFieldTypeColor = (fieldType: string) => {
     const colors = {
       text: 'bg-info/20 text-info',
+      number: 'bg-info/20 text-info',
       date: 'bg-success/20 text-success',
       dropdown: 'bg-primary/20 text-primary',
       checkbox: 'bg-warning/20 text-warning',
@@ -163,8 +231,19 @@ const FormDetails = () => {
       photo: 'bg-error/10 text-error',
       signature: 'bg-secondary/20 text-secondary',
     };
-    return colors[type] || 'bg-surface text-text-muted';
+    return colors[fieldType] || 'bg-surface text-text-muted';
   };
+
+  const fieldTypes = [
+    { value: 'text', label: 'Text Input' },
+    { value: 'number', label: 'Number Input' },
+    { value: 'dropdown', label: 'Dropdown' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'textarea', label: 'Text Area' },
+    { value: 'photo', label: 'Photo Upload' },
+    { value: 'signature', label: 'Signature' },
+    { value: 'date', label: 'Date Picker' }
+  ];
 
   const Actions = () => {
     return (
@@ -329,7 +408,7 @@ const FormDetails = () => {
 
             {!section.isCollapsed && (
               <div className="p-">
-                {section.fields.length === 0 ? (
+                {(!section.fields || section.fields.length === 0) ? (
                   <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                     <div className="text-text-muted mb-2">
                       <span className="text-lg">No fields in this section yet</span>
@@ -355,31 +434,39 @@ const FormDetails = () => {
                         </div>
                         
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-1">
-                            {isEditing ? (
-                              <Input 
-                                value={field.label}
-                                onChange={(e) => updateField(section.id, field.id, { label: e.target.value })}
-                                className="font-medium flex-1"
-                              />
-                            ) : (
-                              <span className="font-medium text-text text-lg">{field.label}</span>
-                            )}
-                            
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${getFieldTypeColor(field.type)}`}>
-                              {field.type}
-                            </span>
-                            
-                            {field.required && (
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-error/20 text-error">
-                                Required
-                              </span>
-                            )}
-                          </div>
-                          
-                          {field.options && (
-                            <div className="text-sm text-text-muted mt-1">
-                              <span className="font-medium">Options:</span> {field.options.join(', ')}
+                          {isEditing ? (
+                            <FieldEditor 
+                              field={field}
+                              fieldTypes={fieldTypes}
+                              onUpdate={(updates) => updateField(section.id, field.id, updates)}
+                            />
+                          ) : (
+                            <div>
+                              <div className="flex items-center space-x-3 mb-1">
+                                <span className="font-medium text-text text-lg">{field.label}</span>
+                                
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${getFieldTypeColor(field.fieldType)}`}>
+                                  {field.fieldType}
+                                </span>
+                                
+                                {field.required && (
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-error/20 text-error">
+                                    Required
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {field.options && Array.isArray(field.options) && field.options.length > 0 && (
+                                <div className="text-sm text-text-muted mt-1">
+                                  <span className="font-medium">Options:</span> {field.options.join(', ')}
+                                </div>
+                              )}
+                              
+                              {field.validationRules && Object.keys(field.validationRules).length > 0 && (
+                                <div className="text-sm text-text-muted mt-1">
+                                  <span className="font-medium">Validation:</span> {JSON.stringify(field.validationRules)}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -413,6 +500,110 @@ const FormDetails = () => {
             </Button>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+const FieldEditor = ({ field, fieldTypes, onUpdate }) => {
+  const [options, setOptions] = useState(
+    field.options && Array.isArray(field.options) 
+      ? field.options.join('\n') 
+      : ''
+  );
+  const [validationRules, setValidationRules] = useState(
+    field.validationRules ? JSON.stringify(field.validationRules, null, 2) : ''
+  );
+
+  const handleOptionsChange = (value: string) => {
+    setOptions(value);
+    const optionsArray = value.split('\n').filter(opt => opt.trim() !== '');
+    onUpdate({ options: optionsArray.length > 0 ? optionsArray : null });
+  };
+
+  const handleValidationChange = (value: string) => {
+    setValidationRules(value);
+    try {
+      const rules = value.trim() ? JSON.parse(value) : null;
+      onUpdate({ validationRules: rules });
+    } catch (e) {
+      // Invalid JSON, don't update
+    }
+  };
+
+  const needsOptions = ['dropdown', 'checkbox'].includes(field.fieldType);
+
+  return (
+    <div className="space-y-4 p-4 bg-surface border border-border rounded-lg">
+      {/* Field Label */}
+      <div>
+        <label className="block text-sm font-medium text-text mb-1">Field Label *</label>
+        <Input 
+          value={field.label}
+          onChange={(e) => onUpdate({ label: e.target.value })}
+          placeholder="Enter field label"
+          className="w-full"
+        />
+      </div>
+
+      {/* Field Type */}
+      <div>
+        <label className="block text-sm font-medium text-text mb-1">Field Type</label>
+        <select
+          value={field.fieldType}
+          onChange={(e) => onUpdate({ fieldType: e.target.value })}
+          className="w-full px-3 py-2 border rounded-md">
+          {fieldTypes.map(type => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Required */}
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id={`required-${field.id}`}
+          checked={field.required || false}
+          onChange={(e) => onUpdate({ required: e.target.checked })}
+          className="rounded"
+        />
+        <label htmlFor={`required-${field.id}`} className="text-sm font-medium text-text">
+          Required field
+        </label>
+      </div>
+
+      {/* Options (for dropdown and checkbox) */}
+      {needsOptions && (
+        <div>
+          <label className="block text-sm font-medium text-text mb-1">
+            Options (one per line)
+          </label>
+          <textarea
+            value={options}
+            onChange={(e) => handleOptionsChange(e.target.value)}
+            placeholder="Option 1&#10;Option 2&#10;Option 3"
+            className="w-full px-3 py-2 border rounded-md h-24 resize-none"
+          />
+        </div>
+      )}
+
+      {/* Validation Rules */}
+      <div>
+        <label className="block text-sm font-medium text-text mb-1">
+          Validation Rules (JSON)
+        </label>
+        <textarea
+          value={validationRules}
+          onChange={(e) => handleValidationChange(e.target.value)}
+          placeholder='{"minLength": 5, "maxLength": 100}'
+          className="w-full px-3 py-2 border rounded-md h-20 resize-none font-mono text-sm"
+        />
+        <div className="text-xs text-text-muted mt-1">
+          Examples: {`{"minLength": 5}, {"pattern": "[0-9]+"}`}
+        </div>
       </div>
     </div>
   );

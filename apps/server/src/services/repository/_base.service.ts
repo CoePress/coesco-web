@@ -42,15 +42,26 @@ export class BaseService<T> {
     };
   }
 
-  async getById(id: string, tx?: Prisma.TransactionClient) {
+  async getById(id: string, params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const scope = await this.getScope();
     const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
 
-    const item = await model.findFirst({
+    const query: any = {
       where: {
         AND: [{ id }, scope ?? {}],
       },
-    });
+    };
+
+    // Handle include/select from params
+    if (params?.include) {
+      const { include } = buildQuery(params, []);
+      if (include) query.include = include;
+    } else if (params?.select) {
+      const { select } = buildQuery(params, []);
+      if (select) query.select = select;
+    }
+
+    const item = await model.findFirst(query);
 
     return {
       success: true,

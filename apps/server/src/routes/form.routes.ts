@@ -12,14 +12,14 @@ router.patch("/:formId", formController.updateForm);
 router.delete("/:formId", formController.deleteForm);
 
 // Sections
-router.post("/:formId/sections", formController.createForm);
-router.patch("/:formId/sections/:sectionId", formController.updateForm);
-router.delete("/:formId/sections/:sectionId", formController.deleteForm);
+router.post("/:formId/sections", formController.createFormSection);
+router.patch("/:formId/sections/:sectionId", formController.updateFormSection);
+router.delete("/:formId/sections/:sectionId", formController.deleteFormSection);
 
 // Fields
-router.post("/:formId/sections/:sectionId/fields", formController.createForm);
-router.patch("/:formId/sections/:sectionId/fields/:fieldId", formController.updateForm);
-router.delete("/:formId/sections/:sectionId/fields/:fieldId", formController.deleteForm);
+router.post("/:formId/sections/:sectionId/fields", formController.createFormField);
+router.patch("/:formId/sections/:sectionId/fields/:fieldId", formController.updateFormField);
+router.delete("/:formId/sections/:sectionId/fields/:fieldId", formController.deleteFormField);
 
 // Submission
 router.post("/:formId/submissions", formController.createForm);
