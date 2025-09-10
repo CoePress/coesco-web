@@ -120,7 +120,7 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
 
       params.offset = paginatedResult.nextOffset;
 
-      if (paginatedResult.records.length === 0) {
+      if (!paginatedResult.hasMore || paginatedResult.records.length < legacyFetchSize) {
         logger.info(`No more records to process. Breaking pagination loop.`);
         break;
       }
@@ -424,6 +424,69 @@ async function _findEmployeeByNumberOrInitials(identifier: string): Promise<any>
   }
 }
 
+function formatModelNumbers(modelNumbers: string[]): string[] {
+  // Group models by their base pattern (everything before the numbers)
+  const groups = new Map<string, string[]>();
+
+  modelNumbers.forEach((model) => {
+    // Extract the base pattern (letters and all numbers/dashes)
+    const match = model.match(/^([A-Z]+-\d+(?:-\d+)*)/);
+    if (match) {
+      const basePattern = match[1];
+      if (!groups.has(basePattern)) {
+        groups.set(basePattern, []);
+      }
+      groups.get(basePattern)!.push(model);
+    }
+  });
+
+  const result: string[] = [];
+
+  // Process each group
+  groups.forEach((models) => {
+    if (models.length < 2) {
+      // If only one model in group, keep as is
+      result.push(...models);
+      return;
+    }
+
+    // Find the longest common prefix within this group
+    const commonPrefix = findLongestCommonPrefix(models);
+
+    // Format each model in the group
+    models.forEach((model) => {
+      if (model.length > commonPrefix.length) {
+        const suffix = model.substring(commonPrefix.length);
+        // Don't add dash if suffix already starts with one
+        const formatted = suffix.startsWith('-') ? `${commonPrefix}${suffix}` : `${commonPrefix}-${suffix}`;
+        result.push(formatted);
+      }
+      else {
+        result.push(model);
+      }
+    });
+  });
+
+  return result;
+}
+
+function findLongestCommonPrefix(strings: string[]): string {
+  if (strings.length === 0)
+    return "";
+
+  let prefix = strings[0];
+
+  for (let i = 1; i < strings.length; i++) {
+    while (!strings[i].startsWith(prefix)) {
+      prefix = prefix.substring(0, prefix.length - 1);
+      if (prefix === "")
+        return "";
+    }
+  }
+
+  return prefix;
+}
+
 // Migrations
 async function _migrateCoilTypes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
@@ -678,67 +741,47 @@ async function _migrateOptionHeaders(): Promise<MigrationResult> {
   }
 
   const mapping: TableMapping = {
-    sourceDatabase: "quote",
-    sourceTable: "StdEquip",
+    sourceDatabase: "std",
+    sourceTable: "StdOptDesc",
     targetTable: "optionHeader",
     fieldMappings: [
       {
-        from: "ID",
+        from: "DescID",
         to: "legacyId",
         transform: value => value?.toString(),
       },
       {
-        from: "Name",
-        to: "name",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Descr",
+        from: "Description",
         to: "description",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Application",
-        to: "application",
         transform: value => value?.trim(),
       },
     ],
     beforeSave: async (data, original) => {
-      const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
-        filter: `ID=${original.ID}`,
-      });
-
       let optionCategoryId = null;
 
-      if (!optGrpRecords || optGrpRecords.length === 0) {
-        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}, using Archived category`);
+      // Use OptionGrpID from StdOptDesc to find the category
+      const optionGrpId = original.OptionGrpID?.toString();
+
+      if (!optionGrpId) {
+        logger.warn(`No OptionGrpID found for StdOptDesc.DescID: ${original.DescID}, using Archived category`);
         optionCategoryId = archivedCategory.id;
       }
       else {
-        const optGrp: any = optGrpRecords[0];
-        const grpId = optGrp.GrpID?.toString();
+        // Find category by the OptionGrpID (which should match OptionOrder.OrderID based on your notes)
+        const optionCategory = await findReferencedRecord("optionCategory", {
+          legacyId: optionGrpId,
+        });
 
-        if (!grpId) {
-          logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}, using Archived category`);
+        if (!optionCategory) {
+          logger.warn(`No optionCategory found for OptionGrpID: ${optionGrpId}, using Archived category`);
           optionCategoryId = archivedCategory.id;
         }
         else {
-          const optionCategory = await findReferencedRecord("optionCategory", {
-            legacyId: grpId,
-          });
-
-          if (!optionCategory) {
-            logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}, using Archived category`);
-            optionCategoryId = archivedCategory.id;
-          }
-          else {
-            optionCategoryId = optionCategory.id;
-          }
+          optionCategoryId = optionCategory.id;
         }
       }
 
-      // TODO: Handle HideOption -> isActive
-
+      data.name = "Temporary Option Name";
       data.optionCategoryId = optionCategoryId;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
@@ -855,6 +898,19 @@ async function _migrateOptionDetails(): Promise<MigrationResult> {
 }
 
 async function _migrateEquipListToItems(): Promise<MigrationResult> {
+  // First, get all models to determine the formatting groups
+  const allRecords = await legacyService.getAll("quote", "EquipList", {});
+  const allModels = allRecords?.map((record: any) =>
+    replaceInternalWhitespace(trimWhitespace(record.Model)),
+  ).filter(Boolean) || [];
+
+  // Create a formatting map
+  const formattedModels = formatModelNumbers(allModels);
+  const modelMap = new Map();
+  allModels.forEach((original, index) => {
+    modelMap.set(original, formattedModels[index]);
+  });
+
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
@@ -863,7 +919,10 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
       {
         from: "Model",
         to: "modelNumber",
-        transform: value => replaceInternalWhitespace(trimWhitespace(value)),
+        transform: (value) => {
+          const cleaned = replaceInternalWhitespace(trimWhitespace(value));
+          return modelMap.get(cleaned) || cleaned;
+        },
       },
       {
         from: "Description",
@@ -900,19 +959,18 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
       data.type = "Equipment" as ItemType;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
-      data.createdById = original.CreateInit.toLowerCase() || "system";
-      data.updatedById = original.ModifyInit.toLowerCase() || "system";
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
       return data;
     },
     skipDuplicates: true,
     duplicateCheck: data => ({
-      model: data.model,
+      modelNumber: data.modelNumber, // Fixed: was "model", should be "modelNumber"
     }),
     batchSize: 100,
   };
 
   const result = await migrateWithMapping(mapping);
-
   return result;
 }
 
@@ -1566,12 +1624,12 @@ async function main() {
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
-    // const coilTypes = await _migrateCoilTypes();
-    // const productClasses = await _migrateProductClasses();
-    // const equipmentItems = await _migrateEquipListToItems();
-    // const optionCategories = await _migrateOptionCategories();
-    // const optionHeaders = await _migrateOptionHeaders();
-    // const optionDetails = await _migrateOptionDetails();
+    const coilTypes = await _migrateCoilTypes();
+    const productClasses = await _migrateProductClasses();
+    const equipmentItems = await _migrateEquipListToItems();
+    const optionCategories = await _migrateOptionCategories();
+    const optionHeaders = await _migrateOptionHeaders();
+    const optionDetails = await _migrateOptionDetails();
     // const quoteHeaders = await _migrateQuotes();
     // const quotes = await _migrateQuoteRevisions();
     // const quoteItems = await _migrateQuoteItems();
@@ -1583,12 +1641,12 @@ async function main() {
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
-    // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
-    // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
-    // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
-    // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
+    logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
+    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
+    logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
     // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);

@@ -814,7 +814,6 @@ model OptionHeader {
   optionCategoryId  String
   name        String
   description String?
-  application String?
   legacyId    String?
   displayOrder   Int       @default(0)
   isActive    Boolean   @default(true)

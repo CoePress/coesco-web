@@ -21,6 +21,10 @@ const Products = () => {
 
   const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>(getInitialProductType);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
+  const [sort, setSort] = useState("modelNumber");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     category: '',
     status: '',
@@ -73,7 +77,12 @@ const Products = () => {
     entities: products,
     loading,
     pagination,
-  } = useGetEntities("/catalog/items");
+  } = useGetEntities("/catalog/items", {
+    page,
+    limit,
+    sort,
+    order,
+  });
 
   const columns: TableColumn<any>[] = [
     {
@@ -260,12 +269,18 @@ const Products = () => {
             <Table
               columns={columns}
               data={products || []}
-              total={products?.length || 0}
+              total={pagination?.total || 0}
               idField="id"
               pagination
               currentPage={pagination?.page || 1}
               totalPages={pagination?.totalPages || 1}
-              onPageChange={() => {}}
+              onPageChange={setPage}
+              sort={sort}
+              order={order}
+              onSortChange={(newSort, newOrder) => {
+                setSort(newSort);
+                setOrder(newOrder);
+              }}
               className="rounded border overflow-clip"
               loading={loading}
               emptyMessage="No products found"
