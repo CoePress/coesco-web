@@ -2,6 +2,7 @@
 import type { ItemType } from "@prisma/client";
 
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -146,32 +147,27 @@ async function processSingleBatch(
   result: MigrationResult,
   batchIndex: number,
 ): Promise<void> {
-  // First, process and prepare all records
   const recordsToCreate: any = [];
 
   for (const record of batchRecords) {
     try {
-      // Apply filter if provided
       if (mapping.filter && !mapping.filter(record)) {
         result.skipped++;
         continue;
       }
 
-      // Map fields
       const mappedData: any = {};
       let skipRecord = false;
 
       for (const fieldMap of mapping.fieldMappings) {
         const sourceValue = record[fieldMap.from];
 
-        // Check required fields
         if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
           logger.warn(`Required field ${fieldMap.from} is missing in record`);
           skipRecord = true;
           break;
         }
 
-        // Apply transformation or use default value
         let targetValue;
         if (fieldMap.transform) {
           targetValue = fieldMap.transform(sourceValue, record);
@@ -194,18 +190,15 @@ async function processSingleBatch(
         continue;
       }
 
-      // Apply beforeSave hook if provided
       const dataToSave = mapping.beforeSave
         ? await mapping.beforeSave(mappedData, record)
         : mappedData;
 
-      // Skip if beforeSave returned null (e.g., missing references)
       if (dataToSave === null) {
         result.skipped++;
         continue;
       }
 
-      // Clean up any temporary fields that start with _temp
       const cleanedData = Object.fromEntries(
         Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
       );
@@ -219,7 +212,6 @@ async function processSingleBatch(
     }
   }
 
-  // Insert all records using bulk createMany with retry logic
   if (recordsToCreate.length > 0) {
     const maxRetries = 3;
     let attempt = 0;
@@ -227,7 +219,6 @@ async function processSingleBatch(
 
     while (attempt < maxRetries && !success) {
       try {
-        // Add random delay for retries to reduce collision probability
         if (attempt > 0) {
           const delay = Math.random() * 1000 + (attempt * 500); // 500-1500ms increasing delay
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -241,12 +232,11 @@ async function processSingleBatch(
           });
           result.created += createResult.count;
 
-          // If we skipped any, calculate how many
           const expectedTotal = recordsToCreate.length;
           const actualCreated = createResult.count;
           result.skipped += (expectedTotal - actualCreated);
         }, {
-          maxWait: 5000, // Shorter wait to fail faster on deadlocks
+          maxWait: 5000,
           timeout: 20000,
         });
 
@@ -257,7 +247,6 @@ async function processSingleBatch(
         attempt++;
         const errorMessage = (bulkError as any).message || bulkError;
 
-        // Check if it's a deadlock error
         const isDeadlock = errorMessage.includes("deadlock") || errorMessage.includes("40P01");
 
         if (isDeadlock && attempt < maxRetries) {
@@ -1416,9 +1405,10 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+// used elsewhere
 export async function _migrateEmployees(): Promise<MigrationResult> {
-  // Initialize legacy service if not already initialized
   await legacyService.initialize();
+  const hash = await bcrypt.hash("Password123!", 10);
 
   const userMapping: TableMapping = {
     sourceDatabase: "std",
@@ -1439,7 +1429,7 @@ export async function _migrateEmployees(): Promise<MigrationResult> {
       }
 
       data.username = username;
-      data.password = null;
+      data.password = hash;
       data.microsoftId = null;
       data.role = "USER";
       data.isActive = true;

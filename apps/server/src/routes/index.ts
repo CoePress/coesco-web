@@ -7,6 +7,7 @@ import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
 import crmRoutes from "./crm.routes";
+import formRoutes from "./form.routes";
 import legacyRoutes from "./legacy.routes";
 import lockRoutes from "./lock.routes";
 import performanceRoutes from "./performance.routes";
@@ -18,13 +19,14 @@ const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
-router.use(protect);
+router.use(protect); // all routes below this are protected
 router.use("/admin", adminRoutes);
 router.use("/catalog", catalogRoutes);
+router.use("/forms", formRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);
 router.use("/legacy", legacyRoutes);
-router.use("/lock", lockRoutes);
+router.use("/locks", lockRoutes);
 router.use("/performance", performanceRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);

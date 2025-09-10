@@ -709,6 +709,161 @@
       }
     },
     {
+      "name": "form",
+      "description": "Schema for Form entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "form-field",
+      "description": "Schema for FormField entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "sectionId": {
+          "type": "string",
+          "required": true
+        },
+        "fieldType": {
+          "type": "string",
+          "required": true
+        },
+        "label": {
+          "type": "string",
+          "required": true
+        },
+        "required": {
+          "type": "boolean",
+          "required": true,
+          "hasDefault": true
+        },
+        "orderIndex": {
+          "type": "int",
+          "required": true
+        },
+        "validationRules": {
+          "type": "json",
+          "required": false
+        },
+        "options": {
+          "type": "json",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "form-section",
+      "description": "Schema for FormSection entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "formId": {
+          "type": "string",
+          "required": true
+        },
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        },
+        "orderIndex": {
+          "type": "int",
+          "required": true
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "form-submission",
+      "description": "Schema for FormSubmission entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "formId": {
+          "type": "string",
+          "required": true
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "locationData": {
+          "type": "json",
+          "required": false
+        },
+        "submittedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        }
+      }
+    },
+    {
       "name": "item",
       "description": "Schema for Item entity",
       "schema": {
@@ -2132,6 +2287,42 @@
           "type": "datetime",
           "required": true,
           "hasDefault": true
+        }
+      }
+    },
+    {
+      "name": "submission-answer",
+      "description": "Schema for SubmissionAnswer entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "submissionId": {
+          "type": "string",
+          "required": true
+        },
+        "fieldId": {
+          "type": "string",
+          "required": true
+        },
+        "value": {
+          "type": "string",
+          "required": false
+        },
+        "filePath": {
+          "type": "string",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
         }
       }
     },

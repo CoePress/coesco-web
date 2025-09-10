@@ -1,61 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import {Button, Input, Card, PageHeader } from '@/components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApi } from '@/hooks/use-api';
+import { IApiResponse } from '@/utils/types';
 
 const FormDetails = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    id: "50e236ab-c9ca-4efd-be64-5178a3b41381",
-    name: 'Safety Inspection Form',
-    description: 'Daily safety inspection checklist for construction sites',
-    status: 'Published'
-  });
-
-  const [sections, setSections] = useState([
-    {
-      id: "1",
-      title: 'Basic Information',
-      description: 'General inspection details',
-      isCollapsed: false,
-      fields: [
-        { id: "1", type: 'text', label: 'Inspector Name', required: true },
-        { id: "2", type: 'date', label: 'Inspection Date', required: true },
-        { id: "3", type: 'dropdown', label: 'Site Location', required: true, options: ['Site A', 'Site B', 'Site C'] },
-      ]
-    },
-    {
-      id: "2",
-      title: 'Safety Checks',
-      description: 'Safety equipment and procedures',
-      isCollapsed: false,
-      fields: [
-        { id: "4", type: 'checkbox', label: 'PPE Check', required: false },
-        { id: "5", type: 'checkbox', label: 'First Aid Kit Available', required: true },
-        { id: "6", type: 'dropdown', label: 'Safety Rating', required: true, options: ['Excellent', 'Good', 'Fair', 'Poor'] },
-      ]
-    },
-    {
-      id: "3",
-      title: 'Documentation',
-      description: 'Photos and additional notes',
-      isCollapsed: false,
-      fields: [
-        { id: "7", type: 'photo', label: 'Site Photos', required: false },
-        { id: "8", type: 'textarea', label: 'Additional Notes', required: false },
-        { id: "9", type: 'signature', label: 'Inspector Signature', required: true },
-      ]
-    }
-  ]);
-
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { get, put } = useApi<IApiResponse<any>>();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<any>(null);
+  const [sections, setSections] = useState<any[]>([]);
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const fetchForm = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    const response = await get(`/forms/${id}`, {
+      include: { 
+        sections: { 
+          include: { fields: true },
+          orderBy: { orderIndex: 'asc' }
+        }
+      }
+    });
+    
+    if (response?.success && response.data) {
+      setFormData(response.data);
+      setSections(response.data.sections?.map(section => ({
+        ...section,
+        isCollapsed: false
+      })) || []);
+    } else {
+      setError(response?.error || "Failed to fetch form");
+    }
+    
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchForm();
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!id || !formData) return;
+    
+    const updateData = {
+      name: formData.name,
+      description: formData.description,
+      status: formData.status,
+      sections: sections.map((section, index) => ({
+        ...section,
+        orderIndex: index,
+        fields: section.fields?.map((field, fieldIndex) => ({
+          ...field,
+          orderIndex: fieldIndex
+        }))
+      }))
+    };
+    
+    const response = await put(`/forms/${id}`, updateData);
+    
+    if (response?.success) {
+      setIsEditing(false);
+      // Optionally refresh the data
+      fetchForm();
+    } else {
+      setError(response?.error || "Failed to save form");
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    // Reset data to original state
+    fetchForm();
+  };
+
+  const updateFormData = (updates: any) => {
+    setFormData(prev => ({ ...prev, ...updates }));
   };
 
   const addSection = () => {
@@ -178,13 +206,63 @@ const FormDetails = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-lg">Loading form...</div>
+      </div>
+    );
+  }
+
+  if (error || !formData) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-error text-lg mb-4">{error || "Form not found"}</div>
+        <Button onClick={() => navigate('/service/forms')}>
+          Back to Forms
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col">
-      <PageHeader
-        title={formData.name}
-        description={formData.description}
-        actions={<Actions />}
-      />
+      {isEditing ? (
+        <div className="border-b border-border bg-surface p-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-4">
+                <Input 
+                  value={formData.name}
+                  onChange={(e) => updateFormData({ name: e.target.value })}
+                  className="text-2xl font-bold"
+                  placeholder="Form name"
+                />
+                <Input 
+                  value={formData.description || ''}
+                  onChange={(e) => updateFormData({ description: e.target.value })}
+                  placeholder="Form description (optional)"
+                />
+                <select
+                  value={formData.status}
+                  onChange={(e) => updateFormData({ status: e.target.value })}
+                  className="px-3 py-2 border rounded-md">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <Actions />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <PageHeader
+          title={formData.name}
+          description={formData.description}
+          actions={<Actions />}
+        />
+      )}
 
       <div className="space-y-4 p-4 max-w-4xl mx-auto w-full">
         {sections.map((section, sectionIndex) => (
