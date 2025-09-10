@@ -16,11 +16,15 @@ import {
   ChartNoAxesCombined,
   ActivityIcon,
   FileClockIcon,
+  WrenchIcon,
+  FileCogIcon,
+  FileCheck2Icon,
+  FileIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -44,7 +48,7 @@ export type Page = {
 };
 
 const adminModule: Module = {
-  sequence: 3,
+  sequence: 4,
   slug: "admin",
   label: "Admin",
   icon: ShieldIcon,
@@ -224,8 +228,45 @@ const salesModule: Module = {
   ],
 };
 
+const serviceModule: Module = {
+  sequence: 3,
+  slug: "service",
+  label: "Service",
+  icon: WrenchIcon,
+  status: "development" as const,
+  pages: [
+    {
+      slug: null,
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      component: ServiceDashboard,
+    },
+    {
+      slug: "forms",
+      label: "Forms",
+      icon: FileIcon,
+      component: Forms,
+      children: [
+        {
+          slug: ":id",
+          label: "Form Details",
+          icon: FileCogIcon,
+          component: FormDetails,
+        },
+        {
+          slug: ":id/submit",
+          label: "Form Submit",
+          icon: FileCheck2Icon,
+          component: FormSubmission,
+        },
+      ]
+    },
+   
+  ]
+}
+
 const sandboxModule: Module = {
-  sequence: 4,
+  sequence: 9999,
   slug: "sandbox",
   label: "Sandbox",
   icon: CodeIcon,
@@ -257,6 +298,7 @@ const modules: Module[] = [
   productionModule,
   salesModule,
   sandboxModule,
+  serviceModule
 ]
   .filter(
     (module) =>

@@ -43,7 +43,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@coesco/eslint-config": "workspace:*",
+    "@coesco/eslint-config": "*",
     "@types/axios": "^0.14.4",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",

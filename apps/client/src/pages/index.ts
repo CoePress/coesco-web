@@ -30,6 +30,12 @@ export { default as Quotes } from "./sales/quotes"
 export { default as QuoteDetails } from "./sales/quote-details"
 export { default as SalesDashboard } from "./sales/dashboard"
 
+// Service
+export { default as ServiceDashboard } from "./service/dashboard"
+export { default as FormDetails } from "./service/form-details"
+export { default as FormSubmission } from "./service/form-submission"
+export { default as Forms } from "./service/forms"
+
 // Utility
 export { default as Chat } from "./utility/chat"
 export { default as MicrosoftCallback } from "./utility/microsoft-callback"
