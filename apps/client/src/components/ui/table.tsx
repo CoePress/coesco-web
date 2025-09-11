@@ -182,18 +182,17 @@ const Table = <T extends Record<string, any>>({
       {pagination && (
         <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
-            Showing{" "}
-            <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}
-            <span className="font-medium">
-              {Math.min(currentPage * 25, total)}
-            </span>{" "}
-            of <span className="font-medium">{total}</span> results
+            {data.length === 0 ? (
+              <span>0 results</span>
+            ) : (
+              <span className="font-medium">{(currentPage - 1) * 25 + 1} to {Math.min(currentPage * 25, total)} of {total} results</span>
+            )}
           </div>
           <div className="flex gap-2 items-center">
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage - 1)}
-              disabled={currentPage === 1}>
+              disabled={currentPage === 1 || data.length === 0}>
               <ArrowLeftIcon size={16} />
             </Button>
             <span className="text-text-muted text-sm">
@@ -202,7 +201,7 @@ const Table = <T extends Record<string, any>>({
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage + 1)}
-              disabled={currentPage === totalPages}>
+              disabled={currentPage === totalPages || data.length === 0}>
               <ArrowRightIcon size={16} />
             </Button>
           </div>
