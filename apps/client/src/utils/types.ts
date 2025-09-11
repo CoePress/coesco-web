@@ -92,12 +92,12 @@ export interface Rule extends IBaseEntity {
   targetOptionIds: string[];
 }
 
-export type RuleCondition =
-  | InputCondition
-  | SimpleCondition
-  | AndCondition
-  | OrCondition
-  | NotCondition;
+export type RuleCondition
+  = | InputCondition
+    | SimpleCondition
+    | AndCondition
+    | OrCondition
+    | NotCondition;
 
 export interface InputCondition {
   type: "INPUT";

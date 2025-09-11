@@ -1,5 +1,5 @@
 import { Search, Wrench, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button, PageHeader, Table, Select } from "@/components";
@@ -73,6 +73,10 @@ const Products = () => {
     handleSearchChange('');
   };
 
+  const filter = useMemo(() => JSON.stringify({
+    type: productType.charAt(0).toUpperCase() + productType.slice(1),
+  }), [productType]);
+
   const {
     entities: products,
     loading,
@@ -82,6 +86,7 @@ const Products = () => {
     limit,
     sort,
     order,
+    filter,
   });
 
   const columns: TableColumn<any>[] = [
