@@ -125,6 +125,10 @@ const Products = () => {
     {
       key: "modelNumber",
       header: "Model #",
+      className: "text-primary hover:underline",
+      render: (_, row) => (
+        <Link to={`/sales/products/p/${row.id}`}>{row.modelNumber}</Link>
+      ),
     },
     {
       key: "description",
@@ -133,9 +137,7 @@ const Products = () => {
     {
       key: "price",
       header: "Price",
-      render: (_, row) => (
-      <Link to={`/sales/quotes/${row.id}`}>{formatCurrency(row.specifications.price)}</Link>
-      ),
+      render: (_, row) => formatCurrency(row.specifications.price),
     },
   ];
 

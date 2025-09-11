@@ -1,51 +1,54 @@
-import {
+import type {
   LucideIcon,
-  UsersIcon,
-  ComputerIcon,
-  SearchIcon,
-  PaintBucketIcon,
-  CodeIcon,
-  DollarSignIcon,
-  FileTextIcon,
+} from "lucide-react";
+import type { ComponentType } from "react";
+
+import {
+  ActivityIcon,
   BoxIcon,
+  ChartNoAxesCombined,
+  CodeIcon,
+  ComputerIcon,
+  DollarSignIcon,
   FactoryIcon,
-  ShieldIcon,
+  FileCheck2Icon,
+  FileClockIcon,
+  FileCogIcon,
+  FileIcon,
+  FileTextIcon,
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
-  ChartNoAxesCombined,
-  ActivityIcon,
-  FileClockIcon,
+  PaintBucketIcon,
+  SearchIcon,
+  ShieldIcon,
+  UsersIcon,
   WrenchIcon,
-  FileCogIcon,
-  FileCheck2Icon,
-  FileIcon,
 } from "lucide-react";
-import { ComponentType } from "react";
 
-import { __dev__ } from "./env";
 import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
-import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
+import Sandbox from "@/pages/sandbox/sandbox";
 
+import { __dev__ } from "./env";
 
-export type Module = {
+export interface Module {
   sequence: number;
   slug: string;
   label: string;
   icon: LucideIcon;
   status: "active" | "inactive" | "development";
   pages: Page[];
-};
+}
 
-export type Page = {
+export interface Page {
   slug: string | null;
   label: string;
   icon?: LucideIcon;
   component: ComponentType;
   children?: Page[];
-};
+}
 
 const adminModule: Module = {
   sequence: 4,
@@ -92,7 +95,7 @@ const adminModule: Module = {
       icon: FileClockIcon,
       component: Sessions,
     },
-    
+
     {
       slug: "devices",
       label: "Devices",
@@ -259,11 +262,11 @@ const serviceModule: Module = {
           icon: FileCheck2Icon,
           component: FormSubmission,
         },
-      ]
+      ],
     },
-   
-  ]
-}
+
+  ],
+};
 
 const sandboxModule: Module = {
   sequence: 9999,
@@ -298,11 +301,11 @@ const modules: Module[] = [
   productionModule,
   salesModule,
   sandboxModule,
-  serviceModule
+  serviceModule,
 ]
   .filter(
-    (module) =>
-      module.status === "active" || (__dev__ && module.status === "development")
+    module =>
+      module.status === "active" || (__dev__ && module.status === "development"),
   )
   .sort((a, b) => a.sequence - b.sequence);
 

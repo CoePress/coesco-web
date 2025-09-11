@@ -7,6 +7,7 @@ import {
   Eye,
   Trash,
   GripVertical,
+  Search,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -953,13 +954,20 @@ const AddItemModal = ({
   quoteId: string;
   onSuccess: () => void;
 }) => {
-  const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<
     Record<string, number>
   >({});
-  const [activeTab, setActiveTab] = useState("equipment");
+  const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>('equipment');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    page: 1,
+    limit: 25
+  });
 
   const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
@@ -986,12 +994,9 @@ const AddItemModal = ({
   const handleConfirmAddItem = async () => {
     if (!quoteId || !selectedItem) return;
 
-    // Determine item type based on active tab
-    const itemType = activeTab === "machines" ? "configuration" : "item";
-
     const result = await createQuoteItem({
       itemId: selectedItem.id,
-      itemType: itemType,
+      itemType: "item",
       quantity: selectedQuantity[selectedItem.id] || 1,
     });
     if (result) {
@@ -1027,14 +1032,14 @@ const AddItemModal = ({
             <div className="space-y-2">
               <div>
                 <div className="font-medium text-text">
-                  {selectedItem?.name}
+                  {selectedItem?.modelNumber}
                 </div>
                 <div className="text-sm text-text-muted">
                   Quantity: {selectedQuantity[selectedItem?.id] || 1} ×{" "}
-                  {formatCurrency(selectedItem?.unitPrice || 0)} ={" "}
+                  {formatCurrency(selectedItem?.specifications?.price || 0)} ={" "}
                   {formatCurrency(
                     (selectedQuantity[selectedItem?.id] || 1) *
-                      (selectedItem?.unitPrice || 0)
+                      (selectedItem?.specifications?.price || 0)
                   )}
                 </div>
               </div>
@@ -1057,50 +1062,68 @@ const AddItemModal = ({
         ) : (
           <>
             <div className="flex-shrink-0 space-y-4">
-              <Tabs
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                tabs={[
-                  { label: "Machines", value: "machines" },
-                  { label: "Parts", value: "parts" },
-                  { label: "Services", value: "services" },
-                ]}
-              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-text-muted" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search items..."
+                      className="block w-full pl-10 pr-2 py-2 border border-border rounded-sm leading-5 bg-foreground placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-1 bg-surface p-1 rounded border border-border">
+                <button
+                  onClick={() => setProductType('equipment')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'equipment' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  Equipment
+                </button>
+                <button
+                  onClick={() => setProductType('parts')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'parts' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  Parts
+                </button>
+                <button
+                  onClick={() => setProductType('services')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'services' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  Services
+                </button>
+                </div>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
-              {activeTab === "equipment" && (
-                <ItemsTab
-                  key="equipment"
-                  onAddItem={handleAddItem}
-                  addItemLoading={addItemLoading}
-                  selectedQuantity={selectedQuantity}
-                  setSelectedQuantity={setSelectedQuantity}
-                  filter={{ type: "equipment" }}
-                />
-              )}
-                
-              {activeTab === "parts" && (
-                <ItemsTab
-                  key="parts"
-                  onAddItem={handleAddItem}
-                  addItemLoading={addItemLoading}
-                  selectedQuantity={selectedQuantity}
-                  setSelectedQuantity={setSelectedQuantity}
-                  filter={{ type: "parts" }}
-                />
-              )}
-
-              {activeTab === "services" && (
-                <ItemsTab
-                  key="services"
-                  onAddItem={handleAddItem}
-                  addItemLoading={addItemLoading}
-                  selectedQuantity={selectedQuantity}
-                  setSelectedQuantity={setSelectedQuantity}
-                  filter={{ type: "services" }}
-                />
-              )}
+              <ItemsTab
+                onAddItem={handleAddItem}
+                addItemLoading={addItemLoading}
+                selectedQuantity={selectedQuantity}
+                setSelectedQuantity={setSelectedQuantity}
+                productType={productType}
+                page={page}
+                setPage={setPage}
+                pagination={pagination}
+                setPagination={setPagination}
+              />
             </div>
 
             <div className="flex justify-between gap-2 pt-2 border-t flex-shrink-0">
@@ -1109,43 +1132,37 @@ const AddItemModal = ({
                 onClick={onClose}>
                 Cancel
               </Button>
-              <div className="flex gap-2 items-center">
-                {activeTab === "configurations" && (
-                  <Button
-                    variant="secondary-outline"
-                    onClick={() => navigate("/sales/catalog/builder")}>
-                    <Plus size={16} />
-                    New Config
-                  </Button>
-                )}
+              <div className="flex gap-2 items-center ml-auto">
                 <div className="flex gap-1">
                   <Button
                     variant="secondary-outline"
-                    size="sm">
+                    size="sm"
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page <= 1}>
                     <ChevronDown
                       className="rotate-90"
                       size={16}
                     />
                   </Button>
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, page - 2)) + i;
+                    if (pageNum > pagination.totalPages) return null;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === page ? "primary" : "secondary-outline"}
+                        size="sm"
+                        onClick={() => setPage(pageNum)}
+                        disabled={pageNum === page}>
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
                   <Button
                     variant="secondary-outline"
-                    size="sm">
-                    1
-                  </Button>
-                  <Button
-                    variant="primary"
                     size="sm"
-                    disabled>
-                    2
-                  </Button>
-                  <Button
-                    variant="secondary-outline"
-                    size="sm">
-                    3
-                  </Button>
-                  <Button
-                    variant="secondary-outline"
-                    size="sm">
+                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                    disabled={page >= pagination.totalPages}>
                     <ChevronDown
                       className="-rotate-90"
                       size={16}
@@ -1166,25 +1183,53 @@ const ItemsTab = ({
   addItemLoading,
   selectedQuantity,
   setSelectedQuantity,
-  filter,
+  productType,
+  page,
+  setPage,
+  pagination,
+  setPagination,
 }: {
   onAddItem: (item: any) => void;
   addItemLoading: boolean;
   selectedQuantity: Record<string, number>;
   setSelectedQuantity: (quantity: Record<string, number>) => void;
-  filter?: Record<string, any>;
+  productType: 'equipment' | 'parts' | 'services';
+  page: number;
+  setPage: (page: number) => void;
+  pagination: { total: number; totalPages: number; page: number; limit: number };
+  setPagination: (pagination: { total: number; totalPages: number; page: number; limit: number }) => void;
 }) => {
   const [items, setItems] = useState<any[]>([]);
   const [itemsLoading, setItemsLoading] = useState<boolean>(true);
   const [itemsError, setItemsError] = useState<string | null>(null);
+  const [limit] = useState(25);
+  const [sort, setSort] = useState("modelNumber");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const { get: getItems } = useApi<IApiResponse<any[]>>();
   
   const fetchItems = async () => {
     setItemsLoading(true);
     setItemsError(null);
-    const response = await getItems("/items", { filter });
+    const filter = JSON.stringify({
+      type: productType.charAt(0).toUpperCase() + productType.slice(1),
+    });
+    const response = await getItems("/catalog/items", { 
+      filter,
+      page,
+      limit,
+      sort,
+      order
+    });
     if (response?.success) {
       setItems(response.data || []);
+      if (response.meta) {
+        setPagination({
+          total: response.meta.total || 0,
+          totalPages: response.meta.totalPages || 0,
+          page: response.meta.page || 1,
+          limit: response.meta.limit || 25,
+        });
+      }
     } else {
       setItemsError(response?.error || "Failed to fetch items");
     }
@@ -1193,7 +1238,7 @@ const ItemsTab = ({
   
   useEffect(() => {
     fetchItems();
-  }, [filter]);
+  }, [productType, page, limit, sort, order]);
 
   return (
     <div className="h-full flex flex-col">
@@ -1207,8 +1252,8 @@ const ItemsTab = ({
         <Table
           columns={[
             {
-              key: "name",
-              header: "Item",
+              key: "modelNumber",
+              header: "Model #",
               className: "text-primary",
             },
             {
@@ -1216,9 +1261,9 @@ const ItemsTab = ({
               header: "Description",
             },
             {
-              key: "unitPrice",
-              header: "Unit Price",
-              render: (value) => formatCurrency(value as number),
+              key: "price",
+              header: "Price",
+              render: (_, row) => formatCurrency(row.specifications?.price || 0),
               className: "text-right",
             },
             {
@@ -1257,7 +1302,15 @@ const ItemsTab = ({
             },
           ]}
           data={items || []}
-          total={items?.length || 0}
+          total={pagination.total}
+          sort={sort}
+          order={order}
+          onSortChange={(newSort, newOrder) => {
+            setSort(newSort);
+            setOrder(newOrder);
+          }}
+          loading={itemsLoading}
+          emptyMessage="No items found"
         />
       )}
     </div>
