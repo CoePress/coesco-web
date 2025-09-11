@@ -257,7 +257,7 @@ const Quotes = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Quotes"
-        description={`${quotes?.length} total quotes`}
+        description="Manage and track sales quotes"
         actions={<Actions />}
       />
 

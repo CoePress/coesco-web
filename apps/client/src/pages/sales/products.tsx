@@ -118,7 +118,7 @@ const Products = () => {
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Product Catalog"
-        description={`${products?.length || 0} products in catalog`}
+        description="Browse and manage products"
         actions={
           <Button variant="primary">
             Add Product

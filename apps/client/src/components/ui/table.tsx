@@ -79,7 +79,7 @@ const Table = <T extends Record<string, any>>({
       <div className="flex-1 overflow-auto relative">
         <table
           className={`min-w-full text-text-muted text-sm ${
-            !loading && data.length === 0 ? 'h-full' : ''
+            (loading || data.length === 0) ? 'h-full' : ''
           }`}>
           <thead className="bg-foreground sticky top-0 z-10" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
             <tr>
@@ -119,7 +119,7 @@ const Table = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border relative">
+          <tbody className="divide-y divide-border relative h-full">
             {loading ? (
                <tr>
                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
