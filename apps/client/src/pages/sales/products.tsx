@@ -5,8 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, PageHeader, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { Action } from "@dnd-kit/core/dist/store";
+import { useApi } from "@/hooks/use-api";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -74,21 +73,53 @@ const Products = () => {
     setFilterValues({ category: '', status: '', stock: '', priceRange: '' });
   };
 
+  const { get } = useApi();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    page: 1,
+    limit: 25
+  });
+
+  const include = useMemo(
+    () => [],
+    []
+  );
+
   const filter = useMemo(() => JSON.stringify({
     type: productType.charAt(0).toUpperCase() + productType.slice(1),
   }), [productType]);
 
-  const {
-    entities: products,
-    loading,
-    pagination,
-  } = useGetEntities("/catalog/items", {
-    page,
-    limit,
-    sort,
-    order,
-    filter,
-  });
+  const fetchProducts = async () => {
+    setLoading(true);
+    const response = await get("/catalog/items", {
+      include,
+      page,
+      limit,
+      sort,
+      order,
+      filter,
+    });
+    
+    if (response?.success) {
+      setProducts(response.data || []);
+      if (response.meta) {
+        setPagination({
+          total: response.meta.total || 0,
+          totalPages: response.meta.totalPages || 0,
+          page: response.meta.page || 1,
+          limit: response.meta.limit || 25,
+        });
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [include, page, limit, sort, order, filter]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -199,11 +230,11 @@ const Products = () => {
             <Table
               columns={columns}
               data={products || []}
-              total={pagination?.total || 0}
+              total={pagination.total}
               idField="id"
               pagination
-              currentPage={pagination?.page || 1}
-              totalPages={pagination?.totalPages || 1}
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
               onPageChange={setPage}
               sort={sort}
               order={order}

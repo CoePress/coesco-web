@@ -1631,8 +1631,8 @@ async function main() {
     const optionCategories = await _migrateOptionCategories();
     const optionHeaders = await _migrateOptionHeaders();
     const optionDetails = await _migrateOptionDetails();
-    // const quoteHeaders = await _migrateQuotes();
-    // const quotes = await _migrateQuoteRevisions();
+    const quoteHeaders = await _migrateQuotes();
+    const quotes = await _migrateQuoteRevisions();
     // const quoteItems = await _migrateQuoteItems();
     // const customQuoteItems = await _migrateCustomQuoteItems();
     // const quoteTerms = await _migrateQuoteTerms();
@@ -1648,8 +1648,8 @@ async function main() {
     logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
     logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
     logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
-    // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
-    // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
     // logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
     // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);

@@ -252,14 +252,14 @@ const Quotes = () => {
   }, [quotes])
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Quotes"
         description="Manage and track sales quotes"
         actions={<Actions />}
       />
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <Metrics>
           {kpis.map((metric) => (
             <MetricsCard {...metric} />
@@ -276,24 +276,26 @@ const Quotes = () => {
           onExport={handleExport}
         />
 
-        <Table
-          columns={columns}
-          data={filteredQuotes}
-          total={pagination.total}
-          idField="id"
-          pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          onPageChange={setPage}
-          sort={sort}
-          order={order}
-          onSortChange={(newSort, newOrder) => {
-            setSort(newSort as "createdAt" | "updatedAt");
-            setOrder(newOrder as "asc" | "desc");
-          }}
-          className="rounded border overflow-clip"
-          emptyMessage="No quotes found"
-        />
+        <div className="flex-1 overflow-hidden">
+          <Table
+            columns={columns}
+            data={filteredQuotes}
+            total={pagination.total}
+            idField="id"
+            pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            sort={sort}
+            order={order}
+            onSortChange={(newSort, newOrder) => {
+              setSort(newSort as "createdAt" | "updatedAt");
+              setOrder(newOrder as "asc" | "desc");
+            }}
+            className="rounded border overflow-clip"
+            emptyMessage="No quotes found"
+          />
+        </div>
       </div>
 
       {isModalOpen && (

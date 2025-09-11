@@ -18,7 +18,6 @@ import {
   Table,
   Tabs,
 } from "@/components";
-import Select from "@/components/ui/select";
 import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
@@ -960,7 +959,7 @@ const AddItemModal = ({
   const [selectedQuantity, setSelectedQuantity] = useState<
     Record<string, number>
   >({});
-  const [activeTab, setActiveTab] = useState("machines");
+  const [activeTab, setActiveTab] = useState("equipment");
 
   const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
@@ -1070,16 +1069,17 @@ const AddItemModal = ({
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 max-h-96">
-              {activeTab === "machines" && (
-                <MachinesTab
-                  key="machines"
+              {activeTab === "equipment" && (
+                <ItemsTab
+                  key="equipment"
                   onAddItem={handleAddItem}
                   addItemLoading={addItemLoading}
                   selectedQuantity={selectedQuantity}
                   setSelectedQuantity={setSelectedQuantity}
+                  filter={{ type: "equipment" }}
                 />
               )}
-
+                
               {activeTab === "parts" && (
                 <ItemsTab
                   key="parts"
@@ -1258,107 +1258,6 @@ const ItemsTab = ({
           ]}
           data={items || []}
           total={items?.length || 0}
-        />
-      )}
-    </div>
-  );
-};
-
-const MachinesTab = ({
-  onAddItem,
-  addItemLoading,
-  selectedQuantity,
-  setSelectedQuantity,
-}: {
-  onAddItem: (item: any) => void;
-  addItemLoading: boolean;
-  selectedQuantity: Record<string, number>;
-  setSelectedQuantity: (quantity: Record<string, number>) => void;
-}) => {
-  const [configurations, setConfigurations] = useState<any[]>([]);
-  const [configurationsLoading, setConfigurationsLoading] = useState<boolean>(true);
-  const [configurationsError, setConfigurationsError] = useState<string | null>(null);
-  const { get: getConfigurations } = useApi<IApiResponse<any[]>>();
-  
-  const fetchConfigurations = async () => {
-    setConfigurationsLoading(true);
-    setConfigurationsError(null);
-    const response = await getConfigurations("/configurations");
-    if (response?.success) {
-      setConfigurations(response.data || []);
-    } else {
-      setConfigurationsError(response?.error || "Failed to fetch configurations");
-    }
-    setConfigurationsLoading(false);
-  };
-  
-  useEffect(() => {
-    fetchConfigurations();
-  }, []);
-
-  return (
-    <div className="h-full flex flex-col">
-      {configurationsLoading ? (
-        <div className="flex justify-center items-center h-full">
-          <Loader />
-        </div>
-      ) : configurationsError ? (
-        <div className="text-sm text-red-500">{configurationsError}</div>
-      ) : (
-        <Table
-          columns={[
-            {
-              key: "name",
-              header: "Machine",
-              className: "text-primary",
-            },
-            {
-              key: "description",
-              header: "Description",
-            },
-            {
-              key: "totalPrice",
-              header: "Total Price",
-              render: (_, row) => formatCurrency(row.totalPrice || 0),
-              className: "text-right",
-            },
-            {
-              key: "quantity",
-              header: "Quantity",
-              render: (_, row) => (
-                <input
-                  type="number"
-                  min="1"
-                  defaultValue={selectedQuantity[row.id] || 1}
-                  onChange={(e) =>
-                    setSelectedQuantity({
-                      ...selectedQuantity,
-                      [row.id]: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-20 px-2 py-1 border rounded text-right"
-                />
-              ),
-              className: "text-right",
-            },
-            {
-              key: "actions",
-              header: "",
-              render: (_, row) => (
-                <div className="flex justify-end">
-                  <Button
-                    variant="secondary-outline"
-                    onClick={() => onAddItem(row)}
-                    disabled={addItemLoading}>
-                    {addItemLoading ? "Adding..." : "Add"}
-                  </Button>
-                </div>
-              ),
-              className: "text-right",
-            },
-          ]}
-          data={configurations || []}
-          total={configurations?.length || 0}
         />
       )}
     </div>
