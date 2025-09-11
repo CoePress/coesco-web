@@ -88,57 +88,46 @@ const Quotes = () => {
         <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number, row.revision)}</Link>
       ),
     },
-    {
-      key: "status",
-      header: "Status",
-      render: (value) => <StatusBadge label={value as string} />,
-    },
-    {
-      key: "totalAmount",
-      header: "Total",
-      render: (value) => formatCurrency(value as number),
-    },
-    {
+        {
       key: "journey.name",
       header: "Journey",
       render: (_, row) =>
-        row.journey ? (
-          <Link
-            to={`/sales/journeys/${row.journey.id}`}
-            className="hover:underline">
-            {row.journey.name || "-"}
-          </Link>
-        ) : (
-          "-"
-        ),
+      row.journey ? (
+        <Link
+          to={`/sales/journeys/${row.journey.id}`}
+          className="hover:underline">
+          {row.journey.name || "-"}
+        </Link>
+      ) : (
+        "-"
+      ),
     },
     {
       key: "journey.customer.name",
       header: "Customer",
       render: (_, row) =>
-        row.journey?.customer ? (
-          <Link
-            to={`/sales/companies/${row.journey.customer.id}`}
-            className="hover:underline">
-            {row.journey.customer.name || "-"}
-          </Link>
-        ) : (
-          "-"
-        ),
+      row.journey?.customer ? (
+        <Link
+          to={`/sales/companies/${row.journey.customer.id}`}
+          className="hover:underline">
+          {row.journey.customer.name || "-"}
+        </Link>
+      ) : (
+        "-"
+      ),
     },
     {
-      key: "createdBy.name",
-      header: "Created By",
-      render: (_, row) =>
-        row.createdBy ? (
-          <Link
-            to={`/sales/team/${row.createdBy.id}?tab=quotes`}
-            className="hover:underline">
-            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
-          </Link>
-        ) : (
-          "-"
-        ),
+      key: "priority",
+      header: "Priority",
+    },
+    {
+      key: "confidence",
+      header: "Confidence",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (value) => <StatusBadge label={value as string} />,
     },
   ];
 
