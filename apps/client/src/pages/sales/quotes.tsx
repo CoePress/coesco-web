@@ -248,8 +248,6 @@ const Quotes = () => {
   ]
 
   const filteredQuotes = useMemo(() => {
-    // For now, just return quotes as-is since filtering should be done server-side
-    // TODO: Implement server-side filtering by passing filterValues to useGetEntities
     return quotes || []
   }, [quotes])
 

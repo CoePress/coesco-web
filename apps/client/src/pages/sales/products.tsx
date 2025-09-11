@@ -1,11 +1,12 @@
-import { Search, Wrench, X } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import { Button, PageHeader, Table, Select } from "@/components";
+import { Button, PageHeader, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { Action } from "@dnd-kit/core/dist/store";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -69,8 +70,8 @@ const Products = () => {
     });
   };
 
-  const clearSearch = () => {
-    handleSearchChange('');
+  const clearFilters = () => {
+    setFilterValues({ category: '', status: '', stock: '', priceRange: '' });
   };
 
   const filter = useMemo(() => JSON.stringify({
@@ -114,163 +115,87 @@ const Products = () => {
     }))
   }
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        {productType === 'equipment' && (
+          <Button 
+            variant="primary"
+            onClick={() => navigate('/sales/products/configuration-builder')}
+          >
+            <Wrench size={16} />
+            Configuration Builder
+          </Button>
+        )}
+        <Button variant="primary">
+        Add Product
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Product Catalog"
         description="Browse and manage products"
-        actions={
-          <Button variant="primary">
-            Add Product
-          </Button>
-        }
+        actions={<Actions />}
       />
 
-      <div className="p-2 flex flex-col flex-1 overflow-hidden">
-        <div className="grid grid-cols-5 gap-2 flex-1 overflow-hidden">
-          <div className="col-span-1 bg-foreground p-2 rounded-sm border border-border overflow-y-auto">
-            <div className="relative mb-2">
-              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-text-muted" />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search products..."
-                className="block w-full pl-8 pr-8 py-1.5 border border-border rounded-sm leading-5 bg-surface placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-text-muted"
-              />
-              {searchQuery && (
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <Toolbar
+          onSearch={handleSearchChange}
+          searchPlaceholder="Search products..."
+          onFilterChange={handleFilterChange}
+          filterValues={filterValues}
+          actions={
+            <>
+              <div className="flex gap-1 bg-surface p-1 rounded border border-border">
                 <button
-                  onClick={clearSearch}
-                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-text-muted hover:text-text"
+                  onClick={() => handleProductTypeChange('equipment')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'equipment' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
                 >
-                  <X className="h-4 w-4" />
+                  Equipment
                 </button>
-              )}
-            </div>
-
-            <div className="flex gap-1 mb-2 bg-surface p-1 rounded">
-              <button
-                onClick={() => handleProductTypeChange('equipment')}
-                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                  productType === 'equipment' 
-                    ? 'bg-primary text-background' 
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                Equipment
-              </button>
-              <button
-                onClick={() => handleProductTypeChange('parts')}
-                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                  productType === 'parts' 
-                    ? 'bg-primary text-background' 
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                Parts
-              </button>
-              <button
-                onClick={() => handleProductTypeChange('services')}
-                className={`flex-1 px-2 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
-                  productType === 'services' 
-                    ? 'bg-primary text-background' 
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                Services
-              </button>
-            </div>
-            
-            <div className="space-y-2">
-              <div>
-                <label className="text-sm font-medium text-text-muted block mb-2">Category</label>
-                <Select
-                  options={[
-                    { value: '', label: 'All Categories' },
-                    { value: 'machinery', label: 'Machinery' },
-                    { value: 'parts', label: 'Parts' },
-                    { value: 'tools', label: 'Tools' },
-                    { value: 'consumables', label: 'Consumables' },
-                    { value: 'safety', label: 'Safety Equipment' },
-                  ]}
-                  value={filterValues.category}
-                  onChange={(e) => handleFilterChange('category', e.target.value)}
-                  placeholder="Select category"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-text-muted block mb-2">Status</label>
-                <Select
-                  options={[
-                    { value: '', label: 'All Status' },
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' },
-                    { value: 'discontinued', label: 'Discontinued' },
-                  ]}
-                  value={filterValues.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  placeholder="Select status"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-text-muted block mb-2">Stock Level</label>
-                <Select
-                  options={[
-                    { value: '', label: 'All Levels' },
-                    { value: 'in-stock', label: 'In Stock' },
-                    { value: 'low-stock', label: 'Low Stock (< 50)' },
-                    { value: 'critical', label: 'Critical (< 10)' },
-                    { value: 'out-of-stock', label: 'Out of Stock' },
-                  ]}
-                  value={filterValues.stock}
-                  onChange={(e) => handleFilterChange('stock', e.target.value)}
-                  placeholder="Select stock level"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-text-muted block mb-2">Price Range</label>
-                <Select
-                  options={[
-                    { value: '', label: 'All Prices' },
-                    { value: '0-100', label: '$0 - $100' },
-                    { value: '100-500', label: '$100 - $500' },
-                    { value: '500-1000', label: '$500 - $1,000' },
-                    { value: '1000-5000', label: '$1,000 - $5,000' },
-                    { value: '5000+', label: '$5,000+' },
-                  ]}
-                  value={filterValues.priceRange}
-                  onChange={(e) => handleFilterChange('priceRange', e.target.value)}
-                  placeholder="Select price range"
-                />
-              </div>
-
-              <Button 
-                variant="secondary-outline" 
-                className="w-full"
-                onClick={() => setFilterValues({ category: '', status: '', stock: '', priceRange: '' })}
-              >
-                Clear Filters
-              </Button>
-
-              {productType === 'equipment' && (
-                <Button 
-                  variant="primary" 
-                  className="w-full mt-2"
-                  onClick={() => navigate('/sales/products/configuration-builder')}
+                <button
+                  onClick={() => handleProductTypeChange('parts')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'parts' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
                 >
-                  <Wrench size={16} />
-                  Configuration Builder
+                  Parts
+                </button>
+                <button
+                  onClick={() => handleProductTypeChange('services')}
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+                    productType === 'services' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  Services
+                </button>
+              </div>
+              {Object.values(filterValues).some(v => v) && (
+                <Button 
+                  variant="secondary-outline"
+                  onClick={clearFilters}
+                >
+                  Clear Filters
                 </Button>
               )}
-            </div>
-          </div>
 
-          <div className="col-span-4 overflow-hidden">
+            </>
+          }
+        />
+
+        <div className="flex-1 overflow-hidden">
             <Table
               columns={columns}
               data={products || []}
@@ -290,7 +215,6 @@ const Products = () => {
               loading={loading}
               emptyMessage="No products found"
             />
-          </div>
         </div>
       </div>
     </div>

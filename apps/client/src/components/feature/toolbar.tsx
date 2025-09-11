@@ -23,6 +23,7 @@ type Props = {
   filterValues?: Record<string, string>;
   showExport?: boolean;
   onExport?: () => void;
+  actions?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }
@@ -35,6 +36,7 @@ const Toolbar = ({
   filterValues = {},
   showExport = false,
   onExport,
+  actions,
   children, 
   className = "" 
 }: Props) => {
@@ -58,21 +60,23 @@ const Toolbar = ({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="flex-1">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-text-muted" />
+      {onSearch && (
+        <div className="flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-text-muted" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              placeholder={searchPlaceholder}
+              className="block w-full pl-10 pr-2 py-2 border border-border rounded-sm leading-5 bg-foreground placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground"
+            />
           </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
-            placeholder={searchPlaceholder}
-            className="block w-full pl-10 pr-2 py-2 border border-border rounded-sm leading-5 bg-foreground placeholder-text-muted focus:outline-none focus:placeholder-text focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground"
-          />
         </div>
-      </div>
+      )}
 
       {filters && filters.map((filter) => (
         <div key={filter.key} className="min-w-[150px]">
@@ -86,13 +90,14 @@ const Toolbar = ({
         </div>
       ))}
 
-      {showExport && (
+      {showExport && onExport && (
         <Button onClick={onExport}>
           <Download size={16} />
           Export
         </Button>
       )}
 
+      {actions}
       {children}
     </div>
   )

@@ -458,7 +458,7 @@ function formatModelNumbers(modelNumbers: string[]): string[] {
       if (model.length > commonPrefix.length) {
         const suffix = model.substring(commonPrefix.length);
         // Don't add dash if suffix already starts with one
-        const formatted = suffix.startsWith('-') ? `${commonPrefix}${suffix}` : `${commonPrefix}-${suffix}`;
+        const formatted = suffix.startsWith("-") ? `${commonPrefix}${suffix}` : `${commonPrefix}-${suffix}`;
         result.push(formatted);
       }
       else {
@@ -1616,6 +1616,7 @@ export async function _migrateEmployees(): Promise<MigrationResult> {
     errorDetails: [...userResult.errorDetails, ...employeeResult.errorDetails],
   };
 
+  await legacyService.close();
   return result;
 }
 
