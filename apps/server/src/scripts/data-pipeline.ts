@@ -1,7 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import type { ItemType } from "@prisma/client";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, QuoteHeaderStatus, QuoteStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -425,11 +425,9 @@ async function _findEmployeeByNumberOrInitials(identifier: string): Promise<any>
 }
 
 function formatModelNumbers(modelNumbers: string[]): string[] {
-  // Group models by their base pattern (everything before the numbers)
   const groups = new Map<string, string[]>();
 
   modelNumbers.forEach((model) => {
-    // Extract the base pattern (letters and all numbers/dashes)
     const match = model.match(/^([A-Z]+-\d+(?:-\d+)*)/);
     if (match) {
       const basePattern = match[1];
@@ -442,22 +440,17 @@ function formatModelNumbers(modelNumbers: string[]): string[] {
 
   const result: string[] = [];
 
-  // Process each group
   groups.forEach((models) => {
     if (models.length < 2) {
-      // If only one model in group, keep as is
       result.push(...models);
       return;
     }
 
-    // Find the longest common prefix within this group
     const commonPrefix = findLongestCommonPrefix(models);
 
-    // Format each model in the group
     models.forEach((model) => {
       if (model.length > commonPrefix.length) {
         const suffix = model.substring(commonPrefix.length);
-        // Don't add dash if suffix already starts with one
         const formatted = suffix.startsWith("-") ? `${commonPrefix}${suffix}` : `${commonPrefix}-${suffix}`;
         result.push(formatted);
       }
@@ -1035,6 +1028,12 @@ async function _migrateQuotes(): Promise<MigrationResult> {
       },
     ],
     beforeSave: (data, original) => {
+      const closed = original.Canceled === "1" || original.LostToComp === "1" || original.Shipped === "1";
+
+      if (closed) {
+        data.status = QuoteHeaderStatus.CLOSED;
+      }
+
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
       data.createdById = original.CreateInit.toLowerCase() || "system";
@@ -1054,6 +1053,42 @@ async function _migrateQuotes(): Promise<MigrationResult> {
   const result = await migrateWithMapping(mapping);
 
   return result;
+}
+
+async function updateQuoteRevisionStatuses(): Promise<void> {
+  try {
+    logger.info("Updating quote revision statuses...");
+
+    const quoteHeaders = await mainDatabase.quoteHeader.findMany({
+      select: { id: true },
+    });
+
+    let updateCount = 0;
+
+    for (const header of quoteHeaders) {
+      const revisions = await mainDatabase.quoteDetails.findMany({
+        where: { quoteHeaderId: header.id },
+        orderBy: { revision: "desc" },
+      });
+
+      if (revisions.length <= 1)
+        continue;
+
+      for (let i = 1; i < revisions.length; i++) {
+        await mainDatabase.quoteDetails.update({
+          where: { id: revisions[i].id },
+          data: { status: QuoteStatus.REVISED },
+        });
+        updateCount++;
+      }
+    }
+
+    logger.info(`Updated ${updateCount} quote revisions to REVISED status`);
+  }
+  catch (error) {
+    logger.error("Error updating quote revision statuses:", error);
+    throw error;
+  }
 }
 
 async function _migrateQuoteRevisions(): Promise<MigrationResult> {
@@ -1089,6 +1124,7 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
       data._tempQuoteHeaderId = quoteHeader.id;
 
       data.quoteHeaderId = quoteHeader.id;
+      data.status = QuoteStatus.DRAFT; // Default all to DRAFT initially
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
@@ -1110,6 +1146,9 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
   };
 
   const result = await migrateWithMapping(mapping);
+
+  await updateQuoteRevisionStatuses();
+
   return result;
 }
 
@@ -1616,7 +1655,6 @@ export async function _migrateEmployees(): Promise<MigrationResult> {
     errorDetails: [...userResult.errorDetails, ...employeeResult.errorDetails],
   };
 
-  await legacyService.close();
   return result;
 }
 
@@ -1625,12 +1663,12 @@ async function main() {
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
-    const coilTypes = await _migrateCoilTypes();
-    const productClasses = await _migrateProductClasses();
+    // const coilTypes = await _migrateCoilTypes();
+    // const productClasses = await _migrateProductClasses();
     const equipmentItems = await _migrateEquipListToItems();
-    const optionCategories = await _migrateOptionCategories();
-    const optionHeaders = await _migrateOptionHeaders();
-    const optionDetails = await _migrateOptionDetails();
+    // const optionCategories = await _migrateOptionCategories();
+    // const optionHeaders = await _migrateOptionHeaders();
+    // const optionDetails = await _migrateOptionDetails();
     const quoteHeaders = await _migrateQuotes();
     const quotes = await _migrateQuoteRevisions();
     // const quoteItems = await _migrateQuoteItems();
@@ -1642,12 +1680,12 @@ async function main() {
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
-    logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
-    logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
+    // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
+    // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
     logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
-    logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
-    logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
-    logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
+    // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
+    // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
+    // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
     logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
     // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);

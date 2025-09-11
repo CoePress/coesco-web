@@ -900,6 +900,7 @@ model QuoteHeader {
   dealerAddressId   String?
   priority          String    @default("C")
   confidence        Int       @default(0)
+  status            QuoteHeaderStatus @default(OPEN)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -911,6 +912,11 @@ model QuoteHeader {
 
   @@unique([year, number])
   @@map("quote_headers")
+}
+
+enum QuoteHeaderStatus {
+  OPEN
+  CLOSED
 }
 
 // QRev + QtNotes

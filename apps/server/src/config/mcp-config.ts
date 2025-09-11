@@ -1428,10 +1428,6 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: false,
       },
-      application: {
-        type: "string",
-        required: false,
-      },
       legacyId: {
         type: "string",
         required: false,
@@ -1999,6 +1995,11 @@ export const SCHEMAS: ISchema[] = [
       },
       confidence: {
         type: "int",
+        required: true,
+        hasDefault: true,
+      },
+      status: {
+        type: "quoteheaderstatus",
         required: true,
         hasDefault: true,
       },

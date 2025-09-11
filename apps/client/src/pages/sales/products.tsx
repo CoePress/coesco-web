@@ -96,11 +96,11 @@ const Products = () => {
     setLoading(true);
     const response = await get("/catalog/items", {
       include,
+      filter,
       page,
       limit,
       sort,
       order,
-      filter,
     });
     
     if (response?.success) {

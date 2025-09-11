@@ -114,6 +114,7 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
           <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
             <button
               onClick={async () => {
+                onTooltipMouseLeave(); // Hide tooltip when opening modal
                 try {
                   if (!screenshotAreaRef.current) return;
                   setIsCapturing(true);

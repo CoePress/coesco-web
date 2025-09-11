@@ -37,11 +37,17 @@ const Quotes = () => {
     []
   );
 
+  const filter = useMemo(() => JSON.stringify({
+    status: "OPEN",
+  }), []);
+
+
   const fetchQuotes = async () => {
     setLoading(true);
     setError(null);
     const response = await get("/quotes", {
       include,
+      filter,
       sort,
       order,
       page,
@@ -77,7 +83,7 @@ const Quotes = () => {
   
   useEffect(() => {
     fetchQuotes();
-  }, [include, sort, order, page, limit]);
+  }, [include, filter, sort, order, page, limit]);
 
   const columns: TableColumn<any>[] = [
     {

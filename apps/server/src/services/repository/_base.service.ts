@@ -55,10 +55,13 @@ export class BaseService<T> {
     // Handle include/select from params
     if (params?.include) {
       const { include } = buildQuery(params, []);
-      if (include) query.include = include;
-    } else if (params?.select) {
+      if (include)
+        query.include = include;
+    }
+    else if (params?.select) {
       const { select } = buildQuery(params, []);
-      if (select) query.select = select;
+      if (select)
+        query.select = select;
     }
 
     const item = await model.findFirst(query);
