@@ -44,8 +44,8 @@ const BackgroundImage = () => {
 };
 
 const Login = () => {
-  const { get, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
-  const { user } = useContext(AuthContext)!;
+  const { get, post, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
+  const { user, login: authLogin } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get("error");
@@ -53,10 +53,22 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
-  const login = async () => {
+  const microsoftLogin = async () => {
     const response = await get("/auth/microsoft/login");
     if (response?.url) {
       window.location.href = response.url;
+    }
+  };
+
+  const handleUsernamePasswordLogin = async () => {
+    const response = await post("/auth/login", {
+      username,
+      password,
+    });
+    
+    if (response) {
+      authLogin(response);
+      navigate("/", { replace: true });
     }
   };
 
@@ -163,14 +175,14 @@ const Login = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (username && password) {
-                  // Submit form logic
+                  handleUsernamePasswordLogin();
                 }
               }}>
               <Input
                 type="text"
                 label="Username"
                 value={username}
-                disabled={true}
+                disabled={loginLoading}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
@@ -180,13 +192,14 @@ const Login = () => {
                 type="password"
                 label="Password"
                 value={password}
-                disabled={true}
+                disabled={loginLoading}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
               />
 
               <Button
+                type="submit"
                 disabled={loginLoading || !username || !password}
                 className="w-full">
                 {loginLoading ? "Signing in..." : "Sign in"}
@@ -205,7 +218,7 @@ const Login = () => {
             </div>
 
             <Button
-              onClick={login}
+              onClick={microsoftLogin}
               disabled={loginLoading}
               variant="secondary-outline"
               className="w-full flex items-center justify-center">

@@ -293,6 +293,7 @@ const Quotes = () => {
               setOrder(newOrder as "asc" | "desc");
             }}
             className="rounded border overflow-clip"
+            loading={loading}
             emptyMessage="No quotes found"
           />
         </div>
