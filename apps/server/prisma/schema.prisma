@@ -919,7 +919,7 @@ enum QuoteHeaderStatus {
   CLOSED
 }
 
-// QRev + QtNotes
+// QRev
 model QuoteDetails {
   id            String      @id @default(uuid())
   quoteHeaderId String

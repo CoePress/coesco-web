@@ -14,7 +14,7 @@ import { format, formatISO } from "date-fns";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("year");
+  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);

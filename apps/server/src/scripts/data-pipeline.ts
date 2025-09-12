@@ -891,16 +891,17 @@ async function _migrateOptionDetails(): Promise<MigrationResult> {
 }
 
 async function _migrateEquipListToItems(): Promise<MigrationResult> {
-  // First, get all models to determine the formatting groups
-  const allRecords = await legacyService.getAll("quote", "EquipList", {});
+  // First, get all models with consistent ordering to determine the formatting groups
+  const allRecords = await legacyService.getAll("quote", "EquipList", { sort: "Model", order: "ASC" });
   const allModels = allRecords?.map((record: any) =>
     replaceInternalWhitespace(trimWhitespace(record.Model)),
   ).filter(Boolean) || [];
 
-  // Create a formatting map
-  const formattedModels = formatModelNumbers(allModels);
+  // Create a formatting map using the models as keys directly
+  const formattedModels = formatModelNumbers([...new Set(allModels)]); // Remove duplicates first
+  const uniqueModels = [...new Set(allModels)];
   const modelMap = new Map();
-  allModels.forEach((original, index) => {
+  uniqueModels.forEach((original, index) => {
     modelMap.set(original, formattedModels[index]);
   });
 
@@ -908,6 +909,8 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
     targetTable: "item",
+    sort: "Model",
+    order: "ASC",
     fieldMappings: [
       {
         from: "Model",
