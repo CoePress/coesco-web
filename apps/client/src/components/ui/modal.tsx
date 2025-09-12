@@ -38,7 +38,7 @@ const Modal = ({
             <X size={16} />
           </Button>
         </div>
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1">{children}</div>
+        <div className="flex flex-col gap-2 overflow-visible flex-1">{children}</div>
       </Card>
     </div>
   );

@@ -100,6 +100,8 @@ const Table = <T extends Record<string, any>>({
                   key={column.key}
                   scope="col"
                   className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
+                    column.header.toLowerCase() === "actions" ? "w-1" : ""
+                  } ${
                     onSortChange && column.header.toLowerCase() !== "actions"
                       ? "cursor-pointer hover:bg-surface"
                       : ""
@@ -164,6 +166,8 @@ const Table = <T extends Record<string, any>>({
                       <td
                         key={column.key}
                         className={`px-2 py-2 whitespace-nowrap ${
+                          column.header.toLowerCase() === "actions" ? "w-1" : ""
+                        } ${
                           column.className || ""
                         }`}>
                         {column.render

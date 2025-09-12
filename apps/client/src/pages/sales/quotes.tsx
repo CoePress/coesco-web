@@ -10,6 +10,7 @@ import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
+import { format, formatISO } from "date-fns";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,20 +95,6 @@ const Quotes = () => {
         <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number, row.revision)}</Link>
       ),
     },
-        {
-      key: "journey.name",
-      header: "Journey",
-      render: (_, row) =>
-      row.journey ? (
-        <Link
-          to={`/sales/journeys/${row.journey.id}`}
-          className="hover:underline">
-          {row.journey.name || "-"}
-        </Link>
-      ) : (
-        "-"
-      ),
-    },
     {
       key: "journey.customer.name",
       header: "Customer",
@@ -123,18 +110,45 @@ const Quotes = () => {
       ),
     },
     {
-      key: "priority",
-      header: "Priority",
-    },
-    {
-      key: "confidence",
-      header: "Confidence",
+      key: "journey.name",
+      header: "Journey",
+      render: (_, row) =>
+      row.journey ? (
+        <Link
+          to={`/sales/journeys/${row.journey.id}`}
+          className="hover:underline">
+          {row.journey.name || "-"}
+        </Link>
+      ) : (
+        "-"
+      ),
     },
     {
       key: "status",
       header: "Status",
-      render: (value) => <StatusBadge label={value as string} />,
+      className: "w-1",
+      render: (_, row) => (
+         <div className="flex gap-2 whitespace-nowrap"><StatusBadge label={row.status as string} /><StatusBadge label={row.revisionStatus as string} /></div>
+       )
     },
+    {
+      key: "priority",
+      header: "Priority",
+      className: "w-1 text-center",
+    },
+    {
+      key: "confidence",
+      header: "Confidence",
+      className: "w-1 text-center",
+    },
+    {
+      key: "createdAt",
+      header: "Created On",
+      className: "w-1",
+      render: (_, row) => {
+        return format(row.createdAt as string, "MM/dd/yyyy");
+      },
+    }
   ];
 
   const toggleModal = () => {

@@ -145,7 +145,7 @@ export class QuotingService {
         return {
           ...header,
           revision: latestRevision?.revision || "A",
-          status: latestRevision?.status || "DRAFT",
+          revisionStatus: latestRevision?.status || "DRAFT",
           totalAmount: latestRevision?.totalAmount || 0,
           latestRevision,
         };

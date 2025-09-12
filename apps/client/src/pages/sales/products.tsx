@@ -1,10 +1,12 @@
-import { Wrench } from "lucide-react";
+import { Wrench, LayoutGrid, LayoutList, Plus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button, PageHeader, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
+import Modal from "@/components/ui/modal";
+import AdvancedDropdown from "@/components/_old/advanced-dropdown";
 import { useApi } from "@/hooks/use-api";
 
 const Products = () => {
@@ -20,6 +22,7 @@ const Products = () => {
   };
 
   const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>(getInitialProductType);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
@@ -31,6 +34,11 @@ const Products = () => {
     stock: '',
     priceRange: ''
   });
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedQuote, setSelectedQuote] = useState<string | { create: true; label: string }>('');
+  const [modalView, setModalView] = useState<'selection' | 'confirmation'>('selection');
+  const [addedQuoteInfo, setAddedQuoteInfo] = useState<{ id: string; label: string } | null>(null);
 
   useEffect(() => {
     const type = searchParams.get('type');
@@ -121,6 +129,64 @@ const Products = () => {
     fetchProducts();
   }, [include, page, limit, sort, order, filter]);
 
+  const handleAddToQuote = (e: React.MouseEvent, product: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedProduct(product);
+    setModalView('selection');
+    setIsQuoteModalOpen(true);
+  };
+
+  const handleQuoteSelection = (value: string | { create: true; label: string }) => {
+    setSelectedQuote(value);
+  };
+
+  const handleConfirmAddToQuote = () => {
+    if (selectedQuote) {
+      let quoteInfo: { id: string; label: string };
+      
+      if (typeof selectedQuote === 'object' && selectedQuote.create) {
+        // Create new quote with the product
+        console.log('Creating new quote:', selectedQuote.label, 'with product:', selectedProduct.modelNumber);
+        // In real implementation, this would return the created quote ID
+        quoteInfo = { id: 'new-quote-id', label: selectedQuote.label };
+      } else {
+        // Add product to existing quote
+        console.log('Adding product:', selectedProduct.modelNumber, 'to quote:', selectedQuote);
+        const quote = mockQuotes.find(q => q.value === selectedQuote);
+        quoteInfo = { id: selectedQuote, label: quote?.label || '' };
+      }
+      
+      setAddedQuoteInfo(quoteInfo);
+      setModalView('confirmation');
+    }
+  };
+
+  const handleContinueAdding = () => {
+    setModalView('selection');
+    setSelectedProduct(null);
+    setSelectedQuote('');
+    setIsQuoteModalOpen(false);
+  };
+
+  const handleViewQuote = () => {
+    if (addedQuoteInfo) {
+      navigate(`/sales/quotes/${addedQuoteInfo.id}`);
+    }
+    setIsQuoteModalOpen(false);
+    setSelectedProduct(null);
+    setSelectedQuote('');
+    setAddedQuoteInfo(null);
+  };
+
+  // Mock quotes data - replace with actual API call
+  const mockQuotes = [
+    { value: 'quote-1', label: 'Q-2024-001 - Acme Corporation' },
+    { value: 'quote-2', label: 'Q-2024-002 - TechCorp Industries' },
+    { value: 'quote-3', label: 'Q-2024-003 - Global Solutions Ltd' },
+    { value: 'quote-4', label: 'Q-2024-004 - Innovation Partners' },
+  ];
+
   const columns: TableColumn<any>[] = [
     {
       key: "modelNumber",
@@ -138,6 +204,21 @@ const Products = () => {
       key: "price",
       header: "Price",
       render: (_, row) => formatCurrency(row.specifications.price),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "w-fit whitespace-nowrap",
+      render: (_, row) => (
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={(e) => handleAddToQuote(e, row)}
+        >
+          <Plus size={14} />
+          Add to Quote
+        </Button>
+      ),
     },
   ];
 
@@ -175,6 +256,94 @@ const Products = () => {
         actions={<Actions />}
       />
 
+      <Modal
+        isOpen={isQuoteModalOpen}
+        onClose={() => {
+          setIsQuoteModalOpen(false);
+          setSelectedProduct(null);
+          setSelectedQuote('');
+          setModalView('selection');
+          setAddedQuoteInfo(null);
+        }}
+        title={modalView === 'selection' ? "Add Product to Quote" : "Product Added Successfully"}
+        size="xs"
+      >
+        {modalView === 'selection' ? (
+          <div className="flex flex-col gap-4">
+            {selectedProduct && (
+              <div className="bg-surface p-3 rounded border border-border">
+                <div className="font-semibold text-primary">{selectedProduct.modelNumber}</div>
+                <div className="text-sm text-text-muted">{selectedProduct.description}</div>
+                <div className="text-lg font-bold mt-2">{formatCurrency(selectedProduct.specifications?.price || 0)}</div>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Select Quote or Create New</label>
+              <AdvancedDropdown
+                options={mockQuotes}
+                value={selectedQuote}
+                onChange={handleQuoteSelection}
+                placeholder="Select a quote"
+                createPlaceholder="Enter quote name"
+                mode={typeof selectedQuote === 'object' && selectedQuote.create ? 'create' : 'select'}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setIsQuoteModalOpen(false);
+                  setSelectedProduct(null);
+                  setSelectedQuote('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmAddToQuote}
+                disabled={!selectedQuote}
+              >
+                {typeof selectedQuote === 'object' && selectedQuote.create ? 'Create Quote & Add' : 'Add to Quote'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="text-center py-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium mb-2">Product added to quote!</p>
+              {addedQuoteInfo && (
+                <p className="text-sm text-text-muted">
+                  {selectedProduct?.modelNumber} has been added to {addedQuoteInfo.label}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="secondary-outline"
+                onClick={handleContinueAdding}
+              >
+                Continue Adding
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleViewQuote}
+              >
+                View Quote
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <Toolbar
           onSearch={handleSearchChange}
@@ -183,6 +352,7 @@ const Products = () => {
           filterValues={filterValues}
           actions={
             <>
+
               <div className="flex gap-1 bg-surface p-1 rounded border border-border">
                 <button
                   onClick={() => handleProductTypeChange('equipment')}
@@ -223,12 +393,37 @@ const Products = () => {
                   Clear Filters
                 </Button>
               )}
+              <div className="flex gap-1 bg-surface p-1 rounded border border-border">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-2 py-1.5 rounded transition-colors cursor-pointer ${
+                    viewMode === 'list' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                  title="List view"
+                >
+                  <LayoutList size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-2 py-1.5 rounded transition-colors cursor-pointer ${
+                    viewMode === 'grid' 
+                      ? 'bg-primary text-background' 
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                  title="Grid view"
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
 
             </>
           }
         />
 
         <div className="flex-1 overflow-hidden">
+          {viewMode === 'list' ? (
             <Table
               columns={columns}
               data={products || []}
@@ -248,6 +443,71 @@ const Products = () => {
               loading={loading}
               emptyMessage="No products found"
             />
+          ) : (
+            <div className="h-full overflow-auto">
+              {loading ? (
+                <div className="flex justify-center items-center h-48">
+                  <div className="text-text-muted">Loading...</div>
+                </div>
+              ) : products.length === 0 ? (
+                <div className="flex justify-center items-center h-48">
+                  <div className="text-text-muted">No products found</div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {products.map((product: any) => (
+                      <Link 
+                        key={product.id} 
+                        to={`/sales/products/p/${product.id}`}
+                        className="block"
+                      >
+                        <div className="bg-surface border border-border rounded-sm p-2 hover:border-primary transition-colors cursor-pointer flex flex-col h-full">
+                          <div className="font-semibold text-primary mb-2">
+                            {product.modelNumber}
+                          </div>
+                          <div className="text-sm text-text-muted mb-3 line-clamp-2 flex-1">
+                            {product.description}
+                          </div>
+                          <div className="text-lg font-bold text-text mb-3">
+                            {formatCurrency(product.specifications?.price || 0)}
+                          </div>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={(e) => handleAddToQuote(e, product)}
+                          >
+                            <Plus size={14} />
+                            Add to Quote
+                          </Button>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="flex justify-center items-center gap-2 p-4 border-t border-border">
+                    <Button
+                      variant="secondary-outline"
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-text-muted">
+                      Page {page} of {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="secondary-outline"
+                      onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                      disabled={page === pagination.totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
