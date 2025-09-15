@@ -290,6 +290,48 @@ export class AuthService {
     return response.json();
   }
 
+  async initializeDefaultUser(): Promise<void> {
+    const defaultEmail = "admin@cpec.com";
+    const defaultUsername = "admin";
+    
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: defaultUsername },
+          { employee: { email: defaultEmail } }
+        ]
+      },
+      include: { employee: true }
+    });
+
+    if (existingUser) {
+      return;
+    }
+
+    const hashedPassword = await hash("admin123", 12);
+
+    await prisma.employee.create({
+      data: {
+        firstName: "Default",
+        lastName: "Admin",
+        initials: "DA",
+        email: defaultEmail,
+        title: "Administrator",
+        number: "ADM001",
+        user: {
+          create: {
+            username: defaultUsername,
+            password: hashedPassword,
+            role: UserRole.ADMIN,
+            isActive: true,
+          },
+        },
+        createdById: "system",
+        updatedById: "system",
+      },
+    });
+  }
+
   async testLogin(): Promise<any> {
     let employee = await prisma.employee.findUnique({
       where: { email: "sample@example.com" },

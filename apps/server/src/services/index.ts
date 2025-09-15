@@ -33,4 +33,5 @@ export async function initializeServices() {
   await machiningService.initialize();
   await mcpService.initialize();
   await socketService.initialize(io);
+  await authService.initializeDefaultUser();
 }

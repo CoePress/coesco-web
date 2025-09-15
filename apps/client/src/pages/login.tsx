@@ -45,7 +45,7 @@ const BackgroundImage = () => {
 
 const Login = () => {
   const { get, post, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
-  const { user, login: authLogin } = useContext(AuthContext)!;
+  const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get("error");
@@ -67,7 +67,7 @@ const Login = () => {
     });
     
     if (response) {
-      authLogin(response);
+      setUser(response.user, response.employee);
       navigate("/", { replace: true });
     }
   };
@@ -200,6 +200,12 @@ const Login = () => {
 
               <Button
                 type="submit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (username && password) {
+                    handleUsernamePasswordLogin();
+                  }
+                }}
                 disabled={loginLoading || !username || !password}
                 className="w-full">
                 {loginLoading ? "Signing in..." : "Sign in"}
