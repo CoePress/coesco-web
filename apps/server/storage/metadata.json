@@ -1,0 +1,292 @@
+[
+  {
+    "id": "dfc611ea-940b-4cf1-a209-d1348f6fe789",
+    "originalName": "Air Travel Statistics.csv",
+    "fileName": "Air Travel Statistics.csv",
+    "path": "data\\Air Travel Statistics.csv",
+    "size": 321,
+    "mimeType": "text/csv",
+    "uploadedAt": "2025-09-15T17:49:53.296Z",
+    "category": "data",
+    "tags": [
+      "statistics"
+    ]
+  },
+  {
+    "id": "6cb7e328-34c1-4ea8-9c73-f2e99969f38c",
+    "originalName": "API Response Sample.json",
+    "fileName": "API Response Sample.json",
+    "path": "data\\API Response Sample.json",
+    "size": 292,
+    "mimeType": "application/json",
+    "uploadedAt": "2025-09-15T17:49:49.446Z",
+    "category": "data",
+    "tags": [
+      "sample"
+    ]
+  },
+  {
+    "id": "13d8b183-faf9-4795-bb47-f5155704455a",
+    "originalName": "Customer Addresses.csv",
+    "fileName": "Customer Addresses.csv",
+    "path": "data\\Customer Addresses.csv",
+    "size": 328,
+    "mimeType": "text/csv",
+    "uploadedAt": "2025-09-15T17:49:52.516Z",
+    "category": "data",
+    "tags": []
+  },
+  {
+    "id": "7e7ae353-8457-4b18-9c11-1a8f3167bc4d",
+    "originalName": "User Data Export.json",
+    "fileName": "User Data Export.json",
+    "path": "data\\User Data Export.json",
+    "size": 5645,
+    "mimeType": "application/json",
+    "uploadedAt": "2025-09-15T17:49:50.108Z",
+    "category": "data",
+    "tags": [
+      "data",
+      "export"
+    ]
+  },
+  {
+    "id": "96d445f6-dc93-44a7-b48b-a47ae9a9cc30",
+    "originalName": "React Framework Guide.md",
+    "fileName": "React Framework Guide.md",
+    "path": "documents\\React Framework Guide.md",
+    "size": 5317,
+    "mimeType": "text/markdown",
+    "uploadedAt": "2025-09-15T17:49:51.440Z",
+    "category": "documents",
+    "tags": [
+      "guide"
+    ]
+  },
+  {
+    "id": "76f343ec-9191-4d8e-807a-baa1d9f357bb",
+    "originalName": "Sample Document.pdf",
+    "fileName": "Sample Document.pdf",
+    "path": "documents\\Sample Document.pdf",
+    "size": 13264,
+    "mimeType": "application/pdf",
+    "uploadedAt": "2025-09-15T17:49:43.875Z",
+    "category": "documents",
+    "tags": [
+      "sample",
+      "document"
+    ]
+  },
+  {
+    "id": "f2ac4a10-9921-48f9-aa09-3484e044569d",
+    "originalName": "TypeScript Documentation.md",
+    "fileName": "TypeScript Documentation.md",
+    "path": "documents\\TypeScript Documentation.md",
+    "size": 2842,
+    "mimeType": "text/markdown",
+    "uploadedAt": "2025-09-15T17:49:50.793Z",
+    "category": "documents",
+    "tags": [
+      "document"
+    ]
+  },
+  {
+    "id": "d93a80c6-d7bd-4728-a07d-fb7e9bbc3638",
+    "originalName": "Banner Image.jpg",
+    "fileName": "Banner Image.jpg",
+    "path": "images\\Banner Image.jpg",
+    "size": 168907,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:49:48.598Z",
+    "category": "images",
+    "tags": [
+      "photo"
+    ]
+  },
+  {
+    "id": "a99ccf5d-28a0-4768-be9f-3cdb26919a1f",
+    "originalName": "Landscape Photo.jpg",
+    "fileName": "Landscape Photo.jpg",
+    "path": "images\\Landscape Photo.jpg",
+    "size": 36938,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:49:46.496Z",
+    "category": "images",
+    "tags": [
+      "photo"
+    ]
+  },
+  {
+    "id": "ae67c46b-f70f-4e5d-a884-2116bb40f38a",
+    "originalName": "Portrait Photo.jpg",
+    "fileName": "Portrait Photo.jpg",
+    "path": "images\\Portrait Photo.jpg",
+    "size": 38309,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:49:47.361Z",
+    "category": "images",
+    "tags": [
+      "photo"
+    ]
+  },
+  {
+    "id": "66604674-774e-46fa-a59e-9d295d3b4f9e",
+    "originalName": "Sample Document.pdf",
+    "fileName": "Sample Document.pdf",
+    "path": "documents\\Sample Document.pdf",
+    "size": 13264,
+    "mimeType": "application/pdf",
+    "uploadedAt": "2025-09-15T17:59:49.785Z",
+    "uploadedBy": "seed-script",
+    "category": "documents",
+    "tags": [
+      "pdf",
+      "sample",
+      "document"
+    ]
+  },
+  {
+    "id": "f6b0b3e8-1549-487b-b6a9-423eb8a3cc83",
+    "originalName": "Landscape Photo.jpg",
+    "fileName": "Landscape Photo.jpg",
+    "path": "images\\Landscape Photo.jpg",
+    "size": 44769,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:59:52.116Z",
+    "uploadedBy": "seed-script",
+    "category": "images",
+    "tags": [
+      "image",
+      "photo",
+      "landscape"
+    ]
+  },
+  {
+    "id": "b6930c28-a5e0-40aa-adc1-2978af81a989",
+    "originalName": "Portrait Photo.jpg",
+    "fileName": "Portrait Photo.jpg",
+    "path": "images\\Portrait Photo.jpg",
+    "size": 112940,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:59:53.009Z",
+    "uploadedBy": "seed-script",
+    "category": "images",
+    "tags": [
+      "image",
+      "photo",
+      "portrait"
+    ]
+  },
+  {
+    "id": "c7768c02-bcf5-4f18-ad90-847427940c3f",
+    "originalName": "Banner Image.jpg",
+    "fileName": "Banner Image.jpg",
+    "path": "images\\Banner Image.jpg",
+    "size": 62003,
+    "mimeType": "image/jpeg",
+    "uploadedAt": "2025-09-15T17:59:53.898Z",
+    "uploadedBy": "seed-script",
+    "category": "images",
+    "tags": [
+      "image",
+      "banner",
+      "header"
+    ]
+  },
+  {
+    "id": "180e5be2-9e96-4b9c-b1b8-72c451c76d78",
+    "originalName": "API Response Sample.json",
+    "fileName": "API Response Sample.json",
+    "path": "data\\API Response Sample.json",
+    "size": 292,
+    "mimeType": "application/json",
+    "uploadedAt": "2025-09-15T17:59:54.661Z",
+    "uploadedBy": "seed-script",
+    "category": "data",
+    "tags": [
+      "json",
+      "api",
+      "data"
+    ]
+  },
+  {
+    "id": "296fce6a-a5ff-4f74-ab6a-dced67ed328e",
+    "originalName": "User Data Export.json",
+    "fileName": "User Data Export.json",
+    "path": "data\\User Data Export.json",
+    "size": 5645,
+    "mimeType": "application/json",
+    "uploadedAt": "2025-09-15T17:59:55.300Z",
+    "uploadedBy": "seed-script",
+    "category": "data",
+    "tags": [
+      "json",
+      "users",
+      "export"
+    ]
+  },
+  {
+    "id": "97e5372f-837b-43f7-9317-7e3e76d8287d",
+    "originalName": "TypeScript Documentation.md",
+    "fileName": "TypeScript Documentation.md",
+    "path": "documents\\TypeScript Documentation.md",
+    "size": 2842,
+    "mimeType": "text/markdown",
+    "uploadedAt": "2025-09-15T17:59:55.972Z",
+    "uploadedBy": "seed-script",
+    "category": "documents",
+    "tags": [
+      "markdown",
+      "documentation",
+      "typescript"
+    ]
+  },
+  {
+    "id": "1fbac4d7-de9c-4349-a07a-87dfa6cd064c",
+    "originalName": "React Framework Guide.md",
+    "fileName": "React Framework Guide.md",
+    "path": "documents\\React Framework Guide.md",
+    "size": 5317,
+    "mimeType": "text/markdown",
+    "uploadedAt": "2025-09-15T17:59:56.622Z",
+    "uploadedBy": "seed-script",
+    "category": "documents",
+    "tags": [
+      "markdown",
+      "react",
+      "guide"
+    ]
+  },
+  {
+    "id": "a0022260-7a0d-40ac-bd87-55577fd3eaf2",
+    "originalName": "Customer Addresses.csv",
+    "fileName": "Customer Addresses.csv",
+    "path": "data\\Customer Addresses.csv",
+    "size": 328,
+    "mimeType": "text/csv",
+    "uploadedAt": "2025-09-15T17:59:57.648Z",
+    "uploadedBy": "seed-script",
+    "category": "data",
+    "tags": [
+      "csv",
+      "data",
+      "addresses"
+    ]
+  },
+  {
+    "id": "13742439-b677-4368-9449-b453976a2f0e",
+    "originalName": "Air Travel Statistics.csv",
+    "fileName": "Air Travel Statistics.csv",
+    "path": "data\\Air Travel Statistics.csv",
+    "size": 321,
+    "mimeType": "text/csv",
+    "uploadedAt": "2025-09-15T17:59:58.487Z",
+    "uploadedBy": "seed-script",
+    "category": "data",
+    "tags": [
+      "csv",
+      "statistics",
+      "travel"
+    ]
+  }
+]

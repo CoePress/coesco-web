@@ -59,7 +59,7 @@ const Resources = () => {
       sortOrder
     };
 
-    const response = await api.get('/api/files/resources', params);
+    const response = await api.get('/files/resources', params);
     if (response) {
       setResources(response.data);
       setTotalResources(response.total);
@@ -68,7 +68,7 @@ const Resources = () => {
   };
 
   const fetchRecentResources = async () => {
-    const response = await recentApi.get('/api/files/resources/recent', { limit: 6 });
+    const response = await recentApi.get('/files/resources/recent', { limit: 6 });
     if (response) {
       setRecentResources(response);
     }
@@ -78,7 +78,7 @@ const Resources = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await uploadApi.post('/api/files/upload', file, {
+    const response = await uploadApi.post('/files/upload', file, {
       headers: {
         'Content-Type': file.type,
         'X-File-Name': file.name
@@ -93,7 +93,7 @@ const Resources = () => {
   };
 
   const handleDelete = async (fileId: string) => {
-    const response = await deleteApi.delete(`/api/files/resources/${fileId}`);
+    const response = await deleteApi.delete(`/files/resources/${fileId}`);
     if (response !== null) {
       fetchResources();
       fetchRecentResources();
@@ -153,7 +153,7 @@ const Resources = () => {
             size="sm"
             onClick={() => {
               const link = document.createElement('a');
-              link.href = `/api/files/resources/${row.id}/download`;
+              link.href = `/files/resources/${row.id}/download`;
               link.download = row.originalName;
               link.click();
             }}
@@ -216,7 +216,7 @@ const Resources = () => {
                   className="flex-1"
                   onClick={() => {
                     const link = document.createElement('a');
-                    link.href = `/api/files/resources/${resource.id}/download`;
+                    link.href = `/files/resources/${resource.id}/download`;
                     link.download = resource.originalName;
                     link.click();
                   }}
@@ -236,7 +236,7 @@ const Resources = () => {
       return (
         <div className="flex justify-center items-center h-full">
           <img
-            src={`/api/files/resources/${resource.id}/download`}
+            src={`/files/resources/${resource.id}/download`}
             alt={resource.originalName}
             className="max-w-full max-h-[60vh] object-contain"
           />
@@ -245,7 +245,7 @@ const Resources = () => {
     } else if (resource.mimeType.includes('pdf')) {
       return (
         <iframe
-          src={`/api/files/resources/${resource.id}/download`}
+          src={`/files/resources/${resource.id}/download`}
           className="w-full h-[60vh] border-0"
           title={resource.originalName}
         />
@@ -261,7 +261,7 @@ const Resources = () => {
             variant="primary"
             onClick={() => {
               const link = document.createElement('a');
-              link.href = `/api/files/resources/${resource.id}/download`;
+              link.href = `/files/resources/${resource.id}/download`;
               link.download = resource.originalName;
               link.click();
             }}
