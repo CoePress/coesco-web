@@ -1,4 +1,5 @@
 import { AdminController } from "./admin.controller";
+import { AuditLogController } from "./audit-log.controller";
 import { AuthController } from "./auth.controller";
 import { ChatController } from "./chat.controller";
 import { ConfigurationController } from "./configuration.controller";
@@ -12,6 +13,7 @@ import { QuoteController } from "./quote.controller";
 import { SystemController } from "./system.controller";
 
 export const adminController = new AdminController();
+export const auditLogController = new AuditLogController();
 export const authController = new AuthController();
 export const chatController = new ChatController();
 export const configurationController = new ConfigurationController();

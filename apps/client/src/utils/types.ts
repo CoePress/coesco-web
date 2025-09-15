@@ -324,3 +324,10 @@ export interface IMachineTimeline {
   endDate: Date;
   machines: IOverviewMachine[];
 }
+
+export interface IAuditLog extends IBaseEntity {
+  model: string;
+  recordId: string;
+  changedBy: string;
+  diff: any;
+}

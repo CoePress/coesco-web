@@ -3,6 +3,7 @@ import { Router } from "express";
 import { protect } from "@/middleware/auth.middleware";
 
 import adminRoutes from "./admin.routes";
+import auditLogRoutes from "./audit-log.routes";
 import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
@@ -22,6 +23,7 @@ router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
 router.use(protect); // all routes below this are protected
 router.use("/admin", adminRoutes);
+router.use("/audit", auditLogRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/forms", formRoutes);
 router.use("/chat", chatRoutes);
