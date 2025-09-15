@@ -137,27 +137,32 @@ const MachineStatuses = () => {
   }
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Machine Statuses"
         description="Explore all machine history"
       />
-      <Table<IMachineStatus>
-        columns={columns as TableColumn<IMachineStatus>[]}
-        data={machineStatuses || []}
-        total={pagination.total}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort);
-          setOrder(newOrder);
-        }}
-      />
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <div className="flex-1 overflow-hidden">
+          <Table<IMachineStatus>
+            columns={columns as TableColumn<IMachineStatus>[]}
+            data={machineStatuses || []}
+            total={pagination.total}
+            idField="id"
+            pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            sort={sort}
+            order={order}
+            onSortChange={(newSort, newOrder) => {
+              setSort(newSort);
+              setOrder(newOrder);
+            }}
+            className="rounded border overflow-clip"
+          />
+        </div>
+      </div>
     </div>
   )
 }
