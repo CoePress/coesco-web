@@ -11,6 +11,7 @@ import formRoutes from "./form.routes";
 import legacyRoutes from "./legacy.routes";
 import lockRoutes from "./lock.routes";
 import performanceRoutes from "./performance.routes";
+import permissionRoutes from "./permissions.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
@@ -28,6 +29,7 @@ router.use("/crm", crmRoutes);
 router.use("/legacy", legacyRoutes);
 router.use("/locks", lockRoutes);
 router.use("/performance", performanceRoutes);
+router.use("/permissions", permissionRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
 

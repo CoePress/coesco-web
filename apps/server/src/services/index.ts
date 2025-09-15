@@ -10,6 +10,7 @@ import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { LockingService } from "./core/locking.service";
 import { MCPService } from "./core/mcp.service";
+import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
 
 // Business
@@ -25,6 +26,7 @@ export const authService = new AuthService();
 export const cacheService = new CacheService();
 export const lockingService = new LockingService();
 export const mcpService = new MCPService();
+export const permissionService = new PermissionService();
 export const socketService = new SocketService();
 
 export async function initializeServices() {

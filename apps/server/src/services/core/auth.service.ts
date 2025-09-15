@@ -291,45 +291,81 @@ export class AuthService {
   }
 
   async initializeDefaultUser(): Promise<void> {
-    const defaultEmail = "admin@cpec.com";
-    const defaultUsername = "admin";
+    const adminEmail = "admin@cpec.com";
+    const adminUsername = "admin";
     
-    const existingUser = await prisma.user.findFirst({
+    const existingAdmin = await prisma.user.findFirst({
       where: {
         OR: [
-          { username: defaultUsername },
-          { employee: { email: defaultEmail } }
+          { username: adminUsername },
+          { employee: { email: adminEmail } }
         ]
       },
       include: { employee: true }
     });
 
-    if (existingUser) {
-      return;
+    if (!existingAdmin) {
+      const hashedAdminPassword = await hash("admin123", 12);
+
+      await prisma.employee.create({
+        data: {
+          firstName: "Default",
+          lastName: "Admin",
+          initials: "DA",
+          email: adminEmail,
+          title: "Administrator",
+          number: "ADM001",
+          user: {
+            create: {
+              username: adminUsername,
+              password: hashedAdminPassword,
+              role: UserRole.ADMIN,
+              isActive: true,
+            },
+          },
+          createdById: "system",
+          updatedById: "system",
+        },
+      });
     }
 
-    const hashedPassword = await hash("admin123", 12);
-
-    await prisma.employee.create({
-      data: {
-        firstName: "Default",
-        lastName: "Admin",
-        initials: "DA",
-        email: defaultEmail,
-        title: "Administrator",
-        number: "ADM001",
-        user: {
-          create: {
-            username: defaultUsername,
-            password: hashedPassword,
-            role: UserRole.ADMIN,
-            isActive: true,
-          },
-        },
-        createdById: "system",
-        updatedById: "system",
+    const userEmail = "user@cpec.com";
+    const userUsername = "user";
+    
+    const existingRegularUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: userUsername },
+          { employee: { email: userEmail } }
+        ]
       },
+      include: { employee: true }
     });
+
+    if (!existingRegularUser) {
+      const hashedUserPassword = await hash("user123", 12);
+
+      await prisma.employee.create({
+        data: {
+          firstName: "Regular",
+          lastName: "User",
+          initials: "RU",
+          email: userEmail,
+          title: "Employee",
+          number: "USR001",
+          user: {
+            create: {
+              username: userUsername,
+              password: hashedUserPassword,
+              role: UserRole.USER,
+              isActive: true,
+            },
+          },
+          createdById: "system",
+          updatedById: "system",
+        },
+      });
+    }
   }
 
   async testLogin(): Promise<any> {

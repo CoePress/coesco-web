@@ -3,6 +3,7 @@ import { MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { MicrosoftService } from "@/services/business/microsoft.service";
+import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
@@ -127,7 +128,111 @@ async function seedMachines() {
   }
 }
 
+async function seedPermissions() {
+  try {
+    const existingPermissions = await prisma.permission.count();
+    
+    if (existingPermissions === 0) {
+      logger.info("Seeding permissions...");
+      
+      for (const permission of ALL_PERMISSIONS) {
+        const [resource, ...actionParts] = permission.split(".");
+        const action = actionParts.join(".");
+        
+        await prisma.permission.create({
+          data: {
+            resource,
+            action,
+            description: `Permission for ${permission}`,
+          },
+        });
+      }
+      
+      logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
+    }
+  }
+  catch (error) {
+    logger.error("Error during permission seeding:", error);
+  }
+}
+
+async function seedRoles() {
+  try {
+    const adminRole = await prisma.role.findUnique({
+      where: { name: "ADMIN" },
+    });
+    
+    if (!adminRole) {
+      logger.info("Seeding roles...");
+      
+      const adminRoleData = await prisma.role.create({
+        data: {
+          name: "ADMIN",
+          description: "Full system administrator with all permissions",
+          isSystem: true,
+        },
+      });
+      
+      const userRole = await prisma.role.create({
+        data: {
+          name: "USER",
+          description: "Standard user with basic permissions",
+          isSystem: true,
+        },
+      });
+      
+      // Get all permissions for ADMIN role
+      const allPermissions = await prisma.permission.findMany();
+      
+      // Admin gets all permissions
+      for (const permission of allPermissions) {
+        await prisma.rolePermission.create({
+          data: {
+            roleId: adminRoleData.id,
+            permissionId: permission.id,
+          },
+        });
+      }
+      
+      // User gets basic permissions
+      const userPermissions = [
+        "employees.read",
+        "legacy.read", 
+        "pipeline.read",
+        "quotes.create",
+        "quotes.read", 
+        "quotes.update",
+        "reports.view",
+        "reports.generate",
+      ];
+      
+      for (const permissionName of userPermissions) {
+        const [resource, action] = permissionName.split(".");
+        const permission = await prisma.permission.findFirst({
+          where: { resource, action },
+        });
+        
+        if (permission) {
+          await prisma.rolePermission.create({
+            data: {
+              roleId: userRole.id,
+              permissionId: permission.id,
+            },
+          });
+        }
+      }
+      
+      logger.info("Seeded ADMIN and USER roles with permissions");
+    }
+  }
+  catch (error) {
+    logger.error("Error during role seeding:", error);
+  }
+}
+
 export async function seedDatabase() {
+  await seedPermissions();
+  await seedRoles();
   await seedEmployees();
   await seedMachines();
 
