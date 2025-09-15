@@ -82,7 +82,7 @@ export class FileStoreController {
 
   listFiles = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { category, tag, uploadedBy, mimeType } = req.query;
+      const { category, tag, uploadedBy, mimeType, page = 1, limit = 25, sortBy, sortOrder } = req.query;
 
       const filters = {
         category: category as string,
@@ -102,7 +102,59 @@ export class FileStoreController {
         Object.keys(filters).length > 0 ? filters : undefined,
       );
 
-      res.json(files);
+      // Apply sorting if requested
+      let sortedFiles = [...files];
+      if (sortBy) {
+        sortedFiles.sort((a, b) => {
+          const aVal = a[sortBy as keyof typeof a];
+          const bVal = b[sortBy as keyof typeof b];
+
+          if (aVal === undefined || bVal === undefined) {
+            return 0;
+          }
+
+          const order = sortOrder === "desc" ? -1 : 1;
+
+          if (aVal > bVal)
+            return order;
+          if (aVal < bVal)
+            return -order;
+          return 0;
+        });
+      }
+
+      // Apply pagination
+      const pageNum = Number.parseInt(page as string);
+      const limitNum = Number.parseInt(limit as string);
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      const paginatedFiles = sortedFiles.slice(startIndex, endIndex);
+
+      res.json({
+        data: paginatedFiles,
+        total: files.length,
+        page: pageNum,
+        totalPages: Math.ceil(files.length / limitNum),
+      });
+    }
+    catch (error) {
+      next(error);
+    }
+  };
+
+  getRecentFiles = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { limit = 6 } = req.query;
+      const limitNum = Number.parseInt(limit as string);
+
+      const files = await this.fileStoreService.listFiles();
+
+      // Sort by uploadedAt descending and take the most recent ones
+      const recentFiles = files
+        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+        .slice(0, limitNum);
+
+      res.json(recentFiles);
     }
     catch (error) {
       next(error);

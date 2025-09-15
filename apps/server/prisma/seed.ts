@@ -2,6 +2,7 @@
 import { MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { seedFiles } from "@/scripts/seed-files";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import { logger } from "@/utils/logger";
@@ -235,6 +236,7 @@ export async function seedDatabase() {
   await seedRoles();
   await seedEmployees();
   await seedMachines();
+  await seedFiles();
 
   logger.info("All seeding completed successfully");
 }

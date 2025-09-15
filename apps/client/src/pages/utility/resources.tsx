@@ -1,61 +1,114 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, PageHeader } from "@/components";
-import { DownloadIcon, EyeIcon, FileIcon, ImageIcon, FileTextIcon } from "lucide-react";
+import { DownloadIcon, EyeIcon, FileIcon, ImageIcon, FileTextIcon, UploadIcon } from "lucide-react";
 import Table, { TableColumn } from "@/components/ui/table";
 import Modal from "@/components/ui/modal";
+import { useApi } from "@/hooks/use-api";
 
 type Resource = {
   id: string;
-  name: string;
-  type: string;
-  url: string;
+  originalName: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
   uploadedAt: string;
-  tags: string[];
+  tags?: string[];
+  category?: string;
+  uploadedBy?: string;
 };
 
-const mockResources: Resource[] = [
-  {
-    id: "1",
-    name: "Project Proposal.pdf",
-    type: "application/pdf",
-    url: "/uploads/Project-Proposal.pdf",
-    uploadedAt: "2025-08-10T14:30:00Z",
-    tags: ["pdf", "project"],
-  },
-  {
-    id: "2",
-    name: "Design Mockup.png",
-    type: "image/png",
-    url: "/uploads/Design-Mockup.png",
-    uploadedAt: "2025-08-11T09:15:00Z",
-    tags: ["image", "design"],
-  },
-  {
-    id: "3",
-    name: "Meeting Notes.docx",
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    url: "/uploads/Meeting-Notes.docx",
-    uploadedAt: "2025-08-13T11:00:00Z",
-    tags: ["doc", "meeting"],
-  },
-];
+type PaginatedResponse = {
+  data: Resource[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
 
 const Resources = () => {
+  const api = useApi<PaginatedResponse>();
+  const recentApi = useApi<Resource[]>();
+  const uploadApi = useApi<Resource>();
+  const deleteApi = useApi();
+
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [recentResources, setRecentResources] = useState<Resource[]>([]);
+  const [totalResources, setTotalResources] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  // Fetch resources on mount and when pagination/sorting changes
+  useEffect(() => {
+    fetchResources();
+  }, [currentPage, sortBy, sortOrder]);
+
+  // Fetch recent resources on mount
+  useEffect(() => {
+    fetchRecentResources();
+  }, []);
+
+  const fetchResources = async () => {
+    const params = {
+      page: currentPage,
+      limit: 25,
+      sortBy,
+      sortOrder
+    };
+
+    const response = await api.get('/api/files/resources', params);
+    if (response) {
+      setResources(response.data);
+      setTotalResources(response.total);
+      setTotalPages(response.totalPages);
+    }
+  };
+
+  const fetchRecentResources = async () => {
+    const response = await recentApi.get('/api/files/resources/recent', { limit: 6 });
+    if (response) {
+      setRecentResources(response);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await uploadApi.post('/api/files/upload', file, {
+      headers: {
+        'Content-Type': file.type,
+        'X-File-Name': file.name
+      }
+    });
+
+    if (response) {
+      setUploadModalOpen(false);
+      fetchResources();
+      fetchRecentResources();
+    }
+  };
+
+  const handleDelete = async (fileId: string) => {
+    const response = await deleteApi.delete(`/api/files/resources/${fileId}`);
+    if (response !== null) {
+      fetchResources();
+      fetchRecentResources();
+    }
+  };
 
   const columns: TableColumn<Resource>[] = [
     {
-      key: "name",
+      key: "originalName",
       header: "Name",
       render: (value, row) => (
         <div className="flex items-center gap-2">
           <span className="font-medium">{value as string}</span>
           <div className="flex gap-1">
-            {row.tags.map(tag => (
+            {row.tags?.map(tag => (
               <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
                 {tag}
               </span>
@@ -65,7 +118,7 @@ const Resources = () => {
       )
     },
     {
-      key: "type",
+      key: "mimeType",
       header: "Type",
       render: (value) => (
         <span className="text-text-muted">
@@ -100,8 +153,8 @@ const Resources = () => {
             size="sm"
             onClick={() => {
               const link = document.createElement('a');
-              link.href = row.url;
-              link.download = row.name;
+              link.href = `/api/files/resources/${row.id}/download`;
+              link.download = row.originalName;
               link.click();
             }}
           >
@@ -125,10 +178,6 @@ const Resources = () => {
     return <FileIcon size={24} className="text-gray-500" />;
   };
 
-  const recentResources = [...mockResources]
-    .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-    .slice(0, 6);
-
   const RecentlyAdded = () => (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
@@ -140,13 +189,13 @@ const Resources = () => {
           >
             <div className="flex flex-col items-center text-center">
               <div className="mb-3">
-                {getFileIcon(resource.type)}
+                {getFileIcon(resource.mimeType)}
               </div>
               <h3 className="font-medium text-sm mb-2 line-clamp-2">
-                {resource.name}
+                {resource.originalName}
               </h3>
               <div className="flex flex-wrap gap-1 mb-3">
-                {resource.tags.map(tag => (
+                {resource.tags?.map(tag => (
                   <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
                     {tag}
                   </span>
@@ -167,8 +216,8 @@ const Resources = () => {
                   className="flex-1"
                   onClick={() => {
                     const link = document.createElement('a');
-                    link.href = resource.url;
-                    link.download = resource.name;
+                    link.href = `/api/files/resources/${resource.id}/download`;
+                    link.download = resource.originalName;
                     link.click();
                   }}
                 >
@@ -183,37 +232,37 @@ const Resources = () => {
   );
 
   const renderPreview = (resource: Resource) => {
-    if (resource.type.startsWith('image/')) {
+    if (resource.mimeType.startsWith('image/')) {
       return (
         <div className="flex justify-center items-center h-full">
-          <img 
-            src={resource.url} 
-            alt={resource.name} 
+          <img
+            src={`/api/files/resources/${resource.id}/download`}
+            alt={resource.originalName}
             className="max-w-full max-h-[60vh] object-contain"
           />
         </div>
       );
-    } else if (resource.type.includes('pdf')) {
+    } else if (resource.mimeType.includes('pdf')) {
       return (
         <iframe
-          src={resource.url}
+          src={`/api/files/resources/${resource.id}/download`}
           className="w-full h-[60vh] border-0"
-          title={resource.name}
+          title={resource.originalName}
         />
       );
     } else {
       return (
         <div className="flex flex-col items-center justify-center h-[300px] gap-4">
           <div className="mb-3">
-            {getFileIcon(resource.type)}
+            {getFileIcon(resource.mimeType)}
           </div>
           <p className="text-text-muted">Preview not available for this file type</p>
           <Button
             variant="primary"
             onClick={() => {
               const link = document.createElement('a');
-              link.href = resource.url;
-              link.download = resource.name;
+              link.href = `/api/files/resources/${resource.id}/download`;
+              link.download = resource.originalName;
               link.click();
             }}
           >
@@ -230,28 +279,41 @@ const Resources = () => {
       <PageHeader
         title="Resources"
         description="Manage and access your uploaded files"
+        actions={
+          <Button onClick={() => setUploadModalOpen(true)}>
+            <UploadIcon size={16} />
+            Upload File
+          </Button>
+        }
       />
 
       <div className="w-full flex flex-1 flex-col p-2 gap-2">
-        <RecentlyAdded />
+        {api.loading || recentApi.loading ? (
+          <div className="flex justify-center items-center h-32">
+            <span>Loading resources...</span>
+          </div>
+        ) : (
+          <RecentlyAdded />
+        )}
         
         <div className="flex flex-col flex-1">
           <Table<Resource>
             columns={columns}
-            data={mockResources}
-            total={mockResources.length}
+            data={resources}
+            total={totalResources}
             selectable={false}
             selectedItems={selectedResources}
             onSelectionChange={(ids) => setSelectedResources(ids as string[])}
             pagination={true}
             currentPage={currentPage}
-            totalPages={Math.ceil(mockResources.length / 25)}
+            totalPages={totalPages}
             onPageChange={setCurrentPage}
             sort={sortBy}
             order={sortOrder}
             onSortChange={handleSortChange}
             emptyMessage="No resources found"
             className="border rounded overflow-clip"
+            loading={api.loading}
           />
         </div>
       </div>
@@ -259,10 +321,32 @@ const Resources = () => {
       <Modal
         isOpen={!!previewResource}
         onClose={() => setPreviewResource(null)}
-        title={previewResource?.name || ""}
+        title={previewResource?.originalName || ""}
         size="lg"
       >
         {previewResource && renderPreview(previewResource)}
+      </Modal>
+
+      <Modal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        title="Upload File"
+        size="md"
+      >
+        <div className="p-4">
+          <input
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleFileUpload(file);
+              }
+            }}
+            className="w-full p-2 border border-border rounded"
+          />
+          {uploadApi.loading && <p className="mt-2">Uploading...</p>}
+          {uploadApi.error && <p className="mt-2 text-red-500">{uploadApi.error}</p>}
+        </div>
       </Modal>
     </div>
   );

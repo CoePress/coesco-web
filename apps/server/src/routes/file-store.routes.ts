@@ -7,22 +7,25 @@ const router = Router();
 // Get storage information (must be before /:fileId routes)
 router.get("/storage/info", fileStoreController.getStorageInfo);
 
-// File upload
+// File upload - for uploading resources
 router.post("/upload", fileStoreController.uploadFile);
 
-// List files with optional filters
-router.get("/", fileStoreController.listFiles);
+// List all resources with optional filters (pagination, sorting, tags)
+router.get("/resources", fileStoreController.listFiles);
 
-// Get file content
-router.get("/:fileId/download", fileStoreController.getFile);
+// Get recently added resources
+router.get("/resources/recent", fileStoreController.getRecentFiles);
 
-// Get file metadata
-router.get("/:fileId", fileStoreController.getFileMetadata);
+// Get file/resource by ID for preview
+router.get("/resources/:fileId", fileStoreController.getFileMetadata);
 
-// Update file metadata
-router.patch("/:fileId", fileStoreController.updateFileMetadata);
+// Download file/resource
+router.get("/resources/:fileId/download", fileStoreController.getFile);
 
-// Delete file
-router.delete("/:fileId", fileStoreController.deleteFile);
+// Update resource metadata (tags, name, etc)
+router.patch("/resources/:fileId", fileStoreController.updateFileMetadata);
+
+// Delete resource
+router.delete("/resources/:fileId", fileStoreController.deleteFile);
 
 export default router;
