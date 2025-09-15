@@ -42,6 +42,29 @@ export class FileStoreController {
     }
   };
 
+  previewFile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { fileId } = req.params;
+      const file = await this.fileStoreService.getFile(fileId);
+
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      res.set({
+        "Content-Type": file.metadata.mimeType,
+        "Content-Disposition": `inline; filename="${file.metadata.originalName}"`,
+        "Content-Length": file.metadata.size.toString(),
+        "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+      });
+
+      res.send(file.buffer);
+    }
+    catch (error) {
+      next(error);
+    }
+  };
+
   getFile = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { fileId } = req.params;

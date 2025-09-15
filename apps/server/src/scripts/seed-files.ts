@@ -147,11 +147,25 @@ async function seedFiles() {
   const fileStoreService = new FileStoreService();
   let successCount = 0;
   let failCount = 0;
+  let skippedCount = 0;
+
+  // Load existing files once at the start
+  console.log("Loading existing files...");
+  const existingFiles = await fileStoreService.listFiles();
+  const existingFileNames = new Set(existingFiles.map(f => f.originalName));
+  console.log(`Found ${existingFiles.length} existing files\n`);
 
   for (const file of sampleFiles) {
     console.log(`\nProcessing: ${file.name}`);
 
     try {
+      // Check if file already exists by original name
+      if (existingFileNames.has(file.name)) {
+        console.log(`⚠ Skipping ${file.name} - already exists`);
+        skippedCount++;
+        continue;
+      }
+
       // Download the file
       const buffer = await downloadFile(file.url);
 
@@ -175,6 +189,9 @@ async function seedFiles() {
         }
       );
 
+      // Add to our local set to avoid duplicate checks
+      existingFileNames.add(file.name);
+
       console.log(`✓ Stored ${file.name} with ID: ${metadata.id}`);
       console.log(`  Size: ${(metadata.size / 1024).toFixed(2)} KB`);
       console.log(`  Type: ${metadata.mimeType}`);
@@ -194,6 +211,9 @@ async function seedFiles() {
   console.log("\n" + "=".repeat(50));
   console.log("Seeding Complete!");
   console.log(`✓ Successfully seeded: ${successCount} files`);
+  if (skippedCount > 0) {
+    console.log(`⚠ Skipped (already exists): ${skippedCount} files`);
+  }
   if (failCount > 0) {
     console.log(`✗ Failed: ${failCount} files`);
   }

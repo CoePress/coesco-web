@@ -75,14 +75,17 @@ const Resources = () => {
   };
 
   const handleFileUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
+    // Convert file to ArrayBuffer then to Buffer for raw binary upload
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
 
-    const response = await uploadApi.post('/files/upload', file, {
+    const response = await uploadApi.post('/files/upload', buffer, {
       headers: {
         'Content-Type': file.type,
         'X-File-Name': file.name
-      }
+      },
+      // Override the default JSON content type for this request
+      transformRequest: [(data) => data]
     });
 
     if (response) {
@@ -236,7 +239,7 @@ const Resources = () => {
       return (
         <div className="flex justify-center items-center h-full">
           <img
-            src={`/files/resources/${resource.id}/download`}
+            src={`/files/resources/${resource.id}/preview`}
             alt={resource.originalName}
             className="max-w-full max-h-[60vh] object-contain"
           />
@@ -245,7 +248,7 @@ const Resources = () => {
     } else if (resource.mimeType.includes('pdf')) {
       return (
         <iframe
-          src={`/files/resources/${resource.id}/download`}
+          src={`/files/resources/${resource.id}/preview`}
           className="w-full h-[60vh] border-0"
           title={resource.originalName}
         />
