@@ -23,7 +23,6 @@ import {
 import { formatCurrency } from "@/utils";
 import { isProductClassDescendant } from "@/utils";
 import { useApi } from "@/hooks/use-api";
-import { RuleCondition, SelectedOption, ValidationResult } from "@/utils/types";
 
 const SaveConfigModal = ({
   isOpen,
@@ -36,7 +35,7 @@ const SaveConfigModal = ({
   isOpen: boolean;
   onClose: () => void;
   configName: string;
-  selectedOptions: SelectedOption[];
+  selectedOptions: any[];
   totalPrice: number;
   onSave: (data: { name: string; isTemplate: boolean }) => void;
 }) => {
@@ -96,7 +95,6 @@ const PerformanceRequirementsModal = ({
   const [requirements, setRequirements] = useState<Record<string, number>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Sample performance forms - replace with actual data
   const performanceForms = [
     {
       id: "form_1",
@@ -376,10 +374,8 @@ const PerformanceRequirementsModal = ({
 
 const ConfigurationBuilder = () => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<SelectedOption[]>([]);
-  const [validationResults, setValidationResults] = useState<
-    ValidationResult[]
-  >([]);
+  const [selectedOptions, setSelectedOptions] = useState<any[]>([]);
+  const [validationResults, setValidationResults] = useState<any[]>([]);
   const [configName, setConfigName] = useState("Untitled Configuration");
   const [productClassSelections, setProductClassSelections] = useState<
     string[]
@@ -436,13 +432,11 @@ const ConfigurationBuilder = () => {
 
   const visibleProductClassLevels = productClassSelections.length + 1;
 
-  const getOptionsForCategory = (categoryId: string) => {
-    // For now, return empty array since we're only displaying categories
+  const getOptionsForCategory = (_categoryId: string) => {
     return [];
   };
 
-  const getOptionById = (optionId: string) => {
-    // For now, return null since we're only displaying categories
+  const getOptionById = (_optionId: string) => {
     return null;
   };
 
@@ -455,12 +449,7 @@ const ConfigurationBuilder = () => {
     return selectedOptions.some((opt) => opt.optionId === optionId);
   };
 
-  const getOptionQuantity = (optionId: string) => {
-    const option = selectedOptions.find((opt) => opt.optionId === optionId);
-    return option ? option.quantity : 0;
-  };
-
-  const evaluateCondition = (condition: RuleCondition): boolean => {
+  const evaluateCondition = (condition: any): boolean => {
     switch (condition.type) {
       case "SIMPLE":
         if (condition.conditionType === "OPTION") {
@@ -480,10 +469,10 @@ const ConfigurationBuilder = () => {
         return false;
 
       case "AND":
-        return condition.conditions.every((cond) => evaluateCondition(cond));
+        return condition.conditions.every((cond: any) => evaluateCondition(cond));
 
       case "OR":
-        return condition.conditions.some((cond) => evaluateCondition(cond));
+        return condition.conditions.some((cond: any) => evaluateCondition(cond));
 
       case "NOT":
         return !evaluateCondition(condition.condition);
@@ -494,7 +483,6 @@ const ConfigurationBuilder = () => {
   };
 
   const isRuleTriggered = (rule: any): boolean => {
-    // Check if any trigger option is selected
     const triggered = rule.triggerOptions.some((triggerOption: any) =>
       isOptionSelected(triggerOption.id)
     );
@@ -505,20 +493,6 @@ const ConfigurationBuilder = () => {
       rule.triggerOptions.map((opt: any) => opt.name)
     );
     return triggered;
-  };
-
-  const shouldDisableOption = (optionId: string): boolean => {
-    if (!optionRules) return false;
-
-    const applicableRules = optionRules
-      .filter(
-        (rule) =>
-          rule.action === "DISABLE" &&
-          rule.targetOptions.some((target: any) => target.id === optionId)
-      )
-      .sort((a, b) => b.priority - a.priority);
-
-    return applicableRules.some((rule) => isRuleTriggered(rule));
   };
 
   const isOptionRequired = (optionId: string): boolean => {
@@ -539,27 +513,17 @@ const ConfigurationBuilder = () => {
     const requiredOptions: string[] = [];
 
     if (!optionRules) {
-      console.log("No option rules available");
       return requiredOptions;
     }
 
-    console.log(`Processing ${optionRules.length} rules for required options`);
-
     for (const rule of optionRules) {
-      console.log(`Checking rule: ${rule.name}, action: ${rule.action}`);
-
       if (rule.action === "REQUIRE" && isRuleTriggered(rule)) {
-        console.log(
-          `Rule "${rule.name}" is triggered, requiring:`,
-          rule.targetOptions.map((opt: { name: string }) => opt.name)
-        );
         requiredOptions.push(
           ...rule.targetOptions.map((opt: { id: string }) => opt.id)
         );
       }
     }
 
-    console.log(`Final required options:`, requiredOptions);
     return [...new Set(requiredOptions)];
   };
 
@@ -579,49 +543,6 @@ const ConfigurationBuilder = () => {
     return [...new Set(disabledOptions)];
   };
 
-  const getDefaultOptions = () => {
-    // For now, return empty array since we're only displaying categories
-    return [];
-  };
-
-  const handleOptionSelect = (
-    optionId: string,
-    categoryId: string,
-    checked: boolean
-  ) => {
-    const category = getCategoryById(categoryId);
-    if (!category) return;
-
-    if (checked) {
-      if (!category.allowMultiple) {
-        setSelectedOptions((prev) => {
-          const otherCategoryOptions = prev.filter((opt) => {
-            const optDetails = getOptionById(opt.optionId);
-            return optDetails?.categoryId !== categoryId;
-          });
-
-          return [...otherCategoryOptions, { optionId, quantity: 1 }];
-        });
-      } else {
-        setSelectedOptions((prev) => [...prev, { optionId, quantity: 1 }]);
-      }
-    } else {
-      setSelectedOptions((prev) =>
-        prev.filter((opt) => opt.optionId !== optionId)
-      );
-    }
-  };
-
-  const handleQuantityChange = (optionId: string, quantity: number) => {
-    if (quantity < 1) return;
-
-    setSelectedOptions((prev) =>
-      prev.map((opt) =>
-        opt.optionId === optionId ? { ...opt, quantity } : opt
-      )
-    );
-  };
-
   const getCategoryStatus = (
     categoryId: string
   ): "valid" | "warning" | "error" | "incomplete" | "default" | "custom" => {
@@ -629,7 +550,7 @@ const ConfigurationBuilder = () => {
     if (!category) return "valid";
 
     const hasSelection = selectedOptions.some((opt) => {
-      const option = getOptionById(opt.optionId);
+      const option: any = getOptionById(opt.optionId);
       return option?.categoryId === categoryId;
     });
 
@@ -645,9 +566,8 @@ const ConfigurationBuilder = () => {
 
       if (hasWarning) return "warning";
 
-      // Check if exactly the default options are selected
       const selectedCategoryOptions = selectedOptions.filter((opt) => {
-        const option = getOptionById(opt.optionId);
+        const option: any = getOptionById(opt.optionId);
         return option?.categoryId === categoryId;
       });
 
@@ -655,11 +575,10 @@ const ConfigurationBuilder = () => {
         (opt: any) => opt.isDefault
       );
       const selectedDefaultOptions = selectedCategoryOptions.filter((opt) => {
-        const option = getOptionById(opt.optionId);
+        const option: any = getOptionById(opt.optionId);
         return option?.isDefault;
       });
 
-      // Check if the selection exactly matches the defaults
       const hasOnlyDefaults =
         selectedCategoryOptions.length === defaultOptions.length &&
         selectedDefaultOptions.length === defaultOptions.length;
@@ -697,7 +616,7 @@ const ConfigurationBuilder = () => {
     let total = 0;
 
     for (const selectedOpt of selectedOptions) {
-      const option = getOptionById(selectedOpt.optionId);
+      const option: any = getOptionById(selectedOpt.optionId);
       if (option) {
         total += option.price * selectedOpt.quantity;
       }
@@ -716,10 +635,10 @@ const ConfigurationBuilder = () => {
   };
 
   const validateConfiguration = () => {
-    const results: ValidationResult[] = [];
+    const results: any[] = [];
 
     const selectedOptionNames = selectedOptions.map((opt) => {
-      const option = getOptionById(opt.optionId);
+      const option: any = getOptionById(opt.optionId);
       return `${option?.name} (${option?.code})`;
     });
     console.log("SELECTED:", selectedOptionNames.join(", "));
@@ -741,7 +660,7 @@ const ConfigurationBuilder = () => {
     for (const category of sortedCategories) {
       if (category.isRequired) {
         const hasSelection = selectedOptions.some((opt) => {
-          const option = getOptionById(opt.optionId);
+          const option: any = getOptionById(opt.optionId);
           return option?.categoryId === category.id;
         });
 
@@ -760,19 +679,19 @@ const ConfigurationBuilder = () => {
     console.log(
       "REQUIRED OPTIONS:",
       requiredOptions.map((id) => {
-        const option = getOptionById(id);
+        const option: any = getOptionById(id);
         return `${option?.name} (${option?.code})`;
       })
     );
 
     for (const optionId of requiredOptions) {
       if (!isOptionSelected(optionId)) {
-        const option = getOptionById(optionId);
+        const option: any = getOptionById(optionId);
         if (option) {
           const category = getCategoryById(option.categoryId);
           if (category) {
             const hasSelectionInCategory = selectedOptions.some((opt) => {
-              const selectedOption = getOptionById(opt.optionId);
+              const selectedOption: any = getOptionById(opt.optionId);
               return selectedOption?.categoryId === category.id;
             });
 
@@ -794,14 +713,14 @@ const ConfigurationBuilder = () => {
     console.log(
       "DISABLED OPTIONS:",
       disabledOptions.map((id) => {
-        const option = getOptionById(id);
+        const option: any = getOptionById(id);
         return `${option?.name} (${option?.code})`;
       })
     );
 
     for (const optionId of disabledOptions) {
       if (isOptionSelected(optionId)) {
-        const option = getOptionById(optionId);
+        const option: any = getOptionById(optionId);
         if (option) {
           const category = getCategoryById(option.categoryId);
           results.push({
@@ -964,7 +883,7 @@ const ConfigurationBuilder = () => {
                       <option value="">
                         Select {level === 0 ? "Category" : "Option"}
                       </option>
-                      {options.map((option) => (
+                      {options.map((option: any) => (
                         <option
                           key={option.id}
                           value={option.id}>
@@ -1019,7 +938,6 @@ const ConfigurationBuilder = () => {
             <div className="divide-y">
               {sortedCategories.map((category) => {
                 const categoryStatus = getCategoryStatus(category.id);
-                const options = getOptionsForCategory(category.id);
 
                 return (
                   <div
@@ -1111,7 +1029,7 @@ const ConfigurationBuilder = () => {
                 {sortedCategories.map((category) => {
                   const selectedCategoryOptions = selectedOptions
                     .filter((so) => {
-                      const option = getOptionById(so.optionId);
+                      const option: any = getOptionById(so.optionId);
                       return option?.categoryId === category.id;
                     })
                     .map((so) => {

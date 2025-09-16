@@ -67,7 +67,7 @@ const Login = () => {
   };
 
   const handleUsernamePasswordLogin = async () => {
-    const response = await post<IApiResponse<{ user: any; employee: any }>>("/auth/login", {
+    const response = await post("/auth/login", {
       username,
       password,
     });
