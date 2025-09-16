@@ -11,7 +11,6 @@ type BugReportFormProps = {
 const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [annotatedScreenshot, setAnnotatedScreenshot] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -16,7 +16,7 @@ export const useGetEntities = <T = any>(
     include,
     dateFrom,
     dateTo,
-  }: IQueryParams = {}
+  }: IQueryParams<any> = {}
 ) => {
   const [entities, setEntities] = useState<T[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

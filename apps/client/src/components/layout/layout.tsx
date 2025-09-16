@@ -192,7 +192,7 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
-  const screenshotAreaRef = useRef<HTMLDivElement>(null);
+  const screenshotAreaRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   const { toggleTheme } = useTheme();
   const { sidebarExpanded, toggleSidebar } = useAppContext();

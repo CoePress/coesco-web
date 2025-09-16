@@ -104,12 +104,12 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
       </div>
 
       <div className="flex gap-2 justify-end mt-4">
-        <Button type="button" variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" variant="primary">
+        <button type="submit" className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5">
           {machine ? "Update" : "Create"} Machine
-        </Button>
+        </button>
       </div>
     </form>
   );

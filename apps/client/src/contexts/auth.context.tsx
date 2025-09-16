@@ -60,9 +60,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (response?.success && response.data) {
           setUserState(response.data.user);
           setEmployeeState(response.data.employee);
-        } else if (response?.user && response?.employee) {
-          setUserState(response.user);
-          setEmployeeState(response.employee);
         } else {
           throw new Error("Session check failed");
         }

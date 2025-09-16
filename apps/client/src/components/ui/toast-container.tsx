@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import Toast, { ToastProps } from "./toast";
+import Toast from "./toast";
 import { ToastData } from "@/hooks/use-toast";
 
 type ToastContainerProps = {
