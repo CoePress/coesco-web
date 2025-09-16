@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-
-const STAGES = [
-  { id: 1, label: "Lead", weight: 0.20 },
-  { id: 2, label: "Qualified", weight: 0.40 },
-  { id: 3, label: "Presentations", weight: 0.60 },
-  { id: 4, label: "Negotiation", weight: 0.90 },
-  { id: 5, label: "Closed Won", weight: 1.0 },
-  { id: 6, label: "Closed Lost", weight: 0.0 },
-] as const;
+import { STAGES, VALID_JOURNEY_STATUS } from "./journeys/constants";
+import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry } from "./journeys/utils";
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -80,65 +73,118 @@ const getPriorityColor = (priority: string) => {
       return "bg-gray-400"; // No priority - gray
   }
 };
-import { Edit, Plus, User } from "lucide-react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { Edit, Plus, User, Trash2 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
+import { DeleteJourneyModal } from "./journeys/components";
+import { AddJourneyContactModal } from "@/components";
 
-function JourneyDetailsTab({ journey }: { journey: any | null }) {
-  const [isEditingDetails, setIsEditingDetails] = useState(false);
-  const [detailsForm, setDetailsForm] = useState({
-    createDT: journey?.CreateDT ?? journey?.createDT ?? "",
-    type: journey?.Journey_Type ?? journey?.type ?? "",
-    source: journey?.Lead_Source ?? journey?.source ?? "",
-    equipmentType: journey?.Equipment_Type ?? "Standard",
-    quoteType: journey?.Quote_Type ?? "Standard more than 6 months",
-    rsm: journey?.RSM ?? "",
+function JourneyDetailsTab({ journey, journeyContacts, updateJourney, refetchJourneyData, setJourneyContacts }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; refetchJourneyData: () => Promise<boolean>; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>> }) {
+  // State for available RSMs
+  const [availableRsms, setAvailableRsms] = useState<string[]>([]);
+  const rsmApi = useApi(); // Separate API instance for RSM fetching
+
+  // Helper function to validate RSM
+  const getValidRSM = (value: string) => {
+    if (!value) return "";
+    const normalized = availableRsms.find(rsm => 
+      rsm.toLowerCase() === value.toLowerCase()
+    );
+    return normalized || value; // Keep original value if not found in list
+  };
+
+  // Helper function to create details form data from journey
+  const createDetailsFormData = (journey: any) => ({
+    type: getValidJourneyType(journey?.Journey_Type ?? journey?.type),
+    source: getValidLeadSource(journey?.Lead_Source ?? journey?.source),
+    equipmentType: getValidEquipmentType(journey?.Equipment_Type),
+    rsm: getValidRSM(journey?.RSM),
     rsmTerritory: journey?.RSM_Territory ?? "",
-    quoteNumber: journey?.Quote_Number ?? "",
     qtyItems: journey?.Qty_of_Items ?? "",
     value: journey?.Journey_Value ?? journey?.value ?? "",
-  });
-
-  const [isEditingTracking, setIsEditingTracking] = useState(false);
-  const [trackingForm, setTrackingForm] = useState({
+    dealer: getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? ""),
+    dealerContact: getValidDealerContact(journey?.Dealer_Contact ?? ""),
+    journeyStartDate: journey?.Journey_Start_Date ? journey.Journey_Start_Date.split(' ')[0] : "",
     stage: journey?.Journey_Stage ?? journey?.stage ?? "",
     priority: journey?.Priority ?? journey?.priority ?? "",
     status: journey?.Journey_Status ?? journey?.status ?? "",
-    presentationDate: journey?.Quote_Presentation_Date ?? "",
-    expectedPoDate: journey?.Expected_Decision_Date ?? "",
-    lastActionDate: journey?.Action_Date ?? journey?.updatedAt ?? "",
+    presentationDate: journey?.Quote_Presentation_Date ? journey.Quote_Presentation_Date.split(' ')[0] : "",
+    expectedPoDate: journey?.Expected_Decision_Date ? journey.Expected_Decision_Date.split(' ')[0] : "",
+    lastActionDate: journey?.Action_Date ? journey.Action_Date.split(' ')[0] : (journey?.updatedAt ? journey.updatedAt.split(' ')[0] : ""),
+    confidence: journey?.Chance_To_Secure_order ?? "",
+    reasonWon: journey?.Reason_Won ?? "",
+    reasonLost: journey?.Reason_Lost ?? "",
+    reasonWonLost: journey?.Reason_Won_Lost ?? "",
+  });
+
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [detailsForm, setDetailsForm] = useState(createDetailsFormData(journey));
+
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [customerForm, setCustomerForm] = useState({
+    companyId: journey?.Company_ID || "",
+    industry: getValidIndustry(journey?.Industry || ""),
   });
 
   const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [contactForm, setContactForm] = useState({
+    Contact_Name: "",
+    Contact_Position: "",
+    Contact_Email: "",
+    Contact_Office: "",
+    Contact_Mobile: "",
+    Contact_Note: "",
+  });
+
+  const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
 
   useEffect(() => {
     if (journey) {
-      setDetailsForm({
-        createDT: journey?.CreateDT ?? journey?.createDT ?? "",
-        type: journey?.Journey_Type ?? journey?.type ?? "",
-        source: journey?.Lead_Source ?? journey?.source ?? "",
-        equipmentType: journey?.Equipment_Type ?? "Standard",
-        quoteType: journey?.Quote_Type ?? "Standard more than 6 months",
-        rsm: journey?.RSM ?? "",
-        rsmTerritory: journey?.RSM_Territory ?? "",
-        quoteNumber: journey?.Quote_Number ?? "",
-        qtyItems: journey?.Qty_of_Items ?? "",
-        value: journey?.Journey_Value ?? journey?.value ?? "",
-      });
+      // Only update form states if we're not currently editing to avoid overwriting user changes
+      if (!isEditingDetails) {
+        setDetailsForm(createDetailsFormData(journey));
+      }
       
-      setTrackingForm({
-        stage: journey?.Journey_Stage ?? journey?.stage ?? "",
-        priority: journey?.Priority ?? journey?.priority ?? "",
-        status: journey?.Journey_Status ?? journey?.status ?? "",
-        presentationDate: journey?.Quote_Presentation_Date ?? "",
-        expectedPoDate: journey?.Expected_Decision_Date ?? "",
-        lastActionDate: journey?.Action_Date ?? journey?.updatedAt ?? "",
-      });
+      if (!isEditingCustomer) {
+        setCustomerForm({
+          companyId: journey?.Company_ID || "",
+          industry: getValidIndustry(journey?.Industry || ""),
+        });
+      }
       
-      setNotes(journey?.Notes ?? journey?.notes ?? "");
+      // Always update notes unless there's a pending save
+      if (!showSavePrompt) {
+        setNotes(journey?.Notes ?? journey?.notes ?? "");
+      }
     }
-  }, [journey]);
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  }, [journey, isEditingDetails, isEditingCustomer, showSavePrompt]);
+
+  // Fetch RSMs like pipeline.tsx does - get initials from Demographic table
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
+          filterField: 'Category',
+          filterValue: 'RSM'
+        });
+        
+        if (!cancelled && Array.isArray(rsmData)) {
+          const rsmValues = rsmData.map(item => item.Name || item.Value || item.Description).filter(Boolean);
+          setAvailableRsms(rsmValues);
+        }
+      } catch (error) {
+        console.error("Error fetching RSM data:", error);
+        setAvailableRsms([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const navigate = useNavigate();
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: string }>({
     isOpen: false,
@@ -148,6 +194,288 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
   const handleOpenModal = (type: string) => setModalState({ isOpen: true, type });
   const handleCloseModal = () => setModalState({ isOpen: false, type: "" });
 
+  const saveJourneyUpdates = async (updates: Record<string, any>) => {
+    if (!journey?.ID && !journey?.id) return false;
+    
+    setIsSaving(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const response = await fetch(
+        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updates),
+        }
+      );
+      
+      if (response.ok) {
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to update journey:", response.status, response.statusText, errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating journey:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDetails = async () => {
+    const rawUpdates = {
+      Journey_Type: detailsForm.type,
+      Lead_Source: detailsForm.source,
+      Equipment_Type: detailsForm.equipmentType,
+      RSM: detailsForm.rsm,
+      RSM_Territory: detailsForm.rsmTerritory,
+      Qty_of_Items: detailsForm.qtyItems,
+      Journey_Value: detailsForm.value,
+      Dealer: detailsForm.dealer,
+      Dealer_Contact: detailsForm.dealerContact,
+      Journey_Start_Date: formatDateForDatabase(detailsForm.journeyStartDate),
+      Journey_Stage: detailsForm.stage,
+      Priority: detailsForm.priority,
+      Journey_Status: detailsForm.status,
+      Quote_Presentation_Date: formatDateForDatabase(detailsForm.presentationDate),
+      Expected_Decision_Date: formatDateForDatabase(detailsForm.expectedPoDate),
+      Action_Date: formatDateForDatabase(detailsForm.lastActionDate),
+      Chance_To_Secure_order: detailsForm.confidence,
+      Reason_Won: detailsForm.reasonWon,
+      Reason_Lost: detailsForm.reasonLost,
+      Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost,
+    };
+
+    // Filter out empty string values, but always include Reason fields
+    const updates = Object.fromEntries(
+      Object.entries(rawUpdates).filter(([key, value]) => {
+        // Always include Reason_Won, Reason_Lost, and Reason_Won_Lost even if empty
+        if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost') {
+          return true;
+        }
+        return value !== "";
+      })
+    );
+
+    const success = await saveJourneyUpdates(updates);
+    if (success) {
+      setIsEditingDetails(false);
+      // Convert stage label to numeric ID for local state
+      const stageId = STAGES.find(s => s.label === detailsForm.stage)?.id;
+      const localUpdates = {
+        ...rawUpdates,
+        stage: stageId // Add numeric stage ID for local state
+      };
+      // Update the journey data locally
+      updateJourney(localUpdates);
+    }
+  };
+
+  const handleCancelDetails = () => {
+    setIsEditingDetails(false);
+  };
+
+
+  const handleSaveCustomer = async () => {
+    const updates = {
+      Company_ID: customerForm.companyId,
+      Industry: customerForm.industry,
+    };
+
+    const success = await saveJourneyUpdates(updates);
+    if (success) {
+      setIsEditingCustomer(false);
+      // Update the journey data locally
+      updateJourney(updates);
+    }
+  };
+
+  const handleCancelCustomer = () => {
+    setIsEditingCustomer(false);
+  };
+
+  const handleSaveNotes = async () => {
+    const updates = {
+      Notes: notes,
+    };
+
+    const success = await saveJourneyUpdates(updates);
+    if (success) {
+      setShowSavePrompt(false);
+      // Update the journey data locally
+      updateJourney(updates);
+    } else {
+      // Revert notes on failure
+      setNotes(journey?.Notes ?? journey?.notes ?? "");
+      setShowSavePrompt(false);
+    }
+  };
+
+  const handleCancelNotes = () => {
+    setNotes(journey?.Notes ?? journey?.notes ?? "");
+    setShowSavePrompt(false);
+  };
+
+  const api = useApi();
+
+  const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
+    if (!journey?.ID && !journey?.id) return;
+    
+    // Update contacts state immediately for responsive UI
+    setJourneyContacts(prevContacts => 
+      prevContacts.map(contact => ({
+        ...contact,
+        IsPrimary: contact.ID === contactId ? 1 : 0
+      }))
+    );
+    
+    setIsSaving(true);
+    try {
+      // First, set all contacts for this journey to not primary using the new bulk update endpoint
+      const bulkUpdateResult = await api.patch(
+        `/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${JourneyID}`,
+        { IsPrimary: 0 }
+      );
+      
+      if (bulkUpdateResult !== null) {
+        // Then set the selected contact as primary
+        const primaryUpdateResult = await api.patch(
+          `/legacy/std/Journey_Contact/${contactId}`,
+          { IsPrimary: 1 }
+        );
+        
+        if (primaryUpdateResult === null) {
+          // If API call failed, revert the UI change
+          setJourneyContacts(prevContacts => 
+            prevContacts.map(contact => ({
+              ...contact,
+              IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
+            }))
+          );
+        }
+      } else {
+        // If first API call failed, revert the UI change
+        setJourneyContacts(prevContacts => 
+          prevContacts.map(contact => ({
+            ...contact,
+            IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error updating primary contact:", error);
+      // Revert the UI change on error
+      setJourneyContacts(prevContacts => 
+        prevContacts.map(contact => ({
+          ...contact,
+          IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
+        }))
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditContact = (contact: any) => {
+    setEditingContactId(contact.ID);
+    setContactForm({
+      Contact_Name: contact.Contact_Name || "",
+      Contact_Position: contact.Contact_Position || "",
+      Contact_Email: contact.Contact_Email || "",
+      Contact_Office: contact.Contact_Office || "",
+      Contact_Mobile: contact.Contact_Mobile || "",
+      Contact_Note: contact.Contact_Note || "",
+    });
+  };
+
+  const handleSaveContact = async () => {
+    if (!editingContactId) return;
+    
+    setIsSaving(true);
+    try {
+      const result = await api.patch(
+        `/legacy/std/Journey_Contact/${editingContactId}`,
+        contactForm
+      );
+      
+      if (result !== null) {
+        // Update the contact in the local state
+        setJourneyContacts(prevContacts => 
+          prevContacts.map(contact => 
+            contact.ID === editingContactId 
+              ? { ...contact, ...contactForm }
+              : contact
+          )
+        );
+        setEditingContactId(null);
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelContactEdit = () => {
+    setEditingContactId(null);
+    setContactForm({
+      Contact_Name: "",
+      Contact_Position: "",
+      Contact_Email: "",
+      Contact_Office: "",
+      Contact_Mobile: "",
+      Contact_Note: "",
+    });
+  };
+
+  const handleContactAdded = async (newContact: any) => {
+    // If this is already a Journey_Contact (from AddJourneyContactModal), just add it to the list
+    // Check for Journey_Contact fields: Jrn_ID, Contact_Name, or ID (for Journey_Contact)
+    if (newContact.Jrn_ID || newContact.Contact_Name || (newContact.ID && !newContact.Cont_Id)) {
+      setJourneyContacts(prev => [...prev, newContact]);
+      return;
+    }
+
+    // Otherwise, this is a regular Contact (from AddContactModal) - create a journey contact linking this contact to the journey
+    if (journey?.ID || journey?.id) {
+      try {
+        const journeyId = journey.ID || journey.id;
+        const journeyContactData = {
+          Jrn_ID: journeyId,
+          Contact_ID: newContact.Cont_Id,
+          Contact_Name: `${newContact.FirstName} ${newContact.LastName}`.trim(),
+          Contact_Position: "",
+          Contact_Email: newContact.Email || "",
+          Contact_Office: newContact.PhoneNumber || "",
+          Contact_Mobile: "",
+          Contact_Note: newContact.Notes || "",
+          IsPrimary: journeyContacts.length === 0 ? 1 : 0, // Make first contact primary
+        };
+
+        const journeyContactResponse = await fetch(
+          "http://localhost:8080/api/legacy/std/Journey_Contact",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(journeyContactData),
+          }
+        );
+
+        if (journeyContactResponse.ok) {
+          const journeyContact = await journeyContactResponse.json();
+          // Add the new journey contact to the list
+          setJourneyContacts(prev => [...prev, journeyContact]);
+        }
+      } catch (error) {
+        console.error("Error creating journey contact link:", error);
+      }
+    }
+  };
+
   if (!journey) return null;
 
   const customer = journey.customer;
@@ -155,17 +483,58 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
   return (
     <div className="p-2 flex flex-1 flex-col">
       <div className="flex flex-col gap-2 flex-1">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-[1fr_2fr] gap-2">
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Customer Details</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => navigate(`/sales/companies/${customer?.id}`)}
-              >
-                <User size={16} />
-              </Button>
+              <div className="flex gap-2">
+                {isEditingCustomer ? (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveCustomer}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={handleCancelCustomer}
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={() => {
+                        setCustomerForm({
+                          companyId: journey?.Company_ID || "",
+                          industry: getValidIndustry(journey?.Industry || ""),
+                        });
+                        setIsEditingCustomer(true);
+                      }}
+                    >
+                      <Edit size={16} />
+                    </Button>
+                    <div title={customer?.id ? "Go to customer page" : "No associated customer"}>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={customer?.id ? () => navigate(`/sales/companies/${customer?.id}`) : undefined}
+                        disabled={!customer?.id}
+                      >
+                        <User size={16} />
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-x-8 gap-y-2">
               <div>
@@ -175,28 +544,209 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                 </div>
               </div>
               <div>
-                <div className="text-sm text-text-muted">Customer ID</div>
-                <div className="text-sm text-text font-mono">
-                  {journey?.Company_ID || "-"}
-                </div>
+                <div className="text-sm text-text-muted">Company ID</div>
+                {isEditingCustomer ? (
+                  <input
+                    type="text"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                    value={customerForm.companyId}
+                    onChange={(e) => setCustomerForm(s => ({ ...s, companyId: e.target.value }))}
+                  />
+                ) : (
+                  <div className="text-sm text-text font-mono">
+                    {journey?.Company_ID || "-"}
+                  </div>
+                )}
               </div>
               <div>
                 <div className="text-sm text-text-muted">Industry</div>
-                <div className="text-sm text-text">
-                  {customer?.industry || journey?.Industry || "-"}
+                {isEditingCustomer ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={customerForm.industry}
+                    onChange={(e) => setCustomerForm(s => ({ ...s, industry: e.target.value }))}
+                  >
+                    <option value="">No Value Selected</option>
+                    <option value="Contract Stamping">Contract Stamping</option>
+                    <option value="Press OEM">Press OEM</option>
+                    <option value="Construction">Construction</option>
+                    <option value="Energy / Motors / Transformers">Energy / Motors / Transformers</option>
+                    <option value="Integrator">Integrator</option>
+                    <option value="Auto Tier 1 & 2">Auto Tier 1 & 2</option>
+                    <option value="Auto OEM">Auto OEM</option>
+                    <option value="Marine">Marine</option>
+                    <option value="Appliances">Appliances</option>
+                    <option value="Lawn Equipment">Lawn Equipment</option>
+                    <option value="Contract Rollforming">Contract Rollforming</option>
+                    <option value="HVAC / Air Handling">HVAC / Air Handling</option>
+                    <option value="Packaging">Packaging</option>
+                    <option value="Mobile Heavy Equipment / Locomotive">Mobile Heavy Equipment / Locomotive</option>
+                    <option value="Other">Other</option>
+                    <option value="Storage / Lockers / Hardware">Storage / Lockers / Hardware</option>
+                    <option value="Contract Fabricating">Contract Fabricating</option>
+                    <option value="Furniture & Components">Furniture & Components</option>
+                    <option value="Electrical Components / Lighting">Electrical Components / Lighting</option>
+                    <option value="RV / Trailers">RV / Trailers</option>
+                    <option value="Military / Defense">Military / Defense</option>
+                    <option value="Medical">Medical</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {customer?.industry || journey?.Industry || "-"}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-text-muted">Contacts ({journeyContacts.length})</div>
+                  <Button
+                    variant="secondary-outline"
+                    size="sm"
+                    onClick={() => setShowAddJourneyContactModal(true)}
+                    disabled={isSaving}
+                  >
+                    <Plus size={14} />
+                  </Button>
                 </div>
-              </div>
-              <div>
-                <div className="text-sm text-text-muted">Contact</div>
-                <div className="text-sm text-text">{customer?.contact || "-"}</div>
-              </div>
-              <div>
-                <div className="text-sm text-text-muted">Email</div>
-                <div className="text-sm text-text">{customer?.email || "-"}</div>
-              </div>
-              <div>
-                <div className="text-sm text-text-muted">Phone</div>
-                <div className="text-sm text-text">{customer?.phone || "-"}</div>
+                {journeyContacts.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {[...journeyContacts]
+                      .sort((a, b) => {
+                        const aIsPrimary = Number(a.IsPrimary) === 1;
+                        const bIsPrimary = Number(b.IsPrimary) === 1;
+                        return (bIsPrimary ? 1 : 0) - (aIsPrimary ? 1 : 0);
+                      })
+                      .map((contact, index) => {
+                        const isPrimary = Number(contact.IsPrimary) === 1;
+                        return (
+                      <div 
+                        key={contact.ID || index} 
+                        className={`rounded border p-3 ${isPrimary ? 'bg-gray border-gray' : 'bg-surface'}`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex-1">
+                            {editingContactId === contact.ID ? (
+                              // Edit mode
+                              <div className="space-y-2">
+                                <input
+                                  type="text"
+                                  className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
+                                  value={contactForm.Contact_Name}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Name: e.target.value }))}
+                                  placeholder="Contact Name"
+                                />
+                                <input
+                                  type="text"
+                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                  value={contactForm.Contact_Position}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Position: e.target.value }))}
+                                  placeholder="Position"
+                                />
+                                <input
+                                  type="email"
+                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                  value={contactForm.Contact_Email}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Email: e.target.value }))}
+                                  placeholder="Email"
+                                />
+                                <input
+                                  type="text"
+                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                  value={contactForm.Contact_Office}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Office: e.target.value }))}
+                                  placeholder="Office Phone"
+                                />
+                                <input
+                                  type="text"
+                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text"
+                                  value={contactForm.Contact_Mobile}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Mobile: e.target.value }))}
+                                  placeholder="Mobile Phone"
+                                />
+                                <textarea
+                                  className="w-full rounded border border-border px-2 py-1 text-xs bg-surface text-text resize-none"
+                                  value={contactForm.Contact_Note}
+                                  onChange={(e) => setContactForm(prev => ({ ...prev, Contact_Note: e.target.value }))}
+                                  placeholder="Notes"
+                                  rows={2}
+                                />
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleSaveContact}
+                                    disabled={isSaving}
+                                  >
+                                    {isSaving ? "Saving..." : "Save"}
+                                  </Button>
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={handleCancelContactEdit}
+                                    disabled={isSaving}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              // View mode
+                              <>
+                                <div className="text-sm text-text font-medium mb-1">
+                                  {contact.Contact_Name || "Unnamed Contact"}
+                                </div>
+                                {contact.Contact_Position && (
+                                  <div className="text-xs text-text-muted mb-1">
+                                    {contact.Contact_Position}
+                                  </div>
+                                )}
+                                {contact.Contact_Email && (
+                                  <div className="text-xs text-text-muted mb-1">
+                                    <span className="font-bold">Email:</span> <a href={`mailto:${contact.Contact_Email}`} className="text-primary hover:underline">{contact.Contact_Email}</a>
+                                  </div>
+                                )}
+                                {contact.Contact_Office && (
+                                  <div className="text-xs text-text-muted mb-1">
+                                    <span className="font-bold">Office:</span> {contact.Contact_Office}
+                                  </div>
+                                )}
+                                {contact.Contact_Mobile && (
+                                  <div className="text-xs text-text-muted mb-1">
+                                    <span className="font-bold">Mobile:</span> {contact.Contact_Mobile}
+                                  </div>
+                                )}
+                                {contact.Contact_Note && (
+                                  <div className="text-xs text-text-muted italic mt-2 p-2 bg-background rounded">
+                                    {contact.Contact_Note}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editingContactId !== contact.ID && (
+                              <>
+                                {isPrimary && <span className="text-xs bg-gray text-white px-2 py-1 rounded">Primary</span>}
+                                <input
+                                  type="radio"
+                                  name="primaryContact"
+                                  checked={isPrimary}
+                                  onChange={() => handleSetPrimaryContact(contact.ID, contact.Jrn_ID)}
+                                  disabled={isSaving || editingContactId !== null}
+                                  className="text-primary focus:ring-primary"
+                                  title="Make primary contact"
+                                />
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="text-sm text-text">No contacts found</div>
+                )}
               </div>
             </div>
           </div>
@@ -204,51 +754,74 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Journey Details</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => {
-                  if (!isEditingDetails) {
-                    setDetailsForm({
-                      createDT: journey?.CreateDT ?? "",
-                      type: journey?.Journey_Type ?? "",
-                      source: journey?.Lead_Source ?? "",
-                      equipmentType: journey?.Equipment_Type ?? "Standard",
-                      quoteType: journey?.Quote_Type ?? "Standard more than 6 months",
-                      rsm: journey?.RSM ?? "",
-                      rsmTerritory: journey?.RSM_Territory ?? "",
-                      quoteNumber: journey?.Quote_Number ?? "",
-                      qtyItems: journey?.Qty_of_Items ?? "",
-                      value: journey?.Journey_Value ?? "",
-                    });
-                    setIsEditingDetails(true);
-                  } else {
-                    setIsEditingDetails(false);
-                  }
-                }}
-              >
-                {isEditingDetails ? "Done" : <Edit size={16} />}
-              </Button>
+              <div className="flex gap-2">
+                {isEditingDetails ? (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveDetails}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={handleCancelDetails}
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="secondary-outline"
+                    size="sm"
+                    onClick={() => {
+                      setDetailsForm(createDetailsFormData(journey));
+                      setIsEditingDetails(true);
+                    }}
+                  >
+                    <Edit size={16} />
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+            <div className="grid grid-cols-4 gap-x-6 gap-y-4">
               <div>
                 <div className="text-sm text-text-muted">Created</div>
+                <div className="text-sm text-text">
+                  {(() => {
+                    try {
+                      return journey?.CreateDT ? formatDate(journey.CreateDT) : "-";
+                    } catch (error) {
+                      return journey?.CreateDT || "-";
+                    }
+                  })()}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Journey Start Date</div>
                 {isEditingDetails ? (
                   <input
-                    type="datetime-local"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={
-                      detailsForm.createDT
-                        ? detailsForm.createDT.replace(" ", "T").slice(0, 16)
-                        : ""
-                    }
+                    type="date"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.journeyStartDate}
                     onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, createDT: e.target.value }))
+                      setDetailsForm((s) => ({ ...s, journeyStartDate: e.target.value }))
                     }
                   />
                 ) : (
                   <div className="text-sm text-text">
-                    {journey?.CreateDT ? formatDate(journey.CreateDT) : "-"}
+                    {(() => {
+                      try {
+                        return journey?.Journey_Start_Date ? formatDate(journey.Journey_Start_Date) : "-";
+                      } catch (error) {
+                        return journey?.Journey_Start_Date || "-";
+                      }
+                    })()}
                   </div>
                 )}
               </div>
@@ -256,15 +829,22 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
               <div>
                 <div className="text-sm text-text-muted">Journey Type</div>
                 {isEditingDetails ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={detailsForm.type}
                     onChange={(e) => setDetailsForm((s) => ({ ...s, type: e.target.value }))}
-                  />
+                  >
+                    <option value="Stamping">Stamping</option>
+                    <option value="CTL">CTL</option>
+                    <option value="Parts">Parts</option>
+                    <option value="Rollforming">Rollforming</option>
+                    <option value="Service">Service</option>
+                    <option value="Feature Upgrade">Feature Upgrade</option>
+                    <option value="Retrofit">Retrofit</option>
+                  </select>
                 ) : (
                   <div className="text-sm text-text">
-                    {journey?.Journey_Type || journey?.type || "-"}
+                    {getValidJourneyType(journey?.Journey_Type || journey?.type)}
                   </div>
                 )}
               </div>
@@ -272,15 +852,36 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
               <div>
                 <div className="text-sm text-text-muted">Lead Source</div>
                 {isEditingDetails ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={detailsForm.source}
                     onChange={(e) => setDetailsForm((s) => ({ ...s, source: e.target.value }))}
-                  />
+                  >
+                    <option value="Dealer Lead">Dealer Lead</option>
+                    <option value="Phone In - Existing Customer">Phone In - Existing Customer</option>
+                    <option value="Coe Website (contact form)">Coe Website (contact form)</option>
+                    <option value="Cold Call - New Customer">Cold Call - New Customer</option>
+                    <option value="Other">Other</option>
+                    <option value="Coe Website (Email Inquiry)">Coe Website (Email Inquiry)</option>
+                    <option value="Email - Existing Customer">Email - Existing Customer</option>
+                    <option value="TopSpot">TopSpot</option>
+                    <option value="OEM Lead">OEM Lead</option>
+                    <option value="Coe Service">Coe Service</option>
+                    <option value="Email - New Customer">Email - New Customer</option>
+                    <option value="Phone In - New Customer">Phone In - New Customer</option>
+                    <option value="Event - Fabtech">Event - Fabtech</option>
+                    <option value="Cold Call - Prior Customer">Cold Call - Prior Customer</option>
+                    <option value="Cold Call - Existing Customer">Cold Call - Existing Customer</option>
+                    <option value="Customer Visit (prior customer)">Customer Visit (prior customer)</option>
+                    <option value="Customer Visit (current customer)">Customer Visit (current customer)</option>
+                    <option value="Email - Dealer">Email - Dealer</option>
+                    <option value="Event - NATM">Event - NATM</option>
+                    <option value="Event - PMA">Event - PMA</option>
+                    <option value="Phone In - Dealer">Phone In - Dealer</option>
+                  </select>
                 ) : (
                   <div className="text-sm text-text">
-                    {journey?.Lead_Source || journey?.source || "-"}
+                    {getValidLeadSource(journey?.Lead_Source || journey?.source)}
                   </div>
                 )}
               </div>
@@ -288,52 +889,21 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
               <div>
                 <div className="text-sm text-text-muted">Equipment Type</div>
                 {isEditingDetails ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={detailsForm.equipmentType}
                     onChange={(e) =>
                       setDetailsForm((s) => ({ ...s, equipmentType: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="Standard">Standard</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
                 ) : (
                   <div className="text-sm text-text">
-                    {journey?.Equipment_Type?.trim() || "Standard"}
+                    {getValidEquipmentType(journey?.Equipment_Type)}
                   </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Quote Type</div>
-                {isEditingDetails ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.quoteType}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, quoteType: e.target.value }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">
-                    {journey?.Quote_Type || "Standard more than 6 months"}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="text-sm text-text-muted">Quote #</div>
-                {isEditingDetails ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                    value={detailsForm.quoteNumber}
-                    onChange={(e) =>
-                      setDetailsForm((s) => ({ ...s, quoteNumber: e.target.value }))
-                    }
-                  />
-                ) : (
-                  <div className="text-sm text-text">{journey?.Quote_Number?.trim() || "-"}</div>
                 )}
               </div>
 
@@ -380,74 +950,66 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
               <div>
                 <div className="text-sm text-text-muted">RSM</div>
                 {isEditingDetails ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={detailsForm.rsm}
                     onChange={(e) =>
                       setDetailsForm((s) => ({ ...s, rsm: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    {/* Show current RSM if it's not in the available list */}
+                    {detailsForm.rsm && !availableRsms.includes(detailsForm.rsm) && (
+                      <option key={detailsForm.rsm} value={detailsForm.rsm}>{detailsForm.rsm}</option>
+                    )}
+                    {availableRsms.map(rsm => (
+                      <option key={rsm} value={rsm}>{rsm}</option>
+                    ))}
+                  </select>
                 ) : (
-                  <div className="text-sm text-text">{journey?.RSM?.trim() || "-"}</div>
+                  <div className="text-sm text-text">{getValidRSM(journey?.RSM) || "-"}</div>
                 )}
               </div>
 
               <div>
                 <div className="text-sm text-text-muted">RSM Territory</div>
                 {isEditingDetails ? (
-                  <input
-                    type="text"
+                  <select
                     className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                     value={detailsForm.rsmTerritory}
                     onChange={(e) =>
                       setDetailsForm((s) => ({ ...s, rsmTerritory: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    {/* Show current RSM Territory if it's not in the available list */}
+                    {detailsForm.rsmTerritory && !availableRsms.includes(detailsForm.rsmTerritory) && (
+                      <option key={detailsForm.rsmTerritory} value={detailsForm.rsmTerritory}>{detailsForm.rsmTerritory}</option>
+                    )}
+                    {availableRsms.map(rsm => (
+                      <option key={rsm} value={rsm}>{rsm}</option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="text-sm text-text">{journey?.RSM_Territory?.trim() || "-"}</div>
                 )}
               </div>
-            </div>
-          </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col gap-2">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted text-sm">Journey Tracking</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => {
-                  if (!isEditingTracking) {
-                    setTrackingForm({
-                      stage: journey?.Journey_Stage ?? journey?.stage ?? "",
-                      priority: journey?.Priority ?? journey?.priority ?? "",
-                      status: journey?.Journey_Status ?? journey?.status ?? "",
-                      presentationDate: journey?.Quote_Presentation_Date ?? "",
-                      expectedPoDate: journey?.Expected_Decision_Date ?? "",
-                      lastActionDate: journey?.Action_Date ?? journey?.updatedAt ?? "",
-                    });
-                    setIsEditingTracking(true);
-                  } else {
-                    setIsEditingTracking(false);
-                  }
-                }}
-              >
-                {isEditingTracking ? "Done" : <Edit size={16} />}
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2">
               <div>
                 <div className="text-sm text-text-muted">Journey Stage</div>
-                {isEditingTracking ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={trackingForm.stage}
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.stage}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({ ...s, stage: e.target.value }))
+                      setDetailsForm((s) => ({ ...s, stage: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    {STAGES.map(stage => (
+                      <option key={stage.id} value={stage.label}>{stage.label}</option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="text-sm text-text">
                     {getStageLabel(journey)}
@@ -457,15 +1019,20 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
 
               <div>
                 <div className="text-sm text-text-muted">Priority</div>
-                {isEditingTracking ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={trackingForm.priority}
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.priority}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({ ...s, priority: e.target.value }))
+                      setDetailsForm((s) => ({ ...s, priority: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    <option value="A">A - Highest</option>
+                    <option value="B">B - High</option>
+                    <option value="C">C - Medium</option>
+                    <option value="D">D - Lowest</option>
+                  </select>
                 ) : (
                   <div className="flex items-center gap-2">
                     <div 
@@ -485,15 +1052,19 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
 
               <div>
                 <div className="text-sm text-text-muted">Status</div>
-                {isEditingTracking ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={trackingForm.status}
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.status}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({ ...s, status: e.target.value }))
+                      setDetailsForm((s) => ({ ...s, status: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">No Value Selected</option>
+                    {VALID_JOURNEY_STATUS.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="text-sm text-text">
                     {journey?.Journey_Status || journey?.status || "-"}
@@ -503,13 +1074,13 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
 
               <div>
                 <div className="text-sm text-text-muted">Presentation Date</div>
-                {isEditingTracking ? (
+                {isEditingDetails ? (
                   <input
                     type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={(trackingForm.presentationDate as string) || ""}
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.presentationDate || ""}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({
+                      setDetailsForm((s) => ({
                         ...s,
                         presentationDate: e.target.value,
                       }))
@@ -517,22 +1088,28 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                   />
                 ) : (
                   <div className="text-sm text-text">
-                    {trackingForm.presentationDate
-                      ? formatDate(trackingForm.presentationDate as string)
-                      : "-"}
+                    {(() => {
+                      try {
+                        return detailsForm.presentationDate
+                          ? formatDate(detailsForm.presentationDate)
+                          : "-";
+                      } catch (error) {
+                        return detailsForm.presentationDate || "-";
+                      }
+                    })()}
                   </div>
                 )}
               </div>
 
               <div>
                 <div className="text-sm text-text-muted">Expected Decision Date</div>
-                {isEditingTracking ? (
+                {isEditingDetails ? (
                   <input
                     type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={(trackingForm.expectedPoDate as string) || ""}
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.expectedPoDate || ""}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({
+                      setDetailsForm((s) => ({
                         ...s,
                         expectedPoDate: e.target.value,
                       }))
@@ -540,22 +1117,28 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                   />
                 ) : (
                   <div className="text-sm text-text">
-                    {trackingForm.expectedPoDate
-                      ? formatDate(trackingForm.expectedPoDate as string)
-                      : "-"}
+                    {(() => {
+                      try {
+                        return detailsForm.expectedPoDate
+                          ? formatDate(detailsForm.expectedPoDate)
+                          : "-";
+                      } catch (error) {
+                        return detailsForm.expectedPoDate || "-";
+                      }
+                    })()}
                   </div>
                 )}
               </div>
 
               <div>
                 <div className="text-sm text-text-muted">Last Action Date</div>
-                {isEditingTracking ? (
+                {isEditingDetails ? (
                   <input
                     type="date"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-surface text-text"
-                    value={(trackingForm.lastActionDate as string) || ""}
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.lastActionDate || ""}
                     onChange={(e) =>
-                      setTrackingForm((s) => ({
+                      setDetailsForm((s) => ({
                         ...s,
                         lastActionDate: e.target.value,
                       }))
@@ -563,22 +1146,238 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                   />
                 ) : (
                   <div className="text-sm text-text">
-                    {journey?.Action_Date
-                      ? formatDate(journey.Action_Date as string)
-                      : journey?.updatedAt
-                      ? formatDate(journey.updatedAt as string)
-                      : "-"}
+                    {(() => {
+                      try {
+                        return journey?.Action_Date
+                          ? formatDate(journey.Action_Date)
+                          : journey?.updatedAt
+                          ? formatDate(journey.updatedAt)
+                          : "-";
+                      } catch (error) {
+                        return journey?.Action_Date || journey?.updatedAt || "-";
+                      }
+                    })()}
                   </div>
                 )}
-              <div>
-                <div className="text-sm text-text-muted">Journey ID</div>
-                <div className="text-sm text-text font-mono">
-                  {journey?.ID || journey?.id || "-"}
-                </div>
               </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Dealer</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.dealer}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, dealer: e.target.value }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    {/* Show current dealer if it's not in the available list */}
+                    {detailsForm.dealer && ![
+                      "H & O Die Supply, Inc.",
+                      "Mid Atlantic Machinery", 
+                      "Visionary Manufacturing Solutions",
+                      "Sterling Fabrication Technology",
+                      "Coe Press Equipment Corp.",
+                      "Metal Forming Equipment Systems, LLC",
+                      "Sanson Northwest Inc.",
+                      "Press Automation, Inc.",
+                      "TCR Inc.",
+                      "Production Resources Inc.",
+                      "Liakos Industrial Sales, LLC",
+                      "Other",
+                      "Promotores Tecnicos, S.A. De C.V.",
+                      "C.J. Smith Machinery",
+                      "Southern States Machinery Inc.",
+                      "Stafford Machinery Company",
+                      "CNI - Consultamex LLC"
+                    ].includes(detailsForm.dealer) && (
+                      <option key={detailsForm.dealer} value={detailsForm.dealer}>{detailsForm.dealer}</option>
+                    )}
+                    <option value="H & O Die Supply, Inc.">H & O Die Supply, Inc.</option>
+                    <option value="Mid Atlantic Machinery">Mid Atlantic Machinery</option>
+                    <option value="Visionary Manufacturing Solutions">Visionary Manufacturing Solutions</option>
+                    <option value="Sterling Fabrication Technology">Sterling Fabrication Technology</option>
+                    <option value="Coe Press Equipment Corp.">Coe Press Equipment Corp.</option>
+                    <option value="Metal Forming Equipment Systems, LLC">Metal Forming Equipment Systems, LLC</option>
+                    <option value="Sanson Northwest Inc.">Sanson Northwest Inc.</option>
+                    <option value="Press Automation, Inc.">Press Automation, Inc.</option>
+                    <option value="TCR Inc.">TCR Inc.</option>
+                    <option value="Production Resources Inc.">Production Resources Inc.</option>
+                    <option value="Liakos Industrial Sales, LLC">Liakos Industrial Sales, LLC</option>
+                    <option value="Other">Other</option>
+                    <option value="Promotores Tecnicos, S.A. De C.V.">Promotores Tecnicos, S.A. De C.V.</option>
+                    <option value="C.J. Smith Machinery">C.J. Smith Machinery</option>
+                    <option value="Southern States Machinery Inc.">Southern States Machinery Inc.</option>
+                    <option value="Stafford Machinery Company">Stafford Machinery Company</option>
+                    <option value="CNI - Consultamex LLC">CNI - Consultamex LLC</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? "") || "-"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Dealer Contact</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.dealerContact}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, dealerContact: e.target.value }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    {/* Show current dealer contact if it's not in the available list */}
+                    {detailsForm.dealerContact && ![
+                      "Greg Liakos",
+                      "Ryan Bowman",
+                      "Al Kosir",
+                      "Dave Smith",
+                      "Scott Bradt",
+                      "Josh Kowal",
+                      "Dave DeFrees",
+                      "Brian Stafford",
+                      "Arthur Anderson",
+                      "Hunter Coe",
+                      "Todd Wenzel",
+                      "Greg Chmielewski",
+                      "Jim Meyer",
+                      "Brian Landry",
+                      "Clint Ponton",
+                      "Francisco Oranday",
+                      "Juan Carlos Estrada",
+                      "Kevin Houston"
+                    ].includes(detailsForm.dealerContact) && (
+                      <option key={detailsForm.dealerContact} value={detailsForm.dealerContact}>{detailsForm.dealerContact}</option>
+                    )}
+                    <option value="Greg Liakos">Greg Liakos</option>
+                    <option value="Ryan Bowman">Ryan Bowman</option>
+                    <option value="Al Kosir">Al Kosir</option>
+                    <option value="Dave Smith">Dave Smith</option>
+                    <option value="Scott Bradt">Scott Bradt</option>
+                    <option value="Josh Kowal">Josh Kowal</option>
+                    <option value="Dave DeFrees">Dave DeFrees</option>
+                    <option value="Brian Stafford">Brian Stafford</option>
+                    <option value="Arthur Anderson">Arthur Anderson</option>
+                    <option value="Hunter Coe">Hunter Coe</option>
+                    <option value="Todd Wenzel">Todd Wenzel</option>
+                    <option value="Greg Chmielewski">Greg Chmielewski</option>
+                    <option value="Jim Meyer">Jim Meyer</option>
+                    <option value="Brian Landry">Brian Landry</option>
+                    <option value="Clint Ponton">Clint Ponton</option>
+                    <option value="Francisco Oranday">Francisco Oranday</option>
+                    <option value="Juan Carlos Estrada">Juan Carlos Estrada</option>
+                    <option value="Kevin Houston">Kevin Houston</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {getValidDealerContact(journey?.Dealer_Contact ?? "") || "-"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Confidence</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.confidence}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, confidence: e.target.value }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    <option value="Closed Won">Closed Won</option>
+                    <option value="Closed Lost">Closed Lost</option>
+                    <option value="90%">90%</option>
+                    <option value="75%">75%</option>
+                    <option value="50%">50%</option>
+                    <option value="25%">25%</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {journey?.Chance_To_Secure_order || "-"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Reason Won</div>
+                {isEditingDetails ? (
+                  <select
+                    className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
+                      detailsForm.reasonLost ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    value={detailsForm.reasonWon}
+                    disabled={!!detailsForm.reasonLost}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ 
+                        ...s, 
+                        reasonWon: e.target.value,
+                        reasonLost: e.target.value ? "" : s.reasonLost
+                      }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    <option value="Coe Quality">Coe Quality</option>
+                    <option value="Customer Relationship">Customer Relationship</option>
+                    <option value="Pricing">Pricing</option>
+                    <option value="Coe Controls">Coe Controls</option>
+                    <option value="Lead Time">Lead Time</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {journey?.Reason_Won || "-"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Reason Lost</div>
+                {isEditingDetails ? (
+                  <select
+                    className={`w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ${
+                      detailsForm.reasonWon ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    value={detailsForm.reasonLost}
+                    disabled={!!detailsForm.reasonWon}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ 
+                        ...s, 
+                        reasonLost: e.target.value,
+                        reasonWon: e.target.value ? "" : s.reasonWon
+                      }))
+                    }
+                  >
+                    <option value="">No Value Selected</option>
+                    <option value="Competitor Price">Competitor Price</option>
+                    <option value="Project Dropped">Project Dropped</option>
+                    <option value="Outside of Budget">Outside of Budget</option>
+                    <option value="Bought Used">Bought Used</option>
+                    <option value="Spam">Spam</option>
+                    <option value="No Response">No Response</option>
+                    <option value="Work not awarded">Work not awarded</option>
+                    <option value="Project Outsourced">Project Outsourced</option>
+                    <option value="Lead Time">Lead Time</option>
+                    <option value="Competitor Relationship">Competitor Relationship</option>
+                    <option value="Not a fit">Not a fit</option>
+                    <option value="Other">Other</option>
+                    <option value="Different COE Equipment Selected">Different COE Equipment Selected</option>
+                    <option value="Coe Controls">Coe Controls</option>
+                    <option value="Parts/Svc Opportunity">Parts/Svc Opportunity</option>
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {journey?.Reason_Lost || "-"}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
         </div>
 
         <div className="grid grid-cols-3 gap-2 flex-1">
@@ -642,6 +1441,12 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                     </div>
                   </div>
                   <div>
+                    <div className="text-sm text-text-muted">Quote Delivery Method</div>
+                    <div className="text-sm text-text">
+                      {journey?.Presentation_Method || "-"}
+                    </div>
+                  </div>
+                  <div>
                     <div className="text-sm text-text-muted">Quantity of Items</div>
                     <div className="text-sm text-text">
                       {journey?.Qty_of_Items != null && journey?.Qty_of_Items !== "" ? journey.Qty_of_Items : "-"}
@@ -690,13 +1495,13 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                       {journey?.Quote_Presentation_Date && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-text-muted">- Presentation:</span>
-                          <span className="text-text">{formatDate(journey.Quote_Presentation_Date)}</span>
+                          <span className="text-text">{journey.Quote_Presentation_Date ? formatDate(journey.Quote_Presentation_Date) : "-"}</span>
                         </div>
                       )}
                       {journey?.Expected_Decision_Date && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-text-muted">- Expected Decision:</span>
-                          <span className="text-text">{formatDate(journey.Expected_Decision_Date)}</span>
+                          <span className="text-text">{journey.Expected_Decision_Date ? formatDate(journey.Expected_Decision_Date) : "-"}</span>
                         </div>
                       )}
                       {journey?.Chance_To_Secure_order && (
@@ -736,21 +1541,31 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
       >
         <p className="mb-4">Do you want to save your changes?</p>
         <div className="flex justify-end gap-2">
-          <Button variant="primary" size="sm" onClick={() => setShowSavePrompt(false)}>
-            Yes
+          <Button 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSaveNotes}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
           </Button>
           <Button
             variant="secondary-outline"
             size="sm"
-            onClick={() => {
-              setNotes(journey?.Notes ?? journey?.notes ?? "");
-              setShowSavePrompt(false);
-            }}
+            onClick={handleCancelNotes}
+            disabled={isSaving}
           >
-            No
+            Cancel
           </Button>
         </div>
       </Modal>
+
+      <AddJourneyContactModal
+        isOpen={showAddJourneyContactModal}
+        onClose={() => setShowAddJourneyContactModal(false)}
+        onContactAdded={handleContactAdded}
+        journeyId={journey?.ID}
+      />
     </div>
   );
 }
@@ -793,6 +1608,10 @@ function JourneyQuotesTab({ journey }: { journey: any | null }) {
             <div className="flex justify-between">
               <span className="text-text-muted">Quote Type:</span>
               <span className="text-text">{journey?.Quote_Type || "Standard more than 6 months"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-muted">Quote Delivery Method:</span>
+              <span className="text-text">{journey?.Presentation_Method || "Not specified"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-muted">Equipment Type:</span>
@@ -910,13 +1729,58 @@ function JourneyQuotesTab({ journey }: { journey: any | null }) {
             <div className="text-sm text-text-muted mb-2">Current Stage</div>
             <div className="text-text">{getStageLabel(journey)}</div>
           </div>
+          <div>
+            <div className="text-sm text-text-muted mb-2">Dealer</div>
+            <div className="text-text">{journey?.Dealer?.trim() || journey?.Dealer_Name?.trim() || "Not specified"}</div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function JourneyHistoryTab() {
+function JourneyHistoryTab({ journey }: { journey: any | null }) {
+  const [logRecords, setLogRecords] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const { get } = useApi();
+
+  useEffect(() => {
+    const fetchLogRecords = async () => {
+      const journeyId = journey?.ID || journey?.id;
+      if (!journeyId) return;
+      
+      setLoadingLogs(true);
+      try {
+        const logData = await get(`/legacy/std/Journey_Log/filter/custom`, {
+          filterField: 'Jrn_ID',
+          filterValue: journeyId,
+          sort: 'CreateDtTm',
+          order: 'desc'
+        });
+        
+        if (Array.isArray(logData)) {
+          setLogRecords(logData);
+        }
+      } catch (error) {
+        console.error("Error fetching journey log records:", error);
+        setLogRecords([]);
+      } finally {
+        setLoadingLogs(false);
+      }
+    };
+
+    fetchLogRecords();
+  }, [journey?.ID, journey?.id]); // Only depend on the actual ID values, not the get function
+
+  const formatLogData = (logs: any[]) => {
+    return logs.map(log => ({
+      id: log.ID,
+      created: log.CreateDtTm,
+      user: log.CreateInit || '-',
+      action: log.Action || '-'
+    }));
+  };
+
   return (
     <div className="flex flex-1 flex-col p-2 gap-2">
       <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
@@ -934,18 +1798,114 @@ function JourneyHistoryTab() {
         />
       </div>
       <div className="bg-foreground rounded shadow-sm border p-2 flex-1">
-        <div className="text-xs font-bold text-text-muted mb-1">Log Records</div>
+        <div className="text-xs font-bold text-text-muted mb-1">
+          Log Records {loadingLogs && <span className="text-text-muted">(Loading...)</span>}
+        </div>
         <Table
           columns={[
-            { key: "created", header: "Created", className: "text-xs" },
-            { key: "user", header: "User", className: "text-xs" },
-            { key: "action", header: "Action", className: "text-xs" },
+            { 
+              key: "created", 
+              header: "Created", 
+              className: "text-xs",
+              render: (value: string) => (
+                <div className="text-xs text-text">
+                  {value ? formatDate(value) : '-'}
+                </div>
+              )
+            },
+            { 
+              key: "user", 
+              header: "User", 
+              className: "text-xs",
+              render: (value: string) => (
+                <div className="text-xs text-text">{value}</div>
+              )
+            },
+            { 
+              key: "action", 
+              header: "Action", 
+              className: "text-xs",
+              render: (value: string) => (
+                <div className="text-xs text-text leading-tight">
+                  <div className="whitespace-pre-wrap">{value}</div>
+                </div>
+              )
+            },
           ]}
-          data={[]}
-          total={0}
-          idField="created"
+          data={formatLogData(logRecords)}
+          total={logRecords.length}
+          idField="id"
         />
       </div>
+    </div>
+  );
+}
+
+function JourneyActionsTab({ journey }: { journey: any | null }) {
+  const navigate = useNavigate();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { delete: deleteApi } = useApi();
+
+  const handleDeleteJourney = async () => {
+    if (!journey?.ID && !journey?.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const result = await deleteApi(`/legacy/std/Journey/${journeyId}`);
+      
+      if (result !== null) {
+        navigate('/sales/pipeline');
+      } else {
+        console.error('Failed to delete journey');
+      }
+    } catch (error) {
+      console.error('Error deleting journey:', error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  if (!journey) return null;
+
+  return (
+    <div className="flex flex-1 flex-col p-4">
+      <div className="bg-foreground rounded shadow-sm border p-4">
+        <h3 className="text-lg font-semibold text-text mb-4">Journey Actions</h3>
+        
+        <div className="space-y-4">
+          <div className="border border-red-200 bg-red-50 rounded p-4">
+            <div className="flex items-start gap-3">
+              <Trash2 className="text-red-600 mt-1" size={20} />
+              <div className="flex-1">
+                <h4 className="font-medium text-red-900 mb-2">Delete Journey</h4>
+                <p className="text-sm text-red-700 mb-3">
+                  Permanently delete this journey and all associated data. This action cannot be undone.
+                </p>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="border-red-500 !text-gray-900 hover:bg-red-100 hover:!text-black"
+                >
+                  <Trash2 size={16} className="mr-2" />
+                  Delete Journey
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <DeleteJourneyModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => handleDeleteJourney()}
+        journey={journey}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
@@ -953,38 +1913,187 @@ function JourneyHistoryTab() {
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
   const navigate = useNavigate();
-  const location = useLocation();
   const { id: journeyId } = useParams<{ id: string }>();
 
-  // Get journey data from navigation state if available
-  const passedJourneyData = location.state as { journey?: any; customer?: any } | null;
-  
-  const shouldFetchFromAPI = !passedJourneyData?.journey;
-  
-  const { loading, error, get } = useApi();
-  const [journeyOverview, setJourneyOverview] = useState<any>(null);
+  const [journeyData, setJourneyData] = useState<any>(null);
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [journeyContacts, setJourneyContacts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const adaptLegacyJourney = (raw: any) => {
+    const mapLegacyStageToId = (stage: any): StageId => {
+      const s = String(stage ?? "").toLowerCase();
+      if (!s) return 1;
+      if (s.includes("qualify") || s.includes("qualifi") || s.includes("pain") || s.includes("discover")) return 2;
+      if (s.includes("present") || s.includes("demo") || s.includes("proposal") || s.includes("quote")) return 3;
+      if (s.includes("negot")) return 4;
+      if (s.includes("po") || s.includes("won") || s.includes("closedwon") || s.includes("closed won") || s.includes("order")) return 5;
+      if (s.includes("lost") || s.includes("closedlost") || s.includes("closed lost") || s.includes("declin")) return 6;
+      if (s.includes("lead") || s.includes("open") || s.includes("new")) return 1;
+      return 1;
+    };
+
+    const normalizeDate = (d: any) => {
+      if (!d) return undefined;
+      const s = String(d);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00`;
+      return s.includes(" ") ? s.replace(" ", "T") : s;
+    };
+
+    const normalizePriority = (v: any): string => {
+      const s = String(v ?? "").toUpperCase().trim();
+      if (s === "A" || s === "B" || s === "C" || s === "D") return s;
+      if (s.startsWith("H")) return "A";
+      if (s.startsWith("L")) return "D";
+      if (s.startsWith("M")) return "C";
+      return "C";
+    };
+
+    const id = raw.ID;
+    const name = raw.Project_Name && String(raw.Project_Name).trim()
+      ? raw.Project_Name
+      : (raw.Target_Account || `Journey ${raw.ID}`);
+
+    const stage = mapLegacyStageToId(raw.Journey_Stage);
+    const value = Number(raw.Journey_Value ?? 0);
+    const priority = normalizePriority(raw.Priority);
+
+    const closeDate =
+      normalizeDate(raw.Expected_Decision_Date) ??
+      normalizeDate(raw.Quote_Presentation_Date) ??
+      normalizeDate(raw.Date_PO_Received) ??
+      normalizeDate(raw.Journey_Start_Date) ??
+      normalizeDate(raw.CreateDT) ??
+      new Date().toISOString();
+
+    const updatedAt =
+      normalizeDate(raw.Action_Date) ??
+      normalizeDate(raw.CreateDT) ??
+      new Date().toISOString();
+
+    const customerId = String(raw.Company_ID ?? "");
+    const companyName = raw.Target_Account || undefined;
+
+    return {
+      id,
+      name,
+      stage,
+      value,
+      priority,
+      closeDate,
+      updatedAt,
+      customerId,
+      companyName,
+      ...raw // Keep all original fields including Dealer, Dealer_Name, Dealer_ID
+    };
+  };
+
+  const fetchJourneyData = async () => {
+    if (!journeyId) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+      
+      if (response.ok) {
+        const rawJourney = await response.json();
+        const adaptedJourney = adaptLegacyJourney(rawJourney);
+        setJourneyData(adaptedJourney);
+        
+        // Fetch customer data if we have a Company_ID
+        if (rawJourney.Company_ID) {
+          try {
+            const customerResponse = await fetch(
+              `http://localhost:8080/api/legacy/base/Company/${rawJourney.Company_ID}`,
+              {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+              }
+            );
+            
+            if (customerResponse.ok) {
+              const customerRaw = await customerResponse.json();
+              setCustomerData({
+                id: customerRaw.Company_ID,
+                name: customerRaw.Company_Name || adaptedJourney.companyName,
+                industry: customerRaw.Industry,
+                contact: customerRaw.Contact_Name,
+                email: customerRaw.Email,
+                phone: customerRaw.Phone
+              });
+            }
+          } catch (customerError) {
+            console.warn("Could not fetch customer data:", customerError);
+            // Create minimal customer data from journey
+            setCustomerData({
+              id: rawJourney.Company_ID,
+              name: adaptedJourney.companyName
+            });
+          }
+        }
+
+        // Fetch journey contacts
+        try {
+          const contactsResponse = await fetch(
+            `http://localhost:8080/api/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${journeyId}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+            }
+          );
+          
+          if (contactsResponse.ok) {
+            const contactsData = await contactsResponse.json();
+            setJourneyContacts(Array.isArray(contactsData) ? contactsData : []);
+          }
+        } catch (contactError) {
+          console.warn("Could not fetch journey contacts:", contactError);
+          setJourneyContacts([]);
+        }
+      } else {
+        setError(`Failed to load journey: ${response.statusText}`);
+      }
+    } catch (err) {
+      setError(`Error loading journey: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refetchJourneyData = async () => {
+    await fetchJourneyData();
+    return true;
+  };
+
+  const updateJourney = (updates: Record<string, any>) => {
+    setJourneyData((prev: any) => ({
+      ...prev,
+      ...updates
+    }));
+  };
 
   useEffect(() => {
-    if (shouldFetchFromAPI && journeyId) {
-      const fetchJourneyData = async () => {
-        const data = await get(`/legacy/base/Journey/${journeyId}`);
-        if (data) {
-          setJourneyOverview(data);
-        }
-      };
-      fetchJourneyData();
-    }
-  }, [shouldFetchFromAPI, journeyId, get]);
+    fetchJourneyData();
+  }, [journeyId]);
 
-  const journeyData = passedJourneyData?.journey || journeyOverview?.journey;
-  const customerData = passedJourneyData?.customer || journeyOverview?.customer;
-
-  if (shouldFetchFromAPI && loading) {
+  if (loading) {
     return <div className="flex justify-center items-center h-64">Loading journey details...</div>;
   }
   
-  if (shouldFetchFromAPI && error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">Error loading journey: {error}</div>;
+  if (error) {
+    return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
   }
 
 
@@ -994,10 +2103,7 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Invalid Journey"
           description="No journey ID provided in the URL."
-          backButton
-          onBack={() =>
-            navigate("/sales/pipeline", { state: { viewMode: "kanban", refresh: true } })
-          }
+          goBack
         />
       </div>
     );
@@ -1009,35 +2115,33 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Journey not found"
           description="This journey may have been removed or is unavailable."
-          backButton
-          onBack={() =>
-            navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
-          }
+          goBack
         />
       </div>
     );
   }
 
-  const j = journeyData;
-
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title={
-          j?.name ||
-          j?.Project_Name ||
-          j?.Target_Account ||
+          journeyData?.name ||
+          journeyData?.Project_Name ||
+          journeyData?.Target_Account ||
           "Coe Press Equipment"
         }
-        description={`Started ${formatDate(
-          (j?.CreateDT as string) || (j?.createDT as string) || "2025-05-28 14:39:28"
-        )} • ${(j?.Journey_Type as string) || (j?.type as string) || "Standard"} • ${formatCurrency(
-          Number(j?.Journey_Value ?? j?.value ?? 0)
+        description={`Started ${
+          (() => {
+            try {
+              return journeyData?.CreateDT ? formatDate(journeyData.CreateDT) : "Unknown Date";
+            } catch (error) {
+              return journeyData?.CreateDT || "Unknown Date";
+            }
+          })()
+        } • ${journeyData?.Journey_Type || "Standard"} • ${formatCurrency(
+          Number(journeyData?.Journey_Value ?? journeyData?.value ?? 0)
         )}`}
-        backButton
-        onBack={() =>
-          navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
-        }
+        goBack
       />
       <Tabs
         activeTab={activeTab}
@@ -1046,6 +2150,7 @@ const JourneyDetailsPage = () => {
           { label: "Details", value: "details" },
           { label: "Quotes", value: "quotes" },
           { label: "History", value: "history" },
+          { label: "Journey Actions", value: "actions" },
         ]}
       />
       <>
@@ -1056,10 +2161,15 @@ const JourneyDetailsPage = () => {
                 ? { ...journeyData, customer: customerData }
                 : null
             }
+            journeyContacts={journeyContacts}
+            updateJourney={updateJourney}
+            refetchJourneyData={refetchJourneyData}
+            setJourneyContacts={setJourneyContacts}
           />
         )}
         {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} />}
-        {activeTab === "history" && <JourneyHistoryTab />}
+        {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
+        {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
       </>
     </div>
   );

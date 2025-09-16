@@ -17,6 +17,8 @@ export { default as ProductionDashboard } from "./production/dashboard"
 // Sales
 export { default as Companies } from "./sales/companies"
 export { default as CompanyDetails } from "./sales/company-details"
+export { default as Contacts } from "./sales/contacts"
+export { default as ContactDetails } from "./sales/contact-details"
 export { default as ConfigurationDetails } from "./sales/configuration-details"
 export { default as ConfigurationBuilder } from "./sales/configuration-builder"
 export { default as Journeys } from "./sales/journeys"

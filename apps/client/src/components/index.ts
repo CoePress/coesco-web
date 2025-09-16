@@ -1,5 +1,7 @@
 // Common
 export { default as AddressInput } from "./_old/address-input";
+export { AddContactModal } from "./AddContactModal";
+export { AddJourneyContactModal } from "./AddJourneyContactModal";
 export { default as AdvancedDropdown } from "./_old/advanced-dropdown";
 export { default as DatePicker } from "./_old/date-picker";
 export { default as Text } from "./ui/text";

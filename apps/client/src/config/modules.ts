@@ -16,11 +16,12 @@ import {
   ChartNoAxesCombined,
   ActivityIcon,
   FileClockIcon,
+  Building2,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contacts, ContactDetails, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -167,13 +168,26 @@ const salesModule: Module = {
     {
       slug: "companies",
       label: "Companies",
-      icon: UsersIcon,
+      icon: Building2,
       component: Companies,
       children: [
         {
           slug: ":id",
           label: "Company Details",
           component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      slug: "contacts",
+      label: "Contacts",
+      icon: UsersIcon,
+      component: Contacts,
+      children: [
+        {
+          slug: ":id",
+          label: "Contact Details",
+          component: ContactDetails,
         },
       ],
     },
