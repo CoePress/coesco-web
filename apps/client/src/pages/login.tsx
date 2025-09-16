@@ -2,6 +2,7 @@ import { Button, Input, Card } from "@/components";
 import { AuthContext } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -44,7 +45,12 @@ const BackgroundImage = () => {
 };
 
 const Login = () => {
-  const { get, post, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
+  const {
+    get: getMicrosoft,
+    post,
+    loading: loginLoading,
+    error: loginError
+  } = useApi<IApiResponse<{ url: string }>>();
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -54,18 +60,18 @@ const Login = () => {
   const [password, setPassword] = useState("");
   
   const microsoftLogin = async () => {
-    const response = await get("/auth/microsoft/login");
+    const response = await getMicrosoft("/auth/microsoft/login");
     if (response?.success && response.data?.url) {
       window.location.href = response.data.url;
     }
   };
 
   const handleUsernamePasswordLogin = async () => {
-    const response = await post("/auth/login", {
+    const response = await post<IApiResponse<{ user: any; employee: any }>>("/auth/login", {
       username,
       password,
     });
-    
+
     if (response?.success && response.data) {
       setUser(response.data.user, response.data.employee);
       navigate("/", { replace: true });
