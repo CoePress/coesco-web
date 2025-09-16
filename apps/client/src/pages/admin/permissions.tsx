@@ -238,6 +238,7 @@ const Permissions = () => {
           columns={permissionColumns}
           data={allPermissions}
           idField="category"
+          total={allPermissions.length}
         />
       )}
 
@@ -249,6 +250,7 @@ const Permissions = () => {
             permissions
           }))}
           idField="role"
+          total={Object.keys(rolePermissions).length}
         />
       )}
 

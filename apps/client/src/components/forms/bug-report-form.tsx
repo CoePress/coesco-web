@@ -59,9 +59,9 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
           <label className="text-sm font-medium text-text">
             Screenshot (Click and drag to highlight bugs)
           </label>
-          <ScreenshotAnnotator 
+          <ScreenshotAnnotator
             screenshot={screenshot}
-            onAnnotatedScreenshot={setAnnotatedScreenshot}
+            onAnnotatedScreenshot={() => {}}
           />
         </div>
       )}

@@ -55,8 +55,8 @@ const Login = () => {
   
   const microsoftLogin = async () => {
     const response = await get("/auth/microsoft/login");
-    if (response?.url) {
-      window.location.href = response.url;
+    if (response?.success && response.data?.url) {
+      window.location.href = response.data.url;
     }
   };
 
@@ -66,8 +66,8 @@ const Login = () => {
       password,
     });
     
-    if (response) {
-      setUser(response.user, response.employee);
+    if (response?.success && response.data) {
+      setUser(response.data.user, response.data.employee);
       navigate("/", { replace: true });
     }
   };
@@ -198,7 +198,7 @@ const Login = () => {
                 className="bg-background/50 mb-2"
               />
 
-              <Button
+              <button
                 type="submit"
                 onClick={(e) => {
                   e.preventDefault();
@@ -207,9 +207,9 @@ const Login = () => {
                   }
                 }}
                 disabled={loginLoading || !username || !password}
-                className="w-full">
+                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
                 {loginLoading ? "Signing in..." : "Sign in"}
-              </Button>
+              </button>
             </form>
 
             <div className="relative my-4">
