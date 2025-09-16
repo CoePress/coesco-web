@@ -1120,7 +1120,6 @@ const AddItemModal = ({
                 setSelectedQuantity={setSelectedQuantity}
                 productType={productType}
                 page={page}
-                setPage={setPage}
                 pagination={pagination}
                 setPagination={setPagination}
               />

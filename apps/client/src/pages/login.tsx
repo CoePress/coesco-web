@@ -47,15 +47,21 @@ const BackgroundImage = () => {
 const Login = () => {
   const {
     get: getMicrosoft,
+    loading: microsoftLoginLoading,
+    error: microsoftLoginError
+  } = useApi<IApiResponse<{ url: string }>>();
+
+  const {
     post,
     loading: loginLoading,
     error: loginError
-  } = useApi<IApiResponse<{ url: string }>>();
+  } = useApi<IApiResponse<{ user: any, employee: any }>>();
+
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get("error");
-  const errorMessage = getErrorMessage(errorParam) || loginError;
+  const errorMessage = getErrorMessage(errorParam) || loginError || microsoftLoginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
@@ -77,6 +83,9 @@ const Login = () => {
       navigate("/", { replace: true });
     }
   };
+
+  const loading = microsoftLoginLoading || loginLoading;
+  const error = microsoftLoginError || loginError;
 
   const { isSystemConnected, subscribeToSystemStatus, unsubscribeFromSystemStatus } = useSocket();
 
@@ -188,7 +197,7 @@ const Login = () => {
                 type="text"
                 label="Username"
                 value={username}
-                disabled={loginLoading}
+                disabled={loading}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
@@ -198,7 +207,7 @@ const Login = () => {
                 type="password"
                 label="Password"
                 value={password}
-                disabled={loginLoading}
+                disabled={loading}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
@@ -212,9 +221,9 @@ const Login = () => {
                     handleUsernamePasswordLogin();
                   }
                 }}
-                disabled={loginLoading || !username || !password}
+                disabled={loading || !username || !password}
                 className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
-                {loginLoading ? "Signing in..." : "Sign in"}
+                {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
 
@@ -231,7 +240,7 @@ const Login = () => {
 
             <Button
               onClick={microsoftLogin}
-              disabled={loginLoading}
+              disabled={loading}
               variant="secondary-outline"
               className="w-full flex items-center justify-center">
               <svg
@@ -244,7 +253,7 @@ const Login = () => {
                   d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"
                 />
               </svg>
-              {loginLoading ? "Connecting..." : "Sign in with Microsoft"}
+              {loading ? "Connecting..." : "Sign in with Microsoft"}
             </Button>
           </div>
         </Card>

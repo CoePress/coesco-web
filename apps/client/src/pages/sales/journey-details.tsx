@@ -994,7 +994,6 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Invalid Journey"
           description="No journey ID provided in the URL."
-          backButton
           onBack={() =>
             navigate("/sales/pipeline", { state: { viewMode: "kanban", refresh: true } })
           }
@@ -1009,7 +1008,6 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Journey not found"
           description="This journey may have been removed or is unavailable."
-          backButton
           onBack={() =>
             navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
           }
@@ -1034,7 +1032,6 @@ const JourneyDetailsPage = () => {
         )} • ${(j?.Journey_Type as string) || (j?.type as string) || "Standard"} • ${formatCurrency(
           Number(j?.Journey_Value ?? j?.value ?? 0)
         )}`}
-        backButton
         onBack={() =>
           navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
         }

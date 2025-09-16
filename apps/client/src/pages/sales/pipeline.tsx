@@ -276,7 +276,7 @@ const Pipeline = () => {
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
 
-  const { user, employee } = useAuth();
+  const { employee } = useAuth();
   const { put, get } = useApi();
   const rsmApi = useApi(); // Separate API instance for RSM fetching
   const [journeys, setJourneys] = useState<any[]>([]);
@@ -785,8 +785,6 @@ const Pipeline = () => {
     return key ? Number(key) : undefined;
   };
 
-  const stageFor = (id: string): number | undefined =>
-    stageFromDroppableId(id) ?? findStageByItemId(id);
 
   const handleDragStart = useCallback(({ active }: any) => {
     setActiveId(active.id.toString());
@@ -1169,7 +1167,7 @@ const Pipeline = () => {
                           items={items}
                           strategy={verticalListSortingStrategy}
                         >
-                          {items.map((itemId) => {
+                          {items.map((itemId: string) => {
                             const journey = kanbanJourneys.find((d) => d.id.toString() === itemId);
                             return journey ? (
                               <SortableItem
@@ -1273,7 +1271,7 @@ const Pipeline = () => {
   );
 };
 
-const ProjectionsView = ({ journeys, customersById }: { journeys: any[], customersById: Map<string, any> }) => {
+const ProjectionsView = ({ journeys }: { journeys: any[], customersById: Map<string, any> }) => {
   const monthlyProjections = useMemo(() => {
     const monthMap = new Map<string, { journeys: any[], weightedValue: number, totalValue: number }>();
     
@@ -1386,7 +1384,7 @@ const ProjectionsView = ({ journeys, customersById }: { journeys: any[], custome
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip 
-                    formatter={(value: number, name: string, props: any) => [
+                    formatter={(value: number, props: any) => [
                       formatCurrency(value), 
                       props.dataKey === 'totalValue' ? 'Total Value' : 'Weighted Value'
                     ]}
