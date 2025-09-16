@@ -83,7 +83,7 @@ async function seedEmployees() {
   try {
     const employeeCount = await prisma.employee.count();
 
-    if (employeeCount === 0) {
+    if (employeeCount === 2) {
       await _migrateEmployees();
       await closeDatabaseConnections();
       await microsoftService.sync();
@@ -232,9 +232,9 @@ async function seedRoles() {
 }
 
 export async function seedDatabase() {
+  await seedEmployees();
   await seedPermissions();
   await seedRoles();
-  await seedEmployees();
   await seedMachines();
 
   logger.info("All seeding completed successfully");

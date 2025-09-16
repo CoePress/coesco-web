@@ -2,7 +2,6 @@ import { Button, Input, Card } from "@/components";
 import { AuthContext } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -49,13 +48,13 @@ const Login = () => {
     get: getMicrosoft,
     loading: microsoftLoginLoading,
     error: microsoftLoginError
-  } = useApi<IApiResponse<{ url: string }>>();
+  } = useApi<string>();
 
   const {
     post,
     loading: loginLoading,
     error: loginError
-  } = useApi<IApiResponse<{ user: any, employee: any }>>();
+  } = useApi<{ user: any, employee: any }>();
 
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
@@ -67,8 +66,8 @@ const Login = () => {
   
   const microsoftLogin = async () => {
     const response = await getMicrosoft("/auth/microsoft/login");
-    if (response?.success && response.data?.url) {
-      window.location.href = response.data.url;
+    if (response) {
+      window.location.href = response;
     }
   };
 
@@ -78,14 +77,13 @@ const Login = () => {
       password,
     });
 
-    if (response?.success && response.data) {
-      setUser(response.data.user, response.data.employee);
+    if (response && response.user) {
+      setUser(response.user, response.employee);
       navigate("/", { replace: true });
     }
   };
 
   const loading = microsoftLoginLoading || loginLoading;
-  const error = microsoftLoginError || loginError;
 
   const { isSystemConnected, subscribeToSystemStatus, unsubscribeFromSystemStatus } = useSocket();
 

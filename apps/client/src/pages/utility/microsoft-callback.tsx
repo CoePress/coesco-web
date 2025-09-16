@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
 import { useAuth } from "@/contexts/auth.context";
 import { Loader } from "@/components";
 
@@ -10,7 +9,7 @@ const MicrosoftCallback = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const hasRun = useRef(false);
-  const { post } = useApi<IApiResponse<{ user: any; employee: any }>>();
+  const { post } = useApi<{ user: any; employee: any }>();
 
   useEffect(() => {
     if (hasRun.current) return;
@@ -32,11 +31,11 @@ const MicrosoftCallback = () => {
           state,
         });
         
-        if (response?.success && response.data) {
-          setUser(response.data.user, response.data.employee);
+        if (response) {
+          setUser(response.user, response.employee);
         } else {
           console.error("Unexpected response format:", response);
-          throw new Error(response?.error || "Authentication failed");
+          throw new Error("Authentication failed");
         }
 
         navigate("/");

@@ -19,8 +19,8 @@ export class AuthController {
 
   async microsoftLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const url = await authService.microsoftLogin();
-      res.json({ url });
+      const result = await authService.microsoftLogin();
+      res.json(result);
     }
     catch (error) {
       next(error);

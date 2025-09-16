@@ -8,8 +8,6 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse } from "@/utils/types";
-
 
 interface IAuthContextType {
   user: any;
@@ -33,7 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false);
-  const { get } = useApi<IApiResponse<{ user: any; employee: any }>>();
+  const { get } = useApi<{ user: any; employee: any }>();
 
   const setUser = (user: any, employee: any) => {
     setUserState(user);
@@ -57,9 +55,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const response = await get("/auth/session");
         
-        if (response?.success && response.data) {
-          setUserState(response.data.user);
-          setEmployeeState(response.data.employee);
+        if (response) {
+          setUserState(response.user);
+          setEmployeeState(response.employee);
         } else {
           throw new Error("Session check failed");
         }
