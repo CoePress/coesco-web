@@ -32,13 +32,8 @@ const MicrosoftCallback = () => {
           state,
         });
         
-        // Handle both IApiResponse format and direct format
         if (response?.success && response.data) {
-          // IApiResponse format
           setUser(response.data.user, response.data.employee);
-        } else if (response?.user && response?.employee) {
-          // Direct format (legacy)
-          setUser(response.user, response.employee);
         } else {
           console.error("Unexpected response format:", response);
           throw new Error(response?.error || "Authentication failed");

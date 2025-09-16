@@ -27,7 +27,7 @@ const RecentChats = () => {
   const [refreshToggle, setRefreshToggle] = useState(false);
   const navigate = useNavigate();
   
-  const { get, delete: deleteChat, patch: patchChat } = useApi<IApiResponse<Chat[]>>();
+  const { get, delete: deleteChat } = useApi<IApiResponse<Chat[]>>();
   
   const refresh = () => setRefreshToggle(prev => !prev);
   

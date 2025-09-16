@@ -17,18 +17,8 @@ type Resource = {
   uploadedBy?: string;
 };
 
-type PaginatedResponse = {
-  data: Resource[];
-  total: number;
-  page: number;
-  totalPages: number;
-};
-
 const Resources = () => {
-  const api = useApi<PaginatedResponse>();
-  const recentApi = useApi<Resource[]>();
-  const uploadApi = useApi<Resource>();
-  const deleteApi = useApi();
+  const { get, post, loading, error } = useApi();
 
   const [resources, setResources] = useState<Resource[]>([]);
   const [recentResources, setRecentResources] = useState<Resource[]>([]);
@@ -41,12 +31,10 @@ const Resources = () => {
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
-  // Fetch resources on mount and when pagination/sorting changes
   useEffect(() => {
     fetchResources();
   }, [currentPage, sortBy, sortOrder]);
 
-  // Fetch recent resources on mount
   useEffect(() => {
     fetchRecentResources();
   }, []);
@@ -59,7 +47,7 @@ const Resources = () => {
       sortOrder
     };
 
-    const response = await api.get('/files/resources', params);
+    const response = await get('/files/resources', params);
     if (response) {
       setResources(response.data);
       setTotalResources(response.total);
@@ -68,23 +56,21 @@ const Resources = () => {
   };
 
   const fetchRecentResources = async () => {
-    const response = await recentApi.get('/files/resources/recent', { limit: 6 });
+    const response = await get('/files/resources/recent', { limit: 6 });
     if (response) {
       setRecentResources(response);
     }
   };
 
   const handleFileUpload = async (file: File) => {
-    // Convert file to ArrayBuffer then to Buffer for raw binary upload
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
-    const response = await uploadApi.post('/files/upload', buffer, {
+    const response = await post('/files/upload', buffer, {
       headers: {
         'Content-Type': file.type,
         'X-File-Name': file.name
       },
-      // Override the default JSON content type for this request
       transformRequest: [(data) => data]
     });
 
@@ -95,13 +81,6 @@ const Resources = () => {
     }
   };
 
-  const handleDelete = async (fileId: string) => {
-    const response = await deleteApi.delete(`/files/resources/${fileId}`);
-    if (response !== null) {
-      fetchResources();
-      fetchRecentResources();
-    }
-  };
 
   const columns: TableColumn<Resource>[] = [
     {
@@ -291,7 +270,7 @@ const Resources = () => {
       />
 
       <div className="w-full flex flex-1 flex-col p-2 gap-2">
-        {api.loading || recentApi.loading ? (
+        {loading ? (
           <div className="flex justify-center items-center h-32">
             <span>Loading resources...</span>
           </div>
@@ -316,7 +295,7 @@ const Resources = () => {
             onSortChange={handleSortChange}
             emptyMessage="No resources found"
             className="border rounded overflow-clip"
-            loading={api.loading}
+            loading={loading}
           />
         </div>
       </div>
@@ -347,8 +326,8 @@ const Resources = () => {
             }}
             className="w-full p-2 border border-border rounded"
           />
-          {uploadApi.loading && <p className="mt-2">Uploading...</p>}
-          {uploadApi.error && <p className="mt-2 text-red-500">{uploadApi.error}</p>}
+          {loading && <p className="mt-2">Uploading...</p>}
+          {error && <p className="mt-2 text-red-500">{error}</p>}
         </div>
       </Modal>
     </div>
