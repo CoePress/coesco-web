@@ -109,23 +109,6 @@ async function fetchFromWeb(baseUrl: string, path: string): Promise<Row[]> {
   return [{ value: data }];
 }
 
-const _Select: React.FC<{
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-  label?: string;
-}> = ({ value, onChange, children, label }) => (
-  <label className="flex flex-col gap-1 text-sm">
-    {label && <span className="text-text-muted">{label}</span>}
-    <select
-      className="rounded border border-border bg-surface px-3 py-2 text-text shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {children}
-    </select>
-  </label>
-);
 
 const ToggleChip: React.FC<{
   checked: boolean;
@@ -207,10 +190,6 @@ const LegacyExplorer: React.FC = () => {
     const rows = scope === "page" ? pageRows : rawRows;
     const csv = toCSV(rows, visibleColumns.length ? visibleColumns : allColumns);
     download(`export_${scope}.csv`, csv, "text/csv");
-  };
-  const _exportJSON = (scope: "page" | "all" = "all") => {
-    const rows = scope === "page" ? pageRows : rawRows;
-    download(`export_${scope}.json`, JSON.stringify(rows, null, 2), "application/json");
   };
 
   useEffect(() => {

@@ -1185,7 +1185,6 @@ const ItemsTab = ({
   setSelectedQuantity,
   productType,
   page,
-  _setPage,
   pagination,
   setPagination,
 }: {
@@ -1195,7 +1194,6 @@ const ItemsTab = ({
   setSelectedQuantity: (quantity: Record<string, number>) => void;
   productType: 'equipment' | 'parts' | 'services';
   page: number;
-  setPage: (page: number) => void;
   pagination: { total: number; totalPages: number; page: number; limit: number };
   setPagination: (pagination: { total: number; totalPages: number; page: number; limit: number }) => void;
 }) => {
