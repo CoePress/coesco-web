@@ -109,7 +109,7 @@ async function fetchFromWeb(baseUrl: string, path: string): Promise<Row[]> {
   return [{ value: data }];
 }
 
-const Select: React.FC<{
+const _Select: React.FC<{
   value: string;
   onChange: (v: string) => void;
   children: React.ReactNode;
@@ -159,7 +159,7 @@ const LegacyExplorer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, _setPageSize] = useState(25);
 
   const allColumns = useMemo(() => inferColumns(rawRows), [rawRows]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
@@ -208,7 +208,7 @@ const LegacyExplorer: React.FC = () => {
     const csv = toCSV(rows, visibleColumns.length ? visibleColumns : allColumns);
     download(`export_${scope}.csv`, csv, "text/csv");
   };
-  const exportJSON = (scope: "page" | "all" = "all") => {
+  const _exportJSON = (scope: "page" | "all" = "all") => {
     const rows = scope === "page" ? pageRows : rawRows;
     download(`export_${scope}.json`, JSON.stringify(rows, null, 2), "application/json");
   };

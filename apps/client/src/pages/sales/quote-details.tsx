@@ -17,7 +17,7 @@ import {
   Loader,
   Modal,
   Table,
-  Tabs,
+  // Tabs,
 } from "@/components";
 import { formatCurrency, formatDate, formatQuoteNumber } from "@/utils";
 import { useMemo, useState, useEffect } from "react";
@@ -181,8 +181,8 @@ const QuoteDetails = () => {
   };
 
   const [quoteOverview, setQuoteOverview] = useState<any>(null);
-  const [overviewLoading, setOverviewLoading] = useState<boolean>(true);
-  const [revisions, setRevisions] = useState<any[]>([]);
+  const [_overviewLoading, setOverviewLoading] = useState<boolean>(true);
+  const [_revisions, setRevisions] = useState<any[]>([]);
   const [sortedRevisions, setSortedRevisions] = useState<any[]>([]);
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1185,7 +1185,7 @@ const ItemsTab = ({
   setSelectedQuantity,
   productType,
   page,
-  setPage,
+  _setPage,
   pagination,
   setPagination,
 }: {

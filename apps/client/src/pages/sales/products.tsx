@@ -129,9 +129,9 @@ const Products = () => {
     fetchProducts();
   }, [include, page, limit, sort, order, filter]);
 
-  const handleAddToQuote = (e: React.MouseEvent, product: any) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToQuote = (e: React.MouseEvent | null, product: any) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setSelectedProduct(product);
     setModalView('selection');
     setIsQuoteModalOpen(true);

@@ -10,7 +10,7 @@ import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
-import { format, formatISO } from "date-fns";
+import { format } from "date-fns";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +22,7 @@ const Quotes = () => {
   
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<{
     total: number;
     totalPages: number;
