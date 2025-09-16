@@ -9,6 +9,7 @@ import chatRoutes from "./chat.routes";
 import crmRoutes from "./crm.routes";
 import legacyRoutes from "./legacy.routes";
 import performanceRoutes from "./performance.routes";
+import postalCodeRoutes from "./postal-code.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
@@ -24,6 +25,7 @@ router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);
 router.use("/legacy", legacyRoutes);
 router.use("/performance", performanceRoutes);
+router.use("/postal-codes", postalCodeRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
 
