@@ -216,22 +216,18 @@ const QuoteDetails = () => {
       const fetchedRevisions = response.data || [];
       setRevisions(fetchedRevisions);
       
-      // Create a static sorted list that never changes
       const staticSorted = [...fetchedRevisions].sort((a: any, b: any) => {
         const aRev = a.revision;
         const bRev = b.revision;
         
-        // Handle numeric revisions
         if (/^\d+$/.test(aRev) && /^\d+$/.test(bRev)) {
           return parseInt(bRev) - parseInt(aRev);
         }
         
-        // Handle alphabetic revisions (A-Z, AA-ZZ, etc.)
         if (aRev.length !== bRev.length) {
-          return bRev.length - aRev.length; // Longer strings are later (AA > Z)
+          return bRev.length - aRev.length;
         }
         
-        // Same length, compare lexicographically in reverse (Z > A)
         return bRev.localeCompare(aRev);
       });
       setSortedRevisions(staticSorted);

@@ -90,10 +90,15 @@ const Quotes = () => {
     {
       key: "quoteNumber",
       header: "Quote Number",
-      className: "text-primary hover:underline",
+      className: "text-primary hover:underline w-1",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number, row.revision)}</Link>
+        <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number)}</Link>
       ),
+    },
+    {
+      key: "revision",
+      header: "Revision",
+      className: "w-1 text-center",
     },
     {
       key: "journey.customer.name",
