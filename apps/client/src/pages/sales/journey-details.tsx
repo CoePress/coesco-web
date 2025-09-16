@@ -649,13 +649,12 @@ function JourneyDetailsTab({ journey }: { journey: any | null }) {
                   </div>
                   <div>
                     <div className="text-sm text-text-muted">Quote Value</div>
-                    <div className="text-sm text-text font-semibold text-primary">
+                    <div className="text-sm font-semibold text-primary">
                       {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
                     </div>
                   </div>
                 </div>
                 
-                {/* Quote Status Section */}
                 {journey?.Quote_Number && (
                   <div className="border-t pt-3">
                     <div className="text-sm font-medium text-text-muted mb-2">Quote Status</div>
@@ -952,11 +951,9 @@ function JourneyHistoryTab() {
 
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
-  const navigate = useNavigate();
   const location = useLocation();
   const { id: journeyId } = useParams<{ id: string }>();
 
-  // Get journey data from navigation state if available
   const passedJourneyData = location.state as { journey?: any; customer?: any } | null;
   
   const shouldFetchFromAPI = !passedJourneyData?.journey;
@@ -994,9 +991,7 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Invalid Journey"
           description="No journey ID provided in the URL."
-          onBack={() =>
-            navigate("/sales/pipeline", { state: { viewMode: "kanban", refresh: true } })
-          }
+          goBack
         />
       </div>
     );
@@ -1008,9 +1003,7 @@ const JourneyDetailsPage = () => {
         <PageHeader
           title="Journey not found"
           description="This journey may have been removed or is unavailable."
-          onBack={() =>
-            navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
-          }
+          goBack
         />
       </div>
     );
@@ -1032,9 +1025,7 @@ const JourneyDetailsPage = () => {
         )} • ${(j?.Journey_Type as string) || (j?.type as string) || "Standard"} • ${formatCurrency(
           Number(j?.Journey_Value ?? j?.value ?? 0)
         )}`}
-        onBack={() =>
-          navigate("/sales/pipeline", { state: { viewMode: "list", refresh: true } })
-        }
+        goBack
       />
       <Tabs
         activeTab={activeTab}
