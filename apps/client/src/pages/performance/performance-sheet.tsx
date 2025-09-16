@@ -8,24 +8,23 @@ import Feed from "./feed";
 import Shear from "./shear";
 import SummaryReport from "./summary-report";
 import { Save, Lock, Link } from "lucide-react";
-import { useGetEntity } from "@/hooks/_base/use-get-entity";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import RFQ from "./rfq";
 
-const PERFORMANCE_TABS = [
-  { label: "RFQ", value: "rfq" },
-  { label: "Material Specs", value: "material-specs" },
-  { label: "TDDBHD", value: "tddbhd" },
-  { label: "Reel Drive", value: "reel-drive" },
-  { label: "Str Utility", value: "str-utility" },
-  { label: "Roll Str Backbend", value: "roll-str-backbend" },
-  { label: "Feed", value: "feed" },
-  { label: "Shear", value: "shear" },
-  { label: "Summary Report", value: "summary-report" },
-];
+// const PERFORMANCE_TABS = [
+//   { label: "RFQ", value: "rfq" },
+//   { label: "Material Specs", value: "material-specs" },
+//   { label: "TDDBHD", value: "tddbhd" },
+//   { label: "Reel Drive", value: "reel-drive" },
+//   { label: "Str Utility", value: "str-utility" },
+//   { label: "Roll Str Backbend", value: "roll-str-backbend" },
+//   { label: "Feed", value: "feed" },
+//   { label: "Shear", value: "shear" },
+//   { label: "Summary Report", value: "summary-report" },
+// ];
 
 type PerformanceTabValue =
   | "rfq"
@@ -41,10 +40,10 @@ type PerformanceTabValue =
 
 const PerformanceSheet = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
-  const location = useLocation();
-  const navigate = useNavigate();
+  // const location = useLocation();
+  // const navigate = useNavigate();
   const [isLocked, setIsLocked] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, _setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [addMode, setAddMode] = useState(false);
@@ -60,7 +59,7 @@ const PerformanceSheet = () => {
     { entityType: "company", entityId: "789" },
   ]);
   const { id: performanceSheetId } = useParams();
-  const { entity: performanceSheet, loading, error, refresh } = useGetEntity(
+  const { entity: performanceSheet, loading, error } = useGetEntity(
     `/performance/sheets`,
     performanceSheetId
   );
@@ -134,8 +133,6 @@ const PerformanceSheet = () => {
     // );
   };
 
-  const handleChange = () => {};
-
   const getHeaderActions = () => {
     if (isEditing) {
       return [
@@ -202,13 +199,13 @@ const PerformanceSheet = () => {
       isEditing
     };
 
-    const getActiveTabFromUrl = (): PerformanceTabValue => {
-      const pathSegments = location.pathname.split('/');
-      const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
+    // const getActiveTabFromUrl = (): PerformanceTabValue => {
+    //   const pathSegments = location.pathname.split('/');
+    //   const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
       
-      const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
-      return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
-    };
+    //   const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
+    //   return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
+    // };
 
     if (loading) {
       return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -246,9 +243,9 @@ const PerformanceSheet = () => {
     }
   };
 
-  const handleTabChange = (tab: PerformanceTabValue) => {
-    navigate(`/performance/${performanceSheetId}/${tab}`);
-  };
+  // const handleTabChange = (tab: PerformanceTabValue) => {
+  //   navigate(`/performance/${performanceSheetId}/${tab}`);
+  // };
 
   return (
     <div className="min-h-screen bg-background">

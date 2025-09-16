@@ -12,11 +12,11 @@ const PerformanceSheets = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [locks, setLocks] = useState<Record<string, any>>({});
   const [name, setName] = useState("");
-  const [links, setLinks] = useState<
+  const [_links, setLinks] = useState<
     Array<{ entityType: string; entityId: string }>
   >([]);
-  const [addMode, setAddMode] = useState(false);
-  const [newLink, setNewLink] = useState<{
+  const [_addMode, setAddMode] = useState(false);
+  const [_newLink, setNewLink] = useState<{
     entityType: string;
     entityId: string;
   }>({ entityType: "quote", entityId: "" });

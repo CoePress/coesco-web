@@ -25,17 +25,15 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
   
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  // Get coil width boundaries from the nested structure
   const coilWidthBounds = useMemo(() => {
     const min = Number(localData.common?.coil?.minCoilWidth) || undefined;
     const max = Number(localData.common?.coil?.maxCoilWidth) || undefined;
     return { min, max };
   }, [localData.common?.coil?.minCoilWidth, localData.common?.coil?.maxCoilWidth]);
 
-  // Customer and Date Section
   const customerDateSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -62,7 +60,6 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, getFieldError, isEditing]);
 
-  // Material Specifications Section
   const materialSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
