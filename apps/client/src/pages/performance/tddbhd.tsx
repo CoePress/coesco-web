@@ -7,7 +7,6 @@ import {
   BACKPLATE_DIAMETER_OPTIONS,
   HYDRAULIC_THREADING_DRIVE_OPTIONS,
   HOLD_DOWN_ASSY_OPTIONS,
-  HOLD_DOWN_CYLINDER_OPTIONS,
   BRAKE_MODEL_OPTIONS,
   BRAKE_QUANTITY_OPTIONS,
   usePerformanceDataService,
@@ -23,8 +22,6 @@ export interface TDDBHDProps {
 
 const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  const textColor = "var(--color-text)"
-  
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;

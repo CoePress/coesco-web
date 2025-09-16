@@ -288,7 +288,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Force Required (lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
               disabled
-              style={{ backgroundColor: ((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+              className={((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
             />
             <Input
               label="Springback"
@@ -413,7 +413,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Force Required (lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired?.toString() || ""}
               disabled
-              style={{ backgroundColor: ((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+              className={((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
             />
             <Input
               label="Springback"
@@ -504,7 +504,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Force Required (lbs)"
                   value={middleData?.forceRequired?.toString() || ""}
                   disabled
-                  style={{ backgroundColor: ((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+                  className={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
                 />
                 <Input
                   label="Springback"
@@ -647,7 +647,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Force Required (lbs)"
                   value={middleData?.forceRequired?.toString() || ""}
                   disabled
-                  style={{ backgroundColor: ((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+                  className={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
                 />
                 <Input
                   label="Yield Strains at Surface"
