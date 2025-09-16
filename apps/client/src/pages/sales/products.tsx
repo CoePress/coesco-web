@@ -23,7 +23,7 @@ const Products = () => {
 
   const [productType, setProductType] = useState<'equipment' | 'parts' | 'services'>(getInitialProductType);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [_searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [sort, setSort] = useState("modelNumber");
@@ -146,15 +146,12 @@ const Products = () => {
       let quoteInfo: { id: string; label: string };
       
       if (typeof selectedQuote === 'object' && selectedQuote.create) {
-        // Create new quote with the product
         console.log('Creating new quote:', selectedQuote.label, 'with product:', selectedProduct.modelNumber);
-        // In real implementation, this would return the created quote ID
         quoteInfo = { id: 'new-quote-id', label: selectedQuote.label };
       } else {
-        // Add product to existing quote
         console.log('Adding product:', selectedProduct.modelNumber, 'to quote:', selectedQuote);
         const quote = mockQuotes.find(q => q.value === selectedQuote);
-        quoteInfo = { id: selectedQuote, label: quote?.label || '' };
+        quoteInfo = { id: selectedQuote as string, label: quote?.label || '' };
       }
       
       setAddedQuoteInfo(quoteInfo);
@@ -179,7 +176,6 @@ const Products = () => {
     setAddedQuoteInfo(null);
   };
 
-  // Mock quotes data - replace with actual API call
   const mockQuotes = [
     { value: 'quote-1', label: 'Q-2024-001 - Acme Corporation' },
     { value: 'quote-2', label: 'Q-2024-002 - TechCorp Industries' },
@@ -213,7 +209,7 @@ const Products = () => {
         <Button
           variant="secondary-outline"
           size="sm"
-          onClick={(e) => handleAddToQuote(e, row)}
+          onClick={() => handleAddToQuote(null, row)}
         >
           <Plus size={14} />
           Add to Quote
@@ -476,7 +472,7 @@ const Products = () => {
                             variant="secondary-outline"
                             size="sm"
                             className="w-full"
-                            onClick={(e) => handleAddToQuote(e, product)}
+                            onClick={() => handleAddToQuote(null, product)}
                           >
                             <Plus size={14} />
                             Add to Quote

@@ -34,7 +34,7 @@ const FormDetails = () => {
     
     if (response?.success && response.data) {
       setFormData(response.data);
-      setSections(response.data.sections?.map(section => ({
+      setSections(response.data.sections?.map((section: any) => ({
         ...section,
         isCollapsed: false,
         fields: section.fields || []
@@ -99,7 +99,7 @@ const FormDetails = () => {
   };
 
   const updateFormData = (updates: any) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData((prev: any) => ({ ...prev, ...updates }));
   };
 
   const addSection = async () => {
@@ -187,7 +187,7 @@ const FormDetails = () => {
     if (response?.success) {
       setSections(sections.map(section => 
         section.id === sectionId 
-          ? { ...section, fields: section.fields?.filter(field => field.id !== fieldId) || [] }
+          ? { ...section, fields: section.fields?.filter((field: any) => field.id !== fieldId) || [] }
           : section
       ));
     } else {
@@ -213,7 +213,7 @@ const FormDetails = () => {
     // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId 
-        ? { ...section, fields: section.fields?.map(field => 
+        ? { ...section, fields: section.fields?.map((field: any) => 
             field.id === fieldId ? { ...field, ...updates } : field
           ) || []}
         : section
@@ -231,7 +231,7 @@ const FormDetails = () => {
       photo: 'bg-error/10 text-error',
       signature: 'bg-secondary/20 text-secondary',
     };
-    return colors[fieldType] || 'bg-surface text-text-muted';
+    return colors[fieldType as keyof typeof colors] || 'bg-surface text-text-muted';
   };
 
   const fieldTypes = [
@@ -425,7 +425,7 @@ const FormDetails = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {section.fields.map((field, fieldIndex) => (
+                    {section.fields.map((field: any, fieldIndex: any) => (
                       <div key={field.id} className="flex items-center space-x-4 p-4 bg-surface border border-border rounded-lg hover:bg-surface/80 transition-colors">
                         {isEditing && <GripVertical className="text-text-muted" size={14} />}
                         
@@ -438,7 +438,7 @@ const FormDetails = () => {
                             <FieldEditor 
                               field={field}
                               fieldTypes={fieldTypes}
-                              onUpdate={(updates) => updateField(section.id, field.id, updates)}
+                              onUpdate={(updates: any) => updateField(section.id, field.id, updates)}
                             />
                           ) : (
                             <div>
@@ -505,7 +505,7 @@ const FormDetails = () => {
   );
 };
 
-const FieldEditor = ({ field, fieldTypes, onUpdate }) => {
+const FieldEditor = ({ field, fieldTypes, onUpdate }: any) => {
   const [options, setOptions] = useState(
     field.options && Array.isArray(field.options) 
       ? field.options.join('\n') 
@@ -553,7 +553,7 @@ const FieldEditor = ({ field, fieldTypes, onUpdate }) => {
           value={field.fieldType}
           onChange={(e) => onUpdate({ fieldType: e.target.value })}
           className="w-full px-3 py-2 border rounded-md">
-          {fieldTypes.map(type => (
+          {fieldTypes.map((type: any) => (
             <option key={type.value} value={type.value}>
               {type.label}
             </option>

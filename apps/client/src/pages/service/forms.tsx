@@ -19,8 +19,8 @@ const Forms = () => {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   
   const [forms, setForms] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_loading, setLoading] = useState<boolean>(true);
+  const [_error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<{
     total: number;
     totalPages: number;
