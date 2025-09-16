@@ -132,14 +132,14 @@ async function seedMachines() {
 async function seedPermissions() {
   try {
     const existingPermissions = await prisma.permission.count();
-    
+
     if (existingPermissions === 0) {
       logger.info("Seeding permissions...");
-      
+
       for (const permission of ALL_PERMISSIONS) {
         const [resource, ...actionParts] = permission.split(".");
         const action = actionParts.join(".");
-        
+
         await prisma.permission.create({
           data: {
             resource,
@@ -148,7 +148,7 @@ async function seedPermissions() {
           },
         });
       }
-      
+
       logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
     }
   }
@@ -162,10 +162,10 @@ async function seedRoles() {
     const adminRole = await prisma.role.findUnique({
       where: { name: "ADMIN" },
     });
-    
+
     if (!adminRole) {
       logger.info("Seeding roles...");
-      
+
       const adminRoleData = await prisma.role.create({
         data: {
           name: "ADMIN",
@@ -173,7 +173,7 @@ async function seedRoles() {
           isSystem: true,
         },
       });
-      
+
       const userRole = await prisma.role.create({
         data: {
           name: "USER",
@@ -181,10 +181,10 @@ async function seedRoles() {
           isSystem: true,
         },
       });
-      
+
       // Get all permissions for ADMIN role
       const allPermissions = await prisma.permission.findMany();
-      
+
       // Admin gets all permissions
       for (const permission of allPermissions) {
         await prisma.rolePermission.create({
@@ -194,25 +194,25 @@ async function seedRoles() {
           },
         });
       }
-      
+
       // User gets basic permissions
       const userPermissions = [
         "employees.read",
-        "legacy.read", 
+        "legacy.read",
         "pipeline.read",
         "quotes.create",
-        "quotes.read", 
+        "quotes.read",
         "quotes.update",
         "reports.view",
         "reports.generate",
       ];
-      
+
       for (const permissionName of userPermissions) {
         const [resource, action] = permissionName.split(".");
         const permission = await prisma.permission.findFirst({
           where: { resource, action },
         });
-        
+
         if (permission) {
           await prisma.rolePermission.create({
             data: {
@@ -222,7 +222,7 @@ async function seedRoles() {
           });
         }
       }
-      
+
       logger.info("Seeded ADMIN and USER roles with permissions");
     }
   }
@@ -236,7 +236,6 @@ export async function seedDatabase() {
   await seedRoles();
   await seedEmployees();
   await seedMachines();
-  await seedFiles();
 
   logger.info("All seeding completed successfully");
 }

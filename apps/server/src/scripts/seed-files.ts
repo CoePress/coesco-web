@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+
 import { FileStoreService } from "../services/core/file-store.service";
 
 interface SampleFile {
@@ -14,13 +15,13 @@ const sampleFiles: SampleFile[] = [
     url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     name: "Sample Document.pdf",
     category: "documents",
-    tags: ["pdf", "sample", "document"]
+    tags: ["pdf", "sample", "document"],
   },
   {
     url: "https://www.africau.edu/images/default/sample.pdf",
     name: "Project Proposal.pdf",
     category: "documents",
-    tags: ["pdf", "project", "proposal"]
+    tags: ["pdf", "project", "proposal"],
   },
 
   // Images
@@ -28,31 +29,31 @@ const sampleFiles: SampleFile[] = [
     url: "https://picsum.photos/800/600",
     name: "Landscape Photo.jpg",
     category: "images",
-    tags: ["image", "photo", "landscape"]
+    tags: ["image", "photo", "landscape"],
   },
   {
     url: "https://picsum.photos/600/800",
     name: "Portrait Photo.jpg",
     category: "images",
-    tags: ["image", "photo", "portrait"]
+    tags: ["image", "photo", "portrait"],
   },
   {
     url: "https://picsum.photos/1200/800",
     name: "Banner Image.jpg",
     category: "images",
-    tags: ["image", "banner", "header"]
+    tags: ["image", "banner", "header"],
   },
   {
     url: "https://via.placeholder.com/400x400/FF5733/FFFFFF?text=Design+Mockup",
     name: "Design Mockup.png",
     category: "images",
-    tags: ["image", "design", "mockup"]
+    tags: ["image", "design", "mockup"],
   },
   {
     url: "https://via.placeholder.com/300x300/3498DB/FFFFFF?text=Logo",
     name: "Company Logo.png",
     category: "images",
-    tags: ["image", "logo", "branding"]
+    tags: ["image", "logo", "branding"],
   },
 
   // JSON files
@@ -60,13 +61,13 @@ const sampleFiles: SampleFile[] = [
     url: "https://jsonplaceholder.typicode.com/posts/1",
     name: "API Response Sample.json",
     category: "data",
-    tags: ["json", "api", "data"]
+    tags: ["json", "api", "data"],
   },
   {
     url: "https://jsonplaceholder.typicode.com/users",
     name: "User Data Export.json",
     category: "data",
-    tags: ["json", "users", "export"]
+    tags: ["json", "users", "export"],
   },
 
   // Text/Markdown
@@ -74,13 +75,13 @@ const sampleFiles: SampleFile[] = [
     url: "https://raw.githubusercontent.com/microsoft/TypeScript/main/README.md",
     name: "TypeScript Documentation.md",
     category: "documents",
-    tags: ["markdown", "documentation", "typescript"]
+    tags: ["markdown", "documentation", "typescript"],
   },
   {
     url: "https://raw.githubusercontent.com/facebook/react/main/README.md",
     name: "React Framework Guide.md",
     category: "documents",
-    tags: ["markdown", "react", "guide"]
+    tags: ["markdown", "react", "guide"],
   },
 
   // CSV
@@ -88,14 +89,14 @@ const sampleFiles: SampleFile[] = [
     url: "https://people.sc.fsu.edu/~jburkardt/data/csv/addresses.csv",
     name: "Customer Addresses.csv",
     category: "data",
-    tags: ["csv", "data", "addresses"]
+    tags: ["csv", "data", "addresses"],
   },
   {
     url: "https://people.sc.fsu.edu/~jburkardt/data/csv/airtravel.csv",
     name: "Air Travel Statistics.csv",
     category: "data",
-    tags: ["csv", "statistics", "travel"]
-  }
+    tags: ["csv", "statistics", "travel"],
+  },
 ];
 
 async function downloadFile(url: string): Promise<Buffer | null> {
@@ -111,14 +112,15 @@ async function downloadFile(url: string): Promise<Buffer | null> {
     const buffer = Buffer.from(await response.arrayBuffer());
     console.log(`Downloaded ${buffer.length} bytes`);
     return buffer;
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Error downloading ${url}:`, error);
     return null;
   }
 }
 
 function getMimeType(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase();
+  const ext = fileName.split(".").pop()?.toLowerCase();
 
   const mimeTypes: Record<string, string> = {
     pdf: "application/pdf",
@@ -135,7 +137,7 @@ function getMimeType(fileName: string): string {
     doc: "application/msword",
     docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     xls: "application/vnd.ms-excel",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   };
 
   return mimeTypes[ext || ""] || "application/octet-stream";
@@ -185,8 +187,8 @@ async function seedFiles() {
           category: file.category,
           tags: file.tags,
           uploadedBy: "seed-script",
-          preserveOriginalName: true
-        }
+          preserveOriginalName: true,
+        },
       );
 
       // Add to our local set to avoid duplicate checks
@@ -201,14 +203,14 @@ async function seedFiles() {
 
       // Add a small delay to avoid overwhelming the server
       await new Promise(resolve => setTimeout(resolve, 500));
-
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`✗ Failed to process ${file.name}:`, error);
       failCount++;
     }
   }
 
-  console.log("\n" + "=".repeat(50));
+  console.log(`\n${"=".repeat(50)}`);
   console.log("Seeding Complete!");
   console.log(`✓ Successfully seeded: ${successCount} files`);
   if (skippedCount > 0) {
@@ -226,7 +228,8 @@ async function seedFiles() {
     console.log(`Total Files: ${storageInfo.totalFiles}`);
     console.log(`Total Size: ${(storageInfo.totalSize / (1024 * 1024)).toFixed(2)} MB`);
     console.log(`Categories: ${storageInfo.categories.join(", ")}`);
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Could not fetch storage info:", error);
   }
 }
