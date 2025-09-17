@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { debounce } from "lodash";
 import { PerformanceData, usePerformanceSheet } from "@/contexts/performance.context";
 import { useApi } from "@/hooks/use-api";
@@ -474,36 +474,11 @@ export const usePerformanceDataService = (
   // Use global performance context instead of local state
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
-  const [performanceSheet, setPerformanceSheet] = useState<any>(null);
-  const [updateLoading, setLoading] = useState<boolean>(true);
-  const [updateError, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchPerformanceSheet = async () => {
-      if (!performanceSheetId) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await api.get(`${endpoint}/${performanceSheetId}`);
-        if (response && response.data) {
-          setPerformanceSheet(response.data);
-          // Update global context with fetched data
-          setPerformanceData(response.data);
-        } else {
-          setPerformanceSheet(null);
-        }
-      } catch (err) {
-        setError("Failed to load performance sheet");
-        setPerformanceSheet(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPerformanceSheet();
-  }, [performanceSheetId]);
-
+  // Don't fetch data here - rely on parent component to provide it via global context
+  // This prevents the infinite loop where both parent and child fetch data
+  
   // Use global data instead of local state
-  const localData = performanceData;
+  const localData = performanceData || initialData;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -551,7 +526,7 @@ export const usePerformanceDataService = (
         // Don't show errors for calculation failures, only for saves
       }
     }, 100), // Very short delay to batch rapid field changes
-    [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]
+    [performanceSheetId, isEditing, api, setPerformanceData]
   );
 
   // Debounced save function (keeps data persistence separate from calculations)
@@ -595,7 +570,7 @@ export const usePerformanceDataService = (
         }));
       }
     }, 1000), // Keep 1000ms delay for saves
-    [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]
+    [performanceSheetId, isEditing, api, setPerformanceData]
   );
 
   // Change handler for form fields
@@ -669,7 +644,7 @@ export const usePerformanceDataService = (
       }));
       throw error;
     }
-  }, [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]);
+  }, [performanceSheetId, isEditing, api, setPerformanceData]);
 
   // Update specific field programmatically
   const updateField = useCallback((fieldPath: string, value: any) => {
@@ -726,8 +701,8 @@ export const usePerformanceDataService = (
     fieldErrors,
     isDirty,
     lastSaved,
-    isLoading: updateLoading,
-    error: updateError
+    isLoading: false, // Not tracking loading in this hook anymore
+    error: null // Not tracking error in this hook anymore
   };
 
   return {
@@ -740,7 +715,7 @@ export const usePerformanceDataService = (
     hasFieldError,
     getFieldError,
     hasPendingChanges: isDirty,
-    isLoading: updateLoading,
+    isLoading: false, // Not tracking loading in this hook anymore
   };
 };
 

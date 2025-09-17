@@ -21,7 +21,6 @@ export interface RFQProps {
 
 const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  console.log("Rendering RFQ component");
 
   // Use the performance data service
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);

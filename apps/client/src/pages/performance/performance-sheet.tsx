@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import RFQ from "./rfq";
 import { useApi } from "@/hooks/use-api";
-import { PerformanceSheetProvider } from "@/contexts/performance.context";
+import { PerformanceSheetProvider, usePerformanceSheet } from "@/contexts/performance.context";
 
 const PERFORMANCE_TABS = [
   { label: "RFQ", value: "rfq" },
@@ -40,7 +40,7 @@ type PerformanceTabValue =
   | "summary-report";
 
 
-const PerformanceSheet = () => {
+const PerformanceSheetContent = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,9 +62,11 @@ const PerformanceSheet = () => {
   ]);
   const { id: performanceSheetId } = useParams();
   const api = useApi();
-  const [performanceSheet, setPerformanceSheet] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use global performance context
+  const { performanceData, setPerformanceData } = usePerformanceSheet();
 
   useEffect(() => {
     const fetchPerformanceSheet = async () => {
@@ -74,19 +76,17 @@ const PerformanceSheet = () => {
       try {
         const response = await api.get(`performance/sheets/${performanceSheetId}`);
         if (response && response.data) {
-          setPerformanceSheet(response.data);
-        } else {
-          setPerformanceSheet(null);
+          // Update global context with fetched data
+          setPerformanceData(response.data.data || response.data);
         }
       } catch (err) {
         setError("Failed to load performance sheet");
-        setPerformanceSheet(null);
       } finally {
         setLoading(false);
       }
     };
     fetchPerformanceSheet();
-  }, [performanceSheetId]);
+  }, [performanceSheetId]); // Only depend on performanceSheetId
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
@@ -161,7 +161,7 @@ const PerformanceSheet = () => {
 
   const renderTabContent = () => {
     const commonProps = {
-      data: performanceSheet?.data || null,
+      data: performanceData || null,
       isEditing
     };
 
@@ -173,11 +173,10 @@ const PerformanceSheet = () => {
       return <div className="flex justify-center items-center h-64 text-red-500">Error loading performance sheet</div>;
     }
 
-    if (!performanceSheet?.data) {
+    if (!performanceData) {
       return <div className="flex justify-center items-center h-64">No data available</div>;
     }
 
-    console.log("Active Tab:", activeTab);
     switch (activeTab) {
       case "rfq":
         return <RFQ {...commonProps} />;
@@ -214,7 +213,6 @@ const PerformanceSheet = () => {
   };
 
   return (
-    <PerformanceSheetProvider>
       <div className="w-full flex-1 flex flex-col overflow-hidden">
         <PageHeader
           title="Performance Details"
@@ -325,6 +323,13 @@ const PerformanceSheet = () => {
           )}
         </Modal>
       </div>
+  );
+};
+
+const PerformanceSheet = () => {
+  return (
+    <PerformanceSheetProvider>
+      <PerformanceSheetContent />
     </PerformanceSheetProvider>
   );
 };
