@@ -161,7 +161,6 @@ const ContactDetails = () => {
           title="Contact not found"
           description="This contact may have been removed or is unavailable."
           goBack
-          backTo="Contacts"
         />
       </div>
     );
@@ -176,7 +175,6 @@ const ContactDetails = () => {
         title={fullName}
         description={`Contact ID: ${contactData.Cont_Id} • ${getContactTypeName(contactData.Type)} • ${companyName}`}
         goBack
-        backTo="Contacts"
       />
       
       <div className="p-4 flex flex-1 flex-col gap-6">
