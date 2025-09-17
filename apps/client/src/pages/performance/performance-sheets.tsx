@@ -1,7 +1,7 @@
-import { Plus, Filter, MoreHorizontal, ChevronDown, Lock } from "lucide-react";
+import { MoreHorizontal, Lock, PlusIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Input, Modal, PageHeader, Table } from "@/components";
+import { Button, Input, Modal, PageHeader, Table } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useState, useEffect } from "react";
 import { instance } from "@/utils";
@@ -12,11 +12,11 @@ const PerformanceSheets = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [locks, setLocks] = useState<Record<string, any>>({});
   const [name, setName] = useState("");
-  const [links, setLinks] = useState<
+  const [_links, setLinks] = useState<
     Array<{ entityType: string; entityId: string }>
   >([]);
-  const [addMode, setAddMode] = useState(false);
-  const [newLink, setNewLink] = useState<{
+  const [_addMode, setAddMode] = useState(false);
+  const [_newLink, setNewLink] = useState<{
     entityType: string;
     entityId: string;
   }>({ entityType: "quote", entityId: "" });
@@ -79,34 +79,25 @@ const PerformanceSheets = () => {
     },
   ];
 
-  const pageTitle = "Performance Sheets";
-  const pageDescription = performanceSheets
-    ? `${performanceSheets?.length} total performance sheets`
-    : "";
+  const pageDescription = performanceSheets ? `${performanceSheets?.length} total performance sheets` : "";
+  
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={() => setModalOpen(true)} variant="primary">
+          <PlusIcon size={16} /> New Performance Sheet
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
-        title={pageTitle}
+        title="Performance Sheets"
         description={pageDescription}
-        actions={[
-          {
-            type: "button",
-            label: "New Performance Sheet",
-            icon: <Plus size={16} />,
-            variant: "primary",
-            onClick: () => setModalOpen(true),
-          },
-        ]}
+        actions={<Actions />}
       />
-
-      {/* <PageSearch
-        placeholder="Search companies..."
-        filters={[
-          { label: "Filters", icon: Filter, onClick: () => {} },
-          { label: "Status", icon: ChevronDown, onClick: () => {} },
-        ]}
-      /> */}
 
       <Table<any>
         columns={columns}
@@ -115,6 +106,7 @@ const PerformanceSheets = () => {
         idField="id"
         pagination
       />
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => {

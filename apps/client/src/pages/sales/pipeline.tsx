@@ -541,7 +541,6 @@ const Pipeline = () => {
     setIdsByStage(next);
   }, [filteredJourneys, kanbanJourneys, viewMode]);
 
-
   const handleDeleteJourney = useCallback(async (journeyId: string) => {
     try {
       const success = await del(`/legacy/std/Journey/${journeyId}`);
@@ -944,7 +943,6 @@ const Pipeline = () => {
     </div>
   );
 };
-
 
 const FilterModal = ({
   isOpen,

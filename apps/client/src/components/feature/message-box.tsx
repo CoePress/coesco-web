@@ -3,20 +3,20 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type MessageBoxProps = {
   placeholder?: string;
-  onSend: (payload: { text: string; files: File[]; audio?: Blob }) => void;
+  onSend: (payload: { message: string; files: File[]; audio?: Blob }) => void;
   disabled?: boolean;
   maxRows?: number;
   accept?: string;
 };
 
 export default function MessageBox({
-  placeholder = 'Send a message...',
+  placeholder = 'Send a message..',
   onSend,
   disabled = false,
   maxRows = 8,
   accept,
 }: MessageBoxProps) {
-  const [text, setText] = useState('');
+  const [message, setMessage] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -40,17 +40,26 @@ export default function MessageBox({
 
   useEffect(() => {
     autosize();
-  }, [text, autosize]);
+  }, [message, autosize]);
+
+  useEffect(() => {
+    if (!disabled) {
+      taRef.current?.focus();
+    }
+  }, [disabled]);
 
   const doSend = useCallback(
     (audio?: Blob) => {
-      const trimmed = text.trim();
+      const trimmed = message.trim();
       if (!trimmed && files.length === 0 && !audio) return;
-      onSend({ text: trimmed, files, audio });
-      setText('');
+      onSend({ message: trimmed, files, audio });
+      setMessage('');
       setFiles([]);
+      setTimeout(() => {
+        taRef.current?.focus();
+      }, 0);
     },
-    [text, files, onSend]
+    [message, files, onSend]
   );
 
   const addFiles = (incoming: FileList | File[]) => {
@@ -165,19 +174,19 @@ export default function MessageBox({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          'relative w-full rounded-md border bg-background flex items-center p-2 shadow-sm',
+          'relative w-full rounded-md border bg-background/50 flex items-center p-1 shadow-sm',
           isDragging ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
         ].join(' ')}
       >
         <textarea
           ref={taRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={isDragging ? 'Drop files to attach…' : placeholder}
           rows={1}
           disabled={disabled}
-          className="block w-full resize-none bg- flex-1 outline-none placeholder-text-muted text-sm sm:text-base"
+          className="block w-full resize-none flex-1 outline-none placeholder-text-muted text-sm px-1"
           aria-label="Message input"
         />
 
@@ -189,7 +198,7 @@ export default function MessageBox({
             aria-label="Attach files"
             onClick={() => fileInputRef.current?.click()}
             className={[
-              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface text-text',
+              'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface text-text-muted',
             ].join(' ')}
           >
             <FileIcon size={16}/>
@@ -203,7 +212,7 @@ export default function MessageBox({
             onClick={toggleRecording}
             className={[
               'p-2 rounded-md focus:outline-none cursor-pointer hover:bg-surface',
-              recording ? 'text-red-500' : 'text-text',
+              recording ? 'text-red-500' : 'text-text-muted',
             ].join(' ')}
           >
             {recording ? (
@@ -215,15 +224,22 @@ export default function MessageBox({
 
           <button
             type="button"
-            disabled={disabled || (!text.trim() && files.length === 0)}
+            disabled={disabled || (!message.trim() && files.length === 0)}
             onClick={() => doSend()}
             className="p-2 cursor-pointer rounded-md bg-primary/90 text-white hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Send message"
             title="Send"
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
-              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 14-7-4 14-3-5-7-2z" />
-            </svg>
+            {disabled ? (
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor">
+                <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 14-7-4 14-3-5-7-2z" />
+              </svg>
+            )}
           </button>
         </div>
 

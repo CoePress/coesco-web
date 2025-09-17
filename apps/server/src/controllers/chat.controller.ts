@@ -63,10 +63,17 @@ export class ChatController {
   async getMessages(req: Request, res: Response, next: NextFunction) {
     try {
       const { chatId } = req.params;
+      const limit = Number.parseInt(req.query.limit as string) || 25;
+      const page = Number.parseInt(req.query.page as string) || 1;
+
       const result = await messageService.getAll({
         filter: {
           chatId,
         },
+        sort: "createdAt",
+        order: "desc",
+        page,
+        limit,
       });
       res.status(200).json(result);
     }

@@ -1,205 +1,335 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { Button, PageHeader } from "@/components";
+import { DownloadIcon, EyeIcon, FileIcon, ImageIcon, FileTextIcon, UploadIcon } from "lucide-react";
+import Table, { TableColumn } from "@/components/ui/table";
+import Modal from "@/components/ui/modal";
+import { useApi } from "@/hooks/use-api";
 
 type Resource = {
   id: string;
-  name: string;
-  type: string;
-  url: string;
+  originalName: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
   uploadedAt: string;
-  tags: string[];
+  tags?: string[];
+  category?: string;
+  uploadedBy?: string;
 };
 
-const mockResources: Resource[] = [
-  {
-    id: "1",
-    name: "Project Proposal.pdf",
-    type: "application/pdf",
-    url: "/uploads/Project-Proposal.pdf",
-    uploadedAt: "2025-08-10T14:30:00Z",
-    tags: ["pdf", "project"],
-  },
-  {
-    id: "2",
-    name: "Design Mockup.png",
-    type: "image/png",
-    url: "/uploads/Design-Mockup.png",
-    uploadedAt: "2025-08-11T09:15:00Z",
-    tags: ["image", "design"],
-  },
-  {
-    id: "3",
-    name: "Meeting Notes.docx",
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    url: "/uploads/Meeting-Notes.docx",
-    uploadedAt: "2025-08-13T11:00:00Z",
-    tags: ["doc", "meeting"],
-  },
-];
-
 const Resources = () => {
-  const [selected, setSelected] = useState<Resource | null>(null);
-  const [search, setSearch] = useState("");
-  const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"date" | "name">("date");
+  const { get, post, loading, error } = useApi();
 
-  // Collect unique tags
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    mockResources.forEach((r) => r.tags.forEach((t) => tagSet.add(t)));
-    return Array.from(tagSet);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [recentResources, setRecentResources] = useState<Resource[]>([]);
+  const [totalResources, setTotalResources] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [previewResource, setPreviewResource] = useState<Resource | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchResources();
+  }, [currentPage, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchRecentResources();
   }, []);
 
-  // Apply search, tag filter, and sorting
-  const filteredResources = useMemo(() => {
-    let items = [...mockResources];
+  const fetchResources = async () => {
+    const params = {
+      page: currentPage,
+      limit: 25,
+      sortBy,
+      sortOrder
+    };
 
-    // Search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      items = items.filter((r) => r.name.toLowerCase().includes(q));
+    const response = await get('/files/resources', params);
+    if (response) {
+      setResources(response.data);
+      setTotalResources(response.total);
+      setTotalPages(response.totalPages);
     }
+  };
 
-    // Tags
-    if (activeTags.length > 0) {
-      items = items.filter((r) => activeTags.every((t) => r.tags.includes(t)));
+  const fetchRecentResources = async () => {
+    const response = await get('/files/resources/recent', { limit: 6 });
+    if (response) {
+      setRecentResources(response);
     }
+  };
 
-    // Sort
-    if (sortBy === "date") {
-      items.sort(
-        (a, b) =>
-          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+  const handleFileUpload = async (file: File) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+
+    const response = await post('/files/upload', buffer, {
+      headers: {
+        'Content-Type': file.type,
+        'X-File-Name': file.name
+      },
+      transformRequest: [(data) => data]
+    });
+
+    if (response) {
+      setUploadModalOpen(false);
+      fetchResources();
+      fetchRecentResources();
+    }
+  };
+
+
+  const columns: TableColumn<Resource>[] = [
+    {
+      key: "originalName",
+      header: "Name",
+      render: (value, row) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{value as string}</span>
+          <div className="flex gap-1">
+            {row.tags?.map(tag => (
+              <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "mimeType",
+      header: "Type",
+      render: (value) => (
+        <span className="text-text-muted">
+          {(value as string).split('/')[1] || value}
+        </span>
+      )
+    },
+    {
+      key: "uploadedAt",
+      header: "Uploaded",
+      render: (value) => (
+        <span className="text-text-muted">
+          {new Date(value as string).toLocaleDateString()}
+        </span>
+      )
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={() => setPreviewResource(row)}
+          >
+            <EyeIcon size={14} />
+            View
+          </Button>
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = `/files/resources/${row.id}/download`;
+              link.download = row.originalName;
+              link.click();
+            }}
+          >
+            <DownloadIcon size={14} />
+            Download
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const handleSortChange = (sort: string, order: "asc" | "desc") => {
+    setSortBy(sort);
+    setSortOrder(order);
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon size={24} className="text-blue-500" />;
+    if (type.includes('pdf')) return <FileTextIcon size={24} className="text-red-500" />;
+    if (type.includes('word') || type.includes('document')) return <FileTextIcon size={24} className="text-blue-600" />;
+    return <FileIcon size={24} className="text-gray-500" />;
+  };
+
+  const RecentlyAdded = () => (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+        {recentResources.map((resource) => (
+          <div
+            key={resource.id}
+            className="bg-foreground border border-border rounded-lg p-4 hover:bg-surface cursor-pointer transition-colors"
+            onClick={() => setPreviewResource(resource)}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-3">
+                {getFileIcon(resource.mimeType)}
+              </div>
+              <h3 className="font-medium text-sm mb-2 line-clamp-2">
+                {resource.originalName}
+              </h3>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {resource.tags?.map(tag => (
+                  <span key={tag} className="px-2 py-1 bg-surface text-xs rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setPreviewResource(resource)}
+                >
+                  <EyeIcon size={12} />
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = `/files/resources/${resource.id}/download`;
+                    link.download = resource.originalName;
+                    link.click();
+                  }}
+                >
+                  <DownloadIcon size={12} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderPreview = (resource: Resource) => {
+    if (resource.mimeType.startsWith('image/')) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <img
+            src={`/files/resources/${resource.id}/preview`}
+            alt={resource.originalName}
+            className="max-w-full max-h-[60vh] object-contain"
+          />
+        </div>
+      );
+    } else if (resource.mimeType.includes('pdf')) {
+      return (
+        <iframe
+          src={`/files/resources/${resource.id}/preview`}
+          className="w-full h-[60vh] border-0"
+          title={resource.originalName}
+        />
       );
     } else {
-      items.sort((a, b) => a.name.localeCompare(b.name));
+      return (
+        <div className="flex flex-col items-center justify-center h-[300px] gap-4">
+          <div className="mb-3">
+            {getFileIcon(resource.mimeType)}
+          </div>
+          <p className="text-text-muted">Preview not available for this file type</p>
+          <Button
+            variant="primary"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = `/files/resources/${resource.id}/download`;
+              link.download = resource.originalName;
+              link.click();
+            }}
+          >
+            <DownloadIcon size={16} />
+            Download File
+          </Button>
+        </div>
+      );
     }
-
-    return items;
-  }, [search, activeTags, sortBy]);
-
-  const toggleTag = (tag: string) => {
-    setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-slate-900">
-      <h1 className="text-xl font-semibold mb-4">Resources</h1>
+    <div className="w-full flex flex-1 flex-col">
+      <PageHeader
+        title="Resources"
+        description="Manage and access your uploaded files"
+        actions={
+          <Button onClick={() => setUploadModalOpen(true)}>
+            <UploadIcon size={16} />
+            Upload File
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-        <input
-          type="text"
-          placeholder="Search files..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm w-64"
-        />
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm"
-        >
-          <option value="date">Sort by Date</option>
-          <option value="name">Sort by Name</option>
-        </select>
-
-        <div className="flex gap-2 flex-wrap">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className={`px-2 py-1 rounded-full text-xs border ${
-                activeTags.includes(tag)
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : "bg-white text-slate-700 border-slate-300"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
+      <div className="w-full flex flex-1 flex-col p-2 gap-2">
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <span>Loading resources...</span>
+          </div>
+        ) : (
+          <RecentlyAdded />
+        )}
+        
+        <div className="flex flex-col flex-1">
+          <Table<Resource>
+            columns={columns}
+            data={resources}
+            total={totalResources}
+            selectable={false}
+            selectedItems={selectedResources}
+            onSelectionChange={(ids) => setSelectedResources(ids as string[])}
+            pagination={true}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            sort={sortBy}
+            order={sortOrder}
+            onSortChange={handleSortChange}
+            emptyMessage="No resources found"
+            className="border rounded overflow-clip"
+            loading={loading}
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-3">
-          <h2 className="text-sm font-medium mb-2">
-            Files ({filteredResources.length})
-          </h2>
-          <ul className="space-y-2">
-            {filteredResources.map((r) => (
-              <li
-                key={r.id}
-                onClick={() => setSelected(r)}
-                className={`p-2 rounded cursor-pointer hover:bg-slate-100 ${
-                  selected?.id === r.id ? "bg-slate-200" : ""
-                }`}
-              >
-                <div className="text-sm font-medium truncate">{r.name}</div>
-                <div className="text-xs text-slate-500">
-                  {new Date(r.uploadedAt).toLocaleDateString()}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <Modal
+        isOpen={!!previewResource}
+        onClose={() => setPreviewResource(null)}
+        title={previewResource?.originalName || ""}
+        size="lg"
+      >
+        {previewResource && renderPreview(previewResource)}
+      </Modal>
 
-        <div className="md:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm p-4 flex flex-col">
-          {!selected && (
-            <div className="flex-1 flex items-center justify-center text-slate-500">
-              Select a resource to preview
-            </div>
-          )}
-          {selected && (
-            <>
-              <div className="mb-3 border-b pb-2">
-                <h2 className="text-lg font-medium">{selected.name}</h2>
-                <p className="text-xs text-slate-500">
-                  Uploaded {new Date(selected.uploadedAt).toLocaleString()}
-                </p>
-                <div className="flex gap-1 mt-1">
-                  {selected.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-300 rounded-full"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto">
-                {selected.type === "application/pdf" ? (
-                  <iframe
-                    src={selected.url}
-                    className="w-full h-[70vh]"
-                    title={selected.name}
-                  />
-                ) : selected.type.startsWith("image/") ? (
-                  <img
-                    src={selected.url}
-                    alt={selected.name}
-                    className="max-w-full max-h-[70vh] mx-auto"
-                  />
-                ) : (
-                  <div className="text-sm text-slate-600">
-                    Preview not available.{" "}
-                    <a
-                      href={selected.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      Download file
-                    </a>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+      <Modal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        title="Upload File"
+        size="md"
+      >
+        <div className="p-4">
+          <input
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleFileUpload(file);
+              }
+            }}
+            className="w-full p-2 border border-border rounded"
+          />
+          {loading && <p className="mt-2">Uploading...</p>}
+          {error && <p className="mt-2 text-red-500">{error}</p>}
         </div>
-      </div>
+      </Modal>
     </div>
   );
 };

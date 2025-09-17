@@ -7,7 +7,6 @@ import { PackageIcon, DollarSignIcon, AlertCircleIcon, CheckCircleIcon } from "l
 const ProductDetails = () => {
   const { id } = useParams();
 
-  // Sample product data
   const product = {
     id: id || "1",
     name: "Industrial Hydraulic Press 2000T",
@@ -40,43 +39,35 @@ const ProductDetails = () => {
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={product.name || "Product Details"}
         description={`SKU: ${product.sku || "N/A"} • ${product.category || "No Category"}`}
         goBack
       />
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
-        <div className="grid grid-cols-3 gap-2">
-          {/* Product Images */}
+      <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
+        <div className="grid grid-cols-3 gap-2 flex-1 overflow-hidden">
           <Card>
-            <div className="space-y-4">
-              {/* Main Product Image */}
+            <div className="space-y-2">
               <div className="aspect-square bg-surface rounded-lg flex items-center justify-center border border-border">
                 <PackageIcon size={64} className="text-text-muted" />
               </div>
               
-              {/* Additional Images Scroll */}
-              <div className="space-y-2">
-                <div className="text-xs text-text-muted">Additional Images</div>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <div
-                      key={i}
-                      className="flex-shrink-0 w-16 h-16 bg-surface rounded border border-border flex items-center justify-center cursor-pointer hover:bg-foreground transition-colors">
-                      <PackageIcon size={24} className="text-text-muted" />
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-5 gap-1">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square bg-surface rounded border border-border flex items-center justify-center cursor-pointer hover:bg-foreground transition-colors">
+                    <PackageIcon size={20} className="text-text-muted" />
+                  </div>
+                ))}
               </div>
             </div>
           </Card>
 
-          {/* Product Details & Pricing */}
-          <Card className="col-span-2">
-            <div className="space-y-6">
-              {/* Product Information */}
+          <Card className="col-span-2 overflow-hidden">
+            <div className="space-y-6 overflow-y-auto h-full">
               <div className="space-y-3">
                 <div className="text-sm font-medium text-text-muted">Product Information</div>
                 <div className="grid grid-cols-2 gap-4">
@@ -119,7 +110,6 @@ const ProductDetails = () => {
                 </div>
               </div>
 
-              {/* Pricing & Stock */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-text-muted">
                   <DollarSignIcon size={16} />
@@ -171,49 +161,41 @@ const ProductDetails = () => {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="space-y-3">
                 <div className="text-sm font-medium text-text-muted">Description</div>
                 <div className="text-sm text-text leading-relaxed">
                   {product.description || "No description available for this product."}
                 </div>
               </div>
-            </div>
-          </Card>
-        </div>
 
-        {/* Specifications & Sales Notes */}
-        <div className="grid grid-cols-2 gap-2">
-          <Card>
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-text-muted">
-                Specifications
-              </div>
-              <div className="space-y-2">
-                {product.specifications ? (
-                  Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between text-sm">
-                      <span className="text-text-muted capitalize">{key}:</span>
-                      <span className="text-text">{value as string}</span>
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-text-muted">
+                  Specifications
+                </div>
+                <div className="space-y-2">
+                  {product.specifications ? (
+                    Object.entries(product.specifications).map(([key, value]) => (
+                      <div key={key} className="flex justify-between text-sm">
+                        <span className="text-text-muted capitalize">{key}:</span>
+                        <span className="text-text">{value as string}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-text-muted">
+                      No specifications available
                     </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-text-muted">
-                    No specifications available
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
 
-          <Card>
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-text-muted">
-                Sales Notes & Key Points
-              </div>
-              <div className="bg-surface p-3 rounded border border-border">
-                <div className="text-sm text-text whitespace-pre-line">
-                  {product.salesNotes || "• Highlight key selling points here\n• Mention any special features or benefits\n• Include competitive advantages\n• Note any common customer questions or concerns"}
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-text-muted">
+                  Sales Notes & Key Points
+                </div>
+                <div className="bg-surface p-3 rounded border border-border">
+                  <div className="text-sm text-text whitespace-pre-line">
+                    {product.salesNotes || "• Highlight key selling points here\n• Mention any special features or benefits\n• Include competitive advantages\n• Note any common customer questions or concerns"}
+                  </div>
                 </div>
               </div>
             </div>

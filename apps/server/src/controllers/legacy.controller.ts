@@ -45,14 +45,34 @@ export class LegacyController {
   async getAllByCustomFilter(req: Request, res: Response, next: NextFunction) {
     try {
       const { database, table } = req.params;
-      const { filterField, filterValue } = req.query;
+      const queryParams = { ...req.query };
 
-      if (!filterField || !filterValue) {
-        return res.status(400).json({ error: "filterField and filterValue query parameters are required" });
+      // Extract filters from query parameters
+      // Support both single filter (filterField/filterValue) and multiple filters
+      const filters: Record<string, string> = {};
+      
+      // Handle legacy single filter format
+      if (queryParams.filterField && queryParams.filterValue) {
+        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+        delete queryParams.filterField;
+        delete queryParams.filterValue;
+      }
+      
+      // Handle multiple filters format (any query param that's not a standard param)
+      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (!reservedParams.includes(key) && value !== undefined) {
+          filters[key] = String(value);
+          delete queryParams[key];
+        }
+      });
+
+      if (Object.keys(filters).length === 0) {
+        return res.status(400).json({ error: "At least one filter parameter is required" });
       }
 
-      const params = buildQueryParams<any>(req.query);
-      const result = await legacyService.getAllByCustomFilter(database, table, String(filterField), String(filterValue), params);
+      const params = buildQueryParams<any>(queryParams);
+      const result = await legacyService.getAllByCustomFilter(database, table, filters, params);
       res.status(200).json(result);
     }
     catch (error) {
@@ -71,10 +91,83 @@ export class LegacyController {
     }
   }
 
+  async updateByCustomFilter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { database, table } = req.params;
+      const updateData = req.body;
+      const queryParams = { ...req.query };
+
+      // Extract filters from query parameters
+      const filters: Record<string, string> = {};
+      
+      // Handle legacy single filter format
+      if (queryParams.filterField && queryParams.filterValue) {
+        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+        delete queryParams.filterField;
+        delete queryParams.filterValue;
+      }
+      
+      // Handle multiple filters format (any query param that's not a standard param)
+      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (!reservedParams.includes(key) && value !== undefined) {
+          filters[key] = String(value);
+          delete queryParams[key];
+        }
+      });
+
+      if (Object.keys(filters).length === 0) {
+        return res.status(400).json({ error: "At least one filter parameter is required" });
+      }
+
+      const result = await legacyService.updateByCustomFilter(database, table, filters, updateData);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { database, table, id } = req.params;
       const result = await legacyService.delete(database, table, id);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteByCustomFilter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { database, table } = req.params;
+      const queryParams = { ...req.query };
+
+      // Extract filters from query parameters
+      const filters: Record<string, string> = {};
+      
+      // Handle legacy single filter format
+      if (queryParams.filterField && queryParams.filterValue) {
+        filters[String(queryParams.filterField)] = String(queryParams.filterValue);
+        delete queryParams.filterField;
+        delete queryParams.filterValue;
+      }
+      
+      // Handle multiple filters format (any query param that's not a standard param)
+      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (!reservedParams.includes(key) && value !== undefined) {
+          filters[key] = String(value);
+          delete queryParams[key];
+        }
+      });
+
+      if (Object.keys(filters).length === 0) {
+        return res.status(400).json({ error: "At least one filter parameter is required for deletion" });
+      }
+
+      const result = await legacyService.deleteByCustomFilter(database, table, filters);
       res.status(200).json(result);
     }
     catch (error) {
@@ -98,6 +191,17 @@ export class LegacyController {
       const { database, table } = req.params;
       const result = await legacyService.getFields(database, table);
       res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async getMaxValue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { database, table, field } = req.params;
+      const result = await legacyService.getMaxValue(database, table, field);
+      res.status(200).json({ maxValue: result });
     }
     catch (error) {
       next(error);

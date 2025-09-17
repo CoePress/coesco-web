@@ -1,31 +1,30 @@
 import { useEffect, useState } from "react";
-import MaterialSpecs from "./material-specs";
-import TDDBHD from "./tddbhd";
-import ReelDrive from "./reel-drive";
-import StrUtility from "./str-utility";
-import RollStrBackbend from "./roll-str-backbend";
-import Feed from "./feed";
-import Shear from "./shear";
-import SummaryReport from "./summary-report";
+// import MaterialSpecs from "./material-specs";
+// import TDDBHD from "./tddbhd";
+// import ReelDrive from "./reel-drive";
+// import StrUtility from "./str-utility";
+// import RollStrBackbend from "./roll-str-backbend";
+// import Feed from "./feed";
+// import Shear from "./shear";
+// import SummaryReport from "./summary-report";
 import { Save, Lock, Link } from "lucide-react";
-import { useGetEntity } from "@/hooks/_base/use-get-entity";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
-import RFQ from "./rfq";
+// import RFQ from "./rfq";
 
-const PERFORMANCE_TABS = [
-  { label: "RFQ", value: "rfq" },
-  { label: "Material Specs", value: "material-specs" },
-  { label: "TDDBHD", value: "tddbhd" },
-  { label: "Reel Drive", value: "reel-drive" },
-  { label: "Str Utility", value: "str-utility" },
-  { label: "Roll Str Backbend", value: "roll-str-backbend" },
-  { label: "Feed", value: "feed" },
-  { label: "Shear", value: "shear" },
-  { label: "Summary Report", value: "summary-report" },
-];
+// const PERFORMANCE_TABS = [
+//   { label: "RFQ", value: "rfq" },
+//   { label: "Material Specs", value: "material-specs" },
+//   { label: "TDDBHD", value: "tddbhd" },
+//   { label: "Reel Drive", value: "reel-drive" },
+//   { label: "Str Utility", value: "str-utility" },
+//   { label: "Roll Str Backbend", value: "roll-str-backbend" },
+//   { label: "Feed", value: "feed" },
+//   { label: "Shear", value: "shear" },
+//   { label: "Summary Report", value: "summary-report" },
+// ];
 
 type PerformanceTabValue =
   | "rfq"
@@ -41,10 +40,10 @@ type PerformanceTabValue =
 
 const PerformanceSheet = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
-  const location = useLocation();
-  const navigate = useNavigate();
+  // const location = useLocation();
+  // const navigate = useNavigate();
   const [isLocked, setIsLocked] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, _setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [addMode, setAddMode] = useState(false);
@@ -60,10 +59,10 @@ const PerformanceSheet = () => {
     { entityType: "company", entityId: "789" },
   ]);
   const { id: performanceSheetId } = useParams();
-  const { entity: performanceSheet, loading, error, refresh } = useGetEntity(
-    `/performance/sheets`,
-    performanceSheetId
-  );
+  // const { entity: performanceSheet, loading, error } = useGetEntity(
+  //   `/performance/sheets`,
+  //   performanceSheetId
+  // );
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
@@ -134,8 +133,6 @@ const PerformanceSheet = () => {
     // );
   };
 
-  const handleChange = () => {};
-
   const getHeaderActions = () => {
     if (isEditing) {
       return [
@@ -196,59 +193,59 @@ const PerformanceSheet = () => {
     return [];
   };
 
-  const renderTabContent = () => {
-    const commonProps = {
-      data: performanceSheet?.data || null,
-      isEditing
-    };
+  // const renderTabContent = () => {
+  //   // const commonProps = {
+  //   //   data: performanceSheet?.data || null,
+  //   //   isEditing
+  //   // };
 
-    const getActiveTabFromUrl = (): PerformanceTabValue => {
-      const pathSegments = location.pathname.split('/');
-      const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
+  //   // // const getActiveTabFromUrl = (): PerformanceTabValue => {
+  //   // //   const pathSegments = location.pathname.split('/');
+  //   // //   const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
       
-      const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
-      return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
-    };
+  //   // //   const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
+  //   // //   return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
+  //   // // };
 
-    if (loading) {
-      return <div className="flex justify-center items-center h-64">Loading...</div>;
-    }
+  //   // if (loading) {
+  //   //   return <div className="flex justify-center items-center h-64">Loading...</div>;
+  //   // }
 
-    if (error) {
-      return <div className="flex justify-center items-center h-64 text-red-500">Error loading performance sheet</div>;
-    }
+  //   // if (error) {
+  //   //   return <div className="flex justify-center items-center h-64 text-red-500">Error loading performance sheet</div>;
+  //   // }
 
-    if (!performanceSheet?.data) {
-      return <div className="flex justify-center items-center h-64">No data available</div>;
-    }
+  //   // if (!performanceSheet?.data) {
+  //   //   return <div className="flex justify-center items-center h-64">No data available</div>;
+  //   // }
 
-    switch (activeTab) {
-      case "rfq":
-        return <RFQ {...commonProps} />;
-      case "material-specs":
-        return <MaterialSpecs {...commonProps} />;
-      case "tddbhd":
-        return <TDDBHD {...commonProps} />;
-      case "reel-drive":
-        return <ReelDrive {...commonProps} />;
-      case "str-utility":
-        return <StrUtility {...commonProps} />;
-      case "roll-str-backbend":
-        return <RollStrBackbend {...commonProps} />;
-      case "feed":
-        return <Feed {...commonProps} />;
-      case "shear":
-        return <Shear {...commonProps} />;
-      case "summary-report":
-        return <SummaryReport {...commonProps} />;
-      default:
-        return <RFQ {...commonProps} />;
-    }
-  };
+  //   // switch (activeTab) {
+  //   //   case "rfq":
+  //   //     return <RFQ {...commonProps} />;
+  //   //   case "material-specs":
+  //   //     return <MaterialSpecs {...commonProps} />;
+  //   //   case "tddbhd":
+  //   //     return <TDDBHD {...commonProps} />;
+  //   //   case "reel-drive":
+  //   //     return <ReelDrive {...commonProps} />;
+  //   //   case "str-utility":
+  //   //     return <StrUtility {...commonProps} />;
+  //   //   case "roll-str-backbend":
+  //   //     return <RollStrBackbend {...commonProps} />;
+  //   //   case "feed":
+  //   //     return <Feed {...commonProps} />;
+  //   //   case "shear":
+  //   //     return <Shear {...commonProps} />;
+  //   //   case "summary-report":
+  //   //     return <SummaryReport {...commonProps} />;
+  //   //   default:
+  //   //     return <RFQ {...commonProps} />;
+  //   // }
+  // };
 
-  const handleTabChange = (tab: PerformanceTabValue) => {
-    navigate(`/performance/${performanceSheetId}/${tab}`);
-  };
+  // const handleTabChange = (tab: PerformanceTabValue) => {
+  //   navigate(`/performance/${performanceSheetId}/${tab}`);
+  // };
 
   return (
     <div className="min-h-screen bg-background">
@@ -264,7 +261,7 @@ const PerformanceSheet = () => {
         tabs={visibleTabs}
       />
 
-      <div className="tab-content">{renderTabContent()}</div>
+      {/* <div className="tab-content">{renderTabContent()}</div> */}
 
       <Modal
         isOpen={showLinksModal}

@@ -1454,13 +1454,12 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, refetchJou
                   </div>
                   <div>
                     <div className="text-sm text-text-muted">Quote Value</div>
-                    <div className="text-sm text-text font-semibold text-primary">
+                    <div className="text-sm font-semibold text-primary">
                       {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
                     </div>
                   </div>
                 </div>
                 
-                {/* Quote Status Section */}
                 {journey?.Quote_Number && (
                   <div className="border-t pt-3">
                     <div className="text-sm font-medium text-text-muted mb-2">Quote Status</div>

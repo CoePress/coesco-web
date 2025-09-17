@@ -1,7 +1,8 @@
 /* eslint-disable node/prefer-global/process */
 import type { ItemType } from "@prisma/client";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, QuoteHeaderStatus, QuoteStatus } from "@prisma/client";
+import bcrypt from "bcrypt";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -54,7 +55,7 @@ interface MigrationResult {
   errorDetails: Array<{ record: any; error: any }>;
 }
 
-async function closeDatabaseConnections() {
+export async function closeDatabaseConnections() {
   await mainDatabase.$disconnect();
   await legacyService.close();
 }
@@ -119,7 +120,7 @@ async function migrateWithMapping(mapping: TableMapping): Promise<MigrationResul
 
       params.offset = paginatedResult.nextOffset;
 
-      if (paginatedResult.records.length === 0) {
+      if (!paginatedResult.hasMore || paginatedResult.records.length < legacyFetchSize) {
         logger.info(`No more records to process. Breaking pagination loop.`);
         break;
       }
@@ -146,32 +147,27 @@ async function processSingleBatch(
   result: MigrationResult,
   batchIndex: number,
 ): Promise<void> {
-  // First, process and prepare all records
   const recordsToCreate: any = [];
 
   for (const record of batchRecords) {
     try {
-      // Apply filter if provided
       if (mapping.filter && !mapping.filter(record)) {
         result.skipped++;
         continue;
       }
 
-      // Map fields
       const mappedData: any = {};
       let skipRecord = false;
 
       for (const fieldMap of mapping.fieldMappings) {
         const sourceValue = record[fieldMap.from];
 
-        // Check required fields
         if (fieldMap.required && (sourceValue === null || sourceValue === undefined)) {
           logger.warn(`Required field ${fieldMap.from} is missing in record`);
           skipRecord = true;
           break;
         }
 
-        // Apply transformation or use default value
         let targetValue;
         if (fieldMap.transform) {
           targetValue = fieldMap.transform(sourceValue, record);
@@ -194,18 +190,15 @@ async function processSingleBatch(
         continue;
       }
 
-      // Apply beforeSave hook if provided
       const dataToSave = mapping.beforeSave
         ? await mapping.beforeSave(mappedData, record)
         : mappedData;
 
-      // Skip if beforeSave returned null (e.g., missing references)
       if (dataToSave === null) {
         result.skipped++;
         continue;
       }
 
-      // Clean up any temporary fields that start with _temp
       const cleanedData = Object.fromEntries(
         Object.entries(dataToSave).filter(([key]) => !key.startsWith("_temp")),
       );
@@ -219,7 +212,6 @@ async function processSingleBatch(
     }
   }
 
-  // Insert all records using bulk createMany with retry logic
   if (recordsToCreate.length > 0) {
     const maxRetries = 3;
     let attempt = 0;
@@ -227,7 +219,6 @@ async function processSingleBatch(
 
     while (attempt < maxRetries && !success) {
       try {
-        // Add random delay for retries to reduce collision probability
         if (attempt > 0) {
           const delay = Math.random() * 1000 + (attempt * 500); // 500-1500ms increasing delay
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -241,12 +232,11 @@ async function processSingleBatch(
           });
           result.created += createResult.count;
 
-          // If we skipped any, calculate how many
           const expectedTotal = recordsToCreate.length;
           const actualCreated = createResult.count;
           result.skipped += (expectedTotal - actualCreated);
         }, {
-          maxWait: 5000, // Shorter wait to fail faster on deadlocks
+          maxWait: 5000,
           timeout: 20000,
         });
 
@@ -257,7 +247,6 @@ async function processSingleBatch(
         attempt++;
         const errorMessage = (bulkError as any).message || bulkError;
 
-        // Check if it's a deadlock error
         const isDeadlock = errorMessage.includes("deadlock") || errorMessage.includes("40P01");
 
         if (isDeadlock && attempt < maxRetries) {
@@ -433,6 +422,62 @@ async function _findEmployeeByNumberOrInitials(identifier: string): Promise<any>
     logger.error(`Error finding employee by identifier ${identifier}:`, error);
     return null;
   }
+}
+
+function formatModelNumbers(modelNumbers: string[]): string[] {
+  const groups = new Map<string, string[]>();
+
+  modelNumbers.forEach((model) => {
+    const match = model.match(/^([A-Z]+-\d+(?:-\d+)*)/);
+    if (match) {
+      const basePattern = match[1];
+      if (!groups.has(basePattern)) {
+        groups.set(basePattern, []);
+      }
+      groups.get(basePattern)!.push(model);
+    }
+  });
+
+  const result: string[] = [];
+
+  groups.forEach((models) => {
+    if (models.length < 2) {
+      result.push(...models);
+      return;
+    }
+
+    const commonPrefix = findLongestCommonPrefix(models);
+
+    models.forEach((model) => {
+      if (model.length > commonPrefix.length) {
+        const suffix = model.substring(commonPrefix.length);
+        const formatted = suffix.startsWith("-") ? `${commonPrefix}${suffix}` : `${commonPrefix}-${suffix}`;
+        result.push(formatted);
+      }
+      else {
+        result.push(model);
+      }
+    });
+  });
+
+  return result;
+}
+
+function findLongestCommonPrefix(strings: string[]): string {
+  if (strings.length === 0)
+    return "";
+
+  let prefix = strings[0];
+
+  for (let i = 1; i < strings.length; i++) {
+    while (!strings[i].startsWith(prefix)) {
+      prefix = prefix.substring(0, prefix.length - 1);
+      if (prefix === "")
+        return "";
+    }
+  }
+
+  return prefix;
 }
 
 // Migrations
@@ -689,67 +734,47 @@ async function _migrateOptionHeaders(): Promise<MigrationResult> {
   }
 
   const mapping: TableMapping = {
-    sourceDatabase: "quote",
-    sourceTable: "StdEquip",
+    sourceDatabase: "std",
+    sourceTable: "StdOptDesc",
     targetTable: "optionHeader",
     fieldMappings: [
       {
-        from: "ID",
+        from: "DescID",
         to: "legacyId",
         transform: value => value?.toString(),
       },
       {
-        from: "Name",
-        to: "name",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Descr",
+        from: "Description",
         to: "description",
-        transform: value => value?.trim(),
-      },
-      {
-        from: "Application",
-        to: "application",
         transform: value => value?.trim(),
       },
     ],
     beforeSave: async (data, original) => {
-      const optGrpRecords = await legacyService.getAll("quote", "OptGrp", {
-        filter: `ID=${original.ID}`,
-      });
-
       let optionCategoryId = null;
 
-      if (!optGrpRecords || optGrpRecords.length === 0) {
-        logger.warn(`No OptGrp record found for StdEquip.ID: ${original.ID}, using Archived category`);
+      // Use OptionGrpID from StdOptDesc to find the category
+      const optionGrpId = original.OptionGrpID?.toString();
+
+      if (!optionGrpId) {
+        logger.warn(`No OptionGrpID found for StdOptDesc.DescID: ${original.DescID}, using Archived category`);
         optionCategoryId = archivedCategory.id;
       }
       else {
-        const optGrp: any = optGrpRecords[0];
-        const grpId = optGrp.GrpID?.toString();
+        // Find category by the OptionGrpID (which should match OptionOrder.OrderID based on your notes)
+        const optionCategory = await findReferencedRecord("optionCategory", {
+          legacyId: optionGrpId,
+        });
 
-        if (!grpId) {
-          logger.warn(`No GrpID found in OptGrp for StdEquip.ID: ${original.ID}, using Archived category`);
+        if (!optionCategory) {
+          logger.warn(`No optionCategory found for OptionGrpID: ${optionGrpId}, using Archived category`);
           optionCategoryId = archivedCategory.id;
         }
         else {
-          const optionCategory = await findReferencedRecord("optionCategory", {
-            legacyId: grpId,
-          });
-
-          if (!optionCategory) {
-            logger.warn(`No optionCategory found for GrpID (legacyId): ${grpId}, using Archived category`);
-            optionCategoryId = archivedCategory.id;
-          }
-          else {
-            optionCategoryId = optionCategory.id;
-          }
+          optionCategoryId = optionCategory.id;
         }
       }
 
-      // TODO: Handle HideOption -> isActive
-
+      data.name = "Temporary Option Name";
       data.optionCategoryId = optionCategoryId;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
@@ -870,11 +895,13 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
     sourceDatabase: "quote",
     sourceTable: "EquipList",
     targetTable: "item",
+    sort: "Model",
+    order: "ASC",
     fieldMappings: [
       {
         from: "Model",
         to: "modelNumber",
-        transform: value => replaceInternalWhitespace(trimWhitespace(value)),
+        transform: (value) => trimWhitespace(value)
       },
       {
         from: "Description",
@@ -911,13 +938,13 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
       data.type = "Equipment" as ItemType;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
-      data.createdById = original.CreateInit.toLowerCase() || "system";
-      data.updatedById = original.ModifyInit.toLowerCase() || "system";
+      data.createdById = original.CreateInit?.toLowerCase() || "system";
+      data.updatedById = original.ModifyInit?.toLowerCase() || "system";
       return data;
     },
     skipDuplicates: true,
     duplicateCheck: data => ({
-      model: data.model,
+      modelNumber: data.modelNumber, // Fixed: was "model", should be "modelNumber"
     }),
     batchSize: 100,
   };
@@ -988,6 +1015,12 @@ async function _migrateQuotes(): Promise<MigrationResult> {
       },
     ],
     beforeSave: (data, original) => {
+      const closed = original.Canceled === "1" || original.LostToComp === "1" || original.Shipped === "1";
+
+      if (closed) {
+        data.status = QuoteHeaderStatus.CLOSED;
+      }
+
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate);
       data.createdById = original.CreateInit.toLowerCase() || "system";
@@ -1007,6 +1040,42 @@ async function _migrateQuotes(): Promise<MigrationResult> {
   const result = await migrateWithMapping(mapping);
 
   return result;
+}
+
+async function updateQuoteRevisionStatuses(): Promise<void> {
+  try {
+    logger.info("Updating quote revision statuses...");
+
+    const quoteHeaders = await mainDatabase.quoteHeader.findMany({
+      select: { id: true },
+    });
+
+    let updateCount = 0;
+
+    for (const header of quoteHeaders) {
+      const revisions = await mainDatabase.quoteDetails.findMany({
+        where: { quoteHeaderId: header.id },
+        orderBy: { revision: "desc" },
+      });
+
+      if (revisions.length <= 1)
+        continue;
+
+      for (let i = 1; i < revisions.length; i++) {
+        await mainDatabase.quoteDetails.update({
+          where: { id: revisions[i].id },
+          data: { status: QuoteStatus.REVISED },
+        });
+        updateCount++;
+      }
+    }
+
+    logger.info(`Updated ${updateCount} quote revisions to REVISED status`);
+  }
+  catch (error) {
+    logger.error("Error updating quote revision statuses:", error);
+    throw error;
+  }
 }
 
 async function _migrateQuoteRevisions(): Promise<MigrationResult> {
@@ -1042,6 +1111,7 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
       data._tempQuoteHeaderId = quoteHeader.id;
 
       data.quoteHeaderId = quoteHeader.id;
+      data.status = QuoteStatus.DRAFT; // Default all to DRAFT initially
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
@@ -1063,6 +1133,9 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
   };
 
   const result = await migrateWithMapping(mapping);
+
+  await updateQuoteRevisionStatuses();
+
   return result;
 }
 
@@ -1416,7 +1489,11 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
-async function _migrateEmployees(): Promise<MigrationResult> {
+// used elsewhere
+export async function _migrateEmployees(): Promise<MigrationResult> {
+  await legacyService.initialize();
+  const hash = await bcrypt.hash("Password123!", 10);
+
   const userMapping: TableMapping = {
     sourceDatabase: "std",
     sourceTable: "Employee",
@@ -1436,7 +1513,7 @@ async function _migrateEmployees(): Promise<MigrationResult> {
       }
 
       data.username = username;
-      data.password = null;
+      data.password = hash;
       data.microsoftId = null;
       data.role = "USER";
       data.isActive = true;
@@ -1573,37 +1650,35 @@ async function main() {
   try {
     logger.info("Starting data pipeline migration...");
     await legacyService.initialize();
-    const employees = await _migrateEmployees();
     // const coilTypes = await _migrateCoilTypes();
     // const productClasses = await _migrateProductClasses();
-    // const equipmentItems = await _migrateEquipListToItems();
+    const equipmentItems = await _migrateEquipListToItems();
     // const optionCategories = await _migrateOptionCategories();
     // const optionHeaders = await _migrateOptionHeaders();
     // const optionDetails = await _migrateOptionDetails();
-    // const quoteHeaders = await _migrateQuotes();
-    // const quotes = await _migrateQuoteRevisions();
-    // const quoteItems = await _migrateQuoteItems();
-    // const customQuoteItems = await _migrateCustomQuoteItems();
-    // const quoteTerms = await _migrateQuoteTerms();
-    // const quoteNotes = await _migrateQuoteNotes();
+    const quoteHeaders = await _migrateQuotes();
+    const quotes = await _migrateQuoteRevisions();
+    const quoteItems = await _migrateQuoteItems();
+    const customQuoteItems = await _migrateCustomQuoteItems();
+    const quoteTerms = await _migrateQuoteTerms();
+    const quoteNotes = await _migrateQuoteNotes();
 
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     logger.info(`Migration Results (${duration}s):`);
-    logger.info(`Users & Employees: ${employees.created} created, ${employees.skipped} skipped, ${employees.errors} errors`);
     // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
     // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
     // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
     // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
-    // logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
-    // logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
-    // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
-    // logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
-    // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
-    // logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
+    logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
+    logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
+    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
+    logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
+    logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }
   catch (error) {
     logger.error("Error in main:", error);
@@ -1614,4 +1689,6 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}

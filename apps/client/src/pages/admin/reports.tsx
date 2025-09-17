@@ -97,7 +97,7 @@ const Reports = () => {
       if (selectedTemplate) {
         try {
           const response = await getTemplate(`/email/templates/${selectedTemplate}`);
-          if (response?.success) {
+          if (response?.success && response.data) {
             setTemplateHtml(response.data.html);
           } else {
             setTemplateHtml(null);

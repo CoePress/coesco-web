@@ -5,6 +5,7 @@ import path from "node:path";
 import zlib from "node:zlib";
 
 import { env } from "@/config/env";
+import { agentService } from "@/services";
 
 export class SystemController {
   async getLogFiles(req: Request, res: Response, next: NextFunction) {
@@ -37,6 +38,17 @@ export class SystemController {
       else {
         return fs.createReadStream(logPath).pipe(res);
       }
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async messageAgent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { employeeId, conversationId, message } = req.body;
+      const result = await agentService.processMessage(employeeId, conversationId, message);
+      res.status(200).json(result);
     }
     catch (error) {
       next(error);

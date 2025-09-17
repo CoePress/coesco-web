@@ -14,4 +14,6 @@ router.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+router.post("/agent", systemController.messageAgent);
+
 export default router;

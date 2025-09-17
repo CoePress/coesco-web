@@ -36,7 +36,6 @@ interface AddressInputProps {
   apiKey: string;
 }
 
-// Singleton to manage Google Maps API loading
 const googleMapsLoader = {
   isLoading: false,
   isLoaded: false,
@@ -61,7 +60,6 @@ const googleMapsLoader = {
         return;
       }
 
-      // Remove any existing script
       const existingScript = document.querySelector(
         `script[src*="maps.googleapis.com"]`
       );
@@ -75,7 +73,6 @@ const googleMapsLoader = {
       script.defer = true;
 
       script.onload = () => {
-        // Wait a bit to ensure everything is properly initialized
         setTimeout(() => {
           if (window.google?.maps?.places) {
             this.isLoaded = true;
@@ -160,7 +157,6 @@ const AddressInput = ({
     initialize();
 
     return () => {
-      // Only cleanup if this is the last instance
       if (document.querySelectorAll("[data-google-maps-loaded]").length <= 1) {
         googleMapsLoader.cleanup();
       }
@@ -200,7 +196,7 @@ const AddressInput = ({
 
     const request = {
       input: searchInput,
-      types: ["address"], // Focus on addresses
+      types: ["address"],
     };
 
     autocompleteService.current.getPlacePredictions(
@@ -236,7 +232,6 @@ const AddressInput = ({
       clearTimeout(debounceRef.current);
     }
 
-    // Debounce API calls
     debounceRef.current = setTimeout(() => {
       fetchPredictions(value);
     }, 300);
@@ -256,7 +251,6 @@ const AddressInput = ({
     setShowDropdown(false);
     setIsLoading(true);
 
-    // Get detailed place information
     const request = {
       placeId: prediction.place_id,
       fields: [
@@ -295,7 +289,6 @@ const AddressInput = ({
     });
   };
 
-  // Helper function to parse address components into common fields
   const parseAddressComponents = (
     components: AddressComponent[]
   ): ParsedAddress => {
@@ -329,7 +322,6 @@ const AddressInput = ({
     return parsed;
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (

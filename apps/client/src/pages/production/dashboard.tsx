@@ -29,6 +29,7 @@ import {
   PageHeader,
   StatusBadge,
 } from "@/components";
+import CustomPieChart from "@/components/charts/pie-chart";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
@@ -826,39 +827,27 @@ const ProductionDashboard = () => {
                       <Loader />
                     </div>
                   ) : (
-                    <div className="h-full flex flex-col gap-2 flex-1">
-                      {stateDistribution
-                        .filter((entry) => entry.state !== "UNRECORDED")
-                        .map((entry) => (
-                          <div
-                            key={entry.state}
-                            className="flex flex-col gap-1 flex-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-text-muted font-medium">
-                                {entry.state}
-                              </span>
-                              <div className="flex items-center gap-2 text-text-muted">
-                                <span>{formatDuration(entry.total)}</span>
-                                <span>
-                                  ({entry.percentage?.toFixed(1) ?? 0}%)
-                                </span>
-                              </div>
+                    <CustomPieChart 
+                      data={stateDistribution.filter(entry => entry.state !== "UNRECORDED").map(entry => ({
+                        name: entry.state,
+                        value: entry.percentage,
+                        color: getStatusColor(entry.state, theme)
+                      }))}
+                      innerRadius={50}
+                      outerRadius={100}
+                      customTooltip={({ active, payload }: any) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-foreground border border-border rounded p-2 text-xs text-text-muted">
+                              <p className="font-medium">{data.name}</p>
+                              <p>Percentage: {data.value?.toFixed(1)}%</p>
                             </div>
-                            <div className="w-full bg-surface rounded-full flex-1 overflow-clip">
-                              <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${entry.percentage ?? 0}%`,
-                                  backgroundColor: getStatusColor(
-                                    entry.state,
-                                    theme
-                                  ),
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
                   )}
                 </div>
               </div>

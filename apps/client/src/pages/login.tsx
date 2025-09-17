@@ -44,21 +44,46 @@ const BackgroundImage = () => {
 };
 
 const Login = () => {
-  const { get, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
-  const { user } = useContext(AuthContext)!;
+  const {
+    get: getMicrosoft,
+    loading: microsoftLoginLoading,
+    error: microsoftLoginError
+  } = useApi<string>();
+
+  const {
+    post,
+    loading: loginLoading,
+    error: loginError
+  } = useApi<{ user: any, employee: any }>();
+
+  const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const errorParam = searchParams.get("error");
-  const errorMessage = getErrorMessage(errorParam) || loginError;
+  const errorMessage = getErrorMessage(errorParam) || loginError || microsoftLoginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
-  const login = async () => {
-    const response = await get("/auth/microsoft/login");
-    if (response?.url) {
-      window.location.href = response.url;
+  const microsoftLogin = async () => {
+    const response = await getMicrosoft("/auth/microsoft/login");
+    if (response) {
+      window.location.href = response;
     }
   };
+
+  const handleUsernamePasswordLogin = async () => {
+    const response = await post("/auth/login", {
+      username,
+      password,
+    });
+
+    if (response && response.user) {
+      setUser(response.user, response.employee);
+      navigate("/", { replace: true });
+    }
+  };
+
+  const loading = microsoftLoginLoading || loginLoading;
 
   const { isSystemConnected, subscribeToSystemStatus, unsubscribeFromSystemStatus } = useSocket();
 
@@ -163,14 +188,14 @@ const Login = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (username && password) {
-                  // Submit form logic
+                  handleUsernamePasswordLogin();
                 }
               }}>
               <Input
                 type="text"
                 label="Username"
                 value={username}
-                disabled={true}
+                disabled={loading}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
@@ -180,17 +205,24 @@ const Login = () => {
                 type="password"
                 label="Password"
                 value={password}
-                disabled={true}
+                disabled={loading}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
               />
 
-              <Button
-                disabled={loginLoading || !username || !password}
-                className="w-full">
-                {loginLoading ? "Signing in..." : "Sign in"}
-              </Button>
+              <button
+                type="submit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (username && password) {
+                    handleUsernamePasswordLogin();
+                  }
+                }}
+                disabled={loading || !username || !password}
+                className="w-full border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer px-3 py-1.5 disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed">
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
             </form>
 
             <div className="relative my-4">
@@ -205,8 +237,8 @@ const Login = () => {
             </div>
 
             <Button
-              onClick={login}
-              disabled={loginLoading}
+              onClick={microsoftLogin}
+              disabled={loading}
               variant="secondary-outline"
               className="w-full flex items-center justify-center">
               <svg
@@ -219,7 +251,7 @@ const Login = () => {
                   d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"
                 />
               </svg>
-              {loginLoading ? "Connecting..." : "Sign in with Microsoft"}
+              {loading ? "Connecting..." : "Sign in with Microsoft"}
             </Button>
           </div>
         </Card>
