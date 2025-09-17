@@ -19,6 +19,8 @@ export { default as MachineStatuses } from "./production/machine-statuses";
 // Production
 export { default as Machines } from "./production/machines";
 // Sales
+export { default as Contacts } from "./sales/contacts"
+export { default as ContactDetails } from "./sales/contact-details"
 export { default as Companies } from "./sales/companies";
 export { default as CompanyDetails } from "./sales/company-details";
 export { default as ConfigurationBuilder } from "./sales/configuration-builder";

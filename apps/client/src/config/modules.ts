@@ -19,6 +19,10 @@ import {
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
+  ChartNoAxesCombined,
+  ActivityIcon,
+  FileClockIcon,
+  Building2,
   PaintBucketIcon,
   SearchIcon,
   ShieldIcon,
@@ -26,7 +30,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contacts, ContactDetails, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -174,13 +178,26 @@ const salesModule: Module = {
     {
       slug: "companies",
       label: "Companies",
-      icon: UsersIcon,
+      icon: Building2,
       component: Companies,
       children: [
         {
           slug: ":id",
           label: "Company Details",
           component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      slug: "contacts",
+      label: "Contacts",
+      icon: UsersIcon,
+      component: Contacts,
+      children: [
+        {
+          slug: ":id",
+          label: "Contact Details",
+          component: ContactDetails,
         },
       ],
     },
