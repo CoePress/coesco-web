@@ -29,7 +29,7 @@ export class PerformanceController {
 
   async getPerformanceSheetVersion(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetVersionService.getById(req.params.companyId);
+      const result = await performanceSheetVersionService.getById(req.params.versionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -39,7 +39,7 @@ export class PerformanceController {
 
   async updatePerformanceSheetVersion(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetVersionService.update(req.params.companyId, req.body);
+      const result = await performanceSheetVersionService.update(req.params.versionId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -49,7 +49,7 @@ export class PerformanceController {
 
   async deletePerformanceSheetVersion(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetVersionService.delete(req.params.companyId);
+      const result = await performanceSheetVersionService.delete(req.params.versionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -81,7 +81,7 @@ export class PerformanceController {
 
   async getPerformanceSheet(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetService.getById(req.params.companyId);
+      const result = await performanceSheetService.getById(req.params.sheetId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -91,7 +91,7 @@ export class PerformanceController {
 
   async updatePerformanceSheet(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetService.update(req.params.companyId, req.body);
+      const result = await performanceSheetService.update(req.params.sheetId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -101,7 +101,7 @@ export class PerformanceController {
 
   async deletePerformanceSheet(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetService.delete(req.params.companyId);
+      const result = await performanceSheetService.delete(req.params.sheetId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -133,7 +133,7 @@ export class PerformanceController {
 
   async getPerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.getById(req.params.companyId);
+      const result = await performanceSheetLinkService.getById(req.params.linkId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -143,7 +143,7 @@ export class PerformanceController {
 
   async updatePerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.update(req.params.companyId, req.body);
+      const result = await performanceSheetLinkService.update(req.params.linkId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -153,7 +153,7 @@ export class PerformanceController {
 
   async deletePerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.delete(req.params.companyId);
+      const result = await performanceSheetLinkService.delete(req.params.linkId);
       res.status(200).json(result);
     }
     catch (error) {

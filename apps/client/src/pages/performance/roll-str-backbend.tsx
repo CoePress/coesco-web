@@ -294,7 +294,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Force Required (lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
               disabled
-              className={` ${((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor} text-text`}
+              className={`bg-${((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor} text-text`}
             />
             <Input
               label="Springback"
@@ -306,7 +306,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded?.toString() || ""}
               disabled
-              className={` ${percentYieldCheck} text-text`}
+              className={`bg-${percentYieldCheck} text-text`}
             />
             <Input
               label="Yield Strains at Surface"

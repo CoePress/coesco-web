@@ -150,7 +150,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           type="number"
           error={getFieldError("tddbhd.reel.airPressureAvailable")}
           disabled={!isEditing}
-          className={` ${airPressureCheck} text-text`}
+          className={`bg-${airPressureCheck} text-text`}
         />
         <Input
           label="Required Decel. Rate (ft/sec²)"
@@ -275,14 +275,14 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="tddbhd.reel.torque.rewindRequired"
           value={localData.tddbhd?.reel?.torque?.rewindRequired?.toString() || ""}
           type="number"
-          className={` ${rewindTorqueCheck} text-text`}
+          className={`bg-${rewindTorqueCheck} text-text`}
           disabled={true}
         />
         <Input
           label="Passed"
           name="tddbhd.reel.checks.tddbhdCheck"
           value={localData.tddbhd?.reel?.checks?.tddbhdCheck || "NOT OK"}
-          className={` ${tddbhdCheck} text-text`}
+          className={`bg-${tddbhdCheck} text-text`}
           disabled={true}
         />
       </div>
@@ -318,7 +318,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.force?.required?.toString() || ""}
           type="number"
           disabled={true}
-          className={` ${holdDownForceCheck} text-text`}
+          className={`bg-${holdDownForceCheck} text-text`}
         />
         <Input
           label="Hold Down Force Available (lbs)"
@@ -334,7 +334,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.minMaterialWidth?.toString() || ""}
           type="number"
           disabled={true}
-          className={` ${minMaterialWidthCheck} text-text`}
+          className={`bg-${minMaterialWidthCheck} text-text`}
         />
         <Checkbox
           label="Confirmed Min Width OK"
@@ -384,7 +384,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.psiAirRequired?.toString() || ""}
           type="number"
           disabled={true}
-          className={` ${brakePressCheck} text-text`}
+          className={`bg-${brakePressCheck} text-text`}
         />
         <Input
           label="Failsafe Holding Force (in. lbs.)"
@@ -392,7 +392,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.holdingForce?.toString() || ""}
           type="number"
           disabled={true}
-          className={` ${torqueRequiredCheck} text-text`}
+          className={`bg-${torqueRequiredCheck} text-text`}
         />
       </div>
     </Card>

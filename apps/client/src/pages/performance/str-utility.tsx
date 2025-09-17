@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { PerformanceData } from "@/contexts/performance.context";
-import { 
+import {
   STR_MODEL_OPTIONS,
   STR_WIDTH_OPTIONS,
   PAYOFF_OPTIONS,
@@ -20,7 +20,7 @@ export interface StrUtilityProps {
 
 const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
@@ -422,7 +422,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: requiredForceCheck, color: textColor }}
+              className={`bg-${requiredForceCheck} text-text`}
             />
             <Input
               label="Rated Force (lbs)"
@@ -438,7 +438,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.pinch.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: pinchRollCheck, color: textColor }}
+              className={`bg-${pinchRollCheck} text-text`}
             />
             <Input
               label="Pinch Roll Rated Torque"
@@ -454,7 +454,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.straightener.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: strRollCheck, color: textColor }}
+              className={`bg-${strRollCheck} text-text`}
             />
             <Input
               label="Str. Roll Rated Torque"
@@ -470,7 +470,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.horsepower"
               value={localData.strUtility?.straightener?.required?.horsepower?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: horsepowerCheck, color: textColor }}
+              className={`bg-${horsepowerCheck} text-text`}
             />
           </div>
         </div>
@@ -533,20 +533,17 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         Status & Recommendations
       </Text>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className={`p-3 rounded text-center font-medium ${
-          backupRollsCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
+        <div className={`p-3 rounded text-center font-medium ${backupRollsCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          }`}>
           <Text className="text-sm">{statusCalculations.jackForce.status}</Text>
           <Text className="text-xs mt-1">Back Up Rolls Recommended</Text>
         </div>
-        <div className={`p-3 rounded text-center font-medium ${
-          fpmCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
+        <div className={`p-3 rounded text-center font-medium ${fpmCheck ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          }`}>
           <Text className="text-sm">{statusCalculations.fpm.status}</Text>
         </div>
-        <div className={`p-3 rounded text-center font-medium ${
-          yieldMet ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-        }`}>
+        <div className={`p-3 rounded text-center font-medium ${yieldMet ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
           <Text className="text-sm">
             {feedRateCheck ? "All Str. Utility OK" : "Review Required"}
           </Text>
@@ -565,7 +562,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -574,7 +571,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -583,7 +580,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

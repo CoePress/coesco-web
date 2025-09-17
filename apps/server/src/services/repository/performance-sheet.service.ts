@@ -3,6 +3,9 @@ import { PerformanceSheet } from "@prisma/client";
 import { BaseService } from "./_base.service";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { getEmployeeContext } from "@/utils/context";
+import { execSync } from "child_process";
+import path from "path";
 
 type PerformanceSheetAttributes = Omit<PerformanceSheet, "id" | "createdAt" | "updatedAt">;
 
@@ -16,5 +19,606 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 		if (!entity.data) throw new BadRequestError("data is required");
 		if (!entity.createdById) throw new BadRequestError("createdById is required");
 		if (!entity.updatedById) throw new BadRequestError("updatedById is required");
+	}
+
+	// Override update method to handle data-only updates and trigger calculations
+	async update(id: string, data: any, tx?: any) {
+		// For performance sheet updates, we typically only update the data field
+		// All other required fields should be preserved from the existing record
+		if (data.data && Object.keys(data).length === 1) {
+			// Only updating the data field, use a simple update
+			const ctx = getEmployeeContext();
+
+			const execute = async (client: any) => {
+				const model = client.performanceSheet;
+
+				// Trigger Python calculations first
+				try {
+					const calculatedResults = await this.runCalculations(data.data);
+
+					// Update with the merged calculated results
+					const finalUpdated = await model.update({
+						where: { id },
+						data: {
+							data: calculatedResults, // calculatedResults is already the complete merged structure
+							updatedById: ctx.id,
+							updatedAt: new Date()
+						}
+					});
+
+					return finalUpdated;
+				} catch (calculationError) {
+					console.error('Calculation error:', calculationError);
+					// Fallback: save original data without calculations
+					const updated = await model.update({
+						where: { id },
+						data: {
+							data: data.data,
+							updatedById: ctx.id,
+							updatedAt: new Date()
+						}
+					});
+					return updated;
+				}
+			};
+
+			const result = tx ? await execute(tx) : await prisma.$transaction(execute);
+
+			// Return just the data field which contains the calculated performance data
+			console.log('🎯 Returning calculated data directly:', JSON.stringify(result.data, null, 2));
+			return result.data;
+		} else {
+			// Full update, use the base method
+			return super.update(id, data, tx);
+		}
+	}
+
+	private async runCalculations(inputData: any): Promise<any> {
+		try {
+			console.log('🧮 Running Python calculations with input:', JSON.stringify(inputData, null, 2));
+
+			const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'main.py');
+			const inputJson = JSON.stringify(inputData);
+
+			console.log('🐍 Script path:', scriptPath);
+			console.log('📁 Script exists:', require('fs').existsSync(scriptPath));
+			console.log('📋 Input JSON length:', inputJson.length);
+
+			// Execute the Python script by writing JSON to stdin
+			const result = execSync(`python "${scriptPath}"`, {
+				input: inputJson,
+				encoding: 'utf-8',
+				cwd: path.join(process.cwd(), 'src', 'scripts', 'performance-sheet'),
+				timeout: 30000 // 30 second timeout
+			});
+
+			console.log('🐍 Python script raw result:', result);
+
+			// Parse the JSON output from the Python script
+			const calculatedResults = JSON.parse(result);
+			console.log('📊 Parsed calculation results:', JSON.stringify(calculatedResults, null, 2));
+
+			// DIRECTLY UPDATE the original data - NO nested structures!
+			console.log('🔄 DIRECTLY updating original data structure (no nesting)...');
+
+			// The goal: inputData should be modified in-place with calculated values
+			// Python returns: { rfq: { average: 16, min: 41.67, max: 160 }, material_specs: {...}, etc. }
+			// We update: inputData.common.feedRates.average.fpm = 16, etc.			// 1. RFQ calculations → DIRECTLY update common.feedRates section
+			if (calculatedResults.rfq && inputData.common?.feedRates) {
+				console.log('📈 DIRECTLY updating common.feedRates with RFQ calculations...');
+				const rfqCalc = calculatedResults.rfq;
+				console.log('RFQ calculations:', rfqCalc);
+				console.log('BEFORE - feedRates:', inputData.common.feedRates);
+
+				// Python returns FPM calculations as: { average: 16, min: 41.67, max: 160 }
+				// DIRECTLY update the original structure
+				if (rfqCalc.average !== undefined && inputData.common.feedRates.average) {
+					console.log(`⚡ UPDATING average fpm: ${rfqCalc.average}`);
+					inputData.common.feedRates.average.fpm = rfqCalc.average;
+				}
+				if (rfqCalc.min !== undefined && inputData.common.feedRates.min) {
+					console.log(`⚡ UPDATING min fpm: ${rfqCalc.min}`);
+					inputData.common.feedRates.min.fpm = rfqCalc.min;
+				}
+				if (rfqCalc.max !== undefined && inputData.common.feedRates.max) {
+					console.log(`⚡ UPDATING max fpm: ${rfqCalc.max}`);
+					inputData.common.feedRates.max.fpm = rfqCalc.max;
+				}
+
+				console.log('✅ AFTER - Updated feedRates:', inputData.common.feedRates);
+			} else {
+				console.log('❌ Missing data for RFQ mapping:', {
+					hasRfqCalc: !!calculatedResults.rfq,
+					hasCommonFeedRates: !!(inputData.common?.feedRates)
+				});
+			}
+
+			// 2. Material specs calculations → DIRECTLY update materialSpecs.material section AND common.material
+			if (calculatedResults.material_specs && inputData.materialSpecs?.material) {
+				console.log('🔧 DIRECTLY updating Material Specs...');
+				const matCalc = calculatedResults.material_specs;
+				const matData = inputData.materialSpecs.material;
+				console.log('Material specs calculations:', matCalc);
+
+				// Python returns: { min_bend_radius: 90.625, min_loop_length: 30.2083, coil_od_calculated: 65, material_density: 0.283 }
+				if (matCalc.min_bend_radius !== undefined) {
+					console.log(`⚡ UPDATING minBendRadius: ${matCalc.min_bend_radius}`);
+					matData.minBendRadius = matCalc.min_bend_radius;
+				}
+				if (matCalc.min_loop_length !== undefined) {
+					console.log(`⚡ UPDATING minLoopLength: ${matCalc.min_loop_length}`);
+					matData.minLoopLength = matCalc.min_loop_length;
+				}
+				if (matCalc.coil_od_calculated !== undefined) {
+					console.log(`⚡ UPDATING calculatedCoilOD: ${matCalc.coil_od_calculated}`);
+					matData.calculatedCoilOD = matCalc.coil_od_calculated;
+				}
+
+				// Also update common.material if it exists
+				if (matCalc.material_density !== undefined && inputData.common?.material) {
+					console.log(`⚡ UPDATING materialDensity: ${matCalc.material_density}`);
+					inputData.common.material.materialDensity = matCalc.material_density;
+				}
+
+				console.log('✅ Updated materialSpecs:', matData);
+			}
+
+			// 3. TDDBHD calculations → tddbhd section AND common.coil for coil-related calcs
+			if (calculatedResults.tddbhd && inputData.tddbhd && typeof calculatedResults.tddbhd === 'object') {
+				console.log('🔩 Mapping TDDBHD calculations...');
+				const tddbhdCalc = calculatedResults.tddbhd;
+				console.log('TDDBHD calculations:', tddbhdCalc);
+
+				// Map coil calculations to both tddbhd.coil AND common.coil
+				if (tddbhdCalc.calculated_coil_weight !== undefined) {
+					if (inputData.tddbhd.coil) {
+						console.log(`Setting tddbhd.coil.coilWeight: ${tddbhdCalc.calculated_coil_weight}`);
+						inputData.tddbhd.coil.coilWeight = tddbhdCalc.calculated_coil_weight;
+					}
+					// Also update common.coil if this should be there
+					if (inputData.common?.coil) {
+						console.log(`Setting common.coil.maxCoilWeight: ${tddbhdCalc.calculated_coil_weight}`);
+						inputData.common.coil.maxCoilWeight = tddbhdCalc.calculated_coil_weight;
+					}
+				}
+				if (tddbhdCalc.coil_od !== undefined) {
+					if (inputData.tddbhd.coil) {
+						console.log(`Setting tddbhd.coil.coilOD: ${tddbhdCalc.coil_od}`);
+						inputData.tddbhd.coil.coilOD = tddbhdCalc.coil_od;
+					}
+					// Also update common.coil
+					if (inputData.common?.coil) {
+						console.log(`Setting common.coil.maxCoilOD: ${tddbhdCalc.coil_od}`);
+						inputData.common.coil.maxCoilOD = tddbhdCalc.coil_od;
+					}
+				}
+
+				// Map reel calculations
+				if (inputData.tddbhd.reel) {
+					if (tddbhdCalc.min_material_width !== undefined) {
+						console.log(`Setting minMaterialWidth: ${tddbhdCalc.min_material_width}`);
+						inputData.tddbhd.reel.minMaterialWidth = tddbhdCalc.min_material_width;
+					}
+					if (tddbhdCalc.web_tension_psi !== undefined && inputData.tddbhd.reel.webTension) {
+						console.log(`Setting webTension.psi: ${tddbhdCalc.web_tension_psi}`);
+						inputData.tddbhd.reel.webTension.psi = tddbhdCalc.web_tension_psi;
+					}
+					if (tddbhdCalc.web_tension_lbs !== undefined && inputData.tddbhd.reel.webTension) {
+						console.log(`Setting webTension.lbs: ${tddbhdCalc.web_tension_lbs}`);
+						inputData.tddbhd.reel.webTension.lbs = tddbhdCalc.web_tension_lbs;
+					}
+					if (tddbhdCalc.torque_required !== undefined && inputData.tddbhd.reel.torque) {
+						console.log(`Setting torque.required: ${tddbhdCalc.torque_required}`);
+						inputData.tddbhd.reel.torque.required = tddbhdCalc.torque_required;
+					}
+					if (tddbhdCalc.torque_at_mandrel !== undefined && inputData.tddbhd.reel.torque) {
+						console.log(`Setting torque.atMandrel: ${tddbhdCalc.torque_at_mandrel}`);
+						inputData.tddbhd.reel.torque.atMandrel = tddbhdCalc.torque_at_mandrel;
+					}
+					if (tddbhdCalc.rewind_torque !== undefined && inputData.tddbhd.reel.torque) {
+						console.log(`Setting torque.rewindRequired: ${tddbhdCalc.rewind_torque}`);
+						inputData.tddbhd.reel.torque.rewindRequired = tddbhdCalc.rewind_torque;
+					}
+					if (tddbhdCalc.hold_down_force_required !== undefined && inputData.tddbhd.reel.holddown?.force) {
+						console.log(`Setting holddown.force.required: ${tddbhdCalc.hold_down_force_required}`);
+						inputData.tddbhd.reel.holddown.force.required = tddbhdCalc.hold_down_force_required;
+					}
+					if (tddbhdCalc.hold_down_force_available !== undefined && inputData.tddbhd.reel.holddown?.force) {
+						console.log(`Setting holddown.force.available: ${tddbhdCalc.hold_down_force_available}`);
+						inputData.tddbhd.reel.holddown.force.available = tddbhdCalc.hold_down_force_available;
+					}
+					if (tddbhdCalc.failsafe_holding_force !== undefined && inputData.tddbhd.reel.dragBrake) {
+						console.log(`Setting dragBrake.holdingForce: ${tddbhdCalc.failsafe_holding_force}`);
+						inputData.tddbhd.reel.dragBrake.holdingForce = tddbhdCalc.failsafe_holding_force;
+					}
+					if (tddbhdCalc.failsafe_required !== undefined && inputData.tddbhd.reel.dragBrake) {
+						console.log(`Setting dragBrake.psiAirRequired: ${tddbhdCalc.failsafe_required}`);
+						inputData.tddbhd.reel.dragBrake.psiAirRequired = tddbhdCalc.failsafe_required;
+					}
+
+					// Map check results
+					if (inputData.tddbhd.reel.checks) {
+						if (tddbhdCalc.min_material_width_check !== undefined) {
+							console.log(`Setting checks.minMaterialWidthCheck: ${tddbhdCalc.min_material_width_check}`);
+							inputData.tddbhd.reel.checks.minMaterialWidthCheck = tddbhdCalc.min_material_width_check;
+						}
+						if (tddbhdCalc.air_pressure_check !== undefined) {
+							console.log(`Setting checks.airPressureCheck: ${tddbhdCalc.air_pressure_check}`);
+							inputData.tddbhd.reel.checks.airPressureCheck = tddbhdCalc.air_pressure_check;
+						}
+						if (tddbhdCalc.rewind_torque_check !== undefined) {
+							console.log(`Setting checks.rewindTorqueCheck: ${tddbhdCalc.rewind_torque_check}`);
+							inputData.tddbhd.reel.checks.rewindTorqueCheck = tddbhdCalc.rewind_torque_check;
+						}
+						if (tddbhdCalc.hold_down_force_check !== undefined) {
+							console.log(`Setting checks.holdDownForceCheck: ${tddbhdCalc.hold_down_force_check}`);
+							inputData.tddbhd.reel.checks.holdDownForceCheck = tddbhdCalc.hold_down_force_check;
+						}
+						if (tddbhdCalc.brake_press_check !== undefined) {
+							console.log(`Setting checks.brakePressCheck: ${tddbhdCalc.brake_press_check}`);
+							inputData.tddbhd.reel.checks.brakePressCheck = tddbhdCalc.brake_press_check;
+						}
+						if (tddbhdCalc.torque_required_check !== undefined) {
+							console.log(`Setting checks.torqueRequiredCheck: ${tddbhdCalc.torque_required_check}`);
+							inputData.tddbhd.reel.checks.torqueRequiredCheck = tddbhdCalc.torque_required_check;
+						}
+						if (tddbhdCalc.tddbhd_check !== undefined) {
+							console.log(`Setting checks.tddbhdCheck: ${tddbhdCalc.tddbhd_check}`);
+							inputData.tddbhd.reel.checks.tddbhdCheck = tddbhdCalc.tddbhd_check;
+						}
+					}
+				}
+				console.log('✅ Updated TDDBHD section');
+			}
+
+			// 4. Reel Drive calculations → reelDrive section AND common.equipment.reel
+			if (calculatedResults.reel_drive && inputData.reelDrive && typeof calculatedResults.reel_drive === 'object') {
+				const reelCalc = calculatedResults.reel_drive;
+
+				// Map according to ReelDriveData interface
+				if (inputData.reelDrive.reel) {
+					if (reelCalc.reel?.size !== undefined) inputData.reelDrive.reel.size = reelCalc.reel.size;
+					if (reelCalc.reel?.max_width !== undefined) inputData.reelDrive.reel.maxWidth = reelCalc.reel.max_width;
+					if (reelCalc.reel?.brg_dist !== undefined && inputData.reelDrive.reel.bearing) {
+						inputData.reelDrive.reel.bearing.distance = reelCalc.reel.brg_dist;
+					}
+					if (reelCalc.reel?.f_brg_dia !== undefined && inputData.reelDrive.reel.bearing?.diameter) {
+						inputData.reelDrive.reel.bearing.diameter.front = reelCalc.reel.f_brg_dia;
+					}
+					if (reelCalc.reel?.r_brg_dia !== undefined && inputData.reelDrive.reel.bearing?.diameter) {
+						inputData.reelDrive.reel.bearing.diameter.rear = reelCalc.reel.r_brg_dia;
+					}
+
+					// Map mandrel data
+					if (reelCalc.mandrel && inputData.reelDrive.reel.mandrel) {
+						Object.assign(inputData.reelDrive.reel.mandrel, {
+							diameter: reelCalc.mandrel.diameter,
+							length: reelCalc.mandrel.length,
+							maxRPM: reelCalc.mandrel.max_rpm,
+							RpmFull: reelCalc.mandrel.rpm_full,
+							weight: reelCalc.mandrel.weight,
+							inertia: reelCalc.mandrel.inertia,
+							reflInertia: reelCalc.mandrel.refl_inert
+						});
+					}
+
+					// Map other calculated fields from reel_drive
+					if (reelCalc.total?.ratio !== undefined) inputData.reelDrive.reel.ratio = reelCalc.total.ratio;
+					if (reelCalc.speed?.speed !== undefined) inputData.reelDrive.reel.speed = reelCalc.speed.speed;
+					if (reelCalc.speed?.accel_rate !== undefined) inputData.reelDrive.reel.accelerationRate = reelCalc.speed.accel_rate;
+					if (reelCalc.speed?.accel_time !== undefined) inputData.reelDrive.reel.accelerationTime = reelCalc.speed.accel_time;
+
+					// Map torque data
+					if (reelCalc.torque && inputData.reelDrive.reel.torque) {
+						if (reelCalc.torque.empty !== undefined && inputData.reelDrive.reel.torque.empty) {
+							inputData.reelDrive.reel.torque.empty.torque = reelCalc.torque.empty;
+						}
+						if (reelCalc.torque.full !== undefined && inputData.reelDrive.reel.torque.full) {
+							inputData.reelDrive.reel.torque.full.torque = reelCalc.torque.full;
+						}
+						if (reelCalc.hp_req?.empty !== undefined && inputData.reelDrive.reel.torque.empty) {
+							inputData.reelDrive.reel.torque.empty.horsepowerRequired = reelCalc.hp_req.empty;
+							inputData.reelDrive.reel.torque.empty.horsepowerCheck = reelCalc.hp_req.status_empty;
+						}
+						if (reelCalc.hp_req?.full !== undefined && inputData.reelDrive.reel.torque.full) {
+							inputData.reelDrive.reel.torque.full.horsepowerRequired = reelCalc.hp_req.full;
+							inputData.reelDrive.reel.torque.full.horsepowerCheck = reelCalc.hp_req.status_full;
+						}
+					}
+				}
+
+				// Map coil data
+				if (reelCalc.coil && inputData.reelDrive.coil) {
+					Object.assign(inputData.reelDrive.coil, {
+						density: reelCalc.coil.density,
+						width: reelCalc.coil.width,
+						weight: reelCalc.coil.weight,
+						inertia: reelCalc.coil.inertia,
+						reflInertia: reelCalc.coil.refl_inert
+					});
+				}
+
+				// Also update common.equipment.reel if applicable
+				if (reelCalc.reel && inputData.common?.equipment?.reel) {
+					if (reelCalc.reel.max_width !== undefined) {
+						inputData.common.equipment.reel.width = reelCalc.reel.max_width;
+					}
+					if (reelCalc.motor?.hp !== undefined) {
+						inputData.common.equipment.reel.horsepower = reelCalc.motor.hp;
+					}
+					if (reelCalc.backplate?.diameter !== undefined && inputData.common.equipment.reel.backplate) {
+						inputData.common.equipment.reel.backplate.diameter = reelCalc.backplate.diameter;
+					}
+				}
+			}
+
+			// 5. Straightener Utility calculations → strUtility section
+			if (calculatedResults.str_utility && inputData.strUtility && typeof calculatedResults.str_utility === 'object') {
+				const strCalc = calculatedResults.str_utility;
+
+				// Map according to StrUtilityData interface
+				if (inputData.strUtility.straightener) {
+					if (strCalc.actual_coil_weight !== undefined) {
+						inputData.strUtility.straightener.actualCoilWeight = strCalc.actual_coil_weight;
+					}
+					if (strCalc.coil_od !== undefined) {
+						inputData.strUtility.straightener.coilOD = strCalc.coil_od;
+					}
+					if (strCalc.required_force !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.force = strCalc.required_force;
+					}
+					if (strCalc.horsepower_required !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.horsepower = strCalc.horsepower_required;
+					}
+					if (strCalc.horsepower_check !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.horsepowerCheck = strCalc.horsepower_check;
+					}
+					if (strCalc.feed_rate_check !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.feedRateCheck = strCalc.feed_rate_check;
+					}
+					if (strCalc.str_roll_check !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.strRollCheck = strCalc.str_roll_check;
+					}
+					if (strCalc.pinch_roll_check !== undefined && inputData.strUtility.straightener.required) {
+						inputData.strUtility.straightener.required.pinchRollCheck = strCalc.pinch_roll_check;
+					}
+
+					// Map torque data
+					if (inputData.strUtility.straightener.torque) {
+						if (strCalc.str_torque !== undefined) {
+							inputData.strUtility.straightener.torque.straightener = strCalc.str_torque;
+						}
+						if (strCalc.acceleration_torque !== undefined) {
+							inputData.strUtility.straightener.torque.acceleration = strCalc.acceleration_torque;
+						}
+						if (strCalc.brake_torque !== undefined) {
+							inputData.strUtility.straightener.torque.brake = strCalc.brake_torque;
+						}
+					}
+
+					// Map rolls data
+					if (inputData.strUtility.straightener.rolls) {
+						if (strCalc.str_roll_rated_torque !== undefined && inputData.strUtility.straightener.rolls.straightener) {
+							inputData.strUtility.straightener.rolls.straightener.ratedTorque = strCalc.str_roll_rated_torque;
+						}
+						if (strCalc.str_roll_req_torque !== undefined && inputData.strUtility.straightener.rolls.straightener) {
+							inputData.strUtility.straightener.rolls.straightener.requiredGearTorque = strCalc.str_roll_req_torque;
+						}
+						if (strCalc.pinch_roll_rated_torque !== undefined && inputData.strUtility.straightener.rolls.pinch) {
+							inputData.strUtility.straightener.rolls.pinch.ratedTorque = strCalc.pinch_roll_rated_torque;
+						}
+						if (strCalc.pinch_roll_req_torque !== undefined && inputData.strUtility.straightener.rolls.pinch) {
+							inputData.strUtility.straightener.rolls.pinch.requiredGearTorque = strCalc.pinch_roll_req_torque;
+						}
+					}
+				}
+			}
+
+			// 6. Roll Straightener Backbend calculations → rollStrBackbend section
+			if (calculatedResults.roll_str_backbend && inputData.rollStrBackbend && typeof calculatedResults.roll_str_backbend === 'object') {
+				const rollCalc = calculatedResults.roll_str_backbend;
+
+				// Map according to RollStrBackbendData interface
+				if (rollCalc.rollConfiguration !== undefined) {
+					inputData.rollStrBackbend.rollConfiguration = rollCalc.rollConfiguration;
+				}
+
+				if (inputData.rollStrBackbend.straightener?.rolls?.backbend) {
+					// Map radius calculations
+					if (inputData.rollStrBackbend.straightener.rolls.backbend.radius) {
+						if (rollCalc.radius_off_coil !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.comingOffCoil = rollCalc.radius_off_coil;
+						}
+						if (rollCalc.radius_off_coil_after_springback !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.offCoilAfterSpringback = rollCalc.radius_off_coil_after_springback;
+						}
+						if (rollCalc.one_radius_off_coil !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.oneOffCoil = rollCalc.one_radius_off_coil;
+						}
+						if (rollCalc.curve_at_yield !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.curveAtYield = rollCalc.curve_at_yield;
+						}
+						if (rollCalc.radius_at_yield !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.radiusAtYield = rollCalc.radius_at_yield;
+						}
+						if (rollCalc.bending_moment_to_yield !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.radius.bendingMomentToYield = rollCalc.bending_moment_to_yield;
+						}
+					}
+
+					// Map roller calculations
+					if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers) {
+						if (rollCalc.roller_depth_required !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.depthRequired = rollCalc.roller_depth_required;
+						}
+						if (rollCalc.roller_depth_required_check !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.depthRequiredCheck = rollCalc.roller_depth_required_check;
+						}
+						if (rollCalc.roller_force_required !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.forceRequired = rollCalc.roller_force_required;
+						}
+						if (rollCalc.roller_force_required_check !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.forceRequiredCheck = rollCalc.roller_force_required_check;
+						}
+						if (rollCalc.percent_yield_check !== undefined) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.percentYieldCheck = rollCalc.percent_yield_check;
+						}
+
+						// Map individual roll data
+						if (rollCalc.first_up && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first?.up) {
+							Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.up, {
+								resultingRadius: rollCalc.first_up.res_rad_first_up,
+								curvatureDifference: rollCalc.first_up.r_ri_first_up,
+								bendingMoment: rollCalc.first_up.mb_first_up,
+								bendingMomentRatio: rollCalc.first_up.mb_my_first_up,
+								springback: rollCalc.first_up.springback_first_up,
+								percentOfThicknessYielded: rollCalc.first_up.percent_yield_first_up,
+								radiusAfterSpringback: rollCalc.first_up.radius_after_springback_first_up
+							});
+						}
+
+						if (rollCalc.last && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last) {
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.height = rollCalc.last.roll_height_last;
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequired = rollCalc.last.force_required_last;
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.forceRequiredCheck = rollCalc.last.force_required_check_last;
+							inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.numberOfYieldStrainsAtSurface = rollCalc.last.number_of_yield_strains_last;
+
+							if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.up) {
+								Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last.up, {
+									resultingRadius: rollCalc.last.res_rad_last,
+									curvatureDifference: rollCalc.last.r_ri_last,
+									bendingMoment: rollCalc.last.mb_last,
+									bendingMomentRatio: rollCalc.last.mb_my_last,
+									springback: rollCalc.last.springback_last,
+									percentOfThicknessYielded: rollCalc.last.percent_yield_last,
+									radiusAfterSpringback: rollCalc.last.radius_after_springback_last
+								});
+							}
+						}
+					}
+				}
+			}
+
+			// 7. Feed calculations → feed.feed section
+			if (calculatedResults.feed && inputData.feed?.feed) {
+				const feedCalc = calculatedResults.feed;
+				const feedData = inputData.feed.feed;
+
+				// Map according to FeedData interface
+				if (feedCalc.ratio !== undefined) feedData.ratio = feedCalc.ratio;
+				if (feedCalc.motor_inertia !== undefined) feedData.motorInertia = feedCalc.motor_inertia;
+				if (feedCalc.settle_time !== undefined) feedData.settleTime = feedCalc.settle_time;
+				if (feedCalc.regen !== undefined) feedData.regen = feedCalc.regen;
+				if (feedCalc.refl_inertia !== undefined) feedData.reflInertia = feedCalc.refl_inertia;
+				if (feedCalc.match !== undefined) feedData.match = feedCalc.match;
+				if (feedCalc.match_check !== undefined) feedData.matchCheck = feedCalc.match_check;
+				if (feedCalc.feed_check !== undefined) feedData.feedCheck = feedCalc.feed_check;
+				if (feedCalc.max_motor_rpm !== undefined) feedData.maxMotorRPM = feedCalc.max_motor_rpm;
+
+				// Map torque calculations
+				if (feedData.torque) {
+					if (feedCalc.motor_peak_torque !== undefined) feedData.torque.motorPeak = feedCalc.motor_peak_torque;
+					if (feedCalc.peak_torque !== undefined) feedData.torque.peak = feedCalc.peak_torque;
+					if (feedCalc.peak_torque_check !== undefined) feedData.torque.peakCheck = feedCalc.peak_torque_check;
+					if (feedCalc.frictiaonal_torque !== undefined) feedData.torque.frictional = feedCalc.frictiaonal_torque;
+					if (feedCalc.loop_torque !== undefined) feedData.torque.loop = feedCalc.loop_torque;
+					if (feedCalc.settle_torque !== undefined) feedData.torque.settle = feedCalc.settle_torque;
+					if (feedCalc.acceleration_torque !== undefined) feedData.torque.acceleration = feedCalc.acceleration_torque;
+					if (feedCalc.acceleration_torque_check !== undefined) feedData.torque.accelerationCheck = feedCalc.acceleration_torque_check;
+
+					// Map RMS torque calculations
+					if (feedData.torque.rms) {
+						if (feedCalc.motor_rms_torque !== undefined) feedData.torque.rms.motor = feedCalc.motor_rms_torque;
+						if (feedCalc.rms_torque_fa1 !== undefined) feedData.torque.rms.feedAngle1 = feedCalc.rms_torque_fa1;
+						if (feedCalc.rms_torque_fa1_check !== undefined) feedData.torque.rms.feedAngle1Check = feedCalc.rms_torque_fa1_check;
+						if (feedCalc.rms_torque_fa2 !== undefined) feedData.torque.rms.feedAngle2 = feedCalc.rms_torque_fa2;
+						if (feedCalc.rms_torque_fa2_check !== undefined) feedData.torque.rms.feedAngle2Check = feedCalc.rms_torque_fa2_check;
+					}
+				}
+
+				// Map table values
+				if (feedCalc.table_values !== undefined) feedData.tableValues = feedCalc.table_values;
+			}
+
+			// 8. Shear calculations → shear.shear section
+			if (calculatedResults.shear && inputData.shear?.shear && typeof calculatedResults.shear === 'object') {
+				// Map shear calculations according to ShearData interface
+				const shearCalc = calculatedResults.shear;
+				const shearData = inputData.shear.shear;
+
+				// Map basic properties
+				if (shearCalc.strength !== undefined) shearData.strength = shearCalc.strength;
+
+				// Map blade calculations
+				if (shearCalc.blade && shearData.blade) {
+					if (shearCalc.blade.angleOfBlade !== undefined) shearData.blade.angleOfBlade = shearCalc.blade.angleOfBlade;
+					if (shearCalc.blade.initialCut && shearData.blade.initialCut) {
+						if (shearCalc.blade.initialCut.length !== undefined) shearData.blade.initialCut.length = shearCalc.blade.initialCut.length;
+						if (shearCalc.blade.initialCut.area !== undefined) shearData.blade.initialCut.area = shearCalc.blade.initialCut.area;
+					}
+				}
+
+				// Map cylinder calculations
+				if (shearCalc.cylinder && shearData.cylinder) {
+					if (shearCalc.cylinder.minStroke && shearData.cylinder.minStroke) {
+						if (shearCalc.cylinder.minStroke.forBlade !== undefined) shearData.cylinder.minStroke.forBlade = shearCalc.cylinder.minStroke.forBlade;
+						if (shearCalc.cylinder.minStroke.requiredForOpening !== undefined) shearData.cylinder.minStroke.requiredForOpening = shearCalc.cylinder.minStroke.requiredForOpening;
+					}
+					if (shearCalc.cylinder.actualOpeningAboveMaxMaterial !== undefined) {
+						shearData.cylinder.actualOpeningAboveMaxMaterial = shearCalc.cylinder.actualOpeningAboveMaxMaterial;
+					}
+				}
+
+				// Map hydraulic calculations
+				if (shearCalc.hydraulic && shearData.hydraulic) {
+					if (shearCalc.hydraulic.cylinder && shearData.hydraulic.cylinder) {
+						if (shearCalc.hydraulic.cylinder.area !== undefined) shearData.hydraulic.cylinder.area = shearCalc.hydraulic.cylinder.area;
+						if (shearCalc.hydraulic.cylinder.volume !== undefined) shearData.hydraulic.cylinder.volume = shearCalc.hydraulic.cylinder.volume;
+					}
+					if (shearCalc.hydraulic.fluidVelocity !== undefined) shearData.hydraulic.fluidVelocity = shearCalc.hydraulic.fluidVelocity;
+				}
+
+				// Map conclusions
+				if (shearCalc.conclusions && shearData.conclusions) {
+					if (shearCalc.conclusions.force && shearData.conclusions.force) {
+						if (shearCalc.conclusions.force.perCylinder !== undefined) shearData.conclusions.force.perCylinder = shearCalc.conclusions.force.perCylinder;
+						if (shearCalc.conclusions.force.totalApplied && shearData.conclusions.force.totalApplied) {
+							if (shearCalc.conclusions.force.totalApplied.lbs !== undefined) shearData.conclusions.force.totalApplied.lbs = shearCalc.conclusions.force.totalApplied.lbs;
+							if (shearCalc.conclusions.force.totalApplied.tons !== undefined) shearData.conclusions.force.totalApplied.tons = shearCalc.conclusions.force.totalApplied.tons;
+						}
+						if (shearCalc.conclusions.force.requiredToShear !== undefined) shearData.conclusions.force.requiredToShear = shearCalc.conclusions.force.requiredToShear;
+						if (shearCalc.conclusions.force.requiredToShearCheck !== undefined) shearData.conclusions.force.requiredToShearCheck = shearCalc.conclusions.force.requiredToShearCheck;
+					}
+					if (shearCalc.conclusions.safetyFactor !== undefined) shearData.conclusions.safetyFactor = shearCalc.conclusions.safetyFactor;
+					if (shearCalc.conclusions.perMinute && shearData.conclusions.perMinute) {
+						if (shearCalc.conclusions.perMinute.gallons && shearData.conclusions.perMinute.gallons) {
+							if (shearCalc.conclusions.perMinute.gallons.instantaneous !== undefined) shearData.conclusions.perMinute.gallons.instantaneous = shearCalc.conclusions.perMinute.gallons.instantaneous;
+							if (shearCalc.conclusions.perMinute.gallons.averaged !== undefined) shearData.conclusions.perMinute.gallons.averaged = shearCalc.conclusions.perMinute.gallons.averaged;
+						}
+						if (shearCalc.conclusions.perMinute.shearStrokes !== undefined) shearData.conclusions.perMinute.shearStrokes = shearCalc.conclusions.perMinute.shearStrokes;
+						if (shearCalc.conclusions.perMinute.parts !== undefined) shearData.conclusions.perMinute.parts = shearCalc.conclusions.perMinute.parts;
+					}
+					if (shearCalc.conclusions.perHour && shearData.conclusions.perHour) {
+						if (shearCalc.conclusions.perHour.parts !== undefined) shearData.conclusions.perHour.parts = shearCalc.conclusions.perHour.parts;
+					}
+				}
+			}
+
+			console.log('✅ Final structure analysis - should be SAME inputData with updated calculated values:');
+			console.log('✅ inputData keys:', Object.keys(inputData));
+			console.log('✅ inputData.referenceNumber:', inputData.referenceNumber);
+			console.log('✅ inputData.common.feedRates (should have updated FPM values):', inputData.common?.feedRates);
+			console.log('✅ Does inputData have nested "data" key?:', 'data' in inputData);
+			if ('data' in inputData) {
+				console.log('❌ ERROR: inputData has nested "data" key - this should NOT happen!');
+				console.log('❌ inputData.data keys:', Object.keys(inputData.data));
+			}
+			console.log('✅ RETURNING updated inputData (no nested structures)');
+			return inputData;
+		} catch (error) {
+			console.error('❌ Failed to run Python calculations:', error);
+			// Always return original data if calculations fail - NEVER lose user data
+			return inputData;
+		}
 	}
 }

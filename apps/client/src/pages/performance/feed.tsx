@@ -138,7 +138,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedCheck || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
-          className={` ${feedCheck} text-text`}
+          className={`bg-${feedCheck} text-text`}
         />
       </div>
 
@@ -417,7 +417,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.match?.toString() || ""}
           disabled={true}
-          className={` ${matchCheck} text-text`}
+          className={`bg-${matchCheck} text-text`}
         />
         <Input
           label="Peak Torque (lbs-in)"
@@ -425,7 +425,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.peak?.toString() || ""}
           disabled={true}
-          className={` ${peakTorqueCheck} text-text`}
+          className={`bg-${peakTorqueCheck} text-text`}
         />
         <Input
           label="RMS Torque (FA1) (lbs-in)"
@@ -433,7 +433,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
           disabled={true}
-          className={` ${rmsTorqueFA1Check} text-text`}
+          className={`bg-${rmsTorqueFA1Check} text-text`}
         />
         <Input
           label="RMS Torque (FA2) (lbs-in)"
@@ -441,7 +441,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
           disabled={true}
-          className={` ${rmsTorqueFA2Check} text-text`}
+          className={`bg-${rmsTorqueFA2Check} text-text`}
         />
         <Input
           label="Acceleration Torque (lbs-in)"
@@ -449,7 +449,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
           disabled={true}
-          className={` ${accelerationCheck} text-text`}
+          className={`bg-${accelerationCheck} text-text`}
         />
       </div>
     </div>

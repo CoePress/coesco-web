@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
-import { PerformanceData } from "@/contexts/performance.context";
+import { PerformanceData, usePerformanceSheet } from "@/contexts/performance.context";
 import { useApi } from "@/hooks/use-api";
 import React from "react";
 
@@ -470,6 +470,10 @@ export const usePerformanceDataService = (
 ) => {
   const endpoint = `/performance/sheets`;
   const api = useApi();
+
+  // Use global performance context instead of local state
+  const { performanceData, setPerformanceData } = usePerformanceSheet();
+
   const [performanceSheet, setPerformanceSheet] = useState<any>(null);
   const [updateLoading, setLoading] = useState<boolean>(true);
   const [updateError, setError] = useState<string | null>(null);
@@ -483,6 +487,8 @@ export const usePerformanceDataService = (
         const response = await api.get(`${endpoint}/${performanceSheetId}`);
         if (response && response.data) {
           setPerformanceSheet(response.data);
+          // Update global context with fetched data
+          setPerformanceData(response.data);
         } else {
           setPerformanceSheet(null);
         }
@@ -496,8 +502,8 @@ export const usePerformanceDataService = (
     fetchPerformanceSheet();
   }, [performanceSheetId]);
 
-  // Local state management
-  const [localData, setLocalData] = useState<PerformanceData>(initialData);
+  // Use global data instead of local state
+  const localData = performanceData;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -511,14 +517,44 @@ export const usePerformanceDataService = (
     localDataRef.current = localData;
   }, [localData]);
 
-  // Sync with prop data on initial load only
+  // Initialize with initial data if needed
   React.useEffect(() => {
     if (initialData && initialData.referenceNumber && !localData.referenceNumber) {
-      setLocalData(initialData);
+      setPerformanceData(initialData);
     }
-  }, [initialData, localData.referenceNumber]);
+  }, [initialData, localData.referenceNumber, setPerformanceData]);
 
-  // Debounced save function
+  // Immediate calculation trigger (no delay for calculations)
+  const triggerCalculations = useCallback(
+    debounce(async () => {
+      if (!performanceSheetId || !isEditing) return;
+
+      try {
+        console.log("=== TRIGGERING IMMEDIATE CALCULATIONS ===");
+        const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
+        console.log("1. Sending data for calculations:", JSON.stringify(updatedData, null, 2));
+
+        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+        console.log("2. Calculation response:", response);
+
+        // Handle calculated values from backend - update global context
+        if (response) {
+          setPerformanceData(prevData => {
+            const merged = deepMerge(prevData, response);
+            console.log("3. Updated with calculations:", merged);
+            return merged;
+          });
+        }
+
+      } catch (error) {
+        console.error('Error running calculations:', error);
+        // Don't show errors for calculation failures, only for saves
+      }
+    }, 100), // Very short delay to batch rapid field changes
+    [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]
+  );
+
+  // Debounced save function (keeps data persistence separate from calculations)
   const debouncedSave = useCallback(
     debounce(async () => {
       if (!performanceSheetId || !isEditing) return;
@@ -526,16 +562,16 @@ export const usePerformanceDataService = (
       try {
         console.log("=== PERFORMANCE DATA SERVICE SAVE ===");
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-        console.log("1. Sending data to backend:", JSON.stringify(updatedData, null, 2));
+        console.log("1. Saving data to backend:", JSON.stringify(updatedData, null, 2));
 
         const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
-        console.log("2. Backend response:", response);
+        console.log("2. Save response:", response);
 
-        // Handle calculated values from backend - merge the entire response
+        // Handle calculated values from backend - update global context
         if (response) {
-          setLocalData(prevData => {
+          setPerformanceData(prevData => {
             const merged = deepMerge(prevData, response);
-            console.log("3. Merged local data:", merged);
+            console.log("3. Merged local data after save:", merged);
             return merged;
           });
         }
@@ -558,8 +594,8 @@ export const usePerformanceDataService = (
           _general: 'Failed to save changes. Please try again.'
         }));
       }
-    }, 1000),
-    [performanceSheetId, performanceSheet, isEditing]
+    }, 1000), // Keep 1000ms delay for saves
+    [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]
   );
 
   // Change handler for form fields
@@ -589,8 +625,8 @@ export const usePerformanceDataService = (
       return;
     }
 
-    // Update local state immediately
-    setLocalData(prevData => {
+    // Update global state immediately
+    setPerformanceData(prevData => {
       const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
       console.log("Setting nested value for:", name, "to", processedValue);
 
@@ -601,8 +637,12 @@ export const usePerformanceDataService = (
     pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
     setIsDirty(true);
 
+    // Trigger calculations immediately for real-time updates
+    triggerCalculations();
+
+    // Also trigger debounced save for persistence
     debouncedSave();
-  }, [isEditing, fieldErrors, debouncedSave]);
+  }, [isEditing, fieldErrors, triggerCalculations, debouncedSave, setPerformanceData]);
 
   // Manual save function (for immediate saves)
   const saveImmediately = useCallback(async () => {
@@ -613,7 +653,7 @@ export const usePerformanceDataService = (
       const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
 
       if (response) {
-        setLocalData(prevData => deepMerge(prevData, response));
+        setPerformanceData(prevData => deepMerge(prevData, response));
       }
 
       setLastSaved(new Date());
@@ -629,17 +669,22 @@ export const usePerformanceDataService = (
       }));
       throw error;
     }
-  }, [performanceSheetId, performanceSheet, isEditing]);
+  }, [performanceSheetId, performanceSheet, isEditing, api, setPerformanceData]);
 
   // Update specific field programmatically
   const updateField = useCallback((fieldPath: string, value: any) => {
     if (!isEditing) return;
 
-    setLocalData(prevData => setNestedValue(prevData, fieldPath, value));
+    setPerformanceData(prevData => setNestedValue(prevData, fieldPath, value));
     pendingChangesRef.current[fieldPath] = value;
     setIsDirty(true);
+
+    // Trigger calculations immediately for real-time updates
+    triggerCalculations();
+
+    // Also trigger debounced save for persistence
     debouncedSave();
-  }, [isEditing, debouncedSave]);
+  }, [isEditing, triggerCalculations, debouncedSave, setPerformanceData]);
 
   // Get field value by path
   const getFieldValue = useCallback((fieldPath: string) => {
@@ -659,11 +704,11 @@ export const usePerformanceDataService = (
 
   // Reset to initial data
   const resetData = useCallback(() => {
-    setLocalData(initialData);
+    setPerformanceData(initialData);
     setFieldErrors({});
     setIsDirty(false);
     pendingChangesRef.current = {};
-  }, [initialData]);
+  }, [initialData, setPerformanceData]);
 
   // Check if field has error
   const hasFieldError = useCallback((fieldName: string) => {
