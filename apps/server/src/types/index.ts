@@ -82,3 +82,16 @@ export interface IDateRange {
   previousStartDate: Date;
   previousEndDate: Date;
 }
+
+export interface ITool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: (params: any) => Promise<any>;
+}
+
+export interface ISchema {
+  name: string;
+  description: string;
+  schema: any;
+}

@@ -1,11 +1,15 @@
-import { AxiosError, AxiosRequestConfig } from "axios";
+import type { AxiosRequestConfig } from "axios";
+
+import { AxiosError } from "axios";
 import { useState } from "react";
+
+import type { IQueryParams } from "@/utils/types";
+
 import { instance } from "@/utils";
-import { IQueryParams } from "@/utils/types";
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
-export const useApi = <T = any>() => {
+export function useApi<T = any>() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -14,7 +18,7 @@ export const useApi = <T = any>() => {
     method: HttpMethod,
     endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ) => {
     setLoading(true);
     setError(null);
@@ -45,40 +49,42 @@ export const useApi = <T = any>() => {
 
       setSuccess(true);
       return response.data;
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`API request error for ${method} ${endpoint}:`, error);
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data?.message ||
-            "An error occurred. Please try again."
+      const errorMessage
+        = error instanceof AxiosError
+          ? error.response?.data?.message
+          || "An error occurred. Please try again."
           : "An error occurred. Please try again.";
 
       setError(errorMessage);
       return null;
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
 
   const get = (
-    endpoint: string, 
-    params?: IQueryParams | Record<string, any>, 
-    config?: AxiosRequestConfig
+    endpoint: string,
+    params?: IQueryParams<T> | Record<string, any>,
+    config?: AxiosRequestConfig,
   ) => {
     let queryParams = {};
-    
+
     if (params) {
       queryParams = { ...params };
-      if ('include' in queryParams && queryParams.include && typeof queryParams.include !== 'string') {
+      if ("include" in queryParams && queryParams.include && typeof queryParams.include !== "string") {
         queryParams.include = JSON.stringify(queryParams.include);
       }
     }
-    
+
     const finalConfig = {
       ...config,
-      params: queryParams
+      params: queryParams,
     };
-    
+
     return request("GET", endpoint, undefined, finalConfig);
   };
 
@@ -105,4 +111,4 @@ export const useApi = <T = any>() => {
     put,
     delete: del,
   };
-};
+}

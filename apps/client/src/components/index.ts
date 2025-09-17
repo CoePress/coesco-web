@@ -5,8 +5,8 @@ export { default as DatePicker } from "./_old/date-picker";
 export { default as Text } from "./ui/text";
 
 // Misc
-export { default as CommandBar } from "./_old/command-bar";
-export { default as MachineMap } from "./_old/machine-map";
+export { default as CommandBar } from "./feature/command-bar";
+export { default as MachineMap } from "./feature/machine-map";
 export { default as MicrosoftCallback } from "../pages/utility/microsoft-callback";
 export { default as MobileLayout } from "./layout/mobile-layout";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";

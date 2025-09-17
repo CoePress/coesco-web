@@ -18,7 +18,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
   
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
   const headerSection = useMemo(() => (

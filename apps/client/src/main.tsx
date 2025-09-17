@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/auth.context.tsx";
 import { AppProvider } from "./contexts/app.context.tsx";
 import { ThemeProvider } from "./contexts/theme.context.tsx";
 import { SocketProvider } from "./contexts/socket.context.tsx";
+import { ToastProvider } from "./contexts/toast.context.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
@@ -14,7 +15,9 @@ createRoot(document.getElementById("root")!).render(
       <SocketProvider>
         <ThemeProvider>
           <AppProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </AppProvider>
         </ThemeProvider>
       </SocketProvider>

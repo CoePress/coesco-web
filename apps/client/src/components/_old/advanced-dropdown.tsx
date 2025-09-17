@@ -225,7 +225,7 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
         </div>
 
         {isOpen && mode !== "create" && (
-          <div className="absolute z-10 w-full mt-1 bg-foreground border border-border rounded-md shadow-lg">
+          <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded-md shadow-lg">
             <div className="max-h-60 overflow-auto">
               <div
                 className="px-3 py-2 cursor-pointer text-sm hover:bg-surface text-text border-b border-border"

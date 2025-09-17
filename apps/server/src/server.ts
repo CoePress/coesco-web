@@ -1,5 +1,6 @@
 import "tsconfig-paths/register";
 import process from "node:process";
+import { seedDatabase } from "prisma/seed";
 
 import { server } from "./app";
 import { env } from "./config/env";
@@ -8,7 +9,9 @@ import { logger } from "./utils/logger";
 import { prisma } from "./utils/prisma";
 
 async function main() {
-  initializeServices();
+  await initializeServices();
+  await seedDatabase();
+
   server.listen(env.PORT, () => {
     logger.info(`Server running on port ${env.PORT}`);
   });

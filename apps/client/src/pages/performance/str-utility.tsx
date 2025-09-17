@@ -22,25 +22,18 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
   
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  const textColor = 'var(--color-text)';
-  const successColor = 'var(--color-success)';
-  const errorColor = 'var(--color-error)';
-  const warningColor = 'var(--color-warning)';
+  let requiredForceCheck = data.strUtility?.straightener?.required?.jackForceCheck === 'OK' ? "bg-success" : "bg-error";
+  let pinchRollCheck = data.strUtility?.straightener?.required?.pinchRollCheck === 'OK' ? "bg-success" : "bg-error";
+  let strRollCheck = data.strUtility?.straightener?.required?.strRollCheck === 'OK' ? "bg-success" : "bg-error";
+  let horsepowerCheck = data.strUtility?.straightener?.required?.horsepowerCheck === 'OK' ? "bg-success" : "bg-error";
+  let backupRollsCheck = data.strUtility?.straightener?.required?.backupRollsCheck === 'Back Up Rolls Recommended' ? "bg-success" : "bg-warning";
+  let fpmCheck = data.strUtility?.straightener?.required?.fpmCheck === 'FPM SUFFICIENT' ? "bg-success" : "bg-error";
+  let yieldMet = data.reelDrive?.reel?.reelDriveOK === 'OK' ? "bg-success" : "bg-error";
+  let feedRateCheck = data.strUtility?.straightener?.required?.feedRateCheck === 'OK' ? "bg-success" : "bg-error";
 
-  // Checks
-  let requiredForceCheck = data.strUtility?.straightener?.required?.jackForceCheck === 'OK' ? successColor : errorColor;
-  let pinchRollCheck = data.strUtility?.straightener?.required?.pinchRollCheck === 'OK' ? successColor : errorColor;
-  let strRollCheck = data.strUtility?.straightener?.required?.strRollCheck === 'OK' ? successColor : errorColor;
-  let horsepowerCheck = data.strUtility?.straightener?.required?.horsepowerCheck === 'OK' ? successColor : errorColor;
-  let backupRollsCheck = data.strUtility?.straightener?.required?.backupRollsCheck === 'Back Up Rolls Recommended' ? successColor : warningColor;
-  let fpmCheck = data.strUtility?.straightener?.required?.fpmCheck === 'FPM SUFFICIENT' ? successColor : errorColor;
-  let yieldMet = data.reelDrive?.reel?.reelDriveOK === 'OK' ? successColor : errorColor;
-  let feedRateCheck = data.strUtility?.straightener?.required?.feedRateCheck === 'OK' ? successColor : errorColor;
-
-  // Status calculation functions
   const statusCalculations = useMemo(() => {
     const getJackForceStatus = () => {
       const required = Number(localData.strUtility?.straightener?.required?.force || 0);
@@ -95,7 +88,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     };
   }, [localData]);
 
-  // Header Information Section
   const headerSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -121,7 +113,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Straightener Specifications Section
   const straightenerSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -164,7 +155,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Coil Information Section
   const coilInfoSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -228,7 +218,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, fieldErrors, handleFieldChange, getFieldError, isEditing]);
 
-  // Operating Parameters Section
   const operatingParamsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -271,7 +260,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Physical Parameters Section
   const physicalParamsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -422,7 +410,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: requiredForceCheck, color: textColor }}
+              className={requiredForceCheck}
             />
             <Input
               label="Rated Force (lbs)"
@@ -438,7 +426,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.pinch.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: pinchRollCheck, color: textColor }}
+              className={pinchRollCheck}
             />
             <Input
               label="Pinch Roll Rated Torque"
@@ -454,7 +442,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.straightener.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: strRollCheck, color: textColor }}
+              className={strRollCheck}
             />
             <Input
               label="Str. Roll Rated Torque"
@@ -470,13 +458,12 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.horsepower"
               value={localData.strUtility?.straightener?.required?.horsepower?.toString() || ""}
               disabled={true}
-              style={{ backgroundColor: horsepowerCheck, color: textColor }}
+              className={horsepowerCheck}
             />
           </div>
         </div>
       </Card>
 
-      {/* Additional Calculations */}
       <Card className="p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
           Additional Calculations
@@ -526,7 +513,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </div>
   ), [localData]);
 
-  // Status Indicators Section
   const statusSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -555,7 +541,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
     </Card>
   ), [statusCalculations]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -589,7 +574,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -597,7 +581,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         )}
       </div>
 
-      {/* Loading and error states */}
       {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -617,7 +600,6 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Form sections */}
       {headerSection}
       {straightenerSpecsSection}
       {coilInfoSection}

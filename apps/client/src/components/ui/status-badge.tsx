@@ -3,8 +3,9 @@ import { LucideIcon } from "lucide-react";
 type StatusBadgeProps = {
   label?: string;
   icon?: LucideIcon;
-  variant?: "success" | "warning" | "error" | "info" | "default";
+  variant?: "success" | "warning" | "error" | "info" | "default" | "secondary";
   size?: "sm" | "md" | "lg";
+  className?: string;
 };
 
 const StatusBadge = ({
@@ -12,6 +13,7 @@ const StatusBadge = ({
   icon: Icon,
   variant = "default",
   size = "md",
+  className = "",
 }: StatusBadgeProps) => {
   const variants = {
     success: "bg-success/10 text-success",
@@ -19,6 +21,7 @@ const StatusBadge = ({
     error: "bg-error/10 text-error",
     info: "bg-info/10 text-info",
     default: "bg-surface text-text-muted",
+    secondary: "bg-text/10 text-text",
   };
 
   const sizes = {
@@ -33,6 +36,7 @@ const StatusBadge = ({
     error: "text-error",
     info: "text-info",
     default: "text-text-muted",
+    secondary: "text-text",
   };
 
   const borderVariants = {
@@ -41,11 +45,12 @@ const StatusBadge = ({
     error: "border-error/50",
     info: "border-info/50",
     default: "border-border",
+    secondary: "border-text/50",
   };
 
   return (
     <div
-      className={`w-max flex items-center gap-1 rounded border ${sizes[size]} font-medium ${variants[variant]} ${borderVariants[variant]}`}>
+      className={`w-max flex items-center gap-1 rounded border ${sizes[size]} font-medium ${variants[variant]} ${borderVariants[variant]} ${className}`}>
       {Icon && (
         <Icon
           size={14}

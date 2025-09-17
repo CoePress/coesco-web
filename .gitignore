@@ -60,7 +60,6 @@ Thumbs.db
 # NuGet
 *.nupkg
 *.snupkg
-packages/
 
 # Publish artifacts
 *.exe

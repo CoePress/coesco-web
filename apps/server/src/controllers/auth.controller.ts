@@ -6,8 +6,8 @@ import { authService } from "@/services";
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
-      const result = await authService.login(email, password);
+      const { username, password } = req.body;
+      const result = await authService.login(username, password);
       res.cookie("accessToken", result.token, cookieOptions);
       res.cookie("refreshToken", result.refreshToken, cookieOptions);
       res.status(200).json(result);
@@ -19,8 +19,8 @@ export class AuthController {
 
   async microsoftLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const url = await authService.microsoftLogin();
-      res.json({ url });
+      const result = await authService.microsoftLogin();
+      res.json(result);
     }
     catch (error) {
       next(error);
