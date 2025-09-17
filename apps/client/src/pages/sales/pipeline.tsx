@@ -1,283 +1,40 @@
 import {
   Download,
-  MoreHorizontal,
   Plus,
   Layout,
   List as ListIcon,
-  Filter,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
-import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
-  pointerWithin,
-  rectIntersection,
-  getFirstCollision,
-  type CollisionDetection
-} from "@dnd-kit/core";
-import {
-  sortableKeyboardCoordinates,
-  useSortable,
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
-
-import { CSS } from "@dnd-kit/utilities";
-import { PageHeader, StatusBadge, Modal, Button, Input, Select } from "@/components";
-import { formatCurrency, formatDate } from "@/utils";
+import { PageHeader, Modal, Button, Input, Select } from "@/components";
+import { KanbanView } from "./journeys/KanbanView";
+import { ListView } from "./journeys/ListView";
+import { ProjectionsView } from "./journeys/ProjectionsView";
+import { PipelineHeader } from "./journeys/PipelineHeader";
+import { STAGES } from "./journeys/constants";
+import { fuzzyMatch } from "./journeys/utils";
+import { formatCurrency } from "@/utils";
+import { generateUniqueId } from "@/utils/unique-id-generator";
 import { useApi } from "@/hooks/use-api";
-import { Link, useNavigate } from "react-router-dom";
-import Table from "@/components/ui/table";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth.context";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const STAGES = [
-  { id: 1, label: "Lead", weight: 0.20 },
-  { id: 2, label: "Qualified", weight: 0.40 },
-  { id: 3, label: "Presentations", weight: 0.60 },
-  { id: 4, label: "Negotiation", weight: 0.90 },
-  { id: 5, label: "Closed Won", weight: 1.0 },
-  { id: 6, label: "Closed Lost", weight: 0.0 },
-] as const;
+import * as XLSX from 'xlsx';
 
 type StageId = (typeof STAGES)[number]["id"];
 
 const stageLabel = (id?: number) =>
   STAGES.find(s => s.id === Number(id))?.label ?? `Stage ${id ?? ""}`;
 
-const columnIdPrefix = "column-";
 
-const DroppableColumn = ({
-  id,
-  children,
-  className = "",
-}: {
-  id: string;
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`${className} ${isOver ? "bg-blue-50" : ""} transition-colors`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const PRIORITY_CONFIG = {
-  A: { style: "error", color: "bg-red-500", label: "Highest" },
-  B: { style: "warning", color: "bg-orange-500", label: "High" },
-  C: { style: "default", color: "bg-yellow-500", label: "Medium" },
-  D: { style: "success", color: "bg-green-500", label: "Lowest" },
-} as const;
-
-const getPriorityConfig = (priority: string) => {
-  const p = String(priority ?? "").toUpperCase();
-  return PRIORITY_CONFIG[p as keyof typeof PRIORITY_CONFIG] || {
-    style: "default",
-    color: "bg-gray-400",
-    label: "Medium"
-  };
-};
-
-
-const JourneyCard = memo(({
-  journey,
-  customer,
-  isDragging = false,
-  onClick,
-  style,
-  ...dragProps
-}: {
-  journey: any;
-  customer?: any;
-  isDragging?: boolean;
-  onClick?: () => void;
-  style?: React.CSSProperties;
-} & any) => {
-  const priorityConfig = useMemo(() => getPriorityConfig(journey.priority), [journey.priority]);
-  
-  return (
-    <div
-      style={style}
-      onClick={onClick}
-      className="bg-foreground rounded shadow-sm border border-border p-3 cursor-move select-none mb-2 
-        hover:shadow-md hover:bg-opacity-90 hover:border-neutral-500 transition-all duration-200"
-      {...dragProps}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <div 
-          className={`w-3 h-3 rounded-full ${priorityConfig.color} relative group cursor-help`}
-          title={`Priority: ${journey.priority || 'None'} (${priorityConfig.label})`}
-        >
-          <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-            Priority: {journey.priority || 'None'} ({priorityConfig.label})
-          </div>
-        </div>
-        <div className="text-sm font-medium text-neutral-400 truncate flex-1">
-          {journey.name}
-        </div>
-      </div>
-      {journey.Quote_Number && (
-        <div className="text-xs text-neutral-500 mb-1">
-          Quote #: {journey.Quote_Number}
-        </div>
-      )}
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-sm font-medium text-neutral-400">
-          {formatCurrency(journey.value)}
-        </div>
-        <div className={`text-xs px-2 py-0.5 rounded-full ${priorityConfig.style}`}>
-          {journey.priority}
-        </div>
-      </div>
-      <div className="text-xs text-neutral-400">
-        Close date: {formatDate(journey.closeDate)}
-      </div>
-      <div className="flex justify-between items-center mt-2 pt-2 border-t">
-        <div className="text-xs text-neutral-400">
-          Last activity: {formatDate(journey.updatedAt)}
-        </div>
-        {!isDragging && (
-          <button
-            className="text-neutral-400 hover:text-neutral-600"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-});
-
-const SortableItem = memo(({
-  journey,
-  customersById,
-}: {
-  journey: any;
-  customersById: Map<string, any>;
-}) => {
-  const navigate = useNavigate();
-  const customer = customersById?.get(String(journey.customerId));
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: journey.id.toString() });
-
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) {
-      e.stopPropagation();
-      navigate(`/sales/pipeline/${journey.id}`, {
-        state: { journey, customer }
-      });
-    }
-  }, [isDragging, navigate, journey, customer]);
-
-  return (
-    <JourneyCard
-      ref={setNodeRef}
-      journey={journey}
-      customer={customer}
-      isDragging={isDragging}
-      onClick={handleClick}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      {...attributes}
-      {...listeners}
-    />
-  );
-});
-
-const DragPreview = memo(({
-  journey,
-  customersById,
-}: {
-  journey: any;
-  customersById: Map<string, any>;
-}) => {
-  const customer = customersById?.get(String(journey.customerId));
-  return (
-    <JourneyCard
-      journey={journey}
-      customer={customer}
-      isDragging
-      className="select-none"
-    />
-  );
-});
-
-const PipelineHeader = ({ searchTerm, setSearchTerm, rsmFilterDisplay, setRsmFilter, setRsmFilterDisplay, availableRsms, employee, setIsFilterModalOpen }: any) => (
-  <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground">
-    <div className="flex items-center gap-4">
-      <Input
-        placeholder="Search journeys..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-64"
-      />
-      <Select
-        value={rsmFilterDisplay}
-        onChange={(e) => {
-          if (e.target.value === 'my-journeys') {
-            const userInitials = employee?.number;
-            setRsmFilter(userInitials || "");
-            setRsmFilterDisplay('my-journeys');
-          } else {
-            setRsmFilter(e.target.value);
-            setRsmFilterDisplay(e.target.value);
-          }
-        }}
-        options={(() => {
-          const baseOptions = [
-            { value: "", label: "All RSMs" },
-            { value: "my-journeys", label: "My Journeys" }
-          ];
-          const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ value: rsm, label: rsm }));
-          console.log('RSM Dropdown Debug:', { availableRsms, rsmOptions });
-          return [...baseOptions, ...rsmOptions];
-        })()}
-        className="w-48"
-      />
-    </div>
-    <div className="flex items-center gap-2">
-      <Button
-        variant="secondary-outline"
-        size="sm"
-        onClick={() => setIsFilterModalOpen(true)}
-        className="flex items-center gap-2"
-      >
-        <Filter size={14} />
-        Advanced Filters
-      </Button>
-    </div>
-  </div>
-);
 
 const Pipeline = () => {
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
+  const navigate = useNavigate();
 
-  const { user, employee } = useAuth();
-  const { put, get } = useApi();
+  const { employee } = useAuth();
+  const { put, get, delete: del } = useApi();
   const rsmApi = useApi(); // Separate API instance for RSM fetching
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -288,7 +45,7 @@ const Pipeline = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
-        get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 1600 }),
+        get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 100 }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
       
@@ -305,23 +62,22 @@ const Pipeline = () => {
     fetchData();
   }, []);
 
+  const refetchApi = useApi();
+
   const refetchLegacyJourneys = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/legacy/base/Journey?sort=CreateDT&order=desc&limit=1600`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
-      if (response.ok) {
-        const raw = await response.json();
+      const raw = await refetchApi.get('/legacy/base/Journey', { 
+        sort: 'CreateDT', 
+        order: 'desc', 
+        limit: 100 
+      });
+      
+      if (raw !== null) {
         const mapped = Array.isArray(raw) ? raw.map(adaptLegacyJourney) : [];
         setLegacyJourneys(mapped);
         return true;
       } else {
-        console.error("Legacy journeys refetch failed:", response.status, await response.text());
+        console.error("Legacy journeys refetch failed");
         return false;
       }
     } catch (error) {
@@ -425,27 +181,27 @@ const Pipeline = () => {
       Industry: raw.Industry,
       Chance_To_Secure_order: raw.Chance_To_Secure_order,
       Company_ID: raw.Company_ID,
+      Dealer: raw.Dealer,
+      Dealer_Name: raw.Dealer_Name,
+      Dealer_ID: raw.Dealer_ID,
     };
   };
+
+  const initialFetchApi = useApi();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/legacy/base/Journey?sort=CreateDT&order=desc&limit=1600`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-        if (response.ok) {
-          const raw = await response.json();
+        const raw = await initialFetchApi.get('/legacy/base/Journey', { 
+          sort: 'CreateDT', 
+          order: 'desc', 
+          limit: 100 
+        });
+        
+        if (!cancelled && raw !== null) {
           const mapped = Array.isArray(raw) ? raw.map(adaptLegacyJourney) : [];
-          if (!cancelled) setLegacyJourneys(mapped);
-        } else {
-          console.error("Legacy journeys fetch failed:", response.status, await response.text());
+          setLegacyJourneys(mapped);
         }
       } catch (error) {
         console.error("Error fetching Journeys:", error);
@@ -510,40 +266,14 @@ const Pipeline = () => {
     visibleStages: STAGES.map(s => s.id) as number[],
   }));
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
   const [rsmFilter, setRsmFilter] = useState<string>(() => getFromLocalStorage('rsmFilter', ''));
   const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage('rsmFilterDisplay', ''));
   const [availableRsms, setAvailableRsms] = useState<string[]>([]);
+  const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
+  const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
 
-  const fuzzyMatch = useCallback((text: string, query: string): boolean => {
-    if (!query) return true;
-    
-    const textLower = text.toLowerCase();
-    const queryLower = query.toLowerCase();
-    
-    if (textLower.includes(queryLower)) return true;
-    
-    const cleanText = textLower.replace(/[^a-z0-9]/g, '');
-    const cleanQuery = queryLower.replace(/[^a-z0-9]/g, '');
-    
-    if (cleanText.includes(cleanQuery)) return true;
-    
-    let textIndex = 0;
-    let queryIndex = 0;
-    let mismatches = 0;
-    const maxMismatches = Math.floor(queryLower.length * 0.3);
-    
-    while (textIndex < textLower.length && queryIndex < queryLower.length) {
-      if (textLower[textIndex] === queryLower[queryIndex]) {
-        queryIndex++;
-      } else {
-        mismatches++;
-        if (mismatches > maxMismatches) return false;
-      }
-      textIndex++;
-    }
-    
-    return queryIndex >= queryLower.length * 0.7;
-  }, []);
 
   const filteredJourneys = useMemo(() => {
     let results = baseJourneys ?? [];
@@ -623,8 +353,15 @@ const Pipeline = () => {
       );
     }
     
+    // Apply journey status filter
+    if (journeyStatusFilter) {
+      results = results.filter(j => 
+        (j.Journey_Status ?? "").toLowerCase() === journeyStatusFilter.toLowerCase()
+      );
+    }
+    
     return results;
-  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter]);
+  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter]);
 
   // For kanban view, limit to 50 most recent journeys
   const kanbanJourneys = useMemo(() => {
@@ -640,11 +377,61 @@ const Pipeline = () => {
   const [listBatchSize, setListBatchSize] = useState(200);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
+  // Apply sorting to the full filtered dataset for list view
+  const sortedFilteredJourneys = useMemo(() => {
+    if (!sortField) return filteredJourneys;
+    
+    return [...filteredJourneys].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = (a.name ?? '').toLowerCase();
+          bValue = (b.name ?? '').toLowerCase();
+          break;
+        case 'customerId':
+          const aCustomer = customersById?.get(String(a.customerId));
+          const bCustomer = customersById?.get(String(b.customerId));
+          aValue = (aCustomer?.name ?? a.companyName ?? '').toLowerCase();
+          bValue = (bCustomer?.name ?? b.companyName ?? '').toLowerCase();
+          break;
+        case 'stage':
+          aValue = a.stage ?? 1;
+          bValue = b.stage ?? 1;
+          break;
+        case 'value':
+          aValue = Number(a.value ?? 0);
+          bValue = Number(b.value ?? 0);
+          break;
+        case 'confidence':
+          aValue = Number(a.confidence ?? 0);
+          bValue = Number(b.confidence ?? 0);
+          break;
+        case 'priority':
+          const priorityOrder = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0;
+          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0;
+          break;
+        case 'updatedAt':
+          aValue = new Date(a.updatedAt ?? 0).getTime();
+          bValue = new Date(b.updatedAt ?? 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredJourneys, sortField, sortDirection, customersById]);
+  
   const listJourneys = useMemo(() => {
-    return filteredJourneys.slice(0, listBatchSize);
-  }, [filteredJourneys, listBatchSize]);
+    return sortedFilteredJourneys.slice(0, listBatchSize);
+  }, [sortedFilteredJourneys, listBatchSize]);
 
-  const hasMoreJourneys = filteredJourneys.length > listBatchSize;
+  const hasMoreJourneys = sortedFilteredJourneys.length > listBatchSize;
 
   const loadMoreJourneys = useCallback(() => {
     if (isLoadingMore || !hasMoreJourneys) return;
@@ -657,46 +444,12 @@ const Pipeline = () => {
     }, 300);
   }, [isLoadingMore, hasMoreJourneys]);
 
-  // Scroll detection for auto-loading
-  const handleScroll = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target || viewMode !== "list") return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
-    
-    if (isNearBottom && hasMoreJourneys && !isLoadingMore) {
-      loadMoreJourneys();
-    }
-  }, [viewMode, hasMoreJourneys, isLoadingMore, loadMoreJourneys]);
 
-  // Add scroll listener for list view
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    if (viewMode !== "list" || !listContainerRef.current) return;
-
-    const scrollContainer = listContainerRef.current;
-
-    // Throttle scroll events
-    let timeoutId: NodeJS.Timeout;
-    const throttledScroll = (e: Event) => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => handleScroll(e), 100);
-    };
-
-    scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', throttledScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [viewMode, handleScroll]);
 
   // Reset batch size when filters change
   useEffect(() => {
     setListBatchSize(200);
-  }, [searchTerm, filters, rsmFilter]);
+  }, [searchTerm, filters, rsmFilter, journeyStatusFilter]);
 
   // Save filters to localStorage whenever they change
   useEffect(() => {
@@ -716,12 +469,23 @@ const Pipeline = () => {
   }, [rsmFilterDisplay]);
 
   useEffect(() => {
+    saveToLocalStorage('journeyStatusFilter', journeyStatusFilter);
+  }, [journeyStatusFilter]);
+
+  useEffect(() => {
     saveToLocalStorage('viewMode', viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    saveToLocalStorage('sortField', sortField);
+  }, [sortField]);
+
+  useEffect(() => {
+    saveToLocalStorage('sortDirection', sortDirection);
+  }, [sortDirection]);
   
   // For kanban view, filter visible stages
   const visibleStageIds = filters.visibleStages;
-  const [activeId, setActiveId] = useState<string | null>(null);
 
   const emptyStageMap = useMemo(() => {
     return STAGES.reduce((acc, s) => {
@@ -764,157 +528,43 @@ const Pipeline = () => {
     setIdsByStage(next);
   }, [filteredJourneys, kanbanJourneys, viewMode]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 }, // Increased to reduce accidental drags
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const stageFromDroppableId = (droppableId: string): number | undefined =>
-    droppableId.startsWith(columnIdPrefix)
-      ? Number(droppableId.replace(columnIdPrefix, ""))
-      : undefined;
-
-  const findStageByItemId = (id: string): number | undefined => {
-    const key = Object.keys(idsByStage).find((k) =>
-      (idsByStage[Number(k)] ?? []).includes(id)
-    );
-    return key ? Number(key) : undefined;
-  };
-
-  const stageFor = (id: string): number | undefined =>
-    stageFromDroppableId(id) ?? findStageByItemId(id);
-
-  const handleDragStart = useCallback(({ active }: any) => {
-    setActiveId(active.id.toString());
-  }, []);
-
-  const collisionDetection = useCallback<CollisionDetection>((args) => {
-    const pointerIntersections = pointerWithin(args);
-    const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
-    const overId = getFirstCollision(intersections, "id");
-    return overId ? [{ id: overId }] : [];
-  }, []);
-
-  const handleDragOver = useCallback(({ active, over }: any) => {
-    if (!over) return;
-
-    const activeContainerId: string | undefined =
-      active?.data?.current?.sortable?.containerId;
-    const sourceStage =
-      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
-      findStageByItemId(String(active.id));
-
-    const targetStage =
-      stageFromDroppableId(String(over.id)) ??
-      (over?.data?.current?.sortable?.containerId
-        ? stageFromDroppableId(over.data.current.sortable.containerId)
-        : undefined) ??
-      findStageByItemId(String(over.id));
-
-    if (!sourceStage || !targetStage || sourceStage === targetStage) return;
-
-    setIdsByStage((prev) => {
-      const sourceItems = [...(prev[sourceStage] ?? [])];
-      const targetItems = [...(prev[targetStage] ?? [])];
-      const activeIndex = sourceItems.indexOf(String(active.id));
-      if (activeIndex === -1) return prev;
-
-      sourceItems.splice(activeIndex, 1);
-
-      const isOverAColumn =
-        typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
-      const overIndex = isOverAColumn ? 0 : targetItems.indexOf(String(over.id));
-      const insertAt = overIndex < 0 ? 0 : overIndex;
-
-      targetItems.splice(insertAt, 0, String(active.id));
-
-      return {
-        ...prev,
-        [sourceStage]: sourceItems,
-        [targetStage]: targetItems,
-      };
-    });
-  }, [stageFromDroppableId, findStageByItemId, columnIdPrefix]);
-  
-
-  const handleDragEnd = async ({ active, over }: any) => {
-    setActiveId(null);
-    if (!over) return;
-
-    const activeContainerId: string | undefined =
-      active?.data?.current?.sortable?.containerId;
-
-    const fromStage =
-      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
-      findStageByItemId(String(active.id));
-
-    const toStage =
-      stageFromDroppableId(String(over.id)) ??
-      (over?.data?.current?.sortable?.containerId
-        ? stageFromDroppableId(over.data.current.sortable.containerId)
-        : undefined) ??
-      findStageByItemId(String(over.id));
-
-    if (!fromStage || !toStage) return;
-
-    const isOverAColumn =
-      typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
-
-    setIdsByStage((prev) => {
-      if (fromStage === toStage) {
-        const list = [...(prev[fromStage] ?? [])];
-        const fromIndex = list.indexOf(String(active.id));
-        if (fromIndex === -1) return prev;
-
-        const rawToIndex = isOverAColumn
-          ? list.length - 1
-          : list.indexOf(String(over.id));
-
-        const toIndex = Math.max(0, Math.min(list.length - 1, rawToIndex));
-        return { ...prev, [fromStage]: arrayMove(list, fromIndex, toIndex) };
-      } else {
-        const fromList = [...(prev[fromStage] ?? [])];
-        const toList = [...(prev[toStage] ?? [])];
-        const fromIndex = fromList.indexOf(String(active.id));
-        if (fromIndex === -1) return prev;
-
-        fromList.splice(fromIndex, 1);
-
-        const overIndex = isOverAColumn
-          ? toList.length
-          : toList.indexOf(String(over.id));
-        const insertAt = overIndex < 0 ? toList.length : overIndex;
-
-        toList.splice(insertAt, 0, String(active.id));
-
-        return { ...prev, [fromStage]: fromList, [toStage]: toList };
-      }
-    });
-
-    const journeysForDrag = viewMode === "kanban" ? kanbanJourneys : filteredJourneys;
-    const updatedJourney = (journeysForDrag ?? []).find(
-      (j) => j.id.toString() === String(active.id)
-    );
-    if (!updatedJourney) return;
-
-    if (isLegacyData) {
-      try {
-        // Call the server to update the journey stage in the legacy database
-        const response = await fetch(
-          `http://localhost:8080/api/legacy/journeys/${updatedJourney.id}/stage`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ stage: toStage }),
-          }
+  const handleDeleteJourney = useCallback(async (journeyId: string) => {
+    try {
+      const success = await del(`/legacy/std/Journey/${journeyId}`);
+      
+      if (success) {
+        // Remove from local state
+        setLegacyJourneys(prev => 
+          prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
         );
+        setJourneys(prev => prev.filter(j => j.id.toString() !== journeyId));
+      } else {
+        alert("Failed to delete journey. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting journey:", error);
+      alert("Failed to delete journey. Please try again.");
+    }
+  }, [del]);
+
+  const stageUpdateApi = useApi();
+
+  const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
+    try {
+      if (isLegacyData) {
+        // Convert stage ID to stage label for backend
+        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
+        if (!stageLabel) {
+          console.error(`Invalid stage ID: ${newStage}`);
+          return;
+        }
         
-        if (response.ok) {
+        // Call the server to update the journey stage in the legacy database
+        const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, { 
+          Journey_Stage: stageLabel 
+        });
+        
+        if (result !== null) {
           // Instead of updating local state immediately, refetch the data to ensure consistency
           // Add a small delay to ensure database has time to commit the change
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -923,10 +573,10 @@ const Pipeline = () => {
             // Fallback: update local state if refetch fails
             setLegacyJourneys((prev) =>
               (prev ?? []).map((j) =>
-                j.id.toString() === String(active.id)
+                j.id.toString() === journeyId
                   ? {
                       ...j,
-                      stage: toStage as StageId,
+                      stage: newStage,
                       updatedAt: new Date().toISOString(),
                     }
                   : j
@@ -934,19 +584,35 @@ const Pipeline = () => {
             );
           }
         } else {
-          console.error("Failed to update journey stage on server:", response.statusText);
+          console.error("Failed to update journey stage on server");
         }
-      } catch (error) {
-        console.error("Error updating journey stage:", error);
+      } else {
+        // Convert stage ID to stage label for backend
+        const stageLabel = STAGES.find(s => s.id === newStage)?.label;
+        if (!stageLabel) {
+          console.error(`Invalid stage ID: ${newStage}`);
+          return;
+        }
+        await put(`/legacy/base/Journey/${journeyId}`, { Journey_Stage: stageLabel });
       }
-    } else {
-      try {
-        await put(`/legacy/base/Journey/${updatedJourney.id}`, { Journey_Stage: toStage });
-      } catch (error) {
-        console.error("Failed to update journey stage:", error);
-      }
+    } catch (error) {
+      console.error("Error updating journey stage:", error);
     }
-  };
+  }, [isLegacyData, refetchLegacyJourneys, put]);
+
+  const handleSort = useCallback((field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }, [sortField, sortDirection]);
+
+  const getSortIcon = useCallback((field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  }, [sortField, sortDirection]);
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
   
@@ -961,103 +627,95 @@ const Pipeline = () => {
   const pageTitle = "Sales Pipeline";
   const pageDescription = `${filteredJourneys.length} Journeys`;
 
-  const tableColumns = [
-    {
-      key: "name",
-      header: "Journey Name",
-      render: (_: string, row: any) => (
-        <Link
-          to={`/sales/pipeline/${row.id}`}
-          state={{ 
-            journey: row,
-            customer: customersById?.get(String(row.customerId))
-          }}
-          className="text-sm font-medium text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {row.name}
-        </Link>
-      ),
-    },
-    {
-      key: "customerId",
-      header: "Company",
-      render: (value: string, row: any) => {
-        const customer = customersById.get(String(value));
-        return (
-          <div>
-            <div className="text-sm text-neutral-400">
-              {customer?.name ?? row.companyName ?? ""}
-            </div>
-            <div className="text-xs text-neutral-400">{row.contact}</div>
-          </div>
-        );
+
+  const exportToExcel = useCallback(() => {
+    const headers = [
+      'Quote Number',
+      'CreateDate', 
+      'ActionDate',
+      'Confidence',
+      'Est PO Date',
+      'Stage',
+      'RSM',
+      'Industry', 
+      'Dealer',
+      'Customer',
+      'Equipment',
+      'Lead Source'
+    ];
+
+    const rows = filteredJourneys.map(journey => {
+      const customer = customersById.get(String(journey.customerId));
+      return [
+        journey.Quote_Number || '',
+        journey.CreateDT ? new Date(journey.CreateDT) : '',
+        journey.Action_Date ? new Date(journey.Action_Date) : '',
+        journey.Chance_To_Secure_order || '',
+        journey.Expected_Decision_Date ? new Date(journey.Expected_Decision_Date) : '',
+        journey.Journey_Stage || stageLabel(journey.stage),
+        journey.RSM || '',
+        journey.Industry || '',
+        journey.Dealer || journey.Dealer_Name || journey.dealer || '',
+        customer?.name || journey.companyName || journey.Target_Account || '',
+        journey.Equipment_Type || '',
+        journey.Lead_Source || ''
+      ];
+    });
+
+    // Create worksheet data
+    const wsData = [headers, ...rows];
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Set column widths (auto-fit with reasonable limits)
+    const colWidths = headers.map((header, index) => {
+      const maxLength = Math.max(
+        header.length,
+        ...rows.map(row => String(row[index] || '').length)
+      );
+      return { wch: Math.min(Math.max(maxLength + 1, 8), 25) }; // Min 8, max 25 characters
+    });
+    ws['!cols'] = colWidths;
+    
+    // Add autofilter to entire data range (enables sorting and filtering)
+    const dataRange = `A1:${XLSX.utils.encode_col(headers.length - 1)}${wsData.length}`;
+    ws['!autofilter'] = { ref: dataRange };
+    
+    // Format data columns for proper sorting
+    for (let col = 0; col < headers.length; col++) {
+      const headerName = headers[col];
+      for (let row = 1; row <= rows.length; row++) {
+        const dataCellRef = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!ws[dataCellRef]) continue;
+        
+        // Format date columns
+        if (headerName === 'CreateDate' || headerName === 'ActionDate' || headerName === 'Est PO Date') {
+          if (ws[dataCellRef].v && ws[dataCellRef].v instanceof Date) {
+            ws[dataCellRef].t = 'd'; // Set cell type to date
+            ws[dataCellRef].z = 'mm/dd/yyyy'; // Date format
+          }
+        }
+        
+        // Format confidence as number
+        if (headerName === 'Confidence' && ws[dataCellRef].v) {
+          const confValue = parseFloat(ws[dataCellRef].v);
+          if (!isNaN(confValue)) {
+            ws[dataCellRef].v = confValue;
+            ws[dataCellRef].t = 'n'; // Set cell type to number
+          }
+        }
       }
-    },
-    {
-      key: "stage",
-      header: "Stage",
-      render: (value: number) => (
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-neutral-400">{stageLabel(value)}</div>
-        </div>
-      ),
-    },
-    {
-      key: "value",
-      header: "Value",
-      render: (value: number) => (
-        <div className="text-sm font-medium text-neutral-400">
-          {formatCurrency(value)}
-        </div>
-      ),
-    },
-    {
-      key: "confidence",
-      header: "Confidence",
-      render: (value: number) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-gray-200 h-1.5 w-16 rounded-full overflow-hidden">
-            <div
-              className={`h-full ${
-                (value ?? 0) >= 70
-                  ? "bg-green-500"
-                  : (value ?? 0) >= 40
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-              }`}
-              style={{ width: `${(value ?? 0)}%` }}></div>
-          </div>
-          <span className="text-xs text-neutral-400">{value ?? 0}%</span>
-        </div>
-      ),
-    },
-    {
-      key: "priority",
-      header: "Priority",
-      render: (value: string) => (
-        <StatusBadge label={value} variant={getPriorityConfig(value).style} />
-      ),
-    },
-    {
-      key: "updatedAt",
-      header: "Last Activity",
-      render: (value: string) => (
-        <div className="text-sm text-neutral-400">{formatDate(value)}</div>
-      ),
-    },
-    {
-      key: "actions",
-      header: "",
-      render: () => (
-        <div className="text-right">
-          <button className="text-neutral-400 hover:text-neutral-600">
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
-      ),
-    },
-  ];
+    }
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Pipeline Export');
+    
+    // Generate Excel file and download
+    const fileName = `pipeline-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }, [filteredJourneys, customersById]);
 
   const HeaderActions = () => (
     <div className="flex gap-2">
@@ -1088,7 +746,7 @@ const Pipeline = () => {
       <Button
         variant="secondary-outline"
         size="sm"
-        onClick={() => {}}
+        onClick={exportToExcel}
       >
         <Download size={16} />
         Export
@@ -1137,74 +795,21 @@ const Pipeline = () => {
             setRsmFilter={setRsmFilter}
             setRsmFilterDisplay={setRsmFilterDisplay}
             availableRsms={availableRsms}
+            journeyStatusFilter={journeyStatusFilter}
+            setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
             setIsFilterModalOpen={setIsFilterModalOpen}
           />
-          <DndContext
-            sensors={sensors}
-            collisionDetection={collisionDetection}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden">
-              <div className="inline-flex gap-2 p-2 h-full">
-                {STAGES.filter(s => visibleStageIds?.includes(s.id)).map((stage) => {
-                  const { items, stageTotal, stageWeighted } = stageCalculations.get(stage.id) || { items: [], stageTotal: 0, stageWeighted: 0 };
-                  return (
-                    <DroppableColumn
-                      key={stage.id}
-                      id={`${columnIdPrefix}${stage.id}`}
-                      className="w-[320px] min-w-[320px] bg-foreground rounded border border-border flex flex-col h-full"
-                    >
-                      <div className="p-2 pb-1 flex items-center justify-between flex-shrink-0">
-                        <div className="text-sm font-semibold text-primary">{stage.label}</div>
-                        <div className="text-xs text-neutral-400">
-                          {items.length} Journeys
-                        </div>
-                      </div>
-                      <div className="flex-1 min-h-0 overflow-y-auto px-2 pt-8">
-                        <SortableContext
-                          id={`${columnIdPrefix}${stage.id}`}
-                          items={items}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          {items.map((itemId) => {
-                            const journey = kanbanJourneys.find((d) => d.id.toString() === itemId);
-                            return journey ? (
-                              <SortableItem
-                                key={itemId}
-                                journey={journey}
-                                customersById={customersById}
-                              />
-                            ) : null;
-                          })}
-                        </SortableContext>
-                      </div>
-                      <div className="flex-shrink-0 p-2 pt-1 border-t border-border bg-background/50">
-                        <div className="text-xs text-neutral-500 space-y-1">
-                          <div className="flex justify-between">
-                            <span>Total:</span>
-                            <span className="font-medium">{formatCurrency(stageTotal)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Weighted ({Math.round(stage.weight * 100)}%):</span>
-                            <span className="font-medium text-primary">{formatCurrency(stageWeighted)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </DroppableColumn>
-                  );
-                })}
-              </div>
-            </div>
-            <DragOverlay>
-              {activeId && (() => {
-                const journey = kanbanJourneys.find((d) => d.id.toString() === activeId);
-                return journey ? <DragPreview journey={journey} customersById={customersById} /> : null;
-              })()}
-            </DragOverlay>
-          </DndContext>
+          <KanbanView
+            journeys={kanbanJourneys}
+            customersById={customersById}
+            visibleStageIds={visibleStageIds}
+            idsByStage={idsByStage}
+            stageCalculations={stageCalculations}
+            onDeleteJourney={handleDeleteJourney}
+            onStageUpdate={handleStageUpdate}
+            setIdsByStage={setIdsByStage}
+          />
         </div>
       )}
 
@@ -1217,34 +822,24 @@ const Pipeline = () => {
             setRsmFilter={setRsmFilter}
             setRsmFilterDisplay={setRsmFilterDisplay}
             availableRsms={availableRsms}
+            journeyStatusFilter={journeyStatusFilter}
+            setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
             setIsFilterModalOpen={setIsFilterModalOpen}
           />
-          <div ref={listContainerRef} className="flex-1 overflow-auto">
-            <div className="flex flex-col h-full">
-              <Table
-                columns={tableColumns as any}
-                data={listJourneys}
-                total={filteredJourneys.length}
-                className="bg-foreground rounded shadow-sm border flex-shrink-0"
-              />
-              {hasMoreJourneys && (
-                <div className="p-4 bg-foreground flex justify-center flex-shrink-0">
-                  <Button
-                    variant="secondary-outline"
-                    onClick={loadMoreJourneys}
-                    disabled={isLoadingMore}
-                    className="min-w-32"
-                  >
-                    {isLoadingMore 
-                      ? "Loading..." 
-                      : `Load ${Math.min(200, filteredJourneys.length - listBatchSize)} More (${filteredJourneys.length - listBatchSize} remaining)`
-                    }
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
+          <ListView
+            journeys={listJourneys}
+            sortedFilteredJourneys={sortedFilteredJourneys}
+            customersById={customersById}
+            listBatchSize={listBatchSize}
+            hasMoreJourneys={hasMoreJourneys}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={loadMoreJourneys}
+            onDeleteJourney={handleDeleteJourney}
+            onSort={handleSort}
+            getSortIcon={getSortIcon}
+            stageLabel={stageLabel}
+          />
         </div>
       )}
 
@@ -1258,8 +853,71 @@ const Pipeline = () => {
         <CreateJourneyModal
           isOpen={isJourneyModalOpen}
           onClose={toggleJourneyModal}
-          onSuccess={() => {}}
+          onSuccess={(newJourney) => {
+            // Add the new journey to the top of the list
+            if (newJourney) {
+              console.log('Raw new journey:', newJourney);
+              const adaptedJourney = adaptLegacyJourney(newJourney);
+              console.log('Adapted journey:', adaptedJourney);
+              
+              // Update both legacy journeys and regular journeys state
+              setLegacyJourneys(prev => {
+                const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
+                console.log('Updated legacyJourneys:', updated);
+                return updated;
+              });
+              setJourneys(prev => {
+                const updated = [adaptedJourney, ...prev];
+                console.log('Updated journeys:', updated);
+                return updated;
+              });
+              
+              // Show navigation modal
+              setNavigationModal({
+                isOpen: true,
+                journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || 'New Journey',
+                journeyId: adaptedJourney.id
+              });
+            }
+          }}
+          availableRsms={availableRsms}
         />
+      )}
+      {navigationModal.isOpen && (
+        <Modal
+          isOpen={navigationModal.isOpen}
+          onClose={() => setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' })}
+          title="Journey Created Successfully!"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-text">
+              Journey "{navigationModal.journeyName}" has been created successfully.
+            </p>
+            <p className="text-text-muted text-sm">
+              Would you like to open the journey details now?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' })}
+              >
+                Stay Here
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setNavigationModal({ isOpen: false, journeyName: '', journeyId: '' });
+                  navigate(`/sales/pipeline/${navigationModal.journeyId}`);
+                }}
+              >
+                Open Journey Details
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
       {isFilterModalOpen && (
         <FilterModal
@@ -1269,207 +927,6 @@ const Pipeline = () => {
           onClose={() => setIsFilterModalOpen(false)}
         />
       )}
-    </div>
-  );
-};
-
-const ProjectionsView = ({ journeys, customersById }: { journeys: any[], customersById: Map<string, any> }) => {
-  const monthlyProjections = useMemo(() => {
-    const monthMap = new Map<string, { journeys: any[], weightedValue: number, totalValue: number }>();
-    
-    journeys.forEach(journey => {
-      const closeDate = new Date(journey.closeDate);
-      const monthKey = `${closeDate.getFullYear()}-${String(closeDate.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = closeDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-      
-      const stage = STAGES.find(s => s.id === journey.stage);
-      const weight = stage?.weight ?? 0;
-      const value = Number(journey.value ?? 0);
-      const weightedValue = value * weight;
-      
-      if (!monthMap.has(monthKey)) {
-        monthMap.set(monthKey, {
-          journeys: [],
-          weightedValue: 0,
-          totalValue: 0
-        });
-      }
-      
-      const monthData = monthMap.get(monthKey)!;
-      monthData.journeys.push({ ...journey, monthLabel });
-      monthData.weightedValue += weightedValue;
-      monthData.totalValue += value;
-    });
-    
-    // Sort by month and convert to array
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([monthKey, data]) => ({
-        monthKey,
-        monthLabel: data.journeys[0]?.monthLabel || monthKey,
-        ...data,
-        avgValuePerDeal: data.journeys.length > 0 ? data.totalValue / data.journeys.length : 0,
-        avgDealAge: data.journeys.length > 0 ? (() => {
-          const journeysWithDates = data.journeys.filter(j => j.CreateDT);
-          if (journeysWithDates.length === 0) return 0;
-          const totalAge = journeysWithDates.reduce((sum, j) => {
-            const createdDate = new Date(j.CreateDT);
-            const daysDiff = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-            return sum + daysDiff;
-          }, 0);
-          return totalAge / journeysWithDates.length;
-        })() : 0
-      }));
-  }, [journeys]);
-
-  const totalWeightedProjection = monthlyProjections.reduce((sum, month) => sum + month.weightedValue, 0);
-  const totalDeals = journeys.length;
-  const avgValuePerDeal = totalDeals > 0 ? journeys.reduce((sum, j) => sum + Number(j.value ?? 0), 0) / totalDeals : 0;
-  const avgDealAge = (() => {
-    const journeysWithDates = journeys.filter(j => j.CreateDT);
-    if (journeysWithDates.length === 0) return 0;
-    const totalAge = journeysWithDates.reduce((sum, j) => {
-      const createdDate = new Date(j.CreateDT);
-      const daysDiff = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      return sum + daysDiff;
-    }, 0);
-    return totalAge / journeysWithDates.length;
-  })();
-
-  return (
-    <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
-      {/* Summary Cards */}
-      <div className="border-b px-6 py-4 bg-foreground">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-background rounded border border-border p-4">
-            <div className="text-sm text-neutral-400 mb-1">Total Weighted Projection</div>
-            <div className="text-2xl font-semibold text-primary">{formatCurrency(totalWeightedProjection)}</div>
-          </div>
-          <div className="bg-background rounded border border-border p-4">
-            <div className="text-sm text-neutral-400 mb-1">Average Deal Value</div>
-            <div className="text-2xl font-semibold text-neutral-400">{formatCurrency(avgValuePerDeal)}</div>
-          </div>
-          <div className="bg-background rounded border border-border p-4">
-            <div className="text-sm text-neutral-400 mb-1">Average Deal Age</div>
-            <div className="text-2xl font-semibold text-neutral-400">{Math.round(avgDealAge)} days</div>
-          </div>
-          <div className="bg-background rounded border border-border p-4">
-            <div className="text-sm text-neutral-400 mb-1">Active Months</div>
-            <div className="text-2xl font-semibold text-neutral-400">{monthlyProjections.length}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scrollable Content Container */}
-      <div className="flex-1 min-h-0 overflow-auto bg-background">
-        {/* Revenue Chart */}
-        <div className="p-6">
-          <div className="bg-foreground rounded border border-border p-4 mb-6">
-            <h3 className="text-lg font-semibold text-neutral-400 mb-4">Revenue by Month</h3>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyProjections.map(month => ({
-                  month: month.monthLabel,
-                  totalValue: month.totalValue,
-                  weightedValue: month.weightedValue,
-                  monthKey: month.monthKey
-                }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    formatter={(value: number, name: string, props: any) => [
-                      formatCurrency(value), 
-                      props.dataKey === 'totalValue' ? 'Total Value' : 'Weighted Value'
-                    ]}
-                    labelStyle={{ color: '#9CA3AF' }}
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '6px',
-                      color: '#F9FAFB'
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ color: '#9CA3AF' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="totalValue" 
-                    stroke="#9CA3AF" 
-                    strokeWidth={2}
-                    name="Total Value"
-                    dot={{ fill: '#9CA3AF', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weightedValue" 
-                    stroke="#EAB308" 
-                    strokeWidth={2}
-                    name="Weighted Value"
-                    dot={{ fill: '#EAB308', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Projections Table */}
-        <div className="px-6 pb-6">
-        <div className="bg-foreground rounded border border-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-border bg-background">
-            <h3 className="text-lg font-semibold text-neutral-400">Monthly Projections</h3>
-          </div>
-          <div>
-            <table className="w-full">
-              <thead className="bg-background">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-neutral-400">Month</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-neutral-400">Journeys</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-neutral-400">Total Value</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-neutral-400">Weighted Value</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-neutral-400">Avg Value/Deal</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-neutral-400">Avg Age (days)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {monthlyProjections.map((month) => (
-                  <tr key={month.monthKey} className="hover:bg-background transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-neutral-400">{month.monthLabel}</div>
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-400">
-                      {month.journeys.length}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-neutral-400">
-                      {formatCurrency(month.totalValue)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-primary">
-                      {formatCurrency(month.weightedValue)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-400">
-                      {formatCurrency(month.avgValuePerDeal)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-400">
-                      {Math.round(month.avgDealAge)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1705,16 +1162,17 @@ const CreateJourneyModal = ({
   isOpen,
   onClose,
   onSuccess,
+  availableRsms,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (newJourney?: any) => void;
+  availableRsms: string[];
 }) => {
   const [name, setName] = useState<string | { create: true; label: string }>("");
   const [startDate, setStartDate] = useState<string>("");
   const [journeyType, setJourneyType] = useState<string>("");
   const [rsm, setRsm] = useState<string>("");
-  const [contactName, setContactName] = useState<string>("");
   const [city, setCity] = useState<string>("");
   const [stateProv, setStateProv] = useState<string>("");
   const [country, setCountry] = useState<string>("");
@@ -1727,31 +1185,83 @@ const CreateJourneyModal = ({
   const { post, loading, error } = useApi();
 
   const handleCreate = async () => {
-    const payload = {
-      name,
-      startDate,
-      journeyType,
-      rsm,
-      contactName,
-      city,
-      state: stateProv,
-      country,
-      industry,
-      leadSource,
-      notes,
-      actionDate,
-      equipmentType,
-    };
+    // Validate required fields
+    if (!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource) {
+      alert("Please fill in all required fields: Journey Name, Journey Type, RSM, City, State, Country, Industry, and Lead Source");
+      return;
+    }
 
-    console.log("Journey payload:", payload);
+    try {
+      // Generate a unique ID for the Journey
+      const uniqueId = await generateUniqueId("Journey", "ID", "std");
 
-    const result = await post("/journeys", payload);
+      // Map form fields to database field names
+      const payload = {
+        ID: uniqueId,
+        Project_Name: name,
+        Journey_Start_Date: startDate,
+        Journey_Type: journeyType,
+        RSM: rsm,
+        City: city,
+        State_Province: stateProv,
+        Country: country,
+        Industry: industry,
+        Lead_Source: leadSource,
+        Journey_Stage: "Lead", // Default to Lead
+        Notes: notes,
+        Action_Date: actionDate,
+        Equipment_Type: equipmentType,
+      };
 
-    if (result) {
-      onSuccess?.();
-      onClose();
-    } else {
-      console.error("Journey creation failed:", error);
+      console.log("Journey payload:", payload);
+
+      const result = await post("/legacy/std/Journey", payload);
+
+      if (result) {
+        // Create the journey object for immediate display
+        const newJourney = {
+          ...payload,
+          // Use the generated ID as the primary identifier
+          CreateDT: new Date().toISOString(),
+          Action_Date: actionDate || new Date().toISOString(),
+          Journey_Value: 0, // Default value
+          Priority: 'C', // Default priority
+          Target_Account: '', // Default empty
+          Quote_Number: '', // Default empty
+          Chance_To_Secure_order: null, // Default empty
+          // Add other fields that might be expected
+          Expected_Decision_Date: null,
+          Quote_Presentation_Date: null,
+          Date_PO_Received: null,
+          Journey_Start_Date: startDate || new Date().toISOString(),
+          Journey_Status: 'Active',
+          RSM_Territory: '',
+          Dealer: '',
+          Dealer_Name: '',
+          Dealer_ID: null,
+          Qty_of_Items: 0,
+        };
+        onSuccess?.(newJourney);
+        onClose();
+        // Reset form
+        setName("");
+        setStartDate("");
+        setJourneyType("");
+        setRsm("");
+        setCity("");
+        setStateProv("");
+        setCountry("");
+        setIndustry("");
+        setLeadSource("");
+        setNotes("");
+        setActionDate("");
+        setEquipmentType("");
+      } else {
+        console.error("Journey creation failed:", error);
+      }
+    } catch (error) {
+      console.error("Error generating unique ID or creating journey:", error);
+      alert("Failed to create journey. Please try again.");
     }
   };
 
@@ -1806,33 +1316,13 @@ const CreateJourneyModal = ({
               required
               value={rsm}
               onChange={(e) => setRsm(e.target.value)}
-              options={[
-                { value: "reid_coe", label: "Reid Coe" },
-                { value: "greg_p_isabel", label: "Greg P. Isabel" },
-                { value: "john_m_kwiatkowski", label: "John M. Kwiatkowski" },
-                { value: "kathryn_l_chun", label: "Kathryn L. Chun" },
-                { value: "mark_a_versteegden", label: "Mark A. Versteegden" },
-                { value: "noah_j_hellner", label: "Noah J. Hellner" },
-                { value: "ryan_w_hardin", label: "Ryan W. Hardin" },
-                { value: "roberto_r_aguilar", label: "Roberto R. Aguilar" },
-                { value: "tyler_c_sloan", label: "Tyler C. Sloan" },
-                { value: "tricia_a_thomas", label: "Tricia A. Thomas" },
-                { value: "terry_l_sawyer", label: "Terry L. Sawyer" },
-                { value: "tom_w_brockie", label: "Tom W. Brockie" },
-              ]}
+              options={availableRsms.filter(rsm => rsm && rsm.trim()).map(rsm => ({ 
+                value: rsm, 
+                label: rsm 
+              }))}
             />
           </div>
 
-          <div className="space-y-1">
-            <Input
-              label="Contact Name"
-              className="w-full rounded border border-border px-3 py-2 text-sm"
-              placeholder="Enter primary contact name"
-              required
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-            />
-          </div>
 
           <div className="grid grid-cols-3 gap-2">
             <Input
@@ -1872,28 +1362,28 @@ const CreateJourneyModal = ({
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
               options={[
-                { value: "appliances", label: "Appliances" },
-                { value: "auto_oem", label: "Auto OEM" },
-                { value: "auto_tier_1_2", label: "Auto Tier 1 & 2" },
-                { value: "construction", label: "Construction" },
-                { value: "contract_fabricating", label: "Contract Fabricating" },
-                { value: "contract_rollforming", label: "Contract Rollforming" },
-                { value: "contract_stamping", label: "Contract Stamping" },
-                { value: "electrical_components_lighting", label: "Electrical Components / Lighting" },
-                { value: "energy_motors_transformers", label: "Energy / Motors / Transformers" },
-                { value: "furniture_components", label: "Furniture & Components" },
-                { value: "hvac_air_handling", label: "HVAC / Air Handling" },
-                { value: "integrator", label: "Integrator" },
-                { value: "lawn_equipment", label: "Lawn Equipment" },
-                { value: "mobile_heavy_equipment_locomotive", label: "Mobile Heavy Equipment / Locomotive" },
-                { value: "marine", label: "Marine" },
-                { value: "medical", label: "Medical" },
-                { value: "military_defense", label: "Military / Defense" },
-                { value: "packaging", label: "Packaging" },
-                { value: "press_oem", label: "Press OEM" },
-                { value: "rv_trailers", label: "RV / Trailers" },
-                { value: "storage_lockers_hardware", label: "Storage / Lockers / Hardware" },
-                { value: "other", label: "Other" },
+                { value: "Contract Stamping", label: "Contract Stamping" },
+                { value: "Press OEM", label: "Press OEM" },
+                { value: "Construction", label: "Construction" },
+                { value: "Energy / Motors / Transformers", label: "Energy / Motors / Transformers" },
+                { value: "Integrator", label: "Integrator" },
+                { value: "Auto Tier 1 & 2", label: "Auto Tier 1 & 2" },
+                { value: "Auto OEM", label: "Auto OEM" },
+                { value: "Marine", label: "Marine" },
+                { value: "Appliances", label: "Appliances" },
+                { value: "Lawn Equipment", label: "Lawn Equipment" },
+                { value: "Contract Rollforming", label: "Contract Rollforming" },
+                { value: "HVAC / Air Handling", label: "HVAC / Air Handling" },
+                { value: "Packaging", label: "Packaging" },
+                { value: "Mobile Heavy Equipment / Locomotive", label: "Mobile Heavy Equipment / Locomotive" },
+                { value: "Other", label: "Other" },
+                { value: "Storage / Lockers / Hardware", label: "Storage / Lockers / Hardware" },
+                { value: "Contract Fabricating", label: "Contract Fabricating" },
+                { value: "Furniture & Components", label: "Furniture & Components" },
+                { value: "Electrical Components / Lighting", label: "Electrical Components / Lighting" },
+                { value: "RV / Trailers", label: "RV / Trailers" },
+                { value: "Military / Defense", label: "Military / Defense" },
+                { value: "Medical", label: "Medical" },
               ]}
             />
           </div>
@@ -1965,7 +1455,7 @@ const CreateJourneyModal = ({
           <div className="pt-2 border-t">
             <Button
               onClick={handleCreate}
-              disabled={!name || loading}
+              disabled={!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource || loading}
               variant="primary"
               className="w-full"
             >

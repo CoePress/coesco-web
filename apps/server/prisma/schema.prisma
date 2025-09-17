@@ -429,7 +429,7 @@ model Message {
   updatedAt DateTime @updatedAt
   fileUrl   String?
 
-  chat Chat @relation(fields: [chatId], references: [id])
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
@@ -545,6 +545,84 @@ model NtfyDevice {
   updatedById        String
 
   @@map("ntfy_devices")
+}
+
+model Form {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String   @default("draft") // draft, published, archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections    FormSection[]
+  submissions FormSubmission[]
+
+  @@map("forms")
+}
+
+model FormSection {
+  id          String   @id @default(uuid())
+  formId      String
+  title       String
+  description String?
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  form   Form        @relation(fields: [formId], references: [id], onDelete: Cascade)
+  fields FormField[]
+
+  @@map("form_sections")
+}
+
+model FormField {
+  id             String  @id @default(uuid())
+  sectionId      String
+  fieldType      String  // text, number, dropdown, checkbox, textarea, photo, signature, date
+  label          String
+  required       Boolean @default(false)
+  orderIndex     Int
+  validationRules Json?   // Store validation rules as JSON
+  options        Json?   // Store dropdown options, checkbox options, etc.
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  section           FormSection           @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  submissionAnswers SubmissionAnswer[]
+
+  @@map("form_fields")
+}
+
+model FormSubmission {
+  id           String   @id @default(uuid())
+  formId       String
+  status       String   @default("draft") // draft, submitted, completed
+  locationData Json?    // GPS coordinates, location info
+  submittedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  form    Form               @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers SubmissionAnswer[]
+
+  @@map("form_submissions")
+}
+
+model SubmissionAnswer {
+  id           String  @id @default(uuid())
+  submissionId String
+  fieldId      String
+  value        String? // Text values, JSON for complex data
+  filePath     String? // For photos, signatures, file uploads
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  submission FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  field      FormField      @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, fieldId])
+  @@map("submission_answers")
 }
 
 enum AuditAction {
@@ -732,19 +810,18 @@ model ProductClassOptionCategory {
 }
 
 model OptionHeader {
-  id               String    @id @default(uuid())
-  optionCategoryId String
-  name             String
-  description      String?
-  application      String?
-  legacyId         String?
-  displayOrder     Int       @default(0)
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
-  createdById      String
-  updatedById      String
+  id          String    @id @default(uuid())
+  optionCategoryId  String
+  name        String
+  description String?
+  legacyId    String?
+  displayOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   category             OptionCategory        @relation(fields: [optionCategoryId], references: [id])
   optionDetails        OptionDetails[]
@@ -823,6 +900,7 @@ model QuoteHeader {
   dealerAddressId   String?
   priority          String    @default("C")
   confidence        Int       @default(0)
+  status            QuoteHeaderStatus @default(OPEN)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -836,7 +914,12 @@ model QuoteHeader {
   @@map("quote_headers")
 }
 
-// QRev + QtNotes
+enum QuoteHeaderStatus {
+  OPEN
+  CLOSED
+}
+
+// QRev
 model QuoteDetails {
   id            String      @id @default(uuid())
   quoteHeaderId String

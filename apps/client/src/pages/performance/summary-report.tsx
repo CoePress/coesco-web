@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { PerformanceData } from "@/contexts/performance.context";
 import { usePerformanceDataService } from "@/utils/performance-sheet";
 import { Card, Input, Text } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import Checkbox from "@/components/ui/checkbox";
 
 export interface SummaryReportProps {
   data: PerformanceData;
@@ -17,10 +17,8 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  // Helper for checkboxes (convert string/boolean to boolean)
   const boolVal = useCallback((val: any) => val === true || val === "true" || val === "Yes", []);
 
-  // Header section
   const headerSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -46,7 +44,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Reel section
   const reelSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -92,7 +89,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Threading Drive section
   const threadingDriveSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -117,7 +113,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Hold Down section
   const holdDownSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -142,7 +137,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Drag Brake section
   const dragBrakeSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -167,7 +161,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Motorized Reel section
   const motorizedReelSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -206,7 +199,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Powered Straightener section
   const poweredStraightenerSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -266,7 +258,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Sigma 5 Feed section
   const sigma5FeedSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -412,7 +403,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, boolVal, handleFieldChange, isEditing]);
 
-  // Performance results table section
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
     const initLength = tableData[0]?.length || 0;
@@ -462,7 +452,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
     );
   }, [localData]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -496,7 +485,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 pb-6 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -504,7 +492,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         )}
       </div>
 
-      {/* Loading and error states */}
       {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -524,7 +511,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Form sections */}
       {headerSection}
       {reelSection}
       {threadingDriveSection}

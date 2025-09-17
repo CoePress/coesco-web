@@ -27,8 +27,8 @@ const corsOptions = {
   origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name"],
+  exposedHeaders: ["Content-Range", "X-Content-Range", "Content-Length", "Content-Disposition"],
 };
 
 const io = new Server(server, {
@@ -62,6 +62,8 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Raw body parsing for file uploads
+app.use("/api/files/upload", express.raw({ type: "*/*", limit: "100mb" }));
 app.set("trust proxy", false);
 
 app.get("/openapi.json", (_req, res) => {

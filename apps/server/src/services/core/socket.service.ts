@@ -3,6 +3,8 @@ import type { Server, Socket } from "socket.io";
 import { agentService } from "@/services";
 import { logger } from "@/utils/logger";
 
+import { chatService, messageService } from "../repository";
+
 export class SocketService {
   private io: Server | null = null;
 
@@ -87,19 +89,45 @@ export class SocketService {
         socket.leave(chatId);
       });
 
-      socket.on("message:send", async (payload, ack?: any) => {
+      socket.on("message:user", async (payload, ack?: any) => {
         try {
-          const { chatId, text } = payload;
-          if (!chatId || !text) {
-            ack?.({ ok: false, error: "Invalid payload" });
+          const { employeeId, chatId, message } = payload;
+          if (!message || !employeeId) {
+            ack?.({ ok: false, error: "Missing required fields: message, employeeId" });
             return;
           }
 
-          const { userMsg, assistantMsg } = await agentService.processMessage(chatId, text);
-          chat.to(chatId).emit("message:new", userMsg);
-          chat.to(chatId).emit("message:new", assistantMsg);
+          let actualChatId = chatId;
 
-          ack?.({ ok: true });
+          if (!chatId) {
+            const newChat = await chatService.create({
+              employeeId,
+              name: `New Chat`,
+              createdById: employeeId,
+              updatedById: employeeId,
+            });
+
+            actualChatId = newChat.data.id;
+            socket.emit("chat:url-update", { chatId: actualChatId });
+          }
+
+          await messageService.create({
+            chatId: actualChatId,
+            role: "user",
+            content: message,
+          });
+
+          const systemMessage = await agentService.processMessage(employeeId, actualChatId, message);
+
+          await messageService.create({
+            chatId: actualChatId,
+            role: "assistant",
+            content: "Hello World",
+          });
+
+          chat.to(actualChatId).emit("message:system", "Hello World");
+
+          ack?.({ ok: true, chatId: actualChatId, message: systemMessage });
         }
         catch (err) {
           logger.error(`Error processing message for socket ${socket.id}`, err);

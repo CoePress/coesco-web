@@ -21,12 +21,10 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, updateField, saveImmediately } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  // Determine shear type based on current data
   const shearType = useMemo(() => {
     return localData.shear?.shear?.model || "single-rake";
   }, [localData.shear?.shear?.model]);
 
-  // Handle shear type change
   const handleShearTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value;
     
@@ -35,14 +33,12 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     updateField("shear.shear.model", newType);
   }, [isEditing, updateField]);
 
-  // Calculate function
   const handleCalculate = useCallback(async () => {
     if (!isEditing || !performanceSheetId) return;
     
     console.log("Calculate pressed for", shearType, "shear configuration");
     
     try {
-      // Trigger shear calculation on the backend
       const response = await saveImmediately();
       console.log("Shear calculation triggered:", response);
     } catch (error) {
@@ -50,7 +46,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     }
   }, [isEditing, performanceSheetId, saveImmediately, shearType]);
 
-  // Calculate derived values from local data (for immediate feedback)
   const calculatedValues = useMemo(() => {
     const materialData = localData.common?.material || {};
     const shearData = localData.shear || {};
@@ -69,9 +64,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     const downwardStrokeTime = Number(shearData.shear?.time?.forDownwardStroke) || 0;
     const dwellTime = Number(shearData.shear?.time?.dwellTime) || 0;
 
-    // Use backend calculated values if available, otherwise calculate locally for immediate feedback
     if (shearData.shear?.conclusions?.force?.perCylinder !== undefined) {
-      // Use backend values
       return {
         angleOfBlade: shearData.shear?.blade?.angleOfBlade || 0,
         lengthOfInitialCut: shearData.shear?.blade?.initialCut?.length || 0,
@@ -96,7 +89,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
       };
     }
 
-    // Local calculations for immediate feedback
     const angleOfBlade = rakeOfBlade * 12; // Convert to display value
     const lengthOfInitialCut = coilWidth / Math.cos(rakeOfBlade * Math.PI / 180);
     const areaOfCut = materialThickness * lengthOfInitialCut;
@@ -147,7 +139,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     };
   }, [localData.common?.material, localData.shear]);
 
-  // Header section
   const headerSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -181,7 +172,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, shearType, handleFieldChange, handleShearTypeChange, isEditing]);
 
-  // Material specifications section
   const materialSpecsSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Material Specifications</Text>
@@ -223,7 +213,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </div>
   ), [localData, calculatedValues, handleFieldChange, isEditing]);
 
-  // Blade specifications section
   const bladeSpecsSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Blade Specifications</Text>
@@ -274,7 +263,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </div>
   ), [localData, calculatedValues, handleFieldChange, isEditing]);
 
-  // Cylinder specifications section
   const cylinderSpecsSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Cylinder Specifications</Text>
@@ -316,7 +304,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </div>
   ), [localData, calculatedValues, handleFieldChange, isEditing]);
 
-  // Hydraulic pressure section
   const hydraulicSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Hydraulic Pressure (psi)</Text>
@@ -338,7 +325,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </div>
   ), [localData, calculatedValues, handleFieldChange, isEditing]);
 
-  // Time section
   const timeSection = useMemo(() => (
     <div className="mb-6">
       <Text as="h4" className="mb-3 text-md font-medium">Time</Text>
@@ -363,7 +349,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </div>
   ), [localData, handleFieldChange, isEditing]);
 
-  // User defined variables section
   const userDefinedSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">User Defined Variables</Text>
@@ -385,7 +370,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </Card>
   ), [materialSpecsSection, bladeSpecsSection, cylinderSpecsSection, hydraulicSection, timeSection, handleCalculate, isEditing, isLoading]);
 
-  // Conclusions section
   const conclusionsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <div className="flex justify-between items-start mb-4">
@@ -458,7 +442,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     </Card>
   ), [calculatedValues]);
 
-  // Notes section for bow-tie
   const notesSection = useMemo(() => {
     if (shearType !== "bow-tie") return null;
     
@@ -494,7 +477,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     );
   }, [shearType]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -528,7 +510,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -536,7 +517,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         )}
       </div>
 
-      {/* Loading and error states */}
       {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -556,7 +536,6 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Form sections */}
       {headerSection}
       {userDefinedSection}
       {conclusionsSection}

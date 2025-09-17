@@ -7,14 +7,13 @@ import {
   BACKPLATE_DIAMETER_OPTIONS,
   HYDRAULIC_THREADING_DRIVE_OPTIONS,
   HOLD_DOWN_ASSY_OPTIONS,
-  HOLD_DOWN_CYLINDER_OPTIONS,
   BRAKE_MODEL_OPTIONS,
   BRAKE_QUANTITY_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
 import { Card, Input, Select, Text } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import Checkbox from "@/components/ui/checkbox";
 
 export interface TDDBHDProps {
   data: PerformanceData;
@@ -23,25 +22,18 @@ export interface TDDBHDProps {
 
 const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  const textColor = "var(--color-text)"
-  
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  const successColor = 'var(--color-success)';
-  const errorColor = 'var(--color-error)';
+  let minMaterialWidthCheck = data.tddbhd?.reel?.checks?.minMaterialWidthCheck === "PASS" ? "bg-success" : "bg-error";
+  let airPressureCheck = data.tddbhd?.reel?.checks?.airPressureCheck === "PASS" ? "bg-success" : "bg-error";
+  let rewindTorqueCheck = data.tddbhd?.reel?.checks?.rewindTorqueCheck === "PASS" ? "bg-success" : "bg-error";
+  let holdDownForceCheck = data.tddbhd?.reel?.checks?.holdDownForceCheck === "PASS" ? "bg-success" : "bg-error";
+  let brakePressCheck = data.tddbhd?.reel?.checks?.brakePressCheck === "PASS" ? "bg-success" : "bg-error";
+  let torqueRequiredCheck = data.tddbhd?.reel?.checks?.torqueRequiredCheck === "PASS" ? "bg-success" : "bg-error";
+  let tddbhdCheck = data.tddbhd?.reel?.checks?.tddbhdCheck === "OK" ? "bg-success" : "bg-error";
 
-  // Checks
-  let minMaterialWidthCheck = data.tddbhd?.reel?.checks?.minMaterialWidthCheck === "PASS" ? successColor : errorColor;
-  let airPressureCheck = data.tddbhd?.reel?.checks?.airPressureCheck === "PASS" ? successColor : errorColor;
-  let rewindTorqueCheck = data.tddbhd?.reel?.checks?.rewindTorqueCheck === "PASS" ? successColor : errorColor;
-  let holdDownForceCheck = data.tddbhd?.reel?.checks?.holdDownForceCheck === "PASS" ? successColor : errorColor;
-  let brakePressCheck = data.tddbhd?.reel?.checks?.brakePressCheck === "PASS" ? successColor : errorColor;
-  let torqueRequiredCheck = data.tddbhd?.reel?.checks?.torqueRequiredCheck === "PASS" ? successColor : errorColor;
-  let tddbhdCheck = data.tddbhd?.reel?.checks?.tddbhdCheck === "OK" ? successColor : errorColor;
-
-  // Customer and Date Section
   const customerDateSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -67,7 +59,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Reel & Material Specs Section
   const reelMaterialSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -150,7 +141,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           type="number"
           error={getFieldError("tddbhd.reel.airPressureAvailable")}
           disabled={!isEditing}
-          style={{ backgroundColor: airPressureCheck, color: textColor }}
+          className={airPressureCheck}
         />
         <Input
           label="Required Decel. Rate (ft/sec²)"
@@ -164,7 +155,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, getFieldError, isEditing]);
 
-  // Coil, Brake & Other Specs Section
   const coilBrakeSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -275,14 +265,14 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="tddbhd.reel.torque.rewindRequired"
           value={localData.tddbhd?.reel?.torque?.rewindRequired?.toString() || ""}
           type="number"
-          style={{ backgroundColor: rewindTorqueCheck, color: textColor }}
+          className={rewindTorqueCheck}
           disabled={true}
         />
         <Input
           label="Passed"
           name="tddbhd.reel.checks.tddbhdCheck"
           value={localData.tddbhd?.reel?.checks?.tddbhdCheck || "NOT OK"}
-          style={{ backgroundColor: tddbhdCheck, color: textColor }}
+          className={tddbhdCheck}
           disabled={true}
         />
       </div>
@@ -318,7 +308,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.force?.required?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: holdDownForceCheck, color: textColor }}
+          className={holdDownForceCheck}
         />
         <Input
           label="Hold Down Force Available (lbs)"
@@ -334,7 +324,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.minMaterialWidth?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: minMaterialWidthCheck, color: textColor }}
+          className={minMaterialWidthCheck}
         />
         <Checkbox
           label="Confirmed Min Width OK"
@@ -384,7 +374,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.psiAirRequired?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: brakePressCheck, color: textColor }}
+          className={brakePressCheck}
         />
         <Input
           label="Failsafe Holding Force (in. lbs.)"
@@ -392,13 +382,12 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.holdingForce?.toString() || ""}
           type="number"
           disabled={true}
-          style={{ backgroundColor: torqueRequiredCheck, color: textColor }}
+          className={torqueRequiredCheck}
         />
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -432,7 +421,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -440,7 +428,6 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         )}
       </div>
 
-      {/* Loading and error states */}
       {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -456,12 +443,10 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Form sections */}
       {customerDateSection}
       {reelMaterialSection}
       {coilBrakeSection}
       
-      {/* Threading Drive and Hold Down */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {threadingDriveSection}
         {holdDownSection}

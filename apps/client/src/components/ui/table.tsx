@@ -79,7 +79,7 @@ const Table = <T extends Record<string, any>>({
       <div className="flex-1 overflow-auto relative">
         <table
           className={`min-w-full text-text-muted text-sm ${
-            !loading && data.length === 0 ? 'h-full' : ''
+            (loading || data.length === 0) ? 'h-full' : ''
           }`}>
           <thead className="bg-foreground sticky top-0 z-10" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
             <tr>
@@ -100,6 +100,8 @@ const Table = <T extends Record<string, any>>({
                   key={column.key}
                   scope="col"
                   className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
+                    column.header.toLowerCase() === "actions" ? "w-1" : ""
+                  } ${
                     onSortChange && column.header.toLowerCase() !== "actions"
                       ? "cursor-pointer hover:bg-surface"
                       : ""
@@ -119,7 +121,7 @@ const Table = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border relative">
+          <tbody className="divide-y divide-border relative h-full">
             {loading ? (
                <tr>
                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
@@ -164,6 +166,8 @@ const Table = <T extends Record<string, any>>({
                       <td
                         key={column.key}
                         className={`px-2 py-2 whitespace-nowrap ${
+                          column.header.toLowerCase() === "actions" ? "w-1" : ""
+                        } ${
                           column.className || ""
                         }`}>
                         {column.render
@@ -182,18 +186,17 @@ const Table = <T extends Record<string, any>>({
       {pagination && (
         <div className="flex h-max items-center justify-between p-2 bg-foreground border-t w-full">
           <div className="text-sm text-text-muted">
-            Showing{" "}
-            <span className="font-medium">{(currentPage - 1) * 25 + 1}</span> to{" "}
-            <span className="font-medium">
-              {Math.min(currentPage * 25, total)}
-            </span>{" "}
-            of <span className="font-medium">{total}</span> results
+            {data.length === 0 ? (
+              <span>0 results</span>
+            ) : (
+              <span className="font-medium">{(currentPage - 1) * 25 + 1} to {Math.min(currentPage * 25, total)} of {total} results</span>
+            )}
           </div>
           <div className="flex gap-2 items-center">
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage - 1)}
-              disabled={currentPage === 1}>
+              disabled={currentPage === 1 || data.length === 0}>
               <ArrowLeftIcon size={16} />
             </Button>
             <span className="text-text-muted text-sm">
@@ -202,7 +205,7 @@ const Table = <T extends Record<string, any>>({
             <Button
               variant="secondary-outline"
               onClick={() => onPageChange?.(currentPage + 1)}
-              disabled={currentPage === totalPages}>
+              disabled={currentPage === totalPages || data.length === 0}>
               <ArrowRightIcon size={16} />
             </Button>
           </div>

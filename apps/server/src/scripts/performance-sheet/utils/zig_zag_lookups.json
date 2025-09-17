@@ -1,54 +1,54 @@
 {
-    "42_tooth": {
-        "drive_sheave": {
-            "o_dia": 4.730,
-            "i_dia": 2.190,
-            "length": 3.000,
-            "density": 0.283,
-            "qty": 1
-        },
-        "bush_1": {
-            "o_dia": 3.188,
-            "i_dia": 1.375,
-            "length": 0.438,
-            "density": 0.283,
-            "qty": 1
-        },
-        "bush_2": {
-            "o_dia": 2.190,
-            "i_dia": 1.375,
-            "length": 0.880,
-            "density": 0.283,
-            "qty": 1
-        }
+  "42_tooth": {
+    "drive_sheave": {
+      "o_dia": 4.730,
+      "i_dia": 2.190,
+      "length": 3.000,
+      "density": 0.283,
+      "qty": 1
     },
-    "24_tooth": {
-        "drive_sheave": {
-            "o_dia": 3.500,
-            "i_dia": 1.750,
-            "length": 2.000,
-            "density": 0.283,
-            "qty": 1
-        },
-        "bush_1": {
-            "o_dia": 2.000,
-            "i_dia": 1.000,
-            "length": 0.500,
-            "density": 0.283,
-            "qty": 1
-        },
-        "bush_2": {
-            "o_dia": 1.750,
-            "i_dia": 1.000,
-            "length": 0.750,
-            "density": 0.283,
-            "qty": 1
-        }
+    "bush_1": {
+      "o_dia": 3.188,
+      "i_dia": 1.375,
+      "length": 0.438,
+      "density": 0.283,
+      "qty": 1
     },
-    "g_box": {
-        "efficiency": 1,
-        "qty": 1,
-        "inertia": 0,
-        "ratio": 1
+    "bush_2": {
+      "o_dia": 2.190,
+      "i_dia": 1.375,
+      "length": 0.880,
+      "density": 0.283,
+      "qty": 1
     }
+  },
+  "24_tooth": {
+    "drive_sheave": {
+      "o_dia": 3.500,
+      "i_dia": 1.750,
+      "length": 2.000,
+      "density": 0.283,
+      "qty": 1
+    },
+    "bush_1": {
+      "o_dia": 2.000,
+      "i_dia": 1.000,
+      "length": 0.500,
+      "density": 0.283,
+      "qty": 1
+    },
+    "bush_2": {
+      "o_dia": 1.750,
+      "i_dia": 1.000,
+      "length": 0.750,
+      "density": 0.283,
+      "qty": 1
+    }
+  },
+  "g_box": {
+    "efficiency": 1,
+    "qty": 1,
+    "inertia": 0,
+    "ratio": 1
+  }
 }

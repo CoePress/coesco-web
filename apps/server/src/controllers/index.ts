@@ -1,8 +1,11 @@
 import { AdminController } from "./admin.controller";
+import { AuditLogController } from "./audit-log.controller";
 import { AuthController } from "./auth.controller";
 import { ChatController } from "./chat.controller";
 import { ConfigurationController } from "./configuration.controller";
 import { CRMController } from "./crm.controller";
+import { FileStoreController } from "./file-store.controller";
+import { FormController } from "./form.controller";
 import { LegacyController } from "./legacy.controller";
 import { LockController } from "./lock.controller";
 import { PerformanceController } from "./performance.controller";
@@ -12,10 +15,13 @@ import { QuoteController } from "./quote.controller";
 import { SystemController } from "./system.controller";
 
 export const adminController = new AdminController();
+export const auditLogController = new AuditLogController();
 export const authController = new AuthController();
 export const chatController = new ChatController();
 export const configurationController = new ConfigurationController();
 export const crmController = new CRMController();
+export const fileStoreController = new FileStoreController();
+export const formController = new FormController();
 export const legacyController = new LegacyController();
 export const lockController = new LockController();
 export const performanceController = new PerformanceController();

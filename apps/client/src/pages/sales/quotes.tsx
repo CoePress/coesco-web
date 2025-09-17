@@ -10,10 +10,11 @@ import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
+import { format } from "date-fns";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("year");
+  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
@@ -21,7 +22,7 @@ const Quotes = () => {
   
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<{
     total: number;
     totalPages: number;
@@ -37,11 +38,17 @@ const Quotes = () => {
     []
   );
 
+  const filter = useMemo(() => JSON.stringify({
+    status: "OPEN",
+  }), []);
+
+
   const fetchQuotes = async () => {
     setLoading(true);
     setError(null);
     const response = await get("/quotes", {
       include,
+      filter,
       sort,
       order,
       page,
@@ -77,69 +84,76 @@ const Quotes = () => {
   
   useEffect(() => {
     fetchQuotes();
-  }, [include, sort, order, page, limit]);
+  }, [include, filter, sort, order, page, limit]);
 
   const columns: TableColumn<any>[] = [
     {
       key: "quoteNumber",
       header: "Quote Number",
-      className: "text-primary hover:underline",
+      className: "text-primary hover:underline w-1",
       render: (_, row) => (
-        <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number, row.revision)}</Link>
+        <Link to={`/sales/quotes/${row.id}`}>{formatQuoteNumber(row.year, row.number)}</Link>
       ),
     },
     {
-      key: "status",
-      header: "Status",
-      render: (value) => <StatusBadge label={value as string} />,
-    },
-    {
-      key: "totalAmount",
-      header: "Total",
-      render: (value) => formatCurrency(value as number),
-    },
-    {
-      key: "journey.name",
-      header: "Journey",
-      render: (_, row) =>
-        row.journey ? (
-          <Link
-            to={`/sales/journeys/${row.journey.id}`}
-            className="hover:underline">
-            {row.journey.name || "-"}
-          </Link>
-        ) : (
-          "-"
-        ),
+      key: "revision",
+      header: "Revision",
+      className: "w-1 text-center",
     },
     {
       key: "journey.customer.name",
       header: "Customer",
       render: (_, row) =>
-        row.journey?.customer ? (
-          <Link
-            to={`/sales/companies/${row.journey.customer.id}`}
-            className="hover:underline">
-            {row.journey.customer.name || "-"}
-          </Link>
-        ) : (
-          "-"
-        ),
+      row.journey?.customer ? (
+        <Link
+          to={`/sales/companies/${row.journey.customer.id}`}
+          className="hover:underline">
+          {row.journey.customer.name || "-"}
+        </Link>
+      ) : (
+        "-"
+      ),
     },
     {
-      key: "createdBy.name",
-      header: "Created By",
+      key: "journey.name",
+      header: "Journey",
       render: (_, row) =>
-        row.createdBy ? (
-          <Link
-            to={`/sales/team/${row.createdBy.id}?tab=quotes`}
-            className="hover:underline">
-            {`${row.createdBy.firstName} ${row.createdBy.lastName}`}
-          </Link>
-        ) : (
-          "-"
-        ),
+      row.journey ? (
+        <Link
+          to={`/sales/journeys/${row.journey.id}`}
+          className="hover:underline">
+          {row.journey.name || "-"}
+        </Link>
+      ) : (
+        "-"
+      ),
     },
+    {
+      key: "status",
+      header: "Status",
+      className: "w-1",
+      render: (_, row) => (
+         <div className="flex gap-2 whitespace-nowrap"><StatusBadge label={row.status as string} /><StatusBadge label={row.revisionStatus as string} /></div>
+       )
+    },
+    {
+      key: "priority",
+      header: "Priority",
+      className: "w-1 text-center",
+    },
+    {
+      key: "confidence",
+      header: "Confidence",
+      className: "w-1 text-center",
+    },
+    {
+      key: "createdAt",
+      header: "Created On",
+      className: "w-1",
+      render: (_, row) => {
+        return format(row.createdAt as string, "MM/dd/yyyy");
+      },
+    }
   ];
 
   const toggleModal = () => {
@@ -248,20 +262,18 @@ const Quotes = () => {
   ]
 
   const filteredQuotes = useMemo(() => {
-    // For now, just return quotes as-is since filtering should be done server-side
-    // TODO: Implement server-side filtering by passing filterValues to useGetEntities
     return quotes || []
   }, [quotes])
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Quotes"
-        description={`${quotes?.length} total quotes`}
+        description="Manage and track sales quotes"
         actions={<Actions />}
       />
 
-      <div className="p-2 gap-2 flex flex-col flex-1">
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <Metrics>
           {kpis.map((metric) => (
             <MetricsCard {...metric} />
@@ -278,24 +290,27 @@ const Quotes = () => {
           onExport={handleExport}
         />
 
-        <Table
-          columns={columns}
-          data={filteredQuotes}
-          total={pagination.total}
-          idField="id"
-          pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          onPageChange={setPage}
-          sort={sort}
-          order={order}
-          onSortChange={(newSort, newOrder) => {
-            setSort(newSort as "createdAt" | "updatedAt");
-            setOrder(newOrder as "asc" | "desc");
-          }}
-          className="rounded border overflow-clip"
-          emptyMessage="No quotes found"
-        />
+        <div className="flex-1 overflow-hidden">
+          <Table
+            columns={columns}
+            data={filteredQuotes}
+            total={pagination.total}
+            idField="id"
+            pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            sort={sort}
+            order={order}
+            onSortChange={(newSort, newOrder) => {
+              setSort(newSort as "createdAt" | "updatedAt");
+              setOrder(newOrder as "asc" | "desc");
+            }}
+            className="rounded border overflow-clip"
+            loading={loading}
+            emptyMessage="No quotes found"
+          />
+        </div>
       </div>
 
       {isModalOpen && (

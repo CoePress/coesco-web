@@ -1,10 +1,11 @@
 import {
   Calendar,
   CheckCircle,
+  Edit,
   Mail,
-  MoreHorizontal,
   Notebook,
   Phone,
+  Trash2,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -13,12 +14,31 @@ import { Button } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 
+const CREDIT_STATUS_OPTIONS = [
+  { value: 'A', label: 'Call Accouting' },
+  { value: 'C', label: 'COD Only' },
+  { value: 'I', label: 'International' },
+  { value: 'N', label: 'No Shipment' },
+  { value: 'O', label: 'Overlimit' },
+  { value: 'S', label: 'OK to Ship' }
+];
+
+// TODO: what the fuck do these codes mean
+const TERMS_CODE_OPTIONS = ['30', '45', '01', '60', '90', '40', '50', '70'];
+
+const MOCK_MENTION_OPTIONS = [
+  { id: 1, name: "John Doe", email: "john@example.com" },
+  { id: 2, name: "Jane Smith", email: "jane@example.com" },
+  { id: 3, name: "Bob Johnson", email: "bob@example.com" },
+];
+
 const CompanyDetails = () => {
   const { id } = useParams();
   const api = useApi();
   const [company, setCompany] = useState<any>(null);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
   const [activeModal, setActiveModal] = useState<{
     type: string;
     isOpen: boolean;
@@ -32,7 +52,6 @@ const CompanyDetails = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mirrorContent, setMirrorContent] = useState("");
   const mirrorRef = useRef<HTMLDivElement>(null);
-  const [_, setMirrorScroll] = useState(0);
   const [mentionDropdownIndex, setMentionDropdownIndex] = useState(0);
 
   // Email modal state
@@ -48,14 +67,37 @@ const CompanyDetails = () => {
   const [meetingAmPm, setMeetingAmPm] = useState("AM");
   const [meetingDuration, setMeetingDuration] = useState(15);
 
-  // Mock data for mentions
-  const mentionOptions = [
-    { id: 1, name: "John Doe", email: "john@example.com" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com" },
-    { id: 3, name: "Bob Johnson", email: "bob@example.com" },
-  ];
+  // Editable field states
+  const [isEditingAll, setIsEditingAll] = useState(false);
+  const [tempValues, setTempValues] = useState<Record<string, any>>({});
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'overview' | 'credit' | 'interactions'>('overview');
+  
+  // Call history editing state
+  const [editingCallId, setEditingCallId] = useState<number | null>(null);
+  const [editingCallData, setEditingCallData] = useState<any>({});
+  
+  // New call creation state
+  const [isAddingCall, setIsAddingCall] = useState(false);
+  const [newCallData, setNewCallData] = useState<any>({});
+  
+  // Contact editing state
+  const [editingContactId, setEditingContactId] = useState<number | null>(null);
+  const [editingContactData, setEditingContactData] = useState<any>({});
+  
+  // New contact creation state
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [newContactData, setNewContactData] = useState<any>({});
 
-  // Journey adaptation logic (from pipeline.tsx)
+  // RSM state
+  const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
+  const rsmApi = useApi();
+
+    // Helper functions
+  const getContactName = (contact: any) => `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
+  const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'C';
+  
   const mapLegacyStageToId = (stage: any): number => {
     const s = String(stage ?? "").toLowerCase();
     if (!s) return 1;
@@ -154,9 +196,7 @@ const CompanyDetails = () => {
 
   // Data fetching logic
   useEffect(() => {
-    console.log("Company ID from URL:", id, "Type:", typeof id); // Debug log
     if (!id || id === "undefined" || id === "null") {
-      console.error("No valid company ID provided in URL");
       return;
     }
     
@@ -164,7 +204,7 @@ const CompanyDetails = () => {
     const fetchCompanyData = async () => {
       try {
         // Use filter/custom API endpoints for proper server-side filtering
-        const [companyData, contactsData, journeysData] = await Promise.all([
+        const [companyData, contactsData, journeysData, callHistoryData] = await Promise.all([
           // Get company by Company_ID using filter/custom endpoint
           api.get(`/legacy/std/Company/filter/custom`, { 
             filterField: 'Company_ID', 
@@ -182,6 +222,12 @@ const CompanyDetails = () => {
             filterField: 'Company_ID', 
             filterValue: id, 
             limit: 100 
+          }),
+          // Get call history filtered by Company_ID
+          api.get(`/legacy/std/CallHistory/filter/custom`, { 
+            filterField: 'Company_ID', 
+            filterValue: id,
+            limit: 200
           })
         ]);
 
@@ -194,57 +240,95 @@ const CompanyDetails = () => {
           const processedJourneys = Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : [];
           setCompanyJourneys(processedJourneys);
 
+          // Process call history data
+          const processedCallHistory = Array.isArray(callHistoryData) ? callHistoryData : [];
+          setCallHistory(processedCallHistory);
+
           // Process company data
           const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
           
           if (processedCompanyData) {
-            // Find primary contact
             const primaryContact = processedContacts.find(contact => contact.Type === 'A') || processedContacts[0];
-            
-            const adaptedCompany = {
+            setCompany({
+              ...processedCompanyData,
               id: processedCompanyData.Company_ID,
               name: processedCompanyData.CustDlrName || `Company ${processedCompanyData.Company_ID}`,
               phone: primaryContact?.PhoneNumber || processedCompanyData.BillToPhone || "",
               email: primaryContact?.Email || "",
               website: primaryContact?.Website || "",
-              dealer: processedCompanyData.Dealer,
               active: processedCompanyData.Active,
               isDealer: processedCompanyData.IsDealer,
-              isExcDealer: processedCompanyData.IsExcDealer,
               creditStatus: processedCompanyData.CreditStatus,
-              creditNote: processedCompanyData.CreditNote,
-              onHoldBy: processedCompanyData.OnHoldBy,
-              onHoldDate: processedCompanyData.OnHoldDate,
-              offHoldBy: processedCompanyData.OffHoldBy,
-              offHoldDate: processedCompanyData.OffHoldDate,
-              classification: processedCompanyData.Classification,
-              custType: processedCompanyData.CustType,
-              lastCreditStat: processedCompanyData.LastCreditStat,
-              coeRSM: processedCompanyData.CoeRSM,
-              discounted: processedCompanyData.Discounted,
-              notes: processedCompanyData.Notes,
-              shipInstr: processedCompanyData.ShipInstr,
-              billToExt: processedCompanyData.BillToExt,
               creditLimit: processedCompanyData.CreditLimit,
               acctBalance: processedCompanyData.AcctBalance,
-              balanceDate: processedCompanyData.BalanceDate,
               termsCode: processedCompanyData.TermsCode,
-              exported: processedCompanyData.Exported,
-              systemNotes: processedCompanyData.SystemNotes,
-            };
-            setCompany(adaptedCompany);
-          } else {
-            console.warn(`No company found with ID ${id}`);
+              coeRSM: processedCompanyData.CoeRSM,
+              balanceDate: processedCompanyData.BalanceDate,
+              creditNote: processedCompanyData.CreditNote
+            });
           }
         }
       } catch (error) {
-        console.error("Error fetching company data:", error);
+        console.error('Error fetching company data:', error);
+        // Set empty call history on error
+        setCallHistory([]);
       }
     };
 
     fetchCompanyData();
     return () => { cancelled = true; };
   }, [id]);
+
+  // Fetch RSMs - get initials from Demographic table, then get employee details
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // First get RSM initials from Demographic table
+        const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
+          filterField: 'Category',
+          filterValue: 'RSM'
+        });
+        
+        if (!cancelled && Array.isArray(rsmData) && rsmData.length > 0) {
+          
+          // Extract initials from the Description field
+          const rsmInitials = rsmData.map(item => item.Description).filter(Boolean);
+          
+          if (rsmInitials.length > 0) {
+            // Fetch employee details for each RSM initial
+            const employeePromises = rsmInitials.map(initials => 
+              rsmApi.get('/legacy/std/Employee/filter/custom', {
+                filterField: 'EmpInitials',
+                filterValue: initials
+              })
+            );
+            
+            const employeeResults = await Promise.all(employeePromises);
+            
+            const rsmOptions = employeeResults
+              .map((result, index) => {
+                if (Array.isArray(result) && result.length > 0) {
+                  const employee = result[0]; // Take first match
+                  return {
+                    name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials || rsmInitials[index],
+                    empNum: employee.EmpNum || 0,
+                    initials: rsmInitials[index]
+                  };
+                }
+                return null;
+              })
+              .filter((rsm): rsm is { name: string; empNum: number; initials: string } => rsm !== null && rsm.empNum > 0);
+            
+            setAvailableRsms(rsmOptions);
+          }
+        }
+      } catch (error) {
+        setAvailableRsms([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleOpenModal = (type: string) => {
     setActiveModal({ type, isOpen: true });
@@ -254,17 +338,10 @@ const CompanyDetails = () => {
     setActiveModal({ type: "", isOpen: false });
     setNoteContent("");
     setShowMentionDropdown(false);
-  };
-
-  const handleEmailModalClose = () => {
-    setActiveModal({ type: "", isOpen: false });
+    // Reset all modal states
     setEmailRecipients("");
     setEmailSubject("");
     setEmailBody("");
-  };
-
-  const handleMeetingModalClose = () => {
-    setActiveModal({ type: "", isOpen: false });
     setMeetingTitle("");
     setMeetingDate("");
     setMeetingHour(9);
@@ -366,7 +443,7 @@ const CompanyDetails = () => {
   };
 
   // Filtered mention options
-  const filteredMentionOptions = mentionOptions.filter(
+  const filteredMentionOptions = MOCK_MENTION_OPTIONS.filter(
     (option) =>
       option.name.toLowerCase().includes(mentionSearch.toLowerCase()) ||
       option.email.toLowerCase().includes(mentionSearch.toLowerCase())
@@ -407,9 +484,6 @@ const CompanyDetails = () => {
               onChange={handleNoteChange}
               className="w-full h-60 bg-background border border-border rounded p-3 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto relative z-0"
               placeholder="Write your notes here... Use @ to mention someone"
-              onScroll={() =>
-                setMirrorScroll(textareaRef.current?.scrollTop || 0)
-              }
               onKeyDown={handleTextareaKeyDown}
             />
             {/* Hidden mirror div for mention positioning */}
@@ -505,12 +579,12 @@ const CompanyDetails = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="secondary-outline"
-                onClick={handleEmailModalClose}>
+                onClick={handleCloseModal}>
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                onClick={handleEmailModalClose}>
+                onClick={handleCloseModal}>
                 Send
               </Button>
             </div>
@@ -661,12 +735,12 @@ const CompanyDetails = () => {
             <div className="flex justify-end gap-2 mt-2">
               <Button
                 variant="secondary-outline"
-                onClick={handleMeetingModalClose}>
+                onClick={handleCloseModal}>
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                onClick={handleMeetingModalClose}>
+                onClick={handleCloseModal}>
                 Schedule
               </Button>
             </div>
@@ -692,6 +766,433 @@ const CompanyDetails = () => {
   useEffect(() => {
     setMentionDropdownIndex(0);
   }, [showMentionDropdown, mentionSearch]);
+
+  // Field editing functions
+  const handleStartEditing = () => {
+    setIsEditingAll(true);
+    setTempValues({
+      active: company.active,
+      isDealer: company.isDealer,
+      creditStatus: company.creditStatus,
+      creditLimit: company.creditLimit,
+      acctBalance: company.acctBalance,
+      termsCode: company.termsCode,
+      coeRSM: company.coeRSM,
+      balanceDate: company.balanceDate,
+      creditNote: company.creditNote
+    });
+  };
+
+  const handleSaveAll = async () => {
+    if (!company || !id) return;
+    
+    try {
+      // Update the company in the database
+      const updateData: Record<string, any> = {
+        Active: tempValues.active,
+        IsDealer: tempValues.isDealer,
+        CreditStatus: tempValues.creditStatus,
+        CreditLimit: parseFloat(tempValues.creditLimit) || 0,
+        AcctBalance: parseFloat(tempValues.acctBalance) || 0,
+        TermsCode: tempValues.termsCode,
+        CoeRSM: parseInt(tempValues.coeRSM) || 0,
+        BalanceDate: tempValues.balanceDate || null,
+        CreditNote: tempValues.creditNote || null
+      };
+      
+      const result = await api.patch(`/legacy/std/Company/${id}`, updateData);
+      
+      if (result) {
+        setCompany({ ...company, ...tempValues });
+        setIsEditingAll(false);
+        setTempValues({});
+      }
+    } catch (error) {
+      // Error handled silently
+    }
+  };
+
+  const handleCancelAll = () => {
+    setIsEditingAll(false);
+    setTempValues({});
+  };
+
+  const handleTempValueChange = (fieldName: string, value: any) => {
+    setTempValues({ ...tempValues, [fieldName]: value });
+  };
+
+  // Call history editing functions
+  const handleEditCall = (call: any) => {
+    setEditingCallId(call.CallRefNum);
+    setEditingCallData({ ...call });
+  };
+
+  const handleCallDataChange = (fieldName: string, value: any) => {
+    setEditingCallData({ ...editingCallData, [fieldName]: value });
+  };
+
+  const handleSaveCall = async () => {
+    if (!editingCallId) return;
+    
+    try {
+      // Only send the fields we actually want to update to avoid SQL syntax issues
+      const updateData = {
+        Contactname: editingCallData.Contactname || '',
+        CallStatus: editingCallData.CallStatus || '',
+        PhoneNumber: editingCallData.PhoneNumber || '',
+        CallType: editingCallData.CallType || '',
+        CallOwner: editingCallData.CallOwner || '',
+        CustEmail: editingCallData.CustEmail || '',
+        CustComments: editingCallData.CustComments || '',
+        OurComments: editingCallData.OurComments || '',
+        Resolution: editingCallData.Resolution || '',
+        Issues: editingCallData.Issues || '',
+        ServiceCodes: editingCallData.ServiceCodes || '',
+        RefEquipment: editingCallData.RefEquipment || ''
+      };
+      
+      console.log('Sending call history update:', updateData);
+      
+      const result = await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${editingCallId}`, updateData);
+      
+      if (result) {
+        // Update the call history in state
+        const updatedCallHistory = callHistory.map(call => 
+          call.CallRefNum === editingCallId ? { ...call, ...updateData } : call
+        );
+        setCallHistory(updatedCallHistory);
+        setEditingCallId(null);
+        setEditingCallData({});
+      }
+    } catch (error) {
+      console.error('Error saving call history:', error);
+    }
+  };
+
+  const handleCancelCallEdit = () => {
+    setEditingCallId(null);
+    setEditingCallData({});
+  };
+
+  // New call creation functions
+  const handleAddCall = async () => {
+    const currentDateTime = new Date();
+    const currentDate = currentDateTime.toISOString().split('T')[0];
+    const currentTime = currentDateTime.getHours() * 10000 + currentDateTime.getMinutes() * 100 + currentDateTime.getSeconds();
+    
+    try {
+      // Get the next CallRefNum by finding the max value and adding 1
+      const maxCallRefNum = await api.get('/legacy/std/CallHistory/CallRefNum/max');
+      const nextCallRefNum = (maxCallRefNum?.maxValue || 0) + 1;
+      
+      setNewCallData({
+        CallRefNum: nextCallRefNum,
+        CallStatus: 'O',
+        CallDate: currentDate,
+        CallTime: currentTime,
+        CallType: 'T',
+        FollowupDate: null,
+        FollowupTime: 0,
+        CallOwner: '',
+        Contactname: '',
+        PhoneNumber: '',
+        CustComments: '',
+        OurComments: '',
+        CustEmail: '',
+        Company_ID: parseInt(id || '0'),
+        Address_ID: 16, // Using same as your sample data
+        FaxNumber: '',
+        Resolution: '',
+        StdEffected: null,
+        StdUpdated: null,
+        ServiceCodes: '',
+        RefEquipment: '',
+        'RefSerial#': '', // This field from your sample data
+        CloseDate: null,
+        CloseTime: 0,
+        Issues: ''
+      });
+      setIsAddingCall(true);
+    } catch (error) {
+      console.error('Error getting next CallRefNum:', error);
+      // Fallback: use current timestamp as CallRefNum if API fails
+      const fallbackCallRefNum = Date.now();
+      setNewCallData({
+        CallRefNum: fallbackCallRefNum,
+        CallStatus: 'O',
+        CallDate: currentDate,
+        CallTime: currentTime,
+        CallType: 'T',
+        FollowupDate: null,
+        FollowupTime: 0,
+        CallOwner: '',
+        Contactname: '',
+        PhoneNumber: '',
+        CustComments: '',
+        OurComments: '',
+        CustEmail: '',
+        Company_ID: parseInt(id || '0'),
+        Address_ID: 16,
+        FaxNumber: '',
+        Resolution: '',
+        StdEffected: null,
+        StdUpdated: null,
+        ServiceCodes: '',
+        RefEquipment: '',
+        'RefSerial#': '',
+        CloseDate: null,
+        CloseTime: 0,
+        Issues: ''
+      });
+      setIsAddingCall(true);
+    }
+  };
+
+  const handleNewCallDataChange = (fieldName: string, value: any) => {
+    setNewCallData({ ...newCallData, [fieldName]: value });
+  };
+
+  const handleSaveNewCall = async () => {
+    try {
+      console.log('Creating new call with data:', newCallData);
+      console.log('API loading state:', api.loading);
+      console.log('API error state:', api.error);
+      
+      let result = null;
+      let success = false;
+      
+      console.log('Trying standard POST...');
+      result = await api.post('/legacy/std/CallHistory', newCallData);
+      console.log('Standard POST result:', result);
+      console.log('Standard POST API success:', api.success);
+      console.log('Standard POST API error:', api.error);
+      
+      if (api.success && !api.error) {
+        success = true;
+      }
+      
+      if (success || result) {
+        console.log('Call creation appears successful, refreshing data...');
+        await refreshCallHistory();
+        setIsAddingCall(false);
+        setNewCallData({});
+      } else {
+        console.log('Call creation failed');
+        console.log('Final API error details:', api.error);
+        alert('Failed to create call record. Check console for details.');
+      }
+    } catch (error) {
+      console.error('Error creating new call:', error);
+      console.log('Current API state - error:', api.error, 'loading:', api.loading, 'success:', api.success);
+    }
+  };
+
+  const handleCancelNewCall = () => {
+    setIsAddingCall(false);
+    setNewCallData({});
+  };
+
+  // Function to refresh call history data from the server
+  const refreshCallHistory = async () => {
+    try {
+      console.log('Refreshing call history data...');
+      const callHistoryData = await api.get(`/legacy/std/CallHistory/filter/custom`, { 
+        filterField: 'Company_ID', 
+        filterValue: id,
+        limit: 200
+      });
+      
+      if (callHistoryData) {
+        const processedCallHistory = Array.isArray(callHistoryData) ? callHistoryData : [];
+        setCallHistory(processedCallHistory);
+        console.log('Call history refreshed:', processedCallHistory.length, 'records');
+      }
+    } catch (error) {
+      console.error('Error refreshing call history:', error);
+    }
+  };
+
+  // Function to delete a call record
+  const handleDeleteCall = async (call: any) => {
+    if (!call.CallRefNum) {
+      console.error('Cannot delete call: missing CallRefNum');
+      return;
+    }
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete call #${call.CallRefNum}?`);
+    if (!confirmDelete) return;
+    
+    try {
+      console.log('Deleting call with CallRefNum:', call.CallRefNum, 'and Company_ID:', id);
+      
+      const result = await api.delete(`/legacy/std/CallHistory/filter/custom`, {
+        params: {
+          CallRefNum: call.CallRefNum,
+          Company_ID: id
+        }
+      });
+      
+      if (result !== null) {
+        // Remove the deleted call from state
+        const updatedCallHistory = callHistory.filter(c => c.CallRefNum !== call.CallRefNum);
+        setCallHistory(updatedCallHistory);
+        console.log('Call deleted successfully');
+      } else {
+        console.error('Failed to delete call record');
+        alert('Failed to delete call record. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting call:', error);
+      alert('Error deleting call record. Please try again.');
+    }
+  };
+
+  // Contact editing functions
+  const handleEditContact = (contact: any) => {
+    setEditingContactId(contact.Cont_Id);
+    setEditingContactData({ ...contact });
+  };
+
+  const handleContactDataChange = (fieldName: string, value: any) => {
+    setEditingContactData({ ...editingContactData, [fieldName]: value });
+  };
+
+  const handleSaveContact = async () => {
+    if (!editingContactId) return;
+    
+    try {
+      const updateData = {
+        FirstName: editingContactData.FirstName || '',
+        LastName: editingContactData.LastName || '',
+        Email: editingContactData.Email || '',
+        PhoneNumber: editingContactData.PhoneNumber || '',
+        PhoneExt: editingContactData.PhoneExt || '',
+        ConTitle: editingContactData.ConTitle || ''
+      };
+      
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?filterField=Cont_Id&filterValue=${editingContactId}`, updateData);
+      
+      if (result) {
+        // Update the contacts in state
+        const updatedContacts = companyContacts.map(contact => 
+          contact.Cont_Id === editingContactId ? { ...contact, ...updateData } : contact
+        );
+        setCompanyContacts(updatedContacts);
+        setEditingContactId(null);
+        setEditingContactData({});
+      }
+    } catch (error) {
+      console.error('Error saving contact:', error);
+      alert('Error saving contact. Please try again.');
+    }
+  };
+
+  const handleCancelContactEdit = () => {
+    setEditingContactId(null);
+    setEditingContactData({});
+  };
+
+  const handleDeleteContact = async (contact: any) => {
+    if (!contact.Cont_Id) {
+      console.error('Cannot delete contact: missing Cont_Id');
+      return;
+    }
+    
+    const contactName = getContactName(contact);
+    const confirmDelete = window.confirm(`Are you sure you want to delete contact "${contactName || 'Unknown Contact'}"?`);
+    if (!confirmDelete) return;
+    
+    try {
+      const result = await api.delete(`/legacy/std/Contacts/filter/custom`, {
+        params: {
+          Cont_Id: contact.Cont_Id,
+          Company_ID: id
+        }
+      });
+      
+      if (result !== null) {
+        // Remove the deleted contact from state
+        const updatedContacts = companyContacts.filter(c => c.Cont_Id !== contact.Cont_Id);
+        setCompanyContacts(updatedContacts);
+        console.log('Contact deleted successfully');
+      } else {
+        console.error('Failed to delete contact');
+        alert('Failed to delete contact. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      alert('Error deleting contact. Please try again.');
+    }
+  };
+
+  // New contact creation functions
+  const handleAddContact = async () => {
+    try {
+      // Get the next Cont_Id by finding the max value and adding 1
+      const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
+      const nextContactId = (maxContactId?.maxValue || 0) + 1;
+      
+      setNewContactData({
+        Cont_Id: nextContactId,
+        Company_ID: parseInt(id || '0'),
+        FirstName: '',
+        LastName: '',
+        Email: '',
+        PhoneNumber: '',
+        PhoneExt: '',
+        ConTitle: '',
+        Type: 'C' // Default to Contact type
+      });
+      setIsAddingContact(true);
+    } catch (error) {
+      console.error('Error getting next Contact ID:', error);
+      // Fallback: use current timestamp as Contact ID if API fails
+      const fallbackContactId = Date.now();
+      setNewContactData({
+        Cont_Id: fallbackContactId,
+        Company_ID: parseInt(id || '0'),
+        FirstName: '',
+        LastName: '',
+        Email: '',
+        PhoneNumber: '',
+        PhoneExt: '',
+        ConTitle: '',
+        Type: 'C'
+      });
+      setIsAddingContact(true);
+    }
+  };
+
+  const handleNewContactDataChange = (fieldName: string, value: any) => {
+    setNewContactData({ ...newContactData, [fieldName]: value });
+  };
+
+  const handleSaveNewContact = async () => {
+    try {
+      console.log('Creating new contact with data:', newContactData);
+      
+      if (api.success && !api.error) {
+        console.log('Contact creation appears successful, refreshing data...');
+        // Add the new contact to state immediately
+        const updatedContacts = [...companyContacts, newContactData];
+        setCompanyContacts(updatedContacts);
+        setIsAddingContact(false);
+        setNewContactData({});
+      } else {
+        console.log('Contact creation failed');
+        console.log('Final API error details:', api.error);
+        alert('Failed to create contact record. Check console for details.');
+      }
+    } catch (error) {
+      console.error('Error creating new contact:', error);
+      alert('Error creating new contact. Please try again.');
+    }
+  };
+
+  const handleCancelNewContact = () => {
+    setIsAddingContact(false);
+    setNewContactData({});
+  };
 
   if (api.loading) {
     return (
@@ -770,18 +1271,39 @@ const CompanyDetails = () => {
               </button>
               <span className="text-text-muted text-xs">Meet</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => {}}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <MoreHorizontal size={16} />
-              </button>
-              <span className="text-text-muted text-xs">More</span>
-            </div>
           </div>
         </div>
 
         <div className="p-2 flex-1 overflow-y-auto">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-semibold text-text">Company Details</h3>
+            {isEditingAll ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveAll}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={handleCancelAll}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={handleStartEditing}
+              >
+                <Edit size={16} />
+              </Button>
+            )}
+          </div>
           <div className="space-y-2 text-sm">
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">Company ID</span>
@@ -793,85 +1315,134 @@ const CompanyDetails = () => {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Customer Type</span>
-              <input
-                type="text"
-                value={company.custType || ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
               <span className="text-text-muted">Active Status</span>
-              <input
-                type="text"
-                value={company.active ? "Active" : "Inactive"}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              {isEditingAll ? (
+                <select
+                  value={tempValues.active ? 'true' : 'false'}
+                  onChange={(e) => handleTempValueChange('active', e.target.value === 'true')}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={company.active ? "Active" : "Inactive"}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">Is Dealer</span>
-              <input
-                type="text"
-                value={company.isDealer ? "Yes" : "No"}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              {isEditingAll ? (
+                <select
+                  value={tempValues.isDealer ? 'true' : 'false'}
+                  onChange={(e) => handleTempValueChange('isDealer', e.target.value === 'true')}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                >
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={company.isDealer ? "Yes" : "No"}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">Credit Status</span>
-              <input
-                type="text"
-                value={company.creditStatus || ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Credit Limit</span>
-              <input
-                type="text"
-                value={company.creditLimit ? formatCurrency(company.creditLimit) : ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              {isEditingAll ? (
+                <select
+                  value={tempValues.creditStatus || ''}
+                  onChange={(e) => handleTempValueChange('creditStatus', e.target.value)}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                >
+                  <option value="">Select status...</option>
+                  {CREDIT_STATUS_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={company.creditStatus ? CREDIT_STATUS_OPTIONS.find(opt => opt.value === company.creditStatus)?.label || company.creditStatus : "-"}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">Account Balance</span>
-              <input
-                type="text"
-                value={company.acctBalance ? formatCurrency(company.acctBalance) : ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              {isEditingAll ? (
+                <input
+                  type="number"
+                  step="0.01"
+                  value={tempValues.acctBalance || ''}
+                  onChange={(e) => handleTempValueChange('acctBalance', e.target.value)}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                  placeholder="0.00"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={company.acctBalance !== null && company.acctBalance !== undefined ? formatCurrency(company.acctBalance) : "-"}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Terms Code</span>
-              <input
-                type="text"
-                value={company.termsCode || ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              <span className="text-text-muted">Balance Date</span>
+              {isEditingAll ? (
+                <input
+                  type="date"
+                  value={tempValues.balanceDate ? new Date(tempValues.balanceDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => handleTempValueChange('balanceDate', e.target.value)}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={company.balanceDate ? formatDate(company.balanceDate) : "-"}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">COE RSM</span>
-              <input
-                type="text"
-                value={company.coeRSM || ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-text-muted">Classification</span>
-              <input
-                type="text"
-                value={company.classification || ""}
-                readOnly
-                className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
-              />
+              {isEditingAll ? (
+                <select
+                  value={tempValues.coeRSM || ''}
+                  onChange={(e) => handleTempValueChange('coeRSM', e.target.value)}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                >
+                  <option value="">Select RSM...</option>
+                  {availableRsms.map(rsm => (
+                    <option key={rsm.empNum} value={rsm.empNum}>
+                      {rsm.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={(() => {
+                    if (!company.coeRSM) return "-";
+                    const rsm = availableRsms.find(r => r.empNum === parseInt(company.coeRSM));
+                    return rsm ? rsm.name : company.coeRSM;
+                  })()}
+                  readOnly
+                  className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -880,323 +1451,1009 @@ const CompanyDetails = () => {
       <main className="flex-1 flex flex-col p-2">
         <div className="bg-foreground px-4 pt-2 rounded-lg border border-border">
           <div className="flex space-x-8 text-sm">
-            <button className="pb-2 border-b-2 border-primary/50 text-primary font-semibold cursor-pointer">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'overview' 
+                  ? 'border-primary/50 text-primary' 
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
               Overview
             </button>
-            <button className="pb-2 text-text-muted hover:text-primary cursor-pointer">
-              Activities
+            <button 
+              onClick={() => setActiveTab('interactions')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'interactions' 
+                  ? 'border-primary/50 text-primary' 
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Interaction History
+            </button>
+            <button 
+              onClick={() => setActiveTab('credit')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'credit' 
+                  ? 'border-primary/50 text-primary' 
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Credit Details
             </button>
           </div>
         </div>
         <div className="flex-1 flex mt-2 space-x-2 overflow-auto">
-          <section className="flex-1 space-y-2">
-            {/* Data Highlights */}
-            <div
-              className="bg-foreground rounded-lg border border-border p-4 flex justify-between"
-              style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
-              <div>
-                <div className="text-xs text-text-muted">CREDIT STATUS</div>
-                <div className="font-semibold text-text">
-                  {company.creditStatus || "--"}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-text-muted">ACCOUNT BALANCE</div>
-                <div className="font-semibold text-text">
-                  {company.acctBalance ? formatCurrency(company.acctBalance) : "--"}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-text-muted">BALANCE DATE</div>
-                <div className="font-semibold text-text">
-                  {company.balanceDate ? formatDate(company.balanceDate) : "--"}
-                </div>
-              </div>
-            </div>
-            {/* Recent Activities */}
-            <div
-              className="bg-foreground rounded-lg border border-border p-4"
-              style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-text">Recent activities</h4>
-                <button className="text-xs text-text-muted border border-border px-2 py-1 rounded hover:bg-surface">
-                  All time so far
-                </button>
-              </div>
-              <div className="flex items-center mb-4">
-                <input
-                  type="text"
-                  placeholder="Search activities"
-                  className="border border-border bg-background text-text rounded px-3 py-1 text-sm w-64 placeholder:text-text-muted"
-                />
-                <span className="ml-4 text-info text-xs cursor-pointer">
-                  5 activities
-                </span>
-              </div>
-              <div className="flex flex-col items-center py-8">
-                <svg
-                  className="w-12 h-12 text-text-muted/50 mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24">
-                  <circle
-                    cx="11"
-                    cy="11"
-                    r="8"
-                  />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
-                <div className="text-text-muted">No activities.</div>
-              </div>
-            </div>
+          {activeTab === 'overview' ? (
+            <section className="flex-1 space-y-2">
             {/* Contacts Table */}
             <div
               className="bg-foreground rounded-lg border border-border p-4"
               style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-text">Contacts ({companyContacts.length})</h4>
-                <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
-                  + Add
+                <button 
+                  onClick={handleAddContact}
+                  className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+                  + Add Contact
                 </button>
               </div>
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search contacts"
                 className="border border-border bg-background text-text rounded px-3 py-1 text-sm mb-4 w-64 placeholder:text-text-muted"
               />
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-text-muted border-b border-border">
-                    <th className="text-left py-2">NAME</th>
-                    <th className="text-left py-2">EMAIL</th>
-                    <th className="text-left py-2">PHONE NUMBER</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companyContacts.length > 0 ? (
-                    companyContacts.map((contact, index) => {
-                      const fullName = `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
-                      const contactInitial = fullName ? fullName.charAt(0).toUpperCase() : 'C';
-                      const uniqueKey = `contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
+              
+              {/* New Contact Form */}
+              {isAddingContact && (
+                <div className="bg-surface p-3 rounded border border-primary mb-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">First Name</label>
+                        <input
+                          type="text"
+                          value={newContactData.FirstName || ''}
+                          onChange={(e) => handleNewContactDataChange('FirstName', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="First name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Last Name</label>
+                        <input
+                          type="text"
+                          value={newContactData.LastName || ''}
+                          onChange={(e) => handleNewContactDataChange('LastName', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="Last name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={newContactData.ConTitle || ''}
+                          onChange={(e) => handleNewContactDataChange('ConTitle', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="Job title"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={newContactData.Email || ''}
+                          onChange={(e) => handleNewContactDataChange('Email', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Phone Number</label>
+                        <input
+                          type="tel"
+                          value={newContactData.PhoneNumber || ''}
+                          onChange={(e) => handleNewContactDataChange('PhoneNumber', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="Phone number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-muted mb-1">Extension</label>
+                        <input
+                          type="text"
+                          value={newContactData.PhoneExt || ''}
+                          onChange={(e) => handleNewContactDataChange('PhoneExt', e.target.value)}
+                          className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          placeholder="Ext"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <div className="text-xs text-text-muted">
+                        New Contact
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleSaveNewContact}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={handleCancelNewContact}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-foreground z-10">
+                    <tr className="text-text-muted border-b border-border">
+                      <th className="text-left py-2">NAME</th>
+                      <th className="text-left py-2">EMAIL</th>
+                      <th className="text-left py-2">PHONE NUMBER</th>
+                      <th className="text-left py-2 w-24">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {companyContacts.length > 0 ? (
+                      companyContacts.map((contact, index) => {
+                        const fullName = getContactName(contact);
+                        const contactInitial = getContactInitial(fullName);
+                        const uniqueKey = `contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
+                        const isEditing = editingContactId === contact.Cont_Id;
+                        const displayData = isEditing ? editingContactData : contact;
+                        
+                        return (
+                          <tr key={uniqueKey} className="border-b border-border">
+                            <td className="py-2">
+                              <div className="flex items-center">
+                                <span className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
+                                  <span className="text-primary text-xs font-bold">{contactInitial}</span>
+                                </span>
+                                <div className="flex flex-col flex-1">
+                                  {isEditing ? (
+                                    <>
+                                      <input
+                                        type="text"
+                                        value={editingContactData.FirstName || ''}
+                                        onChange={(e) => handleContactDataChange('FirstName', e.target.value)}
+                                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
+                                        placeholder="First name"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editingContactData.LastName || ''}
+                                        onChange={(e) => handleContactDataChange('LastName', e.target.value)}
+                                        className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
+                                        placeholder="Last name"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editingContactData.ConTitle || ''}
+                                        onChange={(e) => handleContactDataChange('ConTitle', e.target.value)}
+                                        className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                        placeholder="Title"
+                                      />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-text">
+                                        {fullName || "Unnamed Contact"}
+                                      </span>
+                                      {contact.ConTitle && (
+                                        <span className="text-xs text-text-muted">
+                                          {contact.ConTitle}
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2">
+                              {isEditing ? (
+                                <input
+                                  type="email"
+                                  value={editingContactData.Email || ''}
+                                  onChange={(e) => handleContactDataChange('Email', e.target.value)}
+                                  className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
+                                  placeholder="email@example.com"
+                                />
+                              ) : (
+                                displayData.Email ? (
+                                  <a href={`mailto:${displayData.Email}`} className="text-info hover:underline">
+                                    {displayData.Email}
+                                  </a>
+                                ) : (
+                                  <span className="text-text">--</span>
+                                )
+                              )}
+                            </td>
+                            <td className="py-2">
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <input
+                                    type="tel"
+                                    value={editingContactData.PhoneNumber || ''}
+                                    onChange={(e) => handleContactDataChange('PhoneNumber', e.target.value)}
+                                    className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary flex-1"
+                                    placeholder="Phone number"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={editingContactData.PhoneExt || ''}
+                                    onChange={(e) => handleContactDataChange('PhoneExt', e.target.value)}
+                                    className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-16"
+                                    placeholder="Ext"
+                                  />
+                                </div>
+                              ) : (
+                                displayData.PhoneNumber ? (
+                                  <a href={`tel:${displayData.PhoneNumber}`} className="text-text hover:underline">
+                                    {displayData.PhoneNumber}
+                                    {displayData.PhoneExt && ` ext. ${displayData.PhoneExt}`}
+                                  </a>
+                                ) : (
+                                  <span className="text-text">--</span>
+                                )
+                              )}
+                            </td>
+                            <td className="py-2">
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleSaveContact}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={handleCancelContactEdit}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={() => handleEditContact(contact)}
+                                  >
+                                    <Edit size={12} />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteContact(contact)}
+                                  >
+                                    <Trash2 size={12} />
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center text-text-muted">
+                          No contacts found for this company
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {/* Journeys */}
+            <div
+              className="bg-foreground rounded-lg border border-border p-4"
+              style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-text">Journeys ({companyJourneys.length})</h4>
+                <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+                  + Add
+                </button>
+              </div>
+              {companyJourneys.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {companyJourneys.map((journey, index) => {
+                    const uniqueKey = `journey-${journey.id || journey.customerId}-${index}`;
+                    return (
+                      <div key={uniqueKey} className="bg-surface p-3 rounded border">
+                        <div className="font-semibold text-sm text-text mb-1">{journey.name}</div>
+                        <div className="text-xs text-text-muted mb-1">
+                          Amount: {formatCurrency(journey.value)}
+                        </div>
+                        <div className="text-xs text-text-muted mb-1">
+                          Close date: {formatDate(journey.closeDate)}
+                        </div>
+                        <div className="text-xs text-text-muted mb-1">
+                          Stage: {journey.Journey_Stage || `Stage ${journey.stage}`}
+                        </div>
+                        {journey.confidence && (
+                          <div className="text-xs text-text-muted mb-1">
+                            Confidence: {journey.confidence}%
+                          </div>
+                        )}
+                        {journey.Priority && (
+                          <div className="flex items-center mt-2">
+                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                              Priority {journey.Priority}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-text-muted">
+                  No journeys found for this company
+                </div>
+              )}
+              {companyJourneys.length > 0 && (
+                <div className="mt-3 pt-2 border-t border-border">
+                  <div className="text-xs text-text-muted">
+                    Total Pipeline Value: {formatCurrency(companyJourneys.reduce((sum, j) => sum + (j.value || 0), 0))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+          ) : activeTab === 'interactions' ? (
+            <section className="flex-1 space-y-2">
+              {/* Interaction History - Call History */}
+              <div
+                className="bg-foreground rounded-lg border border-border p-4"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Call History ({callHistory.length})</h4>
+                  <button 
+                    onClick={handleAddCall}
+                    className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+                    + Add Call
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search call history"
+                  className="border border-border bg-background text-text rounded px-3 py-1 text-sm mb-4 w-64 placeholder:text-text-muted"
+                />
+                
+                {/* New Call Form */}
+                {isAddingCall && (
+                  <div className="bg-surface p-3 rounded border border-primary mb-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={newCallData.Contactname || ''}
+                            onChange={(e) => handleNewCallDataChange('Contactname', e.target.value)}
+                            className="text-sm font-medium bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                            placeholder="Contact name"
+                          />
+                          
+                          <select
+                            value={newCallData.CallStatus || 'O'}
+                            onChange={(e) => handleNewCallDataChange('CallStatus', e.target.value)}
+                            className="text-xs px-2 py-1 rounded border border-border bg-background text-text focus:outline-none focus:border-primary"
+                          >
+                            <option value="O">Open</option>
+                            <option value="C">Closed</option>
+                            <option value="F">Follow-up</option>
+                          </select>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div className="text-xs text-text-muted">
+                            <span className="font-medium">Date:</span> {formatDate(newCallData.CallDate)}
+                          </div>
+                          
+                          <input
+                            type="tel"
+                            value={newCallData.PhoneNumber || ''}
+                            onChange={(e) => handleNewCallDataChange('PhoneNumber', e.target.value)}
+                            className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                            placeholder="Phone number"
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <select
+                            value={newCallData.CallType || 'T'}
+                            onChange={(e) => handleNewCallDataChange('CallType', e.target.value)}
+                            className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                          >
+                            <option value="T">Technical</option>
+                            <option value="S">Sales</option>
+                            <option value="G">General</option>
+                          </select>
+                          
+                          <input
+                            type="text"
+                            value={newCallData.CallOwner || ''}
+                            onChange={(e) => handleNewCallDataChange('CallOwner', e.target.value)}
+                            className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                            placeholder="Call owner"
+                          />
+                        </div>
+
+                        <input
+                          type="email"
+                          value={newCallData.CustEmail || ''}
+                          onChange={(e) => handleNewCallDataChange('CustEmail', e.target.value)}
+                          className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full mb-2"
+                          placeholder="Customer email"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-text-muted">
+                          New Call
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleSaveNewCall}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleCancelNewCall}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-2">
+                      <div className="text-xs font-medium text-text-muted mb-1">Customer Comments:</div>
+                      <textarea
+                        value={newCallData.CustComments || ''}
+                        onChange={(e) => handleNewCallDataChange('CustComments', e.target.value)}
+                        className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                        rows={3}
+                        placeholder="Customer comments..."
+                      />
+                    </div>
+                    
+                    <div className="mb-2">
+                      <div className="text-xs font-medium text-text-muted mb-1">Our Comments:</div>
+                      <textarea
+                        value={newCallData.OurComments || ''}
+                        onChange={(e) => handleNewCallDataChange('OurComments', e.target.value)}
+                        className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                        rows={3}
+                        placeholder="Our comments..."
+                      />
+                    </div>
+                    
+                    <div className="mb-2">
+                      <div className="text-xs font-medium text-text-muted mb-1">Resolution:</div>
+                      <textarea
+                        value={newCallData.Resolution || ''}
+                        onChange={(e) => handleNewCallDataChange('Resolution', e.target.value)}
+                        className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                        rows={2}
+                        placeholder="Resolution..."
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={newCallData.Issues || ''}
+                        onChange={(e) => handleNewCallDataChange('Issues', e.target.value)}
+                        className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                        placeholder="Issues"
+                      />
+                      <input
+                        type="text"
+                        value={newCallData.ServiceCodes || ''}
+                        onChange={(e) => handleNewCallDataChange('ServiceCodes', e.target.value)}
+                        className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                        placeholder="Service codes"
+                      />
+                      <input
+                        type="text"
+                        value={newCallData.RefEquipment || ''}
+                        onChange={(e) => handleNewCallDataChange('RefEquipment', e.target.value)}
+                        className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                        placeholder="Equipment"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {callHistory.length > 0 ? (
+                  <div className="space-y-3 max-h-120 overflow-y-auto">
+                    {callHistory.map((call, index) => {
+                      const isEditing = editingCallId === call.CallRefNum;
+                      const displayData = isEditing ? editingCallData : call;
+                      const callDate = displayData.CallDate ? formatDate(displayData.CallDate) : 'Unknown Date';
+                      const callTime = displayData.CallTime && displayData.CallTime !== 0 ? String(displayData.CallTime).padStart(6, '0').replace(/(\d{2})(\d{2})(\d{2})/, '$1:$2:$3') : '';
+                      const followupDate = displayData.FollowupDate ? formatDate(displayData.FollowupDate) : null;
+                      const uniqueKey = `call-${call.CallRefNum || index}`;
                       
                       return (
-                        <tr key={uniqueKey} className="border-b border-border">
-                          <td className="py-2 flex items-center">
-                            <span className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
-                              <span className="text-primary text-xs font-bold">{contactInitial}</span>
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="text-text">
-                                {fullName || "Unnamed Contact"}
-                              </span>
-                              {contact.ConTitle && (
-                                <span className="text-xs text-text-muted">
-                                  {contact.ConTitle}
+                        <div key={uniqueKey} className="bg-surface p-3 rounded border">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={editingCallData.Contactname || ''}
+                                    onChange={(e) => handleCallDataChange('Contactname', e.target.value)}
+                                    className="text-sm font-medium bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                    placeholder="Contact name"
+                                  />
+                                ) : (
+                                  <span className="text-sm font-medium text-text">
+                                    {(displayData.Contactname && displayData.Contactname.trim()) || 'Unknown Contact'}
+                                  </span>
+                                )}
+                                
+                                {isEditing ? (
+                                  <select
+                                    value={editingCallData.CallStatus || ''}
+                                    onChange={(e) => handleCallDataChange('CallStatus', e.target.value)}
+                                    className="text-xs px-2 py-1 rounded border border-border bg-background text-text focus:outline-none focus:border-primary"
+                                  >
+                                    <option value="O">Open</option>
+                                    <option value="C">Closed</option>
+                                    <option value="F">Follow-up</option>
+                                  </select>
+                                ) : (
+                                  displayData.CallStatus && displayData.CallStatus.trim() && (
+                                    <span className={`text-xs px-2 py-0.5 rounded ${
+                                      displayData.CallStatus === 'O' ? 'bg-yellow-100 text-yellow-800' :
+                                      displayData.CallStatus === 'C' ? 'bg-green-100 text-green-800' :
+                                      displayData.CallStatus === 'F' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {displayData.CallStatus === 'O' ? 'Open' : 
+                                       displayData.CallStatus === 'C' ? 'Closed' : 
+                                       displayData.CallStatus === 'F' ? 'Follow-up' : displayData.CallStatus}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                <div className="text-xs text-text-muted">
+                                  <span className="font-medium">Date:</span> {callDate}{callTime && ` at ${callTime}`}
+                                </div>
+                                
+                                {isEditing ? (
+                                  <input
+                                    type="tel"
+                                    value={editingCallData.PhoneNumber || ''}
+                                    onChange={(e) => handleCallDataChange('PhoneNumber', e.target.value)}
+                                    className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                    placeholder="Phone number"
+                                  />
+                                ) : (
+                                  displayData.PhoneNumber && displayData.PhoneNumber.trim() && (
+                                    <div className="text-xs text-text-muted">
+                                      <span className="font-medium">Phone:</span> {displayData.PhoneNumber}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                {isEditing ? (
+                                  <select
+                                    value={editingCallData.CallType || ''}
+                                    onChange={(e) => handleCallDataChange('CallType', e.target.value)}
+                                    className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  >
+                                    <option value="">Select type...</option>
+                                    <option value="T">Technical</option>
+                                    <option value="S">Sales</option>
+                                    <option value="G">General</option>
+                                  </select>
+                                ) : (
+                                  displayData.CallType && displayData.CallType.trim() && (
+                                    <div className="text-xs text-text-muted">
+                                      <span className="font-medium">Type:</span> {displayData.CallType === 'T' ? 'Technical' : displayData.CallType}
+                                    </div>
+                                  )
+                                )}
+                                
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={editingCallData.CallOwner || ''}
+                                    onChange={(e) => handleCallDataChange('CallOwner', e.target.value)}
+                                    className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                    placeholder="Call owner"
+                                  />
+                                ) : (
+                                  displayData.CallOwner && displayData.CallOwner.trim() && (
+                                    <div className="text-xs text-text-muted">
+                                      <span className="font-medium">Owner:</span> {displayData.CallOwner}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+
+                              {isEditing ? (
+                                <input
+                                  type="email"
+                                  value={editingCallData.CustEmail || ''}
+                                  onChange={(e) => handleCallDataChange('CustEmail', e.target.value)}
+                                  className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full mb-2"
+                                  placeholder="Customer email"
+                                />
+                              ) : (
+                                displayData.CustEmail && displayData.CustEmail.trim() && (
+                                  <div className="text-xs text-text-muted mb-2">
+                                    <span className="font-medium">Email:</span> 
+                                    <a href={`mailto:${displayData.CustEmail}`} className="text-info hover:underline ml-1">
+                                      {displayData.CustEmail}
+                                    </a>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs text-text-muted">
+                                #{displayData.CallRefNum || 'N/A'}
+                              </div>
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleSaveCall}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={handleCancelCallEdit}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={() => handleEditCall(call)}
+                                  >
+                                    <Edit size={14} />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteCall(call)}
+                                  >
+                                    <Trash2 size={14} />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {isEditing ? (
+                            <>
+                              <div className="mb-2">
+                                <div className="text-xs font-medium text-text-muted mb-1">Customer Comments:</div>
+                                <textarea
+                                  value={editingCallData.CustComments || ''}
+                                  onChange={(e) => handleCallDataChange('CustComments', e.target.value)}
+                                  className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                                  rows={3}
+                                  placeholder="Customer comments..."
+                                />
+                              </div>
+                              
+                              <div className="mb-2">
+                                <div className="text-xs font-medium text-text-muted mb-1">Our Comments:</div>
+                                <textarea
+                                  value={editingCallData.OurComments || ''}
+                                  onChange={(e) => handleCallDataChange('OurComments', e.target.value)}
+                                  className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                                  rows={3}
+                                  placeholder="Our comments..."
+                                />
+                              </div>
+                              
+                              <div className="mb-2">
+                                <div className="text-xs font-medium text-text-muted mb-1">Resolution:</div>
+                                <textarea
+                                  value={editingCallData.Resolution || ''}
+                                  onChange={(e) => handleCallDataChange('Resolution', e.target.value)}
+                                  className="w-full text-xs bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none"
+                                  rows={2}
+                                  placeholder="Resolution..."
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-3 gap-2 mb-2">
+                                <input
+                                  type="text"
+                                  value={editingCallData.Issues || ''}
+                                  onChange={(e) => handleCallDataChange('Issues', e.target.value)}
+                                  className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  placeholder="Issues"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingCallData.ServiceCodes || ''}
+                                  onChange={(e) => handleCallDataChange('ServiceCodes', e.target.value)}
+                                  className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  placeholder="Service codes"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingCallData.RefEquipment || ''}
+                                  onChange={(e) => handleCallDataChange('RefEquipment', e.target.value)}
+                                  className="text-xs bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  placeholder="Equipment"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {displayData.CustComments && displayData.CustComments.trim() && (
+                                <div className="mb-2">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Customer Comments:</div>
+                                  <div className="text-xs text-text bg-background p-2 rounded border">
+                                    {displayData.CustComments}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.OurComments && displayData.OurComments.trim() && (
+                                <div className="mb-2">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Our Comments:</div>
+                                  <div className="text-xs text-text bg-background p-2 rounded border">
+                                    {displayData.OurComments}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.Resolution && displayData.Resolution.trim() && (
+                                <div className="mb-2">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Resolution:</div>
+                                  <div className="text-xs text-text bg-background p-2 rounded border">
+                                    {displayData.Resolution}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {followupDate && (
+                            <div className="text-xs text-text-muted mt-2 pt-2 border-t border-border">
+                              <span className="font-medium">Follow-up:</span> {followupDate}
+                              {displayData.FollowupTime && displayData.FollowupTime !== 0 && ` at ${String(displayData.FollowupTime).padStart(6, '0').replace(/(\d{2})(\d{2})(\d{2})/, '$1:$2:$3')}`}
+                            </div>
+                          )}
+                          
+                          {!isEditing && ((displayData.Issues && displayData.Issues.trim()) || 
+                            (displayData.ServiceCodes && displayData.ServiceCodes.trim()) || 
+                            (displayData.RefEquipment && displayData.RefEquipment.trim())) && (
+                            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-border">
+                              {displayData.Issues && displayData.Issues.trim() && (
+                                <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                                  Issue: {displayData.Issues}
+                                </span>
+                              )}
+                              {displayData.ServiceCodes && displayData.ServiceCodes.trim() && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                  Service: {displayData.ServiceCodes}
+                                </span>
+                              )}
+                              {displayData.RefEquipment && displayData.RefEquipment.trim() && (
+                                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                                  Equipment: {displayData.RefEquipment}
                                 </span>
                               )}
                             </div>
-                          </td>
-                          <td className="py-2">
-                            {contact.Email ? (
-                              <a href={`mailto:${contact.Email}`} className="text-info hover:underline">
-                                {contact.Email}
-                              </a>
-                            ) : (
-                              <span className="text-text">--</span>
-                            )}
-                          </td>
-                          <td className="py-2">
-                            {contact.PhoneNumber ? (
-                              <a href={`tel:${contact.PhoneNumber}`} className="text-text hover:underline">
-                                {contact.PhoneNumber}
-                                {contact.PhoneExt && ` ext. ${contact.PhoneExt}`}
-                              </a>
-                            ) : (
-                              <span className="text-text">--</span>
-                            )}
-                          </td>
-                        </tr>
+                          )}
+                        </div>
                       );
-                    })
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-8">
+                    <svg
+                      className="w-12 h-12 text-text-muted/50 mb-2"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    <div className="text-text-muted">No call history found.</div>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : (
+            <section className="flex-1 space-y-2">
+              {/* Credit Details */}
+              <div
+                className="bg-foreground rounded-lg border border-border p-4"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Credit Information</h4>
+                  {isEditingAll ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleSaveAll}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={handleCancelAll}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   ) : (
-                    <tr>
-                      <td colSpan={3} className="py-4 text-center text-text-muted">
-                        No contacts found for this company
-                      </td>
-                    </tr>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={handleStartEditing}
+                    >
+                      <Edit size={16} />
+                    </Button>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-      </main>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Credit Status */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text-muted font-medium">Credit Status</span>
+                    {isEditingAll ? (
+                      <select
+                        value={tempValues.creditStatus || ''}
+                        onChange={(e) => handleTempValueChange('creditStatus', e.target.value)}
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary"
+                      >
+                        <option value="">Select status...</option>
+                        {CREDIT_STATUS_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="w-full bg-surface text-text px-3 py-2 rounded border">
+                        {company.creditStatus ? CREDIT_STATUS_OPTIONS.find(opt => opt.value === company.creditStatus)?.label || company.creditStatus : "-"}
+                      </div>
+                    )}
+                  </div>
 
-      <aside className="w-96 flex flex-col space-y-2 pt-2">
-        {/* Company summary */}
-        <div
-          className="bg-foreground rounded-lg border border-border p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Company Information</h4>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="text-text-muted">Status: </span>
-              <span className={`font-medium ${company.active ? 'text-green-600' : 'text-red-600'}`}>
-                {company.active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            
-            {company.isDealer && (
-              <div>
-                <span className="text-text-muted">Type: </span>
-                <span className="text-text font-medium">Dealer</span>
-              </div>
-            )}
-            
-            {company.creditNote && (
-              <div>
-                <span className="text-text-muted">Credit Note: </span>
-                <span className="text-text">{company.creditNote}</span>
-              </div>
-            )}
-            
-            {(company.onHoldBy || company.onHoldDate) && (
-              <div className="bg-yellow-50 border border-yellow-200 p-2 rounded">
-                <div className="text-yellow-800 text-xs font-medium">Account On Hold</div>
-                {company.onHoldBy && (
-                  <div className="text-yellow-700 text-xs">By: {company.onHoldBy}</div>
-                )}
-                {company.onHoldDate && (
-                  <div className="text-yellow-700 text-xs">Date: {formatDate(company.onHoldDate)}</div>
-                )}
-              </div>
-            )}
-            
-            {company.notes && (
-              <div>
-                <span className="text-text-muted">Notes: </span>
-                <div className="text-text mt-1 p-2 bg-background rounded border text-xs">
-                  {company.notes}
+                  {/* Credit Limit */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text-muted font-medium">Credit Limit</span>
+                    {isEditingAll ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={tempValues.creditLimit || ''}
+                        onChange={(e) => handleTempValueChange('creditLimit', e.target.value)}
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary"
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <div className="w-full bg-surface text-text px-3 py-2 rounded border">
+                        {company.creditLimit ? formatCurrency(company.creditLimit) : "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Account Balance */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text-muted font-medium">Account Balance</span>
+                    {isEditingAll ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={tempValues.acctBalance || ''}
+                        onChange={(e) => handleTempValueChange('acctBalance', e.target.value)}
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary"
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <div className="w-full bg-surface text-text px-3 py-2 rounded border">
+                        {company.acctBalance !== null && company.acctBalance !== undefined ? formatCurrency(company.acctBalance) : "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Balance Date */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text-muted font-medium">Balance Date</span>
+                    {isEditingAll ? (
+                      <input
+                        type="date"
+                        value={tempValues.balanceDate ? new Date(tempValues.balanceDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => handleTempValueChange('balanceDate', e.target.value)}
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary"
+                      />
+                    ) : (
+                      <div className="w-full bg-surface text-text px-3 py-2 rounded border">
+                        {company.balanceDate ? formatDate(company.balanceDate) : "-"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Terms Code */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text-muted font-medium">Terms Code</span>
+                    {isEditingAll ? (
+                      <select
+                        value={tempValues.termsCode || ''}
+                        onChange={(e) => handleTempValueChange('termsCode', e.target.value)}
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary"
+                      >
+                        <option value="">Select terms...</option>
+                        {TERMS_CODE_OPTIONS.map(option => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="w-full bg-surface text-text px-3 py-2 rounded border">
+                        {company.termsCode || "-"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Credit Note - Full Width */}
+                <div className="flex flex-col gap-1 mt-6">
+                  <span className="text-text-muted font-medium">Credit Note</span>
+                  {isEditingAll ? (
+                    <textarea
+                      value={tempValues.creditNote || ''}
+                      onChange={(e) => handleTempValueChange('creditNote', e.target.value)}
+                      className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary resize-none"
+                      rows={6}
+                      placeholder="Enter credit note..."
+                    />
+                  ) : (
+                    <div className="w-full bg-surface text-text px-3 py-2 rounded border min-h-[140px]">
+                      {company.creditNote || "-"}
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-        {/* Contacts Panel */}
-        <div
-          className="bg-foreground rounded-lg border border-border p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Contacts ({companyContacts.length})</h4>
-            <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
-              + Add
-            </button>
-          </div>
-          <div className="space-y-4">
-            {companyContacts.length > 0 ? (
-              companyContacts.slice(0, 3).map((contact, index) => {
-                const fullName = `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
-                const contactInitial = fullName ? fullName.charAt(0).toUpperCase() : 'C';
-                const uniqueKey = `sidebar-contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
-                
-                return (
-                  <div key={uniqueKey} className="flex items-center justify-between bg-surface p-3 rounded">
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-text">
-                        {fullName || "Unnamed Contact"}
-                      </div>
-                      {contact.ConTitle && (
-                        <div className="text-xs text-text-muted">
-                          {contact.ConTitle}
-                        </div>
-                      )}
-                      {contact.Email && (
-                        <div className="text-xs text-info">{contact.Email}</div>
-                      )}
-                      {contact.PhoneNumber && (
-                        <div className="text-xs text-text-muted">
-                          {contact.PhoneNumber}
-                          {contact.PhoneExt && ` ext. ${contact.PhoneExt}`}
-                        </div>
-                      )}
-                    </div>
-                    <span className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                      <span className="text-primary text-sm font-bold">{contactInitial}</span>
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-4 text-text-muted">
-                No contacts found for this company
-              </div>
-            )}
-          </div>
-          {companyContacts.length > 3 && (
-            <button className="mt-4 text-xs text-info hover:underline">
-              View all {companyContacts.length} contacts
-            </button>
+            </section>
           )}
         </div>
-        {/* Deals Panel */}
-        <div
-          className="bg-foreground rounded-lg border border-border p-4"
-          style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold text-text">Journeys ({companyJourneys.length})</h4>
-            <button className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
-              + Add
-            </button>
-          </div>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {companyJourneys.length > 0 ? (
-              companyJourneys.map((journey, index) => {
-                const uniqueKey = `journey-${journey.id || journey.customerId}-${index}`;
-                return (
-                  <div key={uniqueKey} className="bg-surface p-3 rounded">
-                    <div className="font-semibold text-sm text-text mb-1">{journey.name}</div>
-                    <div className="text-xs text-text-muted mb-1">
-                      Amount: {formatCurrency(journey.value)}
-                    </div>
-                    <div className="text-xs text-text-muted mb-1">
-                      Close date: {formatDate(journey.closeDate)}
-                    </div>
-                    <div className="text-xs text-text-muted mb-1">
-                      Stage: {journey.Journey_Stage || `Stage ${journey.stage}`}
-                    </div>
-                    {journey.confidence && (
-                      <div className="text-xs text-text-muted mb-1">
-                        Confidence: {journey.confidence}%
-                      </div>
-                    )}
-                    {journey.Priority && (
-                      <div className="flex items-center mt-2">
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                          Priority {journey.Priority}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-4 text-text-muted">
-                No journeys found for this company
-              </div>
-            )}
-          </div>
-          {companyJourneys.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-border">
-              <div className="text-xs text-text-muted">
-                Total Pipeline Value: {formatCurrency(companyJourneys.reduce((sum, j) => sum + (j.value || 0), 0))}
-              </div>
-            </div>
-          )}
-        </div>
-      </aside>
+      </main>
 
       <Modal
         isOpen={activeModal.isOpen}

@@ -92,12 +92,12 @@ export interface Rule extends IBaseEntity {
   targetOptionIds: string[];
 }
 
-export type RuleCondition =
-  | InputCondition
-  | SimpleCondition
-  | AndCondition
-  | OrCondition
-  | NotCondition;
+export type RuleCondition
+  = | InputCondition
+    | SimpleCondition
+    | AndCondition
+    | OrCondition
+    | NotCondition;
 
 export interface InputCondition {
   type: "INPUT";
@@ -239,17 +239,18 @@ export interface IApiResponse<T> {
   };
 }
 
-export interface IQueryParams {
+export interface IQueryParams<T> {
   page?: number;
   limit?: number;
   sort?: string;
   order?: "asc" | "desc";
+  filter?: Partial<T> | string;
   search?: string;
-  filter?: string | Record<string, any>;
-  dateFrom?: string | Date;
-  dateTo?: string | Date;
-  fields?: string[];
-  include?: string[];
+  searchFields?: Array<keyof T>;
+  dateFrom?: Date | string;
+  dateTo?: Date | string;
+  include?: string[] | Record<string, any> | string;
+  select?: string[] | Record<string, any> | string;
 }
 
 export enum MachineType {
@@ -322,4 +323,11 @@ export interface IMachineTimeline {
   startDate: Date;
   endDate: Date;
   machines: IOverviewMachine[];
+}
+
+export interface IAuditLog extends IBaseEntity {
+  model: string;
+  recordId: string;
+  changedBy: string;
+  diff: any;
 }

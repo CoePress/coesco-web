@@ -20,22 +20,17 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   const { state, handleFieldChange, saveImmediately } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  const textColor = 'var(--color-text)';
-  const successColor = 'var(--color-success)';
-  const errorColor = 'var(--color-error)';
-  const warningColor = 'var(--color-warning)';
-
-  let yieldMetCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet === 'OK' ? successColor : errorColor;
-  let depthRequiredCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequiredCheck === 'OK' ? successColor : errorColor;
-  let forceRequiredCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequiredCheck === 'OK' ? successColor : errorColor;
+  let yieldMetCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet === 'OK' ? "bg-success" : "bg-error";
+  let depthRequiredCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequiredCheck === 'OK' ? "bg-success" : "bg-error";
+  let forceRequiredCheck = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequiredCheck === 'OK' ? "bg-success" : "bg-error";
   let percentYield = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.percentYieldCheck;
-  let percentYieldCheck = errorColor;
-  if (percentYield === 'OK') { percentYieldCheck = successColor; }
-  else if (percentYield === 'LOW') { percentYieldCheck = warningColor; }
-  else { percentYieldCheck = errorColor; }
+  let percentYieldCheck = "bg-error";
+  if (percentYield === 'OK') { percentYieldCheck = "bg-success"; }
+  else if (percentYield === 'LOW') { percentYieldCheck = "bg-warning"; }
+  else { percentYieldCheck = "bg-error"; }
 
   let jackForceAvailable = data.rollStrBackbend?.straightener?.jackForceAvailable || 0;
-  let firstHeightColor = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.heightCheck === 'OK' ? successColor : errorColor;
+  let firstHeightColor = data.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.heightCheck === 'OK' ? "bg-success" : "bg-error";
   
   // Calculate function
   const handleCalculate = useCallback(async () => {
@@ -185,25 +180,24 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Total Depth Required (in)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.depthRequired?.toString() || ""}
           disabled
-          style={{ backgroundColor: depthRequiredCheck, color: textColor }}
+          className={depthRequiredCheck}
         />
         <Input
           label="Total Force Required (lbs)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.forceRequired?.toString() || ""}
           disabled
-          style={{ backgroundColor: forceRequiredCheck, color: textColor }}
+          className={forceRequiredCheck}
         />
         <Input
           label="Yield Requirements Met"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.yieldMet || "Not Calculated"}
           disabled
-          style={{ backgroundColor: yieldMetCheck, color: textColor }}  
+          className={yieldMetCheck}
         />
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Backbend specifications section
   const backbendSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h4" className="mb-4 text-lg font-medium">Backbend Specifications</Text>
@@ -264,7 +258,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               name="rollStrBackbend.straightener.rolls.backbend.rollers.first.height"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.height?.toString() || ""}
               disabled
-              style={{ backgroundColor: firstHeightColor, color: textColor }}
+              className={firstHeightColor}
             />
             <Input
               label="Resulting Radius (in)"
@@ -294,7 +288,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Force Required (lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired?.toString() || ""}
               disabled
-              style={{ backgroundColor: ((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+              className={((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
             />
             <Input
               label="Springback"
@@ -306,7 +300,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.percentOfThicknessYielded?.toString() || ""}
               disabled
-              style={{ backgroundColor: percentYieldCheck, color: textColor }}
+              className={percentYieldCheck}
             />
             <Input
               label="Yield Strains at Surface"
@@ -419,7 +413,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Force Required (lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired?.toString() || ""}
               disabled
-              style={{ backgroundColor: ((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+              className={((localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
             />
             <Input
               label="Springback"
@@ -510,7 +504,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Force Required (lbs)"
                   value={middleData?.forceRequired?.toString() || ""}
                   disabled
-                  style={{ backgroundColor: ((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+                  className={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
                 />
                 <Input
                   label="Springback"
@@ -539,7 +533,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               </div>
             </div>
 
-            {/* Down Direction */}
             <div>
               <Text as="h4" className="mb-3 font-medium text-red-600">Down Direction</Text>
               <div className="space-y-2">
@@ -592,7 +585,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
       );
     }
 
-    // For multiple middle rollers, render each one
     const middleRollers = [];
     for (let i = 1; i <= numMiddleRollers; i++) {
       let middleData;
@@ -607,7 +599,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         <Card key={i} className="mb-4 p-4">
           <Text as="h4" className="mb-4 text-lg font-medium">Middle Roller {i}</Text>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Up Direction */}
             <div>
               <Text as="h4" className="mb-3 font-medium text-blue-600">Up Direction</Text>
               <div className="space-y-2">
@@ -656,7 +647,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Force Required (lbs)"
                   value={middleData?.forceRequired?.toString() || ""}
                   disabled
-                  style={{ backgroundColor: ((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor }}
+                  className={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? "bg-error" : "bg-success"}
                 />
                 <Input
                   label="Yield Strains at Surface"
@@ -667,7 +658,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               </div>
             </div>
 
-            {/* Down Direction */}
             <div>
               <Text as="h4" className="mb-3 font-medium text-red-600">Down Direction</Text>
               <div className="space-y-2">
@@ -723,7 +713,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
     return <>{middleRollers}</>;
   }, [localData]);
 
-  // Design notes section
   const designNotesSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h4" className="mb-4 text-lg font-medium">Design Summary</Text>
@@ -758,7 +747,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
     </Card>
   ), [localData]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -792,7 +780,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -800,7 +787,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         )}
       </div>
 
-      {/* Loading and error states */}
       {isLoading && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -820,7 +806,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
         </div>
       )}
 
-      {/* Form sections */}
       {headerSection}
       {materialSpecsSection}
       {rollStraightenerSpecsSection}

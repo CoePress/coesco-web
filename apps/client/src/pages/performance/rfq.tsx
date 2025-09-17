@@ -12,7 +12,7 @@ import {
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
 import { Card, Input, Select, Text } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import Checkbox from "@/components/ui/checkbox";
 
 export interface RFQProps {
   data: PerformanceData;
@@ -22,12 +22,10 @@ export interface RFQProps {
 const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
   
-  // Use the performance data service
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  // Basic Information Section
   const basicInfoSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -242,7 +240,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, fieldErrors, handleFieldChange, isEditing]);
 
-  // Line Configuration Section
   const lineConfigSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -305,7 +302,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Coil Specifications Section
   const coilSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -460,7 +456,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Material Specifications Section
   const materialSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -521,7 +516,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Press Information Section
   const pressInfoSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -669,7 +663,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Dies Information Section
   const diesInfoSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -707,7 +700,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Feed Requirements Section - This is where the FPM calculations show
   const feedRequirementsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -815,7 +807,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Space & Mounting Section
   const spaceMountingSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -911,19 +902,18 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       </div>
 
       <div className="mb-6">
-        <Textarea
+        {/* <Textarea
           label="Obstructions"
           name="rfq.obstructions"
           value={localData.rfq?.obstructions || ""}
           onChange={handleFieldChange}
           rows={3}
           disabled={!isEditing}
-        />
+        /> */}
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Special Requirements Section
   const specialRequirementsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h3" className="mb-4 text-lg font-medium">
@@ -943,19 +933,18 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       </div>
 
       <div>
-        <Textarea
+        {/* <Textarea
           label="Special Considerations"
           name="rfq.specialConsiderations"
           value={localData.rfq?.specialConsiderations || ""}
           onChange={handleFieldChange}
           rows={4}
           disabled={!isEditing}
-        />
+        /> */}
       </div>
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Status indicator component
   const StatusIndicator = () => {
     if (isLoading) {
       return (
@@ -989,7 +978,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
 
   return (
     <div className="w-full flex flex-1 flex-col p-2 gap-2">
-      {/* Status bar */}
       <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
@@ -997,7 +985,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         )}
       </div>
 
-      {/* Loading and error states */}
       {(isLoading) && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <div className="flex items-center">
@@ -1017,7 +1004,6 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         </div>
       )}
 
-      {/* Form sections */}
       {basicInfoSection}
       {lineConfigSection}
       {coilSpecsSection}

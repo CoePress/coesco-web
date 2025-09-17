@@ -2,7 +2,7 @@ import type { SignOptions } from "jsonwebtoken";
 
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { UserRole } from "@prisma/client";
-import { compare } from "bcrypt";
+import { compare, hash } from "bcrypt";
 import { sign, verify } from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
 
@@ -39,13 +39,13 @@ export class AuthService {
     return { token, refreshToken };
   }
 
-  async login(email: string, password: string): Promise<any> {
-    if (!email || !password) {
-      throw new UnauthorizedError("Email and password are required");
+  async login(username: string, password: string): Promise<any> {
+    if (!username || !password) {
+      throw new UnauthorizedError("Username and password are required");
     }
 
     const user = await prisma.user.findUnique({
-      where: { username: email },
+      where: { username },
       include: { employee: true },
     });
 
@@ -57,10 +57,19 @@ export class AuthService {
       throw new UnauthorizedError("Account is inactive");
     }
 
-    const isValidPassword = await compare(password, user.password || "");
+    if (!user.password) {
+      throw new UnauthorizedError("Password login not available for this account");
+    }
+
+    const isValidPassword = await compare(password, user.password);
     if (!isValidPassword) {
       throw new UnauthorizedError("Invalid credentials");
     }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
 
     const { token, refreshToken } = this.generateTokens(user.id);
 
@@ -78,6 +87,88 @@ export class AuthService {
         lastName: user.employee.lastName,
         email: user.employee.email,
         title: user.employee.title,
+      },
+    };
+  }
+
+  async register(userData: {
+    username: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    email?: string;
+  }): Promise<any> {
+    const { username, password, firstName, lastName, title, email } = userData;
+
+    if (!username || !password || !firstName || !lastName) {
+      throw new UnauthorizedError("All fields are required");
+    }
+
+    if (password.length < 8) {
+      throw new UnauthorizedError("Password must be at least 8 characters long");
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUser) {
+      throw new UnauthorizedError("User already exists");
+    }
+
+    if (email) {
+      const existingEmployee = await prisma.employee.findUnique({
+        where: { email },
+      });
+
+      if (existingEmployee) {
+        throw new UnauthorizedError("Employee with this email already exists");
+      }
+    }
+
+    const hashedPassword = await hash(password, 12);
+
+    const employee = await prisma.employee.create({
+      data: {
+        firstName,
+        lastName,
+        initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase(),
+        email,
+        title,
+        number: randomUUID().slice(0, 8),
+        user: {
+          create: {
+            username,
+            password: hashedPassword,
+            role: UserRole.USER,
+            isActive: true,
+          },
+        },
+        createdById: "system",
+        updatedById: "system",
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    const { token, refreshToken } = this.generateTokens(employee.user!.id);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: employee.user!.id,
+        role: employee.user!.role,
+      },
+      employee: {
+        id: employee.id,
+        number: employee.number,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        email: employee.email,
+        title: employee.title,
       },
     };
   }
@@ -197,6 +288,84 @@ export class AuthService {
     }
 
     return response.json();
+  }
+
+  async initializeDefaultUser(): Promise<void> {
+    const adminEmail = "admin@cpec.com";
+    const adminUsername = "admin";
+    
+    const existingAdmin = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: adminUsername },
+          { employee: { email: adminEmail } }
+        ]
+      },
+      include: { employee: true }
+    });
+
+    if (!existingAdmin) {
+      const hashedAdminPassword = await hash("admin123", 12);
+
+      await prisma.employee.create({
+        data: {
+          firstName: "Default",
+          lastName: "Admin",
+          initials: "DA",
+          email: adminEmail,
+          title: "Administrator",
+          number: "ADM001",
+          user: {
+            create: {
+              username: adminUsername,
+              password: hashedAdminPassword,
+              role: UserRole.ADMIN,
+              isActive: true,
+            },
+          },
+          createdById: "system",
+          updatedById: "system",
+        },
+      });
+    }
+
+    const userEmail = "user@cpec.com";
+    const userUsername = "user";
+    
+    const existingRegularUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: userUsername },
+          { employee: { email: userEmail } }
+        ]
+      },
+      include: { employee: true }
+    });
+
+    if (!existingRegularUser) {
+      const hashedUserPassword = await hash("user123", 12);
+
+      await prisma.employee.create({
+        data: {
+          firstName: "Regular",
+          lastName: "User",
+          initials: "RU",
+          email: userEmail,
+          title: "Employee",
+          number: "USR001",
+          user: {
+            create: {
+              username: userUsername,
+              password: hashedUserPassword,
+              role: UserRole.USER,
+              isActive: true,
+            },
+          },
+          createdById: "system",
+          updatedById: "system",
+        },
+      });
+    }
   }
 
   async testLogin(): Promise<any> {

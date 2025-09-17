@@ -12,10 +12,9 @@ import { useGetEntities } from "@/hooks/_base/use-get-entities";
 const Companies = () => {
   const { entities: companies } = useGetEntities("/crm/companies");
   const [legacyCompanies, setLegacyCompanies] = useState<any[] | null>(null);
-  const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
+  const [_legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
 
   const adaptLegacyCompany = (raw: any, contacts: any[] = []) => {
-    // Find primary contact for this company
     const companyContacts = contacts.filter(contact => contact.Company_ID === raw.Company_ID);
     const primaryContact = companyContacts.find(contact => contact.Type === 'A') || companyContacts[0];
     
@@ -103,7 +102,6 @@ const Companies = () => {
   }, []);
 
   const baseCompanies = legacyCompanies?.length ? legacyCompanies : (companies ?? []);
-  const isLegacyData = !!legacyCompanies?.length;
 
   // Batch loading state
   const [batchSize, setBatchSize] = useState(500);

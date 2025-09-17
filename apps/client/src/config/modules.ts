@@ -1,50 +1,58 @@
-import {
+import type {
   LucideIcon,
-  UsersIcon,
-  ComputerIcon,
-  SearchIcon,
-  PaintBucketIcon,
-  CodeIcon,
-  DollarSignIcon,
-  FileTextIcon,
+} from "lucide-react";
+import type { ComponentType } from "react";
+
+import {
+  ActivityIcon,
   BoxIcon,
+  ChartNoAxesCombined,
+  CodeIcon,
+  ComputerIcon,
+  DollarSignIcon,
   FactoryIcon,
-  ShieldIcon,
+  FileCheck2Icon,
+  FileClockIcon,
+  FileCogIcon,
+  FileIcon,
+  FileTextIcon,
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
-  ChartNoAxesCombined,
-  ActivityIcon,
-  FileClockIcon,
+  Building2,
+  PaintBucketIcon,
+  SearchIcon,
+  ShieldIcon,
+  UsersIcon,
+  WrenchIcon,
 } from "lucide-react";
-import { ComponentType } from "react";
 
-import { __dev__ } from "./env";
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
-import Sandbox from "@/pages/sandbox/sandbox";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contacts, ContactDetails, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
+import Sandbox from "@/pages/sandbox/sandbox";
 
+import { __dev__ } from "./env";
 
-export type Module = {
+export interface Module {
   sequence: number;
   slug: string;
   label: string;
   icon: LucideIcon;
   status: "active" | "inactive" | "development";
   pages: Page[];
-};
+}
 
-export type Page = {
+export interface Page {
   slug: string | null;
   label: string;
   icon?: LucideIcon;
   component: ComponentType;
   children?: Page[];
-};
+}
 
 const adminModule: Module = {
-  sequence: 3,
+  sequence: 4,
   slug: "admin",
   label: "Admin",
   icon: ShieldIcon,
@@ -88,7 +96,7 @@ const adminModule: Module = {
       icon: FileClockIcon,
       component: Sessions,
     },
-    
+
     {
       slug: "devices",
       label: "Devices",
@@ -167,13 +175,26 @@ const salesModule: Module = {
     {
       slug: "companies",
       label: "Companies",
-      icon: UsersIcon,
+      icon: Building2,
       component: Companies,
       children: [
         {
           slug: ":id",
           label: "Company Details",
           component: CompanyDetails,
+        },
+      ],
+    },
+    {
+      slug: "contacts",
+      label: "Contacts",
+      icon: UsersIcon,
+      component: Contacts,
+      children: [
+        {
+          slug: ":id",
+          label: "Contact Details",
+          component: ContactDetails,
         },
       ],
     },
@@ -224,8 +245,45 @@ const salesModule: Module = {
   ],
 };
 
+const serviceModule: Module = {
+  sequence: 3,
+  slug: "service",
+  label: "Service",
+  icon: WrenchIcon,
+  status: "development" as const,
+  pages: [
+    {
+      slug: null,
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      component: ServiceDashboard,
+    },
+    {
+      slug: "forms",
+      label: "Forms",
+      icon: FileIcon,
+      component: Forms,
+      children: [
+        {
+          slug: ":id",
+          label: "Form Details",
+          icon: FileCogIcon,
+          component: FormDetails,
+        },
+        {
+          slug: ":id/submit",
+          label: "Form Submit",
+          icon: FileCheck2Icon,
+          component: FormSubmission,
+        },
+      ],
+    },
+
+  ],
+};
+
 const sandboxModule: Module = {
-  sequence: 4,
+  sequence: 9999,
   slug: "sandbox",
   label: "Sandbox",
   icon: CodeIcon,
@@ -257,10 +315,11 @@ const modules: Module[] = [
   productionModule,
   salesModule,
   sandboxModule,
+  serviceModule,
 ]
   .filter(
-    (module) =>
-      module.status === "active" || (__dev__ && module.status === "development")
+    module =>
+      module.status === "active" || (__dev__ && module.status === "development"),
   )
   .sort((a, b) => a.sequence - b.sequence);
 

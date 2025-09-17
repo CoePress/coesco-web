@@ -8,7 +8,7 @@ type MachineMapProps = {
 
 const MACHINE_POSITIONS: Record<string, { row: number; col: number }> = {
   OKK: { row: 1, col: 1 },
-  "Niigata SPN63": { row: 3, col: 1 },
+  "Niigata SPN630": { row: 3, col: 1 },
   "Kuraki Boring Mill": { row: 1, col: 3 },
   "Niigata HN80": { row: 3, col: 3 },
   "Doosan 3100LS": { row: 1, col: 6 },
