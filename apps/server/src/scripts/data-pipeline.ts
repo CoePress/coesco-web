@@ -424,7 +424,7 @@ async function _findEmployeeByNumberOrInitials(identifier: string): Promise<any>
   }
 }
 
-function formatModelNumbers(modelNumbers: string[]): string[] {
+function _formatModelNumbers(modelNumbers: string[]): string[] {
   const groups = new Map<string, string[]>();
 
   modelNumbers.forEach((model) => {
@@ -901,7 +901,7 @@ async function _migrateEquipListToItems(): Promise<MigrationResult> {
       {
         from: "Model",
         to: "modelNumber",
-        transform: (value) => trimWhitespace(value)
+        transform: value => trimWhitespace(value),
       },
       {
         from: "Description",

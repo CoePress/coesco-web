@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 import {
   ActivityIcon,
   BoxIcon,
+  Building2,
   ChartNoAxesCombined,
   CodeIcon,
   ComputerIcon,
@@ -19,7 +20,6 @@ import {
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
-  Building2,
   PaintBucketIcon,
   SearchIcon,
   ShieldIcon,
@@ -27,7 +27,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contacts, ContactDetails, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";

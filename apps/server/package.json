@@ -11,7 +11,6 @@
     "db:generate": "npx prisma generate && tsx src/scripts/service-generator.ts && npm run lint:fix",
     "db:reset": "npx prisma db push --force-reset",
     "pipeline": "tsx src/scripts/data-pipeline.ts",
-    "seed:files": "tsx src/scripts/seed-files.ts",
     "swagger": "tsx src/utils/swagger.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
