@@ -51,7 +51,7 @@ export const UntrackJourneyModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={isLoading ? undefined : onClose}
+      onClose={isLoading ? () => {} : onClose}
       title="Stop Tracking Journey"
       size="sm"
     >

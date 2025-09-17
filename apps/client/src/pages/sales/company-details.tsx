@@ -3,7 +3,6 @@ import {
   CheckCircle,
   Edit,
   Mail,
-  MoreHorizontal,
   Notebook,
   Phone,
   Trash2,
@@ -36,7 +35,6 @@ const MOCK_MENTION_OPTIONS = [
 const CompanyDetails = () => {
   const { id } = useParams();
   const api = useApi();
-  const callHistoryApi = useApi();
   const [company, setCompany] = useState<any>(null);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
@@ -320,7 +318,7 @@ const CompanyDetails = () => {
                 }
                 return null;
               })
-              .filter(rsm => rsm && rsm.empNum > 0);
+              .filter((rsm): rsm is { name: string; empNum: number; initials: string } => rsm !== null && rsm.empNum > 0);
             
             setAvailableRsms(rsmOptions);
           }
@@ -901,7 +899,7 @@ const CompanyDetails = () => {
         CustComments: '',
         OurComments: '',
         CustEmail: '',
-        Company_ID: parseInt(id),
+        Company_ID: parseInt(id || '0'),
         Address_ID: 16, // Using same as your sample data
         FaxNumber: '',
         Resolution: '',
@@ -933,7 +931,7 @@ const CompanyDetails = () => {
         CustComments: '',
         OurComments: '',
         CustEmail: '',
-        Company_ID: parseInt(id),
+        Company_ID: parseInt(id || '0'),
         Address_ID: 16,
         FaxNumber: '',
         Resolution: '',
@@ -1136,7 +1134,7 @@ const CompanyDetails = () => {
       
       setNewContactData({
         Cont_Id: nextContactId,
-        Company_ID: parseInt(id),
+        Company_ID: parseInt(id || '0'),
         FirstName: '',
         LastName: '',
         Email: '',
@@ -1152,7 +1150,7 @@ const CompanyDetails = () => {
       const fallbackContactId = Date.now();
       setNewContactData({
         Cont_Id: fallbackContactId,
-        Company_ID: parseInt(id),
+        Company_ID: parseInt(id || '0'),
         FirstName: '',
         LastName: '',
         Email: '',
@@ -1172,8 +1170,6 @@ const CompanyDetails = () => {
   const handleSaveNewContact = async () => {
     try {
       console.log('Creating new contact with data:', newContactData);
-      
-      const result = await api.post('/legacy/std/Contacts', newContactData);
       
       if (api.success && !api.error) {
         console.log('Contact creation appears successful, refreshing data...');

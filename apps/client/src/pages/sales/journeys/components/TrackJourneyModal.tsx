@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, Button, Input } from "@/components";
+import { Modal, Button } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 
@@ -46,7 +46,7 @@ export const TrackJourneyModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={isLoading ? undefined : onClose}
+      onClose={isLoading ? () => {} : onClose}
       title="Track Journey"
       size="md"
     >

@@ -49,9 +49,8 @@ export const DeleteJourneyModal = ({
           <Button
             variant="primary"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onConfirm(e);
+            onClick={() => {
+              onConfirm();
             }}
             disabled={isDeleting}
             className="bg-gray-800 hover:bg-gray-900 border-gray-800 text-white"

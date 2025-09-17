@@ -270,20 +270,19 @@ export const AddContactModal = ({
 
         <div className="flex justify-end gap-2 pt-4">
           <Button
-            type="button"
             variant="secondary-outline"
             onClick={handleCancel}
             disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button
+          <button
             type="submit"
-            variant="primary"
             disabled={isSubmitting}
+            className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max px-3 py-1.5 border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Creating..." : "Create Contact"}
-          </Button>
+          </button>
         </div>
       </form>
     </Modal>

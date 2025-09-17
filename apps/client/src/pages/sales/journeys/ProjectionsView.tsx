@@ -8,7 +8,7 @@ interface ProjectionsViewProps {
   customersById: Map<string, any>;
 }
 
-export const ProjectionsView = ({ journeys, customersById }: ProjectionsViewProps) => {
+export const ProjectionsView = ({ journeys }: ProjectionsViewProps) => {
   const monthlyProjections = useMemo(() => {
     const monthMap = new Map<string, { journeys: any[], weightedValue: number, totalValue: number }>();
     
@@ -121,7 +121,7 @@ export const ProjectionsView = ({ journeys, customersById }: ProjectionsViewProp
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip 
-                    formatter={(value: number, name: string, props: any) => [
+                    formatter={(value: number, _name: string, props: any) => [
                       formatCurrency(value), 
                       props.dataKey === 'totalValue' ? 'Total Value' : 'Weighted Value'
                     ]}
