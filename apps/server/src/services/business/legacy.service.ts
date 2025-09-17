@@ -64,19 +64,55 @@ export class LegacyService {
   }
 
   async create(database: string, table: string, data: any) {
-    return;
+    if (!data || Object.keys(data).length === 0) {
+      return false;
+    }
+
+    // Filter out fields with empty string values, especially for date fields
+    const filteredData = Object.entries(data).reduce((acc, [key, value]) => {
+      // Skip empty strings for date fields and other empty values
+      if (value === '' || value === null || value === undefined) {
+        return acc;
+      }
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Get the field names and values from the filtered data object
+    const fields = Object.keys(filteredData);
+    const values = Object.values(filteredData);
+
+    if (fields.length === 0) {
+      return false;
+    }
+
+    // Build the field list for the INSERT statement with quoted field names
+    const fieldList = fields.map(field => `"${field}"`).join(', ');
+    
+    // Build the values list with proper escaping
+    const valueList = values.map(value => {
+      if (value === null || value === undefined) {
+        return 'NULL';
+      } else if (typeof value === 'string') {
+        return `'${value.replace(/'/g, "''")}'`;
+      } else {
+        return String(value);
+      }
+    }).join(', ');
+
     const query = `
       INSERT INTO PUB.${table} 
-      (ID) VALUES (${data})
+      (${fieldList}) VALUES (${valueList})
     `;
+
+    console.log(query);
 
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
-      // logger.log(result?.[0].id);
       return true;
     }
     catch (err) {
-      logger.log("Error creating data:", err);
+      logger.error("Error creating data:", err);
       return false;
     }
   }
@@ -197,12 +233,10 @@ export class LegacyService {
     
     // To help prevent bullshit temporarily
     let idField = "ID";
-    if (table.toLowerCase() === "journey") {
-      idField = "Journey_ID";
-    } else if (table.toLowerCase() === "company") {
+    if (table.toLowerCase() === "company") {
       idField = "Company_ID";
     } else if (table.toLowerCase() === "contacts") {
-      idField = "Contact_ID";
+      idField = "Cont_ID";
     }
 
     const query = `
@@ -221,12 +255,16 @@ export class LegacyService {
     }
   }
 
-  async getAllByCustomFilter(database: string, table: string, filterField: string, filterValue: string, params?: any) {
+  async getAllByCustomFilter(database: string, table: string, filters: Record<string, string>, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
-    const escapedField = filterField.replace(/[^a-zA-Z0-9_]/g, ""); // Sanitize field name
-    const escapedValue = filterValue.replace(/'/g, "''");
+    
+    const whereConditions = Object.entries(filters).map(([field, value]) => {
+      const escapedField = field.replace(/[^a-zA-Z0-9_]/g, "");
+      const escapedValue = String(value).replace(/'/g, "''");
+      return `${escapedField} = '${escapedValue}'`;
+    });
 
-    const whereClause = `WHERE ${escapedField} = '${escapedValue}'`;
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
 
     const query = `
       SELECT *
@@ -241,7 +279,8 @@ export class LegacyService {
       return result;   
 
     } catch(err) {
-      console.error(`Error fetching ${table} where ${escapedField} = ${escapedValue}:`, err);
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      console.error(`Error fetching ${table} where ${filterDescription}:`, err);
       return null;
 
     } finally {
@@ -255,12 +294,10 @@ export class LegacyService {
 
     // Determine the correct ID field name based on the table
     let idField = "ID";
-    if (table.toLowerCase() === "journey") {
-      idField = "Journey_ID";
-    } else if (table.toLowerCase() === "company") {
+    if (table.toLowerCase() === "company") {
       idField = "Company_ID";
     } else if (table.toLowerCase() === "contacts") {
-      idField = "Contact_ID";
+      idField = "Cont_ID";
     }
 
     const setClause = Object.entries(data)
@@ -293,9 +330,56 @@ export class LegacyService {
     }
   }
 
-  // Dangerous, unreachable code for now
+  async updateByCustomFilter(database: string, table: string, filters: Record<string, string>, data: Record<string, any>) {
+    if (!data || Object.keys(data).length === 0) {
+      return false;
+    }
+
+    if (!filters || Object.keys(filters).length === 0) {
+      return false;
+    }
+
+    // Build SET clause
+    const setClause = Object.entries(data)
+      .map(([field, value]) => {
+        if (value === null) {
+          return `${field} = NULL`;
+        }
+        else if (typeof value === "string") {
+          return `${field} = '${value.replace(/'/g, "''")}'`;
+        }
+        else {
+          return `${field} = ${value}`;
+        }
+      })
+      .join(", ");
+
+    const whereConditions = Object.entries(filters).map(([field, value]) => {
+      const escapedField = field.replace(/[^a-zA-Z0-9_]/g, "");
+      const escapedValue = String(value).replace(/'/g, "''");
+      return `${escapedField} = '${escapedValue}'`;
+    });
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
+
+    const query = `
+      UPDATE PUB.${table}
+      SET ${setClause}
+      ${whereClause}
+    `;
+
+    try {
+      const result = await this.getDatabaseConnection(database)?.query(query);
+      return true;
+    }
+    catch (err) {
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      logger.error(`Error updating ${table} where ${filterDescription}:`, err);
+      return false;
+    }
+  }
+
   async delete(database: string, table: string, id: string) {
-    return;
     const query = `
       DELETE FROM PUB.${table}
       WHERE ID = '${id}'
@@ -307,6 +391,37 @@ export class LegacyService {
     }
     catch (err) {
       logger.error("Error deleting record: ", err);
+      return false;
+    }
+  }
+
+  async deleteByCustomFilter(database: string, table: string, filters: Record<string, string>) {
+    if (!filters || Object.keys(filters).length === 0) {
+      return false;
+    }
+
+    const whereConditions = Object.entries(filters).map(([field, value]) => {
+      const escapedField = field.replace(/[^a-zA-Z0-9_#]/g, ""); // Sanitize field name (allow # for fields like RefSerial#)
+      const escapedValue = String(value).replace(/'/g, "''"); // Sanitize value
+      return `"${escapedField}" = '${escapedValue}'`;
+    });
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
+
+    const query = `
+      DELETE FROM PUB.${table}
+      ${whereClause}
+    `;
+
+    console.log(query);
+
+    try {
+      const result = await this.getDatabaseConnection(database)?.query(query);
+      return true;
+    }
+    catch (err) {
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      logger.error(`Error deleting from ${table} where ${filterDescription}:`, err);
       return false;
     }
   }
@@ -345,6 +460,28 @@ export class LegacyService {
     catch (err) {
       logger.error("Error fetching table columns: ", err);
       return "";
+    }
+  }
+
+  async getMaxValue(database: string, table: string, field: string): Promise<number | null> {
+    const query = `
+      SELECT MAX(${field}) AS LargestValue
+      FROM PUB.${table}
+    `;
+
+    try {
+      const result: any = await this.getDatabaseConnection(database)?.query(query);
+      
+      const maxValue = result?.[0]?.LargestValue 
+        ?? result?.[0]?.LARGESTVALUE 
+        ?? result?.[0]?.largestvalue
+        ?? null;
+        
+      return maxValue !== null ? Number(maxValue) : null;
+    }
+    catch (err) {
+      logger.error(`Error getting max value for field ${field} in table ${table}:`, err);
+      return null;
     }
   }
 
