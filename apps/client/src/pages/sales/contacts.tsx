@@ -14,7 +14,6 @@ import { TableColumn } from "@/components/ui/table";
 const Contacts = () => {
   const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
   const [legacyCompanies, setLegacyCompanies] = useState<any[] | null>(null);
-  const [legacyAddresses, setLegacyAddresses] = useState<any[] | null>(null);
   
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [showAddContactModal, setShowAddContactModal] = useState(false);
@@ -150,7 +149,6 @@ const Contacts = () => {
         }
       });
 
-      setLegacyAddresses(Array.from(addressMap.values()));
       return { contacts, addressMap };
     } catch (error) {
       console.error('Error fetching contacts with addresses:', error);
@@ -441,7 +439,6 @@ const Contacts = () => {
       {viewMode === "map" && (
         <ContactsMapView 
           contacts={baseContacts || []}
-          addresses={legacyAddresses || []}
           onFetchAddresses={fetchContactsWithAddresses}
         />
       )}
@@ -458,11 +455,9 @@ const Contacts = () => {
 // Contacts Map View Component
 const ContactsMapView = ({ 
   contacts, 
-  addresses, 
   onFetchAddresses 
 }: { 
   contacts: any[]; 
-  addresses: any[]; 
   onFetchAddresses: (limit?: number) => Promise<any> 
 }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -472,8 +467,6 @@ const ContactsMapView = ({
   const [mapView, setMapView] = useState({ center: [39.8283, -98.5795], zoom: 4 });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
 
   // Load addresses when map view is opened (only once)
   useEffect(() => {
@@ -505,7 +498,7 @@ const ContactsMapView = ({
           console.log('ContactsMapView: Loaded contacts with addresses:', combined.length);
           console.log('ContactsMapView: Sample contact with address:', combined[0]);
           console.log('ContactsMapView: Address map keys:', Array.from(result.addressMap.keys()));
-          console.log('ContactsMapView: Sample address data:', combined.find(c => c.address));
+          console.log('ContactsMapView: Sample address data:', combined.find((c: any) => c.address));
         }
       } catch (error) {
         console.error('Error loading address data:', error);

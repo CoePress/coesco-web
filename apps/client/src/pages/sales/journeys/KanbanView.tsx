@@ -471,7 +471,7 @@ export const KanbanView = ({
                     items={items}
                     strategy={verticalListSortingStrategy}
                   >
-                    {items.map((itemId) => {
+                    {items.map((itemId: string) => {
                       const journey = journeys.find((d) => d.id.toString() === itemId);
                       return journey ? (
                         <SortableItem

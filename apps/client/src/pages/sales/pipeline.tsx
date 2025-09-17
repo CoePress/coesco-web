@@ -7,18 +7,17 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 
-import { PageHeader, StatusBadge, Modal, Button, Input, Select } from "@/components";
-import { DeleteJourneyModal, TrackJourneyModal, UntrackJourneyModal } from "./journeys/components";
+import { PageHeader, Modal, Button, Input, Select } from "@/components";
 import { KanbanView } from "./journeys/KanbanView";
 import { ListView } from "./journeys/ListView";
 import { ProjectionsView } from "./journeys/ProjectionsView";
 import { PipelineHeader } from "./journeys/PipelineHeader";
-import { STAGES, PRIORITY_CONFIG } from "./journeys/constants";
-import { getPriorityConfig, fuzzyMatch } from "./journeys/utils";
-import { formatCurrency, formatDate } from "@/utils";
+import { STAGES } from "./journeys/constants";
+import { fuzzyMatch } from "./journeys/utils";
+import { formatCurrency } from "@/utils";
 import { generateUniqueId } from "@/utils/unique-id-generator";
 import { useApi } from "@/hooks/use-api";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth.context";
 import * as XLSX from 'xlsx';
 
@@ -34,7 +33,7 @@ const Pipeline = () => {
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
   const navigate = useNavigate();
 
-  const { user, employee } = useAuth();
+  const { employee } = useAuth();
   const { put, get, delete: del } = useApi();
   const rsmApi = useApi(); // Separate API instance for RSM fetching
   const [journeys, setJourneys] = useState<any[]>([]);
@@ -445,18 +444,6 @@ const Pipeline = () => {
     }, 300);
   }, [isLoadingMore, hasMoreJourneys]);
 
-  // Scroll detection for auto-loading
-  const handleScroll = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target || viewMode !== "list") return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
-    
-    if (isNearBottom && hasMoreJourneys && !isLoadingMore) {
-      loadMoreJourneys();
-    }
-  }, [viewMode, hasMoreJourneys, isLoadingMore, loadMoreJourneys]);
 
 
   // Reset batch size when filters change

@@ -63,7 +63,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Raw body parsing for file uploads
-app.use('/api/files/upload', express.raw({ type: '*/*', limit: '100mb' }));
+app.use("/api/files/upload", express.raw({ type: "*/*", limit: "100mb" }));
 app.set("trust proxy", false);
 
 app.get("/openapi.json", (_req, res) => {

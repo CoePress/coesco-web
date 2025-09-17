@@ -79,7 +79,7 @@ import { useApi } from "@/hooks/use-api";
 import { DeleteJourneyModal } from "./journeys/components";
 import { AddJourneyContactModal } from "@/components";
 
-function JourneyDetailsTab({ journey, journeyContacts, updateJourney, refetchJourneyData, setJourneyContacts }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; refetchJourneyData: () => Promise<boolean>; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>> }) {
+function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>> }) {
   // State for available RSMs
   const [availableRsms, setAvailableRsms] = useState<string[]>([]);
   const rsmApi = useApi(); // Separate API instance for RSM fetching
@@ -379,17 +379,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, refetchJou
     }
   };
 
-  const handleEditContact = (contact: any) => {
-    setEditingContactId(contact.ID);
-    setContactForm({
-      Contact_Name: contact.Contact_Name || "",
-      Contact_Position: contact.Contact_Position || "",
-      Contact_Email: contact.Contact_Email || "",
-      Contact_Office: contact.Contact_Office || "",
-      Contact_Mobile: contact.Contact_Mobile || "",
-      Contact_Note: contact.Contact_Note || "",
-    });
-  };
 
   const handleSaveContact = async () => {
     if (!editingContactId) return;
@@ -1911,7 +1900,6 @@ function JourneyActionsTab({ journey }: { journey: any | null }) {
 
 const JourneyDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("details");
-  const navigate = useNavigate();
   const { id: journeyId } = useParams<{ id: string }>();
 
   const [journeyData, setJourneyData] = useState<any>(null);
@@ -2071,10 +2059,6 @@ const JourneyDetailsPage = () => {
     }
   };
 
-  const refetchJourneyData = async () => {
-    await fetchJourneyData();
-    return true;
-  };
 
   const updateJourney = (updates: Record<string, any>) => {
     setJourneyData((prev: any) => ({
@@ -2162,7 +2146,6 @@ const JourneyDetailsPage = () => {
             }
             journeyContacts={journeyContacts}
             updateJourney={updateJourney}
-            refetchJourneyData={refetchJourneyData}
             setJourneyContacts={setJourneyContacts}
           />
         )}
