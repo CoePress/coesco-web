@@ -141,6 +141,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   });
 
   const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<any>(null);
 
   useEffect(() => {
     if (journey) {
@@ -324,6 +325,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
     if (!journey?.ID && !journey?.id) return;
     
+    // Store the original state for potential revert
+    const originalContacts = journeyContacts;
+    
     // Update contacts state immediately for responsive UI
     setJourneyContacts(prevContacts => 
       prevContacts.map(contact => ({
@@ -348,32 +352,17 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         );
         
         if (primaryUpdateResult === null) {
-          // If API call failed, revert the UI change
-          setJourneyContacts(prevContacts => 
-            prevContacts.map(contact => ({
-              ...contact,
-              IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
-            }))
-          );
+          // If second API call failed, revert to original state
+          setJourneyContacts(originalContacts);
         }
       } else {
-        // If first API call failed, revert the UI change
-        setJourneyContacts(prevContacts => 
-          prevContacts.map(contact => ({
-            ...contact,
-            IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
-          }))
-        );
+        // If first API call failed, revert to original state
+        setJourneyContacts(originalContacts);
       }
     } catch (error) {
       console.error("Error updating primary contact:", error);
-      // Revert the UI change on error
-      setJourneyContacts(prevContacts => 
-        prevContacts.map(contact => ({
-          ...contact,
-          IsPrimary: contact.ID === contactId ? 0 : contact.IsPrimary
-        }))
-      );
+      // Revert to original state on error
+      setJourneyContacts(originalContacts);
     } finally {
       setIsSaving(false);
     }
@@ -420,11 +409,62 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     });
   };
 
+  const handleEditContact = (contact: any) => {
+    setEditingContactId(contact.ID);
+    setContactForm({
+      Contact_Name: contact.Contact_Name || "",
+      Contact_Position: contact.Contact_Position || "",
+      Contact_Email: contact.Contact_Email || "",
+      Contact_Office: contact.Contact_Office || "",
+      Contact_Mobile: contact.Contact_Mobile || "",
+      Contact_Note: contact.Contact_Note || "",
+    });
+  };
+
+  const handleDeleteContact = (contact: any) => {
+    setContactToDelete(contact);
+  };
+
+  const confirmDeleteContact = async () => {
+    if (!contactToDelete) return;
+
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/legacy/std/Journey_Contact/${contactToDelete.ID}`);
+      
+      if (result !== null) {
+        // Remove the contact from the local state
+        setJourneyContacts(prevContacts => 
+          prevContacts.filter(contact => contact.ID !== contactToDelete.ID)
+        );
+        setContactToDelete(null);
+      } else {
+        console.error("Failed to delete contact");
+        alert("Failed to delete contact. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      alert("Error deleting contact. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleContactAdded = async (newContact: any) => {
-    // If this is already a Journey_Contact (from AddJourneyContactModal), just add it to the list
+    // If this is already a Journey_Contact (from AddJourneyContactModal), add it to the list
     // Check for Journey_Contact fields: Jrn_ID, Contact_Name, or ID (for Journey_Contact)
     if (newContact.Jrn_ID || newContact.Contact_Name || (newContact.ID && !newContact.Cont_Id)) {
-      setJourneyContacts(prev => [...prev, newContact]);
+      setJourneyContacts(prev => {
+        // If the new contact is set as primary, unset all other contacts as primary
+        if (newContact.IsPrimary === 1) {
+          const updatedContacts = prev.map(contact => ({
+            ...contact,
+            IsPrimary: 0
+          }));
+          return [...updatedContacts, newContact];
+        }
+        return [...prev, newContact];
+      });
       return;
     }
 
@@ -716,6 +756,24 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                             {editingContactId !== contact.ID && (
                               <>
                                 {isPrimary && <span className="text-xs bg-gray text-white px-2 py-1 rounded">Primary</span>}
+                                <Button
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  onClick={() => handleEditContact(contact)}
+                                  disabled={isSaving || editingContactId !== null}
+                                  className="!p-1 !h-6 !w-6"
+                                >
+                                  <Edit size={12} />
+                                </Button>
+                                <Button
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteContact(contact)}
+                                  disabled={isSaving || editingContactId !== null}
+                                  className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                                >
+                                  <Trash2 size={12} className="text-red-600" />
+                                </Button>
                                 <input
                                   type="radio"
                                   name="primaryContact"
@@ -1554,6 +1612,41 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         onContactAdded={handleContactAdded}
         journeyId={journey?.ID}
       />
+
+      <Modal
+        isOpen={!!contactToDelete}
+        onClose={() => setContactToDelete(null)}
+        title="Delete Contact"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-text">
+            Are you sure you want to delete the contact "{contactToDelete?.Contact_Name || 'Unnamed Contact'}"?
+          </p>
+          <p className="text-text-muted text-sm">
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              size="sm"
+              onClick={() => setContactToDelete(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={confirmDeleteContact}
+              disabled={isSaving}
+              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+            >
+              {isSaving ? "Deleting..." : "Delete Contact"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
