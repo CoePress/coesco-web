@@ -9,7 +9,7 @@ export const PERMISSIONS = {
     delete: "users.delete",
     manage: "users.manage", // Full user management
   },
-  
+
   // Employee Management
   employees: {
     create: "employees.create",
@@ -18,20 +18,20 @@ export const PERMISSIONS = {
     delete: "employees.delete",
     manage: "employees.manage",
   },
-  
+
   // Legacy Database Access
   legacy: {
     read: "legacy.read",
     write: "legacy.write",
     manage: "legacy.manage",
   },
-  
+
   // Microsoft Integration
   microsoft: {
     sync: "microsoft.sync",
     configure: "microsoft.configure",
   },
-  
+
   // System Administration
   system: {
     settings: "system.settings",
@@ -39,14 +39,14 @@ export const PERMISSIONS = {
     maintenance: "system.maintenance",
     all: "system.all", // Super admin
   },
-  
+
   // Data Pipeline
   pipeline: {
     read: "pipeline.read",
     execute: "pipeline.execute",
     configure: "pipeline.configure",
   },
-  
+
   // Quotes
   quotes: {
     create: "quotes.create",
@@ -55,7 +55,7 @@ export const PERMISSIONS = {
     delete: "quotes.delete",
     approve: "quotes.approve",
   },
-  
+
   // Reports
   reports: {
     view: "reports.view",
@@ -65,20 +65,21 @@ export const PERMISSIONS = {
 } as const;
 
 type PermissionValue = string;
-type NestedPermissions = { [key: string]: PermissionValue | NestedPermissions };
+interface NestedPermissions { [key: string]: PermissionValue | NestedPermissions }
 
 // Flatten the permissions object to get all permission strings
 function flattenPermissions(obj: NestedPermissions, prefix = ""): string[] {
   const result: string[] = [];
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "string") {
       result.push(value);
-    } else {
+    }
+    else {
       result.push(...flattenPermissions(value, prefix ? `${prefix}.${key}` : key));
     }
   }
-  
+
   return result;
 }
 
@@ -117,14 +118,14 @@ export class PermissionService {
    */
   hasPermission(role: UserRole, permission: string): boolean {
     const rolePermissions = ROLE_PERMISSIONS[role] || [];
-    
+
     // Check for exact permission match
     if (rolePermissions.includes(permission)) {
       return true;
     }
-    
+
     // Check for wildcard permissions (e.g., system.all covers system.settings)
-    return rolePermissions.some(rolePermission => {
+    return rolePermissions.some((rolePermission) => {
       if (rolePermission.endsWith(".all")) {
         const basePermission = rolePermission.replace(".all", "");
         return permission.startsWith(`${basePermission}.`);
@@ -136,28 +137,28 @@ export class PermissionService {
       return false;
     });
   }
-  
+
   /**
    * Check if a role has any of the provided permissions
    */
   hasAnyPermission(role: UserRole, permissions: string[]): boolean {
     return permissions.some(permission => this.hasPermission(role, permission));
   }
-  
+
   /**
    * Check if a role has all of the provided permissions
    */
   hasAllPermissions(role: UserRole, permissions: string[]): boolean {
     return permissions.every(permission => this.hasPermission(role, permission));
   }
-  
+
   /**
    * Get all permissions for a role
    */
   getRolePermissions(role: UserRole): string[] {
     const rolePermissions = ROLE_PERMISSIONS[role] || [];
     const expandedPermissions = new Set<string>();
-    
+
     for (const permission of rolePermissions) {
       if (permission.endsWith(".all")) {
         const basePermission = permission.replace(".all", "");
@@ -165,34 +166,36 @@ export class PermissionService {
         ALL_PERMISSIONS
           .filter(p => p.startsWith(`${basePermission}.`))
           .forEach(p => expandedPermissions.add(p));
-      } else if (permission.endsWith(".manage")) {
+      }
+      else if (permission.endsWith(".manage")) {
         const basePermission = permission.replace(".manage", "");
         // Add all CRUD permissions for this resource
         ALL_PERMISSIONS
           .filter(p => p.startsWith(`${basePermission}.`))
           .forEach(p => expandedPermissions.add(p));
-      } else {
+      }
+      else {
         expandedPermissions.add(permission);
       }
     }
-    
+
     return Array.from(expandedPermissions);
   }
-  
+
   /**
    * Check if a permission exists in the system
    */
   isValidPermission(permission: string): boolean {
     return ALL_PERMISSIONS.includes(permission);
   }
-  
+
   /**
    * Get permissions by category (e.g., "users", "system")
    */
   getPermissionsByCategory(category: string): string[] {
     return ALL_PERMISSIONS.filter(permission => permission.startsWith(`${category}.`));
   }
-  
+
   /**
    * Parse permission to get category and action
    */
@@ -201,7 +204,7 @@ export class PermissionService {
     if (parts.length < 2) {
       throw new Error(`Invalid permission format: ${permission}`);
     }
-    
+
     return {
       category: parts[0],
       action: parts.slice(1).join("."),
@@ -226,11 +229,11 @@ export class PermissionService {
    */
   async getAllRolePermissions() {
     const expandedRolePermissions: Record<string, string[]> = {};
-    
+
     for (const [role, permissions] of Object.entries(ROLE_PERMISSIONS)) {
       expandedRolePermissions[role] = this.getRolePermissions(role as UserRole);
     }
-    
+
     return {
       success: true,
       data: {
@@ -250,17 +253,17 @@ export class PermissionService {
         error: "Permissions must be an array",
       };
     }
-    
+
     const results: Record<string, boolean> = {};
-    
+
     for (const permission of permissions) {
       results[permission] = this.hasPermission(role, permission);
     }
-    
-    const hasAccess = requireAll 
+
+    const hasAccess = requireAll
       ? Object.values(results).every(Boolean)
       : Object.values(results).some(Boolean);
-    
+
     return {
       success: true,
       data: {
@@ -291,14 +294,14 @@ export class PermissionService {
    */
   async getCategoryPermissions(category: string) {
     const categoryPermissions = this.getPermissionsByCategory(category);
-    
+
     if (categoryPermissions.length === 0) {
       return {
         success: false,
         error: `Category '${category}' not found`,
       };
     }
-    
+
     return {
       success: true,
       data: {

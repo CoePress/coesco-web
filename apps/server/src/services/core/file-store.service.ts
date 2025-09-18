@@ -30,7 +30,7 @@ export class FileStoreService {
 
   constructor(baseStoragePath: string = "./storage/files") {
     this.baseStoragePath = baseStoragePath;
-    this.metadataFilePath = join(baseStoragePath, ".." , "metadata.json");
+    this.metadataFilePath = join(baseStoragePath, "..", "metadata.json");
     this.initializeMetadata();
   }
 
@@ -54,14 +54,15 @@ export class FileStoreService {
   }
 
   private async initializeMetadata(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized)
+      return;
 
     try {
       await this.ensureDirectoryExists(dirname(this.metadataFilePath));
 
       // Try to load existing metadata
       try {
-        const data = await fs.readFile(this.metadataFilePath, 'utf-8');
+        const data = await fs.readFile(this.metadataFilePath, "utf-8");
         const metadata = JSON.parse(data) as FileMetadata[];
         this.metadataStore.clear();
         for (const item of metadata) {
@@ -69,12 +70,14 @@ export class FileStoreService {
           item.uploadedAt = new Date(item.uploadedAt);
           this.metadataStore.set(item.id, item);
         }
-      } catch {
+      }
+      catch {
         // No existing metadata file, scan filesystem
         await this.scanAndRebuildMetadata();
       }
-    } catch (error) {
-      console.error('Failed to initialize metadata:', error);
+    }
+    catch (error) {
+      console.error("Failed to initialize metadata:", error);
     }
 
     this.initialized = true;
@@ -99,13 +102,13 @@ export class FileStoreService {
               const metadata: FileMetadata = {
                 id: randomUUID(),
                 originalName: fileName,
-                fileName: fileName,
+                fileName,
                 path: join(category, fileName),
                 size: fileStat.size,
                 mimeType: this.getMimeType(fileName),
                 uploadedAt: fileStat.birthtime || fileStat.mtime,
-                category: category === 'general' ? undefined : category,
-                tags: this.getTagsFromFilename(fileName)
+                category: category === "general" ? undefined : category,
+                tags: this.getTagsFromFilename(fileName),
               };
 
               this.metadataStore.set(metadata.id, metadata);
@@ -115,43 +118,53 @@ export class FileStoreService {
       }
 
       await this.saveMetadata();
-    } catch (error) {
-      console.error('Failed to scan and rebuild metadata:', error);
+    }
+    catch (error) {
+      console.error("Failed to scan and rebuild metadata:", error);
     }
   }
 
   private getMimeType(fileName: string): string {
     const ext = extname(fileName).toLowerCase();
     const mimeTypes: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.pdf': 'application/pdf',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.txt': 'text/plain',
-      '.md': 'text/markdown',
-      '.csv': 'text/csv',
-      '.json': 'application/json',
-      '.xml': 'application/xml'
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".pdf": "application/pdf",
+      ".doc": "application/msword",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".txt": "text/plain",
+      ".md": "text/markdown",
+      ".csv": "text/csv",
+      ".json": "application/json",
+      ".xml": "application/xml",
     };
-    return mimeTypes[ext] || 'application/octet-stream';
+    return mimeTypes[ext] || "application/octet-stream";
   }
 
   private getTagsFromFilename(fileName: string): string[] {
     const tags: string[] = [];
     const name = fileName.toLowerCase();
 
-    if (name.includes('sample')) tags.push('sample');
-    if (name.includes('test')) tags.push('test');
-    if (name.includes('data')) tags.push('data');
-    if (name.includes('export')) tags.push('export');
-    if (name.includes('report')) tags.push('report');
-    if (name.includes('statistics')) tags.push('statistics');
-    if (name.includes('photo') || name.includes('image')) tags.push('photo');
-    if (name.includes('document') || name.includes('doc')) tags.push('document');
-    if (name.includes('guide')) tags.push('guide');
+    if (name.includes("sample"))
+      tags.push("sample");
+    if (name.includes("test"))
+      tags.push("test");
+    if (name.includes("data"))
+      tags.push("data");
+    if (name.includes("export"))
+      tags.push("export");
+    if (name.includes("report"))
+      tags.push("report");
+    if (name.includes("statistics"))
+      tags.push("statistics");
+    if (name.includes("photo") || name.includes("image"))
+      tags.push("photo");
+    if (name.includes("document") || name.includes("doc"))
+      tags.push("document");
+    if (name.includes("guide"))
+      tags.push("guide");
 
     return tags;
   }
@@ -160,8 +173,9 @@ export class FileStoreService {
     try {
       const metadata = Array.from(this.metadataStore.values());
       await fs.writeFile(this.metadataFilePath, JSON.stringify(metadata, null, 2));
-    } catch (error) {
-      console.error('Failed to save metadata:', error);
+    }
+    catch (error) {
+      console.error("Failed to save metadata:", error);
     }
   }
 

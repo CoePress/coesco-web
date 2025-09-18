@@ -140,13 +140,14 @@ const Table = <T extends Record<string, any>>({
               </tr>
             ) : (
               data.map((row) => {
-                const isSection = (row as any).isSection;
+                const isDivider = (row as any).isPage || (row as any).isSection;
 
-                if (isSection) {
+                if (isDivider) {
+                  const dividerClass = (row as any).dividerClass || "bg-surface";
                   return (
                     <tr
                       key={String(row[idField])}
-                      className="bg-surface">
+                      className={dividerClass}>
                       <td
                         colSpan={columns.length + (selectable ? 1 : 0)}
                         className="px-2 py-2">

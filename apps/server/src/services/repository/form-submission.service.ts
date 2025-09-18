@@ -18,5 +18,11 @@ export class FormSubmissionService extends BaseService<FormSubmission> {
       throw new BadRequestError("formId is required");
     if (!entity.status)
       throw new BadRequestError("status is required");
+    if (!entity.answers)
+      throw new BadRequestError("answers is required");
+    if (!entity.createdById)
+      throw new BadRequestError("createdById is required");
+    if (!entity.updatedById)
+      throw new BadRequestError("updatedById is required");
   }
 }

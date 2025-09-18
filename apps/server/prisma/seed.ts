@@ -1,10 +1,10 @@
 /* eslint-disable node/prefer-global/process */
-import { MachineControllerType, MachineType } from "@prisma/client";
+import { FormFieldControlType, FormFieldDataType, MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
-import { seedFiles } from "@/scripts/seed-files";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
+import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
@@ -231,11 +231,112 @@ async function seedRoles() {
   }
 }
 
+function mapControlType(controlType: string): FormFieldControlType {
+  const mapping: Record<string, FormFieldControlType> = {
+    "dropdown": FormFieldControlType.DROPDOWN,
+    "date selector": FormFieldControlType.DATE_SELECTOR,
+    "stamp": FormFieldControlType.STAMP,
+    "textbox": FormFieldControlType.TEXTBOX,
+    "text area": FormFieldControlType.TEXT_AREA,
+    "sketch pad": FormFieldControlType.SKETCH_PAD,
+    "camera": FormFieldControlType.CAMERA,
+    "time selector": FormFieldControlType.TIME_SELECTOR,
+    "signature pad": FormFieldControlType.SIGNATURE_PAD,
+  };
+  return mapping[controlType] || FormFieldControlType.INPUT;
+}
+
+function mapDataType(dataType: string): FormFieldDataType {
+  const mapping: Record<string, FormFieldDataType> = {
+    "text": FormFieldDataType.TEXT,
+    "date": FormFieldDataType.DATE,
+    "geo location": FormFieldDataType.GEO_LOCATION,
+    "email": FormFieldDataType.EMAIL,
+    "phone number": FormFieldDataType.PHONE_NUMBER,
+    "time": FormFieldDataType.TIME,
+    "image": FormFieldDataType.IMAGE,
+    "signature": FormFieldDataType.SIGNATURE,
+    "date/time": FormFieldDataType.DATE_TIME,
+  };
+  return mapping[dataType] || FormFieldDataType.TEXT;
+}
+
+async function seedServiceTechDailyForm() {
+  try {
+    const existingForm = await prisma.form.findFirst({
+      where: { name: serviceTechDailyTemplate.title },
+    });
+
+    if (!existingForm) {
+      logger.info("Seeding Service Tech Daily form...");
+
+      const form = await prisma.form.create({
+        data: {
+          name: serviceTechDailyTemplate.title,
+          description: "Service Technician Daily Report Form",
+          status: "published",
+          createdById: "system",
+          updatedById: "system",
+        },
+      });
+
+      for (const page of serviceTechDailyTemplate.pages) {
+        const formPage = await prisma.formPage.create({
+          data: {
+            formId: form.id,
+            title: page.label,
+            sequence: page.sequence,
+            createdById: "system",
+            updatedById: "system",
+          },
+        });
+
+        for (const section of page.sections) {
+          const formSection = await prisma.formSection.create({
+            data: {
+              pageId: formPage.id,
+              title: section.label,
+              sequence: section.sequence,
+              createdById: "system",
+              updatedById: "system",
+            },
+          });
+
+          for (const field of section.fields) {
+            await prisma.formField.create({
+              data: {
+                sectionId: formSection.id,
+                label: field.label,
+                variable: field.variable,
+                controlType: mapControlType(field.controlType),
+                dataType: mapDataType(field.dataType),
+                isRequired: field.isRequired,
+                isReadOnly: field.isReadOnly,
+                isHiddenOnDevice: field.isHiddenOnDevice,
+                isHiddenOnReport: field.isHiddenOnReport,
+                sequence: field.sequence,
+                createdById: "system",
+                updatedById: "system",
+              },
+            });
+          }
+        }
+      }
+
+      logger.info(`Seeded Service Tech Daily form with ${serviceTechDailyTemplate.pages.length} pages`);
+    }
+  }
+  catch (error) {
+    logger.error("Error during Service Tech Daily form seeding:", error);
+  }
+}
+
 export async function seedDatabase() {
   await seedEmployees();
   await seedPermissions();
   await seedRoles();
   await seedMachines();
+  await seedServiceTechDailyForm();
 
   logger.info("All seeding completed successfully");
 }

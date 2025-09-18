@@ -751,6 +751,18 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
       },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
     },
   },
   {
@@ -766,30 +778,45 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: true,
       },
-      fieldType: {
-        type: "string",
-        required: true,
-      },
       label: {
         type: "string",
         required: true,
       },
-      required: {
+      variable: {
+        type: "string",
+        required: true,
+      },
+      controlType: {
+        type: "formfieldcontroltype",
+        required: true,
+      },
+      dataType: {
+        type: "formfielddatatype",
+        required: true,
+      },
+      isRequired: {
         type: "boolean",
         required: true,
         hasDefault: true,
       },
-      orderIndex: {
+      isReadOnly: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      isHiddenOnDevice: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      isHiddenOnReport: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      sequence: {
         type: "int",
         required: true,
-      },
-      validationRules: {
-        type: "json",
-        required: false,
-      },
-      options: {
-        type: "json",
-        required: false,
       },
       createdAt: {
         type: "datetime",
@@ -800,11 +827,23 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
       },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
     },
   },
   {
-    name: "form-section",
-    description: "Schema for FormSection entity",
+    name: "form-page",
+    description: "Schema for FormPage entity",
     schema: {
       id: {
         type: "string",
@@ -819,11 +858,7 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: true,
       },
-      description: {
-        type: "string",
-        required: false,
-      },
-      orderIndex: {
+      sequence: {
         type: "int",
         required: true,
       },
@@ -834,6 +869,66 @@ export const SCHEMAS: ISchema[] = [
       },
       updatedAt: {
         type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "form-section",
+    description: "Schema for FormSection entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      pageId: {
+        type: "string",
+        required: true,
+      },
+      title: {
+        type: "string",
+        required: true,
+      },
+      description: {
+        type: "string",
+        required: false,
+      },
+      sequence: {
+        type: "int",
+        required: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
         required: true,
       },
     },
@@ -856,13 +951,10 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
-      locationData: {
+      answers: {
         type: "json",
-        required: false,
-      },
-      submittedAt: {
-        type: "datetime",
-        required: false,
+        required: true,
+        hasDefault: true,
       },
       createdAt: {
         type: "datetime",
@@ -871,6 +963,18 @@ export const SCHEMAS: ISchema[] = [
       },
       updatedAt: {
         type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
         required: true,
       },
     },
@@ -2300,42 +2404,6 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
         hasDefault: true,
-      },
-    },
-  },
-  {
-    name: "submission-answer",
-    description: "Schema for SubmissionAnswer entity",
-    schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      submissionId: {
-        type: "string",
-        required: true,
-      },
-      fieldId: {
-        type: "string",
-        required: true,
-      },
-      value: {
-        type: "string",
-        required: false,
-      },
-      filePath: {
-        type: "string",
-        required: false,
-      },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-      updatedAt: {
-        type: "datetime",
-        required: true,
       },
     },
   },

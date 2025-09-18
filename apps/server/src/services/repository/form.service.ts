@@ -18,5 +18,9 @@ export class FormService extends BaseService<Form> {
       throw new BadRequestError("name is required");
     if (!entity.status)
       throw new BadRequestError("status is required");
+    if (!entity.createdById)
+      throw new BadRequestError("createdById is required");
+    if (!entity.updatedById)
+      throw new BadRequestError("updatedById is required");
   }
 }

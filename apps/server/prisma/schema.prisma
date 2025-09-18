@@ -605,13 +605,14 @@ model FormField {
   id             String  @id @default(uuid())
   sectionId      String
   label          String
+  variable       String
   controlType    FormFieldControlType
   dataType       FormFieldDataType
   isRequired       Boolean @default(false)
   isReadOnly       Boolean @default(false)
-  isHiddenOnDevice       Boolean @default(false)
-  isHiddenOnReport       Boolean @default(false)
-  sequence       Int
+  isHiddenOnDevice Boolean @default(false)
+  isHiddenOnReport Boolean @default(false)
+  sequence           Int
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
@@ -634,15 +635,23 @@ enum FormFieldRestrictions {
 enum FormFieldControlType {
   INPUT
   TEXT_AREA
+  TEXTBOX
   DROPDOWN
   RADIO_BUTTON
   MULTI_SELECT
   BUTTON_GROUP
   GEO_LOCATION
+  DATE_SELECTOR
+  TIME_SELECTOR
+  STAMP
+  SKETCH_PAD
+  CAMERA
+  SIGNATURE_PAD
 }
 
 enum FormFieldDataType {
   TEXT
+  EMAIL
   EMAIL_ADDRESS
   URL
   PHONE_NUMBER
@@ -650,6 +659,11 @@ enum FormFieldDataType {
   DECIMAL
   CURRENCY
   GEO_LOCATION
+  DATE
+  TIME
+  DATE_TIME
+  IMAGE
+  SIGNATURE
 }
 
 model FormSubmission {

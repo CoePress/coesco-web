@@ -126,7 +126,7 @@ export class FileStoreController {
       );
 
       // Apply sorting if requested
-      let sortedFiles = [...files];
+      const sortedFiles = [...files];
       if (sortBy) {
         sortedFiles.sort((a, b) => {
           const aVal = a[sortBy as keyof typeof a];
