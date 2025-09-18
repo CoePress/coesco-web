@@ -55,7 +55,6 @@ export const PipelineHeader = ({
               { value: "my-journeys", label: "Me    " }
             ];
             const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ value: rsm, label: rsm + " " }));
-            console.log('RSM Dropdown Debug:', { availableRsms, rsmOptions });
             return [...baseOptions, ...rsmOptions];
           })()}
           className="w-48"
