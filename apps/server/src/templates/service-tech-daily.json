@@ -1,0 +1,848 @@
+{
+  "title": "V2 Service Technician Daily Report v23",
+  "pages": [
+    {
+      "sequence": 1,
+      "label": "Technician / Date / Location",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Technician Name",
+              "variable": "Tech Name",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 2,
+              "label": "Todays Date",
+              "variable": "Date Inspected",
+              "dataType": "date",
+              "controlType": "date selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 3,
+              "label": "Did you work only in house today?",
+              "variable": "In House?",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": true
+            },
+            {
+              "sequence": 4,
+              "label": "Current Location (GPS)",
+              "variable": "GPS",
+              "dataType": "geo location",
+              "controlType": "stamp",
+              "isRequired": false,
+              "isReadOnly": true,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 5,
+              "label": "Current Location (Enter Address if no GPS location was found)",
+              "variable": "Current Location",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "label": "Customer Information 1",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Customer Name",
+              "variable": "Company Name 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 2,
+              "label": "Service Job Number",
+              "variable": "Service Number 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 3,
+              "label": "Machine Serial Numbers",
+              "variable": "Machine Number 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 4,
+              "label": "Type Machine Manufacturer, Model, & Serial Number if not COE",
+              "variable": "Machine Brand 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 5,
+              "label": "Customer Contact",
+              "variable": "Customer Contact 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 6,
+              "label": "Customer Email",
+              "variable": "Customer Email 1",
+              "dataType": "email",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 7,
+              "label": "Customer Phone #",
+              "variable": "Customer Phone Number 1",
+              "dataType": "phone number",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 8,
+              "label": "Current Location (GPS)",
+              "variable": "GPS 1",
+              "dataType": "geo location",
+              "controlType": "stamp",
+              "isRequired": false,
+              "isReadOnly": true,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 9,
+              "label": "Current Location (Enter Address if no GPS location was found)",
+              "variable": "Current Location 1",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 10,
+              "label": "Date of Service",
+              "variable": "Date Inspected 1",
+              "dataType": "date",
+              "controlType": "date selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 11,
+              "label": "Start Time (Enter start time for this job only)",
+              "variable": "Start Time 1",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 12,
+              "label": "End Time (Enter end time for this job only)",
+              "variable": "End Time 1",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 13,
+              "label": "Report (Be sure to identify today's tasks, issues and resolutions!)",
+              "variable": "Remarks",
+              "dataType": "text",
+              "controlType": "text area",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 14,
+              "label": "Markup Photo",
+              "variable": "Markup Photo",
+              "dataType": "image",
+              "controlType": "sketch pad",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 15,
+              "label": "Add Photos (max 10)",
+              "variable": "Add Photos (max 10)",
+              "dataType": "image",
+              "controlType": "camera",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 16,
+              "label": "Project complete?",
+              "variable": "Project Complete",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 17,
+              "label": "Customer Signature",
+              "variable": "Customer Signature",
+              "dataType": "signature",
+              "controlType": "signature pad",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 18,
+              "label": "Type Customer Name",
+              "variable": "TCN",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "label": "Did you visit another customer?",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Did you visit a second customer?",
+              "variable": "2nd Customer?",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 4,
+      "label": "Customer Information 2",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Customer Name",
+              "variable": "Company Name 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 2,
+              "label": "Service Job Number",
+              "variable": "Service Number 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 3,
+              "label": "Machine Serial Numbers",
+              "variable": "Machine Number 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 4,
+              "label": "Type Machine Manufacturer, Model, & Serial Number if not COE",
+              "variable": "Machine Brand 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 5,
+              "label": "Customer Contact",
+              "variable": "Customer Contact 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 6,
+              "label": "Customer Email",
+              "variable": "Customer Email 2",
+              "dataType": "email",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 7,
+              "label": "Customer Phone #",
+              "variable": "Customer Phone Number 2",
+              "dataType": "phone number",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 8,
+              "label": "Current Location (GPS)",
+              "variable": "GPS 2",
+              "dataType": "geo location",
+              "controlType": "stamp",
+              "isRequired": false,
+              "isReadOnly": true,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 9,
+              "label": "Current Location (Enter Address if no GPS location was found)",
+              "variable": "Current Location 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 10,
+              "label": "Date of Service",
+              "variable": "Date Inspected 2",
+              "dataType": "date",
+              "controlType": "date selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 11,
+              "label": "Start Time (Enter start time for this job only)",
+              "variable": "Start Time 2",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 12,
+              "label": "End Time (Enter end time for this job only)",
+              "variable": "End Time 2",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 13,
+              "label": "Report (Be sure to identify today's tasks, issues and resolutions!)",
+              "variable": "Remarks 2",
+              "dataType": "text",
+              "controlType": "text area",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 14,
+              "label": "Markup Photo",
+              "variable": "Markup Photo 2",
+              "dataType": "image",
+              "controlType": "sketch pad",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 15,
+              "label": "Add Photos (max 10)",
+              "variable": "Add Photos 2",
+              "dataType": "image",
+              "controlType": "camera",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 16,
+              "label": "Project complete?",
+              "variable": "Project Complete 2",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 17,
+              "label": "Customer Signature",
+              "variable": "Customer Signature 2",
+              "dataType": "signature",
+              "controlType": "signature pad",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 18,
+              "label": "Type Customer Name",
+              "variable": "TCN 2",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 5,
+      "label": "Did you visit another customer?",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Did you visit a third customer?",
+              "variable": "Third Customer",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 6,
+      "label": "Customer Information 3",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Customer Name",
+              "variable": "Company Name 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 2,
+              "label": "Service Job Number",
+              "variable": "Service Number 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 3,
+              "label": "Machine Serial Numbers",
+              "variable": "Machine Number 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 4,
+              "label": "Type Machine Manufacturer, Model, & Serial Number if not COE",
+              "variable": "Machine Brand 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 5,
+              "label": "Customer Contact",
+              "variable": "Customer Contact 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 6,
+              "label": "Customer Email",
+              "variable": "Customer Email 3",
+              "dataType": "email",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 7,
+              "label": "Customer Phone #",
+              "variable": "Customer Phone Number 3",
+              "dataType": "phone number",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 8,
+              "label": "Current Location (GPS)",
+              "variable": "GPS 3",
+              "dataType": "geo location",
+              "controlType": "stamp",
+              "isRequired": false,
+              "isReadOnly": true,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 9,
+              "label": "Current Location (Enter Address if no GPS location was found)",
+              "variable": "Current Location 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 10,
+              "label": "Date of Service",
+              "variable": "Date Inspected 3",
+              "dataType": "date",
+              "controlType": "date selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 11,
+              "label": "Start Time (Enter start time for this job only)",
+              "variable": "Start Time 3",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 12,
+              "label": "End Time (Enter end time for this job only)",
+              "variable": "End Time 3",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 13,
+              "label": "Report (Be sure to identify today's tasks, issues and resolutions!)",
+              "variable": "Remarks 3",
+              "dataType": "text",
+              "controlType": "text area",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 14,
+              "label": "Markup Photo",
+              "variable": "Markup Photo 3",
+              "dataType": "image",
+              "controlType": "sketch pad",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 15,
+              "label": "Add Photos (max 10)",
+              "variable": "Add Photos 3",
+              "dataType": "image",
+              "controlType": "camera",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 16,
+              "label": "Project complete?",
+              "variable": "Project Complete 3",
+              "dataType": "text",
+              "controlType": "dropdown",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 17,
+              "label": "Customer Signature",
+              "variable": "Customer Signature 3",
+              "dataType": "signature",
+              "controlType": "signature pad",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 18,
+              "label": "Type Customer Name",
+              "variable": "TCN 3",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 7,
+      "label": "Daily Summary",
+      "sections": [
+        {
+          "sequence": 1,
+          "label": "Section 1",
+          "fields": [
+            {
+              "sequence": 1,
+              "label": "Daily Summary Report (Be sure to identify today's tasks, issues and resolutions!)",
+              "variable": "Daily Summary",
+              "dataType": "text",
+              "controlType": "textbox",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 2,
+              "label": "Markup Photo",
+              "variable": "Markup Photo 3",
+              "dataType": "image",
+              "controlType": "sketch pad",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 3,
+              "label": "Markup Photo",
+              "variable": "Markup Photo 4",
+              "dataType": "image",
+              "controlType": "sketch pad",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 4,
+              "label": "Add Photos (max 10)",
+              "variable": "Take Photo",
+              "dataType": "image",
+              "controlType": "camera",
+              "isRequired": false,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 5,
+              "label": "Date",
+              "variable": "Date",
+              "dataType": "date/time",
+              "controlType": "stamp",
+              "isRequired": false,
+              "isReadOnly": true,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 6,
+              "label": "Start Time (Enter start time for the day)",
+              "variable": "Daily Start",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 7,
+              "label": "End Time (Enter end time for the day)",
+              "variable": "Daily End",
+              "dataType": "time",
+              "controlType": "time selector",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            },
+            {
+              "sequence": 8,
+              "label": "Technician Signature",
+              "variable": "IS",
+              "dataType": "signature",
+              "controlType": "signature pad",
+              "isRequired": true,
+              "isReadOnly": false,
+              "isHiddenOnDevice": false,
+              "isHiddenOnReport": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

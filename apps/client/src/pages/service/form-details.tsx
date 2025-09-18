@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Edit, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
-import {Button, Input, Card, PageHeader } from '@/components';
+import { Edit, Save, X, Plus, Trash2, GripVertical } from 'lucide-react';
+import {Button, Input, Card, PageHeader, Table } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
+import { useToast } from '@/hooks/use-toast';
 
 const FormDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { get, patch, post, delete: deleteRequest } = useApi<IApiResponse<any>>();
+  const toast = useToast();
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,9 @@ const FormDetails = () => {
         fields: section.fields || []
       })) || []);
     } else {
-      setError(response?.error || "Failed to fetch form");
+      const errorMessage = response?.error || "Failed to fetch form";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     
     setLoading(false);
@@ -54,7 +58,6 @@ const FormDetails = () => {
     if (!id || !formData) return;
     
     try {
-      // Update form data only if it actually changed
       const updateData = {
         name: formData.name,
         description: formData.description,
@@ -63,15 +66,11 @@ const FormDetails = () => {
       
       await patch(`/forms/${id}`, updateData);
       
-      // Update all sections using the working endpoints
       for (const section of sections) {
-        // Update section title
         await patch(`/forms/${id}/sections/${section.id}`, { title: section.title });
         
-        // Update section description  
         await patch(`/forms/${id}/sections/${section.id}`, { description: section.description });
         
-        // Update all fields in the section
         if (section.fields && section.fields.length > 0) {
           for (const field of section.fields) {
             await patch(`/forms/${id}/sections/${section.id}/fields/${field.id}`, {
@@ -85,11 +84,14 @@ const FormDetails = () => {
         }
       }
       
+      toast.success('Form updated successfully!');
       setIsEditing(false);
       await fetchForm();
     } catch (error) {
       console.error('Save error:', error);
-      setError('Failed to save changes');
+      const errorMessage = 'Failed to save changes';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -125,17 +127,12 @@ const FormDetails = () => {
         fields: []
       };
       setSections([...sections, newSection]);
+      toast.success('Section added successfully!');
     } else {
-      setError(response?.error || "Failed to create section");
+      const errorMessage = response?.error || "Failed to create section";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
-  };
-
-  const toggleSectionCollapse = (sectionId: string) => {
-    setSections(sections.map(section => 
-      section.id === sectionId 
-        ? { ...section, isCollapsed: !section.isCollapsed }
-        : section
-    ));
   };
 
   const removeSection = async (sectionId: string) => {
@@ -145,8 +142,11 @@ const FormDetails = () => {
     
     if (response?.success) {
       setSections(sections.filter(section => section.id !== sectionId));
+      toast.success('Section removed successfully!');
     } else {
-      setError(response?.error || "Failed to delete section");
+      const errorMessage = response?.error || "Failed to delete section";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -169,13 +169,16 @@ const FormDetails = () => {
     
     if (response?.success) {
       const newField = response.data;
-      setSections(sections.map(section => 
-        section.id === sectionId 
+      setSections(sections.map(section =>
+        section.id === sectionId
           ? { ...section, fields: [...(section.fields || []), newField] }
           : section
       ));
+      toast.success('Field added successfully!');
     } else {
-      setError(response?.error || "Failed to create field");
+      const errorMessage = response?.error || "Failed to create field";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -185,32 +188,32 @@ const FormDetails = () => {
     const response = await deleteRequest(`/forms/${id}/sections/${sectionId}/fields/${fieldId}`);
     
     if (response?.success) {
-      setSections(sections.map(section => 
-        section.id === sectionId 
+      setSections(sections.map(section =>
+        section.id === sectionId
           ? { ...section, fields: section.fields?.filter((field: any) => field.id !== fieldId) || [] }
           : section
       ));
+      toast.success('Field removed successfully!');
     } else {
-      setError(response?.error || "Failed to delete field");
+      const errorMessage = response?.error || "Failed to delete field";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
   const updateSectionTitle = (sectionId: string, title: string) => {
-    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, title } : section
     ));
   };
 
   const updateSectionDescription = (sectionId: string, description: string) => {
-    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, description } : section
     ));
   };
 
   const updateField = (sectionId: string, fieldId: string, updates: any) => {
-    // Only update locally, save will happen when Save button is clicked
     setSections(sections.map(section => 
       section.id === sectionId 
         ? { ...section, fields: section.fields?.map((field: any) => 
@@ -218,20 +221,6 @@ const FormDetails = () => {
           ) || []}
         : section
     ));
-  };
-
-  const getFieldTypeColor = (fieldType: string) => {
-    const colors = {
-      text: 'bg-info/20 text-info',
-      number: 'bg-info/20 text-info',
-      date: 'bg-success/20 text-success',
-      dropdown: 'bg-primary/20 text-primary',
-      checkbox: 'bg-warning/20 text-warning',
-      textarea: 'bg-text/10 text-text',
-      photo: 'bg-error/10 text-error',
-      signature: 'bg-secondary/20 text-secondary',
-    };
-    return colors[fieldType as keyof typeof colors] || 'bg-surface text-text-muted';
   };
 
   const fieldTypes = [
@@ -343,59 +332,41 @@ const FormDetails = () => {
         />
       )}
 
-      <div className="space-y-4 p-4 max-w-4xl mx-auto w-full">
-        {sections.map((section, sectionIndex) => (
-          <Card key={section.id}>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  {isEditing && <GripVertical className="text-text-muted" size={16} />}
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">
-                    Section {sectionIndex + 1}
-                  </span>
-                  {isEditing && (
-                    <button 
+      <div className="p-2">
+        {isEditing ? (
+          sections.map((section, sectionIndex) => (
+            <Card key={section.id}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <GripVertical className="text-text-muted" size={16} />
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">
+                      Section {sectionIndex + 1}
+                    </span>
+                    <button
                       onClick={() => removeSection(section.id)}
                       className="text-error hover:text-error/80 p-1 rounded"
                     >
                       <Trash2 size={16} />
                     </button>
-                  )}
-                </div>
-                
-                {isEditing ? (
+                  </div>
+
                   <div className="space-y-3">
-                    <Input 
+                    <Input
                       value={section.title}
                       onChange={(e) => updateSectionTitle(section.id, e.target.value)}
                       className="text-xl font-semibold"
                       placeholder="Section title"
                     />
-                    <Input 
+                    <Input
                       value={section.description}
                       onChange={(e) => updateSectionDescription(section.id, e.target.value)}
                       placeholder="Section description (optional)"
                     />
                   </div>
-                ) : (
-                  <div className="cursor-pointer" onClick={() => toggleSectionCollapse(section.id)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold text-text mb-1">{section.title}</h3>
-                        {section.description && (
-                          <p className="text-text-muted">{section.description}</p>
-                        )}
-                      </div>
-                      <button className="p-2 hover:bg-foreground rounded-lg transition-colors">
-                        {section.isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {isEditing && (
-                <Button 
+                </div>
+
+                <Button
                   onClick={() => addFieldToSection(section.id)}
                   size="sm"
                   className="ml-4"
@@ -403,90 +374,101 @@ const FormDetails = () => {
                   <Plus size={14} />
                   <span>Add Field</span>
                 </Button>
-              )}
-            </div>
+              </div>
 
-            {!section.isCollapsed && (
-              <div className="p-">
+              <div className="mt-4">
                 {(!section.fields || section.fields.length === 0) ? (
                   <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                     <div className="text-text-muted mb-2">
                       <span className="text-lg">No fields in this section yet</span>
                     </div>
-                    {isEditing && (
-                      <Button 
-                        onClick={() => addFieldToSection(section.id)}
-                        size="sm"
-                      >
-                        <Plus size={14} />
-                        <span>Add your first field</span>
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => addFieldToSection(section.id)}
+                      size="sm"
+                    >
+                      <Plus size={14} />
+                      <span>Add your first field</span>
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {section.fields.map((field: any, fieldIndex: any) => (
                       <div key={field.id} className="flex items-center space-x-4 p-4 bg-surface border border-border rounded-lg hover:bg-surface/80 transition-colors">
-                        {isEditing && <GripVertical className="text-text-muted" size={14} />}
-                        
+                        <GripVertical className="text-text-muted" size={14} />
+
                         <div className="flex items-center justify-center w-8 h-8 bg-foreground border border-border rounded-full text-sm font-medium text-text-muted">
                           {fieldIndex + 1}
                         </div>
-                        
+
                         <div className="flex-1">
-                          {isEditing ? (
-                            <FieldEditor 
-                              field={field}
-                              fieldTypes={fieldTypes}
-                              onUpdate={(updates: any) => updateField(section.id, field.id, updates)}
-                            />
-                          ) : (
-                            <div>
-                              <div className="flex items-center space-x-3 mb-1">
-                                <span className="font-medium text-text text-lg">{field.label}</span>
-                                
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${getFieldTypeColor(field.fieldType)}`}>
-                                  {field.fieldType}
-                                </span>
-                                
-                                {field.required && (
-                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-error/20 text-error">
-                                    Required
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {field.options && Array.isArray(field.options) && field.options.length > 0 && (
-                                <div className="text-sm text-text-muted mt-1">
-                                  <span className="font-medium">Options:</span> {field.options.join(', ')}
-                                </div>
-                              )}
-                              
-                              {field.validationRules && Object.keys(field.validationRules).length > 0 && (
-                                <div className="text-sm text-text-muted mt-1">
-                                  <span className="font-medium">Validation:</span> {JSON.stringify(field.validationRules)}
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <FieldEditor
+                            field={field}
+                            fieldTypes={fieldTypes}
+                            onUpdate={(updates: any) => updateField(section.id, field.id, updates)}
+                          />
                         </div>
 
-                        {isEditing && (
-                          <button 
-                            onClick={() => removeField(section.id, field.id)}
-                            className="text-error hover:text-error/80 p-2 rounded"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => removeField(section.id, field.id)}
+                          className="text-error hover:text-error/80 p-2 rounded"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            )}
-          </Card>
-        ))}
+            </Card>
+          ))
+        ) : (
+          <Table
+            columns={[
+              {
+                key: 'label',
+                header: 'Field Label'
+              },
+              {
+                key: 'fieldType',
+                header: 'Type'
+              },
+              {
+                key: 'required',
+                header: 'Required'
+              },
+              {
+                key: 'options',
+                header: 'Options'
+              },
+              {
+                key: 'validationRules',
+                header: 'Validation'
+              }
+            ]}
+            data={sections.flatMap((section, sectionIndex) => [
+              {
+                id: `section-${section.id}`,
+                isSection: true,
+                sectionIndex: sectionIndex + 1,
+                title: section.title,
+                description: section.description,
+                label: '',
+                fieldType: '',
+                required: false,
+                options: null,
+                validationRules: null
+              },
+              ...(section.fields?.map((field: any) => ({
+                ...field,
+                isSection: false
+              })) || [])
+            ])}
+            total={sections.reduce((acc, section) => acc + (section.fields?.length || 0) + 1, 0)}
+            idField="id"
+            className="border border-border rounded-sm overflow-hidden"
+            emptyMessage="No fields defined in this form"
+          />
+        )}
         
         {isEditing && (
           <div className="flex justify-center p-4">
@@ -504,6 +486,7 @@ const FormDetails = () => {
     </div>
   );
 };
+
 
 const FieldEditor = ({ field, fieldTypes, onUpdate }: any) => {
   const [options, setOptions] = useState(

@@ -1,54 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List } from 'lucide-react';
 import { Button, Input, Card, PageHeader } from '@/components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApi } from '@/hooks/use-api';
+import { IApiResponse } from '@/utils/types';
+import { useToast } from '@/hooks/use-toast';
 
 const FormSubmission = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { get, post } = useApi<IApiResponse<any>>();
+  const toast = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<any>(null);
+  const [sections, setSections] = useState<any[]>([]);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  // Using the same mock data structure from form-details.tsx
-  const formData = {
-    id: "50e236ab-c9ca-4efd-be64-5178a3b41381",
-    name: 'Safety Inspection Form',
-    description: 'Daily safety inspection checklist for construction sites',
-    status: 'Published'
+  const include = useMemo(
+    () => ["sections.fields"],
+    []
+  );
+
+  const fetchForm = async () => {
+    if (!id) return;
+
+    setLoading(true);
+    setError(null);
+
+    const response = await get(`/forms/${id}`, {
+      include
+    });
+
+    if (response?.success && response.data) {
+      setFormData(response.data);
+      setSections(response.data.sections?.map((section: any) => ({
+        ...section,
+        fields: section.fields || []
+      })) || []);
+    } else {
+      setError(response?.error || "Failed to fetch form");
+    }
+
+    setLoading(false);
   };
 
-  const sections = [
-    {
-      id: "1",
-      title: 'Basic Information',
-      description: 'General inspection details',
-      fields: [
-        { id: "1", type: 'text', label: 'Inspector Name', required: true },
-        { id: "2", type: 'date', label: 'Inspection Date', required: true },
-        { id: "3", type: 'dropdown', label: 'Site Location', required: true, options: ['Site A', 'Site B', 'Site C'] },
-      ]
-    },
-    {
-      id: "2",
-      title: 'Safety Checks',
-      description: 'Safety equipment and procedures',
-      fields: [
-        { id: "4", type: 'checkbox', label: 'PPE Check', required: false },
-        { id: "5", type: 'checkbox', label: 'First Aid Kit Available', required: true },
-        { id: "6", type: 'dropdown', label: 'Safety Rating', required: true, options: ['Excellent', 'Good', 'Fair', 'Poor'] },
-      ]
-    },
-    {
-      id: "3",
-      title: 'Documentation',
-      description: 'Photos and additional notes',
-      fields: [
-        { id: "7", type: 'photo', label: 'Site Photos', required: false },
-        { id: "8", type: 'textarea', label: 'Additional Notes', required: false },
-        { id: "9", type: 'signature', label: 'Inspector Signature', required: true },
-      ]
-    }
-  ];
+  useEffect(() => {
+    fetchForm();
+  }, [id]);
 
   const toggleSection = (sectionId: string) => {
     setCollapsedSections(prev => ({
@@ -74,9 +76,9 @@ const FormSubmission = () => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     sections.forEach(section => {
-      section.fields.forEach(field => {
+      section.fields.forEach((field: any) => {
         if (field.required && !formValues[field.id]) {
           newErrors[field.id] = `${field.label} is required`;
         }
@@ -87,23 +89,47 @@ const FormSubmission = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      console.log('Form submitted:', formValues);
-      // Here you would normally send the data to your backend
-      navigate('/service/forms');
+  const handleSubmit = async () => {
+    if (!validateForm() || !id) return;
+
+    try {
+      // Create submission data structure
+      const submissionData = {
+        formId: id,
+        status: 'submitted',
+        submittedAt: new Date().toISOString(),
+        data: formValues
+      };
+
+      // Post submission to API
+      const response = await post(`/forms/${id}/submissions`, submissionData);
+
+      if (response?.success) {
+        toast.success('Form submitted successfully!');
+        navigate('/service/forms');
+      } else {
+        const errorMessage = response?.error || 'Failed to submit form';
+        toast.error(errorMessage);
+        setError(errorMessage);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      const errorMessage = 'Failed to submit form. Please try again.';
+      toast.error(errorMessage);
+      setError(errorMessage);
     }
   };
 
   const handleCancel = () => {
-    navigate('/service/forms');
+    navigate('/service/forms/');
   };
 
   const renderFieldInput = (field: any) => {
     const value = formValues[field.id] || '';
     const hasError = !!errors[field.id];
+    const fieldType = field.fieldType;
 
-    switch (field.type) {
+    switch (fieldType) {
       case 'text':
         return (
           <div className="w-full">
@@ -224,8 +250,8 @@ const FormSubmission = () => {
     }
   };
 
-  const getFieldIcon = (type: string) => {
-    switch (type) {
+  const getFieldIcon = (fieldType: string) => {
+    switch (fieldType) {
       case 'text': return <FileText size={16} />;
       case 'date': return <Calendar size={16} />;
       case 'dropdown': return <List size={16} />;
@@ -250,6 +276,25 @@ const FormSubmission = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-lg">Loading form...</div>
+      </div>
+    );
+  }
+
+  if (error || !formData) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-error text-lg mb-4">{error || "Form not found"}</div>
+        <Button onClick={() => navigate('/service/forms')}>
+          Back to Forms
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
@@ -263,19 +308,19 @@ const FormSubmission = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
-            <span>{Object.keys(formValues).length} / {sections.reduce((acc, s) => acc + s.fields.length, 0)} fields</span>
+            <span>{Object.keys(formValues).length} / {sections.reduce((acc: number, s: any) => acc + s.fields.length, 0)} fields</span>
           </div>
           <div className="w-full bg-foreground rounded-full h-2">
-            <div 
+            <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${(Object.keys(formValues).length / sections.reduce((acc, s) => acc + s.fields.length, 0)) * 100}%` 
+              style={{
+                width: `${(Object.keys(formValues).length / sections.reduce((acc: number, s: any) => acc + s.fields.length, 0)) * 100}%`
               }}
             />
           </div>
         </div>
 
-        {sections.map((section, sectionIndex) => (
+        {sections.map((section: any, sectionIndex: number) => (
           <Card key={section.id} className="overflow-hidden">
             <div 
               className="flex items-center justify-between cursor-pointer hover:bg-foreground/50 transition-colors -m-6 p-6"
@@ -299,10 +344,10 @@ const FormSubmission = () => {
 
             {!collapsedSections[section.id] && (
               <div className="pt-4 mt-6 border-t border-border space-y-6">
-                {section.fields.map((field) => (
+                {section.fields.map((field: any) => (
                   <div key={field.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.type)}</div>
+                      <div className="text-text-muted">{getFieldIcon(field.fieldType)}</div>
                       <label className="text-text font-medium">
                         {field.label}
                         {field.required && <span className="text-error ml-1">*</span>}

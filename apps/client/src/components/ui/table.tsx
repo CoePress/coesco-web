@@ -140,6 +140,27 @@ const Table = <T extends Record<string, any>>({
               </tr>
             ) : (
               data.map((row) => {
+                const isSection = (row as any).isSection;
+
+                if (isSection) {
+                  return (
+                    <tr
+                      key={String(row[idField])}
+                      className="bg-surface">
+                      <td
+                        colSpan={columns.length + (selectable ? 1 : 0)}
+                        className="px-2 py-2">
+                        <div className="font-semibold text-text">
+                          {(row as any).title}
+                          {(row as any).description && (
+                            <span className="text-text-muted text-sm ml-2 font-normal">- {(row as any).description}</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
                   <tr
                     key={String(row[idField])}
