@@ -4,6 +4,20 @@ import { PerformanceData } from "@/contexts/performance.context";
 import { usePerformanceDataService } from "@/utils/performance-sheet";
 import { Card, Input, Text } from "@/components";
 import Checkbox from "@/components/_old/checkbox";
+import { ANGLES } from "../../constants/performance";
+
+// Type for table row data
+interface TableRowData {
+  length?: number;
+  rms_torque_fa1?: number;
+  rms_torque_fa2?: number;
+  spm_at_fa1?: number;
+  fpm_fa1?: number;
+  index_time_fa1?: number;
+  spm_at_fa2?: number;
+  fpm_fa2?: number;
+  index_time_fa2?: number;
+}
 
 export interface SummaryReportProps {
   data: PerformanceData;
@@ -12,13 +26,13 @@ export interface SummaryReportProps {
 
 const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
   // Helper for checkboxes (convert string/boolean to boolean)
-  const boolVal = useCallback((val: any) => val === true || val === "true" || val === "Yes", []);
+  const boolVal = useCallback((val: unknown) => val === true || val === "true" || val === "Yes", []);
 
   // Header section
   const headerSection = useMemo(() => (
@@ -426,15 +440,15 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
             <thead>
               <tr className="bg-gray-800">
                 <th className="border border-gray-300 p-2 text-white">Length</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ 180°</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_180}°</th>
                 <th className="border border-gray-300 p-2 text-white">FPM</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ 240°</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_240}°</th>
                 <th className="border border-gray-300 p-2 text-white">FPM</th>
               </tr>
             </thead>
             <tbody>
               {lengthRows.map((length) => {
-                const rowData = tableData.find((row: any) => row.length === length);
+                const rowData = tableData.find((row: TableRowData) => row.length === length);
                 return (
                   <tr key={length} className="bg-gray-800">
                     <td className="border border-gray-300 p-2 text-center text-white">
@@ -472,7 +486,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -481,7 +495,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -490,7 +504,7 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

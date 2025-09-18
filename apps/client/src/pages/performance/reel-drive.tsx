@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 
 import { PerformanceData } from "@/contexts/performance.context";
-import { 
+import {
   REEL_MODEL_OPTIONS,
   REEL_HORSEPOWER_OPTIONS,
   usePerformanceDataService,
@@ -16,10 +16,25 @@ export interface ReelDriveProps {
 
 const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
+
+  // Memoize options to avoid recreating on every render
+  const reelModelOptions = useMemo(() =>
+    REEL_MODEL_OPTIONS.map(opt => ({
+      value: opt.value,
+      label: opt.label,
+    })), []
+  );
+
+  const reelHorsepowerOptions = useMemo(() =>
+    REEL_HORSEPOWER_OPTIONS.map(opt => ({
+      value: String(opt.value),
+      label: opt.label,
+    })), []
+  );
 
   const headerSection = useMemo(() => (
     <Card className="mb-4 p-4">
@@ -58,10 +73,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           name="common.equipment.reel.model"
           value={localData.common?.equipment?.reel?.model !== undefined && localData.common?.equipment?.reel?.model !== null ? String(localData.common?.equipment?.reel.model) : ""}
           onChange={handleFieldChange}
-          options={REEL_MODEL_OPTIONS.map((opt: any) => ({
-            value: opt.value,
-            label: opt.label,
-          }))}
+          options={reelModelOptions}
           disabled={!isEditing}
         />
         <Select
@@ -69,10 +81,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           name="common.equipment.reel.horsepower"
           value={localData.common?.equipment?.reel?.horsepower !== undefined && localData.common?.equipment?.reel?.horsepower !== null ? String(localData.common?.equipment?.reel.horsepower) : ""}
           onChange={handleFieldChange}
-          options={REEL_HORSEPOWER_OPTIONS.map((opt: any) => ({
-            value: String(opt.value),
-            label: opt.label,
-          }))}
+          options={reelHorsepowerOptions}
           disabled={!isEditing}
         />
       </div>
@@ -665,19 +674,17 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">OK:</label>
-          <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck) 
-              ? 'bg-green-100 text-green-800' 
+          <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck)
+              ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
-          }`}>
+            }`}>
             {(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck) ? "OK" : "NOT OK"}
           </span>
           <label className="text-sm font-medium">OK:</label>
-          <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) 
-              ? 'bg-green-100 text-green-800' 
+          <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.full?.horsepowerCheck)
+              ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
-          }`}>
+            }`}>
             {(localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) ? "OK" : "NOT OK"}
           </span>
         </div>
@@ -710,19 +717,17 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         />
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">Regen:</label>
-          <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.empty?.regen) 
-              ? 'bg-green-100 text-green-800' 
+          <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.empty?.regen)
+              ? 'bg-green-100 text-green-800'
               : 'bg-gray-100 text-gray-800'
-          }`}>
+            }`}>
             {(localData.reelDrive?.reel?.torque?.empty?.regen) ? "YES" : "NO"}
           </span>
           <label className="text-sm font-medium">Regen:</label>
-          <span className={`px-2 py-1 rounded text-sm font-semibold ${
-            (localData.reelDrive?.reel?.torque?.full?.regen) 
-              ? 'bg-green-100 text-green-800' 
+          <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.full?.regen)
+              ? 'bg-green-100 text-green-800'
               : 'bg-gray-100 text-gray-800'
-          }`}>
+            }`}>
             {(localData.reelDrive?.reel?.torque?.full?.regen) ? "YES" : "NO"}
           </span>
         </div>
@@ -740,7 +745,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -749,7 +754,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -758,7 +763,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -791,7 +796,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
       {/* Form sections */}
       {headerSection}
       {modelHpSection}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {reelSection}
         {mandrelSection}

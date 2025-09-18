@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { PerformanceData } from "@/contexts/performance.context";
 import { usePerformanceDataService } from "@/utils/performance-sheet";
 import { Button, Card, Input, Select, Text } from "@/components";
+import { CONVERSION_FACTORS } from "../../constants/performance";
 
 const SHEAR_TYPE_OPTIONS = [
   { value: "single-rake", label: "Single Rake" },
@@ -16,7 +17,7 @@ export interface ShearProps {
 
 const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
-  
+
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
   const { state, handleFieldChange, updateField, saveImmediately } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
@@ -29,18 +30,18 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   // Handle shear type change
   const handleShearTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value;
-    
+
     if (!isEditing) return;
-    
+
     updateField("shear.shear.model", newType);
   }, [isEditing, updateField]);
 
   // Calculate function
   const handleCalculate = useCallback(async () => {
     if (!isEditing || !performanceSheetId) return;
-    
+
     console.log("Calculate pressed for", shearType, "shear configuration");
-    
+
     try {
       // Trigger shear calculation on the backend
       const response = await saveImmediately();
@@ -97,27 +98,27 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
     }
 
     // Local calculations for immediate feedback
-    const angleOfBlade = rakeOfBlade * 12; // Convert to display value
-    const lengthOfInitialCut = coilWidth / Math.cos(rakeOfBlade * Math.PI / 180);
+    const angleOfBlade = rakeOfBlade * CONVERSION_FACTORS.INCHES_PER_FOOT; // Convert to display value
+    const lengthOfInitialCut = coilWidth / Math.cos(rakeOfBlade * CONVERSION_FACTORS.DEGREES_TO_RADIANS);
     const areaOfCut = materialThickness * lengthOfInitialCut;
-    const shearStrength = materialTensile * 0.75; // 75% of tensile
-    
+    const shearStrength = materialTensile * CONVERSION_FACTORS.TENSILE_TO_SHEAR_RATIO; // 75% of tensile
+
     const minimumStrokeForBlade = materialThickness * (penetration / 100) + overlap;
     const minStrokeForDesiredOpening = minimumStrokeForBlade + bladeOpening;
     const actualOpeningAboveMaxMaterial = stroke - minimumStrokeForBlade;
-    
+
     const cylinderArea = Math.PI * Math.pow(boreSize / 2, 2) - Math.PI * Math.pow(rodDia / 2, 2);
     const cylinderVolume = cylinderArea * stroke;
-    const fluidVelocity = downwardStrokeTime > 0 ? stroke / (downwardStrokeTime * 12) : 0;
-    
+    const fluidVelocity = downwardStrokeTime > 0 ? stroke / (downwardStrokeTime * CONVERSION_FACTORS.INCHES_PER_FOOT) : 0;
+
     const forcePerCylinder = cylinderArea * pressure;
     const totalForceApplied = forcePerCylinder * 2;
     const forceReqToShear = areaOfCut * shearStrength;
-    const totalForceAppliedTons = totalForceApplied / 2000;
+    const totalForceAppliedTons = totalForceApplied / CONVERSION_FACTORS.POUNDS_TO_TONS;
     const safetyFactor = forceReqToShear > 0 ? totalForceApplied / forceReqToShear : 0;
-    
+
     const cycleTime = downwardStrokeTime + dwellTime + downwardStrokeTime;
-    const strokesPerMinute = cycleTime > 0 ? 60 / cycleTime : 0;
+    const strokesPerMinute = cycleTime > 0 ? CONVERSION_FACTORS.SECONDS_PER_MINUTE / cycleTime : 0;
     const instantaneousGPM = downwardStrokeTime > 0 ? (cylinderVolume * 2) / 231 * (60 / downwardStrokeTime) : 0;
     const averagedGPM = cycleTime > 0 ? instantaneousGPM * (downwardStrokeTime / cycleTime) : 0;
     const partsPerMinute = strokesPerMinute;
@@ -372,10 +373,10 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
       {cylinderSpecsSection}
       {hydraulicSection}
       {timeSection}
-      
+
       <div className="mt-4 flex justify-center">
-        <Button 
-          onClick={handleCalculate} 
+        <Button
+          onClick={handleCalculate}
           className="px-6 py-2"
           disabled={!isEditing || isLoading}
         >
@@ -461,7 +462,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   // Notes section for bow-tie
   const notesSection = useMemo(() => {
     if (shearType !== "bow-tie") return null;
-    
+
     return (
       <Card className="mb-4 p-4">
         <Text as="h3" className="mb-4 text-lg font-medium">
@@ -478,7 +479,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
               <Text>Ref. Midway #33660 and John Deere #33865</Text>
             </div>
           </div>
-          
+
           <div>
             <Text as="h4" className="font-medium mb-2">Hydraulic Design:</Text>
             <div className="space-y-1 text-sm">
@@ -504,7 +505,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (isDirty) {
       return (
         <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -513,7 +514,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     if (lastSaved) {
       return (
         <div className="flex items-center gap-2 text-sm text-green-600">
@@ -522,7 +523,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 

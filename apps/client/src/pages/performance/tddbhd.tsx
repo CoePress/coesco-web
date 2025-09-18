@@ -30,6 +30,28 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
+  // Memoize options to avoid recreating on every render
+  const reelModelOptions = useMemo(() =>
+    REEL_MODEL_OPTIONS.map(opt => ({
+      value: opt.value,
+      label: opt.label,
+    })), []
+  );
+
+  const reelWidthOptions = useMemo(() =>
+    REEL_WIDTH_OPTIONS.map(opt => ({
+      value: opt.value,
+      label: opt.Label,
+    })), []
+  );
+
+  const backplateDiameterOptions = useMemo(() =>
+    BACKPLATE_DIAMETER_OPTIONS.map(opt => ({
+      value: opt.value,
+      label: opt.Label,
+    })), []
+  );
+
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
 
@@ -80,10 +102,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="common.equipment.reel.model"
           value={localData.common?.equipment?.reel?.model?.toString() || ""}
           onChange={handleFieldChange}
-          options={REEL_MODEL_OPTIONS.map((opt) => ({
-            value: opt.value,
-            label: opt.label,
-          }))}
+          options={reelModelOptions}
           disabled={!isEditing}
         />
         <Select
@@ -91,10 +110,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="common.equipment.reel.width"
           value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleFieldChange}
-          options={REEL_WIDTH_OPTIONS.map((opt) => ({
-            value: opt.value,
-            label: opt.Label,
-          }))}
+          options={reelWidthOptions}
           disabled={!isEditing}
         />
         <Select
@@ -102,10 +118,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           name="common.equipment.reel.backplate.diameter"
           value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleFieldChange}
-          options={BACKPLATE_DIAMETER_OPTIONS.map((opt) => ({
-            value: opt.value,
-            label: opt.Label,
-          }))}
+          options={backplateDiameterOptions}
           disabled={!isEditing}
         />
         <Select

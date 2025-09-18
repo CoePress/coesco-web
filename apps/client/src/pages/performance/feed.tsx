@@ -11,6 +11,21 @@ import {
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { Card, Input, Select, Text } from "@/components";
+import { getStatusColors } from "@/utils/performanceHelpers";
+import { ANGLES } from "../../constants/performance";
+
+// Type for table row data
+interface TableRowData {
+  length?: number;
+  rms_torque_fa1?: number;
+  rms_torque_fa2?: number;
+  spm_at_fa1?: number;
+  fpm_fa1?: number;
+  index_time_fa1?: number;
+  spm_at_fa2?: number;
+  fpm_fa2?: number;
+  index_time_fa2?: number;
+}
 
 export interface FeedProps {
   data: PerformanceData;
@@ -25,17 +40,18 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, updateField } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  const textColor = 'var(--color-text)';
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
-  const warningColor = 'var(--color-warning)';
 
-  let matchCheck = data.feed?.feed?.matchCheck === "OK" ? successColor : errorColor;
-  let peakTorqueCheck = data.feed?.feed?.torque?.peakCheck === "OK" ? successColor : errorColor;
-  let rmsTorqueFA1Check = data.feed?.feed?.torque?.rms?.feedAngle1Check === "OK" ? successColor : errorColor;
-  let rmsTorqueFA2Check = data.feed?.feed?.torque?.rms?.feedAngle2Check === "OK" ? successColor : errorColor;
-  let accelerationCheck = data.feed?.feed?.torque?.accelerationCheck === "OK" ? successColor : errorColor;
-  let feedCheck = data.feed?.feed?.feedCheck === "OK" ? successColor : errorColor;
+  // Use utility function to calculate all status colors at once
+  const statusColors = getStatusColors({
+    matchCheck: data.feed?.feed?.matchCheck,
+    peakTorqueCheck: data.feed?.feed?.torque?.peakCheck,
+    rmsTorqueFA1Check: data.feed?.feed?.torque?.rms?.feedAngle1Check,
+    rmsTorqueFA2Check: data.feed?.feed?.torque?.rms?.feedAngle2Check,
+    accelerationCheck: data.feed?.feed?.torque?.accelerationCheck,
+    feedCheck: data.feed?.feed?.feedCheck
+  }, successColor, errorColor);
 
   // Determine feed type based on current data
   const feedType = useMemo(() => {
@@ -138,7 +154,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedCheck || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
-          customBackgroundColor={feedCheck}
+          customBackgroundColor={statusColors.feedCheck}
         />
       </div>
 
@@ -417,7 +433,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.match?.toString() || ""}
           disabled={true}
-          customBackgroundColor={matchCheck}
+          customBackgroundColor={statusColors.matchCheck}
         />
         <Input
           label="Peak Torque (lbs-in)"
@@ -425,7 +441,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.peak?.toString() || ""}
           disabled={true}
-          customBackgroundColor={peakTorqueCheck}
+          customBackgroundColor={statusColors.peakTorqueCheck}
         />
         <Input
           label="RMS Torque (FA1) (lbs-in)"
@@ -433,7 +449,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
           disabled={true}
-          customBackgroundColor={rmsTorqueFA1Check}
+          customBackgroundColor={statusColors.rmsTorqueFA1Check}
         />
         <Input
           label="RMS Torque (FA2) (lbs-in)"
@@ -441,7 +457,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
           disabled={true}
-          customBackgroundColor={rmsTorqueFA2Check}
+          customBackgroundColor={statusColors.rmsTorqueFA2Check}
         />
         <Input
           label="Acceleration Torque (lbs-in)"
@@ -449,7 +465,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
           disabled={true}
-          customBackgroundColor={accelerationCheck}
+          customBackgroundColor={statusColors.accelerationCheck}
         />
       </div>
     </div>
@@ -635,15 +651,15 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             <thead>
               <tr className="bg-gray-800">
                 <th className="border border-gray-300 p-2 text-white">Length</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ 180°</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_180}°</th>
                 <th className="border border-gray-300 p-2 text-white">FPM</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ 240°</th>
+                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_240}°</th>
                 <th className="border border-gray-300 p-2 text-white">FPM</th>
               </tr>
             </thead>
             <tbody>
               {lengthRows.map((length) => {
-                const rowData = tableData.find((row: any) => row.length === length);
+                const rowData = tableData.find((row: TableRowData) => row.length === length);
                 return (
                   <tr key={length} className="bg-gray-800">
                     <td className="border border-gray-300 p-2 text-center text-white">
