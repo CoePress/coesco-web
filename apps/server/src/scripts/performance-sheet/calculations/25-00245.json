@@ -329,11 +329,9 @@
       "centerDistance": 0,
       "jackForceAvailable": 0,
       "modulus": 0,
+      "maxRollDepth": 0,
       "rolls": {
         "straighteningRolls": 7,
-        "depth": {
-          "withoutMaterial": 0
-        },
         "straightener": {
           "diameter": 0,
           "requiredGearTorque": 0,
@@ -390,7 +388,6 @@
       "rolls": {
         "typeOfRoll": "7 Roll Str. Backbend",
         "depth": {
-          "withoutMaterial": 0,
           "withMaterial": 0
         },
         "backbend": {

@@ -58,6 +58,7 @@
     @apply border-border;
     font-family: "Roboto Mono", monospace;
   }
+
   body {
     @apply bg-background text-text;
   }
@@ -117,4 +118,43 @@ div[style*="overflow"],
 .scrollable-element {
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--background);
+}
+
+/* Input colored state classes for better theme support */
+.input-success {
+  background-color: var(--color-success) !important;
+  color: white !important;
+}
+
+.input-error {
+  background-color: var(--color-error) !important;
+  color: white !important;
+}
+
+.input-warning {
+  background-color: var(--color-warning) !important;
+  color: black !important;
+}
+
+/* Ensure these colors work well in both light and dark themes */
+.dark .input-warning {
+  color: black !important;
+  /* Dark text on amber/orange warning color in dark mode */
+}
+
+/* Handle focus states for colored inputs */
+.input-success:focus,
+.input-error:focus,
+.input-warning:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--color-primary) !important;
+  border-color: transparent !important;
+}
+
+/* Handle disabled states for colored inputs */
+.input-success:disabled,
+.input-error:disabled,
+.input-warning:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
 }

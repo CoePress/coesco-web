@@ -70,7 +70,7 @@ def calc_main_value(center_dist, radius_at_yield, thickness):
 def calc_max_roll_depth_with_material(str_roll_dia, thickness, center_dist, max_roll_depth_without_material):
     check = ((str_roll_dia + thickness) ** 2) - ((center_dist / 2) ** 2)
     max_roll_depth_with_material = max_roll_depth_without_material
-    if (str_roll_dia - sqrt(check)) < -str_roll_dia and check >= 0:
+    if (str_roll_dia - sqrt(check)) < -max_roll_depth_without_material and check >= 0:
         max_roll_depth_with_material = -str_roll_dia + sqrt(check)
     return max_roll_depth_with_material
 

@@ -397,12 +397,10 @@ export interface StrUtilityData {
     autoBrakeCompensation?: string;
     centerDistance?: number;
     jackForceAvailable?: number;
+    maxRollDepth?: number;
     modulus?: number;
     rolls?: {
       straighteningRolls?: number;
-      depth?: {
-        withoutMaterial?: number;
-      };
       straightener?: {
         diameter?: number;
         requiredGearTorque?: number; // Calculated
@@ -465,7 +463,6 @@ export interface RollStrBackbendData {
     rolls?: {
       typeOfRoll?: string;
       depth?: {
-        withoutMaterial?: number;
         withMaterial?: number;
       };
       backbend?: {
@@ -987,12 +984,10 @@ const initialPerformanceData: PerformanceData = {
       autoBrakeCompensation: "",
       centerDistance: 0,
       jackForceAvailable: 0,
+      maxRollDepth: 0,
       modulus: 0,
       rolls: {
         straighteningRolls: 0,
-        depth: {
-          withoutMaterial: 0,
-        },
         straightener: {
           diameter: 0,
           requiredGearTorque: 0,
@@ -1049,7 +1044,6 @@ const initialPerformanceData: PerformanceData = {
       rolls: {
         typeOfRoll: "",
         depth: {
-          withoutMaterial: 0,
           withMaterial: 0,
         },
         backbend: {

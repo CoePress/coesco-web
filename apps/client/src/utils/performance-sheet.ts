@@ -476,7 +476,7 @@ export const usePerformanceDataService = (
 
   // Don't fetch data here - rely on parent component to provide it via global context
   // This prevents the infinite loop where both parent and child fetch data
-  
+
   // Use global data instead of local state
   const localData = performanceData || initialData;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

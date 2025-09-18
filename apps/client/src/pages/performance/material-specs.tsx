@@ -28,8 +28,6 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
   const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  console.log("MaterialSpecs render", { localData, fieldErrors, isDirty, lastSaved, isLoading, error });
-
   // Get coil width boundaries from the nested structure
   const coilWidthBounds = useMemo(() => {
     const min = Number(localData.common?.coil?.minCoilWidth) || undefined;
@@ -85,7 +83,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         <Input
           label="Coil Weight (Max)"
           name="common.coil.maxCoilWeight"
-          value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
+          value={localData.common?.material?.coilWeight?.toString() || ""}
           onChange={handleFieldChange}
           type="number"
           error={getFieldError("common.coil.maxCoilWeight")}

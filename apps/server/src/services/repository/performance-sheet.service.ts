@@ -65,7 +65,6 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 			const result = tx ? await execute(tx) : await prisma.$transaction(execute);
 
 			// Return just the data field which contains the calculated performance data
-			console.log('🎯 Returning calculated data directly:', JSON.stringify(result.data, null, 2));
 			return result.data;
 		} else {
 			// Full update, use the base method
@@ -75,14 +74,8 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 	private async runCalculations(inputData: any): Promise<any> {
 		try {
-			console.log('🧮 Running Python calculations with input:', JSON.stringify(inputData, null, 2));
-
 			const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'main.py');
 			const inputJson = JSON.stringify(inputData);
-
-			console.log('🐍 Script path:', scriptPath);
-			console.log('📁 Script exists:', require('fs').existsSync(scriptPath));
-			console.log('📋 Input JSON length:', inputJson.length);
 
 			// Execute the Python script by writing JSON to stdin
 			const result = execSync(`python "${scriptPath}"`, {
@@ -92,103 +85,74 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				timeout: 30000 // 30 second timeout
 			});
 
-			console.log('🐍 Python script raw result:', result);
-
 			// Parse the JSON output from the Python script
 			const calculatedResults = JSON.parse(result);
-			console.log('📊 Parsed calculation results:', JSON.stringify(calculatedResults, null, 2));
 
 			// DIRECTLY UPDATE the original data - NO nested structures!
-			console.log('🔄 DIRECTLY updating original data structure (no nesting)...');
 
 			// The goal: inputData should be modified in-place with calculated values
 			// Python returns: { rfq: { average: 16, min: 41.67, max: 160 }, material_specs: {...}, etc. }
-			// We update: inputData.common.feedRates.average.fpm = 16, etc.			// 1. RFQ calculations → DIRECTLY update common.feedRates section
+			// We update: inputData.common.feedRates.average.fpm = 16, etc.
+
+			// 1. RFQ calculations → DIRECTLY update common.feedRates section
 			if (calculatedResults.rfq && inputData.common?.feedRates) {
-				console.log('📈 DIRECTLY updating common.feedRates with RFQ calculations...');
 				const rfqCalc = calculatedResults.rfq;
-				console.log('RFQ calculations:', rfqCalc);
-				console.log('BEFORE - feedRates:', inputData.common.feedRates);
 
 				// Python returns FPM calculations as: { average: 16, min: 41.67, max: 160 }
 				// DIRECTLY update the original structure
 				if (rfqCalc.average !== undefined && inputData.common.feedRates.average) {
-					console.log(`⚡ UPDATING average fpm: ${rfqCalc.average}`);
 					inputData.common.feedRates.average.fpm = rfqCalc.average;
 				}
 				if (rfqCalc.min !== undefined && inputData.common.feedRates.min) {
-					console.log(`⚡ UPDATING min fpm: ${rfqCalc.min}`);
 					inputData.common.feedRates.min.fpm = rfqCalc.min;
 				}
 				if (rfqCalc.max !== undefined && inputData.common.feedRates.max) {
-					console.log(`⚡ UPDATING max fpm: ${rfqCalc.max}`);
 					inputData.common.feedRates.max.fpm = rfqCalc.max;
 				}
-
-				console.log('✅ AFTER - Updated feedRates:', inputData.common.feedRates);
-			} else {
-				console.log('❌ Missing data for RFQ mapping:', {
-					hasRfqCalc: !!calculatedResults.rfq,
-					hasCommonFeedRates: !!(inputData.common?.feedRates)
-				});
 			}
 
 			// 2. Material specs calculations → DIRECTLY update materialSpecs.material section AND common.material
 			if (calculatedResults.material_specs && inputData.materialSpecs?.material) {
-				console.log('🔧 DIRECTLY updating Material Specs...');
 				const matCalc = calculatedResults.material_specs;
 				const matData = inputData.materialSpecs.material;
-				console.log('Material specs calculations:', matCalc);
 
 				// Python returns: { min_bend_radius: 90.625, min_loop_length: 30.2083, coil_od_calculated: 65, material_density: 0.283 }
 				if (matCalc.min_bend_radius !== undefined) {
-					console.log(`⚡ UPDATING minBendRadius: ${matCalc.min_bend_radius}`);
 					matData.minBendRadius = matCalc.min_bend_radius;
 				}
 				if (matCalc.min_loop_length !== undefined) {
-					console.log(`⚡ UPDATING minLoopLength: ${matCalc.min_loop_length}`);
 					matData.minLoopLength = matCalc.min_loop_length;
 				}
 				if (matCalc.coil_od_calculated !== undefined) {
-					console.log(`⚡ UPDATING calculatedCoilOD: ${matCalc.coil_od_calculated}`);
 					matData.calculatedCoilOD = matCalc.coil_od_calculated;
 				}
 
 				// Also update common.material if it exists
 				if (matCalc.material_density !== undefined && inputData.common?.material) {
-					console.log(`⚡ UPDATING materialDensity: ${matCalc.material_density}`);
 					inputData.common.material.materialDensity = matCalc.material_density;
 				}
-
-				console.log('✅ Updated materialSpecs:', matData);
 			}
 
 			// 3. TDDBHD calculations → tddbhd section AND common.coil for coil-related calcs
 			if (calculatedResults.tddbhd && inputData.tddbhd && typeof calculatedResults.tddbhd === 'object') {
-				console.log('🔩 Mapping TDDBHD calculations...');
 				const tddbhdCalc = calculatedResults.tddbhd;
-				console.log('TDDBHD calculations:', tddbhdCalc);
 
 				// Map coil calculations to both tddbhd.coil AND common.coil
 				if (tddbhdCalc.calculated_coil_weight !== undefined) {
 					if (inputData.tddbhd.coil) {
-						console.log(`Setting tddbhd.coil.coilWeight: ${tddbhdCalc.calculated_coil_weight}`);
 						inputData.tddbhd.coil.coilWeight = tddbhdCalc.calculated_coil_weight;
 					}
 					// Also update common.coil if this should be there
 					if (inputData.common?.coil) {
-						console.log(`Setting common.coil.maxCoilWeight: ${tddbhdCalc.calculated_coil_weight}`);
 						inputData.common.coil.maxCoilWeight = tddbhdCalc.calculated_coil_weight;
 					}
 				}
 				if (tddbhdCalc.coil_od !== undefined) {
 					if (inputData.tddbhd.coil) {
-						console.log(`Setting tddbhd.coil.coilOD: ${tddbhdCalc.coil_od}`);
 						inputData.tddbhd.coil.coilOD = tddbhdCalc.coil_od;
 					}
 					// Also update common.coil
 					if (inputData.common?.coil) {
-						console.log(`Setting common.coil.maxCoilOD: ${tddbhdCalc.coil_od}`);
 						inputData.common.coil.maxCoilOD = tddbhdCalc.coil_od;
 					}
 				}
@@ -196,79 +160,70 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				// Map reel calculations
 				if (inputData.tddbhd.reel) {
 					if (tddbhdCalc.min_material_width !== undefined) {
-						console.log(`Setting minMaterialWidth: ${tddbhdCalc.min_material_width}`);
 						inputData.tddbhd.reel.minMaterialWidth = tddbhdCalc.min_material_width;
 					}
+					if (tddbhdCalc.disp_reel_mtr !== undefined) {
+						inputData.tddbhd.reel.dispReelMtr = tddbhdCalc.disp_reel_mtr;
+					}
+					if (tddbhdCalc.cylinder_bore !== undefined) {
+						inputData.tddbhd.reel.cylinderBore = tddbhdCalc.cylinder_bore;
+					}
+					if (tddbhdCalc.friction !== undefined) {
+						inputData.tddbhd.reel.coefficientOfFriction = tddbhdCalc.friction;
+					}
 					if (tddbhdCalc.web_tension_psi !== undefined && inputData.tddbhd.reel.webTension) {
-						console.log(`Setting webTension.psi: ${tddbhdCalc.web_tension_psi}`);
 						inputData.tddbhd.reel.webTension.psi = tddbhdCalc.web_tension_psi;
 					}
 					if (tddbhdCalc.web_tension_lbs !== undefined && inputData.tddbhd.reel.webTension) {
-						console.log(`Setting webTension.lbs: ${tddbhdCalc.web_tension_lbs}`);
 						inputData.tddbhd.reel.webTension.lbs = tddbhdCalc.web_tension_lbs;
 					}
 					if (tddbhdCalc.torque_required !== undefined && inputData.tddbhd.reel.torque) {
-						console.log(`Setting torque.required: ${tddbhdCalc.torque_required}`);
 						inputData.tddbhd.reel.torque.required = tddbhdCalc.torque_required;
 					}
 					if (tddbhdCalc.torque_at_mandrel !== undefined && inputData.tddbhd.reel.torque) {
-						console.log(`Setting torque.atMandrel: ${tddbhdCalc.torque_at_mandrel}`);
 						inputData.tddbhd.reel.torque.atMandrel = tddbhdCalc.torque_at_mandrel;
 					}
 					if (tddbhdCalc.rewind_torque !== undefined && inputData.tddbhd.reel.torque) {
-						console.log(`Setting torque.rewindRequired: ${tddbhdCalc.rewind_torque}`);
 						inputData.tddbhd.reel.torque.rewindRequired = tddbhdCalc.rewind_torque;
 					}
 					if (tddbhdCalc.hold_down_force_required !== undefined && inputData.tddbhd.reel.holddown?.force) {
-						console.log(`Setting holddown.force.required: ${tddbhdCalc.hold_down_force_required}`);
 						inputData.tddbhd.reel.holddown.force.required = tddbhdCalc.hold_down_force_required;
 					}
 					if (tddbhdCalc.hold_down_force_available !== undefined && inputData.tddbhd.reel.holddown?.force) {
-						console.log(`Setting holddown.force.available: ${tddbhdCalc.hold_down_force_available}`);
 						inputData.tddbhd.reel.holddown.force.available = tddbhdCalc.hold_down_force_available;
 					}
 					if (tddbhdCalc.failsafe_holding_force !== undefined && inputData.tddbhd.reel.dragBrake) {
-						console.log(`Setting dragBrake.holdingForce: ${tddbhdCalc.failsafe_holding_force}`);
 						inputData.tddbhd.reel.dragBrake.holdingForce = tddbhdCalc.failsafe_holding_force;
 					}
 					if (tddbhdCalc.failsafe_required !== undefined && inputData.tddbhd.reel.dragBrake) {
-						console.log(`Setting dragBrake.psiAirRequired: ${tddbhdCalc.failsafe_required}`);
 						inputData.tddbhd.reel.dragBrake.psiAirRequired = tddbhdCalc.failsafe_required;
 					}
 
 					// Map check results
 					if (inputData.tddbhd.reel.checks) {
 						if (tddbhdCalc.min_material_width_check !== undefined) {
-							console.log(`Setting checks.minMaterialWidthCheck: ${tddbhdCalc.min_material_width_check}`);
 							inputData.tddbhd.reel.checks.minMaterialWidthCheck = tddbhdCalc.min_material_width_check;
 						}
 						if (tddbhdCalc.air_pressure_check !== undefined) {
-							console.log(`Setting checks.airPressureCheck: ${tddbhdCalc.air_pressure_check}`);
 							inputData.tddbhd.reel.checks.airPressureCheck = tddbhdCalc.air_pressure_check;
 						}
 						if (tddbhdCalc.rewind_torque_check !== undefined) {
-							console.log(`Setting checks.rewindTorqueCheck: ${tddbhdCalc.rewind_torque_check}`);
 							inputData.tddbhd.reel.checks.rewindTorqueCheck = tddbhdCalc.rewind_torque_check;
 						}
 						if (tddbhdCalc.hold_down_force_check !== undefined) {
-							console.log(`Setting checks.holdDownForceCheck: ${tddbhdCalc.hold_down_force_check}`);
 							inputData.tddbhd.reel.checks.holdDownForceCheck = tddbhdCalc.hold_down_force_check;
 						}
 						if (tddbhdCalc.brake_press_check !== undefined) {
-							console.log(`Setting checks.brakePressCheck: ${tddbhdCalc.brake_press_check}`);
 							inputData.tddbhd.reel.checks.brakePressCheck = tddbhdCalc.brake_press_check;
 						}
 						if (tddbhdCalc.torque_required_check !== undefined) {
-							console.log(`Setting checks.torqueRequiredCheck: ${tddbhdCalc.torque_required_check}`);
 							inputData.tddbhd.reel.checks.torqueRequiredCheck = tddbhdCalc.torque_required_check;
 						}
 						if (tddbhdCalc.tddbhd_check !== undefined) {
-							console.log(`Setting checks.tddbhdCheck: ${tddbhdCalc.tddbhd_check}`);
 							inputData.tddbhd.reel.checks.tddbhdCheck = tddbhdCalc.tddbhd_check;
 						}
 					}
 				}
-				console.log('✅ Updated TDDBHD section');
 			}
 
 			// 4. Reel Drive calculations → reelDrive section AND common.equipment.reel
@@ -300,6 +255,81 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 							inertia: reelCalc.mandrel.inertia,
 							reflInertia: reelCalc.mandrel.refl_inert
 						});
+					}
+
+					// Map backplate data
+					if (reelCalc.backplate && inputData.reelDrive.reel.backplate) {
+						Object.assign(inputData.reelDrive.reel.backplate, {
+							diameter: reelCalc.backplate.diameter,
+							thickness: reelCalc.backplate.thickness,
+							weight: reelCalc.backplate.weight,
+							inertia: reelCalc.backplate.inertia,
+							reflInertia: reelCalc.backplate.refl_inert
+						});
+					}
+
+					// Map reducer data
+					if (reelCalc.reducer && inputData.reelDrive.reel.reducer) {
+						Object.assign(inputData.reelDrive.reel.reducer, {
+							ratio: reelCalc.reducer.ratio,
+							driving: reelCalc.reducer.driving,
+							backdriving: reelCalc.reducer.backdriving,
+							inertia: reelCalc.reducer.inertia,
+							reflInertia: reelCalc.reducer.refl_inert
+						});
+					}
+
+					// Map chain data
+					if (reelCalc.chain && inputData.reelDrive.reel.chain) {
+						Object.assign(inputData.reelDrive.reel.chain, {
+							ratio: reelCalc.chain.ratio,
+							sprktOD: reelCalc.chain.sprkt_od,
+							sprktThickness: reelCalc.chain.sprkt_thk,
+							weight: reelCalc.chain.weight,
+							inertia: reelCalc.chain.inertia,
+							reflInertia: reelCalc.chain.refl_inert
+						});
+					}
+
+					// Map total values
+					if (reelCalc.total && inputData.reelDrive.reel.totalReflInertia) {
+						if (reelCalc.total.total_refl_inert_empty !== undefined) {
+							inputData.reelDrive.reel.totalReflInertia.empty = reelCalc.total.total_refl_inert_empty;
+						}
+						if (reelCalc.total.total_refl_inert_full !== undefined) {
+							inputData.reelDrive.reel.totalReflInertia.full = reelCalc.total.total_refl_inert_full;
+						}
+					}
+
+					// Map motor data
+					if (reelCalc.motor && inputData.reelDrive.reel.motor) {
+						Object.assign(inputData.reelDrive.reel.motor, {
+							hp: reelCalc.motor.hp,
+							inertia: reelCalc.motor.inertia,
+							rpm: {
+								base: reelCalc.motor.base_rpm,
+								full: reelCalc.motor.rpm_full
+							}
+						});
+					}
+
+					// Map friction data
+					if (reelCalc.friction && inputData.reelDrive.reel.friction) {
+						Object.assign(inputData.reelDrive.reel.friction, {
+							rBrgMand: reelCalc.friction.r_brg_mand,
+							fBrgMand: reelCalc.friction.f_brg_mand,
+							rBrgCoil: reelCalc.friction.r_brg_coil,
+							fBrgCoil: reelCalc.friction.f_brg_coil,
+							totalEmpty: reelCalc.friction.total_empty,
+							totalFull: reelCalc.friction.total_full
+						});
+					}
+
+					// Map speed and acceleration data
+					if (reelCalc.speed && inputData.reelDrive.reel) {
+						if (reelCalc.speed.speed !== undefined) inputData.reelDrive.reel.speed = reelCalc.speed.speed;
+						if (reelCalc.speed.accel_rate !== undefined) inputData.reelDrive.reel.accelerationRate = reelCalc.speed.accel_rate;
+						if (reelCalc.speed.accel_time !== undefined) inputData.reelDrive.reel.accelerationTime = reelCalc.speed.accel_time;
 					}
 
 					// Map other calculated fields from reel_drive
@@ -364,6 +394,18 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 					if (strCalc.coil_od !== undefined) {
 						inputData.strUtility.straightener.coilOD = strCalc.coil_od;
 					}
+					if (strCalc.jack_force_available !== undefined) {
+						inputData.strUtility.straightener.jackForceAvailable = strCalc.jack_force_available;
+					}
+					if (strCalc.max_roll_depth !== undefined) {
+						inputData.strUtility.straightener.maxRollDepth = strCalc.max_roll_depth;
+					}
+					if (strCalc.modulus !== undefined) {
+						inputData.strUtility.straightener.modulus = strCalc.modulus;
+					}
+					if (strCalc.center_dist !== undefined) {
+						inputData.strUtility.straightener.centerDistance = strCalc.center_dist;
+					}
 					if (strCalc.required_force !== undefined && inputData.strUtility.straightener.required) {
 						inputData.strUtility.straightener.required.force = strCalc.required_force;
 					}
@@ -398,11 +440,17 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 					// Map rolls data
 					if (inputData.strUtility.straightener.rolls) {
+						if (strCalc.str_roll_dia !== undefined && inputData.strUtility.straightener.rolls.straightener) {
+							inputData.strUtility.straightener.rolls.straightener.diameter = strCalc.str_roll_dia;
+						}
 						if (strCalc.str_roll_rated_torque !== undefined && inputData.strUtility.straightener.rolls.straightener) {
 							inputData.strUtility.straightener.rolls.straightener.ratedTorque = strCalc.str_roll_rated_torque;
 						}
 						if (strCalc.str_roll_req_torque !== undefined && inputData.strUtility.straightener.rolls.straightener) {
 							inputData.strUtility.straightener.rolls.straightener.requiredGearTorque = strCalc.str_roll_req_torque;
+						}
+						if (strCalc.pinch_roll_dia !== undefined && inputData.strUtility.straightener.rolls.pinch) {
+							inputData.strUtility.straightener.rolls.pinch.diameter = strCalc.pinch_roll_dia;
 						}
 						if (strCalc.pinch_roll_rated_torque !== undefined && inputData.strUtility.straightener.rolls.pinch) {
 							inputData.strUtility.straightener.rolls.pinch.ratedTorque = strCalc.pinch_roll_rated_torque;
@@ -411,6 +459,32 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 							inputData.strUtility.straightener.rolls.pinch.requiredGearTorque = strCalc.pinch_roll_req_torque;
 						}
 					}
+
+					// Map gear data including teeth and DP values
+					if (inputData.strUtility.straightener.gear) {
+
+						if (strCalc.cont_angle !== undefined) {
+							inputData.strUtility.straightener.gear.contAngle = strCalc.cont_angle;
+						}
+						if (strCalc.face_width !== undefined) {
+							inputData.strUtility.straightener.gear.faceWidth = strCalc.face_width;
+						}
+
+						// Map teeth and DP values to the gear section
+						if (strCalc.str_roll_teeth !== undefined && inputData.strUtility.straightener.gear.straightenerRoll) {
+							inputData.strUtility.straightener.gear.straightenerRoll.numberOfTeeth = strCalc.str_roll_teeth;
+						}
+						if (strCalc.str_roll_dp !== undefined && inputData.strUtility.straightener.gear.straightenerRoll) {
+							inputData.strUtility.straightener.gear.straightenerRoll.dp = strCalc.str_roll_dp;
+						}
+						if (strCalc.pinch_roll_teeth !== undefined && inputData.strUtility.straightener.gear.pinchRoll) {
+							inputData.strUtility.straightener.gear.pinchRoll.numberOfTeeth = strCalc.pinch_roll_teeth;
+						}
+						if (strCalc.pinch_roll_dp !== undefined && inputData.strUtility.straightener.gear.pinchRoll) {
+							inputData.strUtility.straightener.gear.pinchRoll.dp = strCalc.pinch_roll_dp;
+						}
+					}
+
 				}
 			}
 
@@ -421,6 +495,25 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				// Map according to RollStrBackbendData interface
 				if (rollCalc.rollConfiguration !== undefined) {
 					inputData.rollStrBackbend.rollConfiguration = rollCalc.rollConfiguration;
+				}
+
+				// Map straightener data
+				if (inputData.rollStrBackbend.straightener) {
+					if (rollCalc.roll_diameter !== undefined && inputData.common?.equipment?.straightener) {
+						inputData.common.equipment.straightener.rollDiameter = rollCalc.roll_diameter;
+					}
+					if (rollCalc.center_distance !== undefined) {
+						inputData.rollStrBackbend.straightener.centerDistance = rollCalc.center_distance;
+					}
+					if (rollCalc.jack_force_available !== undefined) {
+						inputData.rollStrBackbend.straightener.jackForceAvailable = rollCalc.jack_force_available;
+					}
+					if (rollCalc.max_roll_depth_without_material !== undefined) {
+						inputData.strUtility.straightener.maxRollDepth = rollCalc.max_roll_depth_without_material;
+					}
+					if (rollCalc.max_roll_depth_with_material !== undefined) {
+						inputData.rollStrBackbend.straightener.rolls.depth.withMaterial = rollCalc.max_roll_depth_with_material;
+					}
 				}
 
 				if (inputData.rollStrBackbend.straightener?.rolls?.backbend) {
@@ -465,16 +558,145 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 						}
 
 						// Map individual roll data
-						if (rollCalc.first_up && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first?.up) {
-							Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.up, {
-								resultingRadius: rollCalc.first_up.res_rad_first_up,
-								curvatureDifference: rollCalc.first_up.r_ri_first_up,
-								bendingMoment: rollCalc.first_up.mb_first_up,
-								bendingMomentRatio: rollCalc.first_up.mb_my_first_up,
-								springback: rollCalc.first_up.springback_first_up,
-								percentOfThicknessYielded: rollCalc.first_up.percent_yield_first_up,
-								radiusAfterSpringback: rollCalc.first_up.radius_after_springback_first_up
+						if (rollCalc.first_up && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first) {
+							// Map first roller height
+							if (rollCalc.first_up.roll_height_first_up !== undefined) {
+								inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.height = rollCalc.first_up.roll_height_first_up;
+							}
+							// Map first roller force required
+							if (rollCalc.first_up.force_required_first_up !== undefined) {
+								inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.forceRequired = rollCalc.first_up.force_required_first_up;
+							}
+							// Map first roller yield strains at surface
+							if (rollCalc.first_up.number_of_yield_strains_first_up !== undefined) {
+								inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.numberOfYieldStrainsAtSurface = rollCalc.first_up.number_of_yield_strains_first_up;
+							}
+							// Map first roller up direction data
+							if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.up) {
+								Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.up, {
+									resultingRadius: rollCalc.first_up.res_rad_first_up,
+									curvatureDifference: rollCalc.first_up.r_ri_first_up,
+									bendingMoment: rollCalc.first_up.mb_first_up,
+									bendingMomentRatio: rollCalc.first_up.mb_my_first_up,
+									springback: rollCalc.first_up.springback_first_up,
+									percentOfThicknessYielded: rollCalc.first_up.percent_yield_first_up,
+									radiusAfterSpringback: rollCalc.first_up.radius_after_springback_first_up
+								});
+							}
+						}
+
+						// Map first roller down direction data
+						if (rollCalc.first_down && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first?.down) {
+							Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.first.down, {
+								resultingRadius: rollCalc.first_down.res_rad_first_down,
+								curvatureDifference: rollCalc.first_down.r_ri_first_down,
+								bendingMoment: rollCalc.first_down.mb_first_down,
+								bendingMomentRatio: rollCalc.first_down.mb_my_first_down,
+								springback: rollCalc.first_down.springback_first_down,
+								percentOfThicknessYielded: rollCalc.first_down.percent_yield_first_down,
+								radiusAfterSpringback: rollCalc.first_down.radius_after_springback_first_down
 							});
+						}
+
+						// Map middle roller data dynamically
+						// Handle single middle roller (for 5-roll configurations)
+						if (rollCalc.mid_up_1 && !rollCalc.mid_up_2 && !rollCalc.mid_up_3) {
+							// Single middle roller - map directly to middle property
+							if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle) {
+								// Map middle roller height
+								if (rollCalc.mid_up_1.roll_height_mid_up !== undefined) {
+									inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.height = rollCalc.mid_up_1.roll_height_mid_up;
+								}
+								// Map middle roller force required
+								if (rollCalc.mid_up_1.force_required_mid_up !== undefined) {
+									inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.forceRequired = rollCalc.mid_up_1.force_required_mid_up;
+								}
+								// Map middle roller yield strains at surface
+								if (rollCalc.mid_up_1.number_of_yield_strains_mid_up !== undefined) {
+									inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.numberOfYieldStrainsAtSurface = rollCalc.mid_up_1.number_of_yield_strains_mid_up;
+								}
+								// Map middle roller up direction data
+								if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.up) {
+									Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.up, {
+										resultingRadius: rollCalc.mid_up_1.res_rad_mid_up,
+										curvatureDifference: rollCalc.mid_up_1.r_ri_mid_up,
+										bendingMoment: rollCalc.mid_up_1.mb_mid_up,
+										bendingMomentRatio: rollCalc.mid_up_1.mb_my_mid_up,
+										springback: rollCalc.mid_up_1.springback_mid_up,
+										percentOfThicknessYielded: rollCalc.mid_up_1.percent_yield_mid_up,
+										radiusAfterSpringback: rollCalc.mid_up_1.radius_after_springback_mid_up
+									});
+								}
+								// Map middle roller down direction data
+								if (rollCalc.mid_down_1 && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.down) {
+									Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle.down, {
+										resultingRadius: rollCalc.mid_down_1.res_rad_mid_down,
+										curvatureDifference: rollCalc.mid_down_1.r_ri_mid_down,
+										bendingMoment: rollCalc.mid_down_1.mb_mid_down,
+										bendingMomentRatio: rollCalc.mid_down_1.mb_my_mid_down,
+										springback: rollCalc.mid_down_1.springback_mid_down,
+										percentOfThicknessYielded: rollCalc.mid_down_1.percent_yield_mid_down,
+										radiusAfterSpringback: rollCalc.mid_down_1.radius_after_springback_mid_down
+									});
+								}
+							}
+						} else {
+							// Multiple middle rollers - map to indexed structure
+							for (let i = 1; i <= 3; i++) {
+								const midUpKey = `mid_up_${i}`;
+								const midDownKey = `mid_down_${i}`;
+
+								if (rollCalc[midUpKey] && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle) {
+									// Ensure the indexed structure exists
+									if (!inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i]) {
+										inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i] = {
+											height: 0,
+											forceRequired: 0,
+											forceRequiredCheck: '',
+											numberOfYieldStrainsAtSurface: 0,
+											up: {},
+											down: {}
+										};
+									}
+
+									// Map middle roller height
+									if (rollCalc[midUpKey].roll_height_mid_up !== undefined) {
+										inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].height = rollCalc[midUpKey].roll_height_mid_up;
+									}
+									// Map middle roller force required
+									if (rollCalc[midUpKey].force_required_mid_up !== undefined) {
+										inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].forceRequired = rollCalc[midUpKey].force_required_mid_up;
+									}
+									// Map middle roller yield strains at surface
+									if (rollCalc[midUpKey].number_of_yield_strains_mid_up !== undefined) {
+										inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].numberOfYieldStrainsAtSurface = rollCalc[midUpKey].number_of_yield_strains_mid_up;
+									}
+									// Map middle roller up direction data
+									if (inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].up) {
+										Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].up, {
+											resultingRadius: rollCalc[midUpKey].res_rad_mid_up,
+											curvatureDifference: rollCalc[midUpKey].r_ri_mid_up,
+											bendingMoment: rollCalc[midUpKey].mb_mid_up,
+											bendingMomentRatio: rollCalc[midUpKey].mb_my_mid_up,
+											springback: rollCalc[midUpKey].springback_mid_up,
+											percentOfThicknessYielded: rollCalc[midUpKey].percent_yield_mid_up,
+											radiusAfterSpringback: rollCalc[midUpKey].radius_after_springback_mid_up
+										});
+									}
+									// Map middle roller down direction data
+									if (rollCalc[midDownKey] && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].down) {
+										Object.assign(inputData.rollStrBackbend.straightener.rolls.backbend.rollers.middle[i].down, {
+											resultingRadius: rollCalc[midDownKey].res_rad_mid_down,
+											curvatureDifference: rollCalc[midDownKey].r_ri_mid_down,
+											bendingMoment: rollCalc[midDownKey].mb_mid_down,
+											bendingMomentRatio: rollCalc[midDownKey].mb_my_mid_down,
+											springback: rollCalc[midDownKey].springback_mid_down,
+											percentOfThicknessYielded: rollCalc[midDownKey].percent_yield_mid_down,
+											radiusAfterSpringback: rollCalc[midDownKey].radius_after_springback_mid_down
+										});
+									}
+								}
+							}
 						}
 
 						if (rollCalc.last && inputData.rollStrBackbend.straightener.rolls.backbend.rollers.last) {
@@ -514,6 +736,8 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				if (feedCalc.match_check !== undefined) feedData.matchCheck = feedCalc.match_check;
 				if (feedCalc.feed_check !== undefined) feedData.feedCheck = feedCalc.feed_check;
 				if (feedCalc.max_motor_rpm !== undefined) feedData.maxMotorRPM = feedCalc.max_motor_rpm;
+				if (feedCalc.max_vel !== undefined) feedData.maxVelocity = feedCalc.max_vel;
+				if (feedCalc.material_in_loop !== undefined) feedData.materialInLoop = feedCalc.material_in_loop;
 
 				// Map torque calculations
 				if (feedData.torque) {
@@ -538,6 +762,11 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 				// Map table values
 				if (feedCalc.table_values !== undefined) feedData.tableValues = feedCalc.table_values;
+
+				// Also update common.equipment.feed.maximumVelocity
+				if (feedCalc.max_vel !== undefined && inputData.common?.equipment?.feed) {
+					inputData.common.equipment.feed.maximumVelocity = feedCalc.max_vel;
+				}
 			}
 
 			// 8. Shear calculations → shear.shear section
@@ -604,16 +833,6 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				}
 			}
 
-			console.log('✅ Final structure analysis - should be SAME inputData with updated calculated values:');
-			console.log('✅ inputData keys:', Object.keys(inputData));
-			console.log('✅ inputData.referenceNumber:', inputData.referenceNumber);
-			console.log('✅ inputData.common.feedRates (should have updated FPM values):', inputData.common?.feedRates);
-			console.log('✅ Does inputData have nested "data" key?:', 'data' in inputData);
-			if ('data' in inputData) {
-				console.log('❌ ERROR: inputData has nested "data" key - this should NOT happen!');
-				console.log('❌ inputData.data keys:', Object.keys(inputData.data));
-			}
-			console.log('✅ RETURNING updated inputData (no nested structures)');
 			return inputData;
 		} catch (error) {
 			console.error('❌ Failed to run Python calculations:', error);

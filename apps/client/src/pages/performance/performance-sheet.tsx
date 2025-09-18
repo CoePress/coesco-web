@@ -64,7 +64,7 @@ const PerformanceSheetContent = () => {
   const api = useApi();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Use global performance context
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
@@ -213,116 +213,116 @@ const PerformanceSheetContent = () => {
   };
 
   return (
-      <div className="w-full flex-1 flex flex-col overflow-hidden">
-        <PageHeader
-          title="Performance Details"
-          description="Performance Details"
-          actions={<Actions />}
-        />
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
+      <PageHeader
+        title="Performance Details"
+        description="Performance Details"
+        actions={<Actions />}
+      />
 
-        <Tabs
-          activeTab={activeTab}
-          setActiveTab={(tab) => setActiveTab(tab as PerformanceTabValue)}
-          tabs={visibleTabs}
-        />
+      <Tabs
+        activeTab={activeTab}
+        setActiveTab={(tab) => setActiveTab(tab as PerformanceTabValue)}
+        tabs={visibleTabs}
+      />
 
-        <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
+      <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
 
-        <Modal
-          isOpen={showLinksModal}
-          onClose={() => {
-            setShowLinksModal(false);
-            setAddMode(false);
-            setNewLink({ entityType: "quote", entityId: "" });
-          }}
-          title="Links"
-          size="sm">
-          {!addMode ? (
-            <div>
-              <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-                {links.map((link, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
-                    <span className="font-medium capitalize text-text-muted">
-                      {link.entityType}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      #{link.entityId}
-                    </span>
-                  </div>
-                ))}
-              </div>
+      <Modal
+        isOpen={showLinksModal}
+        onClose={() => {
+          setShowLinksModal(false);
+          setAddMode(false);
+          setNewLink({ entityType: "quote", entityId: "" });
+        }}
+        title="Links"
+        size="sm">
+        {!addMode ? (
+          <div>
+            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
+              {links.map((link, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
+                  <span className="font-medium capitalize text-text-muted">
+                    {link.entityType}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    #{link.entityId}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setAddMode(true)}
+              className="w-full">
+              Add
+            </Button>
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setLinks([...links, newLink]);
+              setAddMode(false);
+              setNewLink({ entityType: "quote", entityId: "" });
+            }}>
+            <Select
+              label="Entity Type"
+              name="entityType"
+              value={newLink.entityType}
+              onChange={(e) =>
+                setNewLink({ ...newLink, entityType: e.target.value })
+              }
+              options={[
+                { value: "quote", label: "Quote" },
+                { value: "journey", label: "Journey" },
+                { value: "contact", label: "Contact" },
+                { value: "company", label: "Company" },
+              ]}
+            />
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1">
+                Entity ID
+              </label>
+              <input
+                className="w-full border rounded px-2 py-1"
+                type="text"
+                value={newLink.entityId}
+                onChange={(e) =>
+                  setNewLink({ ...newLink, entityId: e.target.value })
+                }
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="secondary-outline"
+                size="md"
+                onClick={() => {
+                  setAddMode(false);
+                  setNewLink({ entityType: "quote", entityId: "" });
+                }}>
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 size="md"
-                onClick={() => setAddMode(true)}
-                className="w-full">
-                Add
+                onClick={() => {
+                  setLinks([...links, newLink]);
+                  setAddMode(false);
+                  setNewLink({ entityType: "quote", entityId: "" });
+                }}
+                disabled={!newLink.entityId}>
+                Save
               </Button>
             </div>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setLinks([...links, newLink]);
-                setAddMode(false);
-                setNewLink({ entityType: "quote", entityId: "" });
-              }}>
-              <Select
-                label="Entity Type"
-                name="entityType"
-                value={newLink.entityType}
-                onChange={(e) =>
-                  setNewLink({ ...newLink, entityType: e.target.value })
-                }
-                options={[
-                  { value: "quote", label: "Quote" },
-                  { value: "journey", label: "Journey" },
-                  { value: "contact", label: "Contact" },
-                  { value: "company", label: "Company" },
-                ]}
-              />
-              <div className="mt-4">
-                <label className="block text-sm font-medium mb-1">
-                  Entity ID
-                </label>
-                <input
-                  className="w-full border rounded px-2 py-1"
-                  type="text"
-                  value={newLink.entityId}
-                  onChange={(e) =>
-                    setNewLink({ ...newLink, entityId: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="secondary-outline"
-                  size="md"
-                  onClick={() => {
-                    setAddMode(false);
-                    setNewLink({ entityType: "quote", entityId: "" });
-                  }}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={() => {
-                    setLinks([...links, newLink]);
-                    setAddMode(false);
-                    setNewLink({ entityType: "quote", entityId: "" });
-                  }}
-                  disabled={!newLink.entityId}>
-                  Save
-                </Button>
-              </div>
-            </form>
-          )}
-        </Modal>
-      </div>
+          </form>
+        )}
+      </Modal>
+    </div>
   );
 };
 

@@ -154,7 +154,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="No. of Str. Rolls"
-          name="common.equipment.straightener.rolls.numberOfRolls"
+          name="common.equipment.straightener.numberOfRolls"
           type="number"
           value={localData.common?.equipment?.straightener?.numberOfRolls?.toString() || ""}
           onChange={handleFieldChange}
@@ -314,9 +314,9 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Max. Roll Depth (in)"
-          name="strUtility.straightener.rolls.depth.withoutMaterial"
+          name="strUtility.straightener.maxRollDepth"
           type="number"
-          value={localData.strUtility?.straightener?.rolls?.depth?.withoutMaterial?.toString() || ""}
+          value={localData.strUtility?.straightener?.maxRollDepth?.toString() || ""}
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
@@ -422,7 +422,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.force"
               value={localData.strUtility?.straightener?.required?.force?.toString() || ""}
               disabled={true}
-              className={`bg-${requiredForceCheck} text-text`}
+              customBackgroundColor={requiredForceCheck}
             />
             <Input
               label="Rated Force (lbs)"
@@ -438,7 +438,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.pinch.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              className={`bg-${pinchRollCheck} text-text`}
+              customBackgroundColor={pinchRollCheck}
             />
             <Input
               label="Pinch Roll Rated Torque"
@@ -454,7 +454,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.straightener.requiredGearTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.requiredGearTorque?.toString() || ""}
               disabled={true}
-              className={`bg-${strRollCheck} text-text`}
+              customBackgroundColor={strRollCheck}
             />
             <Input
               label="Str. Roll Rated Torque"
@@ -470,7 +470,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.required.horsepower"
               value={localData.strUtility?.straightener?.required?.horsepower?.toString() || ""}
               disabled={true}
-              className={`bg-${horsepowerCheck} text-text`}
+              customBackgroundColor={horsepowerCheck}
             />
           </div>
         </div>

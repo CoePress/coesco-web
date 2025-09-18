@@ -378,7 +378,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
         <div>
           <Checkbox
             label="Slit Edge"
-            name="rfq.coil.slitEdgeCB"
+            name="rfq.coil.slitEdge"
             checked={localData.rfq?.coil?.slitEdge || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
