@@ -751,10 +751,6 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
-      },
       createdById: {
         type: "string",
         required: true,
@@ -827,10 +823,6 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
       },
-      deletedAt: {
-        type: "datetime",
-        required: false,
-      },
       createdById: {
         type: "string",
         required: true,
@@ -870,10 +862,6 @@ export const SCHEMAS: ISchema[] = [
       updatedAt: {
         type: "datetime",
         required: true,
-      },
-      deletedAt: {
-        type: "datetime",
-        required: false,
       },
       createdById: {
         type: "string",
@@ -918,10 +906,6 @@ export const SCHEMAS: ISchema[] = [
       updatedAt: {
         type: "datetime",
         required: true,
-      },
-      deletedAt: {
-        type: "datetime",
-        required: false,
       },
       createdById: {
         type: "string",

@@ -27,24 +27,24 @@ model User {
 }
 
 model Employee {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  number      String    @unique
-  firstName   String
-  lastName    String
-  initials    String
-  email       String?   @unique
-  phoneNumber String?
-  title    String
-  hireDate    DateTime?
-  startDate    DateTime?
-  terminationDate    DateTime?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  number          String    @unique
+  firstName       String
+  lastName        String
+  initials        String
+  email           String?   @unique
+  phoneNumber     String?
+  title           String
+  hireDate        DateTime?
+  startDate       DateTime?
+  terminationDate DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  createdById     String
+  updatedById     String
 
   user             User      @relation(fields: [userId], references: [id])
   journeys         Journey[] @relation("RsmJourneys")
@@ -145,8 +145,8 @@ model PermissionException {
 
 // CRM
 model Company {
-  id          String    @id @default(uuid())
-  name        String
+  id            String        @id @default(uuid())
+  name          String
   website       String?
   email         String?
   phone         String?
@@ -163,12 +163,12 @@ model Company {
   notes         String?
   tags          String[]
   status        CompanyStatus @default(ACTIVE)
-  legacy      Json      @default("{}")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  legacy        Json          @default("{}")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  createdById   String
+  updatedById   String
 
   createdBy        Employee? @relation("CustomerCreatedBy", fields: [createdById], references: [id])
   addresses        Address[]
@@ -552,11 +552,10 @@ model Form {
   name        String
   description String?
   status      String   @default("draft") // draft, published, archived
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
 
   pages       FormPage[]
   submissions FormSubmission[]
@@ -569,11 +568,10 @@ model FormPage {
   formId      String
   title       String
   sequence    Int
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
 
   form     Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
   sections FormSection[]
@@ -588,11 +586,10 @@ model FormSection {
   title       String
   description String?
   sequence    Int
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  updatedById String
 
   page   FormPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
   fields FormField[]
@@ -602,22 +599,21 @@ model FormSection {
 }
 
 model FormField {
-  id             String  @id @default(uuid())
-  sectionId      String
-  label          String
-  variable       String
-  controlType    FormFieldControlType
-  dataType       FormFieldDataType
-  isRequired       Boolean @default(false)
-  isReadOnly       Boolean @default(false)
-  isHiddenOnDevice Boolean @default(false)
-  isHiddenOnReport Boolean @default(false)
-  sequence           Int
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
+  id               String               @id @default(uuid())
+  sectionId        String
+  label            String
+  variable         String
+  controlType      FormFieldControlType
+  dataType         FormFieldDataType
+  isRequired       Boolean              @default(false)
+  isReadOnly       Boolean              @default(false)
+  isHiddenOnDevice Boolean              @default(false)
+  isHiddenOnReport Boolean              @default(false)
+  sequence         Int
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  createdById      String
+  updatedById      String
 
   section FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
@@ -667,15 +663,15 @@ enum FormFieldDataType {
 }
 
 model FormSubmission {
-  id           String   @id @default(uuid())
-  formId       String
-  status       String   @default("draft")
-  answers      Json     @default("{}")
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
+  id          String    @id @default(uuid())
+  formId      String
+  status      String    @default("draft")
+  answers     Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
@@ -812,17 +808,17 @@ model CoilType {
 }
 
 model ProductClass {
-  id           String    @id @default(uuid())
-  code         String    @unique
-  name         String
-  description  String?
-  parentId     String?
-  depth        Int       @default(0)
-  isActive     Boolean   @default(true)
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String?
+  parentId    String?
+  depth       Int     @default(0)
+  isActive    Boolean @default(true)
 
   parent                       ProductClass?                @relation("ProductClassHierarchy", fields: [parentId], references: [id])
   children                     ProductClass[]               @relation("ProductClassHierarchy")
-  options                OptionDetails[]
+  options                      OptionDetails[]
   configurations               Configuration[]
   productClassOptionCategories ProductClassOptionCategory[]
 
@@ -831,14 +827,14 @@ model ProductClass {
 
 // OptGroup
 model OptionCategory {
-  id          String  @id @default(uuid())
-  name        String  @unique
-  description String?
-  multiple    Boolean @default(false)
-  mandatory   Boolean @default(false)
-  standard    Boolean @default(false)
-  displayOrder       Int
-  legacyId    String?
+  id           String  @id @default(uuid())
+  name         String  @unique
+  description  String?
+  multiple     Boolean @default(false)
+  mandatory    Boolean @default(false)
+  standard     Boolean @default(false)
+  displayOrder Int
+  legacyId     String?
 
   optionHeaders                OptionHeader[]
   productClassOptionCategories ProductClassOptionCategory[]
@@ -867,18 +863,18 @@ model ProductClassOptionCategory {
 }
 
 model OptionHeader {
-  id          String    @id @default(uuid())
-  optionCategoryId  String
-  name        String
-  description String?
-  legacyId    String?
-  displayOrder   Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  createdById String
-  updatedById String
+  id               String    @id @default(uuid())
+  optionCategoryId String
+  name             String
+  description      String?
+  legacyId         String?
+  displayOrder     Int       @default(0)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String
 
   category             OptionCategory        @relation(fields: [optionCategoryId], references: [id])
   optionDetails        OptionDetails[]
@@ -903,9 +899,9 @@ model OptionDetails {
   createdById    String
   updatedById    String
 
-  optionHeader OptionHeader @relation(fields: [optionHeaderId], references: [id])
+  optionHeader OptionHeader  @relation(fields: [optionHeaderId], references: [id])
   productClass ProductClass? @relation(fields: [productClassId], references: [id])
-  item Item? @relation(fields: [itemId], references: [id])
+  item         Item?         @relation(fields: [itemId], references: [id])
 
   @@unique([productClassId, optionHeaderId])
   @@index([createdById])
@@ -914,13 +910,13 @@ model OptionDetails {
 
 model Item {
   id             String    @id @default(uuid())
-  productClassId String? 
+  productClassId String?
   modelNumber    String?
   name           String?
   description    String?
   specifications Json      @default("{}")
   unitPrice      Float     @default(0)
-  leadTime       Int?       
+  leadTime       Int?
   type           ItemType
   isActive       Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -929,7 +925,7 @@ model Item {
   createdById    String
   updatedById    String
 
-  options OptionDetails[]
+  options    OptionDetails[]
   quoteItems QuoteItem[]
 
   @@index([createdById])
@@ -944,7 +940,7 @@ enum ItemType {
 
 // QData
 model QuoteHeader {
-  id                String    @id @default(uuid())
+  id                String            @id @default(uuid())
   journeyId         String?
   year              String
   number            String
@@ -955,15 +951,15 @@ model QuoteHeader {
   dealerId          String?
   dealerContactId   String?
   dealerAddressId   String?
-  priority          String    @default("C")
-  confidence        Int       @default(0)
+  priority          String            @default("C")
+  confidence        Int               @default(0)
   status            QuoteHeaderStatus @default(OPEN)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   deletedAt         DateTime?
   createdById       String
   updatedById       String
-  legacy            Json      @default("{}")
+  legacy            Json              @default("{}")
 
   quotes QuoteDetails[]
 
@@ -1011,7 +1007,7 @@ model QuoteItem {
   quantity        Int       @default(1)
   unitPrice       Decimal
   lineNumber      Int
-  isCustom          Boolean   @default(false)
+  isCustom        Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?

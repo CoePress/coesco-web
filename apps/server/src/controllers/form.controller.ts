@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { formFieldService, formSectionService, formService } from "@/services/repository";
+import { formFieldService, formPageService, formSectionService, formService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
 
 export class FormController {
@@ -25,13 +25,29 @@ export class FormController {
   });
 
   deleteForm = asyncWrapper(async (req: Request, res: Response) => {
-    await formService.delete(req.params.formId);
-    res.status(204).send();
+    const result = await formService.delete(req.params.formId);
+    res.status(200).json(result);
+  });
+
+  createFormPage = asyncWrapper(async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const result = await formPageService.create({ ...req.body, formId });
+    res.status(201).json(result);
+  });
+
+  updateFormPage = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formPageService.update(req.params.pageId, req.body);
+    res.status(200).json(result);
+  });
+
+  deleteFormPage = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formPageService.delete(req.params.pageId);
+    res.status(200).json(result);
   });
 
   createFormSection = asyncWrapper(async (req: Request, res: Response) => {
-    const { formId } = req.params;
-    const result = await formSectionService.create({ ...req.body, formId });
+    const { pageId } = req.params;
+    const result = await formSectionService.create({ ...req.body, pageId });
     res.status(201).json(result);
   });
 
@@ -41,8 +57,8 @@ export class FormController {
   });
 
   deleteFormSection = asyncWrapper(async (req: Request, res: Response) => {
-    await formSectionService.delete(req.params.sectionId);
-    res.status(204).send();
+    const result = await formSectionService.delete(req.params.sectionId);
+    res.status(200).json(result);
   });
 
   createFormField = asyncWrapper(async (req: Request, res: Response) => {
@@ -57,7 +73,7 @@ export class FormController {
   });
 
   deleteFormField = asyncWrapper(async (req: Request, res: Response) => {
-    await formFieldService.delete(req.params.fieldId);
-    res.status(204).send();
+    const result = await formFieldService.delete(req.params.fieldId);
+    res.status(200).json(result);
   });
 }

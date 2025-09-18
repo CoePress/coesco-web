@@ -739,10 +739,6 @@
           "type": "datetime",
           "required": true
         },
-        "deletedAt": {
-          "type": "datetime",
-          "required": false
-        },
         "createdById": {
           "type": "string",
           "required": true
@@ -815,10 +811,6 @@
           "type": "datetime",
           "required": true
         },
-        "deletedAt": {
-          "type": "datetime",
-          "required": false
-        },
         "createdById": {
           "type": "string",
           "required": true
@@ -858,10 +850,6 @@
         "updatedAt": {
           "type": "datetime",
           "required": true
-        },
-        "deletedAt": {
-          "type": "datetime",
-          "required": false
         },
         "createdById": {
           "type": "string",
@@ -906,10 +894,6 @@
         "updatedAt": {
           "type": "datetime",
           "required": true
-        },
-        "deletedAt": {
-          "type": "datetime",
-          "required": false
         },
         "createdById": {
           "type": "string",

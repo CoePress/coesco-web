@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Edit, Save, X, Plus, Trash2, GripVertical } from 'lucide-react';
-import {Button, Input, Card, PageHeader, Table } from '@/components';
+import { Edit, Save, X, Plus, Trash2 } from 'lucide-react';
+import {Button, Input, PageHeader, Table, Modal } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -11,12 +11,20 @@ const FormDetails = () => {
   const navigate = useNavigate();
   const { get, patch, post, delete: deleteRequest } = useApi<IApiResponse<any>>();
   const toast = useToast();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [pages, setPages] = useState<any[]>([]);
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: 'page' | 'section' | 'field';
+    id: string;
+    title: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const include = useMemo(
       () => ["pages.sections.fields"],
@@ -36,15 +44,17 @@ const FormDetails = () => {
     
     if (response?.success && response.data) {
       setFormData(response.data);
-      setPages(response.data.pages?.map((page: any) => ({
+      const pagesData = response.data.pages?.map((page: any) => ({
         ...page,
-        isCollapsed: false,
         sections: page.sections?.map((section: any) => ({
           ...section,
-          isCollapsed: false,
           fields: section.fields || []
         })) || []
-      })) || []);
+      })) || [];
+      setPages(pagesData);
+      if (pagesData.length > 0 && !selectedPageId) {
+        setSelectedPageId(pagesData[0].id);
+      }
     } else {
       const errorMessage = response?.error || "Failed to fetch form";
       setError(errorMessage);
@@ -113,10 +123,6 @@ const FormDetails = () => {
     fetchForm();
   };
 
-  const updateFormData = (updates: any) => {
-    setFormData((prev: any) => ({ ...prev, ...updates }));
-  };
-
   const addPage = async () => {
     if (!id) return;
 
@@ -183,6 +189,19 @@ const FormDetails = () => {
     }
   };
 
+  const confirmRemovePage = (pageId: string) => {
+    const page = pages.find(p => p.id === pageId);
+    if (!page) return;
+
+    setDeleteModal({
+      isOpen: true,
+      type: 'page',
+      id: pageId,
+      title: page.title,
+      onConfirm: () => removePage(pageId)
+    });
+  };
+
   const removePage = async (pageId: string) => {
     if (!id) return;
 
@@ -191,11 +210,26 @@ const FormDetails = () => {
     if (response?.success) {
       setPages(pages.filter(page => page.id !== pageId));
       toast.success('Page removed successfully!');
+      setDeleteModal(null);
     } else {
       const errorMessage = response?.error || "Failed to delete page";
       setError(errorMessage);
       toast.error(errorMessage);
     }
+  };
+
+  const confirmRemoveSection = (pageId: string, sectionId: string) => {
+    const page = pages.find(p => p.id === pageId);
+    const section = page?.sections.find((s: any) => s.id === sectionId);
+    if (!section) return;
+
+    setDeleteModal({
+      isOpen: true,
+      type: 'section',
+      id: sectionId,
+      title: section.title,
+      onConfirm: () => removeSection(pageId, sectionId)
+    });
   };
 
   const removeSection = async (pageId: string, sectionId: string) => {
@@ -210,6 +244,7 @@ const FormDetails = () => {
           : page
       ));
       toast.success('Section removed successfully!');
+      setDeleteModal(null);
     } else {
       const errorMessage = response?.error || "Failed to delete section";
       setError(errorMessage);
@@ -266,6 +301,21 @@ const FormDetails = () => {
     }
   };
 
+  const confirmRemoveField = (pageId: string, sectionId: string, fieldId: string) => {
+    const page = pages.find(p => p.id === pageId);
+    const section = page?.sections.find((s: any) => s.id === sectionId);
+    const field = section?.fields?.find((f: any) => f.id === fieldId);
+    if (!field) return;
+
+    setDeleteModal({
+      isOpen: true,
+      type: 'field',
+      id: fieldId,
+      title: field.label,
+      onConfirm: () => removeField(pageId, sectionId, fieldId)
+    });
+  };
+
   const removeField = async (pageId: string, sectionId: string, fieldId: string) => {
     if (!id) return;
 
@@ -285,6 +335,7 @@ const FormDetails = () => {
           : page
       ));
       toast.success('Field removed successfully!');
+      setDeleteModal(null);
     } else {
       const errorMessage = response?.error || "Failed to delete field";
       setError(errorMessage);
@@ -426,10 +477,10 @@ const FormDetails = () => {
     );
   }
 
-  if (error || !formData) {
+  if (!formData && !loading) {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
-        <div className="text-error text-lg mb-4">{error || "Form not found"}</div>
+        <div className="text-error text-lg mb-4">Form not found</div>
         <Button onClick={() => navigate('/service/forms')}>
           Back to Forms
         </Button>
@@ -439,191 +490,71 @@ const FormDetails = () => {
 
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
-      {isEditing ? (
-        <div className="border-b border-border bg-surface p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 space-y-4">
-                <Input
-                  value={formData.name}
-                  onChange={(e) => updateFormData({ name: e.target.value })}
-                  className="text-2xl font-bold"
-                  placeholder="Form name"
-                />
-                <Input
-                  value={formData.description || ''}
-                  onChange={(e) => updateFormData({ description: e.target.value })}
-                  placeholder="Form description (optional)"
-                />
-                <select
-                  value={formData.status}
-                  onChange={(e) => updateFormData({ status: e.target.value })}
-                  className="px-3 py-2 border rounded-md">
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <Actions />
-            </div>
+      <PageHeader
+        title={formData.name}
+        description={formData.description}
+        actions={<Actions />}
+      />
+
+      {error && (
+        <div className="p-2">
+          <div className="bg-error/10 border border-error/20 rounded p-2 text-error text-sm">
+            {error}
           </div>
         </div>
-      ) : (
-        <PageHeader
-          title={formData.name}
-          description={formData.description}
-          actions={<Actions />}
-        />
       )}
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <div className="flex-1 overflow-hidden">
           {isEditing ? (
-            <div className="h-full overflow-y-auto">
-              {pages.map((page, pageIndex) => (
-            <Card key={page.id} className="mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <GripVertical className="text-text-muted" size={16} />
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600">
-                      Page {pageIndex + 1}
-                    </span>
-                    <button
-                      onClick={() => removePage(page.id)}
-                      className="text-error hover:text-error/80 p-1 rounded"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Input
-                      value={page.title}
-                      onChange={(e) => updatePageTitle(page.id, e.target.value)}
-                      className="text-2xl font-bold"
-                      placeholder="Page title"
-                    />
-                  </div>
+            <div className="flex h-full">
+              <div className="w-64 border-r border-border bg-foreground">
+                <div className="p-2 border-b flex items-center justify-between">
+                  <h3 className="text-sm text-text-muted">Pages</h3>
+                  <Button
+                    onClick={addPage}
+                    size="sm"
+                    variant="secondary-outline"
+                  >
+                    <Plus size={14} />
+                  </Button>
                 </div>
-
-                <Button
-                  onClick={() => addSection(page.id)}
-                  size="sm"
-                  className="ml-4"
-                >
-                  <Plus size={14} />
-                  <span>Add Section</span>
-                </Button>
+                <div className="p-2 space-y-1">
+                  {pages.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => setSelectedPageId(page.id)}
+                      className={`w-full text-left px-2 py-2 text-sm rounded transition-colors truncate cursor-pointer ${
+                        selectedPageId === page.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-surface text-text-muted'
+                      }`}
+                    >
+                      {page.title}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {(!page.sections || page.sections.length === 0) ? (
-                  <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
-                    <div className="text-text-muted mb-2">
-                      <span className="text-lg">No sections in this page yet</span>
-                    </div>
-                    <Button
-                      onClick={() => addSection(page.id)}
-                      size="sm"
-                    >
-                      <Plus size={14} />
-                      <span>Add your first section</span>
-                    </Button>
-                  </div>
-                ) : (
-                  page.sections.map((section: any, sectionIndex: any) => (
-                    <Card key={section.id} className="bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <GripVertical className="text-text-muted" size={16} />
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">
-                              Section {sectionIndex + 1}
-                            </span>
-                            <button
-                              onClick={() => removeSection(page.id, section.id)}
-                              className="text-error hover:text-error/80 p-1 rounded"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <Input
-                              value={section.title}
-                              onChange={(e) => updateSectionTitle(page.id, section.id, e.target.value)}
-                              className="text-xl font-semibold"
-                              placeholder="Section title"
-                            />
-                            <Input
-                              value={section.description || ''}
-                              onChange={(e) => updateSectionDescription(page.id, section.id, e.target.value)}
-                              placeholder="Section description (optional)"
-                            />
-                          </div>
-                        </div>
-
-                        <Button
-                          onClick={() => addFieldToSection(page.id, section.id)}
-                          size="sm"
-                          className="ml-4"
-                        >
-                          <Plus size={14} />
-                          <span>Add Field</span>
-                        </Button>
-                      </div>
-
-                      <div className="mt-4">
-                        {(!section.fields || section.fields.length === 0) ? (
-                          <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
-                            <div className="text-text-muted mb-2">
-                              <span>No fields in this section yet</span>
-                            </div>
-                            <Button
-                              onClick={() => addFieldToSection(page.id, section.id)}
-                              size="sm"
-                            >
-                              <Plus size={14} />
-                              <span>Add your first field</span>
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {section.fields.map((field: any, fieldIndex: any) => (
-                              <div key={field.id} className="flex items-center space-x-4 p-4 bg-white border border-border rounded-lg hover:bg-gray-50 transition-colors">
-                                <GripVertical className="text-text-muted" size={14} />
-
-                                <div className="flex items-center justify-center w-8 h-8 bg-foreground border border-border rounded-full text-sm font-medium text-text-muted">
-                                  {fieldIndex + 1}
-                                </div>
-
-                                <div className="flex-1">
-                                  <FieldEditor
-                                    field={field}
-                                    controlTypes={controlTypes}
-                                    dataTypes={dataTypes}
-                                    onUpdate={(updates: any) => updateField(page.id, section.id, field.id, updates)}
-                                  />
-                                </div>
-
-                                <button
-                                  onClick={() => removeField(page.id, section.id, field.id)}
-                                  className="text-error hover:text-error/80 p-2 rounded"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))
+              <div className="flex-1 overflow-y-auto">
+                {selectedPageId && pages.find(p => p.id === selectedPageId) && (
+                  <EditPageView
+                    page={pages.find(p => p.id === selectedPageId)!}
+                    pageIndex={pages.findIndex(p => p.id === selectedPageId)}
+                    onUpdatePageTitle={updatePageTitle}
+                    onRemovePage={confirmRemovePage}
+                    onAddSection={addSection}
+                    onRemoveSection={confirmRemoveSection}
+                    onUpdateSectionTitle={updateSectionTitle}
+                    onUpdateSectionDescription={updateSectionDescription}
+                    onAddField={addFieldToSection}
+                    onRemoveField={confirmRemoveField}
+                    onUpdateField={updateField}
+                    controlTypes={controlTypes}
+                    dataTypes={dataTypes}
+                  />
                 )}
               </div>
-            </Card>
-              ))}
             </div>
           ) : (
           <Table
@@ -690,16 +621,174 @@ const FormDetails = () => {
         )}
         </div>
 
-        {isEditing && (
-          <div className="flex justify-center p-4">
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <Modal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal(null)}
+          title={`Delete ${deleteModal.type}`}
+          size="xs"
+        >
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to delete the {deleteModal.type} "{deleteModal.title}"?
+              {deleteModal.type === 'page' && ' This will also delete all sections and fields within this page.'}
+              {deleteModal.type === 'section' && ' This will also delete all fields within this section.'}
+            </p>
+            <p className="text-error text-sm">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="secondary-outline"
+                onClick={() => setDeleteModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={deleteModal.onConfirm}
+              >
+                Delete {deleteModal.type}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+const EditPageView = ({
+  page,
+  pageIndex,
+  onUpdatePageTitle,
+  onRemovePage,
+  onAddSection,
+  onRemoveSection,
+  onUpdateSectionTitle,
+  onUpdateSectionDescription,
+  onAddField,
+  onRemoveField,
+  onUpdateField,
+  controlTypes,
+  dataTypes
+}: any) => {
+  return (
+    <div className="bg-foreground rounded border border-border flex flex-col h-full">
+      <div className="p-2 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm text-text-muted">Page {pageIndex + 1}</h3>
+          <button
+            onClick={() => onRemovePage(page.id)}
+            className="text-error hover:text-error/80 p-1 rounded cursor-pointer"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+        <Button
+          onClick={() => onAddSection(page.id)}
+          size="sm"
+        >
+          <Plus size={14} />
+          Add Section
+        </Button>
+      </div>
+
+      <div className="p-2 border-b">
+        <Input
+          value={page.title}
+          onChange={(e) => onUpdatePageTitle(page.id, e.target.value)}
+          placeholder="Page title"
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2">
+        {(!page.sections || page.sections.length === 0) ? (
+          <div className="text-center py-8 border-2 border-dashed border-border rounded">
+            <div className="text-text-muted text-sm mb-2">No sections in this page yet</div>
             <Button
-              onClick={addPage}
-              variant="primary-outline"
-              size="md"
+              onClick={() => onAddSection(page.id)}
+              size="sm"
             >
-              <Plus size={16} />
-              <span>Add Page</span>
+              <Plus size={14} />
+              Add your first section
             </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {page.sections.map((section: any, sectionIndex: any) => (
+              <div key={section.id} className="bg-surface border border-border rounded">
+                <div className="p-2 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-muted">Section {sectionIndex + 1}</span>
+                    <button
+                      onClick={() => onRemoveSection(page.id, section.id)}
+                      className="text-error hover:text-error/80 p-1 rounded cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <Button
+                    onClick={() => onAddField(page.id, section.id)}
+                    size="sm"
+                  >
+                    <Plus size={14} />
+                    Add Field
+                  </Button>
+                </div>
+
+                <div className="p-2 space-y-2">
+                  <Input
+                    value={section.title}
+                    onChange={(e) => onUpdateSectionTitle(page.id, section.id, e.target.value)}
+                    placeholder="Section title"
+                  />
+                  <Input
+                    value={section.description || ''}
+                    onChange={(e) => onUpdateSectionDescription(page.id, section.id, e.target.value)}
+                    placeholder="Section description (optional)"
+                  />
+
+                  {(!section.fields || section.fields.length === 0) ? (
+                    <div className="text-center py-4 border-2 border-dashed border-border rounded">
+                      <div className="text-text-muted text-xs mb-2">No fields in this section yet</div>
+                      <Button
+                        onClick={() => onAddField(page.id, section.id)}
+                        size="sm"
+                      >
+                        <Plus size={14} />
+                        Add your first field
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {section.fields.map((field: any, fieldIndex: any) => (
+                        <div key={field.id} className="flex items-start gap-2 p-2 bg-foreground border border-border rounded">
+                          <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium flex-shrink-0">
+                            {fieldIndex + 1}
+                          </div>
+                          <div className="flex-1">
+                            <FieldEditor
+                              field={field}
+                              controlTypes={controlTypes}
+                              dataTypes={dataTypes}
+                              onUpdate={(updates: any) => onUpdateField(page.id, section.id, field.id, updates)}
+                            />
+                          </div>
+                          <button
+                            onClick={() => onRemoveField(page.id, section.id, field.id)}
+                            className="text-error hover:text-error/80 p-1 rounded flex-shrink-0 cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -707,129 +796,94 @@ const FormDetails = () => {
   );
 };
 
-
 const FieldEditor = ({ field, controlTypes, dataTypes, onUpdate }: any) => {
-  const needsOptions = ['DROPDOWN', 'RADIO_BUTTON', 'MULTI_SELECT'].includes(field.controlType);
-
   return (
-    <div className="space-y-4 p-4 bg-surface border border-border rounded-lg">
-      {/* Field Label */}
-      <div>
-        <label className="block text-sm font-medium text-text mb-1">Field Label *</label>
-        <Input
-          value={field.label || ''}
-          onChange={(e) => onUpdate({ label: e.target.value })}
-          placeholder="Enter field label"
-          className="w-full"
-        />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs text-text-muted mb-1">Field Label</label>
+          <Input
+            value={field.label || ''}
+            onChange={(e) => onUpdate({ label: e.target.value })}
+            placeholder="Field label"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-text-muted mb-1">Variable</label>
+          <Input
+            value={field.variable || ''}
+            onChange={(e) => onUpdate({ variable: e.target.value })}
+            placeholder="Variable name"
+          />
+        </div>
       </div>
 
-      {/* Variable Name */}
-      <div>
-        <label className="block text-sm font-medium text-text mb-1">Variable Name *</label>
-        <Input
-          value={field.variable || ''}
-          onChange={(e) => onUpdate({ variable: e.target.value })}
-          placeholder="Enter variable name"
-          className="w-full"
-        />
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs text-text-muted mb-1">Control Type</label>
+          <select
+            value={field.controlType || 'TEXTBOX'}
+            onChange={(e) => onUpdate({ controlType: e.target.value })}
+            className="w-full px-2 py-1 text-xs border border-border rounded bg-background text-text-muted">
+            {controlTypes.map((type: any) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-text-muted mb-1">Data Type</label>
+          <select
+            value={field.dataType || 'TEXT'}
+            onChange={(e) => onUpdate({ dataType: e.target.value })}
+            className="w-full px-2 py-1 text-xs border border-border rounded bg-background text-text-muted">
+            {dataTypes.map((type: any) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Control Type */}
-      <div>
-        <label className="block text-sm font-medium text-text mb-1">Control Type</label>
-        <select
-          value={field.controlType || 'TEXTBOX'}
-          onChange={(e) => onUpdate({ controlType: e.target.value })}
-          className="w-full px-3 py-2 border rounded-md">
-          {controlTypes.map((type: any) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Data Type */}
-      <div>
-        <label className="block text-sm font-medium text-text mb-1">Data Type</label>
-        <select
-          value={field.dataType || 'TEXT'}
-          onChange={(e) => onUpdate({ dataType: e.target.value })}
-          className="w-full px-3 py-2 border rounded-md">
-          {dataTypes.map((type: any) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Field Options */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-wrap gap-3 text-xs">
+        <label className="flex items-center gap-1">
           <input
             type="checkbox"
-            id={`required-${field.id}`}
             checked={field.isRequired || false}
             onChange={(e) => onUpdate({ isRequired: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor={`required-${field.id}`} className="text-sm font-medium text-text">
-            Required
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-2">
+          <span>Required</span>
+        </label>
+        <label className="flex items-center gap-1">
           <input
             type="checkbox"
-            id={`readonly-${field.id}`}
             checked={field.isReadOnly || false}
             onChange={(e) => onUpdate({ isReadOnly: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor={`readonly-${field.id}`} className="text-sm font-medium text-text">
-            Read Only
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-2">
+          <span>Read Only</span>
+        </label>
+        <label className="flex items-center gap-1">
           <input
             type="checkbox"
-            id={`hiddenDevice-${field.id}`}
             checked={field.isHiddenOnDevice || false}
             onChange={(e) => onUpdate({ isHiddenOnDevice: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor={`hiddenDevice-${field.id}`} className="text-sm font-medium text-text">
-            Hidden on Device
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-2">
+          <span>Hidden on Device</span>
+        </label>
+        <label className="flex items-center gap-1">
           <input
             type="checkbox"
-            id={`hiddenReport-${field.id}`}
             checked={field.isHiddenOnReport || false}
             onChange={(e) => onUpdate({ isHiddenOnReport: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor={`hiddenReport-${field.id}`} className="text-sm font-medium text-text">
-            Hidden on Report
-          </label>
-        </div>
-      </div>
-
-      {/* Sequence */}
-      <div>
-        <label className="block text-sm font-medium text-text mb-1">Sequence</label>
-        <Input
-          type="number"
-          value={field.sequence || 1}
-          onChange={(e) => onUpdate({ sequence: parseInt(e.target.value) || 1 })}
-          placeholder="Field sequence"
-          className="w-full"
-        />
+          <span>Hidden on Report</span>
+        </label>
       </div>
     </div>
   );
