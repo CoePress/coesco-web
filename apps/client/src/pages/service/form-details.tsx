@@ -1037,29 +1037,29 @@ const EditPageView = ({
                           <div
                             data-field-draggable="true"
                             data-field-index={fieldIndex}
-                            className={`p-2 bg-foreground border border-border rounded ${
+                            className={`flex items-center gap-2 p-2 bg-foreground border border-border rounded ${
                               draggedFieldId === field.id ? 'opacity-50 field-dragging' : ''
                             }`}
                           >
-                            <div className="flex items-center gap-2 mb-2">
-                              <div
-                                draggable
-                                onDragStart={(e) => handleFieldDragStart(e, field.id)}
-                                onDragEnd={handleFieldDragEnd}
-                                className="cursor-move p-1 -ml-1 hover:bg-black/10 rounded"
-                              >
-                                <GripVerticalIcon className='text-text-muted/50' size={14} />
-                              </div>
-                              <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
-                                {fieldIndex + 1}
-                              </div>
+                            <div
+                              draggable
+                              onDragStart={(e) => handleFieldDragStart(e, field.id)}
+                              onDragEnd={handleFieldDragEnd}
+                              className="cursor-move p-1 -ml-1 hover:bg-black/10 rounded"
+                            >
+                              <GripVerticalIcon className='text-text-muted/50' size={14} />
                             </div>
-                            <FieldEditor
-                              field={field}
-                              controlTypes={controlTypes}
-                              dataTypes={dataTypes}
-                              onUpdate={(updates: any) => onUpdateField(page.id, section.id, field.id, updates)}
-                            />
+                            <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
+                              {fieldIndex + 1}
+                            </div>
+                            <div className="flex-1">
+                              <FieldEditor
+                                field={field}
+                                controlTypes={controlTypes}
+                                dataTypes={dataTypes}
+                                onUpdate={(updates: any) => onUpdateField(page.id, section.id, field.id, updates)}
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1095,36 +1095,11 @@ const FieldEditor = ({ field, controlTypes, dataTypes }: any) => {
   };
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-xs text-text-muted mb-1">Field Label</label>
-          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
-            {field.label || '—'}
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-text-muted mb-1">Variable</label>
-          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
-            {field.variable || '—'}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-xs text-text-muted mb-1">Control Type</label>
-          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
-            {getControlTypeLabel(field.controlType || 'TEXTBOX')}
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-text-muted mb-1">Data Type</label>
-          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
-            {getDataTypeLabel(field.dataType || 'TEXT')}
-          </div>
-        </div>
-      </div>
+    <div className="flex items-center gap-2 text-sm">
+      <span className="font-medium">{field.label || '—'}</span>
+      <span className="text-text-muted">({field.variable || '—'})</span>
+      <span className="text-text-muted ml-4">{getControlTypeLabel(field.controlType || 'TEXTBOX')}</span>
+      <span className="text-text-muted/60">({getDataTypeLabel(field.dataType || 'TEXT')})</span>
     </div>
   );
 };
