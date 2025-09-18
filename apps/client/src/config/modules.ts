@@ -27,7 +27,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -269,6 +269,12 @@ const serviceModule: Module = {
           label: "Form Details",
           icon: FileCogIcon,
           component: FormDetails,
+        },
+        {
+          slug: ":id/build",
+          label: "Form Details",
+          icon: FileCogIcon,
+          component: FormBuilder,
         },
         {
           slug: ":id/submit",
