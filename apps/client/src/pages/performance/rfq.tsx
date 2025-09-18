@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 
 import {
@@ -24,8 +24,89 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
 
   // Use the performance data service
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldValue, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
+
+  // Required fields list
+  const requiredFields = [
+    'referenceNumber', 'rfq.dates.date', 'common.customer', 'common.customerInfo.state',
+    'common.customerInfo.streetAddress', 'common.customerInfo.zip', 'common.customerInfo.city',
+    'common.customerInfo.country', 'common.customerInfo.contactName', 'common.customerInfo.position',
+    'common.customerInfo.phoneNumber', 'common.customerInfo.email', 'common.customerInfo.dealerName',
+    'common.customerInfo.dealerSalesman', 'rfq.dates.idealDeliveryDate', 'rfq.dates.decisionDate',
+    'feed.feed.application', 'common.equipment.feed.typeOfLine', 'feed.feed.pullThru.isPullThru',
+    'rfq.runningCosmeticMaterial', 'common.coil.maxCoilWidth', 'common.coil.minCoilWidth',
+    'common.coil.maxCoilOD', 'common.coil.coilID', 'common.coil.maxCoilWeight', 'rfq.coil.slitEdge',
+    'rfq.coil.millEdge', 'rfq.coil.requireCoilCar', 'rfq.coil.runningOffBackplate',
+    'rfq.coil.requireRewinding', 'rfq.coil.changeTimeConcern', 'rfq.coil.loading',
+    'common.material.materialThickness', 'common.material.coilWidth', 'common.material.materialType',
+    'common.material.maxYieldStrength', 'rfq.press.maxSPM', 'rfq.dies.transferDies',
+    'rfq.dies.progressiveDies', 'rfq.dies.blankingDies', 'common.feedRates.average.length',
+    'common.feedRates.average.spm', 'common.feedRates.average.fpm', 'common.feedRates.max.length',
+    'common.feedRates.max.spm', 'common.feedRates.max.fpm', 'common.feedRates.min.length',
+    'common.feedRates.min.spm', 'common.feedRates.min.fpm', 'rfq.voltageRequired',
+    'rfq.equipmentSpaceLength', 'rfq.equipmentSpaceWidth', 'rfq.obstructions',
+    'common.equipment.feed.direction', 'rfq.requireGuarding'
+  ];
+
+  // Function to check if a required field is empty
+  const isRequiredFieldEmpty = useCallback((fieldName: string) => {
+    const value = getFieldValue(fieldName);
+
+    // Handle different types of empty values
+    if (value === null || value === undefined || (value as any) === '') {
+      return true;
+    }
+
+    // For strings that are just whitespace
+    if (typeof value === 'string' && (value as string).trim() === '') {
+      return true;
+    }
+
+    // For numbers that are 0, consider them as filled (0 is a valid value)
+    if (typeof value === 'number') {
+      return false;
+    }
+
+    // For checkboxes (boolean values), we need to check if they're explicitly set
+    // Since these are required checkboxes, we expect them to be true
+    if (typeof value === 'boolean') {
+      // For required checkboxes, we consider false as "empty" since they should be checked
+      const checkboxFields = [
+        'rfq.coil.slitEdge', 'rfq.coil.millEdge', 'rfq.dies.transferDies',
+        'rfq.dies.progressiveDies', 'rfq.dies.blankingDies'
+      ];
+      if (checkboxFields.includes(fieldName)) {
+        return value === false;
+      }
+      return false; // For other boolean fields, false is acceptable
+    }
+
+    return false;
+  }, [getFieldValue]);
+
+  // Function to get background color for required fields
+  const getRequiredFieldBackgroundColor = useCallback((fieldName: string) => {
+    if (!requiredFields.includes(fieldName)) {
+      return undefined; // Not a required field
+    }
+
+    // Required checkboxes should always be green to indicate they are required
+    const checkboxFields = [
+      'rfq.coil.slitEdge', 'rfq.coil.millEdge', 'rfq.dies.transferDies',
+      'rfq.dies.progressiveDies', 'rfq.dies.blankingDies'
+    ];
+
+    if (checkboxFields.includes(fieldName)) {
+      return 'success'; // Always green for required checkboxes
+    }
+
+    if (isRequiredFieldEmpty(fieldName)) {
+      return 'error'; // Red background for empty required fields
+    }
+
+    return 'success'; // Green background for filled required fields
+  }, [requiredFields, isRequiredFieldEmpty]);
 
   // Basic Information Section
   const basicInfoSection = useMemo(() => (
@@ -42,6 +123,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             error={getFieldError("referenceNumber")}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("referenceNumber")}
           />
         </div>
         <div>
@@ -52,6 +134,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.rfq?.dates?.date || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dates.date")}
           />
         </div>
       </div>
@@ -65,6 +148,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             error={fieldErrors["common.customer"]}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customer")}
           />
         </div>
         <div>
@@ -74,6 +158,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.state || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.state")}
           />
         </div>
         <div>
@@ -83,6 +168,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.streetAddress || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.streetAddress")}
           />
         </div>
         <div>
@@ -93,6 +179,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             error={fieldErrors["common.customerInfo.zip"]}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.zip")}
           />
         </div>
         <div>
@@ -102,6 +189,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.city || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.city")}
           />
         </div>
         <div>
@@ -111,6 +199,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.country || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.country")}
           />
         </div>
       </div>
@@ -123,6 +212,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.contactName || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.contactName")}
           />
         </div>
         <div>
@@ -132,6 +222,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.position || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.position")}
           />
         </div>
         <div>
@@ -142,6 +233,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             error={fieldErrors["common.customerInfo.phoneNumber"]}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.phoneNumber")}
           />
         </div>
         <div>
@@ -152,6 +244,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             error={fieldErrors["common.customerInfo.email"]}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.email")}
           />
         </div>
         <div>
@@ -161,6 +254,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.dealerName || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.dealerName")}
           />
         </div>
         <div>
@@ -170,6 +264,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.common?.customerInfo?.dealerSalesman || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.customerInfo.dealerSalesman")}
           />
         </div>
       </div>
@@ -206,6 +301,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.rfq?.dates?.decisionDate || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dates.decisionDate")}
           />
         </div>
         <div>
@@ -216,6 +312,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             value={localData.rfq?.dates?.idealDeliveryDate || ""}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dates.idealDeliveryDate")}
           />
         </div>
         <div>
@@ -257,6 +354,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={PRESS_APPLICATION_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("feed.feed.application")}
           />
         </div>
         <div>
@@ -267,6 +365,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={TYPE_OF_LINE_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.equipment.feed.typeOfLine")}
           />
         </div>
         <div>
@@ -277,6 +376,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("feed.feed.pullThru.isPullThru")}
           />
         </div>
       </div>
@@ -299,6 +399,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.runningCosmeticMaterial")}
           />
         </div>
       </div>
@@ -320,6 +421,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.coil.maxCoilWidth")}
           />
         </div>
         <div>
@@ -330,6 +432,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.coil.minCoilWidth")}
           />
         </div>
         <div>
@@ -340,6 +443,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.coil.maxCoilOD")}
           />
         </div>
         <div>
@@ -350,6 +454,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.coil.coilID")}
           />
         </div>
         <div>
@@ -360,6 +465,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.coil.maxCoilWeight")}
           />
         </div>
         <div>
@@ -382,6 +488,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             checked={localData.rfq?.coil?.slitEdge || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.slitEdge")}
           />
         </div>
         <div>
@@ -391,6 +498,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             checked={localData.rfq?.coil?.millEdge || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.millEdge")}
           />
         </div>
         <div>
@@ -401,6 +509,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.requireCoilCar")}
           />
         </div>
         <div>
@@ -411,6 +520,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.runningOffBackplate")}
           />
         </div>
       </div>
@@ -424,6 +534,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.requireRewinding")}
           />
         </div>
         <div>
@@ -434,6 +545,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.changeTimeConcern")}
           />
         </div>
         <div>
@@ -454,6 +566,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={LOADING_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.coil.loading")}
           />
         </div>
       </div>
@@ -475,6 +588,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.material.materialThickness")}
           />
         </div>
         <div>
@@ -485,6 +599,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.material.coilWidth")}
           />
         </div>
         <div>
@@ -495,6 +610,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={MATERIAL_TYPE_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.material.materialType")}
           />
         </div>
         <div>
@@ -505,6 +621,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.material.maxYieldStrength")}
           />
         </div>
         <div>
@@ -621,6 +738,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.press.maxSPM")}
           />
         </div>
         <div>
@@ -683,6 +801,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             checked={localData.rfq?.dies?.transferDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dies.transferDies")}
           />
         </div>
         <div>
@@ -692,6 +811,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             checked={localData.rfq?.dies?.progressiveDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dies.progressiveDies")}
           />
         </div>
         <div>
@@ -701,6 +821,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             checked={localData.rfq?.dies?.blankingDies || false}
             onChange={handleFieldChange}
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.dies.blankingDies")}
           />
         </div>
       </div>
@@ -724,6 +845,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.average.length")}
             />
             <Input
               label="SPM"
@@ -732,6 +854,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.average.spm")}
             />
             <Input
               label="FPM (Calculated)"
@@ -739,6 +862,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.average.fpm")}
             />
           </div>
         </div>
@@ -752,6 +876,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.max.length")}
             />
             <Input
               label="SPM"
@@ -760,6 +885,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.max.spm")}
             />
             <Input
               label="FPM (Calculated)"
@@ -767,6 +893,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.max.fpm")}
             />
           </div>
         </div>
@@ -780,6 +907,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.min.length")}
             />
             <Input
               label="SPM"
@@ -788,6 +916,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               type="number"
               disabled={!isEditing}
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.min.spm")}
             />
             <Input
               label="FPM (Calculated)"
@@ -795,6 +924,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
               value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
               disabled={true}
               className="bg-gray-50"
+              customBackgroundColor={getRequiredFieldBackgroundColor("common.feedRates.min.fpm")}
             />
           </div>
         </div>
@@ -809,6 +939,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.voltageRequired")}
           />
         </div>
       </div>
@@ -830,6 +961,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.equipmentSpaceLength")}
           />
         </div>
         <div>
@@ -840,6 +972,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             type="number"
             disabled={!isEditing}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.equipmentSpaceWidth")}
           />
         </div>
       </div>
@@ -906,18 +1039,20 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={FEED_DIRECTION_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("common.equipment.feed.direction")}
           />
         </div>
       </div>
 
       <div className="mb-6">
         <Textarea
-          label="Obstructions"
+          label="Walls/columns obstructing equipment's location?"
           name="rfq.obstructions"
           value={localData.rfq?.obstructions || ""}
           onChange={handleFieldChange}
           rows={3}
           disabled={!isEditing}
+          customBackgroundColor={getRequiredFieldBackgroundColor("rfq.obstructions")}
         />
       </div>
     </Card>
@@ -938,6 +1073,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
             options={YES_NO_OPTIONS}
+            customBackgroundColor={getRequiredFieldBackgroundColor("rfq.requireGuarding")}
           />
         </div>
       </div>

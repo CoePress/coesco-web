@@ -35,6 +35,21 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
     return { min, max };
   }, [localData.common?.coil?.minCoilWidth, localData.common?.coil?.maxCoilWidth]);
 
+  // Get background color for Type of Roll based on selected value
+  const getRollTypeBackgroundColor = useMemo(() => {
+    const rollType = localData.materialSpecs?.straightener?.rolls?.typeOfRoll;
+
+    if (rollType?.includes('7 Roll')) {
+      return 'var(--color-success)'; // Green for 7-roll
+    } else if (rollType?.includes('9 Roll')) {
+      return 'var(--color-warning)'; // Yellow for 9-roll
+    } else if (rollType?.includes('11 Roll')) {
+      return 'var(--color-info)'; // Cyan for 11-roll
+    }
+
+    return undefined; // No special color for other values
+  }, [localData.materialSpecs?.straightener?.rolls?.typeOfRoll]);
+
   // Customer and Date Section
   const customerDateSection = useMemo(() => (
     <Card className="mb-4 p-4">
@@ -236,6 +251,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           onChange={handleFieldChange}
           options={ROLL_TYPE_OPTIONS}
           disabled={!isEditing}
+          customBackgroundColor={getRollTypeBackgroundColor}
         />
         <Select
           label="Reel Backplate Type"

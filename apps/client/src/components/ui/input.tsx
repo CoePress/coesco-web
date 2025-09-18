@@ -16,7 +16,7 @@ type InputProps = {
   readOnly?: boolean;
   min?: number;
   max?: number;
-  variant?: "default" | "success" | "error" | "warning";
+  variant?: "default" | "success" | "error" | "warning" | "info";
   customBackgroundColor?: string;
 };
 
@@ -42,13 +42,15 @@ const Input = ({
   // Get CSS class for colored backgrounds based on variant or custom color
   const getColoredInputClass = () => {
     if (customBackgroundColor) {
-      // Map CSS custom properties to our theme-aware classes
-      if (customBackgroundColor.includes('--color-success')) {
+      // Map simple color names and CSS custom properties to our theme-aware classes
+      if (customBackgroundColor === 'success' || customBackgroundColor.includes('--color-success')) {
         return 'input-success';
-      } else if (customBackgroundColor.includes('--color-error')) {
+      } else if (customBackgroundColor === 'error' || customBackgroundColor.includes('--color-error')) {
         return 'input-error';
-      } else if (customBackgroundColor.includes('--color-warning')) {
+      } else if (customBackgroundColor === 'warning' || customBackgroundColor.includes('--color-warning')) {
         return 'input-warning';
+      } else if (customBackgroundColor === 'info' || customBackgroundColor.includes('--color-info')) {
+        return 'input-info';
       } else {
         // For any other custom colors, fall back to inline styles
         return null;
@@ -62,6 +64,8 @@ const Input = ({
         return 'input-error';
       case "warning":
         return 'input-warning';
+      case "info":
+        return 'input-info';
       default:
         return null;
     }
@@ -78,7 +82,7 @@ const Input = ({
     // use inline styles as fallback
     return {
       backgroundColor: customBackgroundColor,
-      color: "#ffffff" // Default to white text for custom colors
+      color: "var(--text)" // Use theme-aware text color instead of forcing white
     };
   };
 

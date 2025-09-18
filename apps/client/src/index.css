@@ -120,41 +120,283 @@ div[style*="overflow"],
   scrollbar-color: var(--border) var(--background);
 }
 
-/* Input colored state classes for better theme support */
-.input-success {
-  background-color: var(--color-success) !important;
-  color: white !important;
+/* Input, Select, and Textarea colored state classes for better theme support */
+.input-success,
+select.input-success,
+textarea.input-success {
+  background-color: rgba(5, 132, 62, 0.25) !important;
+  /* Light mode: more visible green */
+  border-color: var(--color-success) !important;
+  color: var(--text) !important;
 }
 
-.input-error {
-  background-color: var(--color-error) !important;
-  color: white !important;
+.dark .input-success,
+.dark select.input-success,
+.dark textarea.input-success {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+  /* Dark mode: subtle green */
+  border-color: var(--color-success) !important;
+  color: var(--text) !important;
 }
 
-.input-warning {
-  background-color: var(--color-warning) !important;
-  color: black !important;
+.input-error,
+select.input-error,
+textarea.input-error {
+  background-color: rgba(217, 48, 38, 0.25) !important;
+  /* Light mode: more visible red */
+  border-color: var(--color-error) !important;
+  color: var(--text) !important;
 }
 
-/* Ensure these colors work well in both light and dark themes */
-.dark .input-warning {
-  color: black !important;
-  /* Dark text on amber/orange warning color in dark mode */
+.dark .input-error,
+.dark select.input-error,
+.dark textarea.input-error {
+  background-color: rgba(244, 67, 54, 0.15) !important;
+  /* Dark mode: subtle red */
+  border-color: var(--color-error) !important;
+  color: var(--text) !important;
+}
+
+.input-warning,
+select.input-warning,
+textarea.input-warning {
+  background-color: rgba(255, 165, 0, 0.25) !important;
+  /* Light mode: more visible orange */
+  border-color: var(--color-warning) !important;
+  color: var(--text) !important;
+}
+
+.dark .input-warning,
+.dark select.input-warning,
+.dark textarea.input-warning {
+  background-color: rgba(255, 171, 0, 0.15) !important;
+  /* Dark mode: subtle orange */
+  border-color: var(--color-warning) !important;
+  color: var(--text) !important;
+}
+
+.input-info,
+select.input-info,
+textarea.input-info {
+  background-color: rgba(2, 132, 199, 0.25) !important;
+  /* Light mode: more visible blue */
+  border-color: var(--color-info) !important;
+  color: var(--text) !important;
+}
+
+.dark .input-info,
+.dark select.input-info,
+.dark textarea.input-info {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  /* Dark mode: subtle blue */
+  border-color: var(--color-info) !important;
+  color: var(--text) !important;
+}
+
+/* Checkbox colored state classes with subtle backgrounds */
+.checkbox-success {
+  background-color: rgba(5, 132, 62, 0.25) !important;
+  /* Light mode: more visible green */
+  border-color: var(--color-success) !important;
+  accent-color: var(--color-success) !important;
+}
+
+.dark .checkbox-success {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+  /* Dark mode: subtle green */
+  border-color: var(--color-success) !important;
+  accent-color: var(--color-success) !important;
+}
+
+.checkbox-error {
+  background-color: rgba(217, 48, 38, 0.25) !important;
+  /* Light mode: more visible red */
+  border-color: var(--color-error) !important;
+  accent-color: var(--color-error) !important;
+}
+
+.dark .checkbox-error {
+  background-color: rgba(244, 67, 54, 0.15) !important;
+  /* Dark mode: subtle red */
+  border-color: var(--color-error) !important;
+  accent-color: var(--color-error) !important;
+}
+
+.checkbox-warning {
+  background-color: rgba(255, 165, 0, 0.25) !important;
+  /* Light mode: more visible orange */
+  border-color: var(--color-warning) !important;
+  accent-color: var(--color-warning) !important;
+}
+
+.dark .checkbox-warning {
+  background-color: rgba(255, 171, 0, 0.15) !important;
+  /* Dark mode: subtle orange */
+  border-color: var(--color-warning) !important;
+  accent-color: var(--color-warning) !important;
+}
+
+.checkbox-info {
+  background-color: rgba(2, 132, 199, 0.25) !important;
+  /* Light mode: more visible blue */
+  border-color: var(--color-info) !important;
+  accent-color: var(--color-info) !important;
+}
+
+.dark .checkbox-info {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  /* Dark mode: subtle blue */
+  border-color: var(--color-info) !important;
+  accent-color: var(--color-info) !important;
+}
+
+/* Enhanced checkbox styling to make the colored background more visible */
+.checkbox-success,
+.checkbox-error,
+.checkbox-warning,
+.checkbox-info {
+  position: relative;
+}
+
+.checkbox-success::before,
+.checkbox-error::before,
+.checkbox-warning::before,
+.checkbox-info::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 4px;
+  z-index: -1;
+}
+
+.checkbox-success::before {
+  background-color: rgba(5, 132, 62, 0.25);
+}
+
+.dark .checkbox-success::before {
+  background-color: rgba(52, 211, 153, 0.15);
+}
+
+.checkbox-error::before {
+  background-color: rgba(217, 48, 38, 0.25);
+}
+
+.dark .checkbox-error::before {
+  background-color: rgba(244, 67, 54, 0.15);
+}
+
+/* Checkbox container background colors - more visible approach */
+.checkbox-container-success {
+  background-color: rgba(5, 132, 62, 0.25) !important;
+  border: 1px solid var(--color-success);
+}
+
+.dark .checkbox-container-success {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+  border: 1px solid var(--color-success);
+}
+
+.checkbox-container-error {
+  background-color: rgba(217, 48, 38, 0.25) !important;
+  border: 1px solid var(--color-error);
+}
+
+.dark .checkbox-container-error {
+  background-color: rgba(244, 67, 54, 0.15) !important;
+  border: 1px solid var(--color-error);
+}
+
+.checkbox-container-warning {
+  background-color: rgba(255, 165, 0, 0.25) !important;
+  border: 1px solid var(--color-warning);
+}
+
+.dark .checkbox-container-warning {
+  background-color: rgba(255, 171, 0, 0.15) !important;
+  border: 1px solid var(--color-warning);
+}
+
+.checkbox-container-info {
+  background-color: rgba(2, 132, 199, 0.25) !important;
+  border: 1px solid var(--color-info);
+}
+
+.dark .checkbox-container-info {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  border: 1px solid var(--color-info);
 }
 
 /* Handle focus states for colored inputs */
 .input-success:focus,
 .input-error:focus,
-.input-warning:focus {
+.input-warning:focus,
+.input-info:focus {
   outline: none !important;
-  box-shadow: 0 0 0 2px var(--color-primary) !important;
+  box-shadow: 0 0 0 2px var(--primary) !important;
   border-color: transparent !important;
 }
 
 /* Handle disabled states for colored inputs */
 .input-success:disabled,
 .input-error:disabled,
-.input-warning:disabled {
+.input-warning:disabled,
+.input-info:disabled {
   opacity: 0.7 !important;
   cursor: not-allowed !important;
+}
+
+/* Improved disabled checkbox styling for better visibility */
+input[type="checkbox"]:disabled {
+  opacity: 0.8 !important;
+  /* Less opacity reduction than default */
+  cursor: not-allowed !important;
+}
+
+/* Ensure disabled checkbox containers maintain some visual distinction */
+.checkbox-container-success input[type="checkbox"]:disabled,
+.checkbox-container-error input[type="checkbox"]:disabled,
+.checkbox-container-warning input[type="checkbox"]:disabled,
+.checkbox-container-info input[type="checkbox"]:disabled {
+  opacity: 0.9 !important;
+  /* Even better visibility for colored checkboxes */
+  filter: contrast(1.2) !important;
+  /* Increase contrast for check mark */
+}
+
+/* Disabled checkbox container styling using class-based approach */
+.checkbox-disabled.checkbox-container-success,
+.checkbox-disabled.checkbox-container-error,
+.checkbox-disabled.checkbox-container-warning,
+.checkbox-disabled.checkbox-container-info {
+  opacity: 0.8;
+}
+
+/* Better visibility for disabled checkboxes with enhanced contrast */
+.checkbox-disabled input[type="checkbox"] {
+  opacity: 0.85 !important;
+  filter: contrast(1.3) brightness(1.1) !important;
+}
+
+/* Ensure dropdown options are properly styled in both light and dark modes */
+select option {
+  background-color: var(--background) !important;
+  color: var(--text) !important;
+}
+
+/* Ensure colored select dropdowns have proper option styling */
+.input-success option,
+.input-error option,
+.input-warning option,
+.input-info option {
+  background-color: var(--background) !important;
+  color: var(--text) !important;
+}
+
+/* Fix for browser-specific dropdown styling */
+select {
+  color-scheme: light dark;
+  /* Helps browser apply appropriate styling */
 }
