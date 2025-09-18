@@ -63,7 +63,7 @@ export class LegacyService {
       try {
         const connectionPromise = odbc.connect(connStr);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Connection timeout after 500ms`)), 500),
+          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 1500),
         );
 
         const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
@@ -76,7 +76,7 @@ export class LegacyService {
       }
     };
 
-    // Connect to all databases in parallel with 500ms timeout each
+    // Connect to all databases in parallel with 1500ms timeout each
     const [std, job, quote] = await Promise.all([
       connectFast(stdConnStr, "STD"),
       connectFast(jobConnStr, "JOB"),
