@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Edit, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Edit, Save, X, Plus, Trash2, GripVerticalIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import {Button, Input, PageHeader, Table, Modal } from '@/components';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
@@ -9,15 +9,19 @@ import { useToast } from '@/hooks/use-toast';
 const FormDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { get, patch, post, delete: deleteRequest } = useApi<IApiResponse<any>>();
   const toast = useToast();
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [pages, setPages] = useState<any[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [draggedPageId, setDraggedPageId] = useState<string | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     type: 'page' | 'section' | 'field';
@@ -53,7 +57,10 @@ const FormDetails = () => {
       })) || [];
       setPages(pagesData);
       if (pagesData.length > 0 && !selectedPageId) {
-        setSelectedPageId(pagesData[0].id);
+        // Find the page with the lowest sequence number
+        const lowestSequencePage = pagesData.reduce((min: any, page: any) =>
+          page.sequence < min.sequence ? page : min, pagesData[0]);
+        setSelectedPageId(lowestSequencePage.id);
       }
     } else {
       const errorMessage = response?.error || "Failed to fetch form";
@@ -68,16 +75,27 @@ const FormDetails = () => {
     fetchForm();
   }, [id]);
 
+  const updateEditMode = (editing: boolean) => {
+    setIsEditing(editing);
+    const newParams = new URLSearchParams(searchParams);
+    if (editing) {
+      newParams.set('edit', 'true');
+    } else {
+      newParams.delete('edit');
+    }
+    setSearchParams(newParams);
+  };
+
   const handleSave = async () => {
     if (!id || !formData) return;
-    
+
     try {
       const updateData = {
         name: formData.name,
         description: formData.description,
         status: formData.status
       };
-      
+
       await patch(`/forms/${id}`, updateData);
 
       for (const page of pages) {
@@ -90,7 +108,10 @@ const FormDetails = () => {
           });
 
           if (section.fields && section.fields.length > 0) {
-            for (const field of section.fields) {
+            // Sort fields by sequence before saving
+            const sortedFields = [...section.fields].sort((a: any, b: any) => a.sequence - b.sequence);
+            for (let i = 0; i < sortedFields.length; i++) {
+              const field = sortedFields[i];
               await patch(`/forms/${id}/pages/${page.id}/sections/${section.id}/fields/${field.id}`, {
                 label: field.label,
                 variable: field.variable,
@@ -100,15 +121,15 @@ const FormDetails = () => {
                 isReadOnly: field.isReadOnly,
                 isHiddenOnDevice: field.isHiddenOnDevice,
                 isHiddenOnReport: field.isHiddenOnReport,
-                sequence: field.sequence
+                sequence: i + 1  // Ensure sequential numbering
               });
             }
           }
         }
       }
-      
+
       toast.success('Form updated successfully!');
-      setIsEditing(false);
+      updateEditMode(false);
       await fetchForm();
     } catch (error) {
       console.error('Save error:', error);
@@ -119,7 +140,7 @@ const FormDetails = () => {
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
+    updateEditMode(false);
     fetchForm();
   };
 
@@ -375,7 +396,86 @@ const FormDetails = () => {
     ));
   };
 
-  const updateField = (pageId: string, sectionId: string, fieldId: string, updates: any) => {
+  const handlePageDragStart = (e: React.DragEvent, pageId: string) => {
+    setDraggedPageId(pageId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handlePageDragEnd = () => {
+    setDraggedPageId(null);
+    setDropTargetIndex(null);
+  };
+
+  const handleDragOverContainer = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedPageId) return;
+
+    const container = e.currentTarget as HTMLElement;
+    const afterElement = getDragAfterElement(container, e.clientY);
+
+    if (afterElement) {
+      const index = parseInt(afterElement.getAttribute('data-index') || '0');
+      setDropTargetIndex(index);
+    } else {
+      setDropTargetIndex(pages.length);
+    }
+  };
+
+  const getDragAfterElement = (container: HTMLElement, y: number) => {
+    const draggableElements = [...container.querySelectorAll('[data-draggable="true"]:not(.dragging)')];
+
+    return draggableElements.reduce<{ offset: number; element: HTMLElement | null }>((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child as HTMLElement };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+  };
+
+  const handlePageDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (!draggedPageId || !id) return;
+
+    const draggedIndex = pages.findIndex(p => p.id === draggedPageId);
+    if (draggedIndex === -1 || draggedIndex === dropIndex) {
+      setDraggedPageId(null);
+      setDropTargetIndex(null);
+      return;
+    }
+
+    const newPages = [...pages];
+    const [draggedPage] = newPages.splice(draggedIndex, 1);
+    const actualDropIndex = dropIndex > draggedIndex ? dropIndex - 1 : dropIndex;
+    newPages.splice(actualDropIndex, 0, draggedPage);
+
+    const updatedPages = newPages.map((page, index) => ({
+      ...page,
+      sequence: index + 1
+    }));
+
+    setPages(updatedPages);
+    setDraggedPageId(null);
+    setDropTargetIndex(null);
+
+    try {
+      for (const page of updatedPages) {
+        await patch(`/forms/${id}/pages/${page.id}`, { sequence: page.sequence });
+      }
+      toast.success('Page order updated successfully!');
+    } catch (error) {
+      console.error('Failed to update page order:', error);
+      toast.error('Failed to update page order');
+      // Revert on error
+      await fetchForm();
+    }
+  };
+
+  const updateField = (pageId: string, sectionId: string, fieldId: string | null, updates: any) => {
     setPages(pages.map(page =>
       page.id === pageId
         ? {
@@ -384,9 +484,12 @@ const FormDetails = () => {
               section.id === sectionId
                 ? {
                     ...section,
-                    fields: section.fields?.map((field: any) =>
-                      field.id === fieldId ? { ...field, ...updates } : field
-                    ) || []
+                    // If fieldId is null and updates contains fields array, replace all fields
+                    fields: fieldId === null && updates.fields
+                      ? updates.fields
+                      : section.fields?.map((field: any) =>
+                          field.id === fieldId ? { ...field, ...updates } : field
+                        ) || []
                   }
                 : section
             )
@@ -434,8 +537,8 @@ const FormDetails = () => {
       <div className="flex gap-2">
         {!isEditing ? (
           <>
-            <Button 
-              onClick={() => setIsEditing(true)}
+            <Button
+              onClick={() => updateEditMode(true)}
               variant='secondary-outline'
             >
               <Edit size={16} />
@@ -507,8 +610,8 @@ const FormDetails = () => {
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <div className="flex-1 overflow-hidden">
           {isEditing ? (
-            <div className="flex h-full">
-              <div className="w-64 border-r border-border bg-foreground">
+            <div className="flex h-full gap-2">
+              <div className="w-64 border border-border rounded-sm bg-foreground">
                 <div className="p-2 border-b flex items-center justify-between">
                   <h3 className="text-sm text-text-muted">Pages</h3>
                   <Button
@@ -519,20 +622,69 @@ const FormDetails = () => {
                     <Plus size={14} />
                   </Button>
                 </div>
-                <div className="p-2 space-y-1">
-                  {pages.map((page) => (
-                    <button
-                      key={page.id}
-                      onClick={() => setSelectedPageId(page.id)}
-                      className={`w-full text-left px-2 py-2 text-sm rounded transition-colors truncate cursor-pointer ${
-                        selectedPageId === page.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-surface text-text-muted'
-                      }`}
-                    >
-                      {page.title}
-                    </button>
+                <div
+                  className="p-2"
+                  onDragOver={handleDragOverContainer}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dropTargetIndex !== null) {
+                      handlePageDrop(e, dropTargetIndex);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setDropTargetIndex(null);
+                    }
+                  }}
+                >
+                  {pages.sort((a, b) => a.sequence - b.sequence).map((page, index) => (
+                    <div key={page.id}>
+                      <div
+                        className={`h-1 transition-all duration-200 ${
+                          dropTargetIndex === index
+                            ? 'bg-primary opacity-60'
+                            : 'bg-transparent'
+                        }`}
+                      />
+
+                      <div
+                        data-draggable="true"
+                        data-index={index}
+                        className={`w-full flex items-center text-left text-sm rounded transition-all ${
+                          selectedPageId === page.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-surface text-text-muted'
+                        } ${
+                          draggedPageId === page.id
+                            ? 'opacity-50 dragging'
+                            : ''
+                        }`}
+                      >
+                        <div
+                          draggable
+                          onDragStart={(e) => handlePageDragStart(e, page.id)}
+                          onDragEnd={handlePageDragEnd}
+                          className="cursor-move p-2 -ml-2 hover:bg-black/10"
+                        >
+                          <GripVerticalIcon className='text-text-muted/50' size={16} />
+                        </div>
+                        <button
+                          onClick={() => setSelectedPageId(page.id)}
+                          className="flex-1 text-left py-2 pr-2 truncate cursor-pointer"
+                        >
+                          {page.title}
+                        </button>
+                      </div>
+                    </div>
                   ))}
+
+                  <div
+                    className={`h-1 transition-all duration-200 ${
+                      dropTargetIndex === pages.length
+                        ? 'bg-primary opacity-60'
+                        : 'bg-transparent'
+                    }`}
+                  />
                 </div>
               </div>
 
@@ -552,6 +704,8 @@ const FormDetails = () => {
                     onUpdateField={updateField}
                     controlTypes={controlTypes}
                     dataTypes={dataTypes}
+                    collapsedSections={collapsedSections}
+                    setCollapsedSections={setCollapsedSections}
                   />
                 )}
               </div>
@@ -580,7 +734,7 @@ const FormDetails = () => {
                 header: 'Variable'
               }
             ]}
-            data={pages.flatMap((page, pageIndex) => [
+            data={pages.sort((a, b) => a.sequence - b.sequence).flatMap((page, pageIndex) => [
               {
                 id: `page-${page.id}`,
                 isPage: true,
@@ -593,7 +747,7 @@ const FormDetails = () => {
                 variable: '',
                 dividerClass: 'bg-primary'
               },
-              ...page.sections.flatMap((section: any, sectionIndex: any) => [
+              ...(page.sections || []).sort((a: any, b: any) => a.sequence - b.sequence).flatMap((section: any, sectionIndex: any) => [
                 {
                   id: `section-${section.id}`,
                   isSection: true,
@@ -607,7 +761,7 @@ const FormDetails = () => {
                   variable: '',
                   dividerClass: 'bg-primary/20'
                 },
-                ...(section.fields?.map((field: any) => ({
+                ...((section.fields || []).sort((a: any, b: any) => a.sequence - b.sequence).map((field: any) => ({
                   ...field,
                   isField: true
                 })) || [])
@@ -623,7 +777,6 @@ const FormDetails = () => {
 
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteModal && (
         <Modal
           isOpen={deleteModal.isOpen}
@@ -669,11 +822,87 @@ const EditPageView = ({
   onUpdateSectionTitle,
   onUpdateSectionDescription,
   onAddField,
-  onRemoveField,
   onUpdateField,
   controlTypes,
-  dataTypes
+  dataTypes,
+  collapsedSections,
+  setCollapsedSections
 }: any) => {
+  const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
+  const [fieldDropTargetIndex, setFieldDropTargetIndex] = useState<{ sectionId: string; index: number } | null>(null);
+
+  const handleFieldDragStart = (e: React.DragEvent, fieldId: string) => {
+    setDraggedFieldId(fieldId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleFieldDragEnd = () => {
+    setDraggedFieldId(null);
+    setFieldDropTargetIndex(null);
+  };
+
+  const handleFieldDragOver = (e: React.DragEvent, sectionId: string) => {
+    e.preventDefault();
+    if (!draggedFieldId) return;
+
+    const container = e.currentTarget as HTMLElement;
+    const afterElement = getDragAfterElement(container, e.clientY);
+    const section = page.sections.find((s: any) => s.id === sectionId);
+
+    if (afterElement) {
+      const index = parseInt(afterElement.getAttribute('data-field-index') || '0');
+      setFieldDropTargetIndex({ sectionId, index });
+    } else {
+      setFieldDropTargetIndex({ sectionId, index: section?.fields?.length || 0 });
+    }
+  };
+
+  const getDragAfterElement = (container: HTMLElement, y: number) => {
+    const draggableElements = [...container.querySelectorAll('[data-field-draggable="true"]:not(.field-dragging)')];
+
+    return draggableElements.reduce<{ offset: number; element: HTMLElement | null }>((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child as HTMLElement };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+  };
+
+  const handleFieldDrop = async (e: React.DragEvent, sectionId: string, dropIndex: number) => {
+    e.preventDefault();
+
+    if (!draggedFieldId) return;
+
+    const section = page.sections.find((s: any) => s.id === sectionId);
+    if (!section) return;
+
+    const draggedIndex = section.fields.findIndex((f: any) => f.id === draggedFieldId);
+    if (draggedIndex === -1 || draggedIndex === dropIndex) {
+      setDraggedFieldId(null);
+      setFieldDropTargetIndex(null);
+      return;
+    }
+
+    const newFields = [...section.fields];
+    const [draggedField] = newFields.splice(draggedIndex, 1);
+    const actualDropIndex = dropIndex > draggedIndex ? dropIndex - 1 : dropIndex;
+    newFields.splice(actualDropIndex, 0, draggedField);
+
+    const updatedFields = newFields.map((field, index) => ({
+      ...field,
+      sequence: index + 1
+    }));
+
+    // Update local state
+    onUpdateField(page.id, sectionId, null, { fields: updatedFields });
+
+    setDraggedFieldId(null);
+    setFieldDropTargetIndex(null);
+  };
   return (
     <div className="bg-foreground rounded border border-border flex flex-col h-full">
       <div className="p-2 border-b flex items-center justify-between">
@@ -719,8 +948,26 @@ const EditPageView = ({
           <div className="space-y-2">
             {page.sections.map((section: any, sectionIndex: any) => (
               <div key={section.id} className="bg-surface border border-border rounded">
-                <div className="p-2 border-b flex items-center justify-between">
+                <div className={`p-2 ${!collapsedSections.has(section.id) ? 'border-b' : ''} flex items-center justify-between`}>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const newCollapsed = new Set(collapsedSections);
+                        if (newCollapsed.has(section.id)) {
+                          newCollapsed.delete(section.id);
+                        } else {
+                          newCollapsed.add(section.id);
+                        }
+                        setCollapsedSections(newCollapsed);
+                      }}
+                      className="p-1 hover:bg-black/10 rounded cursor-pointer"
+                    >
+                      {collapsedSections.has(section.id) ? (
+                        <ChevronRight size={14} className="text-text-muted" />
+                      ) : (
+                        <ChevronDown size={14} className="text-text-muted" />
+                      )}
+                    </button>
                     <span className="text-xs text-text-muted">Section {sectionIndex + 1}</span>
                     <button
                       onClick={() => onRemoveSection(page.id, section.id)}
@@ -738,19 +985,20 @@ const EditPageView = ({
                   </Button>
                 </div>
 
-                <div className="p-2 space-y-2">
-                  <Input
-                    value={section.title}
-                    onChange={(e) => onUpdateSectionTitle(page.id, section.id, e.target.value)}
-                    placeholder="Section title"
-                  />
-                  <Input
-                    value={section.description || ''}
-                    onChange={(e) => onUpdateSectionDescription(page.id, section.id, e.target.value)}
-                    placeholder="Section description (optional)"
-                  />
+                {!collapsedSections.has(section.id) && (
+                  <div className="p-2 pb-1 space-y-2">
+                    <Input
+                      value={section.title}
+                      onChange={(e) => onUpdateSectionTitle(page.id, section.id, e.target.value)}
+                      placeholder="Section title"
+                    />
+                    <Input
+                      value={section.description || ''}
+                      onChange={(e) => onUpdateSectionDescription(page.id, section.id, e.target.value)}
+                      placeholder="Section description (optional)"
+                    />
 
-                  {(!section.fields || section.fields.length === 0) ? (
+                    {(!section.fields || section.fields.length === 0) ? (
                     <div className="text-center py-4 border-2 border-dashed border-border rounded">
                       <div className="text-text-muted text-xs mb-2">No fields in this section yet</div>
                       <Button
@@ -762,13 +1010,50 @@ const EditPageView = ({
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {section.fields.map((field: any, fieldIndex: any) => (
-                        <div key={field.id} className="flex items-start gap-2 p-2 bg-foreground border border-border rounded">
-                          <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium flex-shrink-0">
-                            {fieldIndex + 1}
-                          </div>
-                          <div className="flex-1">
+                    <div
+                      className="space-y-0"
+                      onDragOver={(e) => handleFieldDragOver(e, section.id)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (fieldDropTargetIndex?.sectionId === section.id) {
+                          handleFieldDrop(e, section.id, fieldDropTargetIndex?.index || -1);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setFieldDropTargetIndex(null);
+                        }
+                      }}
+                    >
+                      {section.fields.sort((a: any, b: any) => a.sequence - b.sequence).map((field: any, fieldIndex: any) => (
+                        <div key={field.id}>
+                          <div
+                            className={`h-1 transition-all duration-200 ${
+                              fieldDropTargetIndex?.sectionId === section.id && fieldDropTargetIndex?.index === fieldIndex
+                                ? 'bg-primary opacity-60'
+                                : 'bg-transparent'
+                            }`}
+                          />
+                          <div
+                            data-field-draggable="true"
+                            data-field-index={fieldIndex}
+                            className={`p-2 bg-foreground border border-border rounded ${
+                              draggedFieldId === field.id ? 'opacity-50 field-dragging' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <div
+                                draggable
+                                onDragStart={(e) => handleFieldDragStart(e, field.id)}
+                                onDragEnd={handleFieldDragEnd}
+                                className="cursor-move p-1 -ml-1 hover:bg-black/10 rounded"
+                              >
+                                <GripVerticalIcon className='text-text-muted/50' size={14} />
+                              </div>
+                              <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
+                                {fieldIndex + 1}
+                              </div>
+                            </div>
                             <FieldEditor
                               field={field}
                               controlTypes={controlTypes}
@@ -776,17 +1061,19 @@ const EditPageView = ({
                               onUpdate={(updates: any) => onUpdateField(page.id, section.id, field.id, updates)}
                             />
                           </div>
-                          <button
-                            onClick={() => onRemoveField(page.id, section.id, field.id)}
-                            className="text-error hover:text-error/80 p-1 rounded flex-shrink-0 cursor-pointer"
-                          >
-                            <Trash2 size={14} />
-                          </button>
                         </div>
                       ))}
+                      <div
+                        className={`h-1 transition-all duration-200 ${
+                          fieldDropTargetIndex?.sectionId === section.id && fieldDropTargetIndex?.index === section.fields.length
+                            ? 'bg-primary opacity-60'
+                            : 'bg-transparent'
+                        }`}
+                      />
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -796,94 +1083,47 @@ const EditPageView = ({
   );
 };
 
-const FieldEditor = ({ field, controlTypes, dataTypes, onUpdate }: any) => {
+const FieldEditor = ({ field, controlTypes, dataTypes }: any) => {
+  const getControlTypeLabel = (value: string) => {
+    const type = controlTypes.find((t: any) => t.value === value);
+    return type ? type.label : value;
+  };
+
+  const getDataTypeLabel = (value: string) => {
+    const type = dataTypes.find((t: any) => t.value === value);
+    return type ? type.label : value;
+  };
+
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs text-text-muted mb-1">Field Label</label>
-          <Input
-            value={field.label || ''}
-            onChange={(e) => onUpdate({ label: e.target.value })}
-            placeholder="Field label"
-          />
+          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
+            {field.label || '—'}
+          </div>
         </div>
         <div>
           <label className="block text-xs text-text-muted mb-1">Variable</label>
-          <Input
-            value={field.variable || ''}
-            onChange={(e) => onUpdate({ variable: e.target.value })}
-            placeholder="Variable name"
-          />
+          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
+            {field.variable || '—'}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs text-text-muted mb-1">Control Type</label>
-          <select
-            value={field.controlType || 'TEXTBOX'}
-            onChange={(e) => onUpdate({ controlType: e.target.value })}
-            className="w-full px-2 py-1 text-xs border border-border rounded bg-background text-text-muted">
-            {controlTypes.map((type: any) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
+            {getControlTypeLabel(field.controlType || 'TEXTBOX')}
+          </div>
         </div>
         <div>
           <label className="block text-xs text-text-muted mb-1">Data Type</label>
-          <select
-            value={field.dataType || 'TEXT'}
-            onChange={(e) => onUpdate({ dataType: e.target.value })}
-            className="w-full px-2 py-1 text-xs border border-border rounded bg-background text-text-muted">
-            {dataTypes.map((type: any) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          <div className="px-2 py-1 text-sm border border-border rounded bg-background/50 text-text">
+            {getDataTypeLabel(field.dataType || 'TEXT')}
+          </div>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3 text-xs">
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
-            checked={field.isRequired || false}
-            onChange={(e) => onUpdate({ isRequired: e.target.checked })}
-            className="rounded"
-          />
-          <span>Required</span>
-        </label>
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
-            checked={field.isReadOnly || false}
-            onChange={(e) => onUpdate({ isReadOnly: e.target.checked })}
-            className="rounded"
-          />
-          <span>Read Only</span>
-        </label>
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
-            checked={field.isHiddenOnDevice || false}
-            onChange={(e) => onUpdate({ isHiddenOnDevice: e.target.checked })}
-            className="rounded"
-          />
-          <span>Hidden on Device</span>
-        </label>
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
-            checked={field.isHiddenOnReport || false}
-            onChange={(e) => onUpdate({ isHiddenOnReport: e.target.checked })}
-            className="rounded"
-          />
-          <span>Hidden on Report</span>
-        </label>
       </div>
     </div>
   );
