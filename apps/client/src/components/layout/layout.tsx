@@ -10,7 +10,7 @@ import { __dev__ } from "@/config/env";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../feature/command-bar";
 import ToastContainer from "@/components/ui/toast-container";
-import { useToast } from "@/contexts/toast.context";
+import { useToast } from "@/hooks/use-toast";
 import Modal from "@/components/ui/modal";
 import BugReportForm from "@/components/forms/bug-report-form";
 
