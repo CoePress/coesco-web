@@ -28,7 +28,7 @@ const Contacts = () => {
 
   const getContactTypeName = (type: string) => {
     switch (type?.toUpperCase()) {
-      case 'A': return 'Administrative';
+      case 'A': return 'Accounting';
       case 'E': return 'Engineering';
       case 'S': return 'Sales';
       default: return type || 'Unknown';
@@ -467,6 +467,90 @@ const ContactsMapView = ({
   const [mapView, setMapView] = useState({ center: [39.8283, -98.5795], zoom: 4 });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Cache for postal code coordinates to avoid redundant API calls
+  const postalCodeCacheRef = useRef<Map<string, [number, number] | null>>(new Map());
+  const geocodeCache = useRef<Map<string, [number, number]>>(new Map());
+
+  // Fallback coordinate computation (no API calls)
+  const computeFallbackCoordinates = (address: any): [number, number] => {
+    // Major city coordinates for fallback positioning
+    const majorCities: Record<string, [number, number]> = {
+      'NEW YORK': [40.7128, -74.0060], 'LOS ANGELES': [34.0522, -118.2437], 'CHICAGO': [41.8781, -87.6298],
+      'HOUSTON': [29.7604, -95.3698], 'PHOENIX': [33.4484, -112.0740], 'PHILADELPHIA': [39.9526, -75.1652],
+      'SAN ANTONIO': [29.4241, -98.4936], 'SAN DIEGO': [32.7157, -117.1611], 'DALLAS': [32.7767, -96.7970],
+      'TORONTO': [43.6532, -79.3832], 'MONTREAL': [45.5017, -73.5673], 'VANCOUVER': [49.2827, -123.1207],
+    };
+
+    // State/province center coordinates
+    const stateCoords: Record<string, [number, number]> = {
+      'CA': [36.116203, -119.681564], 'TX': [31.054487, -97.563461], 'NY': [42.165726, -74.948051],
+      'FL': [27.766279, -81.686783], 'IL': [40.349457, -88.986137], 'ON': [51.253775, -85.323214],
+    };
+
+    const state = (address.State || address.state || address.stateProvince || '').toUpperCase();
+    const city = (address.City || address.city || '').toUpperCase();
+
+    // Try city lookup first
+    if (city && majorCities[city]) {
+      return majorCities[city];
+    }
+    // Fall back to state/province center
+    else if (state && stateCoords[state]) {
+      return stateCoords[state];
+    }
+
+    // Default to US center
+    return [39.8283, -98.5795];
+  };
+
+  // Batch postal code lookup to reduce API calls
+  const batchLookupPostalCodes = async (postalCodes: Array<{country: string, postalCode: string}>) => {
+    const uniqueCodes = [...new Set(postalCodes.map(p => `${p.country}_${p.postalCode}`))];
+    const uncachedCodes = uniqueCodes.filter(key => !postalCodeCacheRef.current.has(key));
+    
+    if (uncachedCodes.length === 0) return;
+    
+    // Process in smaller batches to avoid overwhelming the API
+    const batchSize = 10;
+    for (let i = 0; i < uncachedCodes.length; i += batchSize) {
+      const batch = uncachedCodes.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (key) => {
+        const [country, postalCode] = key.split('_');
+        const cacheKey = `${country}_${postalCode}`;
+        
+        if (postalCodeCacheRef.current.has(cacheKey)) return;
+        
+        try {
+          const response = await fetch(`http://localhost:8080/api/postal-codes/coordinates/${country}/${postalCode}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              postalCodeCacheRef.current.set(cacheKey, [result.data.latitude, result.data.longitude]);
+            } else {
+              postalCodeCacheRef.current.set(cacheKey, null);
+            }
+          } else {
+            postalCodeCacheRef.current.set(cacheKey, null);
+          }
+        } catch (error) {
+          console.log('Batch postal code lookup failed for', key, ':', error);
+          postalCodeCacheRef.current.set(cacheKey, null);
+        }
+      }));
+      
+      // Small delay between batches to be nice to the API
+      if (i + batchSize < uncachedCodes.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+  };
 
   // Load addresses when map view is opened (only once)
   useEffect(() => {
@@ -594,15 +678,76 @@ const ContactsMapView = ({
   useEffect(() => {
     if (!mapContainerRef.current || contactsWithAddresses.length === 0 || !isInitialLoad) return;
 
-    // Use all contacts data for initial map creation
-    const contactsData = contactsWithAddresses.filter(item => 
-      item.address && (item.address.City || item.address.city) && (item.address.State || item.address.state || item.address.stateProvince)
-    );
+    const initializeMapWithPreloadedData = async () => {
+      // Use all contacts data for initial map creation
+      const contactsData = contactsWithAddresses.filter(item => 
+        item.address && (item.address.City || item.address.city) && (item.address.State || item.address.state || item.address.stateProvince)
+      );
 
-    console.log('ContactsMapView: Creating map with filtered contacts:', contactsData.length);
-    console.log('ContactsMapView: Total contacts with addresses:', contactsWithAddresses.length);
-    console.log('ContactsMapView: Sample filtered contact for map:', contactsData[0]);
-    console.log('ContactsMapView: Sample address from filtered contact:', contactsData[0]?.address);
+      // Pre-load postal code coordinates for all contacts
+      const normalizeCountryCode = (country: string) => {
+        if (!country) return 'US';
+        const normalized = country.toUpperCase().trim();
+        switch (normalized) {
+          case 'USA':
+          case 'UNITED STATES':
+          case 'UNITED STATES OF AMERICA':
+            return 'US';
+          case 'CANADA':
+          case 'CAN':
+            return 'CA';
+          case 'MEXICO':
+          case 'MEX':
+            return 'MX';
+          default:
+            return normalized.length === 2 ? normalized : 'US';
+        }
+      };
+
+      const postalCodesToLookup = contactsData.map(item => {
+        const address = item.address;
+        const zipCode = (address.ZipCode || address.zipCode || address.postalCode || '').replace(/[^A-Z0-9]/g, '');
+        const country = normalizeCountryCode(address.Country || address.country);
+        return { country, postalCode: zipCode };
+      }).filter(p => p.postalCode);
+
+      // Batch lookup all postal codes before creating the map
+      await batchLookupPostalCodes(postalCodesToLookup);
+
+      // Pre-compute all coordinates to avoid API calls in the map
+      const contactsWithCoordinates = contactsData.map(item => {
+        const address = item.address;
+        const zipCode = (address.ZipCode || address.zipCode || address.postalCode || '').replace(/[^A-Z0-9]/g, '');
+        const country = normalizeCountryCode(address.Country || address.country);
+        const cacheKey = `${country}_${zipCode}`;
+        
+        // Get coordinates from cache (postal code API result) - use exact coordinates without spread
+        let coords = postalCodeCacheRef.current.get(cacheKey);
+        
+        // If no postal code coords, use geocode cache or compute fallback
+        if (!coords) {
+          const geocodeKey = JSON.stringify({
+            city: address.City || address.city,
+            state: address.State || address.state || address.stateProvince,
+            country: country,
+            zipCode: zipCode
+          });
+          
+          coords = geocodeCache.current.get(geocodeKey);
+          if (!coords) {
+            coords = computeFallbackCoordinates(address);
+            geocodeCache.current.set(geocodeKey, coords);
+          }
+        }
+        
+        return {
+          ...item,
+          coordinates: coords
+        };
+      });
+
+    console.log('ContactsMapView: Creating map with pre-computed coordinates:', contactsWithCoordinates.length);
+    console.log('ContactsMapView: Postal code cache size:', postalCodeCacheRef.current.size);
 
     const mapHTML = `
 <!DOCTYPE html>
@@ -636,10 +781,10 @@ const ContactsMapView = ({
             font-weight: bold;
             margin-bottom: 5px;
         }
-        .contact-popup .type-admin { background: #e3f2fd; color: #1976d2; }
-        .contact-popup .type-engineering { background: #e8f5e8; color: #388e3c; }
-        .contact-popup .type-sales { background: #fff3e0; color: #f57c00; }
-        .contact-popup .type-unknown { background: #f5f5f5; color: #757575; }
+        .contact-popup .type-a { background: #e3f2fd; color: #1976d2; }
+        .contact-popup .type-e { background: #e8f5e8; color: #388e3c; }
+        .contact-popup .type-s { background: #fff3e0; color: #f57c00; }
+        .contact-popup .type-default { background: #f5f5f5; color: #757575; }
     </style>
 </head>
 <body>
@@ -683,19 +828,19 @@ const ContactsMapView = ({
             }, 250); // Debounce to avoid too many updates
         });
 
-        // Contact data
-        const contactsData = ${JSON.stringify(contactsData)};
+        // Contact data with pre-computed coordinates (no API calls needed)
+        const contactsData = ${JSON.stringify(contactsWithCoordinates)};
         
         // Color palette for different contact types
         const typeColors = {
-            'A': '#1976d2', // Admin - Blue
+            'A': '#1976d2', // Accounting - Blue
             'E': '#388e3c', // Engineering - Green  
             'S': '#f57c00', // Sales - Orange
             'default': '#757575' // Unknown - Gray
         };
 
         const typeLabels = {
-            'A': 'Administrative',
+            'A': 'Accounting',
             'E': 'Engineering',
             'S': 'Sales',
             'default': 'Unknown'
@@ -734,203 +879,10 @@ const ContactsMapView = ({
             }
         }
 
-        // Function to get coordinates from postal code API
-        async function getCoordinatesFromPostalCodeAPI(address) {
-            // Handle both legacy address format and Address table format
-            const zipCode = (address.ZipCode || address.zipCode || address.postalCode || '').replace(/[^A-Z0-9]/g, '');
-            const country = normalizeCountryCode(address.Country || address.country);
-            
-            if (!zipCode) return null;
-            
-            try {
-                // Try to get coordinates from our postal code database
-                const response = await fetch(\`http://localhost:8080/api/postal-codes/coordinates/\${country}/\${zipCode}\`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success && result.data) {
-                        return [result.data.latitude, result.data.longitude];
-                    }
-                }
-            } catch (error) {
-                console.log('PostalCode API lookup failed for', zipCode, ':', error.message);
-            }
-            
-            return null;
-        }
-
-        // Enhanced geocoding using ZIP codes and city data for more accurate positioning
-        async function getCoordinatesFromAddress(address, contactId) {
-            // First, try to get exact coordinates from our postal code database
-            const apiCoords = await getCoordinatesFromPostalCodeAPI(address);
-            if (apiCoords) {
-                // Add small random offset to prevent exact overlap
-                const hash = simpleHash(contactId + (address.Address1 || address.addressLine1 || ''));
-                const offsetLat = ((hash % 1000) / 50000) - 0.01; // Very small offset (~0.01 degrees, ~0.7 miles)
-                const offsetLng = (((hash >> 10) % 1000) / 50000) - 0.01;
-                
-                return [
-                    apiCoords[0] + offsetLat,
-                    apiCoords[1] + offsetLng
-                ];
-            }
-            
-            // Fallback to existing geocoding logic
-            // Major city coordinates for more accurate positioning
-            const majorCities = {
-                // US Major Cities
-                'NEW YORK': [40.7128, -74.0060], 'LOS ANGELES': [34.0522, -118.2437], 'CHICAGO': [41.8781, -87.6298],
-                'HOUSTON': [29.7604, -95.3698], 'PHOENIX': [33.4484, -112.0740], 'PHILADELPHIA': [39.9526, -75.1652],
-                'SAN ANTONIO': [29.4241, -98.4936], 'SAN DIEGO': [32.7157, -117.1611], 'DALLAS': [32.7767, -96.7970],
-                'SAN JOSE': [37.3382, -121.8863], 'AUSTIN': [30.2672, -97.7431], 'JACKSONVILLE': [30.3322, -81.6557],
-                'FORT WORTH': [32.7555, -97.3308], 'COLUMBUS': [39.9612, -82.9988], 'SAN FRANCISCO': [37.7749, -122.4194],
-                'CHARLOTTE': [35.2271, -80.8431], 'INDIANAPOLIS': [39.7684, -86.1581], 'SEATTLE': [47.6062, -122.3321],
-                'DENVER': [39.7392, -104.9903], 'BOSTON': [42.3601, -71.0589], 'EL PASO': [31.7619, -106.4850],
-                'DETROIT': [42.3314, -83.0458], 'NASHVILLE': [36.1627, -86.7816], 'PORTLAND': [45.5152, -122.6784],
-                'MEMPHIS': [35.1495, -90.0490], 'OKLAHOMA CITY': [35.4676, -97.5164], 'LAS VEGAS': [36.1699, -115.1398],
-                'LOUISVILLE': [38.2027, -85.7585], 'BALTIMORE': [39.2904, -76.6122], 'MILWAUKEE': [43.0389, -87.9065],
-                'ALBUQUERQUE': [35.0844, -106.6504], 'TUCSON': [32.2226, -110.9747], 'FRESNO': [36.7378, -119.7871],
-                'MESA': [33.4152, -111.8315], 'SACRAMENTO': [38.5816, -121.4944], 'ATLANTA': [33.7490, -84.3880],
-                'KANSAS CITY': [39.0997, -94.5786], 'COLORADO SPRINGS': [38.8339, -104.8214], 'MIAMI': [25.7617, -80.1918],
-                'RALEIGH': [35.7796, -78.6382], 'OMAHA': [41.2565, -95.9345], 'LONG BEACH': [33.7701, -118.1937],
-                'VIRGINIA BEACH': [36.8529, -75.9780], 'OAKLAND': [37.8044, -122.2712], 'MINNEAPOLIS': [44.9778, -93.2650],
-                'TULSA': [36.1540, -95.9928], 'TAMPA': [27.9506, -82.4572], 'ARLINGTON': [32.7357, -97.1081],
-                'NEW ORLEANS': [29.9511, -90.0715], 'WICHITA': [37.6872, -97.3301], 'CLEVELAND': [41.4993, -81.6944],
-                // Canada Major Cities
-                'TORONTO': [43.6532, -79.3832], 'MONTREAL': [45.5017, -73.5673], 'VANCOUVER': [49.2827, -123.1207],
-                'CALGARY': [51.0447, -114.0719], 'EDMONTON': [53.5461, -113.4938], 'OTTAWA': [45.4215, -75.6972],
-                'WINNIPEG': [49.8951, -97.1384], 'QUEBEC CITY': [46.8139, -71.2080], 'HAMILTON': [43.2557, -79.8711],
-                'KITCHENER': [43.4516, -80.4925], 'LONDON': [42.9849, -81.2453], 'HALIFAX': [44.6488, -63.5752]
-            };
-
-            // ZIP code to coordinate mapping for more precise locations (sample of common ZIP codes)
-            const zipCoords = {
-                // New York area
-                '10001': [40.7505, -73.9934], '10002': [40.7158, -73.9864], '10003': [40.7316, -73.9890],
-                '10004': [40.6890, -74.0165], '10005': [40.7063, -74.0086], '10006': [40.7084, -74.0123],
-                // Los Angeles area
-                '90210': [34.0901, -118.4065], '90211': [34.0837, -118.4001], '90212': [34.1030, -118.4171],
-                '90401': [34.0195, -118.4912], '90402': [34.0236, -118.4804], '90403': [34.0112, -118.4958],
-                // Chicago area
-                '60601': [41.8825, -87.6232], '60602': [41.8796, -87.6312], '60603': [41.8739, -87.6298],
-                '60604': [41.8781, -87.6298], '60605': [41.8708, -87.6172], '60606': [41.8781, -87.6387],
-                // Houston area
-                '77001': [29.7320, -95.3983], '77002': [29.7549, -95.3694], '77003': [29.7405, -95.3444],
-                '77004': [29.7085, -95.3833], '77005': [29.7199, -95.4032], '77006': [29.7405, -95.3902],
-                // Miami area
-                '33101': [25.7839, -80.2102], '33102': [25.7879, -80.2264], '33109': [25.8659, -80.1204],
-                '33111': [25.6837, -80.3155], '33112': [25.7906, -80.3245], '33114': [25.6903, -80.3155],
-                // Texas major cities
-                '75201': [32.7831, -96.8067], '75202': [32.7831, -96.7967], '78701': [30.2691, -97.7431],
-                // California
-                '94102': [37.7849, -122.4094], '94103': [37.7699, -122.4103], '90028': [34.0969, -118.3267],
-                // Canada postal codes (sample)
-                'M5V': [43.6426, -79.3871], 'H3A': [45.5048, -73.5747], 'V6B': [49.2827, -123.1207]
-            };
-
-            const state = (address.State || address.state || address.stateProvince || '').toUpperCase();
-            const city = (address.City || address.city || '').toUpperCase();
-            const zipCode = (address.ZipCode || address.zipCode || address.postalCode || '').replace(/[^A-Z0-9]/g, '');
-            const country = normalizeCountryCode(address.Country || address.country);
-
-            let baseCoords = null;
-
-            // 1. Try ZIP/Postal code lookup first (most accurate)
-            if (zipCode) {
-                // For US ZIP codes, try full 5-digit match first
-                if (country === 'US' && zipCode.length >= 5) {
-                    const zip5 = zipCode.substring(0, 5);
-                    if (zipCoords[zip5]) {
-                        baseCoords = zipCoords[zip5];
-                    }
-                }
-                // For Canada, try first 3 characters of postal code
-                else if (country === 'CA' && zipCode.length >= 3) {
-                    const postal3 = zipCode.substring(0, 3);
-                    if (zipCoords[postal3]) {
-                        baseCoords = zipCoords[postal3];
-                    }
-                }
-            }
-
-            // 2. Try city lookup (good accuracy)
-            if (!baseCoords && city) {
-                if (majorCities[city]) {
-                    baseCoords = majorCities[city];
-                }
-                // Try city with state for disambiguation
-                else if (majorCities[city + ', ' + state]) {
-                    baseCoords = majorCities[city + ', ' + state];
-                }
-            }
-
-            // 3. Fall back to state/province center (low accuracy)
-            if (!baseCoords) {
-                const stateCoords = {
-                    'AL': [32.806671, -86.791130], 'AK': [61.370716, -152.404419], 'AZ': [33.729759, -111.431221],
-                    'AR': [34.969704, -92.373123], 'CA': [36.116203, -119.681564], 'CO': [39.059811, -105.311104],
-                    'CT': [41.597782, -72.755371], 'DE': [39.318523, -75.507141], 'FL': [27.766279, -81.686783],
-                    'GA': [33.040619, -83.643074], 'HI': [21.094318, -157.498337], 'ID': [44.240459, -114.478828],
-                    'IL': [40.349457, -88.986137], 'IN': [39.849426, -86.258278], 'IA': [42.011539, -93.210526],
-                    'KS': [38.526600, -96.726486], 'KY': [37.668140, -84.670067], 'LA': [31.169546, -91.867805],
-                    'ME': [44.323535, -69.765261], 'MD': [39.063946, -76.802101], 'MA': [42.230171, -71.530106],
-                    'MI': [43.326618, -84.536095], 'MN': [45.694454, -93.900192], 'MS': [32.741646, -89.678696],
-                    'MO': [38.572954, -92.189283], 'MT': [47.052952, -110.454353], 'NE': [41.125370, -98.268082],
-                    'NV': [38.313515, -117.055374], 'NH': [43.452492, -71.563896], 'NJ': [40.298904, -74.521011],
-                    'NM': [34.840515, -106.248482], 'NY': [42.165726, -74.948051], 'NC': [35.630066, -79.806419],
-                    'ND': [47.528912, -99.784012], 'OH': [40.388783, -82.764915], 'OK': [35.565342, -96.928917],
-                    'OR': [44.572021, -122.070938], 'PA': [40.590752, -77.209755], 'RI': [41.680893, -71.511780],
-                    'SC': [33.856892, -80.945007], 'SD': [44.299782, -99.438828], 'TN': [35.747845, -86.692345],
-                    'TX': [31.054487, -97.563461], 'UT': [40.150032, -111.862434], 'VT': [44.045876, -72.710686],
-                    'VA': [37.769337, -78.169968], 'WA': [47.400902, -121.490494], 'WV': [38.491226, -80.954570],
-                    'WI': [44.268543, -89.616508], 'WY': [42.755966, -107.302490],
-                    // Canada provinces
-                    'ON': [51.253775, -85.323214], 'QC': [52.9399, -73.5491], 'BC': [53.7267, -127.6476],
-                    'AB': [53.9333, -116.5765], 'MB': [53.7609, -98.8139], 'SK': [52.9399, -106.4509],
-                    'NS': [44.6820, -63.7443], 'NB': [46.5653, -66.4619], 'NL': [53.1355, -57.6604],
-                    'PE': [46.5107, -63.4168], 'NT': [61.9370, -113.6710], 'YT': [64.0685, -139.0686],
-                    'NU': [70.2998, -83.1076]
-                };
-                baseCoords = stateCoords[state] || [39.8283, -98.5795]; // Default to US center
-            }
-
-            // Create deterministic offset based on full address for fine-grained positioning
-            const fullAddressString = [
-                contactId,
-                address.Address1 || address.addressLine1 || '',
-                address.Address2 || address.addressLine2 || '',
-                address.Address3 || address.addressLine3 || '',
-                city,
-                state,
-                zipCode
-            ].join('|');
-            
-            const hash = simpleHash(fullAddressString);
-            
-            // Create smaller, more precise offsets based on address precision
-            let spreadRadius = 0.2; // Default spread (~14 miles)
-            
-            // Reduce spread radius for more precise locations
-            if (zipCode && zipCoords[zipCode.substring(0, 5)] || zipCoords[zipCode.substring(0, 3)]) {
-                spreadRadius = 0.005; // Very precise for exact ZIP matches (~0.3 miles)
-            } else if (majorCities[city]) {
-                spreadRadius = 0.02; // Moderately precise for major cities (~1.4 miles)
-            } else {
-                spreadRadius = 0.1; // Broader spread for state-level positioning (~7 miles)
-            }
-            
-            // Convert hash to consistent pseudo-random values
-            const offsetLat = ((hash % 1000) / 500) - 1; // -1 to 1
-            const offsetLng = (((hash >> 10) % 1000) / 500) - 1; // -1 to 1
-            
-            return [
-                baseCoords[0] + offsetLat * spreadRadius,
-                baseCoords[1] + offsetLng * spreadRadius
-            ];
+        // Optimized coordinate lookup (no API calls - coordinates are pre-computed)
+        function getCoordinatesFromPrecomputed(item) {
+            // Return pre-computed coordinates directly
+            return item.coordinates || [39.8283, -98.5795]; // Default to US center if no coordinates
         }
 
         // Initial markers will be created by createMarkersFromData function
@@ -946,10 +898,13 @@ const ContactsMapView = ({
             
             div.innerHTML = \`
                 <h4 style="margin: 0 0 5px 0;">Contact Types</h4>
-                <div><span style="color: \${typeColors.A};">●</span> Administrative</div>
+                <div><span style="color: \${typeColors.A};">●</span> Accounting</div>
                 <div><span style="color: \${typeColors.E};">●</span> Engineering</div>
                 <div><span style="color: \${typeColors.S};">●</span> Sales</div>
                 <div><span style="color: \${typeColors.default};">●</span> Unknown</div>
+                <div style="margin-top: 8px;">
+                    <div><span style="color: #9c27b0;">●</span> Multiple Contacts</div>
+                </div>
                 <div style="margin-top: 10px; font-size: 12px; color: #666;">
                     Total Contacts: \${contactsData.length}
                 </div>
@@ -962,66 +917,137 @@ const ContactsMapView = ({
         let allMarkers = [];
         let allCircles = [];
         
-        // Function to create markers from contact data
-        async function createMarkersFromData(contactsData) {
+        // Function to create markers from contact data with clustering (optimized - no API calls)
+        function createMarkersFromData(contactsData) {
             // Clear existing markers and circles
             allMarkers.forEach(marker => map.removeLayer(marker));
             allCircles.forEach(circle => map.removeLayer(circle));
             allMarkers = [];
             allCircles = [];
             
-            // Create new markers
+            // Group contacts by coordinates (clustering)
+            const locationGroups = new Map();
+            
             for (const item of contactsData) {
                 const { contact, address, fullName, formattedAddress } = item;
                 
                 if (!address || !(address.City || address.city) || !(address.State || address.state || address.stateProvince)) continue;
                 
-                const coords = await getCoordinatesFromAddress(address, contact.Cont_Id);
-                const contactType = contact.Type?.toUpperCase() || 'default';
-                const color = typeColors[contactType] || typeColors.default;
-                const typeLabel = typeLabels[contactType] || typeLabels.default;
+                const coords = getCoordinatesFromPrecomputed(item);
+                const coordKey = coords[0].toFixed(6) + ',' + coords[1].toFixed(6); // Round to ~0.1m precision
                 
-                // Create custom marker
+                if (!locationGroups.has(coordKey)) {
+                    locationGroups.set(coordKey, {
+                        coordinates: coords,
+                        contacts: []
+                    });
+                }
+                
+                locationGroups.get(coordKey).contacts.push({
+                    contact,
+                    address,
+                    fullName,
+                    formattedAddress,
+                    contactType: contact.Type?.toUpperCase() || 'default'
+                });
+            }
+            
+            // Create markers for each location group
+            for (const [coordKey, group] of locationGroups) {
+                const coords = group.coordinates;
+                const contacts = group.contacts;
+                const contactCount = contacts.length;
+                
+                // Determine marker appearance based on contact count and types
+                let markerColor, markerRadius;
+                if (contactCount === 1) {
+                    // Single contact - use contact type color
+                    const contactType = contacts[0].contactType;
+                    markerColor = typeColors[contactType] || typeColors.default;
+                    markerRadius = 8;
+                } else {
+                    // Multiple contacts - use purple for clusters
+                    markerColor = '#9c27b0';
+                    markerRadius = Math.min(12 + contactCount * 2, 20); // Scale with count, max 20px
+                }
+                
+                // Create cluster marker
                 const marker = L.circleMarker(coords, {
-                    color: color,
-                    fillColor: color,
+                    color: markerColor,
+                    fillColor: markerColor,
                     fillOpacity: 0.7,
-                    radius: 8,
+                    radius: markerRadius,
                     weight: 2
                 }).addTo(map);
                 
-                // Add 30-mile radius circle
+                // Add 30-mile radius circle (only for single contacts or primary contact in cluster)
                 const radiusCircle = L.circle(coords, {
-                    color: color,
-                    fillColor: color,
+                    color: markerColor,
+                    fillColor: markerColor,
                     fillOpacity: 0.1,
                     weight: 1,
                     radius: 48280,
                     interactive: false
                 }).addTo(map);
                 
-                // Create popup content
-                const popupContent = \`
-                    <div class="contact-popup">
-                        <h3>\${fullName}</h3>
-                        <div class="contact-type type-\${contactType.toLowerCase()}">\${typeLabel}</div>
-                        <div class="contact-details">
-                            <strong>Title:</strong> \${contact.ConTitle || 'N/A'}<br>
-                            <strong>Phone:</strong> \${contact.PhoneNumber || 'N/A'}\${contact.PhoneExt ? ' x' + contact.PhoneExt : ''}<br>
-                            <strong>Email:</strong> \${contact.Email || 'N/A'}<br>
-                            <strong>Address:</strong> \${formattedAddress}<br>
-                            \${contact.Notes ? '<strong>Notes:</strong> ' + contact.Notes : ''}<br>
+                if (contactCount === 1) {
+                    // Single contact - show individual contact popup
+                    const contact = contacts[0];
+                    const popupContent = \`
+                        <div class="contact-popup">
+                            <h3>\${contact.fullName}</h3>
+                            <div class="contact-type type-\${contact.contactType.toLowerCase()}">\${typeLabels[contact.contactType] || typeLabels.default}</div>
+                            <div class="contact-details">
+                                <strong>Title:</strong> \${contact.contact.ConTitle || 'N/A'}<br>
+                                <strong>Phone:</strong> \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}<br>
+                                <strong>Email:</strong> \${contact.contact.Email || 'N/A'}<br>
+                                <strong>Address:</strong> \${contact.formattedAddress}<br>
+                                \${contact.contact.Notes ? '<strong>Notes:</strong> ' + contact.contact.Notes : ''}<br>
+                            </div>
+                            <div style="margin-top: 10px; text-align: center;">
+                                <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; display: inline-block;">
+                                    View Full Contact Details
+                                </a>
+                            </div>
                         </div>
-                        <div style="margin-top: 10px; text-align: center;">
-                            <a href="/sales/contacts/\${contact.Cont_Id}_\${contact.Company_ID}_\${contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; display: inline-block;">
-                                View Full Contact Details
-                            </a>
+                    \`;
+                    
+                    marker.bindPopup(popupContent);
+                    marker.bindTooltip(contact.fullName);
+                } else {
+                    // Multiple contacts - show cluster popup with selection
+                    let clusterPopupContent = \`
+                        <div class="contact-popup" style="max-width: 400px;">
+                            <h3>\${contactCount} Contacts at this Location</h3>
+                            <div style="max-height: 300px; overflow-y: auto; margin: 10px 0;">
+                    \`;
+                    
+                    contacts.forEach((contact, index) => {
+                        const typeLabel = typeLabels[contact.contactType] || typeLabels.default;
+                        clusterPopupContent += \`
+                            <div style="border-bottom: 1px solid #eee; padding: 8px 0; \${index === contacts.length - 1 ? 'border-bottom: none;' : ''}">
+                                <div style="font-weight: bold; margin-bottom: 4px;">\${contact.fullName}</div>
+                                <div class="contact-type type-\${contact.contactType.toLowerCase()}" style="margin-bottom: 4px;">\${typeLabel}</div>
+                                <div style="font-size: 11px; color: #666; margin-bottom: 6px;">
+                                    \${contact.contact.ConTitle || 'N/A'} • \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}
+                                </div>
+                                <div style="text-align: center;">
+                                    <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 4px 8px; text-decoration: none; border-radius: 3px; font-size: 10px; display: inline-block;">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        \`;
+                    });
+                    
+                    clusterPopupContent += \`
+                            </div>
                         </div>
-                    </div>
-                \`;
-                
-                marker.bindPopup(popupContent);
-                marker.bindTooltip(fullName);
+                    \`;
+                    
+                    marker.bindPopup(clusterPopupContent);
+                    marker.bindTooltip(\`\${contactCount} contacts at this location\`);
+                }
                 
                 allMarkers.push(marker);
                 allCircles.push(radiusCircle);
@@ -1034,13 +1060,13 @@ const ContactsMapView = ({
             }
         }
         
-        // Create initial markers
-        createMarkersFromData(contactsData).catch(console.error);
+        // Create initial markers (synchronous - no API calls)
+        createMarkersFromData(contactsData);
         
         // Listen for marker update messages from parent
         window.addEventListener('message', function(event) {
             if (event.data.type === 'updateMarkers') {
-                createMarkersFromData(event.data.contactsData).catch(console.error);
+                createMarkersFromData(event.data.contactsData);
             }
         });
         
@@ -1056,11 +1082,17 @@ const ContactsMapView = ({
     iframe.style.border = 'none';
     iframe.srcdoc = mapHTML;
     
-    mapContainerRef.current.appendChild(iframe);
-    setMapLoaded(true);
+    if (mapContainerRef.current) {
+      mapContainerRef.current.appendChild(iframe);
+      setMapLoaded(true);
+    }
     
-    // Mark as no longer initial load after first render
-    setIsInitialLoad(false);
+      // Mark as no longer initial load after first render
+      setIsInitialLoad(false);
+    };
+
+    // Execute the initialization
+    initializeMapWithPreloadedData();
   }, [contactsWithAddresses, isInitialLoad]);
 
   // Update map markers when filters change (without recreating iframe)
@@ -1070,15 +1102,53 @@ const ContactsMapView = ({
     const iframe = mapContainerRef.current.querySelector('iframe');
     if (!iframe || !iframe.contentWindow) return;
 
-    // Send filtered data to the existing map
-    const filteredData = filteredContactsWithAddresses;
+    // Pre-compute coordinates for filtered data to avoid API calls
+    const normalizeCountryCode = (country: string) => {
+      if (!country) return 'US';
+      const normalized = country.toUpperCase().trim();
+      switch (normalized) {
+        case 'USA': case 'UNITED STATES': case 'UNITED STATES OF AMERICA': return 'US';
+        case 'CANADA': case 'CAN': return 'CA';
+        case 'MEXICO': case 'MEX': return 'MX';
+        default: return normalized.length === 2 ? normalized : 'US';
+      }
+    };
+
+    const filteredDataWithCoords = filteredContactsWithAddresses.map(item => {
+      const address = item.address;
+      const zipCode = (address.ZipCode || address.zipCode || address.postalCode || '').replace(/[^A-Z0-9]/g, '');
+      const country = normalizeCountryCode(address.Country || address.country);
+      const cacheKey = `${country}_${zipCode}`;
+      
+      // Get coordinates from cache or compute fallback - use exact coordinates without spread
+      let coords = postalCodeCacheRef.current.get(cacheKey);
+      if (!coords) {
+        const geocodeKey = JSON.stringify({
+          city: address.City || address.city,
+          state: address.State || address.state || address.stateProvince,
+          country: country,
+          zipCode: zipCode
+        });
+        
+        coords = geocodeCache.current.get(geocodeKey);
+        if (!coords) {
+          coords = computeFallbackCoordinates(address);
+          geocodeCache.current.set(geocodeKey, coords);
+        }
+      }
+      
+      return {
+        ...item,
+        coordinates: coords
+      };
+    });
     
     iframe.contentWindow.postMessage({
       type: 'updateMarkers',
-      contactsData: filteredData
+      contactsData: filteredDataWithCoords
     }, '*');
 
-    console.log('ContactsMapView: Updating map with filtered contacts:', filteredData.length);
+    console.log('ContactsMapView: Updating map with filtered contacts:', filteredDataWithCoords.length);
   }, [selectedContactType, searchQuery, filteredContactsWithAddresses, contactsWithAddresses, isInitialLoad]);
 
   const contactsWithValidAddresses = contactsWithAddresses.filter(item => 
@@ -1129,7 +1199,7 @@ const ContactsMapView = ({
                 className="px-3 py-1 text-sm font-normal text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="all">All Types</option>
-                <option value="A">Administrative</option>
+                <option value="A">Accounting</option>
                 <option value="E">Engineering</option>
                 <option value="S">Sales</option>
               </select>
