@@ -1,0 +1,17 @@
+// Auto-generated from Prisma schema
+export enum FormFieldDataType {
+  TEXT = "TEXT",
+  EMAIL = "EMAIL",
+  EMAIL_ADDRESS = "EMAIL_ADDRESS",
+  URL = "URL",
+  PHONE_NUMBER = "PHONE_NUMBER",
+  INTEGER = "INTEGER",
+  DECIMAL = "DECIMAL",
+  CURRENCY = "CURRENCY",
+  GEO_LOCATION = "GEO_LOCATION",
+  DATE = "DATE",
+  TIME = "TIME",
+  DATE_TIME = "DATE_TIME",
+  IMAGE = "IMAGE",
+  SIGNATURE = "SIGNATURE",
+}

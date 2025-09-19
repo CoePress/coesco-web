@@ -10,7 +10,8 @@ import {
   Tabs,
 } from "@/components";
 import { useApi } from "@/hooks/use-api";
-import { RuleAction, IApiResponse } from "@/utils/types";
+import { IApiResponse } from "@/utils/types";
+import { OptionRuleAction } from "@coesco/types";
 
 interface OptionRuleRow {
   id: string;
@@ -18,7 +19,7 @@ interface OptionRuleRow {
   description: string;
   triggerOption: string;
   targetOption: string;
-  ruleType: RuleAction;
+  ruleType: OptionRuleAction;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -120,7 +121,7 @@ const OptionRules = () => {
       render: (value: any) => (
         <span
           className={`px-2 py-1 rounded text-xs font-medium ${
-            value === RuleAction.DISABLE
+            value === OptionRuleAction.DISABLE
               ? "bg-red-100 text-red-800"
               : "bg-blue-100 text-blue-800"
           }`}>
@@ -300,7 +301,7 @@ const RuleForm = ({ rule, onSave, onCancel, options }: RuleFormProps) => {
     description: rule?.description || "",
     triggerOptionId: "",
     targetOptionId: "",
-    ruleType: RuleAction.DISABLE,
+    ruleType: OptionRuleAction.DISABLE,
     active: rule?.active ?? true,
   });
 
@@ -327,14 +328,14 @@ const RuleForm = ({ rule, onSave, onCancel, options }: RuleFormProps) => {
           <label className="block text-sm font-medium mb-1">Rule Type</label>
           <Select
             options={[
-              { value: RuleAction.DISABLE, label: "Disable" },
-              { value: RuleAction.REQUIRE, label: "Require" },
+              { value: OptionRuleAction.DISABLE, label: "Disable" },
+              { value: OptionRuleAction.REQUIRE, label: "Require" },
             ]}
             value={formData.ruleType}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                ruleType: e.target.value as RuleAction,
+                ruleType: e.target.value as OptionRuleAction,
               })
             }
             required

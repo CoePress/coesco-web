@@ -11,8 +11,9 @@ import {
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse, IEmployee } from "@/utils/types";
+import { IApiResponse } from "@/utils/types";
 import { format } from "date-fns";
+import { Employee } from "@coesco/types";
 
 const Employees = () => {
   const [page, setPage] = useState(1);
@@ -24,7 +25,7 @@ const Employees = () => {
   const [selectedRole, setSelectedRole] = useState<string>("USER");
   const [isActive, setIsActive] = useState<boolean>(true);
   
-  const [employees, setEmployees] = useState<IEmployee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<{
@@ -36,7 +37,7 @@ const Employees = () => {
   const [syncLoading, setSyncLoading] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
   
-  const { get, post, patch } = useApi<IApiResponse<IEmployee[]>>();
+  const { get, post, patch } = useApi<IApiResponse<Employee[]>>();
 
   const columns: TableColumn<any>[] = [
     {
@@ -184,7 +185,7 @@ const Employees = () => {
         actions={<Actions />}
       />
 
-      <Table<IEmployee>
+      <Table<Employee>
         columns={columns}
         data={employees || []}
         total={pagination.total}

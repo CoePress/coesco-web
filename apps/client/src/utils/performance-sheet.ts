@@ -586,7 +586,7 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
 
     try {
       const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-      const response = await updateEntity(performanceSheetId, { data: updatedData });
+      const response = await patch(`/performance/sheets/${performanceSheetId}`, { data: updatedData });
 
       if (response) {
         setLocalData(prevData => deepMerge(prevData, response));
