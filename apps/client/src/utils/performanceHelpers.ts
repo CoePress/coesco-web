@@ -54,6 +54,28 @@ export const isEmpty = (value: unknown): boolean => {
 };
 
 /**
+ * Gets a nested value from an object using dot notation
+ * @param obj - The object to get the value from
+ * @param path - The dot-separated path to the value
+ * @returns The value at the path, or undefined if not found
+ */
+export const getNestedValue = (obj: any, path: string): any => {
+    if (!obj || !path) return undefined;
+
+    const keys = path.split('.');
+    let result = obj;
+
+    for (const key of keys) {
+        if (result === null || result === undefined || typeof result !== 'object') {
+            return undefined;
+        }
+        result = result[key];
+    }
+
+    return result;
+};
+
+/**
  * Creates a deep nested object path with a value
  * @param path - Dot-separated path string (e.g., "feed.feed.matchCheck")
  * @param value - Value to set at the path

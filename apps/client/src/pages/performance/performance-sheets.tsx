@@ -1,7 +1,7 @@
 import { Plus, Filter, MoreHorizontal, ChevronDown, Lock, RefreshCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Button, Input, Modal, PageHeader, Table } from "@/components";
+import { Button, Input, Modal, PageHeader, VirtualTableAdapter } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useState, useEffect } from "react";
 import { instance } from "@/utils";
@@ -112,12 +112,16 @@ const PerformanceSheets = () => {
         ]}
       /> */}
 
-      <Table<any>
+      <VirtualTableAdapter<any>
         columns={columns}
         data={performanceSheets || []}
         total={performanceSheets?.length || 0}
         idField="id"
         pagination
+        enableVirtualScrolling={true}
+        virtualScrollThreshold={50}
+        rowHeight={60}
+        containerHeight={500}
       />
       <Modal
         isOpen={isModalOpen}

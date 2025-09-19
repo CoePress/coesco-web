@@ -175,6 +175,7 @@ export interface RFQData {
     strokeLength?: string;
     maxSPM?: string;
     bedWidth?: string;
+    bedLength?: string;
     windowSize?: string;
     cycleTime?: string;
   };
@@ -773,6 +774,7 @@ const initialPerformanceData: PerformanceData = {
       strokeLength: "",
       maxSPM: "",
       bedWidth: "",
+      bedLength: "",
       windowSize: "",
       cycleTime: "",
     },

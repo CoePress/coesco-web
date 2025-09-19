@@ -1,32 +1,17 @@
 import { useEffect, useState } from "react";
-import MaterialSpecs from "./material-specs";
-import TDDBHD from "./tddbhd";
-import ReelDrive from "./reel-drive";
-import StrUtility from "./str-utility";
-import RollStrBackbend from "./roll-str-backbend";
-import Feed from "./feed";
-import Shear from "./shear";
-import SummaryReport from "./summary-report";
 import { Save, Lock, Link } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { instance } from "@/utils";
 import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
-import RFQ from "./rfq";
 import { useApi } from "@/hooks/use-api";
 import { PerformanceSheetProvider, usePerformanceSheet } from "@/contexts/performance.context";
+import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
 
-const PERFORMANCE_TABS = [
-  { label: "RFQ", value: "rfq" },
-  { label: "Material Specs", value: "material-specs" },
-  { label: "TDDBHD", value: "tddbhd" },
-  { label: "Reel Drive", value: "reel-drive" },
-  { label: "Str Utility", value: "str-utility" },
-  { label: "Roll Str Backbend", value: "roll-str-backbend" },
-  { label: "Feed", value: "feed" },
-  { label: "Shear", value: "shear" },
-  { label: "Summary Report", value: "summary-report" },
-];
+const PERFORMANCE_TABS = LAZY_PERFORMANCE_TABS.map(tab => ({
+  label: tab.label,
+  value: tab.value
+}));
 
 type PerformanceTabValue =
   | "rfq"
@@ -67,6 +52,33 @@ const PerformanceSheetContent = () => {
 
   // Use global performance context
   const { performanceData, setPerformanceData } = usePerformanceSheet();
+
+  // Preload next likely tabs on component mount
+  useEffect(() => {
+    // Preload commonly accessed tabs after a short delay
+    const preloadTimer = setTimeout(() => {
+      // Preload Material Specs and TDDBHD as they're commonly accessed after RFQ
+      const materialSpecsTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === "material-specs");
+      const tddbhdTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === "tddbhd");
+
+      if (materialSpecsTab?.preload) {
+        materialSpecsTab.preload().catch(console.warn);
+      }
+      if (tddbhdTab?.preload) {
+        tddbhdTab.preload().catch(console.warn);
+      }
+    }, 2000); // Wait 2 seconds after page load
+
+    return () => clearTimeout(preloadTimer);
+  }, []);
+
+  // Preload tab on hover for instant loading
+  const handleTabHover = (tabValue: string) => {
+    const tab = LAZY_PERFORMANCE_TABS.find(t => t.value === tabValue);
+    if (tab?.preload) {
+      tab.preload().catch(console.warn);
+    }
+  };
 
   useEffect(() => {
     const fetchPerformanceSheet = async () => {
@@ -177,28 +189,22 @@ const PerformanceSheetContent = () => {
       return <div className="flex justify-center items-center h-64">No data available</div>;
     }
 
-    switch (activeTab) {
-      case "rfq":
-        return <RFQ {...commonProps} />;
-      case "material-specs":
-        return <MaterialSpecs {...commonProps} />;
-      case "tddbhd":
-        return <TDDBHD {...commonProps} />;
-      case "reel-drive":
-        return <ReelDrive {...commonProps} />;
-      case "str-utility":
-        return <StrUtility {...commonProps} />;
-      case "roll-str-backbend":
-        return <RollStrBackbend {...commonProps} />;
-      case "feed":
-        return <Feed {...commonProps} />;
-      case "shear":
-        return <Shear {...commonProps} />;
-      case "summary-report":
-        return <SummaryReport {...commonProps} />;
-      default:
-        return <RFQ {...commonProps} />;
+    // Find the matching tab configuration
+    const currentTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === activeTab);
+
+    if (currentTab) {
+      const Component = currentTab.component;
+      return <Component {...commonProps} />;
     }
+
+    // Fallback to RFQ if tab not found
+    const rfqTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === "rfq");
+    if (rfqTab) {
+      const Component = rfqTab.component;
+      return <Component {...commonProps} />;
+    }
+
+    return <div className="flex justify-center items-center h-64">Tab not found</div>;
   };
 
   const Actions = () => {

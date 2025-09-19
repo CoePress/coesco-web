@@ -1,19 +1,25 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback } from "react";
 import { useParams } from "react-router-dom";
 
 import {
-  TYPE_OF_LINE_OPTIONS,
-  MATERIAL_TYPE_OPTIONS,
-  PRESS_APPLICATION_OPTIONS,
-  YES_NO_OPTIONS,
-  FEED_DIRECTION_OPTIONS,
-  LOADING_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
-import { Card, Input, Select, Text, Textarea } from "@/components";
-import Checkbox from "@/components/_old/checkbox";
+import { RFQErrorBoundary } from "@/components/error";
 import { getRequiredFieldBackgroundColor } from "../../utils/performanceHelpers";
+
+// Import lazy-loaded sections
+import {
+  BasicInfoSection,
+  LineConfigSection,
+  CoilSpecsSection,
+  MaterialSpecsSection,
+  PressInfoSection,
+  DiesInfoSection,
+  FeedRequirementsSection,
+  SpaceMountingSection,
+  SpecialRequirementsSection
+} from "@/components/lazy";
 
 export interface RFQProps {
   data: PerformanceData;
@@ -50,993 +56,25 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     'common.equipment.feed.direction', 'rfq.requireGuarding'
   ];
 
+  // Function to save form data before section reset
+  const saveFormData = useCallback(() => {
+    try {
+      // Save current form state to session storage as backup
+      const backupData = {
+        data: localData,
+        timestamp: new Date().toISOString(),
+        performanceSheetId,
+      };
+      sessionStorage.setItem('rfq-form-backup', JSON.stringify(backupData));
+    } catch (error) {
+      console.warn('Could not save form backup:', error);
+    }
+  }, [localData, performanceSheetId]);
+
   // Function to get background color for required fields (using shared utility)
   const getFieldBackgroundColor = useCallback((fieldName: string) => {
     return getRequiredFieldBackgroundColor(fieldName, requiredFields, getFieldValue);
   }, [requiredFields, getFieldValue]);
-
-  // Basic Information Section
-  const basicInfoSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Basic Information
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Input
-            label="Reference Number *"
-            name="referenceNumber"
-            value={localData.referenceNumber || ""}
-            onChange={handleFieldChange}
-            error={getFieldError("referenceNumber")}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("referenceNumber")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Date"
-            type="date"
-            name="rfq.dates.date"
-            value={localData.rfq?.dates?.date || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dates.date")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Input
-            label="Company Name *"
-            name="common.customer"
-            value={localData.common?.customer || ""}
-            onChange={handleFieldChange}
-            error={fieldErrors["common.customer"]}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customer")}
-          />
-        </div>
-        <div>
-          <Input
-            label="State/Province"
-            name="common.customerInfo.state"
-            value={localData.common?.customerInfo?.state || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.state")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Street Address"
-            name="common.customerInfo.streetAddress"
-            value={localData.common?.customerInfo?.streetAddress || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.streetAddress")}
-          />
-        </div>
-        <div>
-          <Input
-            label="ZIP/Postal Code"
-            name="common.customerInfo.zip"
-            value={localData.common?.customerInfo?.zip?.toString() || ""}
-            onChange={handleFieldChange}
-            error={fieldErrors["common.customerInfo.zip"]}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.zip")}
-          />
-        </div>
-        <div>
-          <Input
-            label="City"
-            name="common.customerInfo.city"
-            value={localData.common?.customerInfo?.city || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.city")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Country"
-            name="common.customerInfo.country"
-            value={localData.common?.customerInfo?.country || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.country")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Input
-            label="Contact Name"
-            name="common.customerInfo.contactName"
-            value={localData.common?.customerInfo?.contactName || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.contactName")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Position"
-            name="common.customerInfo.position"
-            value={localData.common?.customerInfo?.position || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.position")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Phone"
-            name="common.customerInfo.phoneNumber"
-            value={localData.common?.customerInfo?.phoneNumber || ""}
-            onChange={handleFieldChange}
-            error={fieldErrors["common.customerInfo.phoneNumber"]}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.phoneNumber")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Email"
-            name="common.customerInfo.email"
-            value={localData.common?.customerInfo?.email || ""}
-            onChange={handleFieldChange}
-            error={fieldErrors["common.customerInfo.email"]}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.email")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Dealer Name"
-            name="common.customerInfo.dealerName"
-            value={localData.common?.customerInfo?.dealerName || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.dealerName")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Dealer Salesman"
-            name="common.customerInfo.dealerSalesman"
-            value={localData.common?.customerInfo?.dealerSalesman || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.customerInfo.dealerSalesman")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Days per week running"
-            name="common.customerInfo.daysPerWeek"
-            value={localData.common?.customerInfo?.daysPerWeek?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Shifts per day"
-            name="common.customerInfo.shiftsPerDay"
-            value={localData.common?.customerInfo?.shiftsPerDay?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        <div>
-          <Input
-            label="Decision Date"
-            type="date"
-            name="rfq.dates.decisionDate"
-            value={localData.rfq?.dates?.decisionDate || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dates.decisionDate")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Ideal Delivery Date"
-            type="date"
-            name="rfq.dates.idealDeliveryDate"
-            value={localData.rfq?.dates?.idealDeliveryDate || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dates.idealDeliveryDate")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Earliest Delivery Date"
-            type="date"
-            name="rfq.dates.earliestDeliveryDate"
-            value={localData.rfq?.dates?.earliestDeliveryDate || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Latest Delivery Date"
-            type="date"
-            name="rfq.dates.latestDeliveryDate"
-            value={localData.rfq?.dates?.latestDeliveryDate || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, fieldErrors, handleFieldChange, isEditing]);
-
-  // Line Configuration Section
-  const lineConfigSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Line Configuration
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Select
-            label="Line Application"
-            name="feed.feed.application"
-            value={localData.feed?.feed?.application || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={PRESS_APPLICATION_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("feed.feed.application")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Type of Line"
-            name="common.equipment.feed.typeOfLine"
-            value={localData.common?.equipment?.feed?.typeOfLine || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={TYPE_OF_LINE_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("common.equipment.feed.typeOfLine")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Pull Through"
-            name="feed.feed.pullThru.isPullThru"
-            value={localData.feed?.feed?.pullThru?.isPullThru || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("feed.feed.pullThru.isPullThru")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Brand of Feed"
-            name="rfq.brandOfFeed"
-            value={localData.rfq?.brandOfFeed || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Select
-            label="Running Cosmetic Material"
-            name="rfq.runningCosmeticMaterial"
-            value={localData.rfq?.runningCosmeticMaterial || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.runningCosmeticMaterial")}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Coil Specifications Section
-  const coilSpecsSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Coil Specifications
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Input
-            label="Max Coil Width (in)"
-            name="common.coil.maxCoilWidth"
-            value={localData.common?.coil?.maxCoilWidth?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.coil.maxCoilWidth")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Min Coil Width (in)"
-            name="common.coil.minCoilWidth"
-            value={localData.common?.coil?.minCoilWidth?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.coil.minCoilWidth")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max Coil OD (in)"
-            name="common.coil.maxCoilOD"
-            value={localData.common?.coil?.maxCoilOD?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.coil.maxCoilOD")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Coil ID (in)"
-            name="common.coil.coilID"
-            value={localData.common?.coil?.coilID?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.coil.coilID")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max Coil Weight (lbs)"
-            name="common.coil.maxCoilWeight"
-            value={localData.common?.coil?.maxCoilWeight?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.coil.maxCoilWeight")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max Coil Handling Cap (lbs)"
-            name="common.coil.maxCoilHandlingCap"
-            value={localData.common?.coil?.maxCoilHandlingCap?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div>
-          <Checkbox
-            label="Slit Edge"
-            name="rfq.coil.slitEdge"
-            checked={localData.rfq?.coil?.slitEdge || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.slitEdge")}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Mill Edge"
-            name="rfq.coil.millEdge"
-            checked={localData.rfq?.coil?.millEdge || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.millEdge")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Require Coil Car"
-            name="rfq.coil.requireCoilCar"
-            value={localData.rfq?.coil?.requireCoilCar || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.requireCoilCar")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Running Off Backplate"
-            name="rfq.coil.runningOffBackplate"
-            value={localData.rfq?.coil?.runningOffBackplate || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.runningOffBackplate")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <Select
-            label="Require Rewinding"
-            name="rfq.coil.requireRewinding"
-            value={localData.rfq?.coil?.requireRewinding || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.requireRewinding")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Change Time Concern"
-            name="rfq.coil.changeTimeConcern"
-            value={localData.rfq?.coil?.changeTimeConcern || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.changeTimeConcern")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Time Change Goal (min)"
-            name="rfq.coil.timeChangeGoal"
-            value={localData.rfq?.coil?.timeChangeGoal || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Select
-            label="Loading"
-            name="rfq.coil.loading"
-            value={localData.rfq?.coil?.loading || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={LOADING_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.coil.loading")}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Material Specifications Section
-  const materialSpecsSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Material Specifications
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <Input
-            label="Material Thickness (in)"
-            name="common.material.materialThickness"
-            value={localData.common?.material?.materialThickness?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.material.materialThickness")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Coil Width (in)"
-            name="common.material.coilWidth"
-            value={localData.common?.material?.coilWidth?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.material.coilWidth")}
-          />
-        </div>
-        <div>
-          <Select
-            label="Material Type"
-            name="common.material.materialType"
-            value={localData.common?.material?.materialType || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={MATERIAL_TYPE_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("common.material.materialType")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max Yield Strength (PSI)"
-            name="common.material.maxYieldStrength"
-            value={localData.common?.material?.maxYieldStrength?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("common.material.maxYieldStrength")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max Tensile Strength (PSI)"
-            name="common.material.maxTensileStrength"
-            value={localData.common?.material?.maxTensileStrength?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Press Information Section
-  const pressInfoSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Press Information
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Checkbox
-            label="Gap Frame Press"
-            name="rfq.press.gapFramePress"
-            checked={localData.rfq?.press?.gapFramePress || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Hydraulic Press"
-            name="rfq.press.hydraulicPress"
-            checked={localData.rfq?.press?.hydraulicPress || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="OBI"
-            name="rfq.press.obi"
-            checked={localData.rfq?.press?.obi || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Servo Press"
-            name="rfq.press.servoPress"
-            checked={localData.rfq?.press?.servoPress || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Shear Die Application"
-            name="rfq.press.shearDieApplication"
-            checked={localData.rfq?.press?.shearDieApplication || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Straight Side Press"
-            name="rfq.press.straightSidePress"
-            checked={localData.rfq?.press?.straightSidePress || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Other Press Type"
-            name="rfq.press.other"
-            checked={localData.rfq?.press?.other || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Input
-            label="Tonnage of Press"
-            name="rfq.press.tonnageOfPress"
-            value={localData.rfq?.press?.tonnageOfPress || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Stroke Length (in)"
-            name="rfq.press.strokeLength"
-            value={localData.rfq?.press?.strokeLength || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Max SPM"
-            name="rfq.press.maxSPM"
-            value={localData.rfq?.press?.maxSPM || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.press.maxSPM")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Bed Width (in)"
-            name="rfq.press.bedWidth"
-            value={localData.rfq?.press?.bedWidth || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Bed Length (in)"
-            name="rfq.press.bedLength"
-            value={localData.common?.press?.bedLength || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Input
-            label="Window Size (in)"
-            name="rfq.press.windowSize"
-            value={localData.rfq?.press?.windowSize || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Cycle Time (sec)"
-            name="rfq.press.cycleTime"
-            value={localData.rfq?.press?.cycleTime || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Dies Information Section
-  const diesInfoSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Dies Information
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Checkbox
-            label="Transfer Dies"
-            name="rfq.dies.transferDies"
-            checked={localData.rfq?.dies?.transferDies || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dies.transferDies")}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Progressive Dies"
-            name="rfq.dies.progressiveDies"
-            checked={localData.rfq?.dies?.progressiveDies || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dies.progressiveDies")}
-          />
-        </div>
-        <div>
-          <Checkbox
-            label="Blanking Dies"
-            name="rfq.dies.blankingDies"
-            checked={localData.rfq?.dies?.blankingDies || false}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.dies.blankingDies")}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Feed Requirements Section - This is where the FPM calculations show
-  const feedRequirementsSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Feed Requirements
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Text as="h4" className="mb-2 text-sm font-medium">Average</Text>
-          <div className="space-y-3">
-            <Input
-              label="Length (in)"
-              name="common.feedRates.average.length"
-              value={localData.common?.feedRates?.average?.length?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.average.length")}
-            />
-            <Input
-              label="SPM"
-              name="common.feedRates.average.spm"
-              value={localData.common?.feedRates?.average?.spm?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.average.spm")}
-            />
-            <Input
-              label="FPM (Calculated)"
-              name="common.feedRates.average.fpm"
-              value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
-              disabled={true}
-              className="bg-gray-50"
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.average.fpm")}
-            />
-          </div>
-        </div>
-        <div>
-          <Text as="h4" className="mb-2 text-sm font-medium">Maximum</Text>
-          <div className="space-y-3">
-            <Input
-              label="Length (in)"
-              name="common.feedRates.max.length"
-              value={localData.common?.feedRates?.max?.length?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.max.length")}
-            />
-            <Input
-              label="SPM"
-              name="common.feedRates.max.spm"
-              value={localData.common?.feedRates?.max?.spm?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.max.spm")}
-            />
-            <Input
-              label="FPM (Calculated)"
-              name="common.feedRates.max.fpm"
-              value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
-              disabled={true}
-              className="bg-gray-50"
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.max.fpm")}
-            />
-          </div>
-        </div>
-        <div>
-          <Text as="h4" className="mb-2 text-sm font-medium">Minimum</Text>
-          <div className="space-y-3">
-            <Input
-              label="Length (in)"
-              name="common.feedRates.min.length"
-              value={localData.common?.feedRates?.min?.length?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.min.length")}
-            />
-            <Input
-              label="SPM"
-              name="common.feedRates.min.spm"
-              value={localData.common?.feedRates?.min?.spm?.toString() || ""}
-              onChange={handleFieldChange}
-              type="number"
-              disabled={!isEditing}
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.min.spm")}
-            />
-            <Input
-              label="FPM (Calculated)"
-              name="common.feedRates.min.fpm"
-              value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
-              disabled={true}
-              className="bg-gray-50"
-              customBackgroundColor={getFieldBackgroundColor("common.feedRates.min.fpm")}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Voltage Required"
-            name="rfq.voltageRequired"
-            value={localData.rfq?.voltageRequired?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.voltageRequired")}
-          />
-        </div>
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Space & Mounting Section
-  const spaceMountingSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Space & Mounting
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Input
-            label="Equipment Space Length (in)"
-            name="rfq.equipmentSpaceLength"
-            value={localData.rfq?.equipmentSpaceLength?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.equipmentSpaceLength")}
-          />
-        </div>
-        <div>
-          <Input
-            label="Equipment Space Width (in)"
-            name="rfq.equipmentSpaceWidth"
-            value={localData.rfq?.equipmentSpaceWidth?.toString() || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-            customBackgroundColor={getFieldBackgroundColor("rfq.equipmentSpaceWidth")}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Select
-            label="Feeder Mounted to Press"
-            name="rfq.mount.feederMountedToPress"
-            value={localData.rfq?.mount?.feederMountedToPress || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-        <div>
-          <Select
-            label="Adequate Support"
-            name="rfq.mount.adequateSupport"
-            value={localData.rfq?.mount?.adequateSupport || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-        <div>
-          <Select
-            label="Custom Mounting"
-            name="rfq.mount.customMounting"
-            value={localData.rfq?.mount?.customMounting || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <Input
-            label="Passline Height (in)"
-            name="common.equipment.feed.passline"
-            value={localData.common?.equipment?.feed?.passline || ""}
-            onChange={handleFieldChange}
-            type="number"
-            disabled={!isEditing}
-          />
-        </div>
-        <div>
-          <Select
-            label="Loop Pit"
-            name="rfq.loopPit"
-            value={localData.common?.equipment?.feed?.loopPit || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-          />
-        </div>
-        <div>
-          <Select
-            label="Feed Direction"
-            name="common.equipment.feed.direction"
-            value={localData.common?.equipment?.feed?.direction || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={FEED_DIRECTION_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("common.equipment.feed.direction")}
-          />
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <Textarea
-          label="Walls/columns obstructing equipment's location?"
-          name="rfq.obstructions"
-          value={localData.rfq?.obstructions || ""}
-          onChange={handleFieldChange}
-          rows={3}
-          disabled={!isEditing}
-          customBackgroundColor={getFieldBackgroundColor("rfq.obstructions")}
-        />
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
-
-  // Special Requirements Section
-  const specialRequirementsSection = useMemo(() => (
-    <Card className="mb-4 p-4">
-      <Text as="h3" className="mb-4 text-lg font-medium">
-        Special Requirements
-      </Text>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Select
-            label="Require Guarding"
-            name="rfq.requireGuarding"
-            value={localData.rfq?.requireGuarding || ""}
-            onChange={handleFieldChange}
-            disabled={!isEditing}
-            options={YES_NO_OPTIONS}
-            customBackgroundColor={getFieldBackgroundColor("rfq.requireGuarding")}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Textarea
-          label="Special Considerations"
-          name="rfq.specialConsiderations"
-          value={localData.rfq?.specialConsiderations || ""}
-          onChange={handleFieldChange}
-          rows={4}
-          disabled={!isEditing}
-        />
-      </div>
-    </Card>
-  ), [localData, handleFieldChange, isEditing]);
 
   // Status indicator component
   const StatusIndicator = () => {
@@ -1101,15 +139,104 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
       )}
 
       {/* Form sections */}
-      {basicInfoSection}
-      {lineConfigSection}
-      {coilSpecsSection}
-      {materialSpecsSection}
-      {pressInfoSection}
-      {diesInfoSection}
-      {feedRequirementsSection}
-      {spaceMountingSection}
-      {specialRequirementsSection}
+      <RFQErrorBoundary sectionName="Basic Info" onSaveBeforeReset={saveFormData}>
+        <BasicInfoSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Line Configuration" onSaveBeforeReset={saveFormData}>
+        <LineConfigSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Coil Specifications" onSaveBeforeReset={saveFormData}>
+        <CoilSpecsSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Material Specifications" onSaveBeforeReset={saveFormData}>
+        <MaterialSpecsSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Press Information" onSaveBeforeReset={saveFormData}>
+        <PressInfoSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Dies Information" onSaveBeforeReset={saveFormData}>
+        <DiesInfoSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Feed Requirements" onSaveBeforeReset={saveFormData}>
+        <FeedRequirementsSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Space & Mounting" onSaveBeforeReset={saveFormData}>
+        <SpaceMountingSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Special Requirements" onSaveBeforeReset={saveFormData}>
+        <SpecialRequirementsSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
     </div>
   );
 };

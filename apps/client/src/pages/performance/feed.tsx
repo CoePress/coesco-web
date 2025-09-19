@@ -10,7 +10,10 @@ import {
   ALLEN_BRADLEY_FEED_MODEL_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
-import { Card, Input, Select, Text } from "@/components";
+import { Card, Input, Select, Text, VirtualTable } from "@/components";
+import OfflineStatus from "@/components/ui/OfflineStatus";
+import MemoryStatus from "@/components/ui/MemoryStatus";
+import { useMemoryEfficientPagination, useDatasetCleanup } from "@/hooks/useMemoryManagement";
 import { getStatusColors } from "@/utils/performanceHelpers";
 import { ANGLES } from "../../constants/performance";
 
@@ -637,52 +640,78 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
     </Card>
   ), [localData, handleFieldChange, isEditing]);
 
-  // Performance results table section
+  // Performance results table section with memory optimization
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
     const initLength = tableData[0]?.length || 0;
     const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
+    // Use memory-efficient data cleanup for large datasets
+    const { data: optimizedLengthRows } = useDatasetCleanup(lengthRows, 50, 0.8);
+
+    // Prepare data for VirtualTable
+    const virtualTableData = optimizedLengthRows.map((length) => {
+      const rowData = tableData.find((row: TableRowData) => row.length === length);
+      return {
+        id: length,
+        length: rowData?.length || length,
+        spm_at_fa1: rowData?.spm_at_fa1 || "#N/A",
+        fpm_fa1: rowData?.fpm_fa1 || "#N/A",
+        spm_at_fa2: rowData?.spm_at_fa2 || "#N/A",
+        fpm_fa2: rowData?.fpm_fa2 || "#N/A",
+      };
+    });
+
+    const columns = [
+      {
+        key: 'length',
+        header: 'Length',
+        className: 'text-center text-white',
+        headerClassName: 'bg-gray-800 text-white border border-gray-300',
+        render: (value: any) => <span className="text-white">{value}</span>
+      },
+      {
+        key: 'spm_at_fa1',
+        header: `SPM @ ${ANGLES.FEED_ANGLE_180}°`,
+        className: 'text-center text-white',
+        headerClassName: 'bg-gray-800 text-white border border-gray-300',
+        render: (value: any) => <span className="text-white">{value}</span>
+      },
+      {
+        key: 'fpm_fa1',
+        header: 'FPM',
+        className: 'text-center text-white',
+        headerClassName: 'bg-gray-800 text-white border border-gray-300',
+        render: (value: any) => <span className="text-white">{value}</span>
+      },
+      {
+        key: 'spm_at_fa2',
+        header: `SPM @ ${ANGLES.FEED_ANGLE_240}°`,
+        className: 'text-center text-white',
+        headerClassName: 'bg-gray-800 text-white border border-gray-300',
+        render: (value: any) => <span className="text-white">{value}</span>
+      },
+      {
+        key: 'fpm_fa2',
+        header: 'FPM',
+        className: 'text-center text-white',
+        headerClassName: 'bg-gray-800 text-white border border-gray-300',
+        render: (value: any) => <span className="text-white">{value}</span>
+      },
+    ];
+
     return (
       <Card className="mb-4 p-4">
         <Text as="h4" className="mb-4 text-lg font-medium">Performance Results</Text>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-800">
-                <th className="border border-gray-300 p-2 text-white">Length</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_180}°</th>
-                <th className="border border-gray-300 p-2 text-white">FPM</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_240}°</th>
-                <th className="border border-gray-300 p-2 text-white">FPM</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lengthRows.map((length) => {
-                const rowData = tableData.find((row: TableRowData) => row.length === length);
-                return (
-                  <tr key={length} className="bg-gray-800">
-                    <td className="border border-gray-300 p-2 text-center text-white">
-                      {rowData?.length || length}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
-                      {rowData?.spm_at_fa1 || "#N/A"}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
-                      {rowData?.fpm_fa1 || "#N/A"}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
-                      {rowData?.spm_at_fa2 || "#N/A"}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
-                      {rowData?.fpm_fa2 || "#N/A"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <VirtualTable
+          data={virtualTableData}
+          columns={columns}
+          rowHeight={40}
+          height={400}
+          className="border border-gray-300 bg-gray-800"
+          headerClassName="bg-gray-800"
+          rowClassName="bg-gray-800 border-b border-gray-300"
+        />
       </Card>
     );
   }, [localData]);
@@ -756,6 +785,14 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
       {feedSpecsSection}
       {feedLengthTableSection}
       {performanceResultsSection}
+
+      {/* Status indicators */}
+      <OfflineStatus showCacheInfo={true} />
+      <MemoryStatus
+        className="fixed top-20 right-4 z-40"
+        showDetailedStats={false}
+        enableMonitoring={true}
+      />
     </div>
   );
 };
