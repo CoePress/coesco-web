@@ -3,9 +3,10 @@ import { TableColumn } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/status-badge";
 import Modal from "@/components/ui/modal";
 import MachineForm from "@/components/forms/machine-form";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { IApiResponse } from "@/utils/types";
 
 const Machines = () => {
   const [page, setPage] = useState(1);
@@ -14,8 +15,41 @@ const Machines = () => {
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMachine, setSelectedMachine] = useState<any>(null);
+  const [machines, setMachines] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
 
-  const { entities: machines, loading, error, pagination } = useGetEntities("/production/machines", {page, limit});
+  const { get, loading, error } = useApi();
+
+  useEffect(() => {
+    const fetchMachines = async () => {
+      const response = await get("/production/machines", {
+        page,
+        limit,
+        sort,
+        order
+      });
+
+      if (response) {
+        const data = response as IApiResponse<any[]>;
+        setMachines(data.data || []);
+        if (data.meta) {
+          setPagination({
+            page: data.meta.page || 1,
+            totalPages: data.meta.totalPages || 0,
+            total: data.meta.total || 0,
+            limit: data.meta.limit || 25
+          });
+        }
+      }
+    };
+
+    fetchMachines();
+  }, [page, limit, sort, order]);
 
   if (loading) {
     return (

@@ -1,7 +1,5 @@
 export { default as MicrosoftCallback } from "../pages/utility/microsoft-callback";
-export { default as AddressInput } from "./_old/address-input";
-export { default as AdvancedDropdown } from "./_old/advanced-dropdown";
-export { default as DatePicker } from "./_old/date-picker";
+export { default as AddressInput } from "./feature/address-input";
 export { default as CommandBar } from "./feature/command-bar";
 export { default as MachineMap } from "./feature/machine-map";
 export { default as Toolbar } from "./feature/toolbar";
@@ -13,6 +11,7 @@ export { default as PageHeader } from "./layout/page-header";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";
 export { AddContactModal } from "./modals/add-contact-modal";
 export { AddJourneyContactModal } from "./modals/create-journey-contact-modal";
+export { default as AdvancedDropdown } from "./ui/advanced-dropdown";
 export { default as Button } from "./ui/button";
 export { default as Card } from "./ui/card";
 export { default as Input } from "./ui/input";

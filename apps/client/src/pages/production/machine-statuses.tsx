@@ -1,10 +1,10 @@
 import { Loader, PageHeader, StatusBadge } from "@/components";
 import Table, { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { formatDuration, getVariantFromStatus } from "@/utils";
-import { IMachineStatus } from "@/utils/types";
+import { IMachineStatus, IApiResponse } from "@/utils/types";
 import { format } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MachineStatuses = () => {
   const [page, setPage] = useState(1);
@@ -13,6 +13,16 @@ const MachineStatuses = () => {
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [selectedState, _setSelectedState] = useState("");
   const [selectedMachine, _setSelectedMachine] = useState("");
+  const [machineStatuses, setMachineStatuses] = useState<IMachineStatus[]>([]);
+  const [machines, setMachines] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const filter = useMemo(
     () => ({
@@ -22,13 +32,54 @@ const MachineStatuses = () => {
     [selectedState, selectedMachine]
   );
 
-  const { entities: machineStatuses, loading: machineStatusesLoading, error: machineStatusesError, pagination } = useGetEntities("/production/machine-statuses", {
-    page, limit, sort, order, filter,
-  });
-  const { entities: machines, loading: machinesLoading, error: machinesError } = useGetEntities("/production/machines");
+  const api = useApi<IApiResponse<IMachineStatus[]>>();
+  const machinesApi = useApi<IApiResponse<any[]>>();
 
-  const loading = machineStatusesLoading || machinesLoading;
-  const error = machineStatusesError || machinesError;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [statusesResponse, machinesResponse] = await Promise.all([
+          api.get("/production/machine-statuses", {
+            page,
+            limit,
+            sort,
+            order,
+            filter
+          }),
+          machinesApi.get("/production/machines", {
+            limit: 100
+          })
+        ]);
+
+        if (statusesResponse) {
+          const statusData = statusesResponse as IApiResponse<IMachineStatus[]>;
+          setMachineStatuses(statusData.data || []);
+          if (statusData.meta) {
+            setPagination({
+              page: statusData.meta.page || 1,
+              totalPages: statusData.meta.totalPages || 0,
+              total: statusData.meta.total || 0,
+              limit: statusData.meta.limit || 25
+            });
+          }
+        }
+
+        if (machinesResponse) {
+          const machineData = machinesResponse as IApiResponse<any[]>;
+          setMachines(machineData.data || []);
+        }
+      } catch (err) {
+        setError(api.error || machinesApi.error || "Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [page, limit, sort, order, filter]);
 
   // const stateOptions = [
   //   { label: "All States", value: "" },
