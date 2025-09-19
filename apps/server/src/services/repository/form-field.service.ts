@@ -20,13 +20,13 @@ export class FormFieldService extends BaseService<FormField> {
       throw new BadRequestError("label is required");
     if (!entity.variable)
       throw new BadRequestError("variable is required");
-    if (entity.isRequired === undefined || entity.isRequired === null)
+    if (!entity.isRequired)
       throw new BadRequestError("isRequired is required");
-    if (entity.isReadOnly === undefined || entity.isReadOnly === null)
+    if (!entity.isReadOnly)
       throw new BadRequestError("isReadOnly is required");
-    if (entity.isHiddenOnDevice === undefined || entity.isHiddenOnDevice === null)
+    if (!entity.isHiddenOnDevice)
       throw new BadRequestError("isHiddenOnDevice is required");
-    if (entity.isHiddenOnReport === undefined || entity.isHiddenOnReport === null)
+    if (!entity.isHiddenOnReport)
       throw new BadRequestError("isHiddenOnReport is required");
     if (!entity.sequence)
       throw new BadRequestError("sequence is required");

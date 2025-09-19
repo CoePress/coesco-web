@@ -20,7 +20,7 @@ export class PostalCodeController {
       const result = await locationService.searchPostalCodes({
         countryCode: countryCode as string,
         postalCode: postalCode as string,
-        limit: limit ? parseInt(limit as string) : undefined,
+        limit: limit ? Number.parseInt(limit as string) : undefined,
       });
       res.status(200).json(result);
     }

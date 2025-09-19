@@ -170,7 +170,8 @@ export class BaseService<T> {
 
         await this.log("DELETE", before, deleted, client);
         return deleted;
-      } else {
+      }
+      else {
         await model.delete({ where: { id } });
         await this.log("DELETE", before, undefined, client);
         return before;

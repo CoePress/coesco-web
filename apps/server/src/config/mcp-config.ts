@@ -1888,6 +1888,28 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "postal-code",
+    description: "Schema for PostalCode entity",
+    schema: {
+      countryCode: {
+        type: "string",
+        required: true,
+      },
+      postalCode: {
+        type: "string",
+        required: true,
+      },
+      latitude: {
+        type: "float",
+        required: true,
+      },
+      longitude: {
+        type: "float",
+        required: true,
+      },
+    },
+  },
+  {
     name: "product-class",
     description: "Schema for ProductClass entity",
     schema: {
