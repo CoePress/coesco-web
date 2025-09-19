@@ -51,7 +51,6 @@ interface ExcelRow {
 
 interface ImportResult {
   success: boolean;
-  companiesCreated: number;
   addressesCreated: number;
   contactsCreated: number;
   journeysCreated: number;
@@ -280,9 +279,9 @@ export const ImportExcelModal = ({
 
   const normalizeCountry = (country: string): string => {
     const normalized = country.toLowerCase().trim();
-    if (normalized === 'usa' || normalized === 'us') return 'usa';
-    if (normalized === 'canada' || normalized === 'ca') return 'canada';
-    if (normalized === 'mexico' || normalized === 'mx') return 'mexico';
+    if (normalized === 'usa' || normalized === 'us') return 'USA';
+    if (normalized === 'canada' || normalized === 'ca') return 'Canada';
+    if (normalized === 'mexico' || normalized === 'mx') return 'Mexico';
     return 'other';
   };
 
@@ -406,7 +405,6 @@ export const ImportExcelModal = ({
     
     const result: ImportResult = {
       success: true,
-      companiesCreated: 0,
       addressesCreated: 0,
       contactsCreated: 0,
       journeysCreated: 0,
@@ -468,44 +466,63 @@ export const ImportExcelModal = ({
                 const existingCompany = existingCompanies[0];
                 companyId = existingCompany.Company_ID;
               } else {
-                // Create new company with CustDlrName = Target_Account
-                companyId = await generateUniqueNumericId("Company", "Company_ID", "base");
-                
-                const companyPayload = {
-                  Company_ID: companyId,
-                  CustDlrName: row.targetAccount, // This is the key field for linking
-                };
-
-                await post("/legacy/base/Company", companyPayload);
-                result.companiesCreated++;
+                result.errors.push(`Company not found for ${row.targetAccount} - skipping row`);
+                return;
               }
             } catch (companyError) {
-              console.error('Error finding/creating company:', companyError);
-              result.errors.push(`Failed to find/create company for ${row.targetAccount}: ${companyError}`);
+              result.errors.push(`Failed to find company for ${row.targetAccount}: ${companyError}`);
+              return;
             }
           }
 
-          // Stage 2: Create address
-          updateStageProgress('Creating Address', 2);
+          // Stage 2: Find or create address
+          updateStageProgress('Finding/Creating Address', 2);
           
           if (companyId && (row.city || row.state || row.country)) {
             try {
-              addressId = await generateUniqueNumericId("Address", "Address_ID", "std");
+              // Check if address already exists for this company with same city, state, country
+              const normalizedCountry = normalizeCountry(row.country) || 'USA';
+              const existingAddresses = await get('/legacy/std/Address/filter/custom', {
+                filterField: 'Company_ID',
+                filterValue: companyId,
+                limit: 100 // Get all addresses for this company to check city/state/country
+              });
               
-              const addressPayload = {
-                Company_ID: companyId,
-                Address_ID: addressId,
-                AddressName: row.targetAccount, // Use target account as address name
-                City: row.city?.substring(0, 20) || '', // Limit to 20 chars
-                State: row.state?.substring(0, 20) || '', // Limit to 20 chars
-                Country: normalizeCountry(row.country)?.substring(0, 25) || 'USA', // Limit to 25 chars, default USA
-              };
+              let existingAddress = null;
+              if (existingAddresses && Array.isArray(existingAddresses)) {
+                existingAddress = existingAddresses.find(addr => 
+                  addr.City?.toLowerCase() === row.city?.toLowerCase() &&
+                  addr.State?.toLowerCase() === row.state?.toLowerCase() &&
+                  addr.Country?.toLowerCase() === normalizedCountry.toLowerCase() &&
+                  (!addr.Address1 || addr.Address1.trim() === '') 
+                  // TODO: The above line should check against the address1 field (when added)
+                  // Not implemented yet as I don't know how to present the 3 separate fields
+                  // to the user in a logical way 
+                );
+              }
+              
+              if (existingAddress) {
+                // Use existing address
+                addressId = existingAddress.Address_ID;
+              } else {
+                // Create new address
+                addressId = await generateUniqueNumericId("Address", "Address_ID", "std");
+                
+                const addressPayload = {
+                  Company_ID: companyId,
+                  Address_ID: addressId,
+                  AddressName: row.targetAccount, // Use target account as address name
+                  City: row.city?.substring(0, 20) || '', // Limit to 20 chars
+                  State: row.state?.substring(0, 20) || '', // Limit to 20 chars
+                  Country: normalizedCountry.substring(0, 25), // Limit to 25 chars
+                };
 
-              await post("/legacy/std/Address", addressPayload);
-              result.addressesCreated++;
+                await post("/legacy/std/Address", addressPayload);
+                result.addressesCreated++;
+              }
             } catch (addressError) {
-              console.error('Error creating address:', addressError);
-              result.errors.push(`Failed to create address for ${row.targetAccount}: ${addressError}`);
+              console.error('Error finding/creating address:', addressError);
+              result.errors.push(`Failed to find/create address for ${row.targetAccount}: ${addressError}`);
             }
           }
 
@@ -955,11 +972,7 @@ export const ImportExcelModal = ({
       
       {importResult && (
         <div className="bg-surface p-4 rounded space-y-2">
-          <div className="grid grid-cols-2 gap-4 text-center text-sm">
-            <div>
-              <div className="font-semibold text-success">{importResult.companiesCreated}</div>
-              <div className="text-text-muted">Companies Created</div>
-            </div>
+          <div className="grid grid-cols-3 gap-4 text-center text-sm">
             <div>
               <div className="font-semibold text-warning">{importResult.addressesCreated}</div>
               <div className="text-text-muted">Addresses Created</div>
