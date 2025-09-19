@@ -61,7 +61,10 @@ class LocalDatabase {
     const db = await this.open();
     const tx = db.transaction(store, "readwrite");
     tx.objectStore(store).put(record);
-    return tx.complete;
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(undefined);
+      tx.onerror = () => reject(tx.error);
+    });
   }
 
   async getAll<T extends StoreNames>(store: T): Promise<DBRecord[]> {
@@ -78,7 +81,10 @@ class LocalDatabase {
     const db = await this.open();
     const tx = db.transaction(store, "readwrite");
     tx.objectStore(store).delete(key);
-    return tx.complete;
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(undefined);
+      tx.onerror = () => reject(tx.error);
+    });
   }
 }
 

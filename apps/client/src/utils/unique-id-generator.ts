@@ -1,7 +1,10 @@
+import { useApi } from "@/hooks/use-api";
+
+const { get } = useApi();
+
 export async function generateUniqueId(
   tableName: string,
   idFieldName: string,
-  apiGet: (endpoint: string, params?: any) => Promise<any>,
   database: string = "std",
 ): Promise<string> {
   let attempts = 0;
@@ -11,7 +14,7 @@ export async function generateUniqueId(
     const newId = crypto.randomUUID();
 
     try {
-      const response = await apiGet(
+      const response = await get(
         `/legacy/${database}/${tableName}/filter/custom`,
         { [idFieldName]: newId },
       );
@@ -40,11 +43,10 @@ export async function generateUniqueId(
 export async function generateUniqueNumericId(
   tableName: string,
   idFieldName: string,
-  apiGet: (endpoint: string, params?: any) => Promise<any>,
   database: string = "std",
 ): Promise<number> {
   try {
-    const result = await apiGet(
+    const result = await get(
       `/legacy/${database}/${tableName}/${idFieldName}/max`,
     );
     const maxValue = result?.maxValue || 0;

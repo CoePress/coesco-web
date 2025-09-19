@@ -65,7 +65,7 @@ const PerformanceSheet = () => {
   // );
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
-  const { get, patch } = useApi();
+  const { get } = useApi();
 
   const visibleTabs = [
     { label: "RFQ", value: "rfq" },
