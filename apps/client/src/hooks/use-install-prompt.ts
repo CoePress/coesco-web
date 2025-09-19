@@ -9,7 +9,7 @@ interface InstallPromptState {
   promptInstall: () => void;
 }
 
-export const useInstallPrompt = (): InstallPromptState => {
+export function useInstallPrompt(): InstallPromptState {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -19,8 +19,8 @@ export const useInstallPrompt = (): InstallPromptState => {
 
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSafari =
-      /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isSafari
+      = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     const isChrome = /Chrome/.test(navigator.userAgent);
 
     setIsIOS(isIOSDevice);
@@ -28,10 +28,10 @@ export const useInstallPrompt = (): InstallPromptState => {
     setIsIOSChrome(isIOSDevice && isChrome);
 
     const isStandalone = window.matchMedia(
-      "(display-mode: standalone)"
+      "(display-mode: standalone)",
     ).matches;
     const isFullscreen = window.matchMedia(
-      "(display-mode: fullscreen)"
+      "(display-mode: fullscreen)",
     ).matches;
     const isMinimalUI = window.matchMedia("(display-mode: minimal-ui)").matches;
     const isPWAInstalled = isStandalone || isFullscreen || isMinimalUI;
@@ -49,7 +49,8 @@ export const useInstallPrompt = (): InstallPromptState => {
 
     if (isIOSDevice) {
       setIsSupported(!isPWAInstalled);
-    } else {
+    }
+    else {
       const handler = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -86,4 +87,4 @@ export const useInstallPrompt = (): InstallPromptState => {
     isInstalled,
     promptInstall,
   };
-};
+}

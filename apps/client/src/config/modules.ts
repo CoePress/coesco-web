@@ -17,6 +17,7 @@ import {
   FileCogIcon,
   FileIcon,
   FileTextIcon,
+  FolderSyncIcon,
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
@@ -31,6 +32,7 @@ import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contac
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
+import SyncTest from "@/pages/service/sync-test";
 
 import { __dev__ } from "./env";
 
@@ -312,6 +314,12 @@ const sandboxModule: Module = {
       label: "Legacy Explorer",
       icon: SearchIcon,
       component: LegacyExplorer,
+    },
+    {
+      slug: "sync",
+      label: "Sync",
+      icon: FolderSyncIcon,
+      component: SyncTest,
     },
   ],
 };

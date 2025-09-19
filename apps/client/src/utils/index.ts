@@ -1,32 +1,36 @@
+import type { ClassValue } from "clsx";
+
 import axios from "axios";
-import { ProductClass } from "./types";
-import { clsx, type ClassValue } from "clsx";
+import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+
 import { env } from "@/config/env";
 
-export const cn = (...inputs: ClassValue[]) => {
-  return twMerge(clsx(inputs));
-};
+import type { ProductClass } from "./types";
 
-export const formatDate = (dateString: string) => {
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatDate(dateString: string) {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   }).format(date);
-};
+}
 
-export const formatCurrency = (amount: number, showCents: boolean = true) => {
+export function formatCurrency(amount: number, showCents: boolean = true) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: showCents ? 2 : 0,
     maximumFractionDigits: showCents ? 2 : 0,
   }).format(amount);
-};
+}
 
-export const formatDuration = (ms: number): string => {
+export function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
 
   const days = Math.floor(totalSeconds / (24 * 60 * 60));
@@ -36,33 +40,35 @@ export const formatDuration = (ms: number): string => {
 
   const parts: string[] = [];
 
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  if (seconds > 0) parts.push(`${seconds}s`);
+  if (days > 0)
+    parts.push(`${days}d`);
+  if (hours > 0)
+    parts.push(`${hours}h`);
+  if (minutes > 0)
+    parts.push(`${minutes}m`);
+  if (seconds > 0)
+    parts.push(`${seconds}s`);
 
   if (parts.length === 0) {
     return "0s";
   }
 
   return parts.join(" ");
-};
+}
 
-export const isProductClassDescendant = (
-  childId: string,
-  parentId: string,
-  productClasses: ProductClass[]
-): boolean => {
-  const child = productClasses.find((pc) => pc.id === childId);
-  if (!child) return false;
-  if (child.parentId === parentId) return true;
+export function isProductClassDescendant(childId: string, parentId: string, productClasses: ProductClass[]): boolean {
+  const child = productClasses.find(pc => pc.id === childId);
+  if (!child)
+    return false;
+  if (child.parentId === parentId)
+    return true;
   if (child.parentId) {
     return isProductClassDescendant(child.parentId, parentId, productClasses);
   }
   return false;
-};
+}
 
-export const getStatusColor = (status: string, theme: string) => {
+export function getStatusColor(status: string, theme: string) {
   switch (status.toUpperCase()) {
     case "ACTIVE":
       return "#34d399";
@@ -79,9 +85,9 @@ export const getStatusColor = (status: string, theme: string) => {
     default:
       return theme === "dark" ? "#404040" : "#d4d4d4";
   }
-};
+}
 
-export const getVariantFromStatus = (status: string) => {
+export function getVariantFromStatus(status: string) {
   const colors = {
     ACTIVE: "success",
     SETUP: "info",
@@ -90,24 +96,24 @@ export const getVariantFromStatus = (status: string) => {
     OFFLINE: "default",
   };
   return colors[status as keyof typeof colors] || "default";
-};
+}
 
-export const getStateColor = (state: string) => {
+export function getStateColor(state: string) {
   const colors = {
-    ACTIVE: "#22c55e", // Green
-    IDLE: "#3b82f6", // Blue
-    FEED_HOLD: "#eab308", // Yellow
+    "ACTIVE": "#22c55e", // Green
+    "IDLE": "#3b82f6", // Blue
+    "FEED_HOLD": "#eab308", // Yellow
     "E-STOP": "#ef4444", // Red
-    ALARM: "#ef4444", // Red
-    SETUP: "#f97316", // Orange
-    TOOL_CHANGE: "#8b5cf6", // Purple
-    POWER_ON: "#6b7280", // Gray
-    HOMING: "#6b7280", // Gray
-    RESET: "#6b7280", // Gray
-    MAINTENANCE: "#f97316", // Orange
+    "ALARM": "#ef4444", // Red
+    "SETUP": "#f97316", // Orange
+    "TOOL_CHANGE": "#8b5cf6", // Purple
+    "POWER_ON": "#6b7280", // Gray
+    "HOMING": "#6b7280", // Gray
+    "RESET": "#6b7280", // Gray
+    "MAINTENANCE": "#f97316", // Orange
   };
   return colors[state as keyof typeof colors] || "#6b7280";
-};
+}
 
 export const instance = axios.create({
   baseURL: env.VITE_API_URL,
@@ -119,6 +125,6 @@ export const instance = axios.create({
 
 export function formatQuoteNumber(year: string, quoteNumber: string, revision?: string) {
   const yearSuffix = year.toString().slice(-2);
-  const paddedQuoteNumber = quoteNumber.toString().padStart(5, '0');
+  const paddedQuoteNumber = quoteNumber.toString().padStart(5, "0");
   return revision ? `${yearSuffix}-${paddedQuoteNumber}-${revision}` : `${yearSuffix}-${paddedQuoteNumber}`;
 }

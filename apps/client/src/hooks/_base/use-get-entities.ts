@@ -1,23 +1,21 @@
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
-import { IApiResponse, IQueryParams } from "@/utils/types";
+import type { IApiResponse, IQueryParams } from "@/utils/types";
+
 import { instance } from "@/utils";
 
-export const useGetEntities = <T = any>(
-  endpoint: string | null,
-  {
-    sort = "createdAt",
-    order = "desc",
-    page = 1,
-    limit = 25,
-    search,
-    filter,
-    include,
-    dateFrom,
-    dateTo,
-  }: IQueryParams<any> = {}
-) => {
+export function useGetEntities<T = any>(endpoint: string | null, {
+  sort = "createdAt",
+  order = "desc",
+  page = 1,
+  limit = 25,
+  search,
+  filter,
+  include,
+  dateFrom,
+  dateTo,
+}: IQueryParams<any> = {}) {
   const [entities, setEntities] = useState<T[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,11 +54,16 @@ export const useGetEntities = <T = any>(
           limit,
         };
 
-        if (search) params.search = search;
-        if (filter) params.filter = filter;
-        if (dateFrom) params.dateFrom = dateFrom;
-        if (dateTo) params.dateTo = dateTo;
-        if (include) params.include = JSON.stringify(include);
+        if (search)
+          params.search = search;
+        if (filter)
+          params.filter = filter;
+        if (dateFrom)
+          params.dateFrom = dateFrom;
+        if (dateTo)
+          params.dateTo = dateTo;
+        if (include)
+          params.include = JSON.stringify(include);
 
         const { data } = await instance.get<IApiResponse<T[]>>(endpoint, {
           params,
@@ -74,17 +77,21 @@ export const useGetEntities = <T = any>(
             page: data.meta?.page || 1,
             limit: data.meta?.limit || 25,
           });
-        } else {
+        }
+        else {
           setError(data.error || `Failed to fetch entities from ${endpoint}`);
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (error instanceof AxiosError) {
           setError(error.response?.data.message);
-        } else {
+        }
+        else {
           setError("An error occurred. Please try again.");
         }
         return null;
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     };
@@ -104,7 +111,7 @@ export const useGetEntities = <T = any>(
     dateTo,
   ]);
 
-  const refresh = () => setRefreshToggle((prev) => !prev);
+  const refresh = () => setRefreshToggle(prev => !prev);
 
   return {
     entities,
@@ -113,4 +120,4 @@ export const useGetEntities = <T = any>(
     refresh,
     pagination,
   };
-};
+}
