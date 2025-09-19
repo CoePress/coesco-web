@@ -1052,3 +1052,13 @@ model QuoteNote {
 
   @@map("quote_notes")
 }
+
+model PostalCode {
+  countryCode String @db.Char(2)
+  postalCode  String @db.VarChar(20)
+  latitude    Float
+  longitude   Float
+
+  @@id([countryCode, postalCode])
+  @@map("postal_code")
+}
