@@ -11,8 +11,9 @@ import {
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import { IApiResponse, IAuditLog } from "@/utils/types";
+import { IApiResponse} from "@/utils/types";
 import { format } from "date-fns";
+import { AuditLog } from "@coesco/types";
 
 const Logs = () => {
   const [page, setPage] = useState(1);
@@ -20,7 +21,7 @@ const Logs = () => {
   const [sort, setSort] = useState("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
-  const [auditLogs, setAuditLogs] = useState<IAuditLog[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
@@ -29,20 +30,20 @@ const Logs = () => {
     total: 0,
     limit: 25,
   });
-  const [selectedLog, setSelectedLog] = useState<IAuditLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const { get } = useApi<IApiResponse<IAuditLog[]>>();
+  const { get } = useApi<IApiResponse<AuditLog[]>>();
 
-  const columns: TableColumn<IAuditLog>[] = [
+  const columns: TableColumn<AuditLog>[] = [
     {
       key: "createdAt",
       header: "Timestamp",
       render: (_, row) => (
         <div className="flex flex-col">
-          <span>{format(new Date(row.createdAt), "MM/dd/yyyy")}</span>
+          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : 'N/A'}</span>
           <span className="text-xs text-text-muted">
-            {format(new Date(row.createdAt), "hh:mm:ss a")}
+            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : 'N/A'}
           </span>
         </div>
       ),
@@ -98,7 +99,7 @@ const Logs = () => {
       });
 
       if (response?.success && response.data) {
-        setAuditLogs(response.data as unknown as IAuditLog[]);
+        setAuditLogs(response.data as unknown as AuditLog[]);
         setPagination(prev => ({
           ...prev,
           ...response.meta,
@@ -146,7 +147,7 @@ const Logs = () => {
         actions={<Actions />}
       />
 
-      <Table<IAuditLog>
+      <Table<AuditLog>
         columns={columns}
         data={auditLogs || []}
         total={pagination.total}
@@ -177,7 +178,7 @@ const Logs = () => {
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
                 <div className="text-sm">
-                  {format(new Date(selectedLog.createdAt), "MM/dd/yyyy hh:mm:ss a")}
+                  {selectedLog.createdAt ? format(new Date(selectedLog.createdAt), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
                 </div>
               </div>
               <div>

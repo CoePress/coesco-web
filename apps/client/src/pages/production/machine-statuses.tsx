@@ -2,7 +2,8 @@ import { Loader, PageHeader, StatusBadge } from "@/components";
 import Table, { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { formatDuration, getVariantFromStatus } from "@/utils";
-import { IMachineStatus, IApiResponse } from "@/utils/types";
+import {  IApiResponse } from "@/utils/types";
+import { MachineStatus } from "@coesco/types";
 import { format } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,7 +14,7 @@ const MachineStatuses = () => {
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [selectedState, _setSelectedState] = useState("");
   const [selectedMachine, _setSelectedMachine] = useState("");
-  const [machineStatuses, setMachineStatuses] = useState<IMachineStatus[]>([]);
+  const [machineStatuses, setMachineStatuses] = useState<MachineStatus[]>([]);
   const [machines, setMachines] = useState<any[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -32,7 +33,7 @@ const MachineStatuses = () => {
     [selectedState, selectedMachine]
   );
 
-  const api = useApi<IApiResponse<IMachineStatus[]>>();
+  const api = useApi<IApiResponse<MachineStatus[]>>();
   const machinesApi = useApi<IApiResponse<any[]>>();
 
   useEffect(() => {
@@ -55,7 +56,7 @@ const MachineStatuses = () => {
         ]);
 
         if (statusesResponse) {
-          const statusData = statusesResponse as IApiResponse<IMachineStatus[]>;
+          const statusData = statusesResponse as IApiResponse<MachineStatus[]>;
           setMachineStatuses(statusData.data || []);
           if (statusData.meta) {
             setPagination({
@@ -102,7 +103,7 @@ const MachineStatuses = () => {
     {
       key: "machineId",
       header: "Machine",
-      render: (_: any, row: IMachineStatus) => {
+      render: (_: any, row: MachineStatus) => {
         const machine = machines?.find(
           (machine) => machine.id === row.machineId
         );
@@ -195,8 +196,8 @@ const MachineStatuses = () => {
       />
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <div className="flex-1 overflow-hidden">
-          <Table<IMachineStatus>
-            columns={columns as TableColumn<IMachineStatus>[]}
+          <Table<MachineStatus>
+            columns={columns as TableColumn<MachineStatus>[]}
             data={machineStatuses || []}
             total={pagination.total}
             idField="id"
