@@ -4,11 +4,13 @@ import {
   Layout,
   List as ListIcon,
   BarChart3,
+  Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
+import { ImportExcelModal } from "@/components/modals/import-excel-modal";
 import { KanbanView } from "./journeys/KanbanView";
 import { ListView } from "./journeys/ListView";
 import { ProjectionsView } from "./journeys/ProjectionsView";
@@ -31,6 +33,8 @@ const stageLabel = (id?: number) =>
 const Pipeline = () => {
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const toggleImportModal = () => setIsImportModalOpen(prev => !prev);
   const navigate = useNavigate();
 
   const { employee } = useAuth();
@@ -752,6 +756,14 @@ const Pipeline = () => {
         Export
       </Button>
       <Button
+        variant="secondary-outline"
+        size="sm"
+        onClick={() => toggleImportModal()}
+      >
+        <Upload size={16} />
+        Import
+      </Button>
+      <Button
         variant="primary"
         size="sm"
         onClick={() => toggleJourneyModal()}
@@ -879,6 +891,28 @@ const Pipeline = () => {
                 journeyId: adaptedJourney.id
               });
             }
+          }}
+          availableRsms={availableRsms}
+        />
+      )}
+      {isImportModalOpen && (
+        <ImportExcelModal
+          isOpen={isImportModalOpen}
+          onClose={toggleImportModal}
+          onSuccess={() => {
+            // Refresh the journeys data after successful import
+            const fetchData = async () => {
+              const [journeysData] = await Promise.all([
+                get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 100 })
+              ]);
+              
+              if (journeysData) {
+                setJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
+                setLegacyJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
+              }
+            };
+            
+            fetchData();
           }}
           availableRsms={availableRsms}
         />
