@@ -65,8 +65,8 @@ export const __prod__ = env.NODE_ENV === "production";
 export const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: __prod__,
-  sameSite: (__prod__ ? "none" : "lax") as "none" | "lax" | "strict",
+  sameSite: __dev__ ? false : "none" as any,
   path: "/",
-  domain: __prod__ ? "cpec.com" : "localhost",
+  domain: __prod__ ? "cpec.com" : undefined,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
