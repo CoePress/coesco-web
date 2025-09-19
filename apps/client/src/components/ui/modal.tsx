@@ -7,6 +7,7 @@ type ModalProps = {
   title: string;
   children: React.ReactNode;
   size?: "xs" | "sm" | "md" | "lg";
+  overflow?: "visible" | "auto";
 };
 
 const Modal = ({
@@ -15,6 +16,7 @@ const Modal = ({
   title,
   children,
   size = "md",
+  overflow = "auto",
 }: ModalProps) => {
   if (!isOpen) return null;
 
@@ -38,7 +40,7 @@ const Modal = ({
             <X size={16} />
           </Button>
         </div>
-        <div className="flex flex-col gap-2 overflow-visible flex-1">{children}</div>
+        <div className={`flex flex-col gap-2 flex-1 ${overflow === "visible" ? "overflow-visible" : "overflow-auto"}`}>{children}</div>
       </Card>
     </div>
   );
