@@ -115,14 +115,6 @@ export function getStateColor(state: string) {
   return colors[state as keyof typeof colors] || "#6b7280";
 }
 
-export const instance = axios.create({
-  baseURL: env.VITE_API_URL,
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 export function formatQuoteNumber(year: string, quoteNumber: string, revision?: string) {
   const yearSuffix = year.toString().slice(-2);
   const paddedQuoteNumber = quoteNumber.toString().padStart(5, "0");
