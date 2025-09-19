@@ -21,7 +21,6 @@ export { default as ContactDetails } from "./sales/contact-details";
 export { default as Contacts } from "./sales/contacts";
 export { default as SalesDashboard } from "./sales/dashboard";
 export { default as JourneyDetails } from "./sales/journey-details";
-export { default as Journeys } from "./sales/journeys";
 export { default as PerformanceSheet } from "./sales/performance-sheet-details";
 export { default as PerformanceSheets } from "./sales/performance-sheets";
 export { default as Pipeline } from "./sales/pipeline";

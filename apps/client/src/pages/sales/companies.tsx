@@ -7,12 +7,15 @@ import { useEffect, useState, useCallback, useRef } from "react";
 
 import { Table, Button, PageHeader } from "@/components";
 import { TableColumn } from "@/components/ui/table";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
+import type { IApiResponse } from "@/utils/types";
 
 const Companies = () => {
-  const { entities: companies } = useGetEntities("/crm/companies");
+  const [companies, setCompanies] = useState<any[] | null>(null);
   const [legacyCompanies, setLegacyCompanies] = useState<any[] | null>(null);
   const [_legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
+  const companiesApi = useApi();
+  const legacyApi = useApi();
 
   const adaptLegacyCompany = (raw: any, contacts: any[] = []) => {
     const companyContacts = contacts.filter(contact => contact.Company_ID === raw.Company_ID);
@@ -55,55 +58,47 @@ const Companies = () => {
   };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    const fetchData = async () => {
       try {
-        // Fetch companies and contacts in parallel
-        const [companiesResponse, contactsResponse] = await Promise.all([
-          fetch(
-            `http://localhost:8080/api/legacy/base/Company?sort=Company_ID&order=desc`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          ),
-          fetch(
-            `http://localhost:8080/api/legacy/base/Contacts?sort=Company_ID&order=desc&limit=500`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          )
+        const modernCompaniesResponse = await companiesApi.get("/crm/companies");
+        if (modernCompaniesResponse) {
+          const data = modernCompaniesResponse as IApiResponse<any[]>;
+          setCompanies(data.data || []);
+        }
+
+        const [legacyCompaniesResponse, contactsResponse] = await Promise.all([
+          legacyApi.get("/legacy/base/Company", {
+            sort: "Company_ID",
+            order: "desc"
+          }),
+          legacyApi.get("/legacy/base/Contacts", {
+            sort: "Company_ID",
+            order: "desc",
+            limit: 500
+          })
         ]);
 
         let contactsData = [];
-        if (contactsResponse.ok) {
-          const rawContacts = await contactsResponse.json();
-          contactsData = Array.isArray(rawContacts) ? rawContacts : [];
-          if (!cancelled) setLegacyContacts(contactsData);
-        } else {
-          console.error("Legacy contacts fetch failed:", contactsResponse.status, await contactsResponse.text());
+        if (contactsResponse) {
+          contactsData = Array.isArray(contactsResponse) ? contactsResponse : [];
+          setLegacyContacts(contactsData);
         }
 
-        if (companiesResponse.ok) {
-          const rawCompanies = await companiesResponse.json();
-          const mapped = Array.isArray(rawCompanies) ? rawCompanies.map(company => adaptLegacyCompany(company, contactsData)) : [];
-          if (!cancelled) setLegacyCompanies(mapped);
-        } else {
-          console.error("Legacy companies fetch failed:", companiesResponse.status, await companiesResponse.text());
+        if (legacyCompaniesResponse) {
+          const rawCompanies = Array.isArray(legacyCompaniesResponse) ? legacyCompaniesResponse : [];
+          const mapped = rawCompanies.map(company => adaptLegacyCompany(company, contactsData));
+          setLegacyCompanies(mapped);
         }
       } catch (error) {
         console.error("Error fetching Companies and Contacts:", error);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+
+    fetchData();
   }, []);
 
   const baseCompanies = legacyCompanies?.length ? legacyCompanies : (companies ?? []);
 
-  // Batch loading state
   const [batchSize, setBatchSize] = useState(500);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
@@ -114,27 +109,24 @@ const Companies = () => {
     if (isLoadingMore || !hasMoreCompanies) return;
     
     setIsLoadingMore(true);
-    // Simulate loading delay for better UX
     setTimeout(() => {
       setBatchSize(prev => prev + 200);
       setIsLoadingMore(false);
     }, 300);
   }, [isLoadingMore, hasMoreCompanies]);
 
-  // Scroll detection for auto-loading
   const handleScroll = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
     if (!target) return;
     
     const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
     
     if (isNearBottom && hasMoreCompanies && !isLoadingMore) {
       loadMoreCompanies();
     }
   }, [hasMoreCompanies, isLoadingMore, loadMoreCompanies]);
 
-  // Add scroll listener
   const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -142,7 +134,6 @@ const Companies = () => {
 
     const scrollContainer = containerRef.current;
 
-    // Throttle scroll events
     let timeoutId: NodeJS.Timeout;
     const throttledScroll = (e: Event) => {
       if (timeoutId) clearTimeout(timeoutId);

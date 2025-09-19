@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 // import SummaryReport from "./summary-report";
 import { Save, Lock, Link } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { instance } from "@/utils";
+import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 // import RFQ from "./rfq";
@@ -65,6 +65,7 @@ const PerformanceSheet = () => {
   // );
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
+  const { get, patch } = useApi();
 
   const visibleTabs = [
     { label: "RFQ", value: "rfq" },
@@ -75,17 +76,19 @@ const PerformanceSheet = () => {
     { label: "Roll Str Backbend", value: "roll-str-backbend" },
     { label: "Feed", value: "feed" },
   ];
-  
+
   useEffect(() => {
     if (!performanceSheetId) return;
 
     const fetchLockStatus = async () => {
       try {
-        const { data } = await instance.get(
+        const response = await get(
           `/lock/status/performance-sheets/${performanceSheetId}`
         );
-        setIsLocked(data?.isLocked ?? false);
-        setLockInfo(data?.lockInfo || null);
+        if (response) {
+          setIsLocked((response as any)?.isLocked ?? false);
+          setLockInfo((response as any)?.lockInfo || null);
+        }
       } catch (err) {
         console.error("Failed to fetch lock status:", err);
       }
@@ -116,21 +119,31 @@ const PerformanceSheet = () => {
     // );
   };
 
-  const handleSave = () => {
-    // if (!performanceSheetId || !isConnected) return;
-    // emit(
-    //   "lock:release",
-    //   {
-    //     recordType: "performance-sheets",
-    //     recordId: performanceSheetId,
-    //     userId: user?.id,
-    //   },
-    //   (result: any) => {
-    //     setIsEditing(false);
-    //     setIsLocked(false);
-    //     setLockInfo(null);
-    //   }
-    // );
+  const handleSave = async () => {
+    if (!performanceSheetId) return;
+
+    try {
+      // Update performance sheet data here using patch
+      // await patch(`/performance/sheets/${performanceSheetId}`, updatedData);
+
+      // Release lock after save
+      // if (!isConnected) return;
+      // emit(
+      //   "lock:release",
+      //   {
+      //     recordType: "performance-sheets",
+      //     recordId: performanceSheetId,
+      //     userId: user?.id,
+      //   },
+      //   (result: any) => {
+      //     setIsEditing(false);
+      //     setIsLocked(false);
+      //     setLockInfo(null);
+      //   }
+      // );
+    } catch (error) {
+      console.error("Failed to save performance sheet:", error);
+    }
   };
 
   const getHeaderActions = () => {

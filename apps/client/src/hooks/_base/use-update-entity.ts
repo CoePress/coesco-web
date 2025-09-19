@@ -1,7 +1,8 @@
 import { useState } from "react";
+
 import { useApi } from "../use-api";
 
-export const useUpdateEntity = (endpoint: string) => {
+export function useUpdateEntity(endpoint: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { patch } = useApi();
@@ -14,7 +15,8 @@ export const useUpdateEntity = (endpoint: string) => {
       const response = await patch(`${endpoint}/${id}`, data);
       setLoading(false);
       return response;
-    } catch (err: any) {
+    }
+    catch (err: any) {
       setError(err.message || "Failed to update entity");
       setLoading(false);
       throw err;
@@ -22,4 +24,4 @@ export const useUpdateEntity = (endpoint: string) => {
   };
 
   return { updateEntity, loading, error };
-};
+}

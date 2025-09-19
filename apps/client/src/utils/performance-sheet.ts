@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from "react";
 
 import type { PerformanceData } from "@/contexts/performance.context";
 
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useApi } from "@/hooks/use-api";
 
 export const DAYS_PER_WEEK_OPTIONS = [
   { value: "1", label: "1 Day" },
@@ -467,8 +467,7 @@ export interface PerformanceDataServiceState {
 }
 
 export function usePerformanceDataService(initialData: PerformanceData, performanceSheetId: string | undefined, isEditing: boolean) {
-  const endpoint = `/performance/sheets`;
-  const { updateEntity, loading: updateLoading, error: updateError } = useUpdateEntity(endpoint);
+  const { patch, loading: updateLoading, error: updateError } = useApi();
 
   // Local state management
   const [localData, setLocalData] = useState<PerformanceData>(initialData);
@@ -503,7 +502,7 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
         console.log("1. Sending data to backend:", JSON.stringify(updatedData, null, 2));
 
-        const response = await updateEntity(performanceSheetId, { data: updatedData });
+        const response = await patch(`/performance/sheets/${performanceSheetId}`, { data: updatedData });
         console.log("2. Backend response:", response);
 
         // Handle calculated values from backend - merge the entire response
@@ -534,7 +533,7 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
         }));
       }
     }, 1000),
-    [performanceSheetId, updateEntity, isEditing],
+    [performanceSheetId, patch, isEditing],
   );
 
   // Change handler for form fields
@@ -607,7 +606,7 @@ export function usePerformanceDataService(initialData: PerformanceData, performa
       }));
       throw error;
     }
-  }, [performanceSheetId, updateEntity, isEditing]);
+  }, [performanceSheetId, patch, isEditing]);
 
   // Update specific field programmatically
   const updateField = useCallback((fieldPath: string, value: any) => {

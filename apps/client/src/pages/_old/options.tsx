@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Edit,
@@ -12,7 +12,8 @@ import {
   Trash,
 } from "lucide-react";
 import { Modal, Button, Tabs, Loader } from "@/components";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
+import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 
 interface RuleCondition {
@@ -57,17 +58,50 @@ const Options = () => {
   >(null);
   const [isCategoryOptionModalOpen, setIsCategoryOptionModalOpen] =
     useState(false);
+  const [optionCategories, setOptionCategories] = useState<any[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
+  const [productClasses, setProductClasses] = useState<any[]>([]);
+  const [optionRules, setOptionRules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { entities: optionCategories, loading: categoriesLoading } =
-    useGetEntities("/configurations/categories");
-  const { entities: options, loading: optionsLoading } = useGetEntities(
-    "/configurations/options"
-  );
-  const { entities: productClasses, loading: productClassesLoading } =
-    useGetEntities("/configurations/classes");
-  const { entities: optionRules, loading: rulesLoading } = useGetEntities(
-    "/configurations/rules"
-  );
+  const api = useApi();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [categoriesRes, optionsRes, classesRes, rulesRes] = await Promise.all([
+          api.get("/configurations/categories"),
+          api.get("/configurations/options"),
+          api.get("/configurations/classes"),
+          api.get("/configurations/rules")
+        ]);
+
+        if (categoriesRes) {
+          const data = categoriesRes as IApiResponse<any[]>;
+          setOptionCategories(data.data || []);
+        }
+        if (optionsRes) {
+          const data = optionsRes as IApiResponse<any[]>;
+          setOptions(data.data || []);
+        }
+        if (classesRes) {
+          const data = classesRes as IApiResponse<any[]>;
+          setProductClasses(data.data || []);
+        }
+        if (rulesRes) {
+          const data = rulesRes as IApiResponse<any[]>;
+          setOptionRules(data.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const categories = Array.isArray(optionCategories)
     ? optionCategories.filter(
@@ -188,12 +222,7 @@ const Options = () => {
     );
   };
 
-  if (
-    categoriesLoading ||
-    optionsLoading ||
-    productClassesLoading ||
-    rulesLoading
-  ) {
+  if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <Loader />
