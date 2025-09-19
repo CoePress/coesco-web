@@ -1,10 +1,7 @@
 import type { ClassValue } from "clsx";
 
-import axios from "axios";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-
-import { env } from "@/config/env";
 
 import type { ProductClass } from "./types";
 
