@@ -41,6 +41,18 @@ export async function getModels() {
   return dmmf.datamodel.models;
 }
 
+export async function getEnums() {
+  const schemaPath = path.resolve(__dirname, "../../prisma/schema.prisma");
+
+  if (!fs.existsSync(schemaPath)) {
+    throw new Error(`schema.prisma not found at: ${schemaPath}`);
+  }
+
+  const datamodel = fs.readFileSync(schemaPath, "utf-8");
+  const dmmf = await getDMMF({ datamodel });
+  return dmmf.datamodel.enums;
+}
+
 async function generateValidations(model: any) {
   const lines: string[] = [];
 
@@ -205,7 +217,6 @@ async function updateMCPConfig(models: any) {
       serviceImports.push(`  ${modelNameLower}Service,`);
       serviceMapEntries.push(`  "${kebabName}": ${modelNameLower}Service,`);
 
-      // Extract just the essential field info for JSON schema
       const fields = model.fields.reduce((acc: any, field: any) => {
         if (field.kind === "scalar" || field.kind === "enum") {
           acc[field.name] = {
@@ -232,7 +243,6 @@ async function updateMCPConfig(models: any) {
 
   let content = fs.readFileSync(mcpConfigFile, "utf-8");
 
-  // Update imports
   const newImport = `import {
 ${serviceImports.join("\n")}
 } from "../services/repository";`;
@@ -242,7 +252,6 @@ ${serviceImports.join("\n")}
     newImport,
   );
 
-  // Update service map
   const newServiceMap = `const serviceMap: Record<string, any> = {
 ${serviceMapEntries.join("\n")}
 };`;
@@ -252,7 +261,6 @@ ${serviceMapEntries.join("\n")}
     newServiceMap,
   );
 
-  // Update schemas
   const newSchemas = `export const SCHEMAS: ISchema[] = [
 ${schemaEntries.join("\n")}
 ];`;
@@ -266,12 +274,161 @@ ${schemaEntries.join("\n")}
   console.log("Updated MCP config service map and schemas");
 }
 
+async function generateSharedTypes(models: any) {
+  const packagesDir = path.resolve(__dirname, "../../../../packages/types");
+  const srcDir = path.resolve(packagesDir, "src");
+
+  fs.mkdirSync(srcDir, { recursive: true });
+
+  const modelExports: string[] = [];
+
+  // Generate enums first
+  const enums = await getEnums();
+  for (const enumDef of enums) {
+    const kebabName = toKebabCase(enumDef.name);
+    const enumFile = path.resolve(srcDir, `${kebabName}.ts`);
+
+    const enumValues = enumDef.values.map((value: any) => `  ${value.name} = "${value.name}",`).join("\n");
+
+    const enumContent = `// Auto-generated from Prisma schema
+export enum ${enumDef.name} {
+${enumValues}
+}
+`;
+
+    fs.writeFileSync(enumFile, enumContent);
+    modelExports.push(`export * from './${kebabName}';`);
+    console.log(`Generated enum: ${enumDef.name}`);
+  }
+
+  for (const model of models) {
+    const kebabName = toKebabCase(model.name);
+    const typeFile = path.resolve(srcDir, `${kebabName}.ts`);
+
+    const fields: string[] = [];
+    const enumImports: Set<string> = new Set();
+
+    model.fields.forEach((field: any) => {
+      let fieldType = "";
+
+      switch (field.type) {
+        case "String":
+          fieldType = "string";
+          break;
+        case "Int":
+        case "Float":
+        case "BigInt":
+        case "Decimal":
+          fieldType = "number";
+          break;
+        case "Boolean":
+          fieldType = "boolean";
+          break;
+        case "DateTime":
+          fieldType = "Date | string";
+          break;
+        case "Json":
+          fieldType = "any";
+          break;
+        default:
+          if (field.kind === "enum") {
+            fieldType = field.type;
+            enumImports.add(field.type);
+          }
+          else if (field.kind === "object") {
+            fieldType = field.type;
+            if (field.isList) {
+              fieldType = `${fieldType}[]`;
+            }
+          }
+          else {
+            fieldType = "any";
+          }
+      }
+
+      if (field.isList && field.kind === "scalar") {
+        fieldType = `${fieldType}[]`;
+      }
+
+      const optional = !field.isRequired || field.hasDefaultValue ? "?" : "";
+      const fieldName = field.name;
+
+      if (field.kind === "scalar" || field.kind === "enum") {
+        fields.push(`  ${fieldName}${optional}: ${fieldType};`);
+      }
+    });
+
+    const importStatements = Array.from(enumImports)
+      .map(enumName => `import { ${enumName} } from './${toKebabCase(enumName)}';`)
+      .join("\n");
+
+    const typeContent = `// Auto-generated from Prisma schema
+${importStatements ? `${importStatements}\n\n` : ""}export interface ${model.name} {
+${fields.join("\n")}
+}
+
+export type Create${model.name}Input = Omit<${model.name}, "id" | "createdAt" | "updatedAt">;
+export type Update${model.name}Input = Partial<Create${model.name}Input>;
+`;
+
+    fs.writeFileSync(typeFile, typeContent);
+    modelExports.push(`export * from './${kebabName}';`);
+    console.log(`Generated type: ${model.name}`);
+  }
+
+  const indexFile = path.resolve(srcDir, "index.ts");
+  fs.writeFileSync(indexFile, `// Auto-generated database types\n${modelExports.join("\n")}\n`);
+
+  const packageJsonFile = path.resolve(packagesDir, "package.json");
+  if (!fs.existsSync(packageJsonFile)) {
+    const packageJson = {
+      name: "@coesco/types",
+      version: "1.0.0",
+      description: "Shared database types",
+      main: "./dist/index.js",
+      types: "./dist/index.d.ts",
+      scripts: {
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+      },
+      devDependencies: {
+        typescript: "^5.0.0",
+      },
+    };
+    fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
+    console.log("Created package.json for types package");
+  }
+
+  const tsconfigFile = path.resolve(packagesDir, "tsconfig.json");
+  if (!fs.existsSync(tsconfigFile)) {
+    const tsconfig = {
+      compilerOptions: {
+        target: "es2020",
+        module: "commonjs",
+        lib: ["es2020"],
+        declaration: true,
+        outDir: "./dist",
+        rootDir: "./src",
+        strict: true,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        forceConsistentCasingInFileNames: true,
+      },
+      include: ["src/**/*"],
+      exclude: ["node_modules", "dist"],
+    };
+    fs.writeFileSync(tsconfigFile, JSON.stringify(tsconfig, null, 2));
+    console.log("Created tsconfig.json for types package");
+  }
+}
+
 async function main() {
   const models = await getModels();
   const relationships = await getRelationships(models);
   await generateServiceFiles(models, relationships);
   await generateIndexFile(models);
   await updateMCPConfig(models);
+  await generateSharedTypes(models);
 }
 
 main();
