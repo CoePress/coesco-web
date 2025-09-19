@@ -17,8 +17,8 @@ export interface NotificationHook {
 }
 
 export function useNotifications(): NotificationHook {
-  const [permission, setPermission] =
-    useState<NotificationPermission>("default");
+  const [permission, setPermission]
+    = useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,8 @@ export function useNotifications(): NotificationHook {
       const result = await Notification.requestPermission();
       setPermission(result);
       return result === "granted";
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error requesting notification permission:", error);
       return false;
     }
@@ -66,7 +67,8 @@ export function useNotifications(): NotificationHook {
         requireInteraction: options.requireInteraction || false,
       });
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error showing notification:", error);
       return false;
     }

@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import Toast from "./toast";
-import { ToastData } from "@/hooks/use-toast";
+import { ToastData } from "@/contexts/toast.context";
 
 type ToastContainerProps = {
   toasts: ToastData[];

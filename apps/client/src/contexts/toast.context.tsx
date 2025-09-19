@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback } from 'react';
 
 export type ToastData = {
   id: string;
@@ -23,15 +23,7 @@ interface ToastContextType {
   info: (message: string, options?: Omit<AddToastOptions, "message" | "variant">) => string;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 type ToastProviderProps = {
   children: React.ReactNode;
@@ -61,7 +53,6 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
     setToasts([]);
   }, []);
 
-  // Convenience methods for different variants
   const success = useCallback((message: string, options?: Omit<AddToastOptions, "message" | "variant">) => {
     return addToast({ ...options, message, variant: "success" });
   }, [addToast]);

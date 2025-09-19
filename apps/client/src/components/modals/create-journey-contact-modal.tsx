@@ -64,7 +64,7 @@ export const AddJourneyContactModal = ({
       );
 
       if (response.ok) {
-        const apiResponse = await response.json();
+        // const apiResponse = await response.json();
         
         // Reset form
         setFormData({

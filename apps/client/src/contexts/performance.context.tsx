@@ -1,9 +1,9 @@
-import React, { 
+import React, {
   createContext, useContext, useState, ReactNode, useCallback,
-  useEffect, useRef 
+  useEffect, useRef
 } from "react";
 import { useParams } from "react-router-dom";
-import { useUpdateEntity } from "@/hooks/_base/use-update-entity";
+import { useApi } from "@/hooks/use-api";
 
 function deepMerge<T>(target: T, source: Partial<T>): T {
   const result = { ...target };
@@ -1272,15 +1272,14 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   const [performanceData, setPerformanceData] = useState<PerformanceData>(initialPerformanceData);
   const performanceDataRef = useRef(performanceData);
   const { id: performanceSheetId } = useParams();
-  const endpoint = `/performance/${performanceSheetId}`;
-  
+
   // Keep ref in sync with state
   useEffect(() => {
     performanceDataRef.current = performanceData;
   }, [performanceData]);
-  
-  // Use the performance-specific hook
-  const { updateEntity, loading, error } = useUpdateEntity(endpoint);
+
+  // Use the api hook
+  const { patch, loading, error } = useApi();
 
   const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = true) => {
     try {
@@ -1293,7 +1292,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
       
       if (shouldSave && performanceSheetId) {
         // Send updates to backend for calculations
-        const response = await updateEntity(performanceSheetId, updates);
+        const response = await patch(`/performance/${performanceSheetId}`, updates);
         
         if (response) {
           console.log("Backend response:", response);
@@ -1316,7 +1315,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
       setPerformanceData(performanceDataRef.current);
       throw error;
     }
-  }, [performanceSheetId, updateEntity]);
+  }, [performanceSheetId, patch]);
 
   return (
     <PerformanceSheetContext.Provider

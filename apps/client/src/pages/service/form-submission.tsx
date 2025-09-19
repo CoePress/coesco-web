@@ -1,54 +1,62 @@
-import { useState } from 'react';
-import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List } from 'lucide-react';
-import { Button, Input, Card, PageHeader } from '@/components';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button, Input, Card, PageHeader, Modal } from '@/components';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApi } from '@/hooks/use-api';
+import { IApiResponse } from '@/utils/types';
+import { useToast } from '@/hooks/use-toast';
 
 const FormSubmission = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { get, post } = useApi<IApiResponse<any>>();
+  const toast = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<any>(null);
+  const [pages, setPages] = useState<any[]>([]);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // Using the same mock data structure from form-details.tsx
-  const formData = {
-    id: "50e236ab-c9ca-4efd-be64-5178a3b41381",
-    name: 'Safety Inspection Form',
-    description: 'Daily safety inspection checklist for construction sites',
-    status: 'Published'
+  const include = useMemo(
+    () => ["pages.sections.fields"],
+    []
+  );
+
+  const fetchForm = async () => {
+    if (!id) return;
+
+    setLoading(true);
+    setError(null);
+
+    const response = await get(`/forms/${id}`, {
+      include
+    });
+
+    if (response?.success && response.data) {
+      setFormData(response.data);
+      const pagesData = response.data.pages?.map((page: any) => ({
+        ...page,
+        sections: page.sections?.map((section: any) => ({
+          ...section,
+          fields: section.fields || []
+        })) || []
+      })) || [];
+      setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
+    } else {
+      setError(response?.error || "Failed to fetch form");
+    }
+
+    setLoading(false);
   };
 
-  const sections = [
-    {
-      id: "1",
-      title: 'Basic Information',
-      description: 'General inspection details',
-      fields: [
-        { id: "1", type: 'text', label: 'Inspector Name', required: true },
-        { id: "2", type: 'date', label: 'Inspection Date', required: true },
-        { id: "3", type: 'dropdown', label: 'Site Location', required: true, options: ['Site A', 'Site B', 'Site C'] },
-      ]
-    },
-    {
-      id: "2",
-      title: 'Safety Checks',
-      description: 'Safety equipment and procedures',
-      fields: [
-        { id: "4", type: 'checkbox', label: 'PPE Check', required: false },
-        { id: "5", type: 'checkbox', label: 'First Aid Kit Available', required: true },
-        { id: "6", type: 'dropdown', label: 'Safety Rating', required: true, options: ['Excellent', 'Good', 'Fair', 'Poor'] },
-      ]
-    },
-    {
-      id: "3",
-      title: 'Documentation',
-      description: 'Photos and additional notes',
-      fields: [
-        { id: "7", type: 'photo', label: 'Site Photos', required: false },
-        { id: "8", type: 'textarea', label: 'Additional Notes', required: false },
-        { id: "9", type: 'signature', label: 'Inspector Signature', required: true },
-      ]
-    }
-  ];
+  useEffect(() => {
+    fetchForm();
+  }, [id]);
 
   const toggleSection = (sectionId: string) => {
     setCollapsedSections(prev => ({
@@ -74,12 +82,14 @@ const FormSubmission = () => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    sections.forEach(section => {
-      section.fields.forEach(field => {
-        if (field.required && !formValues[field.id]) {
-          newErrors[field.id] = `${field.label} is required`;
-        }
+
+    pages.forEach(page => {
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          if (field.isRequired && !formValues[field.id]) {
+            newErrors[field.id] = `${field.label} is required`;
+          }
+        });
       });
     });
 
@@ -87,24 +97,86 @@ const FormSubmission = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      console.log('Form submitted:', formValues);
-      // Here you would normally send the data to your backend
-      navigate('/service/forms');
+  const handleSubmit = async () => {
+    if (!validateForm() || !id) return;
+
+    try {
+      // Create submission data structure
+      const submissionData = {
+        formId: id,
+        status: 'submitted',
+        submittedAt: new Date().toISOString(),
+        data: formValues
+      };
+
+      // Post submission to API
+      const response = await post(`/forms/${id}/submissions`, submissionData);
+
+      if (response?.success) {
+        toast.success('Form submitted successfully!');
+        navigate('/service/forms');
+      } else {
+        const errorMessage = response?.error || 'Failed to submit form';
+        toast.error(errorMessage);
+        setError(errorMessage);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      const errorMessage = 'Failed to submit form. Please try again.';
+      toast.error(errorMessage);
+      setError(errorMessage);
     }
   };
 
   const handleCancel = () => {
-    navigate('/service/forms');
+    // Check if any fields have been filled
+    const hasFilledFields = Object.keys(formValues).length > 0;
+
+    if (hasFilledFields) {
+      setShowCancelModal(true);
+    } else {
+      navigate('/service/forms/');
+    }
+  };
+
+  const confirmCancel = () => {
+    setShowCancelModal(false);
+    navigate('/service/forms/');
+  };
+
+  const getTotalFields = () => {
+    return pages.reduce((total: number, page: any) => {
+      return total + page.sections.reduce((pageTotal: number, section: any) => {
+        return pageTotal + (section.fields?.length || 0);
+      }, 0);
+    }, 0);
+  };
+
+  const getCurrentPage = () => pages[currentPageIndex];
+
+  const canGoNext = () => currentPageIndex < pages.length - 1;
+  const canGoPrevious = () => currentPageIndex > 0;
+
+  const goToNextPage = () => {
+    if (canGoNext()) {
+      setCurrentPageIndex(currentPageIndex + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (canGoPrevious()) {
+      setCurrentPageIndex(currentPageIndex - 1);
+    }
   };
 
   const renderFieldInput = (field: any) => {
     const value = formValues[field.id] || '';
     const hasError = !!errors[field.id];
+    const fieldType = field.controlType;
 
-    switch (field.type) {
-      case 'text':
+    switch (fieldType) {
+      case 'INPUT':
+      case 'TEXTBOX':
         return (
           <div className="w-full">
             <Input
@@ -117,7 +189,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'date':
+      case 'DATE_SELECTOR':
         return (
           <div className="w-full">
             <div className="relative">
@@ -133,7 +205,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'dropdown':
+      case 'DROPDOWN':
         return (
           <div className="w-full">
             <select
@@ -150,7 +222,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'checkbox':
+      case 'MULTI_SELECT':
         return (
           <div className="flex items-center space-x-3">
             <input
@@ -164,7 +236,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'textarea':
+      case 'TEXT_AREA':
         return (
           <div className="w-full">
             <textarea
@@ -178,7 +250,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'photo':
+      case 'CAMERA':
         return (
           <div className="w-full">
             <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
@@ -202,7 +274,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'signature':
+      case 'SIGNATURE_PAD':
         return (
           <div className="w-full">
             <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
@@ -224,15 +296,16 @@ const FormSubmission = () => {
     }
   };
 
-  const getFieldIcon = (type: string) => {
-    switch (type) {
-      case 'text': return <FileText size={16} />;
-      case 'date': return <Calendar size={16} />;
-      case 'dropdown': return <List size={16} />;
-      case 'checkbox': return <CheckSquare size={16} />;
-      case 'textarea': return <FileText size={16} />;
-      case 'photo': return <Camera size={16} />;
-      case 'signature': return <PenTool size={16} />;
+  const getFieldIcon = (fieldType: string) => {
+    switch (fieldType) {
+      case 'INPUT':
+      case 'TEXTBOX': return <FileText size={16} />;
+      case 'DATE_SELECTOR': return <Calendar size={16} />;
+      case 'DROPDOWN': return <List size={16} />;
+      case 'MULTI_SELECT': return <CheckSquare size={16} />;
+      case 'TEXT_AREA': return <FileText size={16} />;
+      case 'CAMERA': return <Camera size={16} />;
+      case 'SIGNATURE_PAD': return <PenTool size={16} />;
       default: return null;
     }
   };
@@ -250,6 +323,25 @@ const FormSubmission = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-lg">Loading form...</div>
+      </div>
+    );
+  }
+
+  if (error || !formData) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        <div className="text-error text-lg mb-4">{error || "Form not found"}</div>
+        <Button onClick={() => navigate('/service/forms')}>
+          Back to Forms
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <PageHeader
@@ -263,19 +355,54 @@ const FormSubmission = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
-            <span>{Object.keys(formValues).length} / {sections.reduce((acc, s) => acc + s.fields.length, 0)} fields</span>
+            <span>{Object.keys(formValues).length} / {getTotalFields()} fields</span>
           </div>
           <div className="w-full bg-foreground rounded-full h-2">
-            <div 
+            <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${(Object.keys(formValues).length / sections.reduce((acc, s) => acc + s.fields.length, 0)) * 100}%` 
+              style={{
+                width: `${(Object.keys(formValues).length / getTotalFields()) * 100}%`
               }}
             />
           </div>
         </div>
 
-        {sections.map((section, sectionIndex) => (
+        {/* Page navigation */}
+        {pages.length > 1 && (
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              onClick={goToPreviousPage}
+              disabled={!canGoPrevious()}
+              variant="secondary-outline"
+              size="sm"
+            >
+              <ChevronLeft size={16} />
+              Previous
+            </Button>
+            <div className="text-sm text-text-muted">
+              Page {currentPageIndex + 1} of {pages.length}
+            </div>
+            <Button
+              onClick={goToNextPage}
+              disabled={!canGoNext()}
+              variant="secondary-outline"
+              size="sm"
+            >
+              Next
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+        )}
+
+        {getCurrentPage() && (
+          <>
+            {/* Page title */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
+            </div>
+
+            {/* Sections */}
+            {getCurrentPage().sections.map((section: any, sectionIndex: number) => (
           <Card key={section.id} className="overflow-hidden">
             <div 
               className="flex items-center justify-between cursor-pointer hover:bg-foreground/50 transition-colors -m-6 p-6"
@@ -299,13 +426,13 @@ const FormSubmission = () => {
 
             {!collapsedSections[section.id] && (
               <div className="pt-4 mt-6 border-t border-border space-y-6">
-                {section.fields.map((field) => (
+                {section.fields.map((field: any) => (
                   <div key={field.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.type)}</div>
+                      <div className="text-text-muted">{getFieldIcon(field.controlType)}</div>
                       <label className="text-text font-medium">
                         {field.label}
-                        {field.required && <span className="text-error ml-1">*</span>}
+                        {field.isRequired && <span className="text-error ml-1">*</span>}
                       </label>
                     </div>
                     {renderFieldInput(field)}
@@ -314,7 +441,9 @@ const FormSubmission = () => {
               </div>
             )}
           </Card>
-        ))}
+            ))}
+          </>
+        )}
 
         {Object.keys(errors).length > 0 && (
           <div className="bg-error/10 border border-error/20 rounded-lg p-4">
@@ -327,6 +456,37 @@ const FormSubmission = () => {
           </div>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Cancel Form Submission"
+        size="xs"
+      >
+        <div className="space-y-4">
+          <p>
+            Are you sure you want to cancel? You have unsaved changes that will be lost.
+          </p>
+          <p className="text-text-muted text-sm">
+            {Object.keys(formValues).length} field(s) have been filled out.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setShowCancelModal(false)}
+            >
+              Continue Editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+            >
+              Discard Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

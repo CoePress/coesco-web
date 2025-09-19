@@ -50,16 +50,16 @@ export class LegacyController {
       // Extract filters from query parameters
       // Support both single filter (filterField/filterValue) and multiple filters
       const filters: Record<string, string> = {};
-      
+
       // Handle legacy single filter format
       if (queryParams.filterField && queryParams.filterValue) {
         filters[String(queryParams.filterField)] = String(queryParams.filterValue);
         delete queryParams.filterField;
         delete queryParams.filterValue;
       }
-      
+
       // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      const reservedParams = ["limit", "offset", "sort", "order"];
       Object.entries(queryParams).forEach(([key, value]) => {
         if (!reservedParams.includes(key) && value !== undefined) {
           filters[key] = String(value);
@@ -99,16 +99,16 @@ export class LegacyController {
 
       // Extract filters from query parameters
       const filters: Record<string, string> = {};
-      
+
       // Handle legacy single filter format
       if (queryParams.filterField && queryParams.filterValue) {
         filters[String(queryParams.filterField)] = String(queryParams.filterValue);
         delete queryParams.filterField;
         delete queryParams.filterValue;
       }
-      
+
       // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      const reservedParams = ["limit", "offset", "sort", "order"];
       Object.entries(queryParams).forEach(([key, value]) => {
         if (!reservedParams.includes(key) && value !== undefined) {
           filters[key] = String(value);
@@ -146,16 +146,16 @@ export class LegacyController {
 
       // Extract filters from query parameters
       const filters: Record<string, string> = {};
-      
+
       // Handle legacy single filter format
       if (queryParams.filterField && queryParams.filterValue) {
         filters[String(queryParams.filterField)] = String(queryParams.filterValue);
         delete queryParams.filterField;
         delete queryParams.filterValue;
       }
-      
+
       // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ['limit', 'offset', 'sort', 'order'];
+      const reservedParams = ["limit", "offset", "sort", "order"];
       Object.entries(queryParams).forEach(([key, value]) => {
         if (!reservedParams.includes(key) && value !== undefined) {
           filters[key] = String(value);

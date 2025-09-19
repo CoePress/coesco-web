@@ -96,7 +96,7 @@ export class LegacyService {
     // Filter out fields with empty string values, especially for date fields
     const filteredData = Object.entries(data).reduce((acc, [key, value]) => {
       // Skip empty strings for date fields and other empty values
-      if (value === '' || value === null || value === undefined) {
+      if (value === "" || value === null || value === undefined) {
         return acc;
       }
       acc[key] = value;
@@ -112,18 +112,20 @@ export class LegacyService {
     }
 
     // Build the field list for the INSERT statement with quoted field names
-    const fieldList = fields.map(field => `"${field}"`).join(', ');
-    
+    const fieldList = fields.map(field => `"${field}"`).join(", ");
+
     // Build the values list with proper escaping
-    const valueList = values.map(value => {
+    const valueList = values.map((value) => {
       if (value === null || value === undefined) {
-        return 'NULL';
-      } else if (typeof value === 'string') {
+        return "NULL";
+      }
+      else if (typeof value === "string") {
         return `'${value.replace(/'/g, "''")}'`;
-      } else {
+      }
+      else {
         return String(value);
       }
-    }).join(', ');
+    }).join(", ");
 
     const query = `
       INSERT INTO PUB.${table} 
@@ -279,7 +281,8 @@ export class LegacyService {
     let idField = "ID";
     if (table.toLowerCase() === "company") {
       idField = "Company_ID";
-    } else if (table.toLowerCase() === "contacts") {
+    }
+    else if (table.toLowerCase() === "contacts") {
       idField = "Cont_ID";
     }
 
@@ -307,12 +310,12 @@ export class LegacyService {
   async getAllByCustomFilter(database: string, table: string, filters: Record<string, string>, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
     const whereConditions = Object.entries(filters).map(([field, value]) => {
-      const escapedField = field.replace(/[^a-zA-Z0-9_]/g, "");
+      const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
       return `${escapedField} = '${escapedValue}'`;
     });
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
     const query = `
       SELECT *
@@ -324,10 +327,10 @@ export class LegacyService {
 
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
-      return result;   
-
-    } catch(err) {
-      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      return result;
+    }
+    catch (err) {
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(" AND ");
       console.error(`Error fetching ${table} where ${filterDescription}:`, err);
       return null;
     }
@@ -342,7 +345,8 @@ export class LegacyService {
     let idField = "ID";
     if (table.toLowerCase() === "company") {
       idField = "Company_ID";
-    } else if (table.toLowerCase() === "contacts") {
+    }
+    else if (table.toLowerCase() === "contacts") {
       idField = "Cont_ID";
     }
 
@@ -406,12 +410,12 @@ export class LegacyService {
       .join(", ");
 
     const whereConditions = Object.entries(filters).map(([field, value]) => {
-      const escapedField = field.replace(/[^a-zA-Z0-9_]/g, "");
+      const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
       return `${escapedField} = '${escapedValue}'`;
     });
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
     const query = `
       UPDATE PUB.${table}
@@ -424,7 +428,7 @@ export class LegacyService {
       return true;
     }
     catch (err) {
-      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(" AND ");
       logger.error(`Error updating ${table} where ${filterDescription}:`, err);
       return false;
     }
@@ -452,12 +456,12 @@ export class LegacyService {
     }
 
     const whereConditions = Object.entries(filters).map(([field, value]) => {
-      const escapedField = field.replace(/[^a-zA-Z0-9_#]/g, ""); // Sanitize field name (allow # for fields like RefSerial#)
+      const escapedField = field.replace(/[^\w#]/g, ""); // Sanitize field name (allow # for fields like RefSerial#)
       const escapedValue = String(value).replace(/'/g, "''"); // Sanitize value
       return `"${escapedField}" = '${escapedValue}'`;
     });
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : "";
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
     const query = `
       DELETE FROM PUB.${table}
@@ -471,7 +475,7 @@ export class LegacyService {
       return true;
     }
     catch (err) {
-      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(' AND ');
+      const filterDescription = Object.entries(filters).map(([field, value]) => `${field} = ${value}`).join(" AND ");
       logger.error(`Error deleting from ${table} where ${filterDescription}:`, err);
       return false;
     }
@@ -532,12 +536,12 @@ export class LegacyService {
 
     try {
       const result: any = await this.getDatabaseConnection(database)?.query(query);
-      
-      const maxValue = result?.[0]?.LargestValue 
-        ?? result?.[0]?.LARGESTVALUE 
+
+      const maxValue = result?.[0]?.LargestValue
+        ?? result?.[0]?.LARGESTVALUE
         ?? result?.[0]?.largestvalue
         ?? null;
-        
+
       return maxValue !== null ? Number(maxValue) : null;
     }
     catch (err) {

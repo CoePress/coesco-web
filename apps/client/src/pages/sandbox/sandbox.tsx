@@ -1,8 +1,8 @@
 import { Button } from "@/components";
-import AddressAutocomplete from "@/components/_old/address-input";
+import AddressAutocomplete from "@/components/feature/address-input";
 import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useToast } from "@/contexts/toast.context";
+import { useToast } from "@/hooks/use-toast";
 
 // Type definitions
 interface Location {

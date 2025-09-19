@@ -510,7 +510,8 @@ const CreateQuoteModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Quote"
-      size="xs">
+      size="xs"
+      overflow="visible">
       {/* Customer Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Customer</label>

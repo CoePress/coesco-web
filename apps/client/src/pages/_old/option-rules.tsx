@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Eye, EyeOff, Loader } from "lucide-react";
 import {
   Button,
@@ -9,8 +9,8 @@ import {
   Input,
   Tabs,
 } from "@/components";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
-import { RuleAction } from "@/utils/types";
+import { useApi } from "@/hooks/use-api";
+import { RuleAction, IApiResponse } from "@/utils/types";
 
 interface OptionRuleRow {
   id: string;
@@ -30,14 +30,40 @@ const OptionRules = () => {
   const [editingRule, setEditingRule] = useState<OptionRuleRow | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<OptionRuleRow | null>(null);
+  const [optionRules, setOptionRules] = useState<any[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { entities: optionRules, loading: optionRulesLoading } = useGetEntities(
-    "/configurations/rules"
-  );
+  const rulesApi = useApi();
+  const optionsApi = useApi();
 
-  const { entities: options, loading: optionsLoading } = useGetEntities(
-    "/configurations/options"
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [rulesResponse, optionsResponse] = await Promise.all([
+          rulesApi.get("/configurations/rules"),
+          optionsApi.get("/configurations/options")
+        ]);
+
+        if (rulesResponse) {
+          const rulesData = rulesResponse as IApiResponse<any[]>;
+          setOptionRules(rulesData.data || []);
+        }
+
+        if (optionsResponse) {
+          const optionsData = optionsResponse as IApiResponse<any[]>;
+          setOptions(optionsData.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const tableData: OptionRuleRow[] = (optionRules || [])
     .filter((rule) => rule !== null)
@@ -173,10 +199,12 @@ const OptionRules = () => {
     setRuleToDelete(null);
   };
 
-  const loading = optionRulesLoading || optionsLoading;
-
   if (loading) {
-    return <Loader />;
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader />
+      </div>
+    );
   }
 
   return (

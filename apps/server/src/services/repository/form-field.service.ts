@@ -16,13 +16,23 @@ export class FormFieldService extends BaseService<FormField> {
   protected async validate(entity: FormFieldAttributes): Promise<void> {
     if (!entity.sectionId)
       throw new BadRequestError("sectionId is required");
-    if (!entity.fieldType)
-      throw new BadRequestError("fieldType is required");
     if (!entity.label)
       throw new BadRequestError("label is required");
-    if (!entity.required)
-      throw new BadRequestError("required is required");
-    if (!entity.orderIndex)
-      throw new BadRequestError("orderIndex is required");
+    if (!entity.variable)
+      throw new BadRequestError("variable is required");
+    if (!entity.isRequired)
+      throw new BadRequestError("isRequired is required");
+    if (!entity.isReadOnly)
+      throw new BadRequestError("isReadOnly is required");
+    if (!entity.isHiddenOnDevice)
+      throw new BadRequestError("isHiddenOnDevice is required");
+    if (!entity.isHiddenOnReport)
+      throw new BadRequestError("isHiddenOnReport is required");
+    if (!entity.sequence)
+      throw new BadRequestError("sequence is required");
+    if (!entity.createdById)
+      throw new BadRequestError("createdById is required");
+    if (!entity.updatedById)
+      throw new BadRequestError("updatedById is required");
   }
 }

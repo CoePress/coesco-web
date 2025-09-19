@@ -74,24 +74,6 @@ export interface SelectedOption {
   quantity: number;
 }
 
-export interface ValidationResult {
-  valid: boolean;
-  message: string;
-  type: "success" | "warning" | "error" | "info";
-  categoryName?: string;
-}
-
-export interface Rule extends IBaseEntity {
-  name: string;
-  description: string;
-  type: "OPTION" | "INPUT";
-  active: boolean;
-  priority: number;
-  action: RuleAction;
-  condition: RuleCondition;
-  targetOptionIds: string[];
-}
-
 export type RuleCondition
   = | InputCondition
     | SimpleCondition
@@ -143,42 +125,6 @@ export enum ComparisonOperator {
 }
 
 export type InputValue = string | number | boolean;
-
-export interface Configuration {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string;
-  productClassId: string;
-  options: Array<{
-    optionId: string;
-    quantity: number;
-  }>;
-  pricing: {
-    basePrice: number;
-    adjustments: number;
-    totalPrice: number;
-  };
-  status: ConfigurationStatus;
-  isTemplate: boolean;
-  createdBy: string;
-  createdAt: Date;
-  updatedBy: string;
-  updatedAt: Date;
-}
-
-export enum ConfigurationStatus {
-  DRAFT = "DRAFT",
-  VALID = "VALID",
-  INVALID = "INVALID",
-  PUBLISHED = "PUBLISHED",
-}
-
-export enum EmployeeStatus {
-  ACTIVE = "ACTIVE",
-  ON_LEAVE = "ON_LEAVE",
-  TERMINATED = "TERMINATED",
-}
 
 export enum EmployeeRole {
   INACTIVE = "INACTIVE",
@@ -256,39 +202,6 @@ export interface IQueryParams<T> {
 export enum MachineType {
   LATHE = "LATHE",
   MILL = "MILL",
-}
-
-export enum MachineControllerType {
-  FANUC = "FANUC",
-  SIEMENS = "SIEMENS",
-  HAAS = "HAAS",
-  MAZAK = "MAZAK",
-  OKUMA = "OKUMA",
-  OTHER = "OTHER",
-}
-
-export enum MachineConnectionType {
-  MTCONNECT = "MTCONNECT",
-  CUSTOM = "CUSTOM",
-}
-
-export interface IMachine extends IBaseEntity {
-  slug: string;
-  name: string;
-  type: MachineType;
-  controllerType: MachineControllerType;
-  controllerModel?: string;
-  connectionType: MachineConnectionType;
-  connectionHost?: string;
-  connectionPort?: number;
-  connectionUrl?: string;
-}
-
-export interface IUtilization {
-  label: string;
-  start: Date;
-  end: Date;
-  utilization: number;
 }
 
 export interface IStateDistribution {

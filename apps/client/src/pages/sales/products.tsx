@@ -6,7 +6,7 @@ import { Button, PageHeader, Table, Toolbar } from "@/components";
 import { formatCurrency } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import Modal from "@/components/ui/modal";
-import AdvancedDropdown from "@/components/_old/advanced-dropdown";
+import AdvancedDropdown from "@/components/ui/advanced-dropdown";
 import { useApi } from "@/hooks/use-api";
 
 const Products = () => {

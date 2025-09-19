@@ -23,8 +23,10 @@ const server = createServer(app);
 
 app.set("trust proxy", 1);
 
+const origin = __dev__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : "https://portal.cpec.com";
+
 const corsOptions = {
-  origin: __dev__ ? "http://localhost:5173" : "https://portal.cpec.com",
+  origin,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-File-Name"],
@@ -32,7 +34,11 @@ const corsOptions = {
 };
 
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin,
+    credentials: true,
+  },
+  transports: ["polling", "websocket"],
   pingInterval: 5000,
   pingTimeout: 5000,
 });
@@ -42,8 +48,8 @@ const stream = {
 };
 
 const limiter = rateLimit({
-  windowMs: __prod__ ? 15 * 60 * 1000 : 60 * 1000, // 15 min vs 1 min
-  max: __prod__ ? 1000 : 10000,
+  windowMs: 15 * 60 * 1000,
+  max: __prod__ ? 1000 : 100000,
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,

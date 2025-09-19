@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 import {
   ActivityIcon,
   BoxIcon,
+  Building2,
   ChartNoAxesCombined,
   CodeIcon,
   ComputerIcon,
@@ -16,10 +17,10 @@ import {
   FileCogIcon,
   FileIcon,
   FileTextIcon,
+  FolderSyncIcon,
   LayoutDashboardIcon,
   LockIcon,
   LogsIcon,
-  Building2,
   PaintBucketIcon,
   SearchIcon,
   ShieldIcon,
@@ -27,10 +28,11 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contacts, ContactDetails, Devices, Employees, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
+import SyncTest from "@/pages/service/sync-test";
 
 import { __dev__ } from "./env";
 
@@ -271,6 +273,12 @@ const serviceModule: Module = {
           component: FormDetails,
         },
         {
+          slug: ":id/build",
+          label: "Form Details",
+          icon: FileCogIcon,
+          component: FormBuilder,
+        },
+        {
           slug: ":id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
@@ -306,6 +314,12 @@ const sandboxModule: Module = {
       label: "Legacy Explorer",
       icon: SearchIcon,
       component: LegacyExplorer,
+    },
+    {
+      slug: "sync",
+      label: "Sync",
+      icon: FolderSyncIcon,
+      component: SyncTest,
     },
   ],
 };

@@ -151,7 +151,7 @@ async function generateIndexFile(models: any) {
     .forEach((model: any) => {
       const kebabName = toKebabCase(model.name);
       const modelNameLower
-      = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+        = model.name.charAt(0).toLowerCase() + model.name.slice(1);
 
       imports.push(
         `import { ${model.name}Service } from "./${kebabName}.service";`,

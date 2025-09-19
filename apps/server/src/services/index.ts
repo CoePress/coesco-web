@@ -2,6 +2,7 @@ import { io } from "@/app";
 
 import { AgentService } from "./business/agent.service";
 import { DeviceService } from "./business/device.service";
+import { FormManagerService } from "./business/form-manager.service";
 import { LegacyService } from "./business/legacy.service";
 import { LocationService } from "./business/location.service";
 import { MachineMonitorService } from "./business/machining.service";
@@ -17,6 +18,7 @@ import { SocketService } from "./core/socket.service";
 // Business
 export const agentService = new AgentService();
 export const deviceService = new DeviceService();
+export const formManagerService = new FormManagerService();
 export const legacyService = new LegacyService();
 export const locationService = new LocationService();
 export const machiningService = new MachineMonitorService();

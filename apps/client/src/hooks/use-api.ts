@@ -1,13 +1,21 @@
 import type { AxiosRequestConfig } from "axios";
 
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { useState } from "react";
 
 import type { IQueryParams } from "@/utils/types";
 
-import { instance } from "@/utils";
+import { env } from "@/config/env";
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+
+export const instance = axios.create({
+  baseURL: env.VITE_API_URL,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export function useApi<T = any>() {
   const [loading, setLoading] = useState(false);

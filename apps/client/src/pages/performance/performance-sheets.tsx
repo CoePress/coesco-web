@@ -2,13 +2,13 @@ import { MoreHorizontal, Lock, PlusIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button, Input, Modal, PageHeader, Table } from "@/components";
-import { useGetEntities } from "@/hooks/_base/use-get-entities";
+import { useApi } from "@/hooks/use-api";
 import { useState, useEffect } from "react";
-import { instance } from "@/utils";
+import { IApiResponse } from "@/utils/types";
 import { TableColumn } from "@/components/ui/table";
 
 const PerformanceSheets = () => {
-  const { entities: performanceSheets } = useGetEntities("/performance/sheets");
+  const [performanceSheets, setPerformanceSheets] = useState<any[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [locks, setLocks] = useState<Record<string, any>>({});
   const [name, setName] = useState("");
@@ -21,22 +21,40 @@ const PerformanceSheets = () => {
     entityId: string;
   }>({ entityType: "quote", entityId: "" });
 
+  const api = useApi();
+  const locksApi = useApi();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await api.get("/performance/sheets");
+      if (response) {
+        const data = response as IApiResponse<any[]>;
+        setPerformanceSheets(data.data || []);
+      }
+    };
+    fetchData();
+  }, []);
+
   useEffect(() => {
     const fetchLocks = async () => {
       try {
-        const { data } = await instance.get(`/lock/performance-sheets`);
-        const lockMap: Record<string, any> = {};
-        (data.locks || []).forEach((lock: any) => {
-          if (lock.lockInfo && lock.lockInfo.recordId) {
-            lockMap[lock.lockInfo.recordId] = lock.lockInfo;
-          }
-        });
-        setLocks(lockMap);
+        const response = await locksApi.get("/lock/performance-sheets");
+        if (response) {
+          const lockMap: Record<string, any> = {};
+          ((response as any).locks || []).forEach((lock: any) => {
+            if (lock.lockInfo && lock.lockInfo.recordId) {
+              lockMap[lock.lockInfo.recordId] = lock.lockInfo;
+            }
+          });
+          setLocks(lockMap);
+        }
       } catch (err) {
         setLocks({});
       }
     };
-    fetchLocks();
+    if (performanceSheets.length > 0) {
+      fetchLocks();
+    }
   }, [performanceSheets]);
 
   const columns: TableColumn<any>[] = [

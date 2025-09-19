@@ -1,7 +1,9 @@
 import type { PostalCode } from "@prisma/client";
-import { BaseService } from "../repository/_base.service";
-import { prisma } from "@/utils/prisma";
+
 import { BadRequestError } from "@/middleware/error.middleware";
+import { prisma } from "@/utils/prisma";
+
+import { BaseService } from "../repository/_base.service";
 
 type PostalCodeAttributes = Omit<PostalCode, "countryCode" | "postalCode">;
 
@@ -41,11 +43,11 @@ export class LocationService extends BaseService<PostalCode> {
 
   async searchPostalCodes(query: { countryCode?: string; postalCode?: string; limit?: number }) {
     const where: any = {};
-    
+
     if (query.countryCode) {
       where.countryCode = query.countryCode.toUpperCase();
     }
-    
+
     if (query.postalCode) {
       where.postalCode = {
         contains: query.postalCode.toUpperCase(),
@@ -62,7 +64,7 @@ export class LocationService extends BaseService<PostalCode> {
         longitude: true,
       },
       orderBy: {
-        postalCode: 'asc',
+        postalCode: "asc",
       },
     });
 

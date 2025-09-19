@@ -293,15 +293,15 @@ export class AuthService {
   async initializeDefaultUser(): Promise<void> {
     const adminEmail = "admin@cpec.com";
     const adminUsername = "admin";
-    
+
     const existingAdmin = await prisma.user.findFirst({
       where: {
         OR: [
           { username: adminUsername },
-          { employee: { email: adminEmail } }
-        ]
+          { employee: { email: adminEmail } },
+        ],
       },
-      include: { employee: true }
+      include: { employee: true },
     });
 
     if (!existingAdmin) {
@@ -331,15 +331,15 @@ export class AuthService {
 
     const userEmail = "user@cpec.com";
     const userUsername = "user";
-    
+
     const existingRegularUser = await prisma.user.findFirst({
       where: {
         OR: [
           { username: userUsername },
-          { employee: { email: userEmail } }
-        ]
+          { employee: { email: userEmail } },
+        ],
       },
-      include: { employee: true }
+      include: { employee: true },
     });
 
     if (!existingRegularUser) {

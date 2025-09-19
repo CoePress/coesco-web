@@ -9,6 +9,7 @@ import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
+import { useToast } from "@/hooks/use-toast";
 
 const Forms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,7 +18,7 @@ const Forms = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  
+
   const [forms, setForms] = useState<any[]>([]);
   const [_loading, setLoading] = useState<boolean>(true);
   const [_error, setError] = useState<string | null>(null);
@@ -28,8 +29,9 @@ const Forms = () => {
     limit: number;
   }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
   const [createLoading, setCreateLoading] = useState<boolean>(false);
-  
+
   const { get, post } = useApi<IApiResponse<any[]>>();
+  const toast = useToast();
 
   const include = useMemo(
     () => [],
@@ -58,7 +60,9 @@ const Forms = () => {
         });
       }
     } else {
-      setError(response?.error || "Failed to fetch forms");
+      const errorMessage = response?.error || "Failed to fetch forms";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -284,6 +288,7 @@ const CreateFormModal = ({
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   const [isCreateDisabledState, setIsCreateDisabledState] = useState(true);
+  const toast = useToast();
 
   useEffect(() => {
     const checkDisabled = () => {
@@ -300,11 +305,19 @@ const CreateFormModal = ({
       description: descriptionValue.trim() || undefined,
       status: "draft",
     };
-    
-    const result = await createForm(params);
-    if (result) {
-      onClose();
-      onSuccess();
+
+    try {
+      const result = await createForm(params);
+      if (result) {
+        toast.success(`Form "${nameValue}" created successfully!`);
+        onClose();
+        onSuccess();
+      } else {
+        toast.error('Failed to create form. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating form:', error);
+      toast.error('An unexpected error occurred while creating the form.');
     }
   };
 

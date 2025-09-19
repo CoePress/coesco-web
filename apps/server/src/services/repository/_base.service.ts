@@ -142,11 +142,8 @@ export class BaseService<T> {
   }
 
   async delete(id: string, tx?: Prisma.TransactionClient) {
-    const meta = await this.getMetaFields({
-      for: "delete",
-      timestamps: true,
-      softDelete: true,
-    });
+    const columns = await this.getColumns();
+    const hasSoftDelete = columns.includes("deletedAt");
 
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
@@ -159,13 +156,26 @@ export class BaseService<T> {
         throw new Error(`Cannot delete: ${this.modelName} ${id} not found`);
       }
 
-      const deleted = await model.update({
-        where: { id },
-        data: meta,
-      });
+      if (hasSoftDelete) {
+        const meta = await this.getMetaFields({
+          for: "delete",
+          timestamps: true,
+          softDelete: true,
+        });
 
-      await this.log("DELETE", before, deleted, client);
-      return deleted;
+        const deleted = await model.update({
+          where: { id },
+          data: meta,
+        });
+
+        await this.log("DELETE", before, deleted, client);
+        return deleted;
+      }
+      else {
+        await model.delete({ where: { id } });
+        await this.log("DELETE", before, undefined, client);
+        return before;
+      }
     };
 
     if (tx) {
@@ -174,7 +184,7 @@ export class BaseService<T> {
     else {
       await prisma.$transaction(execute);
     }
-    return { success: true };
+    return { success: true, message: "Deleted successfully" };
   }
 
   // Private Methods

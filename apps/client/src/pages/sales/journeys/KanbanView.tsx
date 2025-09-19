@@ -28,7 +28,7 @@ import { getPriorityConfig } from "./utils";
 import { DeleteJourneyModal, TrackJourneyModal, UntrackJourneyModal } from "./components";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 
-const columnIdPrefix = "column-";
+// const columnIdPrefix = "column-";
 
 const DroppableColumn = ({
   id,
