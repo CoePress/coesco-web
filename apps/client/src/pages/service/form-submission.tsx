@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List } from 'lucide-react';
-import { Button, Input, Card, PageHeader } from '@/components';
+import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button, Input, Card, PageHeader, Modal } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -15,13 +15,15 @@ const FormSubmission = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
-  const [sections, setSections] = useState<any[]>([]);
+  const [pages, setPages] = useState<any[]>([]);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const include = useMemo(
-    () => ["sections.fields"],
+    () => ["pages.sections.fields"],
     []
   );
 
@@ -37,10 +39,14 @@ const FormSubmission = () => {
 
     if (response?.success && response.data) {
       setFormData(response.data);
-      setSections(response.data.sections?.map((section: any) => ({
-        ...section,
-        fields: section.fields || []
-      })) || []);
+      const pagesData = response.data.pages?.map((page: any) => ({
+        ...page,
+        sections: page.sections?.map((section: any) => ({
+          ...section,
+          fields: section.fields || []
+        })) || []
+      })) || [];
+      setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
     } else {
       setError(response?.error || "Failed to fetch form");
     }
@@ -77,11 +83,13 @@ const FormSubmission = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    sections.forEach(section => {
-      section.fields.forEach((field: any) => {
-        if (field.required && !formValues[field.id]) {
-          newErrors[field.id] = `${field.label} is required`;
-        }
+    pages.forEach(page => {
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          if (field.isRequired && !formValues[field.id]) {
+            newErrors[field.id] = `${field.label} is required`;
+          }
+        });
       });
     });
 
@@ -121,16 +129,54 @@ const FormSubmission = () => {
   };
 
   const handleCancel = () => {
+    // Check if any fields have been filled
+    const hasFilledFields = Object.keys(formValues).length > 0;
+
+    if (hasFilledFields) {
+      setShowCancelModal(true);
+    } else {
+      navigate('/service/forms/');
+    }
+  };
+
+  const confirmCancel = () => {
+    setShowCancelModal(false);
     navigate('/service/forms/');
+  };
+
+  const getTotalFields = () => {
+    return pages.reduce((total: number, page: any) => {
+      return total + page.sections.reduce((pageTotal: number, section: any) => {
+        return pageTotal + (section.fields?.length || 0);
+      }, 0);
+    }, 0);
+  };
+
+  const getCurrentPage = () => pages[currentPageIndex];
+
+  const canGoNext = () => currentPageIndex < pages.length - 1;
+  const canGoPrevious = () => currentPageIndex > 0;
+
+  const goToNextPage = () => {
+    if (canGoNext()) {
+      setCurrentPageIndex(currentPageIndex + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (canGoPrevious()) {
+      setCurrentPageIndex(currentPageIndex - 1);
+    }
   };
 
   const renderFieldInput = (field: any) => {
     const value = formValues[field.id] || '';
     const hasError = !!errors[field.id];
-    const fieldType = field.fieldType;
+    const fieldType = field.controlType;
 
     switch (fieldType) {
-      case 'text':
+      case 'INPUT':
+      case 'TEXTBOX':
         return (
           <div className="w-full">
             <Input
@@ -143,7 +189,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'date':
+      case 'DATE_SELECTOR':
         return (
           <div className="w-full">
             <div className="relative">
@@ -159,7 +205,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'dropdown':
+      case 'DROPDOWN':
         return (
           <div className="w-full">
             <select
@@ -176,7 +222,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'checkbox':
+      case 'MULTI_SELECT':
         return (
           <div className="flex items-center space-x-3">
             <input
@@ -190,7 +236,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'textarea':
+      case 'TEXT_AREA':
         return (
           <div className="w-full">
             <textarea
@@ -204,7 +250,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'photo':
+      case 'CAMERA':
         return (
           <div className="w-full">
             <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
@@ -228,7 +274,7 @@ const FormSubmission = () => {
           </div>
         );
 
-      case 'signature':
+      case 'SIGNATURE_PAD':
         return (
           <div className="w-full">
             <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
@@ -252,13 +298,14 @@ const FormSubmission = () => {
 
   const getFieldIcon = (fieldType: string) => {
     switch (fieldType) {
-      case 'text': return <FileText size={16} />;
-      case 'date': return <Calendar size={16} />;
-      case 'dropdown': return <List size={16} />;
-      case 'checkbox': return <CheckSquare size={16} />;
-      case 'textarea': return <FileText size={16} />;
-      case 'photo': return <Camera size={16} />;
-      case 'signature': return <PenTool size={16} />;
+      case 'INPUT':
+      case 'TEXTBOX': return <FileText size={16} />;
+      case 'DATE_SELECTOR': return <Calendar size={16} />;
+      case 'DROPDOWN': return <List size={16} />;
+      case 'MULTI_SELECT': return <CheckSquare size={16} />;
+      case 'TEXT_AREA': return <FileText size={16} />;
+      case 'CAMERA': return <Camera size={16} />;
+      case 'SIGNATURE_PAD': return <PenTool size={16} />;
       default: return null;
     }
   };
@@ -308,19 +355,54 @@ const FormSubmission = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
-            <span>{Object.keys(formValues).length} / {sections.reduce((acc: number, s: any) => acc + s.fields.length, 0)} fields</span>
+            <span>{Object.keys(formValues).length} / {getTotalFields()} fields</span>
           </div>
           <div className="w-full bg-foreground rounded-full h-2">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(Object.keys(formValues).length / sections.reduce((acc: number, s: any) => acc + s.fields.length, 0)) * 100}%`
+                width: `${(Object.keys(formValues).length / getTotalFields()) * 100}%`
               }}
             />
           </div>
         </div>
 
-        {sections.map((section: any, sectionIndex: number) => (
+        {/* Page navigation */}
+        {pages.length > 1 && (
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              onClick={goToPreviousPage}
+              disabled={!canGoPrevious()}
+              variant="secondary-outline"
+              size="sm"
+            >
+              <ChevronLeft size={16} />
+              Previous
+            </Button>
+            <div className="text-sm text-text-muted">
+              Page {currentPageIndex + 1} of {pages.length}
+            </div>
+            <Button
+              onClick={goToNextPage}
+              disabled={!canGoNext()}
+              variant="secondary-outline"
+              size="sm"
+            >
+              Next
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+        )}
+
+        {getCurrentPage() && (
+          <>
+            {/* Page title */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
+            </div>
+
+            {/* Sections */}
+            {getCurrentPage().sections.map((section: any, sectionIndex: number) => (
           <Card key={section.id} className="overflow-hidden">
             <div 
               className="flex items-center justify-between cursor-pointer hover:bg-foreground/50 transition-colors -m-6 p-6"
@@ -347,10 +429,10 @@ const FormSubmission = () => {
                 {section.fields.map((field: any) => (
                   <div key={field.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.fieldType)}</div>
+                      <div className="text-text-muted">{getFieldIcon(field.controlType)}</div>
                       <label className="text-text font-medium">
                         {field.label}
-                        {field.required && <span className="text-error ml-1">*</span>}
+                        {field.isRequired && <span className="text-error ml-1">*</span>}
                       </label>
                     </div>
                     {renderFieldInput(field)}
@@ -359,7 +441,9 @@ const FormSubmission = () => {
               </div>
             )}
           </Card>
-        ))}
+            ))}
+          </>
+        )}
 
         {Object.keys(errors).length > 0 && (
           <div className="bg-error/10 border border-error/20 rounded-lg p-4">
@@ -372,6 +456,37 @@ const FormSubmission = () => {
           </div>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Cancel Form Submission"
+        size="xs"
+      >
+        <div className="space-y-4">
+          <p>
+            Are you sure you want to cancel? You have unsaved changes that will be lost.
+          </p>
+          <p className="text-text-muted text-sm">
+            {Object.keys(formValues).length} field(s) have been filled out.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setShowCancelModal(false)}
+            >
+              Continue Editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+            >
+              Discard Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

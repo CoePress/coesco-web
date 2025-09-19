@@ -748,9 +748,7 @@ const FormBuilder = () => {
 
 const EditPageView = ({
   page,
-  pageIndex,
   onUpdatePageTitle,
-  onRemovePage,
   onAddSection,
   onRemoveSection,
   onUpdateSectionTitle,
