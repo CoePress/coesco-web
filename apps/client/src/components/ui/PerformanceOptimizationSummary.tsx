@@ -96,9 +96,9 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
             case 'completed':
                 return <CheckCircle size={14} className="text-green-600" />;
             case 'in-progress':
-                return <Activity size={14} className="text-blue-600 animate-spin" />;
+                return <Activity size={14} className="text-primary animate-spin" />;
             default:
-                return <AlertCircle size={14} className="text-gray-400" />;
+                return <AlertCircle size={14} className="text-muted-foreground" />;
         }
     };
 
@@ -111,18 +111,16 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
             case 'low':
                 return 'text-yellow-600 bg-yellow-50';
             default:
-                return 'text-gray-600 bg-gray-50';
+                return 'text-muted-foreground bg-muted';
         }
-    };
-
-    return (
-        <div className={`performance-optimization-summary bg-white rounded-lg border shadow-sm p-4 ${className}`}>
+    }; return (
+        <div className={`performance-optimization-summary bg-background rounded-lg border border-border shadow-sm p-4 ${className}`}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Zap className="text-green-600" size={20} />
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Performance Optimizations</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-foreground">Performance Optimizations</h3>
+                        <p className="text-sm text-muted-foreground">
                             {completedOptimizations.length}/7 optimizations completed ({highImpactCompleted} high-impact)
                         </p>
                     </div>
@@ -139,55 +137,55 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
 
             {/* Progress bar */}
             <div className="mb-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <div className="flex justify-between text-sm text-muted-foreground mb-1">
                     <span>Overall Progress</span>
                     <span>100%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                     <div className="bg-green-500 h-2 rounded-full w-full transition-all duration-300"></div>
                 </div>
             </div>
 
             {/* System status indicators */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
                     <Wifi size={16} className={isOnline ? 'text-green-600' : 'text-red-600'} />
-                    <span className="text-sm">{isOnline ? 'Online' : 'Offline'}</span>
+                    <span className="text-sm text-foreground">{isOnline ? 'Online' : 'Offline'}</span>
                 </div>
 
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                    <Database size={16} className="text-blue-600" />
-                    <span className="text-sm">{cacheStatus?.performance.size || 0} Cached</span>
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                    <Database size={16} className="text-primary" />
+                    <span className="text-sm text-foreground">{cacheStatus?.performance.size || 0} Cached</span>
                 </div>
 
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
                     <Activity size={16} className={isHighMemory ? 'text-red-600' : 'text-green-600'} />
-                    <span className="text-sm">
+                    <span className="text-sm text-foreground">
                         Memory: {memoryStats?.usage || 0}%
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
                     <CheckCircle size={16} className="text-green-600" />
-                    <span className="text-sm">All Systems OK</span>
+                    <span className="text-sm text-foreground">All Systems OK</span>
                 </div>
             </div>
 
             {/* Detailed optimization list */}
             {isExpanded && (
                 <div className="space-y-3">
-                    <h4 className="text-md font-medium text-gray-900 border-t pt-3">Implementation Details</h4>
+                    <h4 className="text-md font-medium text-foreground border-t border-border pt-3">Implementation Details</h4>
 
                     {optimizations.map((optimization) => (
                         <div
                             key={optimization.id}
-                            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                            className="flex items-start gap-3 p-3 bg-muted rounded-lg"
                         >
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                                 {optimization.icon}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h5 className="text-sm font-medium text-gray-900">
+                                        <h5 className="text-sm font-medium text-foreground">
                                             {optimization.title}
                                         </h5>
                                         {getStatusIcon(optimization.status)}
@@ -195,10 +193,10 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
                                             {optimization.impact}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-1">
+                                    <p className="text-sm text-muted-foreground mb-1">
                                         {optimization.description}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         {optimization.details}
                                     </p>
                                 </div>

@@ -18,10 +18,10 @@ export const LoadingFallback: React.FC<{
 }) => {
         if (showSkeleton) {
             return (
-                <div className={`animate-pulse ${height} flex flex-col justify-center items-center p-8 bg-gray-50 rounded-lg border border-gray-200`}>
-                    <div className="w-8 h-8 bg-gray-300 rounded-full mb-4 animate-spin border-2 border-gray-300 border-t-blue-500"></div>
-                    <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                <div className={`animate-pulse ${height} flex flex-col justify-center items-center p-8 bg-muted rounded-lg border border-border`}>
+                    <div className="w-8 h-8 bg-muted-foreground rounded-full mb-4 animate-spin border-2 border-muted-foreground border-t-primary"></div>
+                    <div className="h-4 bg-muted-foreground rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-24"></div>
                 </div>
             );
         }
@@ -29,8 +29,8 @@ export const LoadingFallback: React.FC<{
         return (
             <div className={`${height} flex flex-col justify-center items-center`}>
                 <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="text-gray-600">Loading {name}...</span>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="text-muted-foreground">Loading {name}...</span>
                 </div>
             </div>
         );
@@ -72,7 +72,7 @@ const LazyLoadErrorFallback: React.FC<{
                     </button>
                     <button
                         onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                        className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
                     >
                         Refresh Page
                     </button>

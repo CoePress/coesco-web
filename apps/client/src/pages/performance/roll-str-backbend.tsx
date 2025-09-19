@@ -220,31 +220,31 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           label="Off Coil After Springback"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.offCoilAfterSpringback?.toString() || ""}
           disabled
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Bending Moment to Yield Skin (in-lbs)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.bendingMomentToYield?.toString() || ""}
           disabled
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="One over radius off coil after springback"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.oneOffCoil?.toString() || ""}
           disabled
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Curve at Yield"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.curveAtYield?.toString() || ""}
           disabled
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Radius req to yield flat material (in)"
           value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.radius?.radiusAtYield?.toString() || ""}
           disabled
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -270,25 +270,25 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Resulting Radius (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.resultingRadius?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Curvature Difference"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.curvatureDifference?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment (in-lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMoment?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment Ratio"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.bendingMomentRatio?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Force Required (lbs)"
@@ -300,7 +300,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.springback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="% Thickness Yielded"
@@ -312,13 +312,13 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Yield Strains at Surface"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.numberOfYieldStrainsAtSurface?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Radius After Springback (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.up?.radiusAfterSpringback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -331,43 +331,43 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Resulting Radius (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.resultingRadius?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Curvature Difference"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.curvatureDifference?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment (in-lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMoment?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment Ratio"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.bendingMomentRatio?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.springback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.percentOfThicknessYielded?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Radius After Springback (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.first?.down?.radiusAfterSpringback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -395,25 +395,25 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Resulting Radius (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.resultingRadius?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Curvature Difference"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.curvatureDifference?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment (in-lbs)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMoment?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Bending Moment Ratio"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.bendingMomentRatio?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Force Required (lbs)"
@@ -425,25 +425,25 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
               label="Springback"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.springback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="% Thickness Yielded"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.percentOfThicknessYielded?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Yield Strains at Surface"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.numberOfYieldStrainsAtSurface?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Radius After Springback (in)"
               value={localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.last?.up?.radiusAfterSpringback?.toString() || ""}
               disabled
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -486,25 +486,25 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Resulting Radius (in)"
                   value={middleData?.up?.resultingRadius?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Curvature Difference"
                   value={middleData?.up?.curvatureDifference?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment (in-lbs)"
                   value={middleData?.up?.bendingMoment?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment Ratio"
                   value={middleData?.up?.bendingMomentRatio?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Force Required (lbs)"
@@ -516,25 +516,25 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Springback"
                   value={middleData?.up?.springback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="% Thickness Yielded"
                   value={middleData?.up?.percentOfThicknessYielded?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Yield Strains at Surface"
                   value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Radius After Springback (in)"
                   value={middleData?.up?.radiusAfterSpringback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -547,43 +547,43 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Resulting Radius (in)"
                   value={middleData?.down?.resultingRadius?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Curvature Difference"
                   value={middleData?.down?.curvatureDifference?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment (in-lbs)"
                   value={middleData?.down?.bendingMoment?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment Ratio"
                   value={middleData?.down?.bendingMomentRatio?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Springback"
                   value={middleData?.down?.springback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="% Thickness Yielded"
                   value={middleData?.down?.percentOfThicknessYielded?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Radius After Springback (in)"
                   value={middleData?.down?.radiusAfterSpringback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -620,37 +620,37 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Resulting Radius (in)"
                   value={middleData?.up?.resultingRadius?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Curvature Difference"
                   value={middleData?.up?.curvatureDifference?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment (in-lbs)"
                   value={middleData?.up?.bendingMoment?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment Ratio"
                   value={middleData?.up?.bendingMomentRatio?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Springback"
                   value={middleData?.up?.springback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="% Thickness Yielded"
                   value={middleData?.up?.percentOfThicknessYielded?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Force Required (lbs)"
@@ -662,7 +662,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Yield Strains at Surface"
                   value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -675,43 +675,43 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   label="Resulting Radius (in)"
                   value={middleData?.down?.resultingRadius?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Curvature Difference"
                   value={middleData?.down?.curvatureDifference?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment (in-lbs)"
                   value={middleData?.down?.bendingMoment?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Bending Moment Ratio"
                   value={middleData?.down?.bendingMomentRatio?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Springback"
                   value={middleData?.down?.springback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="% Thickness Yielded"
                   value={middleData?.down?.percentOfThicknessYielded?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
                 <Input
                   label="Radius After Springback (in)"
                   value={middleData?.down?.radiusAfterSpringback?.toString() || ""}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -791,26 +791,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              Saving changes and calculating...
-            </span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

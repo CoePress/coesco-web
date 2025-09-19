@@ -109,26 +109,14 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {(isLoading) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              {isLoading ? "Saving changes and calculating FPM..." : "Loading..."}
-            </span>
-          </div>
-        </div>
-      )}
 
       {(error) && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

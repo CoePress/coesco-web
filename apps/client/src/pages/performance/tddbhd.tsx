@@ -208,7 +208,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dispReelMtr?.toString() || ""}
           type="text"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Web Tension (psi)"
@@ -216,7 +216,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.webTension?.psi?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Web Tension (lbs)"
@@ -224,7 +224,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.webTension?.lbs?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Brake Pad Diameter (in)"
@@ -240,7 +240,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.cylinderBore?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Coefficient of Friction"
@@ -248,7 +248,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.coefficientOfFriction?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -283,7 +283,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.torque?.atMandrel?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Rewind Torque Req. (in. lbs.)"
@@ -325,7 +325,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.cylinderPressure?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Hold Down Force Required (lbs)"
@@ -341,7 +341,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.force?.available?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Min. Material Width (in)"
@@ -391,7 +391,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.torque?.required?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Failsafe - Single Stage (psi air req.)"
@@ -446,24 +446,14 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">Saving changes and calculating...</span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

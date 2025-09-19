@@ -217,7 +217,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.common?.press?.bedLength?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Density"
@@ -233,7 +233,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.materialInLoop?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -301,7 +301,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.maxMotorRPM?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Motor Inertia (lbs-in-sec²)"
@@ -309,7 +309,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.motorInertia?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Max Velocity (ft/min)"
@@ -317,7 +317,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Settle Time (sec)"
@@ -325,7 +325,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.settleTime?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Ratio"
@@ -333,7 +333,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.ratio?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
 
@@ -379,7 +379,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.regen?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
 
         <Input
@@ -388,7 +388,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.motorPeak?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Motor RMS Torque (lbs-in)"
@@ -396,7 +396,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.rms?.motor?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Frictional Torque (lbs-in)"
@@ -404,7 +404,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.frictional?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Loop Torque (lbs-in)"
@@ -412,7 +412,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.loop?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="Settle Torque (lbs-in)"
@@ -420,7 +420,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.torque?.settle?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REF. Inertia (lbs-in-sec²)"
@@ -428,7 +428,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           type="number"
           value={localData.feed?.feed?.reflInertia?.toString() || ""}
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="MATCH"
@@ -572,7 +572,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               type="number"
               value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -602,7 +602,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               type="number"
               value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -632,7 +632,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               type="number"
               value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -666,37 +666,37 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
       {
         key: 'length',
         header: 'Length',
-        className: 'text-center text-white',
-        headerClassName: 'bg-gray-800 text-white border border-gray-300',
-        render: (value: any) => <span className="text-white">{value}</span>
+        className: 'text-center text-black dark:text-white',
+        headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
+        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
       },
       {
         key: 'spm_at_fa1',
         header: `SPM @ ${ANGLES.FEED_ANGLE_180}°`,
-        className: 'text-center text-white',
-        headerClassName: 'bg-gray-800 text-white border border-gray-300',
-        render: (value: any) => <span className="text-white">{value}</span>
+        className: 'text-center text-black dark:text-white',
+        headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
+        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
       },
       {
         key: 'fpm_fa1',
         header: 'FPM',
-        className: 'text-center text-white',
-        headerClassName: 'bg-gray-800 text-white border border-gray-300',
-        render: (value: any) => <span className="text-white">{value}</span>
+        className: 'text-center text-black dark:text-white',
+        headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
+        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
       },
       {
         key: 'spm_at_fa2',
         header: `SPM @ ${ANGLES.FEED_ANGLE_240}°`,
-        className: 'text-center text-white',
-        headerClassName: 'bg-gray-800 text-white border border-gray-300',
-        render: (value: any) => <span className="text-white">{value}</span>
+        className: 'text-center text-black dark:text-white',
+        headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
+        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
       },
       {
         key: 'fpm_fa2',
         header: 'FPM',
-        className: 'text-center text-white',
-        headerClassName: 'bg-gray-800 text-white border border-gray-300',
-        render: (value: any) => <span className="text-white">{value}</span>
+        className: 'text-center text-black dark:text-white',
+        headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
+        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
       },
     ];
 
@@ -708,9 +708,9 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           columns={columns}
           rowHeight={40}
           height={400}
-          className="border border-gray-300 bg-gray-800"
-          headerClassName="bg-gray-800"
-          rowClassName="bg-gray-800 border-b border-gray-300"
+          className="border border-border bg-muted"
+          headerClassName="bg-muted !text-black dark:!text-white"
+          rowClassName="bg-muted border-b border-border"
         />
       </Card>
     );
@@ -749,26 +749,14 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              Saving changes and calculating...
-            </span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

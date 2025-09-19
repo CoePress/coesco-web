@@ -150,59 +150,57 @@ const MemoryStatus: React.FC<MemoryStatusProps> = ({
 
             {/* Detailed stats panel */}
             {showDetails && (
-                <div className="mt-2 rounded-lg border bg-white p-3 shadow-lg">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Memory Details</h4>
+                <div className="mt-2 rounded-lg border border-border bg-background p-3 shadow-lg">
+                    <h4 className="text-sm font-medium text-foreground mb-2">Memory Details</h4>
 
                     <div className="space-y-2 text-xs">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Used:</span>
-                            <span className="font-medium">
+                            <span className="text-muted-foreground">Used:</span>
+                            <span className="font-medium text-foreground">
                                 {formatBytes(memoryStats.usedJSHeapSize)}
                             </span>
                         </div>
 
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Total:</span>
-                            <span className="font-medium">
+                            <span className="text-muted-foreground">Total:</span>
+                            <span className="font-medium text-foreground">
                                 {formatBytes(memoryStats.totalJSHeapSize)}
                             </span>
                         </div>
 
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Limit:</span>
-                            <span className="font-medium">
+                            <span className="text-muted-foreground">Limit:</span>
+                            <span className="font-medium text-foreground">
                                 {formatBytes(memoryStats.jsHeapSizeLimit)}
                             </span>
                         </div>
 
                         {/* Cache stats */}
-                        <div className="pt-2 border-t">
+                        <div className="pt-2 border-t border-border">
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Cache:</span>
-                                <span className="font-medium">
+                                <span className="text-muted-foreground">Cache:</span>
+                                <span className="font-medium text-foreground">
                                     {memoryCache.getStats().size} items
                                 </span>
                             </div>
                         </div>
 
                         {/* Memory usage bar */}
-                        <div className="pt-2 border-t">
+                        <div className="pt-2 border-t border-border">
                             <div className="flex justify-between mb-1">
-                                <span className="text-gray-600">Usage:</span>
-                                <span className="font-medium">{memoryStats.usage}%</span>
+                                <span className="text-muted-foreground">Usage:</span>
+                                <span className="font-medium text-foreground">{memoryStats.usage}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-muted rounded-full h-2">
                                 <div
-                                    className={`h-2 rounded-full transition-all duration-300 ${memoryStats.usage >= 90 ? 'bg-red-500' :
-                                            memoryStats.usage >= 75 ? 'bg-orange-500' :
-                                                memoryStats.usage >= 50 ? 'bg-yellow-500' : 'bg-green-500'
+                                    className={`h-2 rounded-full transition-all duration-300 ${memoryStats.usage >= 90 ? 'bg-destructive' :
+                                        memoryStats.usage >= 75 ? 'bg-orange-500' :
+                                            memoryStats.usage >= 50 ? 'bg-yellow-500' : 'bg-green-500'
                                         }`}
                                     style={{ width: `${Math.min(memoryStats.usage, 100)}%` }}
                                 ></div>
                             </div>
-                        </div>
-
-                        {/* Action buttons */}
+                        </div>                        {/* Action buttons */}
                         <div className="pt-2 border-t flex gap-2">
                             <Button
                                 variant="secondary-outline"

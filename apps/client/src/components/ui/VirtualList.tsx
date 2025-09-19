@@ -51,7 +51,7 @@ const VirtualList = <T,>({
                     {Array.from({ length: Math.min(10, Math.ceil(height / (itemHeight + gap))) }).map((_, index) => (
                         <div
                             key={index}
-                            className="bg-gray-200 rounded"
+                            className="bg-muted rounded"
                             style={{ height: itemHeight }}
                         />
                     ))}
@@ -64,15 +64,13 @@ const VirtualList = <T,>({
     if (items.length === 0) {
         return (
             <div
-                className={`flex items-center justify-center text-gray-500 text-center ${className}`}
+                className={`flex items-center justify-center text-muted text-center ${className}`}
                 style={{ height }}
             >
                 {emptyMessage}
             </div>
         );
-    }
-
-    return (
+    } return (
         <div className={className}>
             {/* Virtual scroll container */}
             <div
@@ -111,7 +109,7 @@ const VirtualList = <T,>({
 
             {/* Virtual scrolling indicator */}
             {isVirtualized && (
-                <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
+                <div className="px-4 py-2 bg-muted border-t border-border text-xs text-muted-foreground text-center">
                     Showing {virtualItems.length} of {items.length} items (Virtual Scrolling Active)
                 </div>
             )}

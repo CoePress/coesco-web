@@ -436,34 +436,34 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
       <Card className="mb-4 p-4">
         <Text as="h4" className="mb-4 text-lg font-medium">Performance Results</Text>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-border">
             <thead>
-              <tr className="bg-gray-800">
-                <th className="border border-gray-300 p-2 text-white">Length</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_180}°</th>
-                <th className="border border-gray-300 p-2 text-white">FPM</th>
-                <th className="border border-gray-300 p-2 text-white">SPM @ {ANGLES.FEED_ANGLE_240}°</th>
-                <th className="border border-gray-300 p-2 text-white">FPM</th>
+              <tr className="bg-muted">
+                <th className="border border-border p-2 text-black dark:text-white">Length</th>
+                <th className="border border-border p-2 text-black dark:text-white">SPM @ {ANGLES.FEED_ANGLE_180}°</th>
+                <th className="border border-border p-2 text-black dark:text-white">FPM</th>
+                <th className="border border-border p-2 text-black dark:text-white">SPM @ {ANGLES.FEED_ANGLE_240}°</th>
+                <th className="border border-border p-2 text-black dark:text-white">FPM</th>
               </tr>
             </thead>
             <tbody>
               {lengthRows.map((length) => {
                 const rowData = tableData.find((row: TableRowData) => row.length === length);
                 return (
-                  <tr key={length} className="bg-gray-800">
-                    <td className="border border-gray-300 p-2 text-center text-white">
+                  <tr key={length} className="bg-muted">
+                    <td className="border border-border p-2 text-center text-black dark:text-white">
                       {rowData?.length || length}
                     </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
+                    <td className="border border-border p-2 text-center text-black dark:text-white">
                       {rowData?.spm_at_fa1 || "#N/A"}
                     </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
+                    <td className="border border-border p-2 text-center text-black dark:text-white">
                       {rowData?.fpm_fa1 || "#N/A"}
                     </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
+                    <td className="border border-border p-2 text-center text-black dark:text-white">
                       {rowData?.spm_at_fa2 || "#N/A"}
                     </td>
-                    <td className="border border-gray-300 p-2 text-center text-white">
+                    <td className="border border-border p-2 text-center text-black dark:text-white">
                       {rowData?.fpm_fa2 || "#N/A"}
                     </td>
                   </tr>
@@ -509,26 +509,14 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 pb-6 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-6 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              Saving changes...
-            </span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

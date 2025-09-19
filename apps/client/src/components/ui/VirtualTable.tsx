@@ -70,27 +70,27 @@ const VirtualTable = <T extends Record<string, any>>({
     // Loading state
     if (loading) {
         return (
-            <div className={`border border-gray-200 rounded-lg overflow-hidden ${className}`}>
+            <div className={`border border-border rounded-lg overflow-hidden ${className}`}>
                 <div className="animate-pulse">
                     {/* Header skeleton */}
-                    <div className="bg-gray-100 border-b border-gray-200 p-4">
+                    <div className="bg-muted border-b border-border p-4">
                         <div className="flex">
                             {columns.map((_, index) => (
                                 <div
                                     key={index}
-                                    className="h-4 bg-gray-300 rounded mr-4 flex-1"
+                                    className="h-4 bg-muted-foreground/30 rounded mr-4 flex-1"
                                 />
                             ))}
                         </div>
                     </div>
                     {/* Rows skeleton */}
                     {Array.from({ length: Math.min(10, Math.ceil(height / rowHeight)) }).map((_, index) => (
-                        <div key={index} className="border-b border-gray-100 p-4">
+                        <div key={index} className="border-b border-border p-4">
                             <div className="flex">
                                 {columns.map((_, colIndex) => (
                                     <div
                                         key={colIndex}
-                                        className="h-4 bg-gray-200 rounded mr-4 flex-1"
+                                        className="h-4 bg-muted rounded mr-4 flex-1"
                                     />
                                 ))}
                             </div>
@@ -104,14 +104,14 @@ const VirtualTable = <T extends Record<string, any>>({
     // Empty state
     if (data.length === 0) {
         return (
-            <div className={`border border-gray-200 rounded-lg overflow-hidden ${className}`}>
+            <div className={`border border-border rounded-lg overflow-hidden ${className}`}>
                 {/* Header */}
-                <div className={`bg-gray-50 border-b border-gray-200 ${headerClassName}`}>
+                <div className={`bg-muted border-b border-border ${headerClassName}`}>
                     <div className="flex">
                         {columns.map((column, index) => (
                             <div
                                 key={column.key}
-                                className={`px-4 py-3 font-medium text-gray-900 ${column.headerClassName || ''}`}
+                                className={`px-4 py-3 font-medium text-foreground ${column.headerClassName || ''}`}
                                 style={{ width: columnWidths[index] }}
                             >
                                 {column.header}
@@ -122,7 +122,7 @@ const VirtualTable = <T extends Record<string, any>>({
 
                 {/* Empty message */}
                 <div
-                    className="flex items-center justify-center text-gray-500 text-center"
+                    className="flex items-center justify-center text-muted text-center"
                     style={{ height: height - 50 }}
                 >
                     {emptyMessage}
@@ -132,17 +132,17 @@ const VirtualTable = <T extends Record<string, any>>({
     }
 
     return (
-        <div className={`border border-gray-200 rounded-lg overflow-hidden ${className}`}>
+        <div className={`border border-border rounded-lg overflow-hidden ${className}`}>
             {/* Header */}
             <div
-                className={`bg-gray-50 border-b border-gray-200 ${stickyHeader ? 'sticky top-0 z-10' : ''
+                className={`bg-muted border-b border-border ${stickyHeader ? 'sticky top-0 z-10' : ''
                     } ${headerClassName}`}
             >
                 <div className="flex">
                     {columns.map((column, index) => (
                         <div
                             key={column.key}
-                            className={`px-4 py-3 font-medium text-gray-900 ${column.headerClassName || ''}`}
+                            className={`px-4 py-3 font-medium text-foreground ${column.headerClassName || ''}`}
                             style={{ width: columnWidths[index] }}
                         >
                             {column.header}
@@ -172,7 +172,7 @@ const VirtualTable = <T extends Record<string, any>>({
                             <div
                                 key={index}
                                 style={style}
-                                className={`flex border-b border-gray-100 hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''
+                                className={`flex border-b border-border hover:bg-muted ${onRowClick ? 'cursor-pointer' : ''
                                     } ${rowClass}`}
                                 onClick={() => onRowClick?.(rowData, index)}
                             >
@@ -185,7 +185,7 @@ const VirtualTable = <T extends Record<string, any>>({
                                     return (
                                         <div
                                             key={column.key}
-                                            className={`px-4 py-3 text-sm text-gray-900 ${column.className || ''}`}
+                                            className={`px-4 py-3 text-sm text-foreground ${column.className || ''}`}
                                             style={{ width: columnWidths[colIndex] }}
                                         >
                                             {cellContent}
@@ -200,7 +200,7 @@ const VirtualTable = <T extends Record<string, any>>({
 
             {/* Virtual scrolling indicator */}
             {isVirtualized && (
-                <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
+                <div className="px-4 py-2 bg-muted border-t border-border text-xs text-muted-foreground text-center">
                     Showing {virtualItems.length} of {data.length} rows (Virtual Scrolling Active)
                 </div>
             )}

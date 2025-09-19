@@ -201,7 +201,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 
                     <button
                         onClick={() => window.location.href = '/'}
-                        className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                     >
                         <Home className="mr-2 h-4 w-4" />
                         Go Home

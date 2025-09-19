@@ -127,7 +127,7 @@ const OfflineStatus: React.FC<OfflineStatusProps> = ({
             {showCacheDetails && (
                 <div className="mt-2 rounded-lg border bg-white p-3 shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-gray-900">Cache Status</h4>
+                        <h4 className="text-sm font-medium text-foreground">Cache Status</h4>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -140,15 +140,15 @@ const OfflineStatus: React.FC<OfflineStatusProps> = ({
                     </div>
 
                     {isCacheLoading ? (
-                        <div className="text-xs text-gray-500">Loading cache status...</div>
+                        <div className="text-xs text-muted-foreground">Loading cache status...</div>
                     ) : cacheStatus ? (
                         <div className="space-y-2">
                             <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Performance Data:</span>
+                                <span className="text-muted-foreground">Performance Data:</span>
                                 <span className="font-medium">{cacheStatus.performance.size} items</span>
                             </div>
                             <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Static Assets:</span>
+                                <span className="text-muted-foreground">Static Assets:</span>
                                 <span className="font-medium">{cacheStatus.static.size} items</span>
                             </div>
 
@@ -164,7 +164,7 @@ const OfflineStatus: React.FC<OfflineStatusProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="text-xs text-gray-500">No cache information available</div>
+                        <div className="text-xs text-muted-foreground">No cache information available</div>
                     )}
                 </div>
             )}

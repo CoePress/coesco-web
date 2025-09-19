@@ -429,7 +429,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.jackForceAvailable"
               value={localData.strUtility?.straightener?.jackForceAvailable?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -445,7 +445,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.pinch.ratedTorque"
               value={localData.strUtility?.straightener?.rolls?.pinch?.ratedTorque?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -461,7 +461,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.rolls.straightener.ratedTorque"
               value={localData.strUtility?.straightener?.rolls?.straightener?.ratedTorque?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
           <div className="grid grid-cols-1 gap-4">
@@ -488,14 +488,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.actualCoilWeight"
               value={localData.strUtility?.straightener?.actualCoilWeight?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Coil OD. (in)"
               name="strUtility.straightener.coilOD"
               value={localData.strUtility?.straightener?.coilOD?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -504,21 +504,21 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
               name="strUtility.straightener.torque.straightener"
               value={localData.strUtility?.straightener?.torque?.straightener?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Accel. Torque (in lbs)"
               name="strUtility.straightener.torque.acceleration"
               value={localData.strUtility?.straightener?.torque?.acceleration?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
             <Input
               label="Brake Torque (in lbs)"
               name="strUtility.straightener.torque.brake"
               value={localData.strUtility?.straightener?.torque?.brake?.toString() || ""}
               disabled={true}
-              className="bg-gray-50"
+              className="bg-muted"
             />
           </div>
         </div>
@@ -585,26 +585,14 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              Saving changes and calculating...
-            </span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

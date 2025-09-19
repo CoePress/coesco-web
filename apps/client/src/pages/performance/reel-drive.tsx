@@ -168,7 +168,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.mandrel?.maxRPM?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="RPM FULL"
@@ -176,7 +176,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.mandrel?.RpmFull?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="WEIGHT"
@@ -184,7 +184,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.mandrel?.weight?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="INERTIA"
@@ -192,7 +192,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.mandrel?.inertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. INERT."
@@ -200,7 +200,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.mandrel?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -235,7 +235,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.backplate?.weight?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="INERTIA"
@@ -243,7 +243,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.backplate?.inertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. INERT."
@@ -251,7 +251,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.backplate?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -310,7 +310,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.coil?.inertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. INERT."
@@ -318,7 +318,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.coil?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -369,7 +369,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.reducer?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -420,7 +420,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.chain?.inertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. INERT."
@@ -428,7 +428,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.chain?.reflInertia?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -447,7 +447,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.ratio?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="TOTAL REFL. INERTIA EMPTY"
@@ -455,7 +455,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.totalReflInertia?.empty?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="TOTAL REFL. INERTIA FULL"
@@ -463,7 +463,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.totalReflInertia?.full?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -498,7 +498,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.motor?.rpm?.base?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="RPM FULL"
@@ -506,7 +506,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.motor?.rpm?.full?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -525,7 +525,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.mandrel?.rear?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="F. BRG. MAND."
@@ -533,7 +533,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.mandrel?.front?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="F. BRG. COIL"
@@ -541,7 +541,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.coil?.front?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="R. BRG. COIL"
@@ -549,7 +549,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.coil?.rear?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="TOTAL EMPTY"
@@ -557,7 +557,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.total?.empty?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="TOTAL FULL"
@@ -565,7 +565,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.total?.full?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. EMPTY"
@@ -573,7 +573,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.refl?.empty?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="REFL. FULL"
@@ -581,7 +581,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.friction?.bearing?.refl?.full?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -616,7 +616,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.accelerationTime?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -635,7 +635,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.empty?.torque?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="FULL"
@@ -643,7 +643,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.full?.torque?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
       </div>
     </Card>
@@ -662,7 +662,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.empty?.horsepowerRequired?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="FULL"
@@ -670,20 +670,20 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.full?.horsepowerRequired?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">OK:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck)
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
             }`}>
             {(localData.reelDrive?.reel?.torque?.empty?.horsepowerCheck) ? "OK" : "NOT OK"}
           </span>
           <label className="text-sm font-medium">OK:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.full?.horsepowerCheck)
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
             }`}>
             {(localData.reelDrive?.reel?.torque?.full?.horsepowerCheck) ? "OK" : "NOT OK"}
           </span>
@@ -705,7 +705,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.empty?.regen?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <Input
           label="FULL"
@@ -713,20 +713,20 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.reelDrive?.reel?.torque?.full?.regen?.toString() || ""}
           type="number"
           disabled={true}
-          className="bg-gray-50"
+          className="bg-muted"
         />
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium">Regen:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.empty?.regen)
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-muted text-foreground'
             }`}>
             {(localData.reelDrive?.reel?.torque?.empty?.regen) ? "YES" : "NO"}
           </span>
           <label className="text-sm font-medium">Regen:</label>
           <span className={`px-2 py-1 rounded text-sm font-semibold ${(localData.reelDrive?.reel?.torque?.full?.regen)
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-muted text-foreground'
             }`}>
             {(localData.reelDrive?.reel?.torque?.full?.regen) ? "YES" : "NO"}
           </span>
@@ -768,24 +768,14 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">Saving changes and calculating...</span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

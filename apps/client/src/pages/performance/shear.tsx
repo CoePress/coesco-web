@@ -217,7 +217,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         />
       </div>
       <div className="mt-2">
-        <Text className="text-sm text-gray-600">
+        <Text className="text-sm text-muted-foreground">
           Shear Strength (psi) (70-80% of tensile): {calculatedValues.shearStrength.toFixed(0)}
         </Text>
       </div>
@@ -265,7 +265,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         </div>
         <div className="space-y-2">
           <Text as="h4" className="text-sm font-medium">Calculated Variables</Text>
-          <div className="p-3 bg-gray-50 rounded space-y-1">
+          <div className="p-3 bg-muted rounded space-y-1">
             <Text className="text-sm">Angle of blade: {calculatedValues.angleOfBlade.toFixed(5)}</Text>
             <Text className="text-sm">Length of initial cut: {calculatedValues.lengthOfInitialCut.toFixed(5)}</Text>
             <Text className="text-sm">Area of cut: {calculatedValues.areaOfCut.toFixed(5)}</Text>
@@ -307,7 +307,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           />
         </div>
         <div className="space-y-2">
-          <div className="p-3 bg-gray-50 rounded space-y-1">
+          <div className="p-3 bg-muted rounded space-y-1">
             <Text className="text-sm">Minimum stroke for blade: {calculatedValues.minimumStrokeForBlade.toFixed(5)}</Text>
             <Text className="text-sm">Min.stroke required for desired opening: {calculatedValues.minStrokeForDesiredOpening.toFixed(5)}</Text>
             <Text className="text-sm">Actual opening above max. mat'l: {calculatedValues.actualOpeningAboveMaxMaterial.toFixed(5)}</Text>
@@ -330,7 +330,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
-        <div className="p-3 bg-gray-50 rounded space-y-1">
+        <div className="p-3 bg-muted rounded space-y-1">
           <Text className="text-sm">Cylinder Area: {calculatedValues.cylinderArea.toFixed(5)}</Text>
           <Text className="text-sm">Cylinder Volume: {calculatedValues.cylinderVolume.toFixed(5)}</Text>
           <Text className="text-sm">Fluid Velocity (ft/sec): {calculatedValues.fluidVelocity.toFixed(5)}</Text>
@@ -393,8 +393,8 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
         <Text as="h3" className="text-lg font-medium">
           Conclusions
         </Text>
-        <div className="w-24 h-24 bg-gray-200 rounded flex items-center justify-center">
-          <Text className="text-xs text-gray-500">COE Logo</Text>
+        <div className="w-24 h-24 bg-muted rounded flex items-center justify-center">
+          <Text className="text-xs text-muted-foreground">COE Logo</Text>
         </div>
       </div>
 
@@ -528,26 +528,14 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col p-2 gap-2">
+    <div className="w-full flex flex-1 flex-col px-2 pb-2 gap-2">
       {/* Status bar */}
-      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+      <div className="flex justify-between items-center p-2 bg-muted rounded-md">
         <StatusIndicator />
         {fieldErrors._general && (
           <div className="text-sm text-red-600">{fieldErrors._general}</div>
         )}
       </div>
-
-      {/* Loading and error states */}
-      {isLoading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            <span className="text-blue-800">
-              Saving changes and calculating...
-            </span>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">

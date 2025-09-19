@@ -134,7 +134,7 @@ const PerformancePageErrorFallback: React.FC<ErrorFallbackProps & {
 
                         <button
                             onClick={() => window.location.reload()}
-                            className="inline-flex items-center px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
+                            className="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors shadow-sm"
                         >
                             <FileText className="mr-2 h-5 w-5" />
                             Refresh App

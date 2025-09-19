@@ -43,7 +43,7 @@ export const FeedRequirementsSection: React.FC<RFQSectionProps> = ({
                         name="common.feedRates.max.fpm"
                         value={localData.common?.feedRates?.max?.fpm?.toString() || ""}
                         disabled={true}
-                        className="bg-gray-50"
+                        className="bg-muted"
                     />
                 </div>
             </div>
@@ -76,7 +76,7 @@ export const FeedRequirementsSection: React.FC<RFQSectionProps> = ({
                         name="common.feedRates.min.fpm"
                         value={localData.common?.feedRates?.min?.fpm?.toString() || ""}
                         disabled={true}
-                        className="bg-gray-50"
+                        className="bg-muted"
                     />
                 </div>
             </div>
@@ -109,7 +109,7 @@ export const FeedRequirementsSection: React.FC<RFQSectionProps> = ({
                         name="common.feedRates.average.fpm"
                         value={localData.common?.feedRates?.average?.fpm?.toString() || ""}
                         disabled={true}
-                        className="bg-gray-50"
+                        className="bg-muted"
                     />
                 </div>
                 <div>
