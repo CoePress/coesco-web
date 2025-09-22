@@ -436,7 +436,6 @@ export const ImportExcelModal = ({
         await Promise.all(batch.map(async (row, rowIndex) => {
         try {
           let companyId: number | undefined;
-          let addressId: number | undefined;
           
           // Stage 1: Find or create company
           const updateStageProgress = (stage: string, stageIndex: number) => {
@@ -502,7 +501,6 @@ export const ImportExcelModal = ({
               
               if (existingAddress) {
                 // Use existing address
-                addressId = existingAddress.Address_ID;
               } else {
                 // Create new address
                 const addressPayload = {
@@ -516,7 +514,6 @@ export const ImportExcelModal = ({
                 const addressResponse = await post("/legacy/std/Address", addressPayload);
                 if (addressResponse) {
                   // The server should return the created record with the auto-generated ID
-                  addressId = addressResponse.Address_ID;
                   result.addressesCreated++;
                 }
               }
