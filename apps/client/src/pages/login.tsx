@@ -253,6 +253,56 @@ const Login = () => {
               </svg>
               {loading ? "Connecting..." : "Sign in with Microsoft"}
             </Button>
+
+            {process.env.NODE_ENV === "development" && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-background text-text-muted">
+                      Dev Quick Login
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      const response = await post("/auth/login", {
+                        username: "admin",
+                        password: "admin123",
+                      });
+                      if (response && response.user) {
+                        setUser(response.user, response.employee);
+                        navigate("/", { replace: true });
+                      }
+                    }}
+                    disabled={loading}
+                    variant="secondary"
+                    className="flex-1 text-xs">
+                    Admin
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      const response = await post("/auth/login", {
+                        username: "user",
+                        password: "user123",
+                      });
+                      if (response && response.user) {
+                        setUser(response.user, response.employee);
+                        navigate("/", { replace: true });
+                      }
+                    }}
+                    disabled={loading}
+                    variant="secondary"
+                    className="flex-1 text-xs">
+                    User
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Card>
       </div>

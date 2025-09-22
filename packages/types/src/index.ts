@@ -64,3 +64,4 @@ export * from './role';
 export * from './role-assignment';
 export * from './role-permission';
 export * from './user';
+export * from './user-settings';

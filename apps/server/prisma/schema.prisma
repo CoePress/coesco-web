@@ -26,6 +26,16 @@ model User {
   @@map("users")
 }
 
+model UserSettings {
+  id              String    @id @default(uuid())
+  userId String
+  settings Json @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("user_settings")
+}
+
 model Employee {
   id              String    @id @default(uuid())
   userId          String    @unique

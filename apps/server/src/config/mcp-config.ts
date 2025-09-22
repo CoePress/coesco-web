@@ -2459,4 +2459,33 @@ export const SCHEMAS: ISchema[] = [
       },
     },
   },
+  {
+    name: "user-settings",
+    description: "Schema for UserSettings entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: true,
+      },
+      settings: {
+        type: "json",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
 ];
