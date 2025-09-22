@@ -12,7 +12,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { generateUniqueId } from "@/utils/unique-id-generator";
 import { useApi } from "@/hooks/use-api";
 
 const CREDIT_STATUS_OPTIONS = [
@@ -1785,7 +1784,11 @@ const CompanyDetails = () => {
                   {companyJourneys.map((journey, index) => {
                     const uniqueKey = `journey-${journey.id || journey.customerId}-${index}`;
                     return (
-                      <div key={uniqueKey} className="bg-surface p-3 rounded border">
+                      <div 
+                        key={uniqueKey} 
+                        className="bg-surface p-3 rounded border cursor-pointer hover:bg-surface/80 transition-colors"
+                        onClick={() => navigate(`/sales/pipeline/${journey.id}`)}
+                      >
                         <div className="font-semibold text-sm text-text mb-1">{journey.name}</div>
                         <div className="text-xs text-text-muted mb-1">
                           Amount: {formatCurrency(journey.value)}
@@ -2709,12 +2712,8 @@ const CreateJourneyModal = ({
     }
 
     try {
-      // Generate a unique ID for the Journey
-      const uniqueId = await generateUniqueId("Journey", "ID", "std");
-
       // Map form fields to database field names
       const payload = {
-        ID: uniqueId,
         Project_Name: name,
         Journey_Start_Date: startDate,
         Journey_Type: journeyType,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Button } from "@/components";
-import { generateUniqueId } from "@/utils/unique-id-generator";
+import { useApi } from "@/hooks/use-api";
 
 interface AddJourneyContactModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export const AddJourneyContactModal = ({
   journeyId,
   isFirstContact = false
 }: AddJourneyContactModalProps) => {
+  const { post } = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     Contact_Name: "",
@@ -34,14 +35,10 @@ export const AddJourneyContactModal = ({
     setIsSubmitting(true);
 
     try {
-      // Generate unique ID for the Journey_Contact
-      const uniqueId = await generateUniqueId("Journey_Contact", "ID", "std");
-      
       const now = new Date();
       const formattedDate = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0')}`;
       
       const journeyContactData = {
-        ID: uniqueId,
         Jrn_ID: journeyId,
         Contact_Name: formData.Contact_Name,
         Contact_Email: formData.Contact_Email,
@@ -53,18 +50,9 @@ export const AddJourneyContactModal = ({
         IsPrimary: formData.IsPrimary ? 1 : 0,
       };
 
-      const response = await fetch(
-        "http://localhost:8080/api/legacy/std/Journey_Contact",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(journeyContactData),
-        }
-      );
+      const result = await post("/legacy/std/Journey_Contact", journeyContactData);
 
-      if (response.ok) {
-        // const apiResponse = await response.json();
+      if (result) {
         
         // Reset form
         setFormData({
@@ -84,8 +72,6 @@ export const AddJourneyContactModal = ({
 
         onClose();
       } else {
-        const errorText = await response.text();
-        console.error("Failed to create journey contact:", response.status, errorText);
         alert("Failed to create contact. Please try again.");
       }
     } catch (error) {

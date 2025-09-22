@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Modal, Button, Input, Select } from "@/components";
-import { generateUniqueId } from "@/utils/unique-id-generator";
 import { useApi } from "@/hooks/use-api";
 
 interface CreateJourneyModalProps {
@@ -43,12 +42,8 @@ export const CreateJourneyModal = ({
     }
 
     try {
-      // Generate a unique ID for the Journey
-      const uniqueId = await generateUniqueId("Journey", "ID", "std");
-
       // Map form fields to database field names
       const payload = {
-        ID: uniqueId,
         Project_Name: name,
         Journey_Start_Date: startDate,
         Journey_Type: journeyType,
@@ -70,11 +65,11 @@ export const CreateJourneyModal = ({
 
       const result = await post("/legacy/std/Journey", payload);
 
-      if (result) {
-        // Create the journey object for immediate display
+      if (result && result.ID) {
+        // Create the journey object for immediate display using the server response
         const newJourney = {
           ...payload,
-          // Use the generated ID as the primary identifier
+          ID: result.ID, // Use the auto-generated ID from the server
           CreateDT: new Date().toISOString(),
           Action_Date: actionDate || new Date().toISOString(),
           Journey_Value: 0, // Default value
@@ -112,7 +107,7 @@ export const CreateJourneyModal = ({
         console.error("Journey creation failed:", error);
       }
     } catch (error) {
-      console.error("Error generating unique ID or creating journey:", error);
+      console.error("Error creating journey:", error);
       alert("Failed to create journey. Please try again.");
     }
   };
