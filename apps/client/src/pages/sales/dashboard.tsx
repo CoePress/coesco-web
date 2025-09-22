@@ -322,25 +322,8 @@ const SalesDashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
           <div className="md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border flex flex-col min-h-[250px]">
-            <div className="p-2 border-b flex items-center justify-between">
+            <div className="p-2 border-b">
               <h3 className="text-sm text-text-muted">Performance Overview</h3>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost">
-                  1W
-                </Button>
-                <Button
-                  size="sm"
-                  variant="primary">
-                  1M
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost">
-                  3M
-                </Button>
-              </div>
             </div>
 
             <div className="p-2 flex-1">
