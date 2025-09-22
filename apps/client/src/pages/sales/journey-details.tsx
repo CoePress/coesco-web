@@ -3,6 +3,7 @@ import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES, VALID_JOURNEY_STATUS } from "./journeys/constants";
 import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry } from "./journeys/utils";
+import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -115,6 +116,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     reasonWon: journey?.Reason_Won ?? "",
     reasonLost: journey?.Reason_Lost ?? "",
     reasonWonLost: journey?.Reason_Won_Lost ?? "",
+    competition: journey?.Competition ?? "",
   });
 
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -201,23 +203,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
-      const response = await fetch(
-        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updates),
-        }
-      );
+      const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
       
-      if (response.ok) {
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.error("Failed to update journey:", response.status, response.statusText, errorText);
-        return false;
-      }
+      return result !== null;
     } catch (error) {
       console.error("Error updating journey:", error);
       return false;
@@ -248,13 +236,14 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       Reason_Won: detailsForm.reasonWon,
       Reason_Lost: detailsForm.reasonLost,
       Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost,
+      Competition: detailsForm.competition,
     };
 
-    // Filter out empty string values, but always include Reason fields
+    // Filter out empty string values, but always include Reason fields and Competition
     const updates = Object.fromEntries(
       Object.entries(rawUpdates).filter(([key, value]) => {
-        // Always include Reason_Won, Reason_Lost, and Reason_Won_Lost even if empty
-        if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost') {
+        // Always include Reason_Won, Reason_Lost, Reason_Won_Lost, and Competition even if empty
+        if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost' || key === 'Competition') {
           return true;
         }
         return value !== "";
@@ -484,18 +473,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           IsPrimary: journeyContacts.length === 0 ? 1 : 0, // Make first contact primary
         };
 
-        const journeyContactResponse = await fetch(
-          "http://localhost:8080/api/legacy/std/Journey_Contact",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(journeyContactData),
-          }
-        );
+        const journeyContact = await api.post("/legacy/std/Journey_Contact", journeyContactData);
 
-        if (journeyContactResponse.ok) {
-          const journeyContact = await journeyContactResponse.json();
+        if (journeyContact !== null) {
           // Add the new journey contact to the list
           setJourneyContacts(prev => [...prev, journeyContact]);
         }
@@ -1422,6 +1402,30 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   </div>
                 )}
               </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Competition</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.competition || ""}
+                    onChange={(e) => {
+                      setDetailsForm((s) => ({ ...s, competition: e.target.value }));
+                    }}
+                  >
+                    <option value="">No Value Selected</option>
+                    {COMPETITION_OPTIONS.filter(option => option !== "No Value Selected").map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {journey?.Competition || "-"}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1814,6 +1818,10 @@ function JourneyQuotesTab({ journey }: { journey: any | null }) {
             <div className="text-sm text-text-muted mb-2">Dealer</div>
             <div className="text-text">{journey?.Dealer?.trim() || journey?.Dealer_Name?.trim() || "Not specified"}</div>
           </div>
+          <div>
+            <div className="text-sm text-text-muted mb-2">Competition</div>
+            <div className="text-text">{journey?.Competition || "Not specified"}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2000,6 +2008,7 @@ const JourneyDetailsPage = () => {
   const [journeyContacts, setJourneyContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const api = useApi();
 
   const adaptLegacyJourney = (raw: any) => {
     const mapLegacyStageToId = (stage: any): StageId => {
@@ -2076,34 +2085,18 @@ const JourneyDetailsPage = () => {
     setError(null);
     
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const rawJourney = await api.get(`/legacy/base/Journey/${journeyId}`);
       
-      if (response.ok) {
-        const rawJourney = await response.json();
+      if (rawJourney !== null) {
         const adaptedJourney = adaptLegacyJourney(rawJourney);
         setJourneyData(adaptedJourney);
         
         // Fetch customer data if we have a Company_ID
         if (rawJourney.Company_ID) {
           try {
-            const customerResponse = await fetch(
-              `http://localhost:8080/api/legacy/base/Company/${rawJourney.Company_ID}`,
-              {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-              }
-            );
+            const customerRaw = await api.get(`/legacy/base/Company/${rawJourney.Company_ID}`);
             
-            if (customerResponse.ok) {
-              const customerRaw = await customerResponse.json();
+            if (customerRaw !== null) {
               setCustomerData({
                 id: customerRaw.Company_ID,
                 name: customerRaw.Company_Name || adaptedJourney.companyName,
@@ -2125,17 +2118,12 @@ const JourneyDetailsPage = () => {
 
         // Fetch journey contacts
         try {
-          const contactsResponse = await fetch(
-            `http://localhost:8080/api/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${journeyId}`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          );
+          const contactsData = await api.get('/legacy/std/Journey_Contact/filter/custom', {
+            filterField: 'Jrn_ID',
+            filterValue: journeyId
+          });
           
-          if (contactsResponse.ok) {
-            const contactsData = await contactsResponse.json();
+          if (contactsData !== null) {
             setJourneyContacts(Array.isArray(contactsData) ? contactsData : []);
           }
         } catch (contactError) {
@@ -2143,7 +2131,7 @@ const JourneyDetailsPage = () => {
           setJourneyContacts([]);
         }
       } else {
-        setError(`Failed to load journey: ${response.statusText}`);
+        setError('Failed to load journey data');
       }
     } catch (err) {
       setError(`Error loading journey: ${err}`);
