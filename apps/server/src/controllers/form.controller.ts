@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { formFieldService, formPageService, formSectionService, formService } from "@/services/repository";
+import { formFieldService, formPageService, formSectionService, formService, formSubmissionService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
 
 export class FormController {
@@ -74,6 +74,38 @@ export class FormController {
 
   deleteFormField = asyncWrapper(async (req: Request, res: Response) => {
     const result = await formFieldService.delete(req.params.fieldId);
+    res.status(200).json(result);
+  });
+
+  // Form Submissions
+  getFormSubmissions = asyncWrapper(async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const query = {
+      ...req.query,
+      filter: JSON.stringify({ formId }),
+    };
+    const result = await formSubmissionService.getAll(query);
+    res.status(200).json(result);
+  });
+
+  getFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formSubmissionService.getById(req.params.submissionId, req.query);
+    res.status(200).json(result);
+  });
+
+  createFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const result = await formSubmissionService.create({ ...req.body, formId });
+    res.status(201).json(result);
+  });
+
+  updateFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formSubmissionService.update(req.params.submissionId, req.body);
+    res.status(200).json(result);
+  });
+
+  deleteFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formSubmissionService.delete(req.params.submissionId);
     res.status(200).json(result);
   });
 }
