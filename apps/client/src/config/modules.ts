@@ -16,11 +16,12 @@ import {
   ChartNoAxesCombined,
   ActivityIcon,
   FileClockIcon,
+  ClockIcon,
 } from "lucide-react";
 import { ComponentType } from "react";
 
 import { __dev__ } from "./env";
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Devices, Employees, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions, TimeClock, TimeHistory, ManagerHours, TimeTrackingSettings } from "@/pages";
 import Sandbox from "@/pages/sandbox/sandbox";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
@@ -41,6 +42,7 @@ export type Page = {
   icon?: LucideIcon;
   component: ComponentType;
   children?: Page[];
+  roleFilter?: (user: any, employee: any) => boolean;
 };
 
 const adminModule: Module = {
@@ -88,7 +90,7 @@ const adminModule: Module = {
       icon: FileClockIcon,
       component: Sessions,
     },
-    
+
     {
       slug: "devices",
       label: "Devices",
@@ -134,6 +136,61 @@ const productionModule: Module = {
       label: "Machine States",
       icon: ActivityIcon,
       component: MachineStatuses,
+    },
+  ],
+};
+
+const timeTrackingModule: Module = {
+  sequence: 4,
+  slug: "time-tracking",
+  label: "Time Tracking",
+  icon: ClockIcon,
+  status: "development" as const,
+  pages: [
+    {
+      slug: "time-clock",
+      label: "Time Clock",
+      icon: ClockIcon,
+      component: TimeClock,
+      roleFilter: (user, employee) => {
+        // Admins can see all pages
+        if (user?.role === 'ADMIN') return true;
+        // Employees see this page (not managers)
+        return !(employee?.title && employee.title.toLowerCase().includes('manager'));
+      },
+    },
+    {
+      slug: "time-history",
+      label: "Time History",
+      icon: FileClockIcon,
+      component: TimeHistory,
+      roleFilter: (user, employee) => {
+        // Admins can see all pages
+        if (user?.role === 'ADMIN') return true;
+        // Employees see this page (not managers)
+        return !(employee?.title && employee.title.toLowerCase().includes('manager'));
+      },
+    },
+    {
+      slug: "manager-hours",
+      label: "Manager Hours",
+      icon: UsersIcon,
+      component: ManagerHours,
+      roleFilter: (user, employee) => {
+        // Only managers see this page
+        if (user?.role === 'ADMIN') return true;
+        return employee?.title && employee.title.toLowerCase().includes('manager');
+      },
+    },
+    {
+      slug: "settings",
+      label: "Settings",
+      icon: ShieldIcon,
+      component: TimeTrackingSettings,
+      roleFilter: () => {
+        // Both employees and managers see settings
+        return true;
+      },
     },
   ],
 };
@@ -255,6 +312,7 @@ const sandboxModule: Module = {
 const modules: Module[] = [
   adminModule,
   productionModule,
+  timeTrackingModule,
   salesModule,
   sandboxModule,
 ]

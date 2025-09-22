@@ -13,6 +13,7 @@ import performanceRoutes from "./performance.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
+import timeTrackingRoutes from "./time-tracking.routes";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use("/lock", lockRoutes);
 router.use("/performance", performanceRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
+router.use("/time-tracking", timeTrackingRoutes);
 
 export default router;

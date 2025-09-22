@@ -19,6 +19,7 @@ type SidebarProps = {
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
   const location = useLocation();
+  const { user, employee } = useAuth();
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -43,18 +44,15 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
   return (
     <div
-      className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${
-        isOpen ? "w-60 border-l" : "w-0"
-      } md:relative absolute z-50`}>
+      className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${isOpen ? "w-60 border-l" : "w-0"
+        } md:relative absolute z-50`}>
       <div
-        className={`flex flex-col h-full transition-opacity duration-300 ${
-          isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
-        }`}>
+        className={`flex flex-col h-full transition-opacity duration-300 ${isOpen ? "w-60 opacity-100" : "w-0 opacity-0"
+          }`}>
         <div className="flex items-center justify-center h-[57px] border-b border-border relative">
           <h1
-            className={`text-xl font-semibold text-primary ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}>
+            className={`text-xl font-semibold text-primary ${isOpen ? "opacity-100" : "opacity-0"
+              }`}>
             {sidebarLabel}
           </h1>
           <Button
@@ -64,32 +62,35 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             <X size={16} />
           </Button>
         </div>
-          <nav className="flex-1 overflow-y-auto p-2">
-            {location.pathname.startsWith("/chat") ? (
-              <ChatSidebar />
-            ) : (
-              <div className="flex flex-col gap-2">
-                {currentModule?.pages?.map((page) => {
+        <nav className="flex-1 overflow-y-auto p-2">
+          {location.pathname.startsWith("/chat") ? (
+            <ChatSidebar />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {currentModule?.pages
+                ?.filter((page) => {
+                  // Apply role-based filtering if roleFilter is defined
+                  return !page.roleFilter || page.roleFilter(user, employee);
+                })
+                ?.map((page) => {
                   const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
                   return (
                     <Link
                       key={page.slug || "index"}
                       to={trimmer(fullPath)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded ${
-                        isOpen ? "opacity-100" : "opacity-0"
-                      } ${
-                        isActive(fullPath)
+                      className={`flex items-center gap-3 px-4 py-2 rounded ${isOpen ? "opacity-100" : "opacity-0"
+                        } ${isActive(fullPath)
                           ? "bg-background text-primary"
                           : "text-text-muted hover:bg-surface"
-                      }`}>
+                        }`}>
                       {page.icon && <page.icon size={18} />}
                       <span className="font-medium text-sm">{page.label}</span>
                     </Link>
                   );
                 })}
-              </div>
-            )}
-          </nav>
+            </div>
+          )}
+        </nav>
       </div>
     </div>
   );
@@ -216,9 +217,8 @@ const Layout = ({ children }: LayoutProps) => {
               className="flex w-full justify-center items-center py-2 h-[36px] rounded text-text-muted hover:text-text hover:bg-surface transition-all duration-300 cursor-pointer">
               <ChevronsRight
                 size={20}
-                className={`transition-transform duration-200 ${
-                  sidebarExpanded ? "rotate-180" : ""
-                }`}
+                className={`transition-transform duration-200 ${sidebarExpanded ? "rotate-180" : ""
+                  }`}
               />
             </button>
             {modules
@@ -232,11 +232,10 @@ const Layout = ({ children }: LayoutProps) => {
                 <Link
                   key={module.slug}
                   to={`/${module.slug}`}
-                  className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${
-                    location.pathname.startsWith(`/${module.slug}`)
+                  className={`flex w-full justify-center items-center py-2 h-[36px] rounded ${location.pathname.startsWith(`/${module.slug}`)
                       ? "bg-background text-primary"
                       : "text-text-muted hover:bg-surface"
-                  }`}>
+                    }`}>
                   <module.icon size={18} />
                 </Link>
               ))}

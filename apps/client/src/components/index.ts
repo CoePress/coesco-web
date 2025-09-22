@@ -11,6 +11,7 @@ export { default as MachineMap } from "./_old/machine-map";
 export { default as MicrosoftCallback } from "../pages/utility/microsoft-callback";
 export { default as MobileLayout } from "./layout/mobile-layout";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";
+export { default as RoleProtectedRoute } from "./layout/role-protected-route";
 
 
 // Feature

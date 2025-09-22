@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
+import RoleProtectedRoute from "./components/layout/role-protected-route";
 import modules from "./config/modules";
 import MainMenu from "./pages/main-menu";
 import NotFound from "./pages/not-found";
@@ -16,7 +17,11 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
         <Route
           key={`${moduleSlug}-${page.slug}`}
           path={page.slug}
-          element={<page.component />}
+          element={
+            <RoleProtectedRoute roleFilter={page.roleFilter}>
+              <page.component />
+            </RoleProtectedRoute>
+          }
         />
       );
     } else {
@@ -24,7 +29,11 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
         <Route
           key={`${moduleSlug}-index`}
           path=""
-          element={<page.component />}
+          element={
+            <RoleProtectedRoute roleFilter={page.roleFilter}>
+              <page.component />
+            </RoleProtectedRoute>
+          }
         />
       );
     }
@@ -36,7 +45,11 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
           <Route
             key={`${moduleSlug}-${childPath}`}
             path={childPath}
-            element={<child.component />}
+            element={
+              <RoleProtectedRoute roleFilter={child.roleFilter}>
+                <child.component />
+              </RoleProtectedRoute>
+            }
           />
         );
       });
