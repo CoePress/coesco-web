@@ -1,6 +1,4 @@
-import { useApi } from "@/hooks/use-api";
-
-const { get } = useApi();
+import { instance } from "@/hooks/use-api";
 
 export async function generateUniqueId(
   tableName: string,
@@ -14,12 +12,12 @@ export async function generateUniqueId(
     const newId = crypto.randomUUID();
 
     try {
-      const response = await get(
+      const response = await instance.get(
         `/legacy/${database}/${tableName}/filter/custom`,
-        { [idFieldName]: newId },
+        { params: { [idFieldName]: newId } },
       );
 
-      const existingRecords = response;
+      const existingRecords = response.data;
 
       if (!existingRecords || !Array.isArray(existingRecords) || existingRecords.length === 0) {
         return newId;
@@ -46,10 +44,10 @@ export async function generateUniqueNumericId(
   database: string = "std",
 ): Promise<number> {
   try {
-    const result = await get(
+    const result = await instance.get(
       `/legacy/${database}/${tableName}/${idFieldName}/max`,
     );
-    const maxValue = result?.maxValue || 0;
+    const maxValue = result.data?.maxValue || 0;
     return maxValue + 1;
   }
   catch (error: any) {
