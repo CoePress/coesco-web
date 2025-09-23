@@ -37,9 +37,9 @@ export { default as Table } from "./ui/table";
 export { default as Tabs } from "./ui/tabs";
 export { default as Toast } from "./ui/toast";
 export { default as Tooltip } from "./ui/tooltip";
-export { default as VirtualTable } from "./ui/VirtualTable";
-export { default as VirtualList } from "./ui/VirtualList";
-export { default as VirtualTableAdapter } from "./ui/VirtualTableAdapter";
-export { default as OfflineStatus } from "./ui/OfflineStatus";
-export { default as MemoryStatus } from "./ui/MemoryStatus";
+export { default as VirtualTable } from "./ui/virtual-table";
+export { default as VirtualList } from "./ui/virtual-list";
+export { default as VirtualTableAdapter } from "./ui/virtual-table-adapter";
+export { default as OfflineStatus } from "./ui/offline-status";
+export { default as MemoryStatus } from "./ui/memory-status";
 

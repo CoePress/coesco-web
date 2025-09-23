@@ -6,8 +6,8 @@
 import React, { useState } from 'react';
 import { Activity, AlertTriangle, Trash2, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components';
-import { useMemoryMonitor, useMemoryCache } from '@/hooks/useMemoryManagement';
-import { forceGarbageCollection } from '@/utils/memoryUtils';
+import { useMemoryMonitor, useMemoryCache } from '@/hooks/use-memory-management';
+import { forceGarbageCollection } from '@/utils/memory-utils';
 
 export interface MemoryStatusProps {
     className?: string;
