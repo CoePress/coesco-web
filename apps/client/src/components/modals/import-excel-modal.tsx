@@ -17,7 +17,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import * as XLSX from 'xlsx';
 import { useApi } from "@/hooks/use-api";
-import { generateUniqueId, generateUniqueNumericId } from "@/utils/unique-id-generator";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
@@ -47,6 +46,7 @@ interface ExcelRow {
   mobile: string;
   office: string;
   journeyStep: string;
+  notes: string;
 }
 
 interface ImportResult {
@@ -167,7 +167,8 @@ export const ImportExcelModal = ({
     { field: 'leadSource', label: 'Lead Source', columnIndex: 8, enabled: true },
     { field: 'mobile', label: 'Mobile #', columnIndex: 9, enabled: true },
     { field: 'office', label: 'Office #', columnIndex: 10, enabled: true },
-    { field: 'journeyStep', label: 'Journey Step', columnIndex: 11, enabled: true },
+    { field: 'journeyStep', label: 'Next Steps', columnIndex: 11, enabled: true },
+    { field: 'notes', label: 'Notes', columnIndex: 12, enabled: false },
   ];
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -437,7 +438,6 @@ export const ImportExcelModal = ({
         await Promise.all(batch.map(async (row, rowIndex) => {
         try {
           let companyId: number | undefined;
-          let addressId: number | undefined;
           
           // Stage 1: Find or create company
           const updateStageProgress = (stage: string, stageIndex: number) => {
@@ -503,22 +503,21 @@ export const ImportExcelModal = ({
               
               if (existingAddress) {
                 // Use existing address
-                addressId = existingAddress.Address_ID;
               } else {
                 // Create new address
-                addressId = await generateUniqueNumericId("Address", "Address_ID", "std");
-                
                 const addressPayload = {
                   Company_ID: companyId,
-                  Address_ID: addressId,
                   AddressName: row.targetAccount, // Use target account as address name
                   City: row.city?.substring(0, 20) || '', // Limit to 20 chars
                   State: row.state?.substring(0, 20) || '', // Limit to 20 chars
                   Country: normalizedCountry.substring(0, 25), // Limit to 25 chars
                 };
 
-                await post("/legacy/std/Address", addressPayload);
-                result.addressesCreated++;
+                const addressResponse = await post("/legacy/std/Address", addressPayload);
+                if (addressResponse) {
+                  // The server should return the created record with the auto-generated ID
+                  result.addressesCreated++;
+                }
               }
             } catch (addressError) {
               console.error('Error finding/creating address:', addressError);
@@ -532,15 +531,12 @@ export const ImportExcelModal = ({
           updateStageProgress('Creating Journey', 3);
           
           try {
-            journeyId = await generateUniqueId("Journey", "ID", "std");
-            
             // Format date as YYYY-MM-DD for the database
             const today = new Date().toISOString().split('T')[0];
             
             const validatedRsm = validateRsm(row.rsm);
             
             const journeyPayload = {
-              ID: journeyId,
               Project_Name: row.targetAccount,
               Target_Account: row.targetAccount,
               Company_ID: companyId || undefined, // Use undefined instead of null
@@ -552,7 +548,8 @@ export const ImportExcelModal = ({
               Journey_Stage: "Lead", // Default to Lead stage
               Journey_Type: "stamping", // Default type
               Industry: "Other", // Default industry
-              Notes: row.journeyStep ? `Initial note: ${row.journeyStep}` : '',
+              Next_Steps: row.journeyStep || '',
+              Notes: row.notes || '',
               Journey_Start_Date: today,
               Action_Date: today,
               Journey_Status: 'Active',
@@ -561,17 +558,21 @@ export const ImportExcelModal = ({
               Dealer: row.dealer,
             };
 
-            await post("/legacy/std/Journey", journeyPayload);
-            result.journeysCreated++;
-            
-            // Add to created journeys list for display
-            result.createdJourneys.push({
-              id: journeyId,
-              name: journeyPayload.Project_Name,
-              targetAccount: row.targetAccount,
-              rsm: validatedRsm,
-              stage: "Lead"
-            });
+            const journeyResponse = await post("/legacy/std/Journey", journeyPayload);
+            if (journeyResponse && journeyResponse.ID) {
+              // The server should return the created record with the auto-generated ID
+              journeyId = journeyResponse.ID;
+              result.journeysCreated++;
+              
+              // Add to created journeys list for display
+              result.createdJourneys.push({
+                id: journeyId as string,
+                name: journeyPayload.Project_Name,
+                targetAccount: row.targetAccount,
+                rsm: validatedRsm,
+                stage: "Lead"
+              });
+            }
           } catch (journeyError) {
             console.error('Error creating journey:', journeyError);
             result.errors.push(`Failed to create journey for ${row.targetAccount}: ${journeyError}`);
@@ -582,22 +583,21 @@ export const ImportExcelModal = ({
           
           if (row.contactName && row.contactEmail && journeyId) {
             try {
-              const contactId = await generateUniqueId("Journey_Contact", "ID", "std");
-
               const journeyContactPayload = {
-                ID: contactId,
                 Jrn_ID: journeyId,
                 Contact_Name: row.contactName.substring(0, 50), // Limit to 50 chars
                 Contact_Email: row.contactEmail.substring(0, 50), // Limit to 50 chars
                 Contact_Office: (row.office || '').substring(0, 30), // Limit to 30 chars
                 Contact_Mobile: (row.mobile || '').substring(0, 30), // Limit to 30 chars
                 Contact_Position: '', // Could be enhanced later
-                Contact_Note: row.journeyStep ? `Initial note: ${row.journeyStep}`.substring(0, 500) : '', // Limit to 500 chars
+                Contact_Note: (row.notes || '').substring(0, 500), // Limit to 500 chars
                 IsPrimary: 1, // Set as primary contact - use 1 for true, 0 for false
               };
 
-              await post("/legacy/std/Journey_Contact", journeyContactPayload);
-              result.contactsCreated++;
+              const contactResponse = await post("/legacy/std/Journey_Contact", journeyContactPayload);
+              if (contactResponse) {
+                result.contactsCreated++;
+              }
             } catch (contactError) {
               console.error('Error creating journey contact:', contactError);
               result.errors.push(`Failed to create journey contact ${row.contactName}: ${contactError}`);
@@ -680,7 +680,8 @@ export const ImportExcelModal = ({
             <div>• Lead Source</div>
             <div>• Mobile #</div>
             <div>• Office #</div>
-            <div>• Journey Step</div>
+            <div>• Next Steps</div>
+            <div>• Notes</div>
           </div>
         </div>
       </div>

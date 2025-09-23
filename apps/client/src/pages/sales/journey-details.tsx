@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES, VALID_JOURNEY_STATUS } from "./journeys/constants";
 import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry } from "./journeys/utils";
+import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -73,7 +74,7 @@ const getPriorityColor = (priority: string) => {
       return "bg-gray-400"; // No priority - gray
   }
 };
-import { Edit, Plus, User, Trash2 } from "lucide-react";
+import { Edit, Plus, User, Trash2, Search } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { DeleteJourneyModal } from "./journeys/components";
@@ -115,6 +116,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     reasonWon: journey?.Reason_Won ?? "",
     reasonLost: journey?.Reason_Lost ?? "",
     reasonWonLost: journey?.Reason_Won_Lost ?? "",
+    competition: journey?.Competition ?? "",
+    visitOutcome: journey?.Visit_Outcome ?? "",
+    visitDate: journey?.Visit_Date ? journey.Visit_Date.split(' ')[0] : "",
+    anticipatedVisitDate: journey?.Anticipated_Visit_Date ? journey.Anticipated_Visit_Date.split(' ')[0] : "",
   });
 
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -125,9 +130,19 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     companyId: journey?.Company_ID || "",
     industry: getValidIndustry(journey?.Industry || ""),
   });
+  const [companySearchMode, setCompanySearchMode] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
+  const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showCompanyResults, setShowCompanyResults] = useState(false);
+  const [companyName, setCompanyName] = useState(journey?.Target_Account || journey?.companyName || "");
+  const lastFetchedCompanyId = useRef<string>("");
+  const justSelectedCompany = useRef<boolean>(false);
 
   const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
+  const [nextSteps, setNextSteps] = useState(journey?.Next_Steps ?? "");
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showNextStepsSavePrompt, setShowNextStepsSavePrompt] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
@@ -143,6 +158,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
 
+  const api = useApi();
+
   useEffect(() => {
     if (journey) {
       // Only update form states if we're not currently editing to avoid overwriting user changes
@@ -155,14 +172,21 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           companyId: journey?.Company_ID || "",
           industry: getValidIndustry(journey?.Industry || ""),
         });
+        setCompanyName(journey?.Target_Account || journey?.companyName || "");
+        lastFetchedCompanyId.current = journey?.Company_ID || "";
       }
       
       // Always update notes unless there's a pending save
       if (!showSavePrompt) {
         setNotes(journey?.Notes ?? journey?.notes ?? "");
       }
+      
+      // Always update next steps unless there's a pending save
+      if (!showNextStepsSavePrompt) {
+        setNextSteps(journey?.Next_Steps ?? "");
+      }
     }
-  }, [journey, isEditingDetails, isEditingCustomer, showSavePrompt]);
+  }, [journey, isEditingDetails, isEditingCustomer, showSavePrompt, showNextStepsSavePrompt]);
 
   // Fetch RSMs like pipeline.tsx does - get initials from Demographic table
   useEffect(() => {
@@ -186,14 +210,90 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return () => { cancelled = true; };
   }, []);
 
-  const navigate = useNavigate();
-  const [modalState, setModalState] = useState<{ isOpen: boolean; type: string }>({
-    isOpen: false,
-    type: "",
-  });
+  // Debounced company search
+  useEffect(() => {
+    if (!companySearchQuery.trim() || !companySearchMode || justSelectedCompany.current) {
+      setCompanySearchResults([]);
+      setShowCompanyResults(false);
+      if (justSelectedCompany.current) {
+        justSelectedCompany.current = false;
+      }
+      return;
+    }
 
-  const handleOpenModal = (type: string) => setModalState({ isOpen: true, type });
-  const handleCloseModal = () => setModalState({ isOpen: false, type: "" });
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const searchResults = await api.get('/legacy/std/Company/filter/custom', {
+          CustDlrName: `%${companySearchQuery}%`,
+          limit: 5
+        });
+        
+        if (Array.isArray(searchResults)) {
+          setCompanySearchResults(searchResults);
+          setShowCompanyResults(true);
+        }
+      } catch (error) {
+        console.error("Error searching companies:", error);
+        setCompanySearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [companySearchQuery, companySearchMode]);
+
+  // Lookup company name when company ID changes
+  useEffect(() => {
+    if (!customerForm.companyId || companySearchMode) {
+      return;
+    }
+
+    // Don't fetch if we already fetched this ID
+    if (lastFetchedCompanyId.current === customerForm.companyId) {
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const companyData = await api.get(`/legacy/std/Company/${customerForm.companyId}`);
+        if (companyData && companyData.CustDlrName) {
+          setCompanyName(companyData.CustDlrName);
+          lastFetchedCompanyId.current = customerForm.companyId;
+          
+          // Update the journey's Target_Account field
+          updateJourney({ Target_Account: companyData.CustDlrName });
+        } else {
+          setCompanyName("");
+          lastFetchedCompanyId.current = customerForm.companyId;
+        }
+      } catch (error) {
+        console.error("Error fetching company name:", error);
+        setCompanyName("");
+        lastFetchedCompanyId.current = customerForm.companyId;
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [customerForm.companyId, companySearchMode]);
+
+  // Handle clicking outside to close search results
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-company-search]')) {
+        setShowCompanyResults(false);
+      }
+    };
+
+    if (showCompanyResults) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCompanyResults]);
+
+  const navigate = useNavigate();
 
   const saveJourneyUpdates = async (updates: Record<string, any>) => {
     if (!journey?.ID && !journey?.id) return false;
@@ -201,23 +301,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
-      const response = await fetch(
-        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updates),
-        }
-      );
+      const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
       
-      if (response.ok) {
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.error("Failed to update journey:", response.status, response.statusText, errorText);
-        return false;
-      }
+      return result !== null;
     } catch (error) {
       console.error("Error updating journey:", error);
       return false;
@@ -248,13 +334,17 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       Reason_Won: detailsForm.reasonWon,
       Reason_Lost: detailsForm.reasonLost,
       Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost,
+      Competition: detailsForm.competition,
+      Visit_Outcome: detailsForm.visitOutcome,
+      Visit_Date: formatDateForDatabase(detailsForm.visitDate),
+      Anticipated_Visit_Date: formatDateForDatabase(detailsForm.anticipatedVisitDate),
     };
 
-    // Filter out empty string values, but always include Reason fields
+    // Filter out empty string values, but always include Reason fields and Competition
     const updates = Object.fromEntries(
       Object.entries(rawUpdates).filter(([key, value]) => {
-        // Always include Reason_Won, Reason_Lost, and Reason_Won_Lost even if empty
-        if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost') {
+        // Always include Reason_Won, Reason_Lost, Reason_Won_Lost, and Competition even if empty
+        if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost' || key === 'Competition') {
           return true;
         }
         return value !== "";
@@ -284,6 +374,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     const updates = {
       Company_ID: customerForm.companyId,
       Industry: customerForm.industry,
+      Target_Account: companyName, // Save the company name as Target_Account
     };
 
     const success = await saveJourneyUpdates(updates);
@@ -296,6 +387,41 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const handleCancelCustomer = () => {
     setIsEditingCustomer(false);
+    setCompanySearchMode(false);
+    setCompanySearchQuery("");
+    setCompanySearchResults([]);
+    setShowCompanyResults(false);
+    // Reset company name to original
+    setCompanyName(journey?.Target_Account || journey?.companyName || "");
+    lastFetchedCompanyId.current = journey?.Company_ID || "";
+  };
+
+  const handleCompanySelect = (company: any) => {
+    // Set flag to prevent search triggering
+    justSelectedCompany.current = true;
+    
+    setCustomerForm(s => ({ ...s, companyId: company.Company_ID }));
+    setCompanySearchQuery(company.CustDlrName || "");
+    setCompanyName(company.CustDlrName || "");
+    lastFetchedCompanyId.current = company.Company_ID;
+    
+    // Close the dropdown
+    setShowCompanyResults(false);
+    setCompanySearchResults([]);
+    
+    // Update the journey's Target_Account field
+    if (company.CustDlrName) {
+      updateJourney({ Target_Account: company.CustDlrName });
+    }
+  };
+
+  const toggleSearchMode = () => {
+    setCompanySearchMode(!companySearchMode);
+    if (!companySearchMode) {
+      setCompanySearchQuery("");
+      setCompanySearchResults([]);
+      setShowCompanyResults(false);
+    }
   };
 
   const handleSaveNotes = async () => {
@@ -320,7 +446,27 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setShowSavePrompt(false);
   };
 
-  const api = useApi();
+  const handleSaveNextSteps = async () => {
+    const updates = {
+      Next_Steps: nextSteps,
+    };
+
+    const success = await saveJourneyUpdates(updates);
+    setIsSaving(false);
+    setShowNextStepsSavePrompt(false);
+    if (success) {
+      updateJourney(updates);
+    } else {
+      // Revert next steps on failure
+      setNextSteps(journey?.Next_Steps ?? "");
+      setShowNextStepsSavePrompt(false);
+    }
+  };
+
+  const handleCancelNextSteps = () => {
+    setNextSteps(journey?.Next_Steps ?? "");
+    setShowNextStepsSavePrompt(false);
+  };
 
   const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
     if (!journey?.ID && !journey?.id) return;
@@ -484,18 +630,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           IsPrimary: journeyContacts.length === 0 ? 1 : 0, // Make first contact primary
         };
 
-        const journeyContactResponse = await fetch(
-          "http://localhost:8080/api/legacy/std/Journey_Contact",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(journeyContactData),
-          }
-        );
+        const journeyContact = await api.post("/legacy/std/Journey_Contact", journeyContactData);
 
-        if (journeyContactResponse.ok) {
-          const journeyContact = await journeyContactResponse.json();
+        if (journeyContact !== null) {
           // Add the new journey contact to the list
           setJourneyContacts(prev => [...prev, journeyContact]);
         }
@@ -569,18 +706,93 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               <div>
                 <div className="text-sm text-text-muted">Company</div>
                 <div className="text-sm text-text">
-                  {journey?.Target_Account || journey?.companyName || "-"}
+                  {companyName || journey?.Target_Account || journey?.companyName || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-text-muted">Company ID</div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-sm text-text-muted">Company ID</div>
+                  {isEditingCustomer && (
+                    <div title={companySearchMode ? "Switch to direct ID entry" : "Search by company name"}>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={toggleSearchMode}
+                        className="!p-1 !h-6 !w-6"
+                      >
+                        <Search size={12} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 {isEditingCustomer ? (
-                  <input
-                    type="text"
-                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
-                    value={customerForm.companyId}
-                    onChange={(e) => setCustomerForm(s => ({ ...s, companyId: e.target.value }))}
-                  />
+                  <div className="relative" data-company-search>
+                    {companySearchMode ? (
+                      <>
+                        <input
+                          type="text"
+                          className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                          value={companySearchQuery}
+                          onChange={(e) => {
+                            justSelectedCompany.current = false; // Reset flag when user types
+                            setCompanySearchQuery(e.target.value);
+                          }}
+                          placeholder="Search company by name..."
+                        />
+                        {isSearching && (
+                          <div className="absolute right-2 top-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          </div>
+                        )}
+                        {showCompanyResults && companySearchResults.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-b shadow-lg max-h-60 overflow-y-auto">
+                            {companySearchResults.map((company, index) => (
+                              <div
+                                key={company.Company_ID || index}
+                                className="p-3 hover:bg-gray cursor-pointer border-b border-border last:border-b-0"
+                                onClick={() => handleCompanySelect(company)}
+                              >
+                                <div className="font-medium text-sm text-text">
+                                  {company.CustDlrName || "Unnamed Company"}
+                                </div>
+                                <div className="text-xs text-text-muted mt-1">
+                                  ID: <span className="font-mono">{company.Company_ID}</span>
+                                  {company.CreateDate && (
+                                    <span className="ml-3">
+                                      Created: {(() => {
+                                        try {
+                                          return formatDate(company.CreateDate);
+                                        } catch {
+                                          return company.CreateDate;
+                                        }
+                                      })()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-xs text-text-muted mt-1">
+                          Selected ID: <span className="font-mono">{customerForm.companyId || "None"}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                        value={customerForm.companyId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Only allow numbers
+                          if (value === '' || /^\d+$/.test(value)) {
+                            setCustomerForm(s => ({ ...s, companyId: value }));
+                          }
+                        }}
+                        placeholder="Enter company ID directly..."
+                      />
+                    )}
+                  </div>
                 ) : (
                   <div className="text-sm text-text font-mono">
                     {journey?.Company_ID || "-"}
@@ -1422,6 +1634,31 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   </div>
                 )}
               </div>
+
+              <div>
+                <div className="text-sm text-text-muted">Competition</div>
+                {isEditingDetails ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.competition || ""}
+                    onChange={(e) => {
+                      setDetailsForm((s) => ({ ...s, competition: e.target.value }));
+                    }}
+                  >
+                    <option value="">No Value Selected</option>
+                    {COMPETITION_OPTIONS.filter(option => option !== "No Value Selected").map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-sm text-text">
+                    {journey?.Competition || "-"}
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
 
@@ -1445,139 +1682,135 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           </div>
 
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted text-sm">Interactions</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => handleOpenModal("interactions")}
-              >
-                <Plus size={16} />
-              </Button>
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold text-text-muted text-sm mb-1">Next Steps</h2>
             </div>
-            <div className="flex-1 overflow-auto">
-              <ul className="flex flex-col gap-2 text-xs"></ul>
-            </div>
+            <textarea
+              className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              value={nextSteps}
+              onChange={(e) => setNextSteps(e.target.value)}
+              onBlur={() => {
+                if (nextSteps !== (journey?.Next_Steps ?? "")) {
+                  setShowNextStepsSavePrompt(true);
+                }
+              }}
+              placeholder="Enter next steps..."
+            />
           </div>
 
           <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-text-muted text-sm">Quote Information</h2>
-              <Button
-                variant="secondary-outline"
-                size="sm"
-                onClick={() => handleOpenModal("quotes")}
-              >
-                <Plus size={16} />
-              </Button>
+              <h2 className="font-semibold text-text-muted text-sm">Visit Logging</h2>
+              <div className="flex gap-2">
+                {isEditingDetails ? (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveDetails}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={handleCancelDetails}
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="secondary-outline"
+                    size="sm"
+                    onClick={() => {
+                      setDetailsForm(createDetailsFormData(journey));
+                      setIsEditingDetails(true);
+                    }}
+                  >
+                    <Edit size={16} />
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="flex-1 overflow-auto">
-              <div className="space-y-3">
-                {/* Quote Details Section */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <div className="text-sm text-text-muted">Quote Number</div>
-                    <div className="text-sm text-text font-mono">
-                      {journey?.Quote_Number?.trim() || "-"}
-                    </div>
+                    <div className="text-sm text-text-muted mb-2">Visit Date</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.visitDate || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, visitDate: e.target.value }))
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-text p-2 bg-background rounded border">
+                        {(() => {
+                          try {
+                            return journey?.Visit_Date ? formatDate(journey.Visit_Date) : "No visit date recorded";
+                          } catch (error) {
+                            return journey?.Visit_Date || "No visit date recorded";
+                          }
+                        })()}
+                      </div>
+                    )}
                   </div>
+
                   <div>
-                    <div className="text-sm text-text-muted">Quote Type</div>
-                    <div className="text-sm text-text">
-                      {journey?.Quote_Type || "Standard more than 6 months"}
-                    </div>
+                    <div className="text-sm text-text-muted mb-2">Anticipated Visit Date</div>
+                    {isEditingDetails ? (
+                      <input
+                        type="date"
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                        value={detailsForm.anticipatedVisitDate || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, anticipatedVisitDate: e.target.value }))
+                        }
+                      />
+                    ) : (
+                      <div className="text-sm text-text p-2 bg-background rounded border">
+                        {(() => {
+                          try {
+                            return journey?.Anticipated_Visit_Date ? formatDate(journey.Anticipated_Visit_Date) : "No anticipated visit date";
+                          } catch (error) {
+                            return journey?.Anticipated_Visit_Date || "No anticipated visit date";
+                          }
+                        })()}
+                      </div>
+                    )}
                   </div>
+
                   <div>
-                    <div className="text-sm text-text-muted">Quote Delivery Method</div>
-                    <div className="text-sm text-text">
-                      {journey?.Presentation_Method || "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Quantity of Items</div>
-                    <div className="text-sm text-text">
-                      {journey?.Qty_of_Items != null && journey?.Qty_of_Items !== "" ? journey.Qty_of_Items : "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-text-muted">Quote Value</div>
-                    <div className="text-sm font-semibold text-primary">
-                      {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
-                    </div>
+                    <div className="text-sm text-text-muted mb-2">Visit Outcome</div>
+                    {isEditingDetails ? (
+                      <textarea
+                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
+                        value={detailsForm.visitOutcome || ""}
+                        onChange={(e) =>
+                          setDetailsForm((s) => ({ ...s, visitOutcome: e.target.value }))
+                        }
+                        rows={4}
+                        placeholder="Enter visit outcome details..."
+                      />
+                    ) : (
+                      <div className="text-sm text-text p-2 bg-background rounded border min-h-[80px] whitespace-pre-wrap">
+                        {journey?.Visit_Outcome || "No visit outcome recorded"}
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                {journey?.Quote_Number && (
-                  <div className="border-t pt-3">
-                    <div className="text-sm font-medium text-text-muted mb-2">Quote Status</div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex items-center justify-between p-2 bg-background rounded border">
-                        <div>
-                          <div className="text-sm font-medium text-text">
-                            Quote #{journey.Quote_Number}
-                          </div>
-                          <div className="text-xs text-text-muted">
-                            {journey?.Equipment_Type?.trim() || "Standard"} • {journey?.Quote_Type || "Standard more than 6 months"}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-primary">
-                            {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
-                          </div>
-                          <div className="text-xs text-text-muted">
-                            {journey?.Qty_of_Items && journey.Qty_of_Items !== "" ? `${journey.Qty_of_Items} items` : ""}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Timeline Section */}
-                {(journey?.Quote_Presentation_Date || journey?.Expected_Decision_Date) && (
-                  <div className="border-t pt-3">
-                    <div className="text-sm font-medium text-text-muted mb-2">Quote Timeline</div>
-                    <div className="space-y-2">
-                      {journey?.Quote_Presentation_Date && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-text-muted">- Presentation:</span>
-                          <span className="text-text">{journey.Quote_Presentation_Date ? formatDate(journey.Quote_Presentation_Date) : "-"}</span>
-                        </div>
-                      )}
-                      {journey?.Expected_Decision_Date && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-text-muted">- Expected Decision:</span>
-                          <span className="text-text">{journey.Expected_Decision_Date ? formatDate(journey.Expected_Decision_Date) : "-"}</span>
-                        </div>
-                      )}
-                      {journey?.Chance_To_Secure_order && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-text-muted">- Success Probability:</span>
-                          <span className="text-text font-medium">{journey.Chance_To_Secure_order}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <Modal isOpen={modalState.isOpen} onClose={handleCloseModal} title={
-        modalState.type === "interactions" || modalState.type === "quotes"
-          ? `Add ${modalState.type
-              .split("-")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")}`
-          : `Edit ${modalState.type
-              .split("-")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")}`
-      } size="sm">
-        <p>Opened modal for: {modalState.type}</p>
-      </Modal>
 
       <Modal
         isOpen={showSavePrompt}
@@ -1585,7 +1818,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         title="Save Changes?"
         size="sm"
       >
-        <p className="mb-4">Do you want to save your changes?</p>
+        <p className="mb-4">Do you want to save your changes to Notes?</p>
         <div className="flex justify-end gap-2">
           <Button 
             variant="primary" 
@@ -1599,6 +1832,33 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             variant="secondary-outline"
             size="sm"
             onClick={handleCancelNotes}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showNextStepsSavePrompt}
+        onClose={() => setShowNextStepsSavePrompt(false)}
+        title="Save Changes?"
+        size="sm"
+      >
+        <p className="mb-4">Do you want to save your changes to Next Steps?</p>
+        <div className="flex justify-end gap-2">
+          <Button 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSaveNextSteps}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={handleCancelNextSteps}
             disabled={isSaving}
           >
             Cancel
@@ -1651,32 +1911,144 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   );
 }
 
-function JourneyQuotesTab({ journey }: { journey: any | null }) {
+function JourneyQuotesTab({ journey, updateJourney }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void }) {
+  const [isEditingQuotes, setIsEditingQuotes] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const api = useApi();
+
+  // Helper function to create quote form data from journey
+  const createQuoteFormData = (journey: any) => ({
+    quoteNumber: journey?.Quote_Number?.trim() || "",
+    quoteType: journey?.Quote_Type || "Standard more than 6 months",
+    presentationMethod: journey?.Presentation_Method || "",
+    presentationDate: journey?.Quote_Presentation_Date ? journey.Quote_Presentation_Date.split(' ')[0] : "",
+    expectedDecisionDate: journey?.Expected_Decision_Date ? journey.Expected_Decision_Date.split(' ')[0] : "",
+  });
+
+  const [quoteForm, setQuoteForm] = useState(createQuoteFormData(journey));
+
+  useEffect(() => {
+    if (journey && !isEditingQuotes) {
+      setQuoteForm(createQuoteFormData(journey));
+    }
+  }, [journey, isEditingQuotes]);
+
+  const saveQuoteUpdates = async (updates: Record<string, any>) => {
+    if (!journey?.ID && !journey?.id) return false;
+    
+    setIsSaving(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
+      
+      return result !== null;
+    } catch (error) {
+      console.error("Error updating journey:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveQuotes = async () => {
+    const rawUpdates = {
+      Quote_Number: quoteForm.quoteNumber,
+      Quote_Type: quoteForm.quoteType,
+      Presentation_Method: quoteForm.presentationMethod,
+      Quote_Presentation_Date: formatDateForDatabase(quoteForm.presentationDate),
+      Expected_Decision_Date: formatDateForDatabase(quoteForm.expectedDecisionDate),
+    };
+
+    // Filter out empty string values
+    const updates = Object.fromEntries(
+      Object.entries(rawUpdates).filter(([_, value]) => value !== "")
+    );
+
+    const success = await saveQuoteUpdates(updates);
+    if (success) {
+      setIsEditingQuotes(false);
+      // Update the journey data locally
+      updateJourney(rawUpdates);
+    }
+  };
+
+  const handleCancelQuotes = () => {
+    setQuoteForm(createQuoteFormData(journey));
+    setIsEditingQuotes(false);
+  };
+
   if (!journey) return null;
 
   return (
     <div className="flex flex-1 flex-col p-4 gap-6">
       {/* Quote Overview */}
       <div className="bg-foreground rounded shadow-sm border p-4">
-        <h3 className="text-lg font-semibold text-text mb-4">Quote Overview</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-text">Quote Overview</h3>
+          <div className="flex gap-2">
+            {isEditingQuotes ? (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveQuotes}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={handleCancelQuotes}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="secondary-outline"
+                size="sm"
+                onClick={() => {
+                  setQuoteForm(createQuoteFormData(journey));
+                  setIsEditingQuotes(true);
+                }}
+              >
+                <Edit size={16} />
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Quote Number</div>
-            <div className="text-lg font-semibold text-text font-mono">
-              {journey?.Quote_Number?.trim() || "No Quote Number"}
-            </div>
+            {isEditingQuotes ? (
+              <input
+                type="text"
+                className="w-full rounded border border-border px-2 py-1 text-lg font-semibold text-text font-mono bg-background"
+                value={quoteForm.quoteNumber}
+                onChange={(e) => setQuoteForm(s => ({ ...s, quoteNumber: e.target.value }))}
+                placeholder="Enter quote number"
+              />
+            ) : (
+              <div className="text-lg font-semibold text-text font-mono">
+                {journey?.Quote_Number?.trim() || "No Quote Number"}
+              </div>
+            )}
           </div>
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Quote Value</div>
             <div className="text-lg font-semibold text-primary">
               {formatCurrency(Number(journey?.Journey_Value ?? journey?.value ?? 0))}
             </div>
+            <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
           </div>
           <div className="bg-background rounded border p-3">
             <div className="text-sm text-text-muted mb-1">Success Probability</div>
             <div className="text-lg font-semibold text-text">
               {journey?.Chance_To_Secure_order ? `${journey.Chance_To_Secure_order}%` : "Not specified"}
             </div>
+            <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
           </div>
         </div>
       </div>
@@ -1685,74 +2057,127 @@ function JourneyQuotesTab({ journey }: { journey: any | null }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-foreground rounded shadow-sm border p-4">
           <h3 className="text-lg font-semibold text-text mb-4">Quote Details</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-text-muted">Quote Type:</span>
-              <span className="text-text">{journey?.Quote_Type || "Standard more than 6 months"}</span>
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-text-muted mb-1">Quote Type</div>
+              {isEditingQuotes ? (
+                <select
+                  className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                  value={quoteForm.quoteType}
+                  onChange={(e) => setQuoteForm(s => ({ ...s, quoteType: e.target.value }))}
+                >
+                  <option value="Standard more than 6 months">Standard more than 6 months</option>
+                  <option value="Standard less than 6 months">Standard less than 6 months</option>
+                  <option value="Custom">Custom</option>
+                  <option value="Retrofit">Retrofit</option>
+                  <option value="Service">Service</option>
+                </select>
+              ) : (
+                <div className="text-sm text-text">{journey?.Quote_Type || "Standard more than 6 months"}</div>
+              )}
             </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Quote Delivery Method:</span>
-              <span className="text-text">{journey?.Presentation_Method || "Not specified"}</span>
+            <div>
+              <div className="text-sm text-text-muted mb-1">Quote Delivery Method</div>
+              {isEditingQuotes ? (
+                <select
+                  className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                  value={quoteForm.presentationMethod}
+                  onChange={(e) => setQuoteForm(s => ({ ...s, presentationMethod: e.target.value }))}
+                >
+                  <option value="">Select delivery method</option>
+                  <option value="Email">Email</option>
+                  <option value="In-Person Presentation">In-Person Presentation</option>
+                  <option value="Virtual Presentation">Virtual Presentation</option>
+                  <option value="Phone Call">Phone Call</option>
+                  <option value="Mail">Mail</option>
+                </select>
+              ) : (
+                <div className="text-sm text-text">{journey?.Presentation_Method || "Not specified"}</div>
+              )}
             </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Equipment Type:</span>
-              <span className="text-text">{journey?.Equipment_Type?.trim() || "Standard"}</span>
+            <div>
+              <div className="text-sm text-text-muted mb-1">Equipment Type</div>
+              <div className="text-sm text-text">{journey?.Equipment_Type?.trim() || "Standard"}</div>
+              <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Quantity of Items:</span>
-              <span className="text-text">
+            <div>
+              <div className="text-sm text-text-muted mb-1">Quantity of Items</div>
+              <div className="text-sm text-text">
                 {journey?.Qty_of_Items != null && journey?.Qty_of_Items !== "" ? journey.Qty_of_Items : "Not specified"}
-              </span>
+              </div>
+              <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">RSM:</span>
-              <span className="text-text">{journey?.RSM?.trim() || "Not assigned"}</span>
+            <div>
+              <div className="text-sm text-text-muted mb-1">RSM</div>
+              <div className="text-sm text-text">{journey?.RSM?.trim() || "Not assigned"}</div>
+              <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-text-muted">Territory:</span>
-              <span className="text-text">{journey?.RSM_Territory?.trim() || "Not specified"}</span>
+            <div>
+              <div className="text-sm text-text-muted mb-1">Territory</div>
+              <div className="text-sm text-text">{journey?.RSM_Territory?.trim() || "Not specified"}</div>
+              <div className="text-xs text-text-muted mt-1">Edit in Details tab</div>
             </div>
           </div>
         </div>
 
         <div className="bg-foreground rounded shadow-sm border p-4">
           <h3 className="text-lg font-semibold text-text mb-4">Timeline & Dates</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1">
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
                 <div className="text-sm text-text-muted">Quote Presentation Date</div>
-                <div className="text-text">
+              </div>
+              {isEditingQuotes ? (
+                <input
+                  type="date"
+                  className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ml-5"
+                  value={quoteForm.presentationDate || ""}
+                  onChange={(e) => setQuoteForm(s => ({ ...s, presentationDate: e.target.value }))}
+                />
+              ) : (
+                <div className="text-text ml-5">
                   {journey?.Quote_Presentation_Date ? formatDate(journey.Quote_Presentation_Date) : "Not scheduled"}
                 </div>
-              </div>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
                 <div className="text-sm text-text-muted">Expected Decision Date</div>
-                <div className="text-text">
+              </div>
+              {isEditingQuotes ? (
+                <input
+                  type="date"
+                  className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text ml-5"
+                  value={quoteForm.expectedDecisionDate || ""}
+                  onChange={(e) => setQuoteForm(s => ({ ...s, expectedDecisionDate: e.target.value }))}
+                />
+              ) : (
+                <div className="text-text ml-5">
                   {journey?.Expected_Decision_Date ? formatDate(journey.Expected_Decision_Date) : "Not specified"}
                 </div>
-              </div>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                 <div className="text-sm text-text-muted">Journey Created</div>
-                <div className="text-text">
-                  {journey?.CreateDT ? formatDate(journey.CreateDT) : "Not available"}
-                </div>
               </div>
+              <div className="text-text ml-5">
+                {journey?.CreateDT ? formatDate(journey.CreateDT) : "Not available"}
+              </div>
+              <div className="text-xs text-text-muted ml-5 mt-1">Read-only system field</div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
                 <div className="text-sm text-text-muted">Last Action Date</div>
-                <div className="text-text">
-                  {journey?.Action_Date ? formatDate(journey.Action_Date) : "Not available"}
-                </div>
               </div>
+              <div className="text-text ml-5">
+                {journey?.Action_Date ? formatDate(journey.Action_Date) : "Not available"}
+              </div>
+              <div className="text-xs text-text-muted ml-5 mt-1">Edit in Details tab</div>
             </div>
           </div>
         </div>
@@ -1813,6 +2238,10 @@ function JourneyQuotesTab({ journey }: { journey: any | null }) {
           <div>
             <div className="text-sm text-text-muted mb-2">Dealer</div>
             <div className="text-text">{journey?.Dealer?.trim() || journey?.Dealer_Name?.trim() || "Not specified"}</div>
+          </div>
+          <div>
+            <div className="text-sm text-text-muted mb-2">Competition</div>
+            <div className="text-text">{journey?.Competition || "Not specified"}</div>
           </div>
         </div>
       </div>
@@ -2000,6 +2429,7 @@ const JourneyDetailsPage = () => {
   const [journeyContacts, setJourneyContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const api = useApi();
 
   const adaptLegacyJourney = (raw: any) => {
     const mapLegacyStageToId = (stage: any): StageId => {
@@ -2076,34 +2506,18 @@ const JourneyDetailsPage = () => {
     setError(null);
     
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/legacy/base/Journey/${journeyId}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const rawJourney = await api.get(`/legacy/base/Journey/${journeyId}`);
       
-      if (response.ok) {
-        const rawJourney = await response.json();
+      if (rawJourney !== null) {
         const adaptedJourney = adaptLegacyJourney(rawJourney);
         setJourneyData(adaptedJourney);
         
         // Fetch customer data if we have a Company_ID
         if (rawJourney.Company_ID) {
           try {
-            const customerResponse = await fetch(
-              `http://localhost:8080/api/legacy/base/Company/${rawJourney.Company_ID}`,
-              {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-              }
-            );
+            const customerRaw = await api.get(`/legacy/base/Company/${rawJourney.Company_ID}`);
             
-            if (customerResponse.ok) {
-              const customerRaw = await customerResponse.json();
+            if (customerRaw !== null) {
               setCustomerData({
                 id: customerRaw.Company_ID,
                 name: customerRaw.Company_Name || adaptedJourney.companyName,
@@ -2125,17 +2539,12 @@ const JourneyDetailsPage = () => {
 
         // Fetch journey contacts
         try {
-          const contactsResponse = await fetch(
-            `http://localhost:8080/api/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${journeyId}`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          );
+          const contactsData = await api.get('/legacy/std/Journey_Contact/filter/custom', {
+            filterField: 'Jrn_ID',
+            filterValue: journeyId
+          });
           
-          if (contactsResponse.ok) {
-            const contactsData = await contactsResponse.json();
+          if (contactsData !== null) {
             setJourneyContacts(Array.isArray(contactsData) ? contactsData : []);
           }
         } catch (contactError) {
@@ -2143,7 +2552,7 @@ const JourneyDetailsPage = () => {
           setJourneyContacts([]);
         }
       } else {
-        setError(`Failed to load journey: ${response.statusText}`);
+        setError('Failed to load journey data');
       }
     } catch (err) {
       setError(`Error loading journey: ${err}`);
@@ -2224,7 +2633,7 @@ const JourneyDetailsPage = () => {
         setActiveTab={setActiveTab}
         tabs={[
           { label: "Details", value: "details" },
-          { label: "Quotes", value: "quotes" },
+          { label: "Quote Info", value: "quotes" },
           { label: "History", value: "history" },
           { label: "Journey Actions", value: "actions" },
         ]}
@@ -2242,7 +2651,7 @@ const JourneyDetailsPage = () => {
             setJourneyContacts={setJourneyContacts}
           />
         )}
-        {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} />}
+        {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} />}
         {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
         {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
       </>

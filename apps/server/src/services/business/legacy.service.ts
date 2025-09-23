@@ -1,4 +1,6 @@
 import odbc from "odbc";
+import * as fs from "fs";
+import * as path from "path";
 
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
@@ -30,10 +32,20 @@ const quoteConnStr = `
   PWD=${env.PROSQL_PASSWORD};
 `;
 
+interface IdMapEntry {
+  database: string;
+  table: string;
+  ids: Array<{
+    field: string;
+    type: "uuid" | "int";
+  }>;
+}
+
 export class LegacyService {
   private stdConnection?: odbc.Connection;
   private jobConnection?: odbc.Connection;
   private quoteConnection?: odbc.Connection;
+  private idMap?: IdMapEntry[];
 
   private getDatabaseConnection(db: string) {
     switch (db) {
@@ -55,6 +67,56 @@ export class LegacyService {
 
     const order = params.order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
     return `ORDER BY ${params.sort} ${order}`;
+  }
+
+  private loadIdMap() {
+    if (this.idMap) {
+      return this.idMap;
+    }
+
+    try {
+      const idMapPath = path.join(__dirname, "../../config/legacy-service-id-map.json");
+      const idMapData = fs.readFileSync(idMapPath, "utf8");
+      this.idMap = JSON.parse(idMapData);
+      return this.idMap;
+    } catch (err) {
+      logger.error("Error loading ID map:", err);
+      return [];
+    }
+  }
+
+  private async generateUniqueUuid(database: string, table: string, field: string): Promise<string> {
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    while (attempts < maxAttempts) {
+      const newId = crypto.randomUUID();
+
+      try {
+        const existingRecords = await this.getAllByCustomFilter(database, table, { [field]: newId });
+
+        if (!existingRecords || !Array.isArray(existingRecords) || existingRecords.length === 0) {
+          return newId;
+        }
+      } catch (error) {
+        logger.warn("Error checking UUID uniqueness, using generated ID:", error);
+        return newId;
+      }
+
+      attempts++;
+    }
+
+    throw new Error(`Failed to generate unique UUID for table ${table} field ${field} after ${maxAttempts} attempts`);
+  }
+
+  private async generateUniqueNumericId(database: string, table: string, field: string): Promise<number> {
+    try {
+      const maxValue = await this.getMaxValue(database, table, field);
+      return (maxValue || 0) + 1;
+    } catch (error) {
+      logger.error("Error getting max ID:", error);
+      return Math.floor(Math.random() * 1000000) + 1;
+    }
   }
 
   async initialize() {
@@ -91,6 +153,29 @@ export class LegacyService {
   async create(database: string, table: string, data: any) {
     if (!data || Object.keys(data).length === 0) {
       return false;
+    }
+
+    // Auto-generate IDs based on the ID map
+    const idMap = this.loadIdMap();
+    const tableConfig = idMap?.find(entry => entry.database === database && entry.table === table);
+    
+    if (tableConfig) {
+      for (const idConfig of tableConfig.ids) {
+        // Only generate ID if the field is not already provided
+        if (!(idConfig.field in data) || data[idConfig.field] === null || data[idConfig.field] === undefined || data[idConfig.field] === "") {
+          try {
+            if (idConfig.type === "uuid") {
+              data[idConfig.field] = await this.generateUniqueUuid(database, table, idConfig.field);
+            } else if (idConfig.type === "int") {
+              data[idConfig.field] = await this.generateUniqueNumericId(database, table, idConfig.field);
+            }
+            logger.info(`Auto-generated ${idConfig.type} ID for ${table}.${idConfig.field}: ${data[idConfig.field]}`);
+          } catch (error) {
+            logger.error(`Failed to generate ID for ${table}.${idConfig.field}:`, error);
+            return false;
+          }
+        }
+      }
     }
 
     // Filter out fields with empty string values, especially for date fields
@@ -132,11 +217,9 @@ export class LegacyService {
       (${fieldList}) VALUES (${valueList})
     `;
 
-    console.log(query);
-
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
-      return true;
+      return filteredData;
     }
     catch (err) {
       logger.error("Error creating data:", err);
@@ -312,7 +395,13 @@ export class LegacyService {
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
-      return `${escapedField} = '${escapedValue}'`;
+      
+      // Check if value contains wildcard characters (% or _)
+      if (escapedValue.includes('%') || escapedValue.includes('_')) {
+        return `UPPER(${escapedField}) LIKE UPPER('${escapedValue}')`;
+      } else {
+        return `${escapedField} = '${escapedValue}'`;
+      }
     });
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";

@@ -122,9 +122,10 @@ interface ListViewProps {
   isLoadingMore: boolean;
   onLoadMore: () => void;
   onDeleteJourney: (journeyId: string) => void;
-  onSort: (field: string) => void;
-  getSortIcon: (field: string) => string | null;
+  onSort: (field: string, order?: 'asc' | 'desc') => void;
   stageLabel: (id?: number) => string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
 export const ListView = ({
@@ -137,8 +138,9 @@ export const ListView = ({
   onLoadMore,
   onDeleteJourney,
   onSort,
-  getSortIcon,
   stageLabel,
+  sortField,
+  sortDirection,
 }: ListViewProps) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
 
@@ -179,14 +181,7 @@ export const ListView = ({
   const tableColumns = [
     {
       key: "name",
-      header: (
-        <button
-          onClick={() => onSort('name')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Journey Name {getSortIcon('name')}
-        </button>
-      ),
+      header: "Journey Name",
       render: (_: string, row: any) => (
         <Link
           to={`/sales/pipeline/${row.id}`}
@@ -199,14 +194,7 @@ export const ListView = ({
     },
     {
       key: "customerId",
-      header: (
-        <button
-          onClick={() => onSort('customerId')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Company {getSortIcon('customerId')}
-        </button>
-      ),
+      header: "Company",
       render: (value: string, row: any) => {
         const customer = customersById.get(String(value));
         return (
@@ -221,14 +209,7 @@ export const ListView = ({
     },
     {
       key: "stage",
-      header: (
-        <button
-          onClick={() => onSort('stage')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Stage {getSortIcon('stage')}
-        </button>
-      ),
+      header: "Stage",
       render: (value: number) => (
         <div className="flex items-center gap-2">
           <div className="text-sm text-neutral-400">{stageLabel(value)}</div>
@@ -237,14 +218,7 @@ export const ListView = ({
     },
     {
       key: "value",
-      header: (
-        <button
-          onClick={() => onSort('value')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Value {getSortIcon('value')}
-        </button>
-      ),
+      header: "Value",
       render: (value: number) => (
         <div className="text-sm font-medium text-neutral-400">
           {formatCurrency(value)}
@@ -253,14 +227,7 @@ export const ListView = ({
     },
     {
       key: "confidence",
-      header: (
-        <button
-          onClick={() => onSort('confidence')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Confidence {getSortIcon('confidence')}
-        </button>
-      ),
+      header: "Confidence",
       render: (value: number) => (
         <div className="flex items-center gap-2">
           <div className="bg-gray-200 h-1.5 w-16 rounded-full overflow-hidden">
@@ -280,28 +247,14 @@ export const ListView = ({
     },
     {
       key: "priority",
-      header: (
-        <button
-          onClick={() => onSort('priority')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Priority {getSortIcon('priority')}
-        </button>
-      ),
+      header: "Priority",
       render: (value: string) => (
         <StatusBadge label={value} variant={getPriorityConfig(value).style} />
       ),
     },
     {
       key: "updatedAt",
-      header: (
-        <button
-          onClick={() => onSort('updatedAt')}
-          className="flex items-center gap-1 text-left hover:text-primary transition-colors"
-        >
-          Last Activity {getSortIcon('updatedAt')}
-        </button>
-      ),
+      header: "Last Activity",
       render: (value: string) => (
         <div className="text-sm text-neutral-400">{formatDate(value)}</div>
       ),
@@ -319,10 +272,13 @@ export const ListView = ({
     <div ref={listContainerRef} className="flex-1 overflow-auto">
       <div className="flex flex-col h-full">
         <Table
-          columns={tableColumns as any}
+          columns={tableColumns}
           data={listJourneys}
           total={sortedFilteredJourneys.length}
           className="bg-foreground rounded shadow-sm border flex-shrink-0"
+          onSortChange={(sort, order) => onSort(sort, order)}
+          sort={sortField}
+          order={sortDirection}
         />
         {hasMoreJourneys && (
           <div className="p-4 bg-foreground flex justify-center flex-shrink-0">

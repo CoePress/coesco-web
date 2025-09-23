@@ -37,6 +37,7 @@ export interface Journey {
   Target_Account?: string;
   Project_Name?: string;
   ID?: number | string;
+  Competition?: string;
 }
 
 export interface Customer {
@@ -54,3 +55,23 @@ export interface TrackingInfo {
   notes?: string;
   is_active: boolean;
 }
+
+export const COMPETITION_OPTIONS = [
+  "No Value Selected",
+  "Arku",
+  "Bradberry",
+  "CHS",
+  "Chinese Line Offering",
+  "CoilTech",
+  "Colt",
+  "CWP",
+  "Dallas",
+  "Iowa Precision",
+  "Mecon",
+  "Ori",
+  "Other",
+  "PA Industries",
+  "Perfecto",
+  "Schuller",
+  "Universal Feed"
+] as const;

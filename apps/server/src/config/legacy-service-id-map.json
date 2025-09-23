@@ -1,0 +1,32 @@
+[
+  {
+    "database": "std",
+    "table": "Journey_Contact",
+    "ids": [
+      {
+        "field": "ID",
+        "type": "uuid"
+      }
+    ]
+  },
+  {
+    "database": "std",
+    "table": "Journey",
+    "ids": [
+      {
+        "field": "ID",
+        "type": "uuid"
+      }
+    ]
+  },
+  {
+    "database": "std",
+    "table": "Address",
+    "ids": [
+      {
+        "field": "Address_ID",
+        "type": "int"
+      }
+    ]
+  }
+]
