@@ -604,8 +604,11 @@ const Pipeline = () => {
     }
   }, [isLegacyData, refetchLegacyJourneys, put]);
 
-  const handleSort = useCallback((field: string) => {
-    if (sortField === field) {
+  const handleSort = useCallback((field: string, order?: 'asc' | 'desc') => {
+    if (order) {
+      setSortField(field);
+      setSortDirection(order);
+    } else if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
@@ -849,8 +852,9 @@ const Pipeline = () => {
             onLoadMore={loadMoreJourneys}
             onDeleteJourney={handleDeleteJourney}
             onSort={handleSort}
-            getSortIcon={getSortIcon}
             stageLabel={stageLabel}
+            sortField={sortField}
+            sortDirection={sortDirection}
           />
         </div>
       )}
