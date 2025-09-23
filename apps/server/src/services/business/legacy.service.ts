@@ -63,7 +63,7 @@ export class LegacyService {
       try {
         const connectionPromise = odbc.connect(connStr);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 1500),
+          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 2500),
         );
 
         const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;

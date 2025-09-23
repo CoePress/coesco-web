@@ -790,6 +790,11 @@ export const SCHEMAS: ISchema[] = [
         type: "formfielddatatype",
         required: true,
       },
+      options: {
+        type: "json",
+        required: true,
+        hasDefault: true,
+      },
       isRequired: {
         type: "boolean",
         required: true,

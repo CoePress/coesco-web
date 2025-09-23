@@ -14,6 +14,7 @@ export { AddJourneyContactModal } from "./modals/create-journey-contact-modal";
 export { default as AdvancedDropdown } from "./ui/advanced-dropdown";
 export { default as Button } from "./ui/button";
 export { default as Card } from "./ui/card";
+export { default as DatePicker } from "./ui/date-picker";
 export { default as Input } from "./ui/input";
 export { default as Loader } from "./ui/loader";
 export { default as Modal } from "./ui/modal";

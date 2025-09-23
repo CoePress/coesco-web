@@ -615,6 +615,7 @@ model FormField {
   variable         String
   controlType      FormFieldControlType
   dataType         FormFieldDataType
+  options          Json                 @default("{}")
   isRequired       Boolean              @default(false)
   isReadOnly       Boolean              @default(false)
   isHiddenOnDevice Boolean              @default(false)

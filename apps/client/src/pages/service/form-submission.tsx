@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal } from '@/components';
+import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -263,20 +263,20 @@ const FormSubmission = () => {
       case 'DATE_SELECTOR':
         return (
           <div className="w-full">
-            <div className="relative">
-              <Input
-                type="date"
-                value={value}
-                onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                className={`pr-10 ${hasError ? 'border-error' : ''}`}
-              />
-              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
-            </div>
+            <DatePicker
+              value={value}
+              onChange={(date) => handleFieldChange(field.id, date)}
+              placeholder={`Select ${field.label.toLowerCase()}`}
+              className={hasError ? 'border-error' : ''}
+            />
             {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
           </div>
         );
 
       case 'DROPDOWN':
+        // Handle options - could be an array directly or nested in the options object
+        const dropdownOptions = Array.isArray(field.options) ? field.options : [];
+
         return (
           <div className="w-full">
             <select
@@ -285,9 +285,15 @@ const FormSubmission = () => {
               className={`w-full px-4 py-2 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
             >
               <option value="">Select {field.label.toLowerCase()}</option>
-              {field.options?.map((option: string) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {dropdownOptions.map((option: any, index: number) => {
+                // Handle both string options and object options
+                if (typeof option === 'string') {
+                  return <option key={option} value={option}>{option}</option>;
+                } else if (option && typeof option === 'object') {
+                  return <option key={option.value || index} value={option.value}>{option.label}</option>;
+                }
+                return null;
+              })}
             </select>
             {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
           </div>

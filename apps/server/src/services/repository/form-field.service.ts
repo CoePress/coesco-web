@@ -20,6 +20,8 @@ export class FormFieldService extends BaseService<FormField> {
       throw new BadRequestError("label is required");
     if (!entity.variable)
       throw new BadRequestError("variable is required");
+    if (!entity.options)
+      throw new BadRequestError("options is required");
     if (!entity.isRequired)
       throw new BadRequestError("isRequired is required");
     if (!entity.isReadOnly)
