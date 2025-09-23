@@ -20,7 +20,6 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   const { state, handleFieldChange, saveImmediately } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
 
-  const textColor = 'var(--color-text)';
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
   const warningColor = 'var(--color-warning)';
@@ -453,15 +452,15 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
 
   // Middle rollers section
   const middleRollersSection = useMemo(() => {
-    // Determine number of middle rollers based on straightener rolls
-    const numStraightenerRolls = localData.common?.equipment?.straightener?.numberOfRolls || 7;
+    // Determine number of middle rollers based on type of roll selection
+    const typeOfRoll = localData.materialSpecs?.straightener?.rolls?.typeOfRoll || "";
     let numMiddleRollers = 0;
 
-    if (numStraightenerRolls === 7) {
+    if (typeOfRoll.includes('7 Roll')) {
       numMiddleRollers = 1;
-    } else if (numStraightenerRolls === 9) {
+    } else if (typeOfRoll.includes('9 Roll')) {
       numMiddleRollers = 2;
-    } else if (numStraightenerRolls === 11) {
+    } else if (typeOfRoll.includes('11 Roll')) {
       numMiddleRollers = 3;
     }
 
@@ -596,10 +595,11 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
     const middleRollers = [];
     for (let i = 1; i <= numMiddleRollers; i++) {
       let middleData;
-      if (numStraightenerRolls === 7) {
+      if (numMiddleRollers === 1) {
+        // For 7 roll (1 middle), data is at the direct middle path
         middleData = localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle;
-      }
-      else {
+      } else {
+        // For 9/11 roll (2/3 middles), data is at middle[i] path
         middleData = localData.rollStrBackbend?.straightener?.rolls?.backbend?.rollers?.middle?.[i];
       }
 
@@ -641,6 +641,12 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   className="bg-muted"
                 />
                 <Input
+                  label="Force Required (lbs)"
+                  value={middleData?.forceRequired?.toString() || ""}
+                  disabled
+                  customBackgroundColor={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor}
+                />
+                <Input
                   label="Springback"
                   value={middleData?.up?.springback?.toString() || ""}
                   disabled
@@ -653,14 +659,14 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
                   className="bg-muted"
                 />
                 <Input
-                  label="Force Required (lbs)"
-                  value={middleData?.forceRequired?.toString() || ""}
-                  disabled
-                  customBackgroundColor={((middleData?.forceRequired ?? 0) > jackForceAvailable) ? errorColor : successColor}
-                />
-                <Input
                   label="Yield Strains at Surface"
                   value={middleData?.numberOfYieldStrainsAtSurface?.toString() || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <Input
+                  label="Radius After Springback (in)"
+                  value={middleData?.up?.radiusAfterSpringback?.toString() || ""}
                   disabled
                   className="bg-muted"
                 />
@@ -721,7 +727,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
     }
 
     return <>{middleRollers}</>;
-  }, [localData]);
+  }, [localData, jackForceAvailable, errorColor, successColor]);
 
   // Design notes section
   const designNotesSection = useMemo(() => (
