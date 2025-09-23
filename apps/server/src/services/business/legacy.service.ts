@@ -395,7 +395,13 @@ export class LegacyService {
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
-      return `${escapedField} = '${escapedValue}'`;
+      
+      // Check if value contains wildcard characters (% or _)
+      if (escapedValue.includes('%') || escapedValue.includes('_')) {
+        return `UPPER(${escapedField}) LIKE UPPER('${escapedValue}')`;
+      } else {
+        return `${escapedField} = '${escapedValue}'`;
+      }
     });
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";

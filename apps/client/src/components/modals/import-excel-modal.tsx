@@ -46,6 +46,7 @@ interface ExcelRow {
   mobile: string;
   office: string;
   journeyStep: string;
+  notes: string;
 }
 
 interface ImportResult {
@@ -166,7 +167,8 @@ export const ImportExcelModal = ({
     { field: 'leadSource', label: 'Lead Source', columnIndex: 8, enabled: true },
     { field: 'mobile', label: 'Mobile #', columnIndex: 9, enabled: true },
     { field: 'office', label: 'Office #', columnIndex: 10, enabled: true },
-    { field: 'journeyStep', label: 'Journey Step', columnIndex: 11, enabled: true },
+    { field: 'journeyStep', label: 'Next Steps', columnIndex: 11, enabled: true },
+    { field: 'notes', label: 'Notes', columnIndex: 12, enabled: false },
   ];
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -546,7 +548,8 @@ export const ImportExcelModal = ({
               Journey_Stage: "Lead", // Default to Lead stage
               Journey_Type: "stamping", // Default type
               Industry: "Other", // Default industry
-              Notes: row.journeyStep ? `Initial note: ${row.journeyStep}` : '',
+              Next_Steps: row.journeyStep || '',
+              Notes: row.notes || '',
               Journey_Start_Date: today,
               Action_Date: today,
               Journey_Status: 'Active',
@@ -587,7 +590,7 @@ export const ImportExcelModal = ({
                 Contact_Office: (row.office || '').substring(0, 30), // Limit to 30 chars
                 Contact_Mobile: (row.mobile || '').substring(0, 30), // Limit to 30 chars
                 Contact_Position: '', // Could be enhanced later
-                Contact_Note: row.journeyStep ? `Initial note: ${row.journeyStep}`.substring(0, 500) : '', // Limit to 500 chars
+                Contact_Note: (row.notes || '').substring(0, 500), // Limit to 500 chars
                 IsPrimary: 1, // Set as primary contact - use 1 for true, 0 for false
               };
 
@@ -677,7 +680,8 @@ export const ImportExcelModal = ({
             <div>• Lead Source</div>
             <div>• Mobile #</div>
             <div>• Office #</div>
-            <div>• Journey Step</div>
+            <div>• Next Steps</div>
+            <div>• Notes</div>
           </div>
         </div>
       </div>
