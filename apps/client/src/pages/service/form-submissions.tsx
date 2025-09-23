@@ -43,6 +43,8 @@ const FormSubmissions = () => {
     []
   );
 
+  console.log("Test")
+
   const filter = useMemo(() => {
     const filterObj: any = {};
     if (filterValues.status) {
