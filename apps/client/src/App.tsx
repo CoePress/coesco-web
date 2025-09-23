@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import RoleProtectedRoute from "./components/layout/role-protected-route";
 import modules from "./config/modules";
@@ -123,9 +122,7 @@ const App = () => {
     </Routes>
   );
 
-  return (
-    <SocketProvider>{content}</SocketProvider>
-  );
+  return content;
 };
 
 export default App;

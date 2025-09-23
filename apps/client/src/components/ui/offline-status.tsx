@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Wifi, WifiOff, RefreshCw, Database, X } from 'lucide-react';
 import { Button } from '@/components';
-import { usePerformanceServiceWorker, useOfflinePerformance } from '@/hooks/usePerformanceServiceWorker';
+import { usePerformanceServiceWorker, useOfflinePerformance } from '@/hooks/use-performance-service-worker';
 
 export interface OfflineStatusProps {
     className?: string;

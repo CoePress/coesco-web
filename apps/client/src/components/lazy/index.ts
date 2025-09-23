@@ -3,5 +3,5 @@
  * Centralized access to all lazy-loaded components
  */
 
-export * from './performanceComponents';
-export * from './additionalComponents';
+export * from './performance-components';
+export * from './additional-components';

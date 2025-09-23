@@ -11,10 +11,10 @@ import {
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { Card, Input, Select, Text, VirtualTable } from "@/components";
-import OfflineStatus from "@/components/ui/OfflineStatus";
-import MemoryStatus from "@/components/ui/MemoryStatus";
-import { useMemoryEfficientPagination, useDatasetCleanup } from "@/hooks/useMemoryManagement";
-import { getStatusColors } from "@/utils/performanceHelpers";
+import OfflineStatus from "@/components/ui/offline-status";
+import MemoryStatus from "@/components/ui/memory-status";
+import { useMemoryEfficientPagination, useDatasetCleanup } from "@/hooks/use-memory-management";
+import { getStatusColors } from "@/utils/performance-helpers";
 import { ANGLES } from "../../constants/performance";
 
 // Type for table row data

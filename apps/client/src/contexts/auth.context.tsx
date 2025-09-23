@@ -1,4 +1,4 @@
-import {
+import React, {
   createContext,
   useState,
   useEffect,
@@ -56,16 +56,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       try {
         const response = await get("/auth/session");
-        
+
         // Handle both IApiResponse format and direct format
         if (response?.success && response.data) {
           // IApiResponse format
           setUserState(response.data.user);
           setEmployeeState(response.data.employee);
-        } else if (response?.user && response?.employee) {
+        } else if (response?.data?.user && response?.data?.employee) {
           // Direct format (legacy)
-          setUserState(response.user);
-          setEmployeeState(response.employee);
+          setUserState(response.data.user);
+          setEmployeeState(response.data.employee);
         } else {
           throw new Error("Session check failed");
         }

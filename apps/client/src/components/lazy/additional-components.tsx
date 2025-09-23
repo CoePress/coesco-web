@@ -3,7 +3,7 @@
  * Other components that benefit from code splitting
  */
 
-import { createLazyRoute } from '@/utils/lazyLoading';
+import { createLazyRoute } from '@/utils/lazy-loading';
 
 // Dashboard components (often large with charts/visualizations)
 export const LazyProductionDashboard = createLazyRoute(

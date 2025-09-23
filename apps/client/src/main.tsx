@@ -7,7 +7,7 @@ import { AuthProvider } from "./contexts/auth.context.tsx";
 import { AppProvider } from "./contexts/app.context.tsx";
 import { ThemeProvider } from "./contexts/theme.context.tsx";
 import { SocketProvider } from "./contexts/socket.context.tsx";
-import serviceWorkerManager from "./utils/serviceWorkerManager";
+import serviceWorkerManager from "./utils/service-worker-manager";
 
 // Register service worker
 if ('serviceWorker' in navigator) {

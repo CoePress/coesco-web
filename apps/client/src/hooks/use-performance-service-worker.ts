@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import serviceWorkerManager, { CacheStatus, scheduleBackgroundSync } from '@/utils/serviceWorkerManager';
+import serviceWorkerManager, { CacheStatus, scheduleBackgroundSync } from '@/utils/service-worker-manager';
 
 export interface PerformanceCache {
     isOnline: boolean;

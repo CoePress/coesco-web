@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import ErrorBoundary, { ErrorFallbackProps } from './ErrorBoundary';
+import ErrorBoundary, { ErrorFallbackProps } from './error-boundary';
 import { AlertCircle, Save, RefreshCw, FileText } from 'lucide-react';
 
 interface RFQErrorBoundaryProps {

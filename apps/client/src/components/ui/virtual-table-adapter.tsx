@@ -4,7 +4,7 @@
  */
 
 import Table, { TableColumn } from './table';
-import VirtualTable from './VirtualTable';
+import VirtualTable from './virtual-table';
 
 interface VirtualTableAdapterProps<T> {
     columns: TableColumn<T>[];

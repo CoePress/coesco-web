@@ -27,11 +27,11 @@
       ]
     },
     "dev": {
+      "dependsOn": [
+        "^dev"
+      ],
       "cache": false,
-      "persistent": true,
-      "passThroughEnv": [
-        "NODE_ENV"
-      ]
+      "persistent": true
     }
   }
 }

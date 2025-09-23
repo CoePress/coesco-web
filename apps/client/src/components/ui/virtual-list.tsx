@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { useVirtualList } from '@/hooks/useVirtualScroll';
+import { useVirtualList } from '@/hooks/use-virtual-scroll';
 
 export interface VirtualListProps<T = any> {
     items: T[];

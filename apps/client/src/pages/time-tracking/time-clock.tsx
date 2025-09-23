@@ -4,9 +4,9 @@ import Button from '../../components/ui/button';
 import { TimeClockPage, Employee, NavigationContext } from './time-clock/types';
 
 // Import individual workflow components
-import SelectOpPage from './time-clock/SelectOpPage';
-import SelectJobPartsPage from './time-clock/SelectJobPartsPage';
-import UnitsProdPage from './time-clock/UnitsProdPage';
+import SelectOpPage from './time-clock/select-op-page';
+import SelectJobPartsPage from './time-clock/select-job-parts-page';
+import UnitsProdPage from './time-clock/units-prod-page';
 
 export default function TimeClockMainPage() {
     const [currentPage, setCurrentPage] = useState<TimeClockPage>('TimeClock');

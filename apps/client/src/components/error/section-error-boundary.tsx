@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import ErrorBoundary, { ErrorFallbackProps } from './ErrorBoundary';
+import ErrorBoundary, { ErrorFallbackProps } from './error-boundary';
 import { AlertTriangle, RefreshCw, FileText } from 'lucide-react';
 
 interface SectionErrorBoundaryProps {

@@ -6,8 +6,8 @@
 import React, { useState } from 'react';
 import { Zap, Users, Database, Wifi, Activity, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components';
-import { useMemoryMonitor } from '@/hooks/useMemoryManagement';
-import { usePerformanceServiceWorker } from '@/hooks/usePerformanceServiceWorker';
+import { useMemoryMonitor } from '@/hooks/use-memory-management';
+import { usePerformanceServiceWorker } from '@/hooks/use-performance-service-worker';
 
 export interface PerformanceOptimizationSummaryProps {
     className?: string;

@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
 import { PerformanceValidationState, PerformanceValidationAction } from './types';
 import { usePerformanceData } from './data.context';
-import { getNestedValue, isEmpty } from '../../utils/performanceHelpers';
+import { getNestedValue, isEmpty } from '../../utils/performance-helpers';
 
 // Initial validation state
 const initialValidationState: PerformanceValidationState = {

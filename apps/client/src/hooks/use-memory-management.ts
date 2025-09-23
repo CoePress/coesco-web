@@ -11,7 +11,7 @@ import {
     MemoryCache,
     performanceResultPool,
     createMemoryMonitor
-} from '@/utils/memoryUtils';
+} from '@/utils/memory-utils';
 
 // Hook for monitoring memory usage
 export const useMemoryMonitor = (

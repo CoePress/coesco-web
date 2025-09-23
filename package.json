@@ -4,13 +4,12 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "dev:no-fanuc": "turbo run dev --filter=!@coesco/fanuc",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.20",
+    "@types/leaflet": "^1.9.20",
     "prettier": "^3.5.3",
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
@@ -22,5 +21,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0",
+    "xlsx": "^0.18.5"
+  }
 }

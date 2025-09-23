@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { withLazyLoading, createLazyRoute } from '@/utils/lazyLoading';
+import { withLazyLoading, createLazyRoute } from '@/utils/lazy-loading';
 
 // Lazy load RFQ sections (these use named exports, so we need to handle them differently)
 export const LazyBasicInfoSection = React.lazy(() =>

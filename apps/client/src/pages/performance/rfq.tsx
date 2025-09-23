@@ -6,7 +6,7 @@ import {
 } from "@/utils/performance-sheet";
 import { PerformanceData } from "@/contexts/performance.context";
 import { RFQErrorBoundary } from "@/components/error";
-import { getRequiredFieldBackgroundColor } from "../../utils/performanceHelpers";
+import { getRequiredFieldBackgroundColor } from "../../utils/performance-helpers";
 
 // Import lazy-loaded sections
 import {

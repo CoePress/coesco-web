@@ -60,21 +60,25 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
+    hmr: {
+      port: 5173,
+      host: "localhost",
     },
     watch: {
       usePolling: true,
       interval: 1000,
     },
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   },
   resolve: {
     alias: {
       "@": "/src",
+      "react": "react",
+      "react-dom": "react-dom",
     },
   },
 });

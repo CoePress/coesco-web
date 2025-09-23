@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { useVirtualTable } from '@/hooks/useVirtualScroll';
+import { useVirtualTable } from '@/hooks/use-virtual-scroll';
 
 export interface VirtualTableColumn<T = any> {
     key: string;
