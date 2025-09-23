@@ -1,4 +1,5 @@
 import { io } from "@/app";
+import { __prod__ } from "@/config/env";
 
 import { AgentService } from "./business/agent.service";
 import { DeviceService } from "./business/device.service";
@@ -36,8 +37,13 @@ export const socketService = new SocketService();
 export async function initializeServices() {
   await deviceService.initialize();
   await legacyService.initialize();
-  await machiningService.initialize();
   await mcpService.initialize();
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
+
+  const collectMachineData = false;
+
+  if (__prod__ || collectMachineData) {
+    await machiningService.initialize();
+  }
 }
