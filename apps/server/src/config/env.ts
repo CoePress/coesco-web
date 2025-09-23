@@ -16,6 +16,7 @@ const envSchema = z.object({
   COPY_DATABASE_URL: z.string().url(),
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string().transform(Number).default("6379"),
+  REDIS_URL: z.string(),
   LOGS_DIR: z.string(),
   AZURE_TENANT_ID: z.string(),
   AZURE_CLIENT_ID: z.string(),
