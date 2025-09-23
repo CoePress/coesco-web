@@ -310,6 +310,7 @@ async function seedServiceTechDailyForm() {
                 variable: field.variable,
                 controlType: mapControlType(field.controlType),
                 dataType: mapDataType(field.dataType),
+                options: field.options ? field.options : undefined,
                 isRequired: field.isRequired,
                 isReadOnly: field.isReadOnly,
                 isHiddenOnDevice: field.isHiddenOnDevice,

@@ -32,6 +32,7 @@ import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contac
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
+import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
 
 import { __dev__ } from "./env";
@@ -277,6 +278,12 @@ const serviceModule: Module = {
           label: "Form Details",
           icon: FileCogIcon,
           component: FormBuilder,
+        },
+        {
+          slug: ":id/submissions",
+          label: "Form Submissions",
+          icon: FileCheck2Icon,
+          component: FormSubmissions,
         },
         {
           slug: ":id/submit",

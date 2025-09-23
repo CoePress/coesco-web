@@ -9,6 +9,7 @@ export interface FormField {
   variable: string;
   controlType: FormFieldControlType;
   dataType: FormFieldDataType;
+  options?: any;
   isRequired?: boolean;
   isReadOnly?: boolean;
   isHiddenOnDevice?: boolean;

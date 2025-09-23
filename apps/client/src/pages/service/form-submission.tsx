@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal } from '@/components';
+import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -21,11 +21,45 @@ const FormSubmission = () => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<any>(null);
 
   const include = useMemo(
     () => ["pages.sections.fields"],
     []
   );
+
+  const storageKey = useMemo(() => `form-submission-${id}`, [id]);
+
+  const saveToLocalStorage = (values: Record<string, any>) => {
+    if (!id) return;
+    const dataToSave = {
+      formId: id,
+      formValues: values,
+      currentPageIndex,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+  };
+
+  const loadFromLocalStorage = () => {
+    if (!id) return null;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const clearLocalStorage = () => {
+    if (!id) return;
+    localStorage.removeItem(storageKey);
+  };
 
   const fetchForm = async () => {
     if (!id) return;
@@ -47,6 +81,13 @@ const FormSubmission = () => {
         })) || []
       })) || [];
       setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
+
+      // Check for saved progress after form is loaded
+      const saved = loadFromLocalStorage();
+      if (saved && saved.formValues && Object.keys(saved.formValues).length > 0) {
+        setSavedProgress(saved);
+        setShowContinueModal(true);
+      }
     } else {
       setError(response?.error || "Failed to fetch form");
     }
@@ -58,6 +99,13 @@ const FormSubmission = () => {
     fetchForm();
   }, [id]);
 
+  // Auto-save on form value changes
+  useEffect(() => {
+    if (Object.keys(formValues).length > 0) {
+      saveToLocalStorage(formValues);
+    }
+  }, [formValues, currentPageIndex]);
+
   const toggleSection = (sectionId: string) => {
     setCollapsedSections(prev => ({
       ...prev,
@@ -66,10 +114,14 @@ const FormSubmission = () => {
   };
 
   const handleFieldChange = (fieldId: string, value: any) => {
-    setFormValues(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
+    setFormValues(prev => {
+      const newValues = {
+        ...prev,
+        [fieldId]: value
+      };
+      // Save to local storage will happen via useEffect
+      return newValues;
+    });
     // Clear error when field is filled
     if (errors[fieldId]) {
       setErrors(prev => {
@@ -78,6 +130,23 @@ const FormSubmission = () => {
         return newErrors;
       });
     }
+  };
+
+  const handleContinueProgress = () => {
+    if (savedProgress) {
+      setFormValues(savedProgress.formValues || {});
+      setCurrentPageIndex(savedProgress.currentPageIndex || 0);
+      toast.success('Continuing from where you left off');
+    }
+    setShowContinueModal(false);
+  };
+
+  const handleStartNew = () => {
+    clearLocalStorage();
+    setFormValues({});
+    setCurrentPageIndex(0);
+    toast.info('Starting fresh form submission');
+    setShowContinueModal(false);
   };
 
   const validateForm = () => {
@@ -113,6 +182,8 @@ const FormSubmission = () => {
       const response = await post(`/forms/${id}/submissions`, submissionData);
 
       if (response?.success) {
+        // Clear local storage on successful submission
+        clearLocalStorage();
         toast.success('Form submitted successfully!');
         navigate('/service/forms');
       } else {
@@ -192,20 +263,20 @@ const FormSubmission = () => {
       case 'DATE_SELECTOR':
         return (
           <div className="w-full">
-            <div className="relative">
-              <Input
-                type="date"
-                value={value}
-                onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                className={`pr-10 ${hasError ? 'border-error' : ''}`}
-              />
-              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
-            </div>
+            <DatePicker
+              value={value}
+              onChange={(date) => handleFieldChange(field.id, date)}
+              placeholder={`Select ${field.label.toLowerCase()}`}
+              className={hasError ? 'border-error' : ''}
+            />
             {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
           </div>
         );
 
       case 'DROPDOWN':
+        // Handle options - could be an array directly or nested in the options object
+        const dropdownOptions = Array.isArray(field.options) ? field.options : [];
+
         return (
           <div className="w-full">
             <select
@@ -214,9 +285,15 @@ const FormSubmission = () => {
               className={`w-full px-4 py-2 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
             >
               <option value="">Select {field.label.toLowerCase()}</option>
-              {field.options?.map((option: string) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {dropdownOptions.map((option: any, index: number) => {
+                // Handle both string options and object options
+                if (typeof option === 'string') {
+                  return <option key={option} value={option}>{option}</option>;
+                } else if (option && typeof option === 'object') {
+                  return <option key={option.value || index} value={option.value}>{option.label}</option>;
+                }
+                return null;
+              })}
             </select>
             {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
           </div>
@@ -466,7 +543,7 @@ const FormSubmission = () => {
       >
         <div className="space-y-4">
           <p>
-            Are you sure you want to cancel? You have unsaved changes that will be lost.
+            Are you sure you want to cancel? Your progress has been saved and you can continue later.
           </p>
           <p className="text-text-muted text-sm">
             {Object.keys(formValues).length} field(s) have been filled out.
@@ -482,7 +559,40 @@ const FormSubmission = () => {
               variant="destructive"
               onClick={confirmCancel}
             >
-              Discard Changes
+              Leave Form
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Continue Progress Modal */}
+      <Modal
+        isOpen={showContinueModal}
+        onClose={() => {}}
+        title="Continue Previous Submission?"
+        size="xs"
+      >
+        <div className="space-y-4">
+          <p>
+            You have a saved form submission in progress. Would you like to continue where you left off?
+          </p>
+          {savedProgress && (
+            <div className="text-text-muted text-sm space-y-1">
+              <p>{Object.keys(savedProgress.formValues || {}).length} field(s) already filled</p>
+              <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
+            </div>
+          )}
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="secondary-outline"
+              onClick={handleStartNew}
+            >
+              Start New
+            </Button>
+            <Button
+              onClick={handleContinueProgress}
+            >
+              Continue
             </Button>
           </div>
         </div>

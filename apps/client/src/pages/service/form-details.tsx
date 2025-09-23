@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Edit, Plus } from 'lucide-react';
+import { Edit, Plus, FileText } from 'lucide-react';
 import {Button, PageHeader, Table } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
@@ -65,6 +65,13 @@ const FormDetails = () => {
           >
             <Edit size={16} />
             <span>Edit Form</span>
+          </Button>
+          <Button
+            onClick={() => navigate(`/service/forms/${id}/submissions`)}
+            variant='secondary-outline'
+          >
+            <FileText size={16} />
+            <span>View Submissions</span>
           </Button>
           <Button
             onClick={() => navigate("submit")}

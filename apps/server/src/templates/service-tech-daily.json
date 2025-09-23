@@ -18,7 +18,19 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": false
+              "isHiddenOnReport": false,
+              "options": [
+                {
+                  "label": "Mike Jones",
+                  "value": "7f9e519c-8331-4802-bcfc-c2d27052a158",
+                  "tableKey": "employee.id"
+                },
+                {
+                  "label": "John Smith",
+                  "value": "76d72016-d4a5-40b6-bdad-812deec83552",
+                  "tableKey": "employee.id"
+                }
+              ]
             },
             {
               "sequence": 2,
@@ -40,7 +52,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": true
+              "isHiddenOnReport": true,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             },
             {
               "sequence": 4,

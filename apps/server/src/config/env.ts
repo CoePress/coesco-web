@@ -8,14 +8,12 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.string().regex(/^\d+$/).transform(Number).default("8080"),
   DATABASE_URL: z.string().url(),
-  COPY_DATABASE_URL: z.string().url(),
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string().transform(Number).default("6379"),
+  REDIS_URL: z.string(),
   LOGS_DIR: z.string(),
   AZURE_TENANT_ID: z.string(),
   AZURE_CLIENT_ID: z.string(),

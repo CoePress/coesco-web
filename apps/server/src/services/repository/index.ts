@@ -43,6 +43,7 @@ import { QuoteTermsService } from "./quote-terms.service";
 import { RoleAssignmentService } from "./role-assignment.service";
 import { RolePermissionService } from "./role-permission.service";
 import { RoleService } from "./role.service";
+import { UserSettingsService } from "./user-settings.service";
 import { UserService } from "./user.service";
 
 export { AddressService };
@@ -90,6 +91,7 @@ export { RoleService };
 export { RoleAssignmentService };
 export { RolePermissionService };
 export { UserService };
+export { UserSettingsService };
 
 export const addressService = new AddressService();
 export const auditLogService = new AuditLogService();
@@ -136,3 +138,4 @@ export const roleService = new RoleService();
 export const roleAssignmentService = new RoleAssignmentService();
 export const rolePermissionService = new RolePermissionService();
 export const userService = new UserService();
+export const userSettingsService = new UserSettingsService();

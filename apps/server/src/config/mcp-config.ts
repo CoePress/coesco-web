@@ -790,6 +790,11 @@ export const SCHEMAS: ISchema[] = [
         type: "formfielddatatype",
         required: true,
       },
+      options: {
+        type: "json",
+        required: true,
+        hasDefault: true,
+      },
       isRequired: {
         type: "boolean",
         required: true,
@@ -2447,6 +2452,35 @@ export const SCHEMAS: ISchema[] = [
       lastLogin: {
         type: "datetime",
         required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "user-settings",
+    description: "Schema for UserSettings entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: true,
+      },
+      settings: {
+        type: "json",
+        required: true,
+        hasDefault: true,
       },
       createdAt: {
         type: "datetime",

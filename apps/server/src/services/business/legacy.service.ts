@@ -1,6 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import odbc from "odbc";
-import * as fs from "fs";
-import * as path from "path";
 
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
@@ -79,7 +79,8 @@ export class LegacyService {
       const idMapData = fs.readFileSync(idMapPath, "utf8");
       this.idMap = JSON.parse(idMapData);
       return this.idMap;
-    } catch (err) {
+    }
+    catch (err) {
       logger.error("Error loading ID map:", err);
       return [];
     }
@@ -98,7 +99,8 @@ export class LegacyService {
         if (!existingRecords || !Array.isArray(existingRecords) || existingRecords.length === 0) {
           return newId;
         }
-      } catch (error) {
+      }
+      catch (error) {
         logger.warn("Error checking UUID uniqueness, using generated ID:", error);
         return newId;
       }
@@ -113,7 +115,8 @@ export class LegacyService {
     try {
       const maxValue = await this.getMaxValue(database, table, field);
       return (maxValue || 0) + 1;
-    } catch (error) {
+    }
+    catch (error) {
       logger.error("Error getting max ID:", error);
       return Math.floor(Math.random() * 1000000) + 1;
     }
@@ -125,7 +128,7 @@ export class LegacyService {
       try {
         const connectionPromise = odbc.connect(connStr);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 1500),
+          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 2500),
         );
 
         const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
@@ -158,7 +161,7 @@ export class LegacyService {
     // Auto-generate IDs based on the ID map
     const idMap = this.loadIdMap();
     const tableConfig = idMap?.find(entry => entry.database === database && entry.table === table);
-    
+
     if (tableConfig) {
       for (const idConfig of tableConfig.ids) {
         // Only generate ID if the field is not already provided
@@ -166,11 +169,13 @@ export class LegacyService {
           try {
             if (idConfig.type === "uuid") {
               data[idConfig.field] = await this.generateUniqueUuid(database, table, idConfig.field);
-            } else if (idConfig.type === "int") {
+            }
+            else if (idConfig.type === "int") {
               data[idConfig.field] = await this.generateUniqueNumericId(database, table, idConfig.field);
             }
             logger.info(`Auto-generated ${idConfig.type} ID for ${table}.${idConfig.field}: ${data[idConfig.field]}`);
-          } catch (error) {
+          }
+          catch (error) {
             logger.error(`Failed to generate ID for ${table}.${idConfig.field}:`, error);
             return false;
           }
@@ -395,11 +400,12 @@ export class LegacyService {
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
-      
+
       // Check if value contains wildcard characters (% or _)
-      if (escapedValue.includes('%') || escapedValue.includes('_')) {
+      if (escapedValue.includes("%") || escapedValue.includes("_")) {
         return `UPPER(${escapedField}) LIKE UPPER('${escapedValue}')`;
-      } else {
+      }
+      else {
         return `${escapedField} = '${escapedValue}'`;
       }
     });
