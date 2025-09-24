@@ -1282,27 +1282,19 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
 
   const updatePerformanceData = useCallback(async (updates: Partial<PerformanceData>, shouldSave = true) => {
     try {
-      console.log("Updating performance data with:", updates);
       // Always update local state first for immediate UI feedback
       const updatedData = deepMerge(performanceDataRef.current, updates);
       setPerformanceData(updatedData);
-
-      console.log("performanceSheetId:", performanceSheetId, "shouldSave:", shouldSave, "updates:", updates);
 
       if (shouldSave && performanceSheetId) {
         // Send updates to backend for calculations
         const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
 
         if (response) {
-          console.log("Backend response:", response);
-
           // Backend response should already be in PerformanceData format
           // Just deep merge it with our current data
           const finalData = deepMerge(updatedData, response);
           setPerformanceData(finalData);
-
-          console.log("Final merged data:", finalData);
-
           return finalData;
         }
       }

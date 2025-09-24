@@ -2,6 +2,7 @@
 Time utilities for physics-based calculations.
 
 """
+import sys
 from models import time_input
 from math import sqrt, floor
 
@@ -60,7 +61,7 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
     """
     Calculate shorter values based on the initial values and input data.
     """
-    if index is 1:
+    if index == 1:
         length = data.min_length
     else:
         length = data.min_length + (data.increment * (index - 1))
@@ -88,10 +89,15 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
                        ((data.settle_torque ** 2) * data.settle_time) + 
                        ((data.loop_torque ** 2) * dwell_time)) / cycle_time)
     
-    if (60 / cycle_time * length) < data.str_max_sp_inch:
-        strokes_per_minute = floor(60 / cycle_time)
+    # Calculate SPM based on cycle time and straightener speed limits
+    natural_spm = 60 / cycle_time
+    spm_at_max_speed = data.str_max_sp_inch / length
+    
+    if (natural_spm * length) < data.str_max_sp_inch:
+        # Use natural SPM, but ensure minimum of 1 for reasonable operation
+        strokes_per_minute = max(1, round(natural_spm))
     else: 
-        strokes_per_minute = floor(data.str_max_sp_inch / length)
+        strokes_per_minute = max(1, floor(spm_at_max_speed))
 
     return {
         "length": length,

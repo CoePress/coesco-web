@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Save, Lock, Link } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { instance } from "@/utils";
@@ -103,12 +103,17 @@ const PerformanceSheetContent = () => {
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
-  // Calculate visible tabs based on performance data
-  const visibleTabs = performanceData ? getVisibleTabs(performanceData) : [
-    { label: "RFQ", value: "rfq" },
-    { label: "Material Specs", value: "material-specs" },
-    { label: "Equipment Summary", value: "summary-report" }
-  ];
+  // Calculate visible tabs based on performance data - memoized to react to data changes
+  const visibleTabs = useMemo(() => {
+    if (!performanceData) {
+      return [
+        { label: "RFQ", value: "rfq" },
+        { label: "Material Specs", value: "material-specs" },
+        { label: "Equipment Summary", value: "summary-report" }
+      ];
+    }
+    return getVisibleTabs(performanceData);
+  }, [performanceData]);
 
   // Ensure active tab is always visible
   useEffect(() => {

@@ -5,12 +5,14 @@ import {
   FEED_MODEL_OPTIONS,
   MACHINE_WIDTH_OPTIONS,
   YES_NO_OPTIONS,
+  PRESS_APPLICATION_OPTIONS,
+  STRAIGHTENER_ROLLS_OPTIONS,
+  STR_FEED_RATE_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { Card, Input, Select, Text, VirtualTable } from "@/components";
 import OfflineStatus from "@/components/ui/offline-status";
 import MemoryStatus from "@/components/ui/memory-status";
-import { useDatasetCleanup } from "@/hooks/use-memory-management";
 import { getStatusColors } from "@/utils/performance-helpers";
 import { ANGLES } from "../../constants/performance";
 import {
@@ -20,6 +22,15 @@ import {
   getMotorOptionsForControlsLevel,
   shouldShowAdvancedTorqueCalculations,
 } from "@/utils/feed-controls-mapping";
+
+// Feed angle options based on standard angles
+const FEED_ANGLE_OPTIONS = [
+  { value: "180", label: "180°" },
+  { value: "240", label: "240°" },
+  { value: "120", label: "120°" },
+  { value: "90", label: "90°" },
+  { value: "60", label: "60°" },
+];
 
 // Type for table row data
 interface TableRowData {
@@ -171,11 +182,12 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           options={FEED_MODEL_OPTIONS}
           disabled={!isEditing}
         />
-        <Input
+        <Select
           label="Application"
           name="feed.feed.application"
           value={localData.feed?.feed?.application || ""}
           onChange={handleFieldChange}
+          options={PRESS_APPLICATION_OPTIONS}
           disabled={!isEditing}
         />
         <Select
@@ -332,12 +344,12 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <Input
+        <Select
           label="STR Max Speed (ft/min)"
           name="feed.feed.strMaxSpeed"
-          type="number"
           value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
           onChange={handleFieldChange}
+          options={STR_FEED_RATE_OPTIONS}
           disabled={!isEditing}
         />
         <Input
@@ -426,20 +438,20 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
-        <Input
+        <Select
           label="Feed Angle 1 (Deg)"
           name="feed.feed.feedAngle1"
-          type="number"
           value={localData.feed?.feed?.feedAngle1?.toString() || ""}
           onChange={handleFieldChange}
+          options={FEED_ANGLE_OPTIONS}
           disabled={!isEditing}
         />
-        <Input
+        <Select
           label="Feed Angle 2 (Deg)"
           name="feed.feed.feedAngle2"
-          type="number"
           value={localData.feed?.feed?.feedAngle2?.toString() || ""}
           onChange={handleFieldChange}
+          options={FEED_ANGLE_OPTIONS}
           disabled={!isEditing}
         />
       </div>
@@ -633,12 +645,12 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             onChange={handleFieldChange}
             disabled={!isEditing}
           />
-          <Input
+          <Select
             label="Straightener Pinch Rolls"
             name="feed.feed.pullThru.pinchRolls"
-            type="number"
             value={localData.feed?.feed?.pullThru?.pinchRolls?.toString() || ""}
             onChange={handleFieldChange}
+            options={STRAIGHTENER_ROLLS_OPTIONS}
             disabled={!isEditing}
           />
         </div>
@@ -675,12 +687,12 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <Input
+          <Select
             label="STR Max Speed (ft/min)"
             name="feed.feed.strMaxSpeed"
-            type="number"
             value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
             onChange={handleFieldChange}
+            options={STR_FEED_RATE_OPTIONS}
             disabled={!isEditing}
             className="bg-white"
           />
@@ -731,12 +743,12 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           onChange={handleFieldChange}
           disabled={!isEditing}
         />
-        <Input
+        <Select
           label="Feed Angle 1 (Deg)"
           name="feed.feed.feedAngle1"
-          type="number"
           value={localData.feed?.feed?.feedAngle1?.toString() || ""}
           onChange={handleFieldChange}
+          options={FEED_ANGLE_OPTIONS}
           disabled={!isEditing}
         />
       </div>
@@ -937,11 +949,13 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   // Performance results table section with memory optimization
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
+
+
     const initLength = tableData[0]?.length || 0;
     const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
-    // Use memory-efficient data cleanup for large datasets
-    const { data: optimizedLengthRows } = useDatasetCleanup(lengthRows, 50, 0.8);
+    // Skip memory optimization for now to fix the hooks error
+    const optimizedLengthRows = lengthRows;
 
     // Prepare data for VirtualTable
     const virtualTableData = optimizedLengthRows.map((length) => {

@@ -40,12 +40,9 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
   const handleCalculate = useCallback(async () => {
     if (!isEditing || !performanceSheetId) return;
 
-    console.log("Calculate pressed for Roll Straightener Backbend");
-
     try {
       // Trigger roll straightener backbend calculation on the backend
-      const response = await saveImmediately();
-      console.log("Roll Straightener Backbend calculation triggered:", response);
+      await saveImmediately();
     } catch (error) {
       console.error('Error triggering roll straightener backbend calculation:', error);
     }

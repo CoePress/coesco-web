@@ -26,8 +26,16 @@ export interface VisibleTab {
  */
 export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
     // Extract configuration values from the data
+    // Normalize application values to handle both "Press Feed" and "pressFeed" formats
+    const rawApplication = data?.feed?.feed?.application;
+    const normalizedApplication = rawApplication
+        ? rawApplication.toLowerCase().replace(/\s+/g, '')
+        : undefined;
+
     const config: TabVisibilityConfig = {
-        lineApplication: data?.feed?.feed?.application,
+        lineApplication: normalizedApplication === 'pressfeed' ? 'pressFeed' :
+            normalizedApplication === 'cuttolength' ? 'cutToLength' :
+                normalizedApplication === 'standalone' ? 'standalone' : rawApplication,
         lineType: data?.common?.equipment?.feed?.lineType,
         pullThrough: data?.feed?.feed?.pullThru?.isPullThru,
         controlsLevel: data?.common?.equipment?.feed?.controlsLevel,
@@ -45,7 +53,7 @@ export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
 
     // Determine additional tabs based on configuration
     const additionalTabs = determineAdditionalTabs(config);
-    
+
     return [...visibleTabs, ...additionalTabs];
 }
 
@@ -68,8 +76,8 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
     // Roll Str Backbend Logic - appears when specific roll types are selected
     if (shouldShowRollStrBackbend(config)) {
         const rollLabel = getRollStrBackbendLabel(config.selectRoll);
-        tabs.push({ 
-            label: "Roll Straightener", 
+        tabs.push({
+            label: "Roll Straightener",
             value: "roll-str-backbend",
             dynamicLabel: rollLabel
         });
@@ -83,8 +91,8 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
     // Feed Logic - appears based on feed controls selection
     if (shouldShowFeed(config)) {
         const feedLabel = getFeedLabel(config);
-        tabs.push({ 
-            label: "Feed", 
+        tabs.push({
+            label: "Feed",
             value: "feed",
             dynamicLabel: feedLabel
         });
@@ -103,27 +111,21 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
  */
 function shouldShowTDDBHD(config: TabVisibilityConfig): boolean {
     const { lineApplication, controlsLevel } = config;
-    
-    // Show for press feed and cut to length with SyncMaster or SyncMaster Plus
-    if ((lineApplication === "pressFeed" || lineApplication === "cutToLength")) {
-        return controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
-    }
-    
-    return false;
-}
 
-/**
+    return (lineApplication === "pressFeed" || lineApplication === "cutToLength") &&
+        (controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus");
+}/**
  * Determines if Reel Drive tab should be visible
  */
 function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
     const { pullThrough, typeOfLine, lineType } = config;
-    
+
     // Show for pull through configurations
     // Example 4: line type = compact, pull through = yes, type of line = pull through compact
-    return pullThrough === "Yes" || 
-           (typeOfLine && typeOfLine.toLowerCase().includes("pull through")) ||
-           (lineType === "Compact" && pullThrough === "Yes") ||
-           false;
+    return pullThrough === "Yes" ||
+        (typeOfLine && typeOfLine.toLowerCase().includes("pull through")) ||
+        (lineType === "Compact" && pullThrough === "Yes") ||
+        false;
 }
 
 /**
@@ -131,62 +133,49 @@ function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
  */
 function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
     const { lineApplication, lineType, controlsLevel, typeOfLine } = config;
-    
-    // Show for press feed and cut to length with conventional configurations and SyncMaster controls
-    // Examples 1 & 3: conventional configurations with SyncMaster/SyncMaster Plus
-    if ((lineApplication === "pressFeed" || lineApplication === "cutToLength")) {
-        const isConventional = lineType === "Conventional" || 
-                              Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
-        const hasSyncMaster = controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
-        return Boolean(isConventional && hasSyncMaster);
-    }
-    
-    return false;
-}
 
-/**
+    const isConventional = lineType === "Conventional" ||
+        Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
+    const hasSyncMaster = controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
+
+    return (lineApplication === "pressFeed" || lineApplication === "cutToLength") &&
+        isConventional && hasSyncMaster;
+}/**
  * Determines if Roll Straightener tab should be visible
  */
 function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
     const { selectRoll, lineApplication, lineType } = config;
-    
-    // Show when a roll type is selected and it's not a standalone feed-only configuration
+
     if (selectRoll && selectRoll.includes("Roll Str")) {
-        // Don't show for standalone feed only configurations (Example 2)
+        // Don't show for standalone feed only configurations
         if (lineApplication === "standalone" && lineType === "Feed") {
             return false;
         }
         return true;
     }
-    
-    return false;
-}
 
-/**
+    return false;
+}/**
  * Determines if Feed tab should be visible
  */
 function shouldShowFeed(config: TabVisibilityConfig): boolean {
     const { feedControls, lineApplication, lineType } = config;
-    
-    // Show when feed controls are specified
-    // Also show for standalone feed configurations and other feed-related configurations
-    return (!!feedControls && feedControls !== "") ||
-           (lineApplication === "standalone" && lineType === "Feed") ||
-           lineApplication === "pressFeed" ||
-           lineApplication === "cutToLength";
-}
 
-/**
+    return (!!feedControls && feedControls !== "") ||
+        (lineApplication === "standalone" && lineType === "Feed") ||
+        lineApplication === "pressFeed" ||
+        lineApplication === "cutToLength";
+}/**
  * Determines if Shear tab should be visible
  */
 function shouldShowShear(config: TabVisibilityConfig): boolean {
     const { lineApplication, typeOfLine } = config;
-    
+
     // Show for cut to length configurations or when shear is mentioned in type of line
-    return lineApplication === "cutToLength" || 
-           (typeOfLine && typeOfLine.includes("CTL")) ||
-           (typeOfLine && typeOfLine.includes("Shear")) ||
-           false;
+    return lineApplication === "cutToLength" ||
+        (typeOfLine && typeOfLine.includes("CTL")) ||
+        (typeOfLine && typeOfLine.includes("Shear")) ||
+        false;
 }
 
 /**
@@ -194,9 +183,9 @@ function shouldShowShear(config: TabVisibilityConfig): boolean {
  */
 function getRollStrBackbendLabel(selectRoll?: string): string {
     if (!selectRoll) return "Roll Straightener";
-    
-    // Return just the roll type as the tab label
-    return selectRoll;
+
+    // Always return "Roll Str Backbend" regardless of roll number
+    return "Roll Str Backbend";
 }
 
 /**
@@ -204,14 +193,14 @@ function getRollStrBackbendLabel(selectRoll?: string): string {
  */
 function getFeedLabel(config: TabVisibilityConfig): string {
     const { feedControls, pullThrough } = config;
-    
+
     if (!feedControls) return "Feed";
-    
+
     // Add pull through designation if applicable (Example 4)
     if (pullThrough === "Yes" && feedControls.toLowerCase().includes("sigma")) {
         return `Feed (${feedControls} with pull through)`;
     }
-    
+
     // Standard feed control labels (Examples 1, 2, 3)
     return `Feed (${feedControls})`;
 }

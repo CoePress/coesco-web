@@ -40,16 +40,13 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
   const handleCalculate = useCallback(async () => {
     if (!isEditing || !performanceSheetId) return;
 
-    console.log("Calculate pressed for", shearType, "shear configuration");
-
     try {
       // Trigger shear calculation on the backend
-      const response = await saveImmediately();
-      console.log("Shear calculation triggered:", response);
+      await saveImmediately();
     } catch (error) {
       console.error('Error triggering shear calculation:', error);
     }
-  }, [isEditing, performanceSheetId, saveImmediately, shearType]);
+  }, [isEditing, performanceSheetId, saveImmediately]);
 
   // Calculate derived values from local data (for immediate feedback)
   const calculatedValues = useMemo(() => {

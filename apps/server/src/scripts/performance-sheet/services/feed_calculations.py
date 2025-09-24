@@ -3,6 +3,7 @@ Feed calculations service module
 
 """
 
+import sys
 from models import feed_w_pull_thru_input, base_feed_params, time_input, inertia_input, regen_input
 from math import pi, sqrt
 from utils.lookup_tables import get_material_density, get_sigma_five_specs, get_sigma_five_pt_specs, get_ab_feed_specs, get_selected_str_used

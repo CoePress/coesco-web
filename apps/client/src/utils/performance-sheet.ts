@@ -50,9 +50,9 @@ export const DIE_TYPE_OPTIONS = [
 ];
 
 export const PRESS_APPLICATION_OPTIONS = [
-  { value: "pressFeed", label: "Press Feed" },
-  { value: "cutToLength", label: "Cut To Length" },
-  { value: "standalone", label: "Standalone" },
+  { value: "Press Feed", label: "Press Feed" },
+  { value: "Cut To Length", label: "Cut To Length" },
+  { value: "Standalone", label: "Standalone" },
 ];
 
 export const VOLTAGE_OPTIONS = [
@@ -510,54 +510,19 @@ export const usePerformanceDataService = (
     }
   }, [initialData, localData.referenceNumber, setPerformanceData]);
 
-  // Immediate calculation trigger (no delay for calculations)
-  const triggerCalculations = useCallback(
-    debounce(async () => {
-      if (!performanceSheetId || !isEditing) return;
-
-      try {
-        console.log("=== TRIGGERING IMMEDIATE CALCULATIONS ===");
-        const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-        console.log("1. Sending data for calculations:", JSON.stringify(updatedData, null, 2));
-
-        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
-        console.log("2. Calculation response:", response);
-
-        // Handle calculated values from backend - update global context
-        if (response) {
-          setPerformanceData(prevData => {
-            const merged = deepMerge(prevData, response);
-            console.log("3. Updated with calculations:", merged);
-            return merged;
-          });
-        }
-
-      } catch (error) {
-        console.error('Error running calculations:', error);
-        // Don't show errors for calculation failures, only for saves
-      }
-    }, 100), // Very short delay to batch rapid field changes
-    [performanceSheetId, isEditing, api, setPerformanceData]
-  );
-
-  // Debounced save function (keeps data persistence separate from calculations)
+  // Debounced function for calculations and save (consolidated to reduce API calls)
   const debouncedSave = useCallback(
     debounce(async () => {
       if (!performanceSheetId || !isEditing) return;
 
       try {
-        console.log("=== PERFORMANCE DATA SERVICE SAVE ===");
         const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-        console.log("1. Saving data to backend:", JSON.stringify(updatedData, null, 2));
-
         const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
-        console.log("2. Save response:", response);
 
         // Handle calculated values from backend - update global context
         if (response) {
           setPerformanceData(prevData => {
             const merged = deepMerge(prevData, response);
-            console.log("3. Merged local data after save:", merged);
             return merged;
           });
         }
@@ -574,13 +539,13 @@ export const usePerformanceDataService = (
         });
 
       } catch (error) {
-        console.error('Error saving performance data:', error);
+        console.error('Error running calculations and saving performance data:', error);
         setFieldErrors(prev => ({
           ...prev,
           _general: 'Failed to save changes. Please try again.'
         }));
       }
-    }, 1000), // Keep 1000ms delay for saves
+    }, 500), // Balanced delay for calculations and saves
     [performanceSheetId, isEditing, api, setPerformanceData]
   );
 
@@ -590,7 +555,6 @@ export const usePerformanceDataService = (
   ) => {
     if (!isEditing) return;
 
-    console.log("Field change detected:", e.target.name, e.target.value);
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     const actualValue = type === "checkbox" ? checked : value;
@@ -614,8 +578,6 @@ export const usePerformanceDataService = (
     // Update global state immediately
     setPerformanceData(prevData => {
       const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      console.log("Setting nested value for:", name, "to", processedValue);
-
       return setNestedValue(prevData, name, processedValue);
     });
 
@@ -623,12 +585,9 @@ export const usePerformanceDataService = (
     pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
     setIsDirty(true);
 
-    // Trigger calculations immediately for real-time updates
-    triggerCalculations();
-
-    // Also trigger debounced save for persistence
+    // Trigger calculations and save with balanced timing (consolidate API calls)
     debouncedSave();
-  }, [isEditing, fieldErrors, triggerCalculations, debouncedSave, setPerformanceData]);
+  }, [isEditing, fieldErrors, debouncedSave, setPerformanceData]);
 
   // Manual save function (for immediate saves)
   const saveImmediately = useCallback(async () => {
@@ -665,12 +624,9 @@ export const usePerformanceDataService = (
     pendingChangesRef.current[fieldPath] = value;
     setIsDirty(true);
 
-    // Trigger calculations immediately for real-time updates
-    triggerCalculations();
-
-    // Also trigger debounced save for persistence
+    // Trigger calculations and save with balanced timing (consolidate API calls)
     debouncedSave();
-  }, [isEditing, triggerCalculations, debouncedSave, setPerformanceData]);
+  }, [isEditing, debouncedSave, setPerformanceData]);
 
   // Get field value by path
   const getFieldValue = useCallback((fieldPath: string) => {
