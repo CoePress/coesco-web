@@ -1082,39 +1082,22 @@ const CompanyDetails = () => {
     setEditingContactData({});
   };
 
-  const handleAddContact = async () => {
-    try {
-      const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
-      const nextContactId = (maxContactId?.maxValue || 0) + 1;
-      
-      setNewContactData({
-        Cont_Id: nextContactId,
-        Company_ID: parseInt(id || '0'),
-        FirstName: '',
-        LastName: '',
-        Email: '',
-        PhoneNumber: '',
-        PhoneExt: '',
-        ConTitle: '',
-        Type: 'C'
-      });
-      setIsAddingContact(true);
-    } catch (error) {
-      console.error('Error getting next Contact ID:', error);
-      const fallbackContactId = Date.now();
-      setNewContactData({
-        Cont_Id: fallbackContactId,
-        Company_ID: parseInt(id || '0'),
-        FirstName: '',
-        LastName: '',
-        Email: '',
-        PhoneNumber: '',
-        PhoneExt: '',
-        ConTitle: '',
-        Type: 'C'
-      });
-      setIsAddingContact(true);
-    }
+  const handleAddContact = () => {
+    console.log('Add Contact button clicked');
+    
+    const fallbackContactId = Date.now();
+    setNewContactData({
+      Cont_Id: fallbackContactId,
+      Company_ID: parseInt(id || '0'),
+      FirstName: '',
+      LastName: '',
+      Email: '',
+      PhoneNumber: '',
+      PhoneExt: '',
+      ConTitle: '',
+      Type: ContactType.Sales
+    });
+    setIsAddingContact(true);
   };
 
   const handleNewContactDataChange = (fieldName: string, value: any) => {
@@ -1125,11 +1108,22 @@ const CompanyDetails = () => {
     try {
       console.log('Creating new contact with data:', newContactData);
       
-      await api.post('/legacy/std/Contacts', newContactData);
+      // Try to get a proper contact ID before saving
+      let contactDataToSave = { ...newContactData };
+      try {
+        const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
+        if (maxContactId?.maxValue) {
+          contactDataToSave.Cont_Id = maxContactId.maxValue + 1;
+        }
+      } catch (error) {
+        console.warn('Could not get next contact ID, using fallback:', error);
+      }
+      
+      await api.post('/legacy/std/Contacts', contactDataToSave);
       
       if (api.success && !api.error) {
         console.log('Contact creation appears successful, refreshing data...');
-        const updatedContacts = [...companyContacts, newContactData];
+        const updatedContacts = [...companyContacts, contactDataToSave];
         setCompanyContacts(updatedContacts);
         setIsAddingContact(false);
         setNewContactData({});
@@ -1453,6 +1447,7 @@ const CompanyDetails = () => {
                   })
                 </h4>
                 <button 
+                  type="button"
                   onClick={handleAddContact}
                   className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                   + Add Contact
@@ -1628,7 +1623,7 @@ const CompanyDetails = () => {
                                   ) : (
                                     <>
                                       <Link 
-                                        to={`/sales/contacts/${contact.Cont_Id}_${contact.Company_ID}${contact.Address_ID ? `_${contact.Address_ID}` : ''}`}
+                                        to={`/sales/contacts/${contact.Cont_Id}_${contact.Company_ID}_${contact.Address_ID || 0}`}
                                         className="text-primary hover:underline"
                                       >
                                         {fullName || "Unnamed Contact"}
@@ -1767,6 +1762,7 @@ const CompanyDetails = () => {
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-text">Journeys ({companyJourneys.length})</h4>
                 <button 
+                  type="button"
                   onClick={() => setIsJourneyModalOpen(true)}
                   className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                   + Add Journey
@@ -1831,6 +1827,7 @@ const CompanyDetails = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-semibold text-text">Call History ({callHistory.length})</h4>
                   <button 
+                    type="button"
                     onClick={handleAddCall}
                     className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                     + Add Call
