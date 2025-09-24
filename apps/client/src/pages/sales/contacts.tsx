@@ -4,6 +4,7 @@ import {
   Building2,
   List as ListIcon,
   MapPin,
+  Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -11,6 +12,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Table, Button, PageHeader, AddContactModal } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { ContactType } from "@coesco/types";
+import { useApi } from "@/hooks/use-api";
 
 const Contacts = () => {
   const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
@@ -18,6 +20,127 @@ const Contacts = () => {
   
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const api = useApi();
+
+  useEffect(() => {
+    setBatchSize(50);
+  }, [searchQuery]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeDropdown && !(event.target as Element)?.closest('.relative')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
+  const handleDeleteContact = (contact: any) => {
+    setContactToDelete(contact);
+    setShowDeleteModal(true);
+    setActiveDropdown(null);
+  };
+
+  const handleMakeInactive = async () => {
+    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactToDelete.originalId}&Company_ID=${contactToDelete.companyId}`, {
+        Type: ContactType.Inactive
+      });
+      
+      if (result !== null) {
+        // Update the contact in the local state
+        setLegacyContacts(prev => 
+          prev?.map(contact => 
+            contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
+              ? { ...contact, type: ContactType.Inactive, typeName: 'Inactive' }
+              : contact
+          ) || null
+        );
+        setShowDeleteModal(false);
+        setContactToDelete(null);
+      }
+    } catch (error) {
+      console.error("Error making contact inactive:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleMarkLeftCompany = async () => {
+    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactToDelete.originalId}&Company_ID=${contactToDelete.companyId}`, {
+        Type: ContactType.Left_Company
+      });
+      
+      if (result !== null) {
+        // Update the contact in the local state
+        setLegacyContacts(prev => 
+          prev?.map(contact => 
+            contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
+              ? { ...contact, type: ContactType.Left_Company, typeName: 'Left Company' }
+              : contact
+          ) || null
+        );
+        setShowDeleteModal(false);
+        setContactToDelete(null);
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeletePermanently = async () => {
+    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await api.delete(`/legacy/std/Contacts/filter/custom`, {
+        params: {
+          Cont_Id: contactToDelete.originalId,
+          Company_ID: contactToDelete.companyId
+        }
+      });
+      
+      if (result !== null) {
+        // Remove the contact from the local state
+        setLegacyContacts(prev => 
+          prev?.filter(contact => 
+            !(contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId)
+          ) || null
+        );
+        setShowDeleteModal(false);
+        setContactToDelete(null);
+      } else {
+        alert('Failed to delete contact. Please try again.');
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      alert('Error deleting contact. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setContactToDelete(null);
+    }
+  };
 
   const handleContactAdded = (newContact: any) => {
     // Adapt the new contact to our format and add it to the list
@@ -214,13 +337,31 @@ const Contacts = () => {
 
   const baseContacts = legacyContacts || [];
 
+  const filteredContacts = baseContacts.filter(contact => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase().trim();
+    const searchableText = [
+      contact.fullName,
+      contact.firstName,
+      contact.lastName,
+      contact.email,
+      contact.phoneNumber,
+      contact.title,
+      contact.companyName,
+      contact.typeName
+    ].filter(Boolean).join(' ').toLowerCase();
+    
+    return searchableText.includes(query);
+  });
+
   // Batch loading state
   const [batchSize, setBatchSize] = useState(50);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allContactsLoaded, setAllContactsLoaded] = useState(false);
   
-  const displayedContacts = baseContacts.slice(0, batchSize);
-  const hasMoreContacts = baseContacts.length > batchSize || !allContactsLoaded;
+  const displayedContacts = filteredContacts.slice(0, batchSize);
+  const hasMoreContacts = filteredContacts.length > batchSize || (!allContactsLoaded && !searchQuery.trim());
 
   const loadMoreContacts = useCallback(async () => {
     if (isLoadingMore || !hasMoreContacts) return;
@@ -228,8 +369,7 @@ const Contacts = () => {
     setIsLoadingMore(true);
     
     try {
-      // If we have more contacts locally, just increase batch size
-      if (baseContacts.length > batchSize) {
+      if (filteredContacts.length > batchSize) {
         setBatchSize(prev => prev + 50);
       } else {
         // Fetch more contacts from API
@@ -265,7 +405,7 @@ const Contacts = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMoreContacts, baseContacts.length, batchSize, legacyCompanies]);
+  }, [isLoadingMore, hasMoreContacts, baseContacts.length, batchSize, legacyCompanies, filteredContacts.length]);
 
   // Scroll detection for auto-loading
   const handleScroll = useCallback((e: Event) => {
@@ -280,7 +420,6 @@ const Contacts = () => {
     }
   }, [hasMoreContacts, isLoadingMore, loadMoreContacts]);
 
-  // Add scroll listener
   const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -373,10 +512,33 @@ const Contacts = () => {
     {
       key: "actions",
       header: "",
-      render: () => (
-        <button onClick={(e) => e.stopPropagation()}>
-          <MoreHorizontal size={16} />
-        </button>
+      render: (_, row) => (
+        <div className="relative">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveDropdown(activeDropdown === row.id ? null : row.id);
+            }}
+            className="p-1 hover:bg-surface rounded"
+          >
+            <MoreHorizontal size={16} />
+          </button>
+          
+          {activeDropdown === row.id && (
+            <div className="absolute right-0 top-8 z-10 bg-foreground border border-border rounded-md shadow-lg py-1 min-w-[120px]">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteContact(row);
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-surface flex items-center gap-2 text-error hover:text-error"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       ),
     },
   ];
@@ -414,17 +576,36 @@ const Contacts = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Contacts"
-        description={baseContacts ? `${baseContacts?.length} total contacts` : "Loading contacts..."}
+        description={
+          searchQuery.trim() 
+            ? `Showing ${filteredContacts.length} of ${baseContacts.length} contacts`
+            : baseContacts 
+              ? `${baseContacts?.length} total contacts` 
+              : "Loading contacts..."
+        }
         actions={<HeaderActions />}
       />
 
       {viewMode === "list" && (
         <div ref={containerRef} className="flex-1 overflow-auto">
           <div className="flex flex-col h-full">
+            {/* Search Input */}
+            <div className="p-4 bg-foreground border-b">
+              <div className="max-w-lg">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, email, phone, title or company"
+                  className="w-full px-3 py-2 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
+                />
+              </div>
+            </div>
+            
             <Table<any>
               columns={columns}
               data={displayedContacts || []}
-              total={baseContacts?.length || 0}
+              total={filteredContacts?.length || 0}
               idField="id"
               className="bg-foreground rounded shadow-sm border flex-shrink-0"
             />
@@ -435,7 +616,7 @@ const Contacts = () => {
                   onClick={loadMoreContacts}
                   disabled={isLoadingMore}
                 >
-                  {isLoadingMore ? "Loading..." : `Load More (${displayedContacts.length} of ${allContactsLoaded ? baseContacts.length : baseContacts.length + '+'} contacts)`}
+                  {isLoadingMore ? "Loading..." : `Load More (${displayedContacts.length} of ${searchQuery.trim() ? filteredContacts.length : (allContactsLoaded ? baseContacts.length : baseContacts.length + '+')} contacts)`}
                 </Button>
               </div>
             )}
@@ -455,11 +636,74 @@ const Contacts = () => {
         onClose={() => setShowAddContactModal(false)}
         onContactAdded={handleContactAdded}
       />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && contactToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-foreground rounded-lg border border-border p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
+                <Trash2 size={20} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-text">Delete Contact</h3>
+                <p className="text-text-muted text-sm">Are you sure you want to delete {contactToDelete.fullName}?</p>
+              </div>
+            </div>
+            
+            <div className="bg-surface rounded-lg p-4 mb-4 border border-warning/20">
+              <p className="text-sm text-text mb-2">
+                <strong>Recommendation:</strong> Instead of deleting, consider making this contact "Inactive" or "Left Company" to preserve historical records.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary-outline" 
+                  size="sm"
+                  onClick={handleMakeInactive}
+                  disabled={isDeleting}
+                  className="text-warning border-warning hover:bg-warning/10"
+                >
+                  Make Inactive
+                </Button>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={handleMarkLeftCompany}
+                  disabled={isDeleting}
+                  className="text-info border-info hover:bg-info/10"
+                >
+                  Mark Left Company
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setContactToDelete(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDeletePermanently}
+                disabled={isDeleting}
+                className="bg-error border-error hover:bg-error/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete Permanently"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// Contacts Map View Component
 const ContactsMapView = ({ 
   contacts, 
   onFetchAddresses 
