@@ -17,6 +17,7 @@ from calculations.feeds.allen_bradley_mpl_feed import calculate_allen_bradley
 from calculations.shears.single_rake_hyd_shear import calculate_single_rake_hyd_shear
 from calculations.shears.bow_tie_hyd_shear import calculate_bow_tie_hyd_shear
 from utils.shared import DEFAULTS
+from utils.feed_controls_mapping import map_controls_level_to_feed_controls, get_default_feed_model_for_controls
 
 # --- Helper functions ---
 def str2bool(val):
@@ -168,6 +169,27 @@ def main():
         except Exception as e:
             print(f"Error in Material Specs calculation: {e}", file=sys.stderr)
             mat_result = {"error": str(e)}
+
+        # Map controls level to feed controls if controls level is provided
+        controls_level = get_nested(data, ["common", "equipment", "feed", "controlsLevel"])
+        if controls_level:
+            calculated_feed_controls = map_controls_level_to_feed_controls(controls_level)
+            default_feed_model = get_default_feed_model_for_controls(controls_level)
+            
+            # Update the data structure with calculated values
+            if "common" not in data:
+                data["common"] = {}
+            if "equipment" not in data["common"]:
+                data["common"]["equipment"] = {}
+            if "feed" not in data["common"]["equipment"]:
+                data["common"]["equipment"]["feed"] = {}
+            
+            # Set the calculated feed controls
+            data["common"]["equipment"]["feed"]["controls"] = calculated_feed_controls
+            
+            # Set default model if not already set
+            if not get_nested(data, ["common", "equipment", "feed", "model"]):
+                data["common"]["equipment"]["feed"]["model"] = default_feed_model
 
         # Get calculated coil OD from material specs, fallback to JSON value if not available
         calculated_coil_od = None

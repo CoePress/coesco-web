@@ -1,4 +1,9 @@
 import { Router, Request, Response } from 'express';
+import { TimeTrackingCore, createTimeTrackingCore } from '../services/time-tracking-core.service';
+import { ClockingRepository } from '../services/clocking.service';
+import { CostCodeRepository } from '../services/cost-code.service';
+import { AuditRepository } from '../services/audit-trail.service';
+import { EmployeeHours, CostCode, EmployeeJobCode, DataHistory } from '../types/time-tracking.types';
 
 // Enhanced time tracking interfaces
 interface TimeTrackingResult {
@@ -62,9 +67,128 @@ interface Job {
     operations: { operation: number; description: string; }[];
 }
 
-// Enhanced in-memory time tracking service
+// Mock repository implementations
+class MockClockingRepository implements ClockingRepository {
+    private employeeHours: EmployeeHours[] = [];
+    private idCounter = 1;
+
+    async findActiveClockIn(empNum: number): Promise<EmployeeHours | null> {
+        return this.employeeHours.find(h => 
+            h.empNum === empNum && 
+            h.timeIn && 
+            !h.timeOut
+        ) || null;
+    }
+
+    async createEmployeeHours(hours: EmployeeHours): Promise<EmployeeHours> {
+        const newHours = { ...hours, id: (this.idCounter++).toString() };
+        this.employeeHours.push(newHours);
+        return newHours;
+    }
+
+    async updateEmployeeHours(id: string, updates: Partial<EmployeeHours>): Promise<EmployeeHours> {
+        const index = this.employeeHours.findIndex(h => h.id === id);
+        if (index === -1) {
+            throw new Error('Employee hours record not found');
+        }
+        this.employeeHours[index] = { ...this.employeeHours[index], ...updates };
+        return this.employeeHours[index];
+    }
+
+    getAllEmployeeHours(): EmployeeHours[] {
+        return this.employeeHours;
+    }
+}
+
+class MockCostCodeRepository implements CostCodeRepository {
+    private costCodes: CostCode[] = [
+        {
+            id: '1',
+            jobSfx: 'A',
+            bomItem: '001',
+            sequence: '010',
+            active: true,
+            jobCode: 10,
+            jobName: 'Setup',
+            costCode: 'A\\001\\010',
+            isConfirmed: true
+        },
+        {
+            id: '2',
+            jobSfx: 'B',
+            bomItem: '002',
+            sequence: '020',
+            active: true,
+            jobCode: 20,
+            jobName: 'Assembly',
+            costCode: 'B\\002\\020',
+            isConfirmed: true
+        }
+    ];
+
+    private employeeJobCodes: EmployeeJobCode[] = [
+        {
+            id: '1',
+            empNum: 1,
+            jobCode: 10,
+            description: 'Setup Operations',
+            active: true,
+            clockable: true,
+            requiresCostCode: true,
+            askQuantity: false,
+            askSplitCode: false,
+            isConfirmed: true
+        },
+        {
+            id: '2',
+            empNum: 1,
+            jobCode: 20,
+            description: 'Assembly Operations',
+            active: true,
+            clockable: true,
+            requiresCostCode: false,
+            askQuantity: true,
+            askSplitCode: false,
+            isConfirmed: true
+        }
+    ];
+
+    async findCostCodesByJobCode(jobCode: number): Promise<CostCode[]> {
+        return this.costCodes.filter(cc => cc.jobCode === jobCode && cc.active);
+    }
+
+    async findEmployeeJobCode(empNum: number, jobCode: number): Promise<EmployeeJobCode | null> {
+        return this.employeeJobCodes.find(ejc => 
+            ejc.empNum === empNum && 
+            ejc.jobCode === jobCode && 
+            ejc.active
+        ) || null;
+    }
+}
+
+class MockAuditRepository implements AuditRepository {
+    private dataHistory: DataHistory[] = [];
+    private idCounter = 1;
+
+    async createDataHistory(history: DataHistory): Promise<DataHistory> {
+        const newHistory = { ...history, id: (this.idCounter++).toString() };
+        this.dataHistory.push(newHistory);
+        return newHistory;
+    }
+
+    async findDataHistoryByHoursId(hoursId: string): Promise<DataHistory[]> {
+        return this.dataHistory.filter(dh => dh.hoursId === hoursId);
+    }
+
+    async findDataHistoryByEmployee(empNum: number): Promise<DataHistory[]> {
+        return this.dataHistory.filter(dh => dh.empNum === empNum);
+    }
+}
+
+// Enhanced time tracking service using the new core services
 class SimpleTimeTrackingService {
-    private activeClockIns = new Map<string, any>();
+    private timeTrackingCore: TimeTrackingCore;
+    private clockingRepo: MockClockingRepository;
     private timeEntries: TimeEntry[] = [];
     private historyEntries: HistoryEntry[] = [];
     private employees: Employee[] = [
@@ -114,6 +238,19 @@ class SimpleTimeTrackingService {
     ];
 
     constructor() {
+        // Initialize repositories
+        this.clockingRepo = new MockClockingRepository();
+        const costCodeRepo = new MockCostCodeRepository();
+        const auditRepo = new MockAuditRepository();
+
+        // Create the time tracking core
+        this.timeTrackingCore = createTimeTrackingCore({
+            clocking: this.clockingRepo,
+            costCode: costCodeRepo,
+            audit: auditRepo
+        });
+
+        // Generate sample data
         this.generateSampleData();
     }
 
@@ -182,7 +319,7 @@ class SimpleTimeTrackingService {
     }
 
     async getEmployeeStatus(empNum: number): Promise<TimeTrackingResult> {
-        const active = this.activeClockIns.get(empNum.toString());
+        const active = await this.timeTrackingCore.clocking.getCurrentClockIn(empNum);
         return {
             success: true,
             data: {
@@ -214,92 +351,88 @@ class SimpleTimeTrackingService {
     }
 
     async clockIn(request: ClockInRequest): Promise<TimeTrackingResult> {
-        const employeeId = request.employeeId || request.empNum?.toString();
-        if (!employeeId) {
+        const empNum = request.empNum;
+        if (!empNum) {
             return {
                 success: false,
-                errors: ['Employee ID is required']
+                errors: ['Employee number is required']
             };
         }
 
-        if (this.activeClockIns.has(employeeId)) {
-            return {
-                success: false,
-                errors: ['Employee is already clocked in']
-            };
-        }
-
-        const clockInTime = new Date().toISOString();
-        const entry = {
-            id: `entry_${Date.now()}`,
-            employeeId,
-            employeeName: request.employeeName || 'Unknown',
-            timeIn: clockInTime,
-            jobCode: request.jobCode || 0,
+        const result = await this.timeTrackingCore.executeClockIn({
+            empNum: empNum,
+            opNum: request.jobCode || 10,
+            clockedTime: new Date(),
             costCode: request.costCode,
             jobDesc: request.jobDesc,
-            isActive: true
-        };
+            userName: 'System',
+            userRole: 'Employee'
+        });
 
-        this.activeClockIns.set(employeeId, entry);
+        if (!result.success) {
+            return {
+                success: false,
+                errors: result.errors
+            };
+        }
 
-        // Add to history
+        // Add to history for UI compatibility
         this.historyEntries.unshift({
             id: `hist_${Date.now()}`,
-            timestamp: clockInTime,
+            timestamp: new Date().toISOString(),
             action: 'clock-in',
             employeeName: request.employeeName || 'Unknown',
-            employeeId,
+            employeeId: empNum.toString(),
             description: `${request.employeeName} clocked in for work`,
         });
 
         return {
             success: true,
             data: {
-                clockInTime,
-                entry
+                clockInTime: result.data?.timeIn,
+                entry: result.data
             }
         };
     }
 
     async clockOut(request: ClockOutRequest): Promise<TimeTrackingResult> {
-        const employeeId = request.empNum?.toString();
-        if (!employeeId) {
+        const empNum = request.empNum;
+        if (!empNum) {
             return {
                 success: false,
-                errors: ['Employee ID is required']
+                errors: ['Employee number is required']
             };
         }
 
-        const active = this.activeClockIns.get(employeeId);
-        if (!active) {
+        const result = await this.timeTrackingCore.executeClockOut({
+            empNum: empNum,
+            clockedTime: new Date(),
+            units: request.quantity?.toString(),
+            split: request.splitCode,
+            userName: 'System',
+            userRole: 'Employee'
+        });
+
+        if (!result.success) {
             return {
                 success: false,
-                errors: ['No active clock in found for employee']
+                errors: result.errors
             };
         }
 
-        const clockOutTime = new Date().toISOString();
-        active.timeOut = clockOutTime;
-        active.quantity = request.quantity;
-        active.splitCode = request.splitCode;
-        active.isActive = false;
-
-        this.activeClockIns.delete(employeeId);
-
-        // Add to history
+        // Add to history for UI compatibility
         this.historyEntries.unshift({
             id: `hist_${Date.now()}`,
-            timestamp: clockOutTime,
+            timestamp: new Date().toISOString(),
             action: 'clock-out',
-            employeeName: active.employeeName,
-            employeeId,
-            description: `${active.employeeName} clocked out`,
+            employeeName: 'Employee',
+            employeeId: empNum.toString(),
+            description: `Employee clocked out`,
         });
 
         return {
             success: true,
-            data: active
+            data: result.data
         };
     }
 
@@ -353,10 +486,11 @@ class SimpleTimeTrackingService {
     }
 
     async getCurrentEmployee(): Promise<Employee | null> {
-        // For demo purposes, return the first active employee
-        const activeEmployeeId = Array.from(this.activeClockIns.keys())[0];
-        if (activeEmployeeId) {
-            return this.employees.find(emp => emp.id === activeEmployeeId) || null;
+        // For demo purposes, return the first employee with an active clock in
+        const allHours = this.clockingRepo.getAllEmployeeHours();
+        const activeHour = allHours.find(h => h.timeIn && !h.timeOut);
+        if (activeHour) {
+            return this.employees.find(emp => emp.number === activeHour.empNum.toString()) || null;
         }
         return null;
     }

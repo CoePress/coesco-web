@@ -1,21 +1,25 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { PerformanceData } from "@/contexts/performance.context";
 import {
   FEED_MODEL_OPTIONS,
   MACHINE_WIDTH_OPTIONS,
   YES_NO_OPTIONS,
-  SIGMA_5_FEED_MODEL_OPTIONS,
-  SIGMA_5_PULLTHRU_FEED_MODEL_OPTIONS,
-  ALLEN_BRADLEY_FEED_MODEL_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { Card, Input, Select, Text, VirtualTable } from "@/components";
 import OfflineStatus from "@/components/ui/offline-status";
 import MemoryStatus from "@/components/ui/memory-status";
-import { useMemoryEfficientPagination, useDatasetCleanup } from "@/hooks/use-memory-management";
+import { useDatasetCleanup } from "@/hooks/use-memory-management";
 import { getStatusColors } from "@/utils/performance-helpers";
 import { ANGLES } from "../../constants/performance";
+import {
+  mapControlsLevelToFeedControls,
+  getFeedModelOptionsForControlsLevel,
+  getAmpOptionsForControlsLevel,
+  getMotorOptionsForControlsLevel,
+  shouldShowAdvancedTorqueCalculations,
+} from "@/utils/feed-controls-mapping";
 
 // Type for table row data
 interface TableRowData {
@@ -70,6 +74,45 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
     }
     return "sigma-5"; // default
   }, [localData.common?.equipment?.feed?.model, localData.feed?.feed?.pullThru?.isPullThru]);
+
+  // Get feed controls mapping based on controls level
+  const feedControlsMapping = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return mapControlsLevelToFeedControls(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
+
+  // Get appropriate options based on controls level
+  const feedModelOptions = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return getFeedModelOptionsForControlsLevel(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
+
+  const ampOptions = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return getAmpOptionsForControlsLevel(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
+
+  const motorOptions = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return getMotorOptionsForControlsLevel(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
+
+  const showAdvancedTorque = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return shouldShowAdvancedTorqueCalculations(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
+
+  // Auto-update feed controls when controls level changes
+  useEffect(() => {
+    if (isEditing && localData.common?.equipment?.feed?.controlsLevel) {
+      const currentControls = localData.common?.equipment?.feed?.controls;
+      const expectedControls = feedControlsMapping.controls;
+
+      if (currentControls !== expectedControls) {
+        updateField("common.equipment.feed.controls", expectedControls);
+      }
+    }
+  }, [localData.common?.equipment?.feed?.controlsLevel, feedControlsMapping.controls, isEditing, updateField]);
 
   // Handle feed type change
   const handleFeedTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -137,18 +180,10 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Model"
-          name="feed.feed.model"
+          name="common.equipment.feed.model"
           value={localData.common?.equipment?.feed?.model || ""}
           onChange={handleFieldChange}
-          options={
-            feedType === "sigma-5"
-              ? SIGMA_5_FEED_MODEL_OPTIONS
-              : feedType === "sigma-5-pull-thru"
-                ? SIGMA_5_PULLTHRU_FEED_MODEL_OPTIONS
-                : feedType === "allen-bradley"
-                  ? ALLEN_BRADLEY_FEED_MODEL_OPTIONS
-                  : SIGMA_5_FEED_MODEL_OPTIONS
-          }
+          options={feedModelOptions}
           disabled={!isEditing}
         />
         <Input
@@ -172,7 +207,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
         <Select
           label="Loop Pit"
-          name="feed.feed.loopPit"
+          name="common.equipment.feed.loopPit"
           value={localData.common?.equipment?.feed?.loopPit || ""}
           onChange={handleFieldChange}
           options={YES_NO_OPTIONS}
@@ -187,8 +222,43 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           disabled={!isEditing}
         />
       </div>
+
+      {/* Controls Level and Feed Controls Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-muted rounded-md">
+        <div>
+          <Text as="h4" className="mb-2 font-medium">Controls Configuration</Text>
+          <div className="space-y-2">
+            <Input
+              label="Controls Level"
+              name="common.equipment.feed.controlsLevel"
+              value={localData.common?.equipment?.feed?.controlsLevel || ""}
+              onChange={handleFieldChange}
+              disabled={true}
+              className="bg-gray-100"
+              placeholder="Set from Material Specs page"
+            />
+            <Input
+              label="Feed Controls"
+              name="common.equipment.feed.controls"
+              value={localData.common?.equipment?.feed?.controls || feedControlsMapping.controls}
+              onChange={handleFieldChange}
+              disabled={true}
+              className="bg-gray-100"
+              customBackgroundColor={feedControlsMapping.feedType === "allen-bradley" ? "rgba(59, 130, 246, 0.1)" : "rgba(34, 197, 94, 0.1)"}
+            />
+          </div>
+        </div>
+        <div>
+          <Text as="h4" className="mb-2 font-medium">Configuration Info</Text>
+          <div className="space-y-1 text-sm text-gray-600">
+            <div>Feed Type: <span className="font-medium">{feedControlsMapping.feedType}</span></div>
+            <div>Control Level: <span className="font-medium">{localData.common?.equipment?.feed?.controlsLevel || "Not set"}</span></div>
+            <div>Advanced Features: <span className="font-medium">{showAdvancedTorque ? "Enabled" : "Basic"}</span></div>
+          </div>
+        </div>
+      </div>
     </Card>
-  ), [feedType, localData, handleFieldChange, handleFeedTypeChange, isEditing]);
+  ), [feedType, localData, handleFieldChange, handleFeedTypeChange, isEditing, feedModelOptions, statusColors, feedControlsMapping, showAdvancedTorque]);
 
   // Material information section
   const materialInfoSection = useMemo(() => (
@@ -243,18 +313,20 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const sigma5Fields = useMemo(() => (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <Input
+        <Select
           label="Motor"
           name="feed.feed.motor"
           value={localData.feed?.feed?.motor || ""}
           onChange={handleFieldChange}
+          options={motorOptions}
           disabled={!isEditing}
         />
-        <Input
+        <Select
           label="AMP"
           name="feed.feed.amp"
           value={localData.feed?.feed?.amp || ""}
           onChange={handleFieldChange}
+          options={ampOptions}
           disabled={!isEditing}
         />
       </div>
@@ -372,6 +444,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         />
       </div>
 
+      {/* Basic Torque Calculations */}
       <div className="grid grid-cols-4 gap-4">
         <Input
           label="ReGen (Watts)"
@@ -381,7 +454,6 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           disabled={true}
           className="bg-muted"
         />
-
         <Input
           label="Motor Peak Torque (lbs-in)"
           name="feed.feed.torque.motorPeak"
@@ -406,73 +478,128 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           disabled={true}
           className="bg-muted"
         />
-        <Input
-          label="Loop Torque (lbs-in)"
-          name="feed.feed.torque.loop"
-          type="number"
-          value={localData.feed?.feed?.torque?.loop?.toString() || ""}
-          disabled={true}
-          className="bg-muted"
-        />
-        <Input
-          label="Settle Torque (lbs-in)"
-          name="feed.feed.torque.settle"
-          type="number"
-          value={localData.feed?.feed?.torque?.settle?.toString() || ""}
-          disabled={true}
-          className="bg-muted"
-        />
-        <Input
-          label="REF. Inertia (lbs-in-sec²)"
-          name="feed.feed.reflInertia"
-          type="number"
-          value={localData.feed?.feed?.reflInertia?.toString() || ""}
-          disabled={true}
-          className="bg-muted"
-        />
-        <Input
-          label="MATCH"
-          name="feed.feed.match"
-          type="number"
-          value={localData.feed?.feed?.match?.toString() || ""}
-          disabled={true}
-          customBackgroundColor={statusColors.matchCheck}
-        />
-        <Input
-          label="Peak Torque (lbs-in)"
-          name="feed.feed.torque.peak"
-          type="number"
-          value={localData.feed?.feed?.torque?.peak?.toString() || ""}
-          disabled={true}
-          customBackgroundColor={statusColors.peakTorqueCheck}
-        />
-        <Input
-          label="RMS Torque (FA1) (lbs-in)"
-          name="feed.feed.torque.rms.feedAngle1"
-          type="number"
-          value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
-          disabled={true}
-          customBackgroundColor={statusColors.rmsTorqueFA1Check}
-        />
-        <Input
-          label="RMS Torque (FA2) (lbs-in)"
-          name="feed.feed.torque.rms.feedAngle2"
-          type="number"
-          value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
-          disabled={true}
-          customBackgroundColor={statusColors.rmsTorqueFA2Check}
-        />
-        <Input
-          label="Acceleration Torque (lbs-in)"
-          name="feed.feed.torque.acceleration"
-          type="number"
-          value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
-          disabled={true}
-          customBackgroundColor={statusColors.accelerationCheck}
-        />
       </div>
+
+      {/* Advanced Torque Calculations - shown only for advanced controls */}
+      {showAdvancedTorque && (
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+            <Text as="h4" className="mb-2 font-medium text-blue-800">Advanced Torque Analysis</Text>
+            <div className="grid grid-cols-4 gap-4">
+              <Input
+                label="Loop Torque (lbs-in)"
+                name="feed.feed.torque.loop"
+                type="number"
+                value={localData.feed?.feed?.torque?.loop?.toString() || ""}
+                disabled={true}
+                className="bg-muted"
+              />
+              <Input
+                label="Settle Torque (lbs-in)"
+                name="feed.feed.torque.settle"
+                type="number"
+                value={localData.feed?.feed?.torque?.settle?.toString() || ""}
+                disabled={true}
+                className="bg-muted"
+              />
+              <Input
+                label="REF. Inertia (lbs-in-sec²)"
+                name="feed.feed.reflInertia"
+                type="number"
+                value={localData.feed?.feed?.reflInertia?.toString() || ""}
+                disabled={true}
+                className="bg-muted"
+              />
+              <Input
+                label="MATCH"
+                name="feed.feed.match"
+                type="number"
+                value={localData.feed?.feed?.match?.toString() || ""}
+                disabled={true}
+                customBackgroundColor={statusColors.matchCheck}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              label="Peak Torque (lbs-in)"
+              name="feed.feed.torque.peak"
+              type="number"
+              value={localData.feed?.feed?.torque?.peak?.toString() || ""}
+              disabled={true}
+              customBackgroundColor={statusColors.peakTorqueCheck}
+            />
+            <Input
+              label="RMS Torque (FA1) (lbs-in)"
+              name="feed.feed.torque.rms.feedAngle1"
+              type="number"
+              value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
+              disabled={true}
+              customBackgroundColor={statusColors.rmsTorqueFA1Check}
+            />
+            <Input
+              label="RMS Torque (FA2) (lbs-in)"
+              name="feed.feed.torque.rms.feedAngle2"
+              type="number"
+              value={localData.feed?.feed?.torque?.rms?.feedAngle2?.toString() || ""}
+              disabled={true}
+              customBackgroundColor={statusColors.rmsTorqueFA2Check}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <Input
+              label="Acceleration Torque (lbs-in)"
+              name="feed.feed.torque.acceleration"
+              type="number"
+              value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
+              disabled={true}
+              customBackgroundColor={statusColors.accelerationCheck}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Basic torque display for non-advanced controls */}
+      {!showAdvancedTorque && (
+        <div className="grid grid-cols-4 gap-4">
+          <Input
+            label="MATCH"
+            name="feed.feed.match"
+            type="number"
+            value={localData.feed?.feed?.match?.toString() || ""}
+            disabled={true}
+            customBackgroundColor={statusColors.matchCheck}
+          />
+          <Input
+            label="Peak Torque (lbs-in)"
+            name="feed.feed.torque.peak"
+            type="number"
+            value={localData.feed?.feed?.torque?.peak?.toString() || ""}
+            disabled={true}
+            customBackgroundColor={statusColors.peakTorqueCheck}
+          />
+          <Input
+            label="RMS Torque (FA1) (lbs-in)"
+            name="feed.feed.torque.rms.feedAngle1"
+            type="number"
+            value={localData.feed?.feed?.torque?.rms?.feedAngle1?.toString() || ""}
+            disabled={true}
+            customBackgroundColor={statusColors.rmsTorqueFA1Check}
+          />
+          <Input
+            label="Acceleration Torque (lbs-in)"
+            name="feed.feed.torque.acceleration"
+            type="number"
+            value={localData.feed?.feed?.torque?.acceleration?.toString() || ""}
+            disabled={true}
+            customBackgroundColor={statusColors.accelerationCheck}
+          />
+        </div>
+      )}
     </div>
-  ), [localData, handleFieldChange, isEditing]);
+  ), [localData, handleFieldChange, isEditing, motorOptions, ampOptions, showAdvancedTorque, statusColors]);
 
   // Pull-through fields
   const pullThruFields = useMemo(() => (
@@ -522,24 +649,191 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   // Allen Bradley fields
   const allenBradleyFields = useMemo(() => (
     <div className="space-y-4">
-      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
-        <Text className="text-sm text-yellow-800">
-          Note: Other AMP options and additional calculations are available for Allen Bradley configurations.
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+        <Text as="h4" className="mb-2 font-medium text-blue-800">Allen Bradley MPL Feed System</Text>
+        <Text className="text-sm text-blue-700 mb-4">
+          Advanced servo-driven feed system with precision control and monitoring capabilities.
         </Text>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <Select
+            label="Allen Bradley Motor"
+            name="feed.feed.motor"
+            value={localData.feed?.feed?.motor || ""}
+            onChange={handleFieldChange}
+            options={motorOptions}
+            disabled={!isEditing}
+          />
+          <Select
+            label="Allen Bradley AMP/Drive"
+            name="feed.feed.amp"
+            value={localData.feed?.feed?.amp || ""}
+            onChange={handleFieldChange}
+            options={ampOptions}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Input
+            label="STR Max Speed (ft/min)"
+            name="feed.feed.strMaxSpeed"
+            type="number"
+            value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
+            onChange={handleFieldChange}
+            disabled={!isEditing}
+            className="bg-white"
+          />
+          <Input
+            label="Acceleration Rate (ft/sec²)"
+            name="feed.feed.accelerationRate"
+            type="number"
+            value={localData.feed?.feed?.accelerationRate?.toString() || ""}
+            onChange={handleFieldChange}
+            disabled={!isEditing}
+            className="bg-white"
+          />
+          <Input
+            label="Default Accel (ft/sec²)"
+            name="feed.feed.defaultAcceleration"
+            type="number"
+            value={localData.feed?.feed?.defaultAcceleration?.toString() || ""}
+            onChange={handleFieldChange}
+            disabled={!isEditing}
+            className="bg-white"
+          />
+        </div>
       </div>
+
+      {/* Standard fields that apply to Allen Bradley */}
+      <div className="grid grid-cols-4 gap-4">
+        <Input
+          label="Friction in Die (lbs)"
+          name="feed.feed.frictionInDie"
+          type="number"
+          value={localData.feed?.feed?.frictionInDie?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Chart Minimum Length (in)"
+          name="feed.feed.chartMinLength"
+          type="number"
+          value={localData.feed?.feed?.chartMinLength?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Length Increment (in)"
+          name="feed.feed.lengthIncrement"
+          type="number"
+          value={localData.feed?.feed?.lengthIncrement?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+        <Input
+          label="Feed Angle 1 (Deg)"
+          name="feed.feed.feedAngle1"
+          type="number"
+          value={localData.feed?.feed?.feedAngle1?.toString() || ""}
+          onChange={handleFieldChange}
+          disabled={!isEditing}
+        />
+      </div>
+
+      {/* Allen Bradley specific calculated fields */}
+      <div className="bg-gray-50 border border-gray-200 p-4 rounded">
+        <Text as="h4" className="mb-2 font-medium text-gray-800">Calculated Performance</Text>
+        <div className="grid grid-cols-4 gap-4">
+          <Input
+            label="Peak Torque (lbs-in)"
+            name="feed.feed.torque.peak"
+            type="number"
+            value={localData.feed?.feed?.torque?.peak?.toString() || ""}
+            disabled={true}
+            className="bg-muted"
+            customBackgroundColor={statusColors.peakTorqueCheck}
+          />
+          <Input
+            label="RMS Torque (lbs-in)"
+            name="feed.feed.torque.rms.motor"
+            type="number"
+            value={localData.feed?.feed?.torque?.rms?.motor?.toString() || ""}
+            disabled={true}
+            className="bg-muted"
+          />
+          <Input
+            label="Max Velocity (ft/min)"
+            name="common.equipment.feed.maxVelocity"
+            type="number"
+            value={localData.common?.equipment?.feed?.maximumVelocity?.toString() || ""}
+            disabled={true}
+            className="bg-muted"
+          />
+          <Input
+            label="Feed Check"
+            name="feed.feed.feedCheck"
+            value={localData.feed?.feed?.feedCheck || ""}
+            disabled={true}
+            className="bg-muted"
+            customBackgroundColor={statusColors.feedCheck}
+          />
+        </div>
+      </div>
+
+      {/* Advanced Allen Bradley features if enabled */}
+      {showAdvancedTorque && (
+        <div className="bg-green-50 border border-green-200 p-4 rounded">
+          <Text as="h4" className="mb-2 font-medium text-green-800">Advanced Allen Bradley Features</Text>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Text className="text-sm font-medium">Motion Control</Text>
+              <ul className="text-xs text-green-700 space-y-1">
+                <li>• Integrated Safety (SIL 3)</li>
+                <li>• Cam Profile Programming</li>
+                <li>• Electronic Gearing</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <Text className="text-sm font-medium">Diagnostics</Text>
+              <ul className="text-xs text-green-700 space-y-1">
+                <li>• Real-time Monitoring</li>
+                <li>• Predictive Maintenance</li>
+                <li>• Load Analysis</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <Text className="text-sm font-medium">Integration</Text>
+              <ul className="text-xs text-green-700 space-y-1">
+                <li>• EtherNet/IP Communication</li>
+                <li>• HMI Interface</li>
+                <li>• Data Logging</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  ), [localData.feed, handleFieldChange, isEditing]);
+  ), [localData, handleFieldChange, isEditing, motorOptions, ampOptions, showAdvancedTorque, statusColors]);
 
   // Feed specifications section
   const feedSpecsSection = useMemo(() => (
     <Card className="mb-4 p-4">
       <Text as="h4" className="mb-4 text-lg font-medium">Feed Specifications</Text>
 
-      {feedType === "sigma-5" && sigma5Fields}
+      {feedControlsMapping.showSigma5Fields && sigma5Fields}
       {feedType === "sigma-5-pull-thru" && pullThruFields}
-      {feedType === "allen-bradley" && allenBradleyFields}
+      {feedControlsMapping.showAllenBradleyFields && allenBradleyFields}
+
+      {!feedControlsMapping.showSigma5Fields && !feedControlsMapping.showAllenBradleyFields && (
+        <div className="bg-gray-50 border border-gray-200 p-4 rounded text-center">
+          <Text className="text-gray-600">
+            Please select a Controls Level in the Material Specs page to configure feed specifications.
+          </Text>
+        </div>
+      )}
     </Card>
-  ), [feedType, sigma5Fields, pullThruFields, allenBradleyFields]);
+  ), [feedControlsMapping, feedType, sigma5Fields, pullThruFields, allenBradleyFields]);
 
   // Feed length table section
   const feedLengthTableSection = useMemo(() => (

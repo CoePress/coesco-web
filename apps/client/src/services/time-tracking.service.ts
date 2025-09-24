@@ -1,142 +1,255 @@
-import { instance } from '../utils';
+// Client-side time tracking service
+// Handles API communication for time tracking operations
 
-export interface TimeTrackingStats {
-    totalEmployees: number;
-    activeSessions: number;
-    todayHours: number;
-    weekHours: number;
-}
+import { 
+  TimeEntry, 
+  Employee, 
+  Job, 
+  ClockInRequest, 
+  ClockOutRequest, 
+  ApiResponse, 
+  EmployeeStatus, 
+  TimeTrackingStats,
+  HistoryEntry 
+} from '../types/time-tracking.types';
 
-export interface Employee {
-    empNum: number;
-    name: string;
-    clockedIn: boolean;
-    currentOperation?: string;
-    todayHours: number;
-}
-
-export interface Job {
-    jobNum: string;
-    description: string;
-    customer: string;
-    status: string;
-}
-
-export interface Operation {
-    opNum: number;
-    description: string;
-    jobNum: string;
-    standardTime?: number;
-}
-
-export interface TimeEntry {
-    id: string;
-    empNum: number;
-    employeeName: string;
-    opNum: number;
-    operation: string;
-    jobNum: string;
-    clockInTime: string;
-    clockOutTime?: string;
-    totalTime?: number;
-    units?: string;
-    costCode?: string;
-}
-
-export interface ClockStatus {
-    clockedIn: boolean;
-    currentOperation?: Operation;
-    clockInTime?: string;
-    elapsedTime?: number;
-}
+const API_BASE = '/api/time-tracking';
 
 export class TimeTrackingService {
-    private static readonly BASE_PATH = '/time-tracking';
-
-    // Statistics
-    static async getStats(): Promise<TimeTrackingStats> {
-        const response = await instance.get(`${this.BASE_PATH}/stats`);
-        return response.data;
+  
+  /**
+   * Clock in an employee
+   */
+  async clockIn(request: ClockInRequest): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE}/clock-in`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to clock in. Please try again.']
+      };
     }
+  }
 
-    // Employee management
-    static async getEmployees(): Promise<Employee[]> {
-        const response = await instance.get(`${this.BASE_PATH}/employees`);
-        return response.data;
+  /**
+   * Clock out an employee
+   */
+  async clockOut(request: ClockOutRequest): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE}/clock-out`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to clock out. Please try again.']
+      };
     }
+  }
 
-    static async getCurrentEmployee(): Promise<Employee> {
-        const response = await instance.get(`${this.BASE_PATH}/current-employee`);
-        return response.data;
+  /**
+   * Get employee clock status
+   */
+  async getEmployeeStatus(empNum: number): Promise<ApiResponse<EmployeeStatus>> {
+    try {
+      const response = await fetch(`${API_BASE}/status/${empNum}`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get employee status']
+      };
     }
+  }
 
-    // Clock operations
-    static async getClockStatus(empNum: number): Promise<ClockStatus> {
-        const response = await instance.get(`${this.BASE_PATH}/clock-status/${empNum}`);
-        return response.data;
+  /**
+   * Get overall time tracking statistics
+   */
+  async getStats(): Promise<ApiResponse<TimeTrackingStats>> {
+    try {
+      const response = await fetch(`${API_BASE}/status`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get statistics']
+      };
     }
+  }
 
-    static async clockIn(empNum: number, opNum: number, costCode?: string): Promise<void> {
-        await instance.post(`${this.BASE_PATH}/clock-in`, {
-            empNum,
-            opNum,
-            costCode,
-        });
+  /**
+   * Get list of employees
+   */
+  async getEmployees(): Promise<ApiResponse<Employee[]>> {
+    try {
+      const response = await fetch(`${API_BASE}/employees`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get employees']
+      };
     }
+  }
 
-    static async clockOut(empNum: number, units?: string, split?: string): Promise<void> {
-        await instance.post(`${this.BASE_PATH}/clock-out`, {
-            empNum,
-            units,
-            split,
-        });
+  /**
+   * Get list of jobs
+   */
+  async getJobs(): Promise<ApiResponse<Job[]>> {
+    try {
+      const response = await fetch(`${API_BASE}/jobs`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get jobs']
+      };
     }
+  }
 
-    // Jobs and operations
-    static async getJobs(): Promise<Job[]> {
-        const response = await instance.get(`${this.BASE_PATH}/jobs`);
-        return response.data;
+  /**
+   * Get time entries with optional filters
+   */
+  async getTimeEntries(filters?: {
+    startDate?: string;
+    endDate?: string;
+    employeeFilter?: string;
+    statusFilter?: string;
+  }): Promise<ApiResponse<TimeEntry[]>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters?.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters?.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters?.employeeFilter) queryParams.append('employeeFilter', filters.employeeFilter);
+      if (filters?.statusFilter) queryParams.append('statusFilter', filters.statusFilter);
+      
+      const url = `${API_BASE}/entries${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get time entries']
+      };
     }
+  }
 
-    static async getOperations(jobNum?: string): Promise<Operation[]> {
-        const params = jobNum ? { jobNum } : {};
-        const response = await instance.get(`${this.BASE_PATH}/operations`, { params });
-        return response.data;
+  /**
+   * Get history entries
+   */
+  async getHistory(filters?: {
+    startDate?: string;
+    endDate?: string;
+    employeeFilter?: string;
+  }): Promise<ApiResponse<HistoryEntry[]>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters?.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters?.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters?.employeeFilter) queryParams.append('employeeFilter', filters.employeeFilter);
+      
+      const url = `${API_BASE}/history${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get history']
+      };
     }
+  }
 
-    static async startOperation(empNum: number, opNum: number): Promise<void> {
-        await instance.post(`${this.BASE_PATH}/start-operation`, {
-            empNum,
-            opNum,
-        });
+  /**
+   * Get current employee (demo/testing)
+   */
+  async getCurrentEmployee(): Promise<ApiResponse<Employee>> {
+    try {
+      const response = await fetch(`${API_BASE}/current-employee`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to get current employee']
+      };
     }
+  }
 
-    // Time entries and history
-    static async getTimeEntries(
-        empNum?: number,
-        startDate?: string,
-        endDate?: string
-    ): Promise<TimeEntry[]> {
-        const params: any = {};
-        if (empNum) params.empNum = empNum;
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-
-        const response = await instance.post(`${this.BASE_PATH}/entries`, params);
-        return response.data;
+  /**
+   * Create a new time entry (for managers)
+   */
+  async createTimeEntry(entry: Partial<TimeEntry>): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE}/entries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entry),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to create time entry']
+      };
     }
+  }
 
-    static async getHistory(
-        empNum?: number,
-        startDate?: string,
-        endDate?: string
-    ): Promise<TimeEntry[]> {
-        const params: any = {};
-        if (empNum) params.empNum = empNum;
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-
-        const response = await instance.post(`${this.BASE_PATH}/history`, params);
-        return response.data;
+  /**
+   * Update a time entry (for managers)
+   */
+  async updateTimeEntry(id: string, updates: Partial<TimeEntry>): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE}/entries/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to update time entry']
+      };
     }
+  }
+
+  /**
+   * Delete a time entry (for managers)
+   */
+  async deleteTimeEntry(id: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE}/entries/${id}`, {
+        method: 'DELETE',
+      });
+      
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        errors: ['Failed to delete time entry']
+      };
+    }
+  }
 }
+
+// Export singleton instance
+export const timeTrackingService = new TimeTrackingService();
