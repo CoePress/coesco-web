@@ -8,11 +8,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
+import { ContactType } from "@coesco/types";
 
 const CREDIT_STATUS_OPTIONS = [
   { value: 'A', label: 'Call Accouting' },
@@ -32,6 +33,30 @@ const MOCK_MENTION_OPTIONS = [
   { id: 3, name: "Bob Johnson", email: "bob@example.com" },
 ];
 
+const getContactTypeName = (type: ContactType | string | null | undefined): string => {
+  switch (type?.toUpperCase()) {
+    case ContactType.Accounting: return 'Accounting';
+    case ContactType.Engineering: return 'Engineering';
+    case ContactType.Inactive: return 'Inactive';
+    case ContactType.Left_Company: return 'Left Company';
+    case ContactType.Parts_Service: return 'Parts/Service';
+    case ContactType.Sales: return 'Sales';
+    default: return type || 'Unknown';
+  }
+};
+
+const getContactTypeColor = (type: ContactType | string | null | undefined): string => {
+  switch (type?.toUpperCase()) {
+    case ContactType.Accounting: return 'bg-blue-100 text-blue-800 border-blue-200';
+    case ContactType.Engineering: return 'bg-green-100 text-green-800 border-green-200';
+    case ContactType.Inactive: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case ContactType.Left_Company: return 'bg-red-100 text-red-800 border-red-200';
+    case ContactType.Parts_Service: return 'bg-purple-100 text-purple-800 border-purple-200';
+    case ContactType.Sales: return 'bg-orange-100 text-orange-800 border-orange-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
 const CompanyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,11 +70,9 @@ const CompanyDetails = () => {
     isOpen: boolean;
   }>({ type: "", isOpen: false });
   
-  // Journey modal state
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
 
-  // Notes state
   const [noteContent, setNoteContent] = useState("");
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionSearch, setMentionSearch] = useState("");
@@ -59,12 +82,10 @@ const CompanyDetails = () => {
   const mirrorRef = useRef<HTMLDivElement>(null);
   const [mentionDropdownIndex, setMentionDropdownIndex] = useState(0);
 
-  // Email modal state
   const [emailRecipients, setEmailRecipients] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
-  // Meeting modal state
   const [meetingTitle, setMeetingTitle] = useState("");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingHour, setMeetingHour] = useState(9);
@@ -72,35 +93,30 @@ const CompanyDetails = () => {
   const [meetingAmPm, setMeetingAmPm] = useState("AM");
   const [meetingDuration, setMeetingDuration] = useState(15);
 
-  // Editable field states
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [tempValues, setTempValues] = useState<Record<string, any>>({});
   
-  // Tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'credit' | 'interactions'>('overview');
   
-  // Call history editing state
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
   
-  // New call creation state
   const [isAddingCall, setIsAddingCall] = useState(false);
   const [newCallData, setNewCallData] = useState<any>({});
   
-  // Contact editing state
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editingContactData, setEditingContactData] = useState<any>({});
   
-  // New contact creation state
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContactData, setNewContactData] = useState<any>({});
+  
+  const [showInactiveContacts, setShowInactiveContacts] = useState(false);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
 
-  // RSM state
   const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
   const [availableRsmsList, setAvailableRsmsList] = useState<string[]>([]);
   const rsmApi = useApi();
 
-    // Helper functions
   const getContactName = (contact: any) => `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
   const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'C';
   
@@ -200,7 +216,6 @@ const CompanyDetails = () => {
     };
   };
 
-  // Data fetching logic
   useEffect(() => {
     if (!id || id === "undefined" || id === "null") {
       return;
@@ -209,27 +224,22 @@ const CompanyDetails = () => {
     let cancelled = false;
     const fetchCompanyData = async () => {
       try {
-        // Use filter/custom API endpoints for proper server-side filtering
         const [companyData, contactsData, journeysData, callHistoryData] = await Promise.all([
-          // Get company by Company_ID using filter/custom endpoint
           api.get(`/legacy/std/Company/filter/custom`, { 
             filterField: 'Company_ID', 
             filterValue: id, 
             limit: 1 
           }),
-          // Get contacts filtered by Company_ID
           api.get(`/legacy/std/Contacts/filter/custom`, { 
             filterField: 'Company_ID', 
             filterValue: id, 
             limit: 100 
           }),
-          // Get journeys filtered by Company_ID
           api.get(`/legacy/std/Journey/filter/custom`, { 
             filterField: 'Company_ID', 
             filterValue: id, 
             limit: 100 
           }),
-          // Get call history filtered by Company_ID
           api.get(`/legacy/std/CallHistory/filter/custom`, { 
             filterField: 'Company_ID', 
             filterValue: id,
@@ -238,19 +248,15 @@ const CompanyDetails = () => {
         ]);
 
         if (!cancelled) {
-          // Process contacts data
           const processedContacts = Array.isArray(contactsData) ? contactsData : [];
           setCompanyContacts(processedContacts);
 
-          // Process journeys data
           const processedJourneys = Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : [];
           setCompanyJourneys(processedJourneys);
 
-          // Process call history data
           const processedCallHistory = Array.isArray(callHistoryData) ? callHistoryData : [];
           setCallHistory(processedCallHistory);
 
-          // Process company data
           const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
           
           if (processedCompanyData) {
@@ -276,7 +282,6 @@ const CompanyDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching company data:', error);
-        // Set empty call history on error
         setCallHistory([]);
       }
     };
@@ -285,12 +290,10 @@ const CompanyDetails = () => {
     return () => { cancelled = true; };
   }, [id]);
 
-  // Fetch RSMs - get initials from Demographic table, then get employee details
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        // First get RSM initials from Demographic table
         const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
           filterField: 'Category',
           filterValue: 'RSM'
@@ -298,14 +301,11 @@ const CompanyDetails = () => {
         
         if (!cancelled && Array.isArray(rsmData) && rsmData.length > 0) {
           
-          // Extract initials from the Description field
           const rsmInitials = rsmData.map(item => item.Description).filter(Boolean);
           
           if (rsmInitials.length > 0) {
-            // Set RSM list for journey creation
             setAvailableRsmsList(rsmInitials);
             
-            // Fetch employee details for each RSM initial
             const employeePromises = rsmInitials.map(initials => 
               rsmApi.get('/legacy/std/Employee/filter/custom', {
                 filterField: 'EmpInitials',
@@ -318,7 +318,7 @@ const CompanyDetails = () => {
             const rsmOptions = employeeResults
               .map((result, index) => {
                 if (Array.isArray(result) && result.length > 0) {
-                  const employee = result[0]; // Take first match
+                  const employee = result[0];
                   return {
                     name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials || rsmInitials[index],
                     empNum: employee.EmpNum || 0,
@@ -347,7 +347,6 @@ const CompanyDetails = () => {
     setActiveModal({ type: "", isOpen: false });
     setNoteContent("");
     setShowMentionDropdown(false);
-    // Reset all modal states
     setEmailRecipients("");
     setEmailSubject("");
     setEmailBody("");
@@ -363,12 +362,10 @@ const CompanyDetails = () => {
     const value = e.target.value;
     setNoteContent(value);
 
-    // Check for @ symbol
     const cursorPosition = e.target.selectionStart;
     const textBeforeCursor = value.slice(0, cursorPosition);
     const lastAtIndex = textBeforeCursor.lastIndexOf("@");
 
-    // Mirror logic
     let mirrorHtml = value
       .slice(0, lastAtIndex)
       .replace(/\n/g, "<br/>")
@@ -387,10 +384,8 @@ const CompanyDetails = () => {
         lastAtIndex === 0 ? "" : textBeforeCursor[lastAtIndex - 1];
       const searchText = textBeforeCursor.slice(lastAtIndex + 1);
       const isInMention = searchText.includes("<") && !searchText.includes(">");
-      // Only trigger if @ is at start, after space, or after line break
       const validTrigger =
         lastAtIndex === 0 || charBeforeAt === " " || charBeforeAt === "\n";
-      // Hide if @ is followed by space
       const atFollowedBySpace = searchText.startsWith(" ");
       if (
         validTrigger &&
@@ -406,7 +401,7 @@ const CompanyDetails = () => {
             const markerRect = marker.getBoundingClientRect();
             const mirrorRect = mirrorRef.current.getBoundingClientRect();
             setMentionPosition({
-              top: markerRect.top - mirrorRect.top - textarea.scrollTop + 24, // 24 for line height/padding
+              top: markerRect.top - mirrorRect.top - textarea.scrollTop + 24,
               left: markerRect.left - mirrorRect.left - textarea.scrollLeft,
             });
           }
@@ -440,10 +435,9 @@ const CompanyDetails = () => {
     setNoteContent(newContent);
     setShowMentionDropdown(false);
 
-    // Set cursor position after the inserted mention
     setTimeout(() => {
       if (textareaRef.current) {
-        const newPosition = lastAtIndex + mention.id.toString().length + 4; // +4 for @<> and space
+        const newPosition = lastAtIndex + mention.id.toString().length + 4;
         textareaRef.current.selectionStart = newPosition;
         textareaRef.current.selectionEnd = newPosition;
         textareaRef.current.focus();
@@ -451,7 +445,6 @@ const CompanyDetails = () => {
     }, 0);
   };
 
-  // Filtered mention options
   const filteredMentionOptions = MOCK_MENTION_OPTIONS.filter(
     (option) =>
       option.name.toLowerCase().includes(mentionSearch.toLowerCase()) ||
@@ -762,7 +755,6 @@ const CompanyDetails = () => {
     }
   };
 
-  // Sync scroll between textarea and mirror
   useEffect(() => {
     const textarea = textareaRef.current;
     const mirror = mirrorRef.current;
@@ -776,7 +768,6 @@ const CompanyDetails = () => {
     setMentionDropdownIndex(0);
   }, [showMentionDropdown, mentionSearch]);
 
-  // Field editing functions
   const handleStartEditing = () => {
     setIsEditingAll(true);
     setTempValues({
@@ -796,7 +787,6 @@ const CompanyDetails = () => {
     if (!company || !id) return;
     
     try {
-      // Update the company in the database
       const updateData: Record<string, any> = {
         Active: tempValues.active,
         IsDealer: tempValues.isDealer,
@@ -817,7 +807,6 @@ const CompanyDetails = () => {
         setTempValues({});
       }
     } catch (error) {
-      // Error handled silently
     }
   };
 
@@ -830,7 +819,6 @@ const CompanyDetails = () => {
     setTempValues({ ...tempValues, [fieldName]: value });
   };
 
-  // Call history editing functions
   const handleEditCall = (call: any) => {
     setEditingCallId(call.CallRefNum);
     setEditingCallData({ ...call });
@@ -844,7 +832,6 @@ const CompanyDetails = () => {
     if (!editingCallId) return;
     
     try {
-      // Only send the fields we actually want to update to avoid SQL syntax issues
       const updateData = {
         Contactname: editingCallData.Contactname || '',
         CallStatus: editingCallData.CallStatus || '',
@@ -865,7 +852,6 @@ const CompanyDetails = () => {
       const result = await api.patch(`/legacy/std/CallHistory/filter/custom?filterField=CallRefNum&filterValue=${editingCallId}`, updateData);
       
       if (result) {
-        // Update the call history in state
         const updatedCallHistory = callHistory.map(call => 
           call.CallRefNum === editingCallId ? { ...call, ...updateData } : call
         );
@@ -883,14 +869,12 @@ const CompanyDetails = () => {
     setEditingCallData({});
   };
 
-  // New call creation functions
   const handleAddCall = async () => {
     const currentDateTime = new Date();
     const currentDate = currentDateTime.toISOString().split('T')[0];
     const currentTime = currentDateTime.getHours() * 10000 + currentDateTime.getMinutes() * 100 + currentDateTime.getSeconds();
     
     try {
-      // Get the next CallRefNum by finding the max value and adding 1
       const maxCallRefNum = await api.get('/legacy/std/CallHistory/CallRefNum/max');
       const nextCallRefNum = (maxCallRefNum?.maxValue || 0) + 1;
       
@@ -909,14 +893,14 @@ const CompanyDetails = () => {
         OurComments: '',
         CustEmail: '',
         Company_ID: parseInt(id || '0'),
-        Address_ID: 16, // Using same as your sample data
+        Address_ID: 16,
         FaxNumber: '',
         Resolution: '',
         StdEffected: null,
         StdUpdated: null,
         ServiceCodes: '',
         RefEquipment: '',
-        'RefSerial#': '', // This field from your sample data
+        'RefSerial#': '',
         CloseDate: null,
         CloseTime: 0,
         Issues: ''
@@ -924,7 +908,6 @@ const CompanyDetails = () => {
       setIsAddingCall(true);
     } catch (error) {
       console.error('Error getting next CallRefNum:', error);
-      // Fallback: use current timestamp as CallRefNum if API fails
       const fallbackCallRefNum = Date.now();
       setNewCallData({
         CallRefNum: fallbackCallRefNum,
@@ -1001,7 +984,6 @@ const CompanyDetails = () => {
     setNewCallData({});
   };
 
-  // Function to refresh call history data from the server
   const refreshCallHistory = async () => {
     try {
       console.log('Refreshing call history data...');
@@ -1021,7 +1003,6 @@ const CompanyDetails = () => {
     }
   };
 
-  // Function to delete a call record
   const handleDeleteCall = async (call: any) => {
     if (!call.CallRefNum) {
       console.error('Cannot delete call: missing CallRefNum');
@@ -1042,7 +1023,6 @@ const CompanyDetails = () => {
       });
       
       if (result !== null) {
-        // Remove the deleted call from state
         const updatedCallHistory = callHistory.filter(c => c.CallRefNum !== call.CallRefNum);
         setCallHistory(updatedCallHistory);
         console.log('Call deleted successfully');
@@ -1056,7 +1036,6 @@ const CompanyDetails = () => {
     }
   };
 
-  // Contact editing functions
   const handleEditContact = (contact: any) => {
     setEditingContactId(contact.Cont_Id);
     setEditingContactData({ ...contact });
@@ -1070,19 +1049,22 @@ const CompanyDetails = () => {
     if (!editingContactId) return;
     
     try {
+      const contactBeingEdited = companyContacts.find(c => c.Cont_Id === editingContactId);
+      if (!contactBeingEdited) return;
+
       const updateData = {
         FirstName: editingContactData.FirstName || '',
         LastName: editingContactData.LastName || '',
         Email: editingContactData.Email || '',
         PhoneNumber: editingContactData.PhoneNumber || '',
         PhoneExt: editingContactData.PhoneExt || '',
-        ConTitle: editingContactData.ConTitle || ''
+        ConTitle: editingContactData.ConTitle || '',
+        Type: editingContactData.Type || ''
       };
       
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?filterField=Cont_Id&filterValue=${editingContactId}`, updateData);
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${editingContactId}&Company_ID=${contactBeingEdited.Company_ID}`, updateData);
       
-      if (result) {
-        // Update the contacts in state
+      if (result !== null) {
         const updatedContacts = companyContacts.map(contact => 
           contact.Cont_Id === editingContactId ? { ...contact, ...updateData } : contact
         );
@@ -1101,75 +1083,22 @@ const CompanyDetails = () => {
     setEditingContactData({});
   };
 
-  const handleDeleteContact = async (contact: any) => {
-    if (!contact.Cont_Id) {
-      console.error('Cannot delete contact: missing Cont_Id');
-      return;
-    }
+  const handleAddContact = () => {
+    console.log('Add Contact button clicked');
     
-    const contactName = getContactName(contact);
-    const confirmDelete = window.confirm(`Are you sure you want to delete contact "${contactName || 'Unknown Contact'}"?`);
-    if (!confirmDelete) return;
-    
-    try {
-      const result = await api.delete(`/legacy/std/Contacts/filter/custom`, {
-        params: {
-          Cont_Id: contact.Cont_Id,
-          Company_ID: id
-        }
-      });
-      
-      if (result !== null) {
-        // Remove the deleted contact from state
-        const updatedContacts = companyContacts.filter(c => c.Cont_Id !== contact.Cont_Id);
-        setCompanyContacts(updatedContacts);
-        console.log('Contact deleted successfully');
-      } else {
-        console.error('Failed to delete contact');
-        alert('Failed to delete contact. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      alert('Error deleting contact. Please try again.');
-    }
-  };
-
-  // New contact creation functions
-  const handleAddContact = async () => {
-    try {
-      // Get the next Cont_Id by finding the max value and adding 1
-      const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
-      const nextContactId = (maxContactId?.maxValue || 0) + 1;
-      
-      setNewContactData({
-        Cont_Id: nextContactId,
-        Company_ID: parseInt(id || '0'),
-        FirstName: '',
-        LastName: '',
-        Email: '',
-        PhoneNumber: '',
-        PhoneExt: '',
-        ConTitle: '',
-        Type: 'C' // Default to Contact type
-      });
-      setIsAddingContact(true);
-    } catch (error) {
-      console.error('Error getting next Contact ID:', error);
-      // Fallback: use current timestamp as Contact ID if API fails
-      const fallbackContactId = Date.now();
-      setNewContactData({
-        Cont_Id: fallbackContactId,
-        Company_ID: parseInt(id || '0'),
-        FirstName: '',
-        LastName: '',
-        Email: '',
-        PhoneNumber: '',
-        PhoneExt: '',
-        ConTitle: '',
-        Type: 'C'
-      });
-      setIsAddingContact(true);
-    }
+    const fallbackContactId = Date.now();
+    setNewContactData({
+      Cont_Id: fallbackContactId,
+      Company_ID: parseInt(id || '0'),
+      FirstName: '',
+      LastName: '',
+      Email: '',
+      PhoneNumber: '',
+      PhoneExt: '',
+      ConTitle: '',
+      Type: ContactType.Sales
+    });
+    setIsAddingContact(true);
   };
 
   const handleNewContactDataChange = (fieldName: string, value: any) => {
@@ -1180,12 +1109,22 @@ const CompanyDetails = () => {
     try {
       console.log('Creating new contact with data:', newContactData);
       
-      await api.post('/legacy/std/Contacts', newContactData);
+      // Try to get a proper contact ID before saving
+      let contactDataToSave = { ...newContactData };
+      try {
+        const maxContactId = await api.get('/legacy/std/Contacts/Cont_Id/max');
+        if (maxContactId?.maxValue) {
+          contactDataToSave.Cont_Id = maxContactId.maxValue + 1;
+        }
+      } catch (error) {
+        console.warn('Could not get next contact ID, using fallback:', error);
+      }
+      
+      await api.post('/legacy/std/Contacts', contactDataToSave);
       
       if (api.success && !api.error) {
         console.log('Contact creation appears successful, refreshing data...');
-        // Add the new contact to state immediately
-        const updatedContacts = [...companyContacts, newContactData];
+        const updatedContacts = [...companyContacts, contactDataToSave];
         setCompanyContacts(updatedContacts);
         setIsAddingContact(false);
         setNewContactData({});
@@ -1499,18 +1438,61 @@ const CompanyDetails = () => {
               className="bg-foreground rounded-lg border border-border p-4"
               style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-text">Contacts ({companyContacts.length})</h4>
+                <h4 className="font-semibold text-text">
+                  Contacts ({(() => {
+                    let filteredContacts = showInactiveContacts 
+                      ? companyContacts 
+                      : companyContacts.filter(contact => 
+                          contact.Type !== ContactType.Inactive && 
+                          contact.Type !== ContactType.Left_Company
+                        );
+
+                    // Apply search filter for count
+                    if (contactSearchTerm.trim()) {
+                      const searchTerm = contactSearchTerm.toLowerCase().trim();
+                      filteredContacts = filteredContacts.filter(contact => {
+                        const fullName = getContactName(contact).toLowerCase();
+                        const email = (contact.Email || "").toLowerCase();
+                        const phone = (contact.PhoneNumber || "").toLowerCase();
+                        const title = (contact.ConTitle || "").toLowerCase();
+                        const type = getContactTypeName(contact.Type).toLowerCase();
+                        
+                        return fullName.includes(searchTerm) ||
+                               email.includes(searchTerm) ||
+                               phone.includes(searchTerm) ||
+                               title.includes(searchTerm) ||
+                               type.includes(searchTerm);
+                      });
+                    }
+                    
+                    return filteredContacts.length;
+                  })()})
+                </h4>
                 <button 
+                  type="button"
                   onClick={handleAddContact}
                   className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                   + Add Contact
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder="Search contacts"
-                className="border border-border bg-background text-text rounded px-3 py-1 text-sm mb-4 w-64 placeholder:text-text-muted"
-              />
+              <div className="flex items-center justify-between mb-4">
+                <input
+                  type="text"
+                  placeholder="Search contacts"
+                  value={contactSearchTerm}
+                  onChange={(e) => setContactSearchTerm(e.target.value)}
+                  className="border border-border bg-background text-text rounded px-3 py-1 text-sm w-64 placeholder:text-text-muted"
+                />
+                <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showInactiveContacts}
+                    onChange={(e) => setShowInactiveContacts(e.target.checked)}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span>Show inactive contacts</span>
+                </label>
+              </div>
               
               {/* New Contact Form */}
               {isAddingContact && (
@@ -1607,14 +1589,41 @@ const CompanyDetails = () => {
                   <thead className="sticky top-0 bg-foreground z-10">
                     <tr className="text-text-muted border-b border-border">
                       <th className="text-left py-2">NAME</th>
+                      <th className="text-left py-2">TYPE</th>
                       <th className="text-left py-2">EMAIL</th>
                       <th className="text-left py-2">PHONE NUMBER</th>
                       <th className="text-left py-2 w-24">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {companyContacts.length > 0 ? (
-                      companyContacts.map((contact, index) => {
+                    {(() => {
+                      let filteredContacts = showInactiveContacts 
+                        ? companyContacts 
+                        : companyContacts.filter(contact => 
+                            contact.Type !== ContactType.Inactive && 
+                            contact.Type !== ContactType.Left_Company
+                          );
+
+                      // Apply search filter
+                      if (contactSearchTerm.trim()) {
+                        const searchTerm = contactSearchTerm.toLowerCase().trim();
+                        filteredContacts = filteredContacts.filter(contact => {
+                          const fullName = getContactName(contact).toLowerCase();
+                          const email = (contact.Email || "").toLowerCase();
+                          const phone = (contact.PhoneNumber || "").toLowerCase();
+                          const title = (contact.ConTitle || "").toLowerCase();
+                          const type = getContactTypeName(contact.Type).toLowerCase();
+                          
+                          return fullName.includes(searchTerm) ||
+                                 email.includes(searchTerm) ||
+                                 phone.includes(searchTerm) ||
+                                 title.includes(searchTerm) ||
+                                 type.includes(searchTerm);
+                        });
+                      }
+                      
+                      return filteredContacts.length > 0 ? (
+                        filteredContacts.map((contact, index) => {
                         const fullName = getContactName(contact);
                         const contactInitial = getContactInitial(fullName);
                         const uniqueKey = `contact-${contact.Cont_Id || contact.Company_ID}-${index}`;
@@ -1655,9 +1664,12 @@ const CompanyDetails = () => {
                                     </>
                                   ) : (
                                     <>
-                                      <span className="text-text">
+                                      <Link 
+                                        to={`/sales/contacts/${contact.Cont_Id}_${contact.Company_ID}_${contact.Address_ID || 0}`}
+                                        className="text-primary hover:underline"
+                                      >
                                         {fullName || "Unnamed Contact"}
-                                      </span>
+                                      </Link>
                                       {contact.ConTitle && (
                                         <span className="text-xs text-text-muted">
                                           {contact.ConTitle}
@@ -1667,6 +1679,27 @@ const CompanyDetails = () => {
                                   )}
                                 </div>
                               </div>
+                            </td>
+                            <td className="py-2">
+                              {isEditing ? (
+                                <select
+                                  value={editingContactData.Type || ''}
+                                  onChange={(e) => handleContactDataChange('Type', e.target.value)}
+                                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm text-text focus:outline-none focus:border-primary"
+                                >
+                                  <option value="">Select Type</option>
+                                  <option value={ContactType.Accounting}>Accounting</option>
+                                  <option value={ContactType.Engineering}>Engineering</option>
+                                  <option value={ContactType.Inactive}>Inactive</option>
+                                  <option value={ContactType.Left_Company}>Left Company</option>
+                                  <option value={ContactType.Parts_Service}>Parts/Service</option>
+                                  <option value={ContactType.Sales}>Sales</option>
+                                </select>
+                              ) : (
+                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getContactTypeColor(displayData.Type)}`}>
+                                  {getContactTypeName(displayData.Type)}
+                                </span>
+                              )}
                             </td>
                             <td className="py-2">
                               {isEditing ? (
@@ -1743,26 +1776,25 @@ const CompanyDetails = () => {
                                   >
                                     <Edit size={12} />
                                   </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteContact(contact)}
-                                  >
-                                    <Trash2 size={12} />
-                                  </Button>
                                 </div>
                               )}
                             </td>
                           </tr>
                         );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="py-4 text-center text-text-muted">
-                          No contacts found for this company
-                        </td>
-                      </tr>
-                    )}
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-4 text-center text-text-muted">
+                            {contactSearchTerm.trim()
+                              ? `No contacts found matching "${contactSearchTerm}"`
+                              : companyContacts.length > 0 && !showInactiveContacts
+                              ? "No active contacts found. Check 'Show inactive contacts' to see all contacts."
+                              : "No contacts found for this company"
+                            }
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -1774,6 +1806,7 @@ const CompanyDetails = () => {
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-text">Journeys ({companyJourneys.length})</h4>
                 <button 
+                  type="button"
                   onClick={() => setIsJourneyModalOpen(true)}
                   className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                   + Add Journey
@@ -1838,6 +1871,7 @@ const CompanyDetails = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-semibold text-text">Call History ({callHistory.length})</h4>
                   <button 
+                    type="button"
                     onClick={handleAddCall}
                     className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
                     + Add Call
@@ -2488,16 +2522,13 @@ const CompanyDetails = () => {
           isOpen={isJourneyModalOpen}
           onClose={() => setIsJourneyModalOpen(false)}
           onSuccess={(newJourney) => {
-            // Add the new journey to the journeys list
             if (newJourney) {
               console.log('Raw new journey:', newJourney);
               const adaptedJourney = adaptLegacyJourney(newJourney);
               console.log('Adapted journey:', adaptedJourney);
               
-              // Update journeys state
               setCompanyJourneys(prev => [adaptedJourney, ...prev]);
               
-              // Show navigation modal
               setNavigationModal({
                 isOpen: true,
                 journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || 'New Journey',
@@ -2552,7 +2583,6 @@ const CompanyDetails = () => {
   );
 };
 
-// MiniCalendar component
 const MiniCalendar = ({
   selected,
   onSelect,
@@ -2673,7 +2703,6 @@ const MiniCalendar = ({
   );
 };
 
-// CreateJourneyModal component
 const CreateJourneyModal = ({
   isOpen,
   onClose,
@@ -2705,14 +2734,12 @@ const CreateJourneyModal = ({
   const { post, loading, error } = useApi();
 
   const handleCreate = async () => {
-    // Validate required fields
     if (!name || !journeyType || !rsm || !city || !stateProv || !country || !industry || !leadSource) {
       alert("Please fill in all required fields: Journey Name, Journey Type, RSM, City, State, Country, Industry, and Lead Source");
       return;
     }
 
     try {
-      // Map form fields to database field names
       const payload = {
         Project_Name: name,
         Journey_Start_Date: startDate,
@@ -2723,7 +2750,7 @@ const CreateJourneyModal = ({
         Country: country,
         Industry: industry,
         Lead_Source: leadSource,
-        Journey_Stage: "Lead", // Default to Lead
+        Journey_Stage: "Lead",
         Notes: notes,
         Action_Date: actionDate,
         Equipment_Type: equipmentType,
@@ -2736,17 +2763,14 @@ const CreateJourneyModal = ({
       const result = await post("/legacy/std/Journey", payload);
 
       if (result) {
-        // Create the journey object for immediate display
         const newJourney = {
           ...payload,
-          // Use the generated ID as the primary identifier
           CreateDT: new Date().toISOString(),
           Action_Date: actionDate || new Date().toISOString(),
-          Journey_Value: 0, // Default value
-          Priority: 'C', // Default priority
-          Quote_Number: '', // Default empty
-          Chance_To_Secure_order: null, // Default empty
-          // Add other fields that might be expected
+          Journey_Value: 0,
+          Priority: 'C',
+          Quote_Number: '',
+          Chance_To_Secure_order: null,
           Expected_Decision_Date: null,
           Quote_Presentation_Date: null,
           Date_PO_Received: null,
@@ -2760,7 +2784,6 @@ const CreateJourneyModal = ({
         };
         onSuccess?.(newJourney);
         onClose();
-        // Reset form
         setName("");
         setStartDate("");
         setJourneyType("");
