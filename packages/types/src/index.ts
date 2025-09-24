@@ -17,6 +17,7 @@ export * from './option-rule-action';
 export * from './quote-status';
 export * from './time-scale';
 export * from './user-role';
+export * from './contact-type';
 export * from './item-type';
 export * from './quote-header-status';
 export * from './address';

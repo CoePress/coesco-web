@@ -795,6 +795,15 @@ enum UserRole {
   ADMIN
 }
 
+enum ContactType {
+  Accounting
+  Engineering
+  Inactive
+  Left_Company
+  Parts_Service
+  Sales
+}
+
 // CoilType
 model CoilType {
   id          String  @id @default(uuid())
