@@ -94,11 +94,12 @@ const ContactDetails = () => {
   };
 
   const handleSave = async () => {
-    if (!contactData?.Cont_Id) return;
+    if (!contactData?.Cont_Id || !contactData?.Company_ID) return;
 
     setIsSaving(true);
     try {
-      const result = await api.patch(`/legacy/std/Contacts/${contactData.Cont_Id}`, editForm);
+      
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, editForm);
       if (result !== null) {
         // Update local contact data
         setContactData({ ...contactData, ...editForm });
@@ -134,26 +135,21 @@ const ContactDetails = () => {
       const expectedCompanyId = parts.length === 3 ? parts[1] : null;
       const expectedAddressId = parts.length === 3 ? parts[2] : (parts.length === 2 ? parts[1] : null);
       
-      // Build fetch URL with available parameters for most precise matching
-      let fetchUrl = `http://localhost:8080/api/legacy/std/Contacts/filter/custom?Cont_Id=${actualContactId}`;
+      const queryParams: Record<string, string> = {
+        Cont_Id: actualContactId
+      };
       
       if (expectedCompanyId) {
-        fetchUrl += `&Company_ID=${expectedCompanyId}`;
+        queryParams.Company_ID = expectedCompanyId;
       }
       
       if (expectedAddressId) {
-        fetchUrl += `&Address_ID=${expectedAddressId}`;
+        queryParams.Address_ID = expectedAddressId;
       }
       
-      const response = await fetch(fetchUrl, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const rawContactResponse = await api.get('/legacy/std/Contacts/filter/custom', queryParams);
       
-      if (response.ok) {
-        const rawContactResponse = await response.json();
-        
+      if (rawContactResponse) {
         // Handle response format - custom filter always returns array
         const rawContact = Array.isArray(rawContactResponse) 
           ? rawContactResponse[0] 
@@ -171,17 +167,8 @@ const ContactDetails = () => {
         // Fetch company data if we have a Company_ID
         if (rawContact?.Company_ID) {
           try {
-            const companyResponse = await fetch(
-              `http://localhost:8080/api/legacy/base/Company/${rawContact.Company_ID}`,
-              {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-              }
-            );
-            
-            if (companyResponse.ok) {
-              const companyRaw = await companyResponse.json();
+            const companyRaw = await api.get(`/legacy/base/Company/${rawContact.Company_ID}`);
+            if (companyRaw) {
               setCompanyData(companyRaw);
             }
           } catch (companyError) {
@@ -192,28 +179,20 @@ const ContactDetails = () => {
         // Fetch address data if we have an Address_ID
         if (rawContact?.Address_ID) {
           try {
-            const addressResponse = await fetch(
-              `http://localhost:8080/api/legacy/base/Address/filter/custom?Address_ID=${rawContact.Address_ID}&Company_ID=${rawContact.Company_ID}`,
-              {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-              }
-            );
+            const addressResults = await api.get('/legacy/base/Address/filter/custom', {
+              Address_ID: rawContact.Address_ID,
+              Company_ID: rawContact.Company_ID
+            });
             
-            if (addressResponse.ok) {
-              const addressResults = await addressResponse.json();
-              // The custom filter returns an array, so take the first result
-              if (addressResults && addressResults.length > 0) {
-                setAddressData(addressResults[0]);
-              }
+            if (addressResults && addressResults.length > 0) {
+              setAddressData(addressResults[0]);
             }
           } catch (addressError) {
             console.warn("Could not fetch address data:", addressError);
           }
         }
       } else {
-        setError(`Failed to load contact: ${response.statusText}`);
+        setError('Failed to load contact data');
       }
     } catch (err) {
       setError(`Error loading contact: ${err}`);
