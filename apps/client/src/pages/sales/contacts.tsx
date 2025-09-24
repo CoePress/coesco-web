@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 
 import { Table, Button, PageHeader, AddContactModal } from "@/components";
 import { TableColumn } from "@/components/ui/table";
+import { ContactType } from "@coesco/types";
 
 const Contacts = () => {
   const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
@@ -28,9 +29,12 @@ const Contacts = () => {
 
   const getContactTypeName = (type: string) => {
     switch (type?.toUpperCase()) {
-      case 'A': return 'Accounting';
-      case 'E': return 'Engineering';
-      case 'S': return 'Sales';
+      case ContactType.Accounting: return 'Accounting';
+      case ContactType.Engineering: return 'Engineering';
+      case ContactType.Inactive: return 'Inactive';
+      case ContactType.Left_Company: return 'Left Company';
+      case ContactType.Parts_Service: return 'Parts/Service';
+      case ContactType.Sales: return 'Sales';
       default: return type || 'Unknown';
     }
   };
@@ -327,9 +331,12 @@ const Contacts = () => {
       header: "Type",
       render: (_, row) => (
         <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-          row.type === 'A' ? 'bg-blue-100 text-blue-800' :
-          row.type === 'E' ? 'bg-green-100 text-green-800' :
-          row.type === 'S' ? 'bg-orange-100 text-orange-800' :
+          row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
+          row.type === ContactType.Engineering ? 'bg-green-100 text-green-800' :
+          row.type === ContactType.Sales ? 'bg-orange-100 text-orange-800' :
+          row.type === ContactType.Parts_Service ? 'bg-purple-100 text-purple-800' :
+          row.type === ContactType.Inactive ? 'bg-gray-100 text-gray-800' :
+          row.type === ContactType.Left_Company ? 'bg-red-100 text-red-800' :
           'bg-gray-100 text-gray-800'
         }`}>
           {row.typeName}
@@ -836,6 +843,9 @@ const ContactsMapView = ({
             'A': '#1976d2', // Accounting - Blue
             'E': '#388e3c', // Engineering - Green  
             'S': '#f57c00', // Sales - Orange
+            'P': '#9c27b0', // Parts/Service - Purple
+            'I': '#757575', // Inactive - Gray
+            'L': '#d32f2f', // Left Company - Red
             'default': '#757575' // Unknown - Gray
         };
 
@@ -843,6 +853,9 @@ const ContactsMapView = ({
             'A': 'Accounting',
             'E': 'Engineering',
             'S': 'Sales',
+            'P': 'Parts/Service',
+            'I': 'Inactive',
+            'L': 'Left Company',
             'default': 'Unknown'
         };
 
@@ -901,6 +914,9 @@ const ContactsMapView = ({
                 <div><span style="color: \${typeColors.A};">●</span> Accounting</div>
                 <div><span style="color: \${typeColors.E};">●</span> Engineering</div>
                 <div><span style="color: \${typeColors.S};">●</span> Sales</div>
+                <div><span style="color: \${typeColors.P};">●</span> Parts/Service</div>
+                <div><span style="color: \${typeColors.I};">●</span> Inactive</div>
+                <div><span style="color: \${typeColors.L};">●</span> Left Company</div>
                 <div><span style="color: \${typeColors.default};">●</span> Unknown</div>
                 <div style="margin-top: 8px;">
                     <div><span style="color: #9c27b0;">●</span> Multiple Contacts</div>
@@ -1001,8 +1017,16 @@ const ContactsMapView = ({
                                 <strong>Title:</strong> \${contact.contact.ConTitle || 'N/A'}<br>
                                 <strong>Phone:</strong> \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}<br>
                                 <strong>Email:</strong> \${contact.contact.Email || 'N/A'}<br>
-                                <strong>Address:</strong> \${contact.formattedAddress}<br>
-                                \${contact.contact.Notes ? '<strong>Notes:</strong> ' + contact.contact.Notes : ''}<br>
+                                <strong>Company:</strong> \${contact.contact.Company_ID ? 'Company ' + contact.contact.Company_ID : 'N/A'}<br>
+                                <strong>Address:</strong><br>
+                                <div style="margin-left: 10px; line-height: 1.3;">
+                                    \${contact.address ? [
+                                        contact.address.Address1 || contact.address.addressLine1,
+                                        contact.address.Address2 || contact.address.addressLine2,
+                                        [contact.address.City || contact.address.city, contact.address.State || contact.address.state || contact.address.stateProvince, contact.address.ZipCode || contact.address.zipCode || contact.address.postalCode].filter(Boolean).join(', ')
+                                    ].filter(Boolean).join('<br>') : 'N/A'}
+                                </div>
+                                \${contact.contact.Notes ? '<strong>Notes:</strong> ' + contact.contact.Notes + '<br>' : ''}
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
                                 <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; display: inline-block;">
@@ -1028,8 +1052,20 @@ const ContactsMapView = ({
                             <div style="border-bottom: 1px solid #eee; padding: 8px 0; \${index === contacts.length - 1 ? 'border-bottom: none;' : ''}">
                                 <div style="font-weight: bold; margin-bottom: 4px;">\${contact.fullName}</div>
                                 <div class="contact-type type-\${contact.contactType.toLowerCase()}" style="margin-bottom: 4px;">\${typeLabel}</div>
-                                <div style="font-size: 11px; color: #666; margin-bottom: 6px;">
-                                    \${contact.contact.ConTitle || 'N/A'} • \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}
+                                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">
+                                    <strong>Title:</strong> \${contact.contact.ConTitle || 'N/A'}<br>
+                                    <strong>Phone:</strong> \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}<br>
+                                    <strong>Email:</strong> \${contact.contact.Email || 'N/A'}
+                                </div>
+                                <div style="font-size: 10px; color: #888; margin-bottom: 6px;">
+                                    <strong>Address:</strong><br>
+                                    <div style="margin-left: 8px; line-height: 1.2;">
+                                        \${contact.address ? [
+                                            contact.address.Address1 || contact.address.addressLine1,
+                                            contact.address.Address2 || contact.address.addressLine2,
+                                            [contact.address.City || contact.address.city, contact.address.State || contact.address.state || contact.address.stateProvince, contact.address.ZipCode || contact.address.zipCode || contact.address.postalCode].filter(Boolean).join(', ')
+                                        ].filter(Boolean).join('<br>') : 'N/A'}
+                                    </div>
                                 </div>
                                 <div style="text-align: center;">
                                     <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 4px 8px; text-decoration: none; border-radius: 3px; font-size: 10px; display: inline-block;">
@@ -1199,9 +1235,12 @@ const ContactsMapView = ({
                 className="px-3 py-1 text-sm font-normal text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="all">All Types</option>
-                <option value="A">Accounting</option>
-                <option value="E">Engineering</option>
-                <option value="S">Sales</option>
+                <option value={ContactType.Accounting}>Accounting</option>
+                <option value={ContactType.Engineering}>Engineering</option>
+                <option value={ContactType.Sales}>Sales</option>
+                <option value={ContactType.Parts_Service}>Parts/Service</option>
+                <option value={ContactType.Inactive}>Inactive</option>
+                <option value={ContactType.Left_Company}>Left Company</option>
               </select>
             </div>
           </div>
