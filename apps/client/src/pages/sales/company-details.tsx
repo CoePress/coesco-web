@@ -111,6 +111,7 @@ const CompanyDetails = () => {
   const [newContactData, setNewContactData] = useState<any>({});
   
   const [showInactiveContacts, setShowInactiveContacts] = useState(false);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
 
   const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
   const [availableRsmsList, setAvailableRsmsList] = useState<string[]>([]);
@@ -1438,13 +1439,34 @@ const CompanyDetails = () => {
               style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-text">
-                  Contacts ({showInactiveContacts 
-                    ? companyContacts.length 
-                    : companyContacts.filter(contact => 
-                        contact.Type !== ContactType.Inactive && 
-                        contact.Type !== ContactType.Left_Company
-                      ).length
-                  })
+                  Contacts ({(() => {
+                    let filteredContacts = showInactiveContacts 
+                      ? companyContacts 
+                      : companyContacts.filter(contact => 
+                          contact.Type !== ContactType.Inactive && 
+                          contact.Type !== ContactType.Left_Company
+                        );
+
+                    // Apply search filter for count
+                    if (contactSearchTerm.trim()) {
+                      const searchTerm = contactSearchTerm.toLowerCase().trim();
+                      filteredContacts = filteredContacts.filter(contact => {
+                        const fullName = getContactName(contact).toLowerCase();
+                        const email = (contact.Email || "").toLowerCase();
+                        const phone = (contact.PhoneNumber || "").toLowerCase();
+                        const title = (contact.ConTitle || "").toLowerCase();
+                        const type = getContactTypeName(contact.Type).toLowerCase();
+                        
+                        return fullName.includes(searchTerm) ||
+                               email.includes(searchTerm) ||
+                               phone.includes(searchTerm) ||
+                               title.includes(searchTerm) ||
+                               type.includes(searchTerm);
+                      });
+                    }
+                    
+                    return filteredContacts.length;
+                  })()})
                 </h4>
                 <button 
                   type="button"
@@ -1457,6 +1479,8 @@ const CompanyDetails = () => {
                 <input
                   type="text"
                   placeholder="Search contacts"
+                  value={contactSearchTerm}
+                  onChange={(e) => setContactSearchTerm(e.target.value)}
                   className="border border-border bg-background text-text rounded px-3 py-1 text-sm w-64 placeholder:text-text-muted"
                 />
                 <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
@@ -1573,12 +1597,30 @@ const CompanyDetails = () => {
                   </thead>
                   <tbody>
                     {(() => {
-                      const filteredContacts = showInactiveContacts 
+                      let filteredContacts = showInactiveContacts 
                         ? companyContacts 
                         : companyContacts.filter(contact => 
                             contact.Type !== ContactType.Inactive && 
                             contact.Type !== ContactType.Left_Company
                           );
+
+                      // Apply search filter
+                      if (contactSearchTerm.trim()) {
+                        const searchTerm = contactSearchTerm.toLowerCase().trim();
+                        filteredContacts = filteredContacts.filter(contact => {
+                          const fullName = getContactName(contact).toLowerCase();
+                          const email = (contact.Email || "").toLowerCase();
+                          const phone = (contact.PhoneNumber || "").toLowerCase();
+                          const title = (contact.ConTitle || "").toLowerCase();
+                          const type = getContactTypeName(contact.Type).toLowerCase();
+                          
+                          return fullName.includes(searchTerm) ||
+                                 email.includes(searchTerm) ||
+                                 phone.includes(searchTerm) ||
+                                 title.includes(searchTerm) ||
+                                 type.includes(searchTerm);
+                        });
+                      }
                       
                       return filteredContacts.length > 0 ? (
                         filteredContacts.map((contact, index) => {
@@ -1743,7 +1785,9 @@ const CompanyDetails = () => {
                       ) : (
                         <tr>
                           <td colSpan={5} className="py-4 text-center text-text-muted">
-                            {companyContacts.length > 0 && !showInactiveContacts
+                            {contactSearchTerm.trim()
+                              ? `No contacts found matching "${contactSearchTerm}"`
+                              : companyContacts.length > 0 && !showInactiveContacts
                               ? "No active contacts found. Check 'Show inactive contacts' to see all contacts."
                               : "No contacts found for this company"
                             }
