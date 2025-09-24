@@ -12,8 +12,8 @@ export interface ClockingRepository {
 }
 
 export class ClockingService {
-  
-  constructor(private repository: ClockingRepository) {}
+
+  constructor(private repository: ClockingRepository) { }
 
   /**
    * Clock in an employee (ported from ClockingService.ClockInAsync)
@@ -40,7 +40,7 @@ export class ClockingService {
 
       // Round the clocked time to nearest 3 minutes
       const roundedTime = timeCalculationService.roundTime(operation.clockedTime);
-      
+
       // Create the employee hours record
       const employeeHours: EmployeeHours = {
         id: '', // Will be set by repository
@@ -70,9 +70,9 @@ export class ClockingService {
       };
 
       const result = await this.repository.createEmployeeHours(employeeHours);
-      
+
       return { success: true, data: result };
-      
+
     } catch (error) {
       console.error('Clock in error:', error);
       return { success: false, error: 'An error occurred during clock in' };
@@ -89,10 +89,10 @@ export class ClockingService {
    * @returns Success result or error
    */
   async clockOut(
-    empNum: number, 
-    clockedTime: Date, 
-    units?: string, 
-    split?: string, 
+    empNum: number,
+    clockedTime: Date,
+    units?: string,
+    split?: string,
     breakFlag: number = 0
   ): Promise<{ success: boolean; error?: string; data?: EmployeeHours }> {
     try {
@@ -111,8 +111,8 @@ export class ClockingService {
       // Validate units if provided
       if (units) {
         const unitsValidation = validationService.validateHoursEdit(
-          { units } as any, 
-          'units', 
+          { units } as any,
+          'units',
           units
         );
         if (!unitsValidation.isValid) {
@@ -123,8 +123,8 @@ export class ClockingService {
       // Validate split if provided
       if (split) {
         const splitValidation = validationService.validateHoursEdit(
-          { split } as any, 
-          'split', 
+          { split } as any,
+          'split',
           split
         );
         if (!splitValidation.isValid) {
@@ -134,7 +134,7 @@ export class ClockingService {
 
       // Round the clock out time
       const roundedTime = timeCalculationService.roundTime(clockedTime);
-      
+
       // Validate that clock out is after clock in
       const timeInDate = new Date(activeClockIn.timeIn || '');
       if (roundedTime <= timeInDate) {
@@ -143,7 +143,7 @@ export class ClockingService {
 
       // Calculate total minutes worked
       const totalMinutes = timeCalculationService.calculateMinutes(timeInDate, roundedTime);
-      
+
       // Update the clock in record with clock out information
       const updates: Partial<EmployeeHours> = {
         timeOut: roundedTime.toISOString(),
@@ -155,9 +155,9 @@ export class ClockingService {
       };
 
       const result = await this.repository.updateEmployeeHours(activeClockIn.id, updates);
-      
+
       return { success: true, data: result };
-      
+
     } catch (error) {
       console.error('Clock out error:', error);
       return { success: false, error: 'An error occurred during clock out' };
@@ -201,8 +201,8 @@ export class ClockingService {
    * @returns Success result or error
    */
   async forceClockOut(
-    empNum: number, 
-    clockOutTime: Date, 
+    empNum: number,
+    clockOutTime: Date,
     managerName: string
   ): Promise<{ success: boolean; error?: string; data?: EmployeeHours }> {
     try {
@@ -213,7 +213,7 @@ export class ClockingService {
 
       const timeInDate = new Date(activeClockIn.timeIn || '');
       const totalMinutes = timeCalculationService.calculateMinutes(timeInDate, clockOutTime);
-      
+
       const updates: Partial<EmployeeHours> = {
         timeOut: clockOutTime.toISOString(),
         actualTimeOut: clockOutTime.toISOString(),
@@ -223,9 +223,9 @@ export class ClockingService {
       };
 
       const result = await this.repository.updateEmployeeHours(activeClockIn.id, updates);
-      
+
       return { success: true, data: result };
-      
+
     } catch (error) {
       console.error('Force clock out error:', error);
       return { success: false, error: 'An error occurred during force clock out' };

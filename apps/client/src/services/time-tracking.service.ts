@@ -1,22 +1,22 @@
 // Client-side time tracking service
 // Handles API communication for time tracking operations
 
-import { 
-  TimeEntry, 
-  Employee, 
-  Job, 
-  ClockInRequest, 
-  ClockOutRequest, 
-  ApiResponse, 
-  EmployeeStatus, 
+import {
+  TimeEntry,
+  Employee,
+  Job,
+  ClockInRequest,
+  ClockOutRequest,
+  ApiResponse,
+  EmployeeStatus,
   TimeTrackingStats,
-  HistoryEntry 
+  HistoryEntry
 } from '../types/time-tracking.types';
 
 const API_BASE = '/api/time-tracking';
 
 export class TimeTrackingService {
-  
+
   /**
    * Clock in an employee
    */
@@ -29,7 +29,7 @@ export class TimeTrackingService {
         },
         body: JSON.stringify(request),
       });
-      
+
       return await response.json();
     } catch (error) {
       return {
@@ -51,7 +51,7 @@ export class TimeTrackingService {
         },
         body: JSON.stringify(request),
       });
-      
+
       return await response.json();
     } catch (error) {
       return {
@@ -136,7 +136,7 @@ export class TimeTrackingService {
       if (filters?.endDate) queryParams.append('endDate', filters.endDate);
       if (filters?.employeeFilter) queryParams.append('employeeFilter', filters.employeeFilter);
       if (filters?.statusFilter) queryParams.append('statusFilter', filters.statusFilter);
-      
+
       const url = `${API_BASE}/entries${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const response = await fetch(url);
       return await response.json();
@@ -161,7 +161,7 @@ export class TimeTrackingService {
       if (filters?.startDate) queryParams.append('startDate', filters.startDate);
       if (filters?.endDate) queryParams.append('endDate', filters.endDate);
       if (filters?.employeeFilter) queryParams.append('employeeFilter', filters.employeeFilter);
-      
+
       const url = `${API_BASE}/history${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const response = await fetch(url);
       return await response.json();
@@ -200,7 +200,7 @@ export class TimeTrackingService {
         },
         body: JSON.stringify(entry),
       });
-      
+
       return await response.json();
     } catch (error) {
       return {
@@ -222,7 +222,7 @@ export class TimeTrackingService {
         },
         body: JSON.stringify(updates),
       });
-      
+
       return await response.json();
     } catch (error) {
       return {
@@ -240,7 +240,7 @@ export class TimeTrackingService {
       const response = await fetch(`${API_BASE}/entries/${id}`, {
         method: 'DELETE',
       });
-      
+
       return await response.json();
     } catch (error) {
       return {

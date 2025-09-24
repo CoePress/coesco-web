@@ -112,6 +112,7 @@ export interface CommonData {
       direction?: string;
       controlsLevel?: string;
       controls?: string;
+      lineType?: string;
       typeOfLine?: string;
       passline?: string;
       lightGuageNonMarking?: string;
@@ -713,6 +714,7 @@ const initialPerformanceData: PerformanceData = {
         direction: "",
         controlsLevel: "",
         controls: "",
+        lineType: "",
         typeOfLine: "",
         passline: "",
         lightGuageNonMarking: "",

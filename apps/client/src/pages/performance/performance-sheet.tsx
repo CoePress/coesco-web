@@ -7,6 +7,7 @@ import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { PerformanceSheetProvider, usePerformanceSheet } from "@/contexts/performance.context";
 import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
+import { getVisibleTabs } from "@/utils/tab-visibility";
 
 const PERFORMANCE_TABS = LAZY_PERFORMANCE_TABS.map(tab => ({
   label: tab.label,
@@ -102,15 +103,20 @@ const PerformanceSheetContent = () => {
   // const { emit, isConnected } = useSocket();
   const { user } = useAuth();
 
-  const visibleTabs = [
+  // Calculate visible tabs based on performance data
+  const visibleTabs = performanceData ? getVisibleTabs(performanceData) : [
     { label: "RFQ", value: "rfq" },
     { label: "Material Specs", value: "material-specs" },
-    { label: "Summary Report", value: "summary-report" },
-    { label: "TDDBHD", value: "tddbhd" },
-    { label: "Str Utility", value: "str-utility" },
-    { label: "Roll Str Backbend", value: "roll-str-backbend" },
-    { label: "Feed", value: "feed" },
+    { label: "Equipment Summary", value: "summary-report" }
   ];
+
+  // Ensure active tab is always visible
+  useEffect(() => {
+    const isActiveTabVisible = visibleTabs.some(tab => tab.value === activeTab);
+    if (!isActiveTabVisible && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0].value as PerformanceTabValue);
+    }
+  }, [visibleTabs, activeTab]);
 
   useEffect(() => {
     if (!performanceSheetId) return;
@@ -229,7 +235,10 @@ const PerformanceSheetContent = () => {
       <Tabs
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(tab as PerformanceTabValue)}
-        tabs={visibleTabs}
+        tabs={visibleTabs.map(tab => ({
+          label: tab.dynamicLabel || tab.label,
+          value: tab.value
+        }))}
       />
 
       <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>

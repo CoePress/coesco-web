@@ -9,8 +9,8 @@ export interface CostCodeRepository {
 }
 
 export class CostCodeService {
-  
-  constructor(private repository: CostCodeRepository) {}
+
+  constructor(private repository: CostCodeRepository) { }
 
   /**
    * Check if cost code is required for a specific job and employee
@@ -22,13 +22,13 @@ export class CostCodeService {
   async isCostCodeRequired(empNum: number, jobCode: number): Promise<boolean> {
     try {
       const employeeJobCode = await this.repository.findEmployeeJobCode(empNum, jobCode);
-      
+
       if (!employeeJobCode) {
         return false; // If no job code configuration found, assume not required
       }
 
       return employeeJobCode.requiresCostCode;
-      
+
     } catch (error) {
       console.error('Error checking cost code requirement:', error);
       return false; // Default to not required on error
@@ -43,10 +43,10 @@ export class CostCodeService {
   async getCostCodesForJob(jobCode: number): Promise<CostCode[]> {
     try {
       const costCodes = await this.repository.findCostCodesByJobCode(jobCode);
-      
+
       // Filter to only active cost codes
       return costCodes.filter(cc => cc.active);
-      
+
     } catch (error) {
       console.error('Error getting cost codes for job:', error);
       return [];
@@ -83,7 +83,7 @@ export class CostCodeService {
     }
 
     const [jobSfx, bomItem, sequence] = parts;
-    
+
     if (!jobSfx || !bomItem || !sequence) {
       result.errors.push('All cost code parts (suffix, item, sequence) must be provided');
       result.isValid = false;
@@ -93,9 +93,9 @@ export class CostCodeService {
     // Check if cost code exists for the job
     try {
       const availableCostCodes = await this.getCostCodesForJob(jobCode);
-      const costCodeExists = availableCostCodes.some(cc => 
-        cc.jobSfx === jobSfx && 
-        cc.bomItem === bomItem && 
+      const costCodeExists = availableCostCodes.some(cc =>
+        cc.jobSfx === jobSfx &&
+        cc.bomItem === bomItem &&
         cc.sequence === sequence
       );
 
@@ -103,7 +103,7 @@ export class CostCodeService {
         result.errors.push('Cost code does not exist for this job');
         result.isValid = false;
       }
-      
+
     } catch (error) {
       console.error('Error validating cost code existence:', error);
       result.warnings.push('Could not verify cost code existence');
@@ -222,7 +222,7 @@ export class CostCodeService {
   }> {
     try {
       const employeeJobCode = await this.repository.findEmployeeJobCode(empNum, jobCode);
-      
+
       if (!employeeJobCode) {
         return {
           costCodeRequired: false,
@@ -238,7 +238,7 @@ export class CostCodeService {
         splitCodeRequired: employeeJobCode.askSplitCode,
         clockable: employeeJobCode.clockable
       };
-      
+
     } catch (error) {
       console.error('Error getting job requirements:', error);
       return {

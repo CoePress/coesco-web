@@ -10,8 +10,8 @@ export interface AuditRepository {
 }
 
 export class AuditTrailService {
-  
-  constructor(private repository: AuditRepository) {}
+
+  constructor(private repository: AuditRepository) { }
 
   /**
    * Add data history record when hours are modified
@@ -51,9 +51,9 @@ export class AuditTrailService {
       };
 
       await this.repository.createDataHistory(dataHistory);
-      
+
       return { success: true };
-      
+
     } catch (error) {
       console.error('Error adding data history:', error);
       return { success: false, error: 'Failed to create audit trail record' };
@@ -294,7 +294,7 @@ export class AuditTrailService {
     description: string = 'Multiple fields modified'
   ): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
-    
+
     for (const [fieldName, change] of Object.entries(changes)) {
       const result = await this.addDataHistory({
         hoursId: hoursRecord.id,

@@ -5,7 +5,7 @@ import { Hours, TimeSpan, ValidationResult } from '../types/time-tracking.types'
 
 export class TimeCalculationService {
   private readonly ROUND_MINUTES = 3;
-  
+
   /**
    * Round time to nearest 3 minutes (ported from RoundingService.RoundTime)
    * @param actualTime - The actual time to round
@@ -51,9 +51,9 @@ export class TimeCalculationService {
    * @returns Validation result
    */
   validateTimeOverlap(
-    currentHour: Hours, 
-    allHours: Hours[], 
-    newTime: Date, 
+    currentHour: Hours,
+    allHours: Hours[],
+    newTime: Date,
     isTimeIn: boolean
   ): ValidationResult {
     const result: ValidationResult = {
@@ -64,7 +64,7 @@ export class TimeCalculationService {
 
     const currentTimeIn = new Date(currentHour.timeIn || '');
     const currentTimeOut = new Date(currentHour.timeOut || '');
-    
+
     // Get earliest and latest times across all jobs
     const times = allHours.map(h => [new Date(h.timeIn || ''), new Date(h.timeOut || '')]).flat();
     const earliestTime = new Date(Math.min(...times.map(t => t.getTime())));
@@ -83,21 +83,21 @@ export class TimeCalculationService {
         result.isValid = false;
         result.errors.push('Time in must be before time out');
       }
-      
+
       // Find nearest job that ends before this one starts
       const nearestJob = this.findNearestPreviousJob(currentHour, allHours);
       if (nearestJob && new Date(nearestJob.timeOut || '') > newTime) {
         result.isValid = false;
         result.errors.push('Time in conflicts with previous job');
       }
-    } 
+    }
     // Validate time out
     else {
       if (newTime <= currentTimeIn) {
         result.isValid = false;
         result.errors.push('Time out must be after time in');
       }
-      
+
       // Find nearest job that starts after this one ends
       const nearestJob = this.findNearestNextJob(currentHour, allHours);
       if (nearestJob && new Date(nearestJob.timeIn || '') < newTime) {
@@ -122,7 +122,7 @@ export class TimeCalculationService {
     }
 
     const totalMinutes = this.calculateMinutes(timeIn, timeOut);
-    
+
     if (totalMinutes === 0) {
       return false;
     }
@@ -142,7 +142,7 @@ export class TimeCalculationService {
     const timeOut = new Date(originalHour.timeOut || '');
     const actualTimeIn = new Date(originalHour.actualTimeIn || '');
     const actualTimeOut = new Date(originalHour.actualTimeOut || '');
-    
+
     if (!this.isSplitViable(timeIn, timeOut, numSplits)) {
       throw new Error('Split is not viable - time difference must be divisible by 3 minutes');
     }
@@ -153,10 +153,10 @@ export class TimeCalculationService {
 
     for (let i = 0; i < numSplits; i++) {
       const splitTimeIn = new Date(timeIn.getTime() + (i * minutesPerSplit * 60 * 1000));
-      const splitTimeOut = i === numSplits - 1 
+      const splitTimeOut = i === numSplits - 1
         ? timeOut // Last split uses original end time
         : new Date(timeIn.getTime() + ((i + 1) * minutesPerSplit * 60 * 1000));
-      
+
       const splitActualTimeIn = new Date(actualTimeIn.getTime() + (i * minutesPerSplit * 60 * 1000));
       const splitActualTimeOut = i === numSplits - 1
         ? actualTimeOut
@@ -204,7 +204,7 @@ export class TimeCalculationService {
 
   private findNearestPreviousJob(currentHour: Hours, allHours: Hours[]): Hours | null {
     const currentStart = new Date(currentHour.timeIn || '').getTime();
-    
+
     return allHours
       .filter(h => h.id !== currentHour.id)
       .filter(h => new Date(h.timeOut || '').getTime() <= currentStart)
@@ -213,7 +213,7 @@ export class TimeCalculationService {
 
   private findNearestNextJob(currentHour: Hours, allHours: Hours[]): Hours | null {
     const currentEnd = new Date(currentHour.timeOut || '').getTime();
-    
+
     return allHours
       .filter(h => h.id !== currentHour.id)
       .filter(h => new Date(h.timeIn || '').getTime() >= currentEnd)

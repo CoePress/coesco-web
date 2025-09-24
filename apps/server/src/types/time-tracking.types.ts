@@ -46,12 +46,12 @@ export interface Hours {
   dayTotal?: string;
   weekTotal?: string;
   isSelected: boolean;
-  
+
   // Computed properties
   timeInDT: Date;
   timeOutDT: Date;
   displayTimeOut: string;
-  
+
   // Old values for change tracking
   oldTimeIn?: string;
   oldActualTimeIn?: string;

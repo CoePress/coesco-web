@@ -26,7 +26,7 @@ export class TimeTrackingCore {
     // Initialize singleton services
     this.timeCalculation = new TimeCalculationService();
     this.validation = new ValidationService();
-    
+
     // Initialize repository-dependent services
     this.clocking = new ClockingService(clockingRepository);
     this.costCode = new CostCodeService(costCodeRepository);
@@ -151,7 +151,7 @@ export class TimeTrackingCore {
 
     // Validate units and split if provided
     const validationErrors: string[] = [];
-    
+
     if (operation.units) {
       const unitsValidation = this.validation.validateHoursEdit(
         { units: operation.units } as any,
@@ -266,10 +266,10 @@ export const TimeTrackingUtils = {
   getWorkDayBounds(date: Date): { start: Date; end: Date } {
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
-    
+
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
-    
+
     return { start, end };
   },
 
@@ -289,11 +289,11 @@ export const TimeTrackingUtils = {
     const diff = start.getDate() - day; // Sunday = 0
     start.setDate(diff);
     start.setHours(0, 0, 0, 0);
-    
+
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
-    
+
     return { start, end };
   }
 };

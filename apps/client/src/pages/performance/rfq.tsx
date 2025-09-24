@@ -41,7 +41,7 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     'common.customerInfo.country', 'common.customerInfo.contactName', 'common.customerInfo.position',
     'common.customerInfo.phoneNumber', 'common.customerInfo.email', 'common.customerInfo.dealerName',
     'common.customerInfo.dealerSalesman', 'rfq.dates.idealDeliveryDate', 'rfq.dates.decisionDate',
-    'feed.feed.application', 'common.equipment.feed.typeOfLine', 'feed.feed.pullThru.isPullThru',
+    'feed.feed.application', 'common.equipment.feed.lineType', 'feed.feed.pullThru.isPullThru',
     'rfq.runningCosmeticMaterial', 'common.coil.maxCoilWidth', 'common.coil.minCoilWidth',
     'common.coil.maxCoilOD', 'common.coil.coilID', 'common.coil.maxCoilWeight', 'rfq.coil.slitEdge',
     'rfq.coil.millEdge', 'rfq.coil.requireCoilCar', 'rfq.coil.runningOffBackplate',

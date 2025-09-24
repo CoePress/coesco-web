@@ -7,16 +7,14 @@ import { AuthProvider } from "./contexts/auth.context.tsx";
 import { AppProvider } from "./contexts/app.context.tsx";
 import { ThemeProvider } from "./contexts/theme.context.tsx";
 import { SocketProvider } from "./contexts/socket.context.tsx";
-import serviceWorkerManager from "./utils/service-worker-manager";
 
-// Register service worker
+// Unregister any existing service workers during development
 if ('serviceWorker' in navigator) {
-  serviceWorkerManager.register().then((registration) => {
-    if (registration) {
-      console.log('Service Worker registered successfully');
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister();
+      console.log('Service Worker unregistered');
     }
-  }).catch((error) => {
-    console.error('Service Worker registration failed:', error);
   });
 }
 

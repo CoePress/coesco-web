@@ -73,9 +73,9 @@ class MockClockingRepository implements ClockingRepository {
     private idCounter = 1;
 
     async findActiveClockIn(empNum: number): Promise<EmployeeHours | null> {
-        return this.employeeHours.find(h => 
-            h.empNum === empNum && 
-            h.timeIn && 
+        return this.employeeHours.find(h =>
+            h.empNum === empNum &&
+            h.timeIn &&
             !h.timeOut
         ) || null;
     }
@@ -158,9 +158,9 @@ class MockCostCodeRepository implements CostCodeRepository {
     }
 
     async findEmployeeJobCode(empNum: number, jobCode: number): Promise<EmployeeJobCode | null> {
-        return this.employeeJobCodes.find(ejc => 
-            ejc.empNum === empNum && 
-            ejc.jobCode === jobCode && 
+        return this.employeeJobCodes.find(ejc =>
+            ejc.empNum === empNum &&
+            ejc.jobCode === jobCode &&
             ejc.active
         ) || null;
     }

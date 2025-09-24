@@ -4,7 +4,7 @@
 import { Hours, EmployeeJobCode, ValidationResult } from '../types/time-tracking.types';
 
 export class ValidationService {
-  
+
   /**
    * Validate hours entry for editing (ported from EditHoursService.ValidateHours)
    * @param hour - The hour record to validate
@@ -22,20 +22,20 @@ export class ValidationService {
     switch (field) {
       case 'jobCode':
         return this.validateJobCode(newValue as string, result);
-      
+
       case 'costCode':
         return this.validateCostCode(newValue as string, result);
-      
+
       case 'units':
         return this.validateUnits(newValue as string, result);
-      
+
       case 'split':
         return this.validateSplit(newValue as string, result);
-      
+
       case 'timeIn':
       case 'timeOut':
         return this.validateTime(hour, field, newValue as string, result);
-      
+
       default:
         result.errors.push(`Unknown field: ${field}`);
         result.isValid = false;
@@ -233,7 +233,7 @@ export class ValidationService {
     };
 
     const num = typeof empNum === 'string' ? parseInt(empNum) : empNum;
-    
+
     if (isNaN(num)) {
       result.errors.push('Employee number must be a valid number');
       result.isValid = false;

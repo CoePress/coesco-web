@@ -89,6 +89,17 @@ export const RFQ_TYPE_OF_LINE_OPTIONS = [
   { value: "Conventional", label: "Conventional" },
 ];
 
+export const STANDALONE_TYPE_OF_LINE_OPTIONS = [
+  { value: "Feed", label: "Feed" },
+  { value: "Straightener", label: "Straightener" },
+  { value: "Reel-Motorized", label: "Reel-Motorized" },
+  { value: "Reel-Pull Off", label: "Reel-Pull Off" },
+  { value: "Straightener-Reel Combination", label: "Straightener-Reel Combination" },
+  { value: "Other", label: "Other" },
+  { value: "Feed-Shear", label: "Feed-Shear" },
+  { value: "Threading Table", label: "Threading Table" },
+];
+
 export const TYPE_OF_LINE_OPTIONS = [
   { value: "Compact", label: "Compact" },
   { value: "Compact CTL", label: "Compact CTL" },
