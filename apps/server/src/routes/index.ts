@@ -8,7 +8,6 @@ import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import chatRoutes from "./chat.routes";
 import crmRoutes from "./crm.routes";
-import fileStoreRoutes from "./file-store.routes";
 import formRoutes from "./form.routes";
 import legacyRoutes from "./legacy.routes";
 import lockRoutes from "./lock.routes";
@@ -28,7 +27,6 @@ router.use(protect); // all routes below this are protected
 router.use("/admin", adminRoutes);
 router.use("/audit", auditLogRoutes);
 router.use("/catalog", catalogRoutes);
-router.use("/files", fileStoreRoutes);
 router.use("/forms", formRoutes);
 router.use("/chat", chatRoutes);
 router.use("/crm", crmRoutes);

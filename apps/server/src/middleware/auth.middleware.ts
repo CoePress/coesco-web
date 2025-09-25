@@ -41,12 +41,13 @@ export const protect = asyncHandler(
       req.user = { id: "system", role: "SYSTEM" };
       contextStorage.run(
         {
-          id: "123",
-          number: "SYS",
+          id: "00000000-0000-0000-0000-000000000000",
+          number: "0",
           firstName: "System",
           lastName: "Account",
           title: "System",
-          email: "",
+          email: "system@cpec.com",
+          initials: "sys"
         },
         () => next(),
       );
@@ -85,6 +86,7 @@ export const protect = asyncHandler(
         email: emp.email!,
         title: emp.title,
         number: emp.number,
+        initials: emp.initials
       };
 
       req.user = { id: user.id, role: user.role };
