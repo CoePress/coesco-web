@@ -65,3 +65,27 @@ psql -h 10.231.200.38 -U cpec -d coesco
 sudo systemctl restart server.service
 sudo systemctl stop server.service
 journalctl -f --output=cat -u server.service
+
+
+## Deployoment Commands
+
+# 1. Prune the monorepo for your server app
+turbo prune @coesco/server --out-dir deploy
+
+# 2. Go into the deploy directory and install dependencies
+cd deploy
+npm install
+
+# 3. Go into the server app and generate Prisma client
+cd apps/server
+npx prisma generate
+
+# 4. Go back to deploy root and build
+cd ../..
+turbo run build --filter=@coesco/server
+
+# 5. Send the built deploy folder to production
+scp -r . administrator@cp-portal-1:/home/administrator/coesco/
+
+# 6. Run it on the server
+ssh administrator@cp-portal-1 "cd /home/administrator/coesco/apps/server && npm start"

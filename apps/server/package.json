@@ -15,7 +15,7 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "dev": "nodemon src/server.ts",
-    "build": "npm run db:generate && tsc && tsc-alias",
+    "build": "tsc && tsc-alias",
     "start": "npm run build && node dist/src/server.js"
   },
   "dependencies": {
