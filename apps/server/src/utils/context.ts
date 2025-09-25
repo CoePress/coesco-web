@@ -7,6 +7,7 @@ export interface EmployeeContext {
   email: string;
   title: string;
   number: string;
+  initials: string
 }
 
 export const contextStorage = new AsyncLocalStorage<EmployeeContext>();
