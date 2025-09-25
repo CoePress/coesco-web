@@ -65,6 +65,9 @@ export default defineConfig({
       interval: 1000,
     },
   },
+  build: {
+    sourcemap: true
+  },
   resolve: {
     alias: {
       "@": "/src",
