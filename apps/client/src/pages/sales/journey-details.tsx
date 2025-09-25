@@ -23,18 +23,15 @@ const stageLabel = (id?: number) =>
   STAGES.find(s => s.id === Number(id))?.label ?? `Stage ${id ?? ""}`;
 
 const getStageLabel = (journey: any) => {
-  // If journey has a numeric stage, use it directly
   if (typeof journey?.stage === 'number') {
     return stageLabel(journey.stage);
   }
   
-  // If journey has Journey_Stage (legacy), map it to numeric and get label
   if (journey?.Journey_Stage) {
     const mappedStageId = mapLegacyStageToId(journey.Journey_Stage);
     return stageLabel(mappedStageId);
   }
   
-  // If journey has stage as string, map it to numeric and get label  
   if (journey?.stage) {
     const mappedStageId = mapLegacyStageToId(journey.stage);
     return stageLabel(mappedStageId);
@@ -82,11 +79,9 @@ import { DeleteJourneyModal } from "./journeys/components";
 import { AddJourneyContactModal } from "@/components";
 
 function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any }) {
-  // State for available RSMs
   const [availableRsms, setAvailableRsms] = useState<string[]>([]);
   const rsmApi = useApi(); // Separate API instance for RSM fetching
 
-  // Helper function to validate RSM
   const getValidRSM = (value: string) => {
     if (!value) return "";
     const normalized = availableRsms.find(rsm => 
@@ -95,7 +90,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return normalized || value; // Keep original value if not found in list
   };
 
-  // Helper function to create details form data from journey
   const createDetailsFormData = (journey: any) => ({
     type: getValidJourneyType(journey?.Journey_Type ?? journey?.type),
     source: getValidLeadSource(journey?.Lead_Source ?? journey?.source),
@@ -163,7 +157,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   useEffect(() => {
     if (journey) {
-      // Only update form states if we're not currently editing to avoid overwriting user changes
       if (!isEditingDetails) {
         setDetailsForm(createDetailsFormData(journey));
       }
@@ -177,19 +170,16 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         lastFetchedCompanyId.current = journey?.Company_ID || "";
       }
       
-      // Always update notes unless there's a pending save
       if (!showSavePrompt) {
         setNotes(journey?.Notes ?? journey?.notes ?? "");
       }
       
-      // Always update next steps unless there's a pending save
       if (!showNextStepsSavePrompt) {
         setNextSteps(journey?.Next_Steps ?? "");
       }
     }
   }, [journey, isEditingDetails, isEditingCustomer, showSavePrompt, showNextStepsSavePrompt]);
 
-  // Fetch RSMs like pipeline.tsx does - get initials from Demographic table
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -211,7 +201,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return () => { cancelled = true; };
   }, []);
 
-  // Debounced company search
   useEffect(() => {
     if (!companySearchQuery.trim() || !companySearchMode || justSelectedCompany.current) {
       setCompanySearchResults([]);
@@ -245,13 +234,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return () => clearTimeout(timeoutId);
   }, [companySearchQuery, companySearchMode]);
 
-  // Lookup company name when company ID changes
   useEffect(() => {
     if (!customerForm.companyId || companySearchMode) {
       return;
     }
 
-    // Don't fetch if we already fetched this ID
     if (lastFetchedCompanyId.current === customerForm.companyId) {
       return;
     }
@@ -263,7 +250,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
           setCompanyName(companyData.CustDlrName);
           lastFetchedCompanyId.current = customerForm.companyId;
           
-          // Update the journey's Target_Account field
           updateJourney({ Target_Account: companyData.CustDlrName });
         } else {
           setCompanyName("");
@@ -279,7 +265,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     return () => clearTimeout(timeoutId);
   }, [customerForm.companyId, companySearchMode]);
 
-  // Handle clicking outside to close search results
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -296,19 +281,15 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const navigate = useNavigate();
 
-  // Helper function to log journey changes
   const logJourneyChanges = async (journeyId: string, oldData: any, newData: Record<string, any>, originalUpdates: Record<string, any>) => {
     if (!employee?.initials) return;
 
-    // Helper function to check if values are effectively the same
     const areValuesEqual = (oldVal: any, newVal: any, originalVal: any, fieldName: string) => {
-      // For date fields, check if the date portion is the same
       if (fieldName.includes('Date') || fieldName.includes('_Date')) {
         const oldDateStr = oldVal ? String(oldVal).split(' ')[0] : '';
         const newDateStr = originalVal ? String(originalVal) : '';
         return oldDateStr === newDateStr;
       }
-      // For other fields, direct comparison
       return oldVal === newVal;
     };
 
@@ -317,22 +298,16 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       const oldValue = oldData?.[field];
       const originalValue = originalUpdates?.[field];
       
-      // Only log if values are actually different
       if (!areValuesEqual(oldValue, newValue, originalValue, field)) {
-        // For date fields, keep FROM with full timestamp, TO with just date
         let fromValue = oldValue || 'null';
         let toValue = originalValue !== undefined ? originalValue : newValue;
         
-        // For date fields, keep the TO value as just the date (no time)
         if ((field.includes('Date') || field.includes('_Date')) && toValue && toValue !== 'null') {
-          // Ensure TO value is just the date part (YYYY-MM-DD)
           if (toValue.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(toValue)) {
-            // Keep as-is, it's already in the correct format
             toValue = toValue;
           }
         }
         
-        // Format the change log entry
         const changeEntry = `${field}: FROM ${fromValue} TO ${toValue}`;
         changes.push(changeEntry);
       }
@@ -361,7 +336,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     try {
       const journeyId = journey.ID || journey.id;
       
-      // Log the changes before making the update
       await logJourneyChanges(journeyId, journey, updates, originalUpdates || updates);
       
       const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
@@ -376,7 +350,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   };
 
   const handleSaveDetails = async () => {
-    // Original updates with form values (for logging)
     const originalUpdates = {
       Journey_Type: detailsForm.type,
       Lead_Source: detailsForm.source,
@@ -404,7 +377,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       Anticipated_Visit_Date: detailsForm.anticipatedVisitDate,
     };
 
-    // Database updates with formatted dates
     const rawUpdates = {
       Journey_Type: detailsForm.type,
       Lead_Source: detailsForm.source,
@@ -432,10 +404,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       Anticipated_Visit_Date: formatDateForDatabase(detailsForm.anticipatedVisitDate),
     };
 
-    // Filter out empty string values, but always include Reason fields and Competition
     const updates = Object.fromEntries(
       Object.entries(rawUpdates).filter(([key, value]) => {
-        // Always include Reason_Won, Reason_Lost, Reason_Won_Lost, and Competition even if empty
         if (key === 'Reason_Won' || key === 'Reason_Lost' || key === 'Reason_Won_Lost' || key === 'Competition') {
           return true;
         }
@@ -446,13 +416,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     const success = await saveJourneyUpdates(updates, originalUpdates);
     if (success) {
       setIsEditingDetails(false);
-      // Convert stage label to numeric ID for local state
       const stageId = STAGES.find(s => s.label === detailsForm.stage)?.id;
       const localUpdates = {
         ...rawUpdates,
         stage: stageId // Add numeric stage ID for local state
       };
-      // Update the journey data locally
       updateJourney(localUpdates);
     }
   };
@@ -472,7 +440,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     const success = await saveJourneyUpdates(updates);
     if (success) {
       setIsEditingCustomer(false);
-      // Update the journey data locally
       updateJourney(updates);
     }
   };
@@ -483,13 +450,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setCompanySearchQuery("");
     setCompanySearchResults([]);
     setShowCompanyResults(false);
-    // Reset company name to original
     setCompanyName(journey?.Target_Account || journey?.companyName || "");
     lastFetchedCompanyId.current = journey?.Company_ID || "";
   };
 
   const handleCompanySelect = (company: any) => {
-    // Set flag to prevent search triggering
     justSelectedCompany.current = true;
     
     setCustomerForm(s => ({ ...s, companyId: company.Company_ID }));
@@ -497,11 +462,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setCompanyName(company.CustDlrName || "");
     lastFetchedCompanyId.current = company.Company_ID;
     
-    // Close the dropdown
     setShowCompanyResults(false);
     setCompanySearchResults([]);
     
-    // Update the journey's Target_Account field
     if (company.CustDlrName) {
       updateJourney({ Target_Account: company.CustDlrName });
     }
@@ -524,10 +487,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     const success = await saveJourneyUpdates(updates);
     if (success) {
       setShowSavePrompt(false);
-      // Update the journey data locally
       updateJourney(updates);
     } else {
-      // Revert notes on failure
       setNotes(journey?.Notes ?? journey?.notes ?? "");
       setShowSavePrompt(false);
     }
@@ -549,7 +510,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     if (success) {
       updateJourney(updates);
     } else {
-      // Revert next steps on failure
       setNextSteps(journey?.Next_Steps ?? "");
       setShowNextStepsSavePrompt(false);
     }
@@ -563,10 +523,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
     if (!journey?.ID && !journey?.id) return;
     
-    // Store the original state for potential revert
     const originalContacts = journeyContacts;
     
-    // Update contacts state immediately for responsive UI
     setJourneyContacts(prevContacts => 
       prevContacts.map(contact => ({
         ...contact,
@@ -576,30 +534,25 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     
     setIsSaving(true);
     try {
-      // First, set all contacts for this journey to not primary using the new bulk update endpoint
       const bulkUpdateResult = await api.patch(
         `/legacy/std/Journey_Contact/filter/custom?filterField=Jrn_ID&filterValue=${JourneyID}`,
         { IsPrimary: 0 }
       );
       
       if (bulkUpdateResult !== null) {
-        // Then set the selected contact as primary
         const primaryUpdateResult = await api.patch(
           `/legacy/std/Journey_Contact/${contactId}`,
           { IsPrimary: 1 }
         );
         
         if (primaryUpdateResult === null) {
-          // If second API call failed, revert to original state
           setJourneyContacts(originalContacts);
         }
       } else {
-        // If first API call failed, revert to original state
         setJourneyContacts(originalContacts);
       }
     } catch (error) {
       console.error("Error updating primary contact:", error);
-      // Revert to original state on error
       setJourneyContacts(originalContacts);
     } finally {
       setIsSaving(false);
@@ -618,7 +571,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       );
       
       if (result !== null) {
-        // Update the contact in the local state
         setJourneyContacts(prevContacts => 
           prevContacts.map(contact => 
             contact.ID === editingContactId 
@@ -671,7 +623,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       const result = await api.delete(`/legacy/std/Journey_Contact/${contactToDelete.ID}`);
       
       if (result !== null) {
-        // Remove the contact from the local state
         setJourneyContacts(prevContacts => 
           prevContacts.filter(contact => contact.ID !== contactToDelete.ID)
         );
@@ -689,11 +640,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   };
 
   const handleContactAdded = async (newContact: any) => {
-    // If this is already a Journey_Contact (from AddJourneyContactModal), add it to the list
-    // Check for Journey_Contact fields: Jrn_ID, Contact_Name, or ID (for Journey_Contact)
     if (newContact.Jrn_ID || newContact.Contact_Name || (newContact.ID && !newContact.Cont_Id)) {
       setJourneyContacts(prev => {
-        // If the new contact is set as primary, unset all other contacts as primary
         if (newContact.IsPrimary === 1) {
           const updatedContacts = prev.map(contact => ({
             ...contact,
@@ -706,7 +654,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       return;
     }
 
-    // Otherwise, this is a regular Contact (from AddContactModal) - create a journey contact linking this contact to the journey
     if (journey?.ID || journey?.id) {
       try {
         const journeyId = journey.ID || journey.id;
@@ -725,7 +672,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         const journeyContact = await api.post("/legacy/std/Journey_Contact", journeyContactData);
 
         if (journeyContact !== null) {
-          // Add the new journey contact to the list
           setJourneyContacts(prev => [...prev, journeyContact]);
         }
       } catch (error) {
@@ -876,7 +822,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                         value={customerForm.companyId}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Only allow numbers
                           if (value === '' || /^\d+$/.test(value)) {
                             setCustomerForm(s => ({ ...s, companyId: value }));
                           }
@@ -959,7 +904,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                         <div className="flex items-start justify-between mb-1">
                           <div className="flex-1">
                             {editingContactId === contact.ID ? (
-                              // Edit mode
                               <div className="space-y-2">
                                 <input
                                   type="text"
@@ -1023,7 +967,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                                 </div>
                               </div>
                             ) : (
-                              // View mode
                               <>
                                 <div className="text-sm text-text font-medium mb-1">
                                   {contact.Contact_Name || "Unnamed Contact"}
@@ -2008,7 +1951,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
   const [isSaving, setIsSaving] = useState(false);
   const api = useApi();
 
-  // Helper function to create quote form data from journey
   const createQuoteFormData = (journey: any) => ({
     quoteNumber: journey?.Quote_Number?.trim() || "",
     quoteType: journey?.Quote_Type || "Standard more than 6 months",
@@ -2025,19 +1967,15 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     }
   }, [journey, isEditingQuotes]);
 
-  // Helper function to log journey changes
   const logJourneyChanges = async (journeyId: string, oldData: any, newData: Record<string, any>, originalUpdates: Record<string, any>) => {
     if (!employee?.initials) return;
 
-    // Helper function to check if values are effectively the same
     const areValuesEqual = (oldVal: any, newVal: any, originalVal: any, fieldName: string) => {
-      // For date fields, check if the date portion is the same
       if (fieldName.includes('Date') || fieldName.includes('_Date')) {
         const oldDateStr = oldVal ? String(oldVal).split(' ')[0] : '';
         const newDateStr = originalVal ? String(originalVal) : '';
         return oldDateStr === newDateStr;
       }
-      // For other fields, direct comparison
       return oldVal === newVal;
     };
 
@@ -2046,22 +1984,16 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
       const oldValue = oldData?.[field];
       const originalValue = originalUpdates?.[field];
       
-      // Only log if values are actually different
       if (!areValuesEqual(oldValue, newValue, originalValue, field)) {
-        // For date fields, keep FROM with full timestamp, TO with just date
         let fromValue = oldValue || 'null';
         let toValue = originalValue !== undefined ? originalValue : newValue;
         
-        // For date fields, keep the TO value as just the date (no time)
         if ((field.includes('Date') || field.includes('_Date')) && toValue && toValue !== 'null') {
-          // Ensure TO value is just the date part (YYYY-MM-DD)
           if (toValue.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(toValue)) {
-            // Keep as-is, it's already in the correct format
             toValue = toValue;
           }
         }
         
-        // Format the change log entry
         const changeEntry = `${field}: FROM ${fromValue} TO ${toValue}`;
         changes.push(changeEntry);
       }
@@ -2090,7 +2022,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     try {
       const journeyId = journey.ID || journey.id;
       
-      // Log the changes before making the update
       await logJourneyChanges(journeyId, journey, updates, originalUpdates || updates);
       
       const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
@@ -2105,7 +2036,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
   };
 
   const handleSaveQuotes = async () => {
-    // Original updates with form values (for logging)
     const originalUpdates = {
       Quote_Number: quoteForm.quoteNumber,
       Quote_Type: quoteForm.quoteType,
@@ -2114,7 +2044,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
       Expected_Decision_Date: quoteForm.expectedDecisionDate,
     };
 
-    // Database updates with formatted dates
     const rawUpdates = {
       Quote_Number: quoteForm.quoteNumber,
       Quote_Type: quoteForm.quoteType,
@@ -2123,7 +2052,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
       Expected_Decision_Date: formatDateForDatabase(quoteForm.expectedDecisionDate),
     };
 
-    // Filter out empty string values
     const updates = Object.fromEntries(
       Object.entries(rawUpdates).filter(([_, value]) => value !== "")
     );
@@ -2131,7 +2059,6 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     const success = await saveQuoteUpdates(updates, originalUpdates);
     if (success) {
       setIsEditingQuotes(false);
-      // Update the journey data locally
       updateJourney(rawUpdates);
     }
   };
@@ -2677,7 +2604,6 @@ const JourneyDetailsPage = () => {
         const adaptedJourney = adaptLegacyJourney(rawJourney);
         setJourneyData(adaptedJourney);
         
-        // Fetch customer data if we have a Company_ID
         if (rawJourney.Company_ID) {
           try {
             const customerRaw = await api.get(`/legacy/base/Company/${rawJourney.Company_ID}`);
@@ -2694,7 +2620,6 @@ const JourneyDetailsPage = () => {
             }
           } catch (customerError) {
             console.warn("Could not fetch customer data:", customerError);
-            // Create minimal customer data from journey
             setCustomerData({
               id: rawJourney.Company_ID,
               name: adaptedJourney.companyName
@@ -2702,7 +2627,6 @@ const JourneyDetailsPage = () => {
           }
         }
 
-        // Fetch journey contacts
         try {
           const contactsData = await api.get('/legacy/std/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
