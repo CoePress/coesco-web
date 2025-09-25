@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, Input, Select, Text } from "@/components";
 import { RFQSectionProps } from "./types";
+import { AutoFillFieldIndicator } from "../performance/auto-fill-ui";
 
 export const BasicInfoSection: React.FC<RFQSectionProps> = ({
     localData,
@@ -42,15 +43,22 @@ export const BasicInfoSection: React.FC<RFQSectionProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div>
-                    <Input
-                        label="Company Name *"
-                        name="common.customer"
-                        value={localData.common?.customer || ""}
-                        onChange={handleFieldChange}
-                        error={fieldErrors["common.customer"]}
-                        disabled={!isEditing}
-                        customBackgroundColor={getFieldBackgroundColor("common.customer")}
-                    />
+                    <div className="space-y-1">
+                        <Input
+                            label="Company Name *"
+                            name="common.customer"
+                            value={localData.common?.customer || ""}
+                            onChange={handleFieldChange}
+                            error={fieldErrors["common.customer"]}
+                            disabled={!isEditing}
+                            customBackgroundColor={getFieldBackgroundColor("common.customer")}
+                        />
+                        <AutoFillFieldIndicator
+                            fieldPath="common.customer"
+                            isVisible={isEditing}
+                            className="mt-1"
+                        />
+                    </div>
                 </div>
                 <div>
                     <Input
@@ -76,7 +84,8 @@ export const BasicInfoSection: React.FC<RFQSectionProps> = ({
                     <Input
                         label="ZIP/Postal Code"
                         name="common.customerInfo.zip"
-                        value={localData.common?.customerInfo?.zip?.toString() || ""}
+                        type="text"
+                        value={localData.common?.customerInfo?.zip || ""}
                         onChange={handleFieldChange}
                         error={fieldErrors["common.customerInfo.zip"]}
                         disabled={!isEditing}

@@ -139,9 +139,9 @@ function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
 
     // For Standalone - show for reel configurations and straightener-reel combination
     if (lineApplication === "standalone") {
-        return lineType === "Reel-Motorized" || 
-               lineType === "Reel-Pull Off" || 
-               lineType === "Straightener-Reel Combination";
+        return lineType === "Reel-Motorized" ||
+            lineType === "Reel-Pull Off" ||
+            lineType === "Straightener-Reel Combination";
     }
 
     return false;
@@ -220,8 +220,8 @@ function shouldShowShear(config: TabVisibilityConfig): boolean {
 
     // Legacy logic for type of line mentions
     return (typeOfLine && typeOfLine.includes("CTL")) ||
-           (typeOfLine && typeOfLine.includes("Shear")) ||
-           false;
+        (typeOfLine && typeOfLine.includes("Shear")) ||
+        false;
 }
 
 /**

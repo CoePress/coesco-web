@@ -82,7 +82,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
     // Handle field changes with validation for dependent fields
     const handleLocalFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        
+
         // If line application changes, reset line type and pull through
         if (name === "feed.feed.application") {
             handleFieldChange(e);
@@ -107,7 +107,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
             const newPullThroughOptions = getPullThroughOptionsForLineType(lineApplication, value);
             const currentPullThrough = localData.feed?.feed?.pullThru?.isPullThru || "";
             const isCurrentValueValid = newPullThroughOptions.some(option => option.value === currentPullThrough);
-            
+
             if (!isCurrentValueValid) {
                 // Reset to empty to show placeholder unless there's only one option
                 handleFieldChange({

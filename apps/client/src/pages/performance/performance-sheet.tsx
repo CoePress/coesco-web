@@ -1,18 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
-import { Save, Lock, Link } from "lucide-react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Save, Lock } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
-import { useAuth } from "@/contexts/auth.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { PerformanceSheetProvider, usePerformanceSheet } from "@/contexts/performance.context";
+import { AutoFillProvider } from "@/contexts/performance/autofill.context";
 import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
 import { getVisibleTabs } from "@/utils/tab-visibility";
-
-const PERFORMANCE_TABS = LAZY_PERFORMANCE_TABS.map(tab => ({
-  label: tab.label,
-  value: tab.value
-}));
+import { useAutoFillWatcher } from "@/contexts/performance/use-autofill-watcher.hook";
+import { AutoFillControlPanel } from "@/components/performance/auto-fill-ui";
 
 type PerformanceTabValue =
   | "rfq"
@@ -28,11 +25,7 @@ type PerformanceTabValue =
 
 const PerformanceSheetContent = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [newLink, setNewLink] = useState<{
@@ -54,6 +47,13 @@ const PerformanceSheetContent = () => {
   // Use global performance context
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
+  // Auto-fill watcher integration
+  useAutoFillWatcher(performanceData, {
+    enabled: isEditing, // Only watch when editing
+    debounceMs: 3000,   // 3 second debounce
+    requireMinimumFields: 4
+  });
+
   // Preload next likely tabs on component mount
   useEffect(() => {
     // Preload commonly accessed tabs after a short delay
@@ -73,13 +73,7 @@ const PerformanceSheetContent = () => {
     return () => clearTimeout(preloadTimer);
   }, []);
 
-  // Preload tab on hover for instant loading
-  const handleTabHover = (tabValue: string) => {
-    const tab = LAZY_PERFORMANCE_TABS.find(t => t.value === tabValue);
-    if (tab?.preload) {
-      tab.preload().catch(console.warn);
-    }
-  };
+
 
   useEffect(() => {
     const fetchPerformanceSheet = async () => {
@@ -101,7 +95,6 @@ const PerformanceSheetContent = () => {
     fetchPerformanceSheet();
   }, [performanceSheetId]); // Only depend on performanceSheetId
   // const { emit, isConnected } = useSocket();
-  const { user } = useAuth();
 
   // Calculate visible tabs based on performance data - memoized to react to data changes
   const visibleTabs = useMemo(() => {
@@ -131,8 +124,8 @@ const PerformanceSheetContent = () => {
         const { data } = await instance.get(
           `/lock/status/performance-sheets/${performanceSheetId}`
         );
-        setIsLocked(data?.isLocked ?? false);
-        setLockInfo(data?.lockInfo || null);
+        // Lock status fetched but not stored in state for now
+        console.log("Lock status:", data);
       } catch (err) {
         console.error("Failed to fetch lock status:", err);
       }
@@ -220,11 +213,16 @@ const PerformanceSheetContent = () => {
 
   const Actions = () => {
     return (
-      <div className="flex gap-2">
-        <Button onClick={isEditing ? handleSave : handleEdit}>
-          {isEditing ? <Save size={16} /> : <Lock size={16} />}
-          {isEditing ? 'Save' : 'Edit'}
-        </Button>
+      <div className="flex items-center gap-3">
+        {/* Auto-fill controls - only show when editing */}
+        {isEditing && <AutoFillControlPanel />}
+
+        <div className="flex gap-2">
+          <Button onClick={isEditing ? handleSave : handleEdit}>
+            {isEditing ? <Save size={16} /> : <Lock size={16} />}
+            {isEditing ? 'Save' : 'Edit'}
+          </Button>
+        </div>
       </div>
     );
   };
@@ -350,7 +348,9 @@ const PerformanceSheetContent = () => {
 const PerformanceSheet = () => {
   return (
     <PerformanceSheetProvider>
-      <PerformanceSheetContent />
+      <AutoFillProvider>
+        <PerformanceSheetContent />
+      </AutoFillProvider>
     </PerformanceSheetProvider>
   );
 };

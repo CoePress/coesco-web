@@ -8,6 +8,7 @@ import { PerformanceDataProvider } from './data.context';
 import { PerformanceActionsProvider } from './actions.context';
 import { PerformanceValidationProvider } from './validation.context';
 import { PerformanceUIProvider } from './ui.context';
+import { AutoFillProvider } from './autofill.context';
 
 interface PerformanceProviderProps {
     children: ReactNode;
@@ -26,7 +27,11 @@ export const PerformanceProvider: React.FC<PerformanceProviderProps> = ({ childr
                 React.createElement(
                     PerformanceUIProvider,
                     null,
-                    children
+                    React.createElement(
+                        AutoFillProvider,
+                        null,
+                        children
+                    )
                 )
             )
         )
@@ -62,5 +67,9 @@ export {
     useSelectedSections,
     useSidebarState,
 } from './ui.context';
+
+export {
+    useAutoFill,
+} from './autofill.context';
 
 export * from './types';

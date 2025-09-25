@@ -1,26 +1,124 @@
-import { Plus, Filter, MoreHorizontal, ChevronDown, Lock, RefreshCcw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MoreHorizontal, Lock, RefreshCcw, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button, Input, Modal, PageHeader, VirtualTableAdapter } from "@/components";
 import { useGetEntities } from "@/hooks/_base/use-get-entities";
 import { useState, useEffect } from "react";
 import { instance } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
-import { set } from "date-fns";
+import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
+import { initialPerformanceData } from "@/contexts/performance.context";
 
 const PerformanceSheets = () => {
-  const { entities: performanceSheets } = useGetEntities("/performance/sheets");
+  const { entities: performanceSheets, refresh } = useGetEntities("/performance/sheets");
   const [isModalOpen, setModalOpen] = useState(false);
   const [locks, setLocks] = useState<Record<string, any>>({});
   const [name, setName] = useState("");
-  const [links, setLinks] = useState<
-    Array<{ entityType: string; entityId: string }>
-  >([]);
-  const [addMode, setAddMode] = useState(false);
-  const [newLink, setNewLink] = useState<{
-    entityType: string;
-    entityId: string;
-  }>({ entityType: "quote", entityId: "" });
+  const [isCreating, setIsCreating] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    sheetId: string;
+    sheetName: string;
+  }>({ isOpen: false, sheetId: "", sheetName: "" });
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const api = useApi();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Handler to delete a performance sheet
+  const handleDeleteSheet = async (sheetId: string) => {
+    setIsDeleting(true);
+    try {
+      await api.delete(`/performance/sheets/${sheetId}`);
+
+      // Close confirmation modal
+      setDeleteConfirmation({ isOpen: false, sheetId: "", sheetName: "" });
+
+      // Refresh the list to remove the deleted sheet
+      refresh();
+
+    } catch (error) {
+      console.error("Failed to delete performance sheet:", error);
+      // TODO: Add proper error handling/notification
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handler to show delete confirmation
+  const showDeleteConfirmation = (sheetId: string, sheetName: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      sheetId,
+      sheetName
+    });
+    setOpenDropdownId(null); // Close dropdown
+  };
+
+  // Handler to create a new performance sheet
+  const handleCreateSheet = async () => {
+    if (!name.trim()) return;
+
+    setIsCreating(true);
+    try {
+      // Create a performance sheet version first (required by the data model)
+      const versionResponse = await api.post("/performance/versions", {
+        sections: {}, // Empty sections for now
+        createdById: user?.id,
+        updatedById: user?.id
+      });
+
+      if (!versionResponse?.data?.id) {
+        throw new Error("Failed to create performance sheet version");
+      }
+
+      // Create the performance sheet with the version ID
+      const performanceData = {
+        ...initialPerformanceData,
+        referenceNumber: name.trim() // Use the name as the reference number
+      };
+
+      const sheetResponse = await api.post("/performance/sheets", {
+        name: name.trim(),
+        versionId: versionResponse.data.id,
+        data: performanceData,
+        createdById: user?.id,
+        updatedById: user?.id
+      });
+
+      if (sheetResponse?.data?.id) {
+        // Close modal and reset form
+        setModalOpen(false);
+        setName("");
+
+        // Refresh the list to show the new sheet
+        refresh();
+
+        // Navigate to the new performance sheet
+        navigate(`/sales/performance-sheets/${sheetResponse.data.id}`);
+      }
+    } catch (error) {
+      console.error("Failed to create performance sheet:", error);
+      // TODO: Add proper error handling/notification
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdownId(null);
+    };
+
+    if (openDropdownId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdownId]);
 
   useEffect(() => {
     const fetchLocks = async () => {
@@ -72,10 +170,33 @@ const PerformanceSheets = () => {
     {
       key: "actions",
       header: "",
-      render: () => (
-        <button onClick={(e) => e.stopPropagation()}>
-          <MoreHorizontal size={16} />
-        </button>
+      render: (_, row) => (
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenDropdownId(openDropdownId === row.id ? null : row.id);
+            }}
+            className="p-1 hover:bg-gray-100 rounded"
+          >
+            <MoreHorizontal size={16} />
+          </button>
+
+          {openDropdownId === row.id && (
+            <div className="absolute right-0 top-8 z-10 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[120px]">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showDeleteConfirmation(row.id, row.name || "Untitled Performance Sheet");
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       ),
     },
   ];
@@ -128,9 +249,6 @@ const PerformanceSheets = () => {
         onClose={() => {
           setModalOpen(false);
           setName("");
-          setLinks([]);
-          setAddMode(false);
-          setNewLink({ entityType: "quote", entityId: "" });
         }}
         title="New Performance Sheet"
         size="xs">
@@ -141,7 +259,61 @@ const PerformanceSheets = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            placeholder="Enter performance sheet name..."
           />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="secondary-outline"
+              size="md"
+              onClick={() => {
+                setModalOpen(false);
+                setName("");
+              }}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleCreateSheet}
+              disabled={!name.trim() || isCreating}
+            >
+              {isCreating ? "Creating..." : "Create Performance Sheet"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, sheetId: "", sheetName: "" })}
+        title="Delete Performance Sheet"
+        size="xs"
+      >
+        <div className="py-4">
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to delete "{deleteConfirmation.sheetName}"? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              size="md"
+              onClick={() => setDeleteConfirmation({ isOpen: false, sheetId: "", sheetName: "" })}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="md"
+              onClick={() => handleDeleteSheet(deleteConfirmation.sheetId)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

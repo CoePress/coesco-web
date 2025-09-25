@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { debounce } from "lodash";
 import { PerformanceData, usePerformanceSheet } from "@/contexts/performance.context";
 import { useApi } from "@/hooks/use-api";
+import { DEBOUNCE_DELAYS } from "@/constants/performance";
 import React from "react";
 
 export const DAYS_PER_WEEK_OPTIONS = [
@@ -545,7 +546,7 @@ export const usePerformanceDataService = (
           _general: 'Failed to save changes. Please try again.'
         }));
       }
-    }, 500), // Balanced delay for calculations and saves
+    }, DEBOUNCE_DELAYS.SAVE), // Use consistent save delay to prevent excessive API calls during typing
     [performanceSheetId, isEditing, api, setPerformanceData]
   );
 

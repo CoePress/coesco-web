@@ -2,6 +2,7 @@ import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } 
 import type { NextFunction, Request, Response } from "express";
 
 import { performanceSheetLinkService, performanceSheetService, performanceSheetVersionService } from "@/services/repository";
+import { PerformanceAutoFillService } from "@/services/performance-autofill.service";
 import { buildQueryParams } from "@/utils";
 
 export class PerformanceController {
@@ -105,6 +106,62 @@ export class PerformanceController {
       res.status(200).json(result);
     }
     catch (error) {
+      next(error);
+    }
+  }
+
+  // Auto-fill endpoint
+  async autoFillPerformanceSheet(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sheetId } = req.params;
+      const inputData = req.body;
+
+      // Check if sufficient data exists for auto-fill
+      if (!PerformanceAutoFillService.hasSufficientData(inputData)) {
+        return res.status(400).json({
+          success: false,
+          error: "Insufficient data for auto-fill. Please provide at least material type, thickness, yield strength, coil width, and feed rates.",
+          hasSufficientData: false
+        });
+      }
+
+      // Generate auto-fill values
+      const autoFillResult = await PerformanceAutoFillService.generateAutoFillValues(inputData);
+
+      if (!autoFillResult.success) {
+        return res.status(500).json(autoFillResult);
+      }
+
+      // Optionally merge with existing data (controlled by query param)
+      const shouldMerge = req.query.merge === 'true';
+      let finalData = autoFillResult.autoFillValues;
+
+      if (shouldMerge) {
+        const mergeOptions = {
+          preserveUserInput: req.query.preserveUserInput !== 'false', // Default true
+          prioritizeModels: req.query.prioritizeModels !== 'false'    // Default true
+        };
+
+        finalData = PerformanceAutoFillService.mergeAutoFillValues(
+          inputData,
+          autoFillResult.autoFillValues,
+          mergeOptions
+        );
+      }
+
+      // Return the auto-fill results
+      res.status(200).json({
+        success: true,
+        data: finalData,
+        metadata: {
+          ...autoFillResult.metadata,
+          fillableTabs: autoFillResult.fillableTabs,
+          merged: shouldMerge,
+          sheetId: sheetId
+        }
+      });
+
+    } catch (error) {
       next(error);
     }
   }

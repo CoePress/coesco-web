@@ -62,7 +62,7 @@ export interface CommonData {
     streetAddress?: string;
     city?: string;
     state?: string;
-    zip?: number;
+    zip?: string;
     country?: string;
     contactName?: string;
     position?: string;
@@ -665,7 +665,7 @@ const initialPerformanceData: PerformanceData = {
       streetAddress: "",
       city: "",
       state: "",
-      zip: 0,
+      zip: "",
       country: "",
       contactName: "",
       position: "",
