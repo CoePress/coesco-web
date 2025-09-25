@@ -13,7 +13,7 @@ import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
-import { ContactType } from "@coesco/types";
+import { ContactType } from "@/types/enums";
 
 const CREDIT_STATUS_OPTIONS = [
   { value: 'A', label: 'Call Accouting' },
