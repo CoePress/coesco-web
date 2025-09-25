@@ -4,7 +4,7 @@ import { Building2, Mail, Phone, Globe, Calendar, User, MapPin, Edit, Trash2 } f
 import { PageHeader, Button } from "@/components";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
-import { ContactType } from "@coesco/types";
+import { ContactType } from "@/types/enums";
 
 interface EditFormData {
   FirstName: string;
