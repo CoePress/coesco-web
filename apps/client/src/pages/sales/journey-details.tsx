@@ -77,10 +77,11 @@ const getPriorityColor = (priority: string) => {
 import { Edit, Plus, User, Trash2, Search } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
 import { DeleteJourneyModal } from "./journeys/components";
 import { AddJourneyContactModal } from "@/components";
 
-function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>> }) {
+function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any }) {
   // State for available RSMs
   const [availableRsms, setAvailableRsms] = useState<string[]>([]);
   const rsmApi = useApi(); // Separate API instance for RSM fetching
@@ -295,12 +296,74 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const navigate = useNavigate();
 
-  const saveJourneyUpdates = async (updates: Record<string, any>) => {
+  // Helper function to log journey changes
+  const logJourneyChanges = async (journeyId: string, oldData: any, newData: Record<string, any>, originalUpdates: Record<string, any>) => {
+    if (!employee?.initials) return;
+
+    // Helper function to check if values are effectively the same
+    const areValuesEqual = (oldVal: any, newVal: any, originalVal: any, fieldName: string) => {
+      // For date fields, check if the date portion is the same
+      if (fieldName.includes('Date') || fieldName.includes('_Date')) {
+        const oldDateStr = oldVal ? String(oldVal).split(' ')[0] : '';
+        const newDateStr = originalVal ? String(originalVal) : '';
+        return oldDateStr === newDateStr;
+      }
+      // For other fields, direct comparison
+      return oldVal === newVal;
+    };
+
+    const changes = [];
+    for (const [field, newValue] of Object.entries(newData)) {
+      const oldValue = oldData?.[field];
+      const originalValue = originalUpdates?.[field];
+      
+      // Only log if values are actually different
+      if (!areValuesEqual(oldValue, newValue, originalValue, field)) {
+        // For date fields, keep FROM with full timestamp, TO with just date
+        let fromValue = oldValue || 'null';
+        let toValue = originalValue !== undefined ? originalValue : newValue;
+        
+        // For date fields, keep the TO value as just the date (no time)
+        if ((field.includes('Date') || field.includes('_Date')) && toValue && toValue !== 'null') {
+          // Ensure TO value is just the date part (YYYY-MM-DD)
+          if (toValue.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(toValue)) {
+            // Keep as-is, it's already in the correct format
+            toValue = toValue;
+          }
+        }
+        
+        // Format the change log entry
+        const changeEntry = `${field}: FROM ${fromValue} TO ${toValue}`;
+        changes.push(changeEntry);
+      }
+    }
+
+    if (changes.length > 0) {
+      const actionText = changes.join('; ');
+      
+      try {
+        await api.post('/legacy/std/Journey_Log', {
+          Jrn_ID: journeyId,
+          Action: actionText,
+          CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
+          CreateInit: employee.initials
+        });
+      } catch (error) {
+        console.error('Error logging journey changes:', error);
+      }
+    }
+  };
+
+  const saveJourneyUpdates = async (updates: Record<string, any>, originalUpdates?: Record<string, any>) => {
     if (!journey?.ID && !journey?.id) return false;
     
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
+      
+      // Log the changes before making the update
+      await logJourneyChanges(journeyId, journey, updates, originalUpdates || updates);
+      
       const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
       
       return result !== null;
@@ -313,6 +376,35 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   };
 
   const handleSaveDetails = async () => {
+    // Original updates with form values (for logging)
+    const originalUpdates = {
+      Journey_Type: detailsForm.type,
+      Lead_Source: detailsForm.source,
+      Equipment_Type: detailsForm.equipmentType,
+      RSM: detailsForm.rsm,
+      RSM_Territory: detailsForm.rsmTerritory,
+      Qty_of_Items: detailsForm.qtyItems,
+      Journey_Value: detailsForm.value,
+      Dealer: detailsForm.dealer,
+      Dealer_Contact: detailsForm.dealerContact,
+      Journey_Start_Date: detailsForm.journeyStartDate,
+      Journey_Stage: detailsForm.stage,
+      Priority: detailsForm.priority,
+      Journey_Status: detailsForm.status,
+      Quote_Presentation_Date: detailsForm.presentationDate,
+      Expected_Decision_Date: detailsForm.expectedPoDate,
+      Action_Date: detailsForm.lastActionDate,
+      Chance_To_Secure_order: detailsForm.confidence,
+      Reason_Won: detailsForm.reasonWon,
+      Reason_Lost: detailsForm.reasonLost,
+      Reason_Won_Lost: detailsForm.reasonWon || detailsForm.reasonLost,
+      Competition: detailsForm.competition,
+      Visit_Outcome: detailsForm.visitOutcome,
+      Visit_Date: detailsForm.visitDate,
+      Anticipated_Visit_Date: detailsForm.anticipatedVisitDate,
+    };
+
+    // Database updates with formatted dates
     const rawUpdates = {
       Journey_Type: detailsForm.type,
       Lead_Source: detailsForm.source,
@@ -351,7 +443,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       })
     );
 
-    const success = await saveJourneyUpdates(updates);
+    const success = await saveJourneyUpdates(updates, originalUpdates);
     if (success) {
       setIsEditingDetails(false);
       // Convert stage label to numeric ID for local state
@@ -1911,7 +2003,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   );
 }
 
-function JourneyQuotesTab({ journey, updateJourney }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void }) {
+function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
   const [isEditingQuotes, setIsEditingQuotes] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const api = useApi();
@@ -1933,12 +2025,74 @@ function JourneyQuotesTab({ journey, updateJourney }: { journey: any | null; upd
     }
   }, [journey, isEditingQuotes]);
 
-  const saveQuoteUpdates = async (updates: Record<string, any>) => {
+  // Helper function to log journey changes
+  const logJourneyChanges = async (journeyId: string, oldData: any, newData: Record<string, any>, originalUpdates: Record<string, any>) => {
+    if (!employee?.initials) return;
+
+    // Helper function to check if values are effectively the same
+    const areValuesEqual = (oldVal: any, newVal: any, originalVal: any, fieldName: string) => {
+      // For date fields, check if the date portion is the same
+      if (fieldName.includes('Date') || fieldName.includes('_Date')) {
+        const oldDateStr = oldVal ? String(oldVal).split(' ')[0] : '';
+        const newDateStr = originalVal ? String(originalVal) : '';
+        return oldDateStr === newDateStr;
+      }
+      // For other fields, direct comparison
+      return oldVal === newVal;
+    };
+
+    const changes = [];
+    for (const [field, newValue] of Object.entries(newData)) {
+      const oldValue = oldData?.[field];
+      const originalValue = originalUpdates?.[field];
+      
+      // Only log if values are actually different
+      if (!areValuesEqual(oldValue, newValue, originalValue, field)) {
+        // For date fields, keep FROM with full timestamp, TO with just date
+        let fromValue = oldValue || 'null';
+        let toValue = originalValue !== undefined ? originalValue : newValue;
+        
+        // For date fields, keep the TO value as just the date (no time)
+        if ((field.includes('Date') || field.includes('_Date')) && toValue && toValue !== 'null') {
+          // Ensure TO value is just the date part (YYYY-MM-DD)
+          if (toValue.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(toValue)) {
+            // Keep as-is, it's already in the correct format
+            toValue = toValue;
+          }
+        }
+        
+        // Format the change log entry
+        const changeEntry = `${field}: FROM ${fromValue} TO ${toValue}`;
+        changes.push(changeEntry);
+      }
+    }
+
+    if (changes.length > 0) {
+      const actionText = changes.join('; ');
+      
+      try {
+        await api.post('/legacy/std/Journey_Log', {
+          Jrn_ID: journeyId,
+          Action: actionText,
+          CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
+          CreateInit: employee.initials
+        });
+      } catch (error) {
+        console.error('Error logging journey changes:', error);
+      }
+    }
+  };
+
+  const saveQuoteUpdates = async (updates: Record<string, any>, originalUpdates?: Record<string, any>) => {
     if (!journey?.ID && !journey?.id) return false;
     
     setIsSaving(true);
     try {
       const journeyId = journey.ID || journey.id;
+      
+      // Log the changes before making the update
+      await logJourneyChanges(journeyId, journey, updates, originalUpdates || updates);
+      
       const result = await api.patch(`/legacy/base/Journey/${journeyId}`, updates);
       
       return result !== null;
@@ -1951,6 +2105,16 @@ function JourneyQuotesTab({ journey, updateJourney }: { journey: any | null; upd
   };
 
   const handleSaveQuotes = async () => {
+    // Original updates with form values (for logging)
+    const originalUpdates = {
+      Quote_Number: quoteForm.quoteNumber,
+      Quote_Type: quoteForm.quoteType,
+      Presentation_Method: quoteForm.presentationMethod,
+      Quote_Presentation_Date: quoteForm.presentationDate,
+      Expected_Decision_Date: quoteForm.expectedDecisionDate,
+    };
+
+    // Database updates with formatted dates
     const rawUpdates = {
       Quote_Number: quoteForm.quoteNumber,
       Quote_Type: quoteForm.quoteType,
@@ -1964,7 +2128,7 @@ function JourneyQuotesTab({ journey, updateJourney }: { journey: any | null; upd
       Object.entries(rawUpdates).filter(([_, value]) => value !== "")
     );
 
-    const success = await saveQuoteUpdates(updates);
+    const success = await saveQuoteUpdates(updates, originalUpdates);
     if (success) {
       setIsEditingQuotes(false);
       // Update the journey data locally
@@ -2430,6 +2594,7 @@ const JourneyDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const api = useApi();
+  const { employee } = useAuth();
 
   const adaptLegacyJourney = (raw: any) => {
     const mapLegacyStageToId = (stage: any): StageId => {
@@ -2649,9 +2814,10 @@ const JourneyDetailsPage = () => {
             journeyContacts={journeyContacts}
             updateJourney={updateJourney}
             setJourneyContacts={setJourneyContacts}
+            employee={employee}
           />
         )}
-        {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} />}
+        {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
         {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
         {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
       </>
