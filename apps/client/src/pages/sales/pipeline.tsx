@@ -616,10 +616,10 @@ const Pipeline = () => {
     }
   }, [sortField, sortDirection]);
 
-  const getSortIcon = useCallback((field: string) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? '↑' : '↓';
-  }, [sortField, sortDirection]);
+  // const getSortIcon = useCallback((field: string) => {
+  //   if (sortField !== field) return null;
+  //   return sortDirection === 'asc' ? '↑' : '↓';
+  // }, [sortField, sortDirection]);
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
   

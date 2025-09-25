@@ -88,7 +88,7 @@ app.use(
   }),
 );
 
-app.use("/api", routes);
+app.use("/v1", routes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(new NotFoundError(`Route not found: ${req.method} ${req.originalUrl}`));
