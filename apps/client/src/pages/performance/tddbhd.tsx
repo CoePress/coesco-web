@@ -103,6 +103,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.reel?.model?.toString() || ""}
           onChange={handleFieldChange}
           options={reelModelOptions}
+          placeholder="Select model..."
           disabled={!isEditing}
         />
         <Select
@@ -111,6 +112,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.reel?.width?.toString() || ""}
           onChange={handleFieldChange}
           options={reelWidthOptions}
+          placeholder="Select width..."
           disabled={!isEditing}
         />
         <Select
@@ -119,6 +121,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.reel?.backplate?.diameter?.toString() || ""}
           onChange={handleFieldChange}
           options={backplateDiameterOptions}
+          placeholder="Select diameter..."
           disabled={!isEditing}
         />
         <Select
@@ -127,6 +130,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.common?.material?.materialType || ""}
           onChange={handleFieldChange}
           options={MATERIAL_TYPE_OPTIONS}
+          placeholder="Select material type..."
           disabled={!isEditing}
         />
         <Input
@@ -268,6 +272,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           onChange={handleFieldChange}
           disabled={!isEditing}
           options={YES_NO_OPTIONS}
+          placeholder="Select..."
         />
         <Select
           label="Hyd. Threading Drive"
@@ -275,6 +280,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.threadingDrive?.hydThreadingDrive || ""}
           onChange={handleFieldChange}
           options={HYDRAULIC_THREADING_DRIVE_OPTIONS}
+          placeholder="Select drive..."
           disabled={!isEditing}
         />
         <Input
@@ -317,6 +323,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.holddown?.assy || ""}
           onChange={handleFieldChange}
           options={HOLD_DOWN_ASSY_OPTIONS}
+          placeholder="Select assembly..."
           disabled={!isEditing}
         />
         <Input
@@ -375,6 +382,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.model || ""}
           onChange={handleFieldChange}
           options={BRAKE_MODEL_OPTIONS}
+          placeholder="Select model..."
           disabled={!isEditing}
         />
         <Select
@@ -383,6 +391,7 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
           value={localData.tddbhd?.reel?.dragBrake?.quantity?.toString() || ""}
           onChange={handleFieldChange}
           options={BRAKE_QUANTITY_OPTIONS}
+          placeholder="Select quantity..."
           disabled={!isEditing}
         />
         <Input

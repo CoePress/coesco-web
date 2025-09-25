@@ -24,6 +24,7 @@ export const SpecialRequirementsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.mount.feederMountedToPress")}
                     />
                 </div>
@@ -35,6 +36,7 @@ export const SpecialRequirementsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.mount.adequateSupport")}
                     />
                 </div>
@@ -46,6 +48,7 @@ export const SpecialRequirementsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.mount.customMounting")}
                     />
                 </div>
@@ -57,6 +60,7 @@ export const SpecialRequirementsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.requireGuarding")}
                     />
                 </div>

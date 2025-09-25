@@ -119,6 +119,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.material?.materialType || ""}
           onChange={handleFieldChange}
           options={MATERIAL_TYPE_OPTIONS}
+          placeholder="Select material type..."
           disabled={!isEditing}
         />
         <Input
@@ -211,6 +212,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.direction || ""}
           onChange={handleFieldChange}
           options={FEED_DIRECTION_OPTIONS}
+          placeholder="Select feed direction..."
           disabled={!isEditing}
         />
         <Select
@@ -219,6 +221,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.controlsLevel || ""}
           onChange={handleFieldChange}
           options={CONTROLS_LEVEL_OPTIONS}
+          placeholder="Select controls level..."
           disabled={!isEditing}
         />
         <Select
@@ -227,6 +230,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.typeOfLine || ""}
           onChange={handleFieldChange}
           options={TYPE_OF_LINE_OPTIONS}
+          placeholder="Select type of line..."
           disabled={!isEditing}
         />
         <Input
@@ -242,6 +246,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.passline || ""}
           onChange={handleFieldChange}
           options={PASSLINE_OPTIONS}
+          placeholder="Select passline..."
           disabled={!isEditing}
         />
         <Select
@@ -250,6 +255,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.materialSpecs?.straightener?.rolls?.typeOfRoll || ""}
           onChange={handleFieldChange}
           options={ROLL_TYPE_OPTIONS}
+          placeholder="Select type of roll..."
           disabled={!isEditing}
           customBackgroundColor={getRollTypeBackgroundColor}
         />
@@ -259,6 +265,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.materialSpecs?.reel?.backplate?.type || ""}
           onChange={handleFieldChange}
           options={REEL_BACKPLATE_OPTIONS}
+          placeholder="Select backplate type..."
           disabled={!isEditing}
         />
         <Select
@@ -267,6 +274,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.materialSpecs?.reel?.style || ""}
           onChange={handleFieldChange}
           options={REEL_STYLE_OPTIONS}
+          placeholder="Select reel style..."
           disabled={!isEditing}
         />
         <Checkbox

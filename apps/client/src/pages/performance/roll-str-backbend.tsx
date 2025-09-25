@@ -85,6 +85,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           value={localData.common?.material?.materialType || ""}
           onChange={handleFieldChange}
           options={MATERIAL_TYPE_OPTIONS}
+          placeholder="Select material type..."
           disabled={!isEditing}
         />
         <Input
@@ -140,6 +141,7 @@ const RollStrBackbend: React.FC<RollStrBackbendProps> = ({ data, isEditing }) =>
           value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleFieldChange}
           options={STR_MODEL_OPTIONS}
+          placeholder="Select straightener model..."
           disabled={!isEditing}
         />
         <Input

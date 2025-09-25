@@ -11,7 +11,6 @@ import {
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
 import { Card, Input, Select, Text, VirtualTable } from "@/components";
-import OfflineStatus from "@/components/ui/offline-status";
 import MemoryStatus from "@/components/ui/memory-status";
 import { getStatusColors } from "@/utils/performance-helpers";
 import { ANGLES } from "../../constants/performance";
@@ -180,6 +179,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={feedType}
           onChange={handleFeedTypeChange}
           options={FEED_MODEL_OPTIONS}
+          placeholder="Select feed type..."
           disabled={!isEditing}
         />
         <Select
@@ -188,6 +188,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.application || ""}
           onChange={handleFieldChange}
           options={PRESS_APPLICATION_OPTIONS}
+          placeholder="Select application..."
           disabled={!isEditing}
         />
         <Select
@@ -196,6 +197,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.model || ""}
           onChange={handleFieldChange}
           options={feedModelOptions}
+          placeholder="Select model..."
           disabled={!isEditing}
         />
         <Input
@@ -215,6 +217,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.machineWidth !== undefined ? String(localData.feed?.feed?.machineWidth) : ""}
           onChange={handleFieldChange}
           options={MACHINE_WIDTH_OPTIONS}
+          placeholder="Select width..."
           disabled={!isEditing}
         />
         <Select
@@ -223,6 +226,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.loopPit || ""}
           onChange={handleFieldChange}
           options={YES_NO_OPTIONS}
+          placeholder="Select..."
           disabled={!isEditing}
         />
         <Select
@@ -231,6 +235,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.fullWidthRolls || ""}
           onChange={handleFieldChange}
           options={YES_NO_OPTIONS}
+          placeholder="Select..."
           disabled={!isEditing}
         />
       </div>
@@ -331,6 +336,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.motor || ""}
           onChange={handleFieldChange}
           options={motorOptions}
+          placeholder="Select motor..."
           disabled={!isEditing}
         />
         <Select
@@ -339,6 +345,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.amp || ""}
           onChange={handleFieldChange}
           options={ampOptions}
+          placeholder="Select amp..."
           disabled={!isEditing}
         />
       </div>
@@ -350,6 +357,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
           onChange={handleFieldChange}
           options={STR_FEED_RATE_OPTIONS}
+          placeholder="Select speed..."
           disabled={!isEditing}
         />
         <Input
@@ -444,6 +452,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedAngle1?.toString() || ""}
           onChange={handleFieldChange}
           options={FEED_ANGLE_OPTIONS}
+          placeholder="Select angle..."
           disabled={!isEditing}
         />
         <Select
@@ -452,6 +461,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedAngle2?.toString() || ""}
           onChange={handleFieldChange}
           options={FEED_ANGLE_OPTIONS}
+          placeholder="Select angle..."
           disabled={!isEditing}
         />
       </div>
@@ -651,6 +661,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             value={localData.feed?.feed?.pullThru?.pinchRolls?.toString() || ""}
             onChange={handleFieldChange}
             options={STRAIGHTENER_ROLLS_OPTIONS}
+            placeholder="Select rolls..."
             disabled={!isEditing}
           />
         </div>
@@ -674,6 +685,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             value={localData.feed?.feed?.motor || ""}
             onChange={handleFieldChange}
             options={motorOptions}
+            placeholder="Select motor..."
             disabled={!isEditing}
           />
           <Select
@@ -682,6 +694,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             value={localData.feed?.feed?.amp || ""}
             onChange={handleFieldChange}
             options={ampOptions}
+            placeholder="Select amp/drive..."
             disabled={!isEditing}
           />
         </div>
@@ -693,6 +706,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             value={localData.feed?.feed?.strMaxSpeed?.toString() || ""}
             onChange={handleFieldChange}
             options={STR_FEED_RATE_OPTIONS}
+            placeholder="Select speed..."
             disabled={!isEditing}
             className="bg-white"
           />
@@ -749,6 +763,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
           value={localData.feed?.feed?.feedAngle1?.toString() || ""}
           onChange={handleFieldChange}
           options={FEED_ANGLE_OPTIONS}
+          placeholder="Select angle..."
           disabled={!isEditing}
         />
       </div>
@@ -1081,14 +1096,6 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
       {feedSpecsSection}
       {feedLengthTableSection}
       {performanceResultsSection}
-
-      {/* Status indicators */}
-      <OfflineStatus showCacheInfo={true} />
-      <MemoryStatus
-        className="fixed top-20 right-4 z-40"
-        showDetailedStats={false}
-        enableMonitoring={true}
-      />
     </div>
   );
 };

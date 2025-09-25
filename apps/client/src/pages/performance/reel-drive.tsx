@@ -74,6 +74,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.reel?.model !== undefined && localData.common?.equipment?.reel?.model !== null ? String(localData.common?.equipment?.reel.model) : ""}
           onChange={handleFieldChange}
           options={reelModelOptions}
+          placeholder="Select reel model..."
           disabled={!isEditing}
         />
         <Select
@@ -82,6 +83,7 @@ const ReelDrive: React.FC<ReelDriveProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.reel?.horsepower !== undefined && localData.common?.equipment?.reel?.horsepower !== null ? String(localData.common?.equipment?.reel.horsepower) : ""}
           onChange={handleFieldChange}
           options={reelHorsepowerOptions}
+          placeholder="Select horsepower..."
           disabled={!isEditing}
         />
       </div>

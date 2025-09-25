@@ -116,6 +116,7 @@ export const CoilSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.coil.requireCoilCar")}
                     />
                 </div>
@@ -127,6 +128,7 @@ export const CoilSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.coil.runningOffBackplate")}
                     />
                 </div>
@@ -138,6 +140,7 @@ export const CoilSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.coil.requireRewinding")}
                     />
                 </div>
@@ -149,6 +152,7 @@ export const CoilSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.coil.changeTimeConcern")}
                     />
                 </div>
@@ -170,6 +174,7 @@ export const CoilSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={LOADING_OPTIONS}
+                        placeholder="Select loading side..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.coil.loading")}
                     />
                 </div>

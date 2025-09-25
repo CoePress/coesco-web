@@ -49,6 +49,7 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                     />
                 </div>
                 <div>
@@ -59,6 +60,7 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                     />
                 </div>
                 <div>
@@ -69,6 +71,7 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                     />
                 </div>
             </div>
@@ -92,6 +95,7 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                     />
                 </div>
                 <div>
@@ -102,6 +106,7 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={FEED_DIRECTION_OPTIONS}
+                        placeholder="Select direction..."
                         customBackgroundColor={getFieldBackgroundColor("common.equipment.feed.direction")}
                     />
                 </div>

@@ -302,6 +302,7 @@ const PerformanceSheetContent = () => {
                 { value: "contact", label: "Contact" },
                 { value: "company", label: "Company" },
               ]}
+              placeholder="Select entity type..."
             />
             <div className="mt-4">
               <label className="block text-sm font-medium mb-1">

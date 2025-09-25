@@ -110,22 +110,41 @@ function determineAdditionalTabs(config: TabVisibilityConfig): VisibleTab[] {
  * Determines if TDDBHD tab should be visible
  */
 function shouldShowTDDBHD(config: TabVisibilityConfig): boolean {
-    const { lineApplication, controlsLevel } = config;
+    const { lineApplication, controlsLevel, lineType } = config;
 
-    return (lineApplication === "pressFeed" || lineApplication === "cutToLength") &&
-        (controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus");
+    // For Press Feed and Cut to Length
+    if ((lineApplication === "pressFeed" || lineApplication === "cutToLength") &&
+        (controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus")) {
+        return true;
+    }
+
+    // For Standalone - Threading Table
+    if (lineApplication === "standalone" && lineType === "Threading Table") {
+        return true;
+    }
+
+    return false;
 }/**
  * Determines if Reel Drive tab should be visible
  */
 function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
-    const { pullThrough, typeOfLine, lineType } = config;
+    const { pullThrough, typeOfLine, lineType, lineApplication } = config;
 
-    // Show for pull through configurations
-    // Example 4: line type = compact, pull through = yes, type of line = pull through compact
-    return pullThrough === "Yes" ||
-        (typeOfLine && typeOfLine.toLowerCase().includes("pull through")) ||
-        (lineType === "Compact" && pullThrough === "Yes") ||
-        false;
+    // For Press Feed and Cut to Length - show for pull through configurations
+    if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        return pullThrough === "Yes" ||
+            (typeOfLine && typeOfLine.toLowerCase().includes("pull through")) ||
+            (lineType === "Compact" && pullThrough === "Yes");
+    }
+
+    // For Standalone - show for reel configurations and straightener-reel combination
+    if (lineApplication === "standalone") {
+        return lineType === "Reel-Motorized" || 
+               lineType === "Reel-Pull Off" || 
+               lineType === "Straightener-Reel Combination";
+    }
+
+    return false;
 }
 
 /**
@@ -134,24 +153,34 @@ function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
 function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
     const { lineApplication, lineType, controlsLevel, typeOfLine } = config;
 
-    const isConventional = lineType === "Conventional" ||
-        Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
-    const hasSyncMaster = controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
+    // For Press Feed and Cut to Length
+    if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        const isConventional = lineType === "Conventional" ||
+            Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
+        const hasSyncMaster = controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
+        return isConventional && hasSyncMaster;
+    }
 
-    return (lineApplication === "pressFeed" || lineApplication === "cutToLength") &&
-        isConventional && hasSyncMaster;
+    // For Standalone - show for straightener configurations
+    if (lineApplication === "standalone") {
+        return lineType === "Straightener" || lineType === "Straightener-Reel Combination";
+    }
+
+    return false;
 }/**
  * Determines if Roll Straightener tab should be visible
  */
 function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
     const { selectRoll, lineApplication, lineType } = config;
 
-    if (selectRoll && selectRoll.includes("Roll Str")) {
-        // Don't show for standalone feed only configurations
-        if (lineApplication === "standalone" && lineType === "Feed") {
-            return false;
-        }
-        return true;
+    // For Press Feed and Cut to Length - based on roll selection
+    if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        return Boolean(selectRoll && selectRoll.includes("Roll Str"));
+    }
+
+    // For Standalone - show for straightener configurations
+    if (lineApplication === "standalone") {
+        return lineType === "Straightener" || lineType === "Straightener-Reel Combination";
     }
 
     return false;
@@ -161,21 +190,38 @@ function shouldShowRollStrBackbend(config: TabVisibilityConfig): boolean {
 function shouldShowFeed(config: TabVisibilityConfig): boolean {
     const { feedControls, lineApplication, lineType } = config;
 
-    return (!!feedControls && feedControls !== "") ||
-        (lineApplication === "standalone" && lineType === "Feed") ||
-        lineApplication === "pressFeed" ||
-        lineApplication === "cutToLength";
+    // For Press Feed and Cut to Length - always show
+    if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        return true;
+    }
+
+    // For Standalone - show for feed configurations
+    if (lineApplication === "standalone") {
+        return lineType === "Feed" || lineType === "Feed-Shear";
+    }
+
+    // Legacy logic for feed controls
+    return !!(feedControls && feedControls !== "");
 }/**
  * Determines if Shear tab should be visible
  */
 function shouldShowShear(config: TabVisibilityConfig): boolean {
-    const { lineApplication, typeOfLine } = config;
+    const { lineApplication, typeOfLine, lineType } = config;
 
-    // Show for cut to length configurations or when shear is mentioned in type of line
-    return lineApplication === "cutToLength" ||
-        (typeOfLine && typeOfLine.includes("CTL")) ||
-        (typeOfLine && typeOfLine.includes("Shear")) ||
-        false;
+    // For Cut to Length - always show
+    if (lineApplication === "cutToLength") {
+        return true;
+    }
+
+    // For Standalone - show for feed-shear configuration
+    if (lineApplication === "standalone" && lineType === "Feed-Shear") {
+        return true;
+    }
+
+    // Legacy logic for type of line mentions
+    return (typeOfLine && typeOfLine.includes("CTL")) ||
+           (typeOfLine && typeOfLine.includes("Shear")) ||
+           false;
 }
 
 /**

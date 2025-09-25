@@ -40,6 +40,5 @@ export { default as Tooltip } from "./ui/tooltip";
 export { default as VirtualTable } from "./ui/virtual-table";
 export { default as VirtualList } from "./ui/virtual-list";
 export { default as VirtualTableAdapter } from "./ui/virtual-table-adapter";
-export { default as OfflineStatus } from "./ui/offline-status";
 export { default as MemoryStatus } from "./ui/memory-status";
 

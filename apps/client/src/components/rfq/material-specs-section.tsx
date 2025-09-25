@@ -46,6 +46,7 @@ export const MaterialSpecsSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={MATERIAL_TYPE_OPTIONS}
+                        placeholder="Select material type..."
                         customBackgroundColor={getFieldBackgroundColor("common.material.materialType")}
                     />
                 </div>

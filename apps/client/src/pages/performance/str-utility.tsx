@@ -134,6 +134,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={localData.strUtility?.straightener?.payoff || ""}
           onChange={handleFieldChange}
           options={PAYOFF_OPTIONS}
+          placeholder="Select payoff..."
           disabled={!isEditing}
         />
         <Select
@@ -142,6 +143,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.straightener?.model || ""}
           onChange={handleFieldChange}
           options={STR_MODEL_OPTIONS}
+          placeholder="Select model..."
           disabled={!isEditing}
         />
         <Select
@@ -150,6 +152,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={String(localData.common?.equipment?.straightener?.width ?? "")}
           onChange={handleFieldChange}
           options={STR_WIDTH_OPTIONS}
+          placeholder="Select width..."
           disabled={!isEditing}
         />
         <Input
@@ -222,6 +225,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={localData.common?.material?.materialType || ""}
           onChange={handleFieldChange}
           options={MATERIAL_TYPE_OPTIONS}
+          placeholder="Select material type..."
           disabled={!isEditing}
         />
       </div>
@@ -241,6 +245,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={String(localData.strUtility?.straightener?.horsepower ?? "")}
           onChange={handleFieldChange}
           options={STR_HORSEPOWER_OPTIONS}
+          placeholder="Select horsepower..."
           disabled={!isEditing}
         />
         <Input
@@ -257,6 +262,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={String(localData.strUtility?.straightener?.feedRate ?? "")}
           onChange={handleFieldChange}
           options={STR_FEED_RATE_OPTIONS}
+          placeholder="Select feed rate..."
           disabled={!isEditing}
         />
         <Select
@@ -265,6 +271,7 @@ const StrUtility: React.FC<StrUtilityProps> = ({ data, isEditing }) => {
           value={localData.strUtility?.straightener?.autoBrakeCompensation || ""}
           onChange={handleFieldChange}
           options={YES_NO_OPTIONS}
+          placeholder="Select..."
           disabled={!isEditing}
         />
       </div>

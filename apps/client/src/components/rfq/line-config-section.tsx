@@ -19,11 +19,16 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
     const lineApplication = localData.feed?.feed?.application || "";
     const lineType = localData.common?.equipment?.feed?.lineType || "";
 
+    // Helper function to check if current value is valid for given options
+    const isValueValidForOptions = (value: string, options: { value: string; label: string; disabled?: boolean }[]) => {
+        return value === "" || options.some(option => option.value === value);
+    };
+
     // Determine line type options based on line application
     const lineTypeOptions = useMemo(() => {
-        if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        if (lineApplication === "Press Feed" || lineApplication === "Cut To Length") {
             return RFQ_TYPE_OF_LINE_OPTIONS;
-        } else if (lineApplication === "standalone") {
+        } else if (lineApplication === "Standalone") {
             return STANDALONE_TYPE_OF_LINE_OPTIONS;
         }
         return RFQ_TYPE_OF_LINE_OPTIONS; // Default fallback
@@ -31,14 +36,14 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
 
     // Determine pull through options based on line application and line type
     const pullThroughOptions = useMemo(() => {
-        if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
+        if (lineApplication === "Press Feed" || lineApplication === "Cut To Length") {
             // For RFQ types: Conventional = No only, Compact = Yes or No
             if (lineType === "Conventional") {
                 return [{ value: "No", label: "No" }];
             } else if (lineType === "Compact") {
                 return YES_NO_OPTIONS;
             }
-        } else if (lineApplication === "standalone") {
+        } else if (lineApplication === "Standalone") {
             // For standalone types: Feed, Other, Feed-Shear = Yes or No, others = No only
             if (lineType === "Feed" || lineType === "Other" || lineType === "Feed-Shear") {
                 return YES_NO_OPTIONS;
@@ -49,15 +54,22 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
         return YES_NO_OPTIONS; // Default fallback
     }, [lineApplication, lineType]);
 
+    // Get validated values (empty if not valid for current options)
+    const validatedLineType = isValueValidForOptions(lineType, lineTypeOptions) ? lineType : "";
+    const validatedPullThrough = isValueValidForOptions(
+        localData.feed?.feed?.pullThru?.isPullThru || "",
+        pullThroughOptions
+    ) ? (localData.feed?.feed?.pullThru?.isPullThru || "") : "";
+
     // Helper function to get pull through options for a given line application and type
     const getPullThroughOptionsForLineType = (app: string, type: string) => {
-        if (app === "pressFeed" || app === "cutToLength") {
+        if (app === "Press Feed" || app === "Cut To Length") {
             if (type === "Conventional") {
                 return [{ value: "No", label: "No" }];
             } else if (type === "Compact") {
                 return YES_NO_OPTIONS;
             }
-        } else if (app === "standalone") {
+        } else if (app === "Standalone") {
             if (type === "Feed" || type === "Other" || type === "Feed-Shear") {
                 return YES_NO_OPTIONS;
             } else {
@@ -74,7 +86,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
         // If line application changes, reset line type and pull through
         if (name === "feed.feed.application") {
             handleFieldChange(e);
-            // Reset dependent fields
+            // Reset dependent fields to empty to show placeholders
             handleFieldChange({
                 target: {
                     name: "common.equipment.feed.lineType",
@@ -97,6 +109,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
             const isCurrentValueValid = newPullThroughOptions.some(option => option.value === currentPullThrough);
             
             if (!isCurrentValueValid) {
+                // Reset to empty to show placeholder unless there's only one option
                 handleFieldChange({
                     target: {
                         name: "feed.feed.pullThru.isPullThru",
@@ -124,6 +137,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
                         onChange={handleLocalFieldChange}
                         disabled={!isEditing}
                         options={PRESS_APPLICATION_OPTIONS}
+                        placeholder="Select application..."
                         customBackgroundColor={getFieldBackgroundColor("feed.feed.application")}
                     />
                 </div>
@@ -131,10 +145,11 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
                     <Select
                         label="Type of Line"
                         name="common.equipment.feed.lineType"
-                        value={lineType}
+                        value={validatedLineType}
                         onChange={handleLocalFieldChange}
                         disabled={!isEditing}
                         options={lineTypeOptions}
+                        placeholder="Select type of line..."
                         customBackgroundColor={getFieldBackgroundColor("common.equipment.feed.lineType")}
                     />
                 </div>
@@ -142,10 +157,11 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
                     <Select
                         label="Pull Through"
                         name="feed.feed.pullThru.isPullThru"
-                        value={localData.feed?.feed?.pullThru?.isPullThru || ""}
+                        value={validatedPullThrough}
                         onChange={handleLocalFieldChange}
                         disabled={!isEditing}
                         options={pullThroughOptions}
+                        placeholder={pullThroughOptions.length > 1 ? "Select pull through..." : undefined}
                         customBackgroundColor={getFieldBackgroundColor("feed.feed.pullThru.isPullThru")}
                     />
                 </div>
@@ -169,6 +185,7 @@ export const LineConfigSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={YES_NO_OPTIONS}
+                        placeholder="Select..."
                         customBackgroundColor={getFieldBackgroundColor("rfq.runningCosmeticMaterial")}
                     />
                 </div>

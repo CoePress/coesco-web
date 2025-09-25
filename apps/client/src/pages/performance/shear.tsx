@@ -173,6 +173,7 @@ const Shear: React.FC<ShearProps> = ({ data, isEditing }) => {
           value={shearType}
           onChange={handleShearTypeChange}
           options={SHEAR_TYPE_OPTIONS}
+          placeholder="Select shear type..."
           disabled={!isEditing}
         />
       </div>
