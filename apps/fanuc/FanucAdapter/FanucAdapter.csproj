@@ -5,7 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-    <PlatformTarget>x86</PlatformTarget>
+    <!-- <PlatformTarget>x86</PlatformTarget> -->
+    <PlatformTarget>ARM</PlatformTarget>
   </PropertyGroup>
 
 </Project>
