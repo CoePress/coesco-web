@@ -8,8 +8,6 @@ import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
-// contextStorage.enterWith(SYSTEM_CONTEXT);
-
 const microsoftService = new MicrosoftService();
 
 const machines = [
@@ -42,7 +40,7 @@ const machines = [
     name: "Doosan 3100LS",
     type: MachineType.LATHE,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/doosan/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/doosan/current",
     enabled: true,
   },
   {
@@ -50,7 +48,7 @@ const machines = [
     name: "Kuraki Boring Mill",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/kuraki/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/kuraki/current",
     enabled: false,
   },
   {
@@ -58,7 +56,7 @@ const machines = [
     name: "OKK",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/okk/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/okk/current",
     enabled: true,
   },
   {
@@ -66,7 +64,7 @@ const machines = [
     name: "Niigata HN80",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/hn80/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/hn80/current",
     enabled: true,
   },
   {
@@ -74,7 +72,7 @@ const machines = [
     name: "Niigata SPN630",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/spn630/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/spn630/current",
     enabled: false,
   },
 ];
