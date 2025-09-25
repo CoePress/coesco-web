@@ -11,8 +11,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 
 import { Table, Button, PageHeader, AddContactModal } from "@/components";
 import { TableColumn } from "@/components/ui/table";
-import { ContactType } from "@coesco/types";
 import { useApi } from "@/hooks/use-api";
+import { ContactType } from "@/types/enums";
 
 const Contacts = () => {
   const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
