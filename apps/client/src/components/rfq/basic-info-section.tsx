@@ -84,8 +84,7 @@ export const BasicInfoSection: React.FC<RFQSectionProps> = ({
                     <Input
                         label="ZIP/Postal Code"
                         name="common.customerInfo.zip"
-                        type="text"
-                        value={localData.common?.customerInfo?.zip || ""}
+                        value={localData.common?.customerInfo?.zip?.toString() || ""}
                         onChange={handleFieldChange}
                         error={fieldErrors["common.customerInfo.zip"]}
                         disabled={!isEditing}

@@ -110,6 +110,42 @@ export class PerformanceController {
     }
   }
 
+  // Check auto-fill availability for specific tabs
+  async checkTabAutoFillAvailability(req: Request, res: Response, next: NextFunction) {
+    try {
+      const inputData = req.body;
+      const { tab } = req.query;
+
+      if (typeof tab === 'string') {
+        // Check specific tab
+        const canAutoFill = PerformanceAutoFillService.hasTabSufficientData(inputData, tab);
+        return res.status(200).json({
+          success: true,
+          tab: tab,
+          canAutoFill: canAutoFill,
+          globalSufficient: PerformanceAutoFillService.hasSufficientData(inputData)
+        });
+      } else {
+        // Check all tabs
+        const allTabs = ['rfq', 'material-specs', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
+        const tabStatus = allTabs.reduce((acc, tabName) => {
+          acc[tabName] = PerformanceAutoFillService.hasTabSufficientData(inputData, tabName);
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        return res.status(200).json({
+          success: true,
+          tabStatus: tabStatus,
+          fillableTabs: PerformanceAutoFillService.getAutoFillableTabs(inputData),
+          globalSufficient: PerformanceAutoFillService.hasSufficientData(inputData)
+        });
+      }
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Auto-fill endpoint
   async autoFillPerformanceSheet(req: Request, res: Response, next: NextFunction) {
     try {

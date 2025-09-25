@@ -20,6 +20,8 @@ interface AutoFillState {
     pendingAutoFill: boolean;
     autoFillResults: any | null;
     hasSufficientData: boolean;
+    tabAutoFillStatus: Record<string, boolean>;
+    fillableTabs: string[];
     error: string | null;
     settings: {
         enabled: boolean;
@@ -35,6 +37,8 @@ type AutoFillAction =
     | { type: 'SET_PENDING_AUTO_FILL'; payload: boolean }
     | { type: 'SET_AUTO_FILL_RESULTS'; payload: any }
     | { type: 'SET_SUFFICIENT_DATA'; payload: boolean }
+    | { type: 'SET_TAB_AUTO_FILL_STATUS'; payload: Record<string, boolean> }
+    | { type: 'SET_FILLABLE_TABS'; payload: string[] }
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'ADD_AUTO_FILLED_FIELDS'; payload: string[] }
     | { type: 'REMOVE_AUTO_FILLED_FIELD'; payload: string }
@@ -50,6 +54,8 @@ const initialAutoFillState: AutoFillState = {
     pendingAutoFill: false,
     autoFillResults: null,
     hasSufficientData: false,
+    tabAutoFillStatus: {},
+    fillableTabs: [],
     error: null,
     settings: {
         enabled: true,
@@ -71,6 +77,10 @@ function autoFillReducer(state: AutoFillState, action: AutoFillAction): AutoFill
             return { ...state, autoFillResults: action.payload, error: null };
         case 'SET_SUFFICIENT_DATA':
             return { ...state, hasSufficientData: action.payload };
+        case 'SET_TAB_AUTO_FILL_STATUS':
+            return { ...state, tabAutoFillStatus: action.payload };
+        case 'SET_FILLABLE_TABS':
+            return { ...state, fillableTabs: action.payload };
         case 'SET_ERROR':
             return { ...state, error: action.payload, isAutoFilling: false };
         case 'ADD_AUTO_FILLED_FIELDS':
@@ -113,6 +123,8 @@ interface AutoFillContextType {
 
     // Data checking
     checkSufficientData: (performanceData: PerformanceData) => boolean;
+    checkTabAutoFillAvailability: (performanceData: PerformanceData) => Promise<void>;
+    canAutoFillTab: (tabName: string) => boolean;
 
     // Settings management
     updateSettings: (newSettings: Partial<AutoFillState['settings']>) => void;
@@ -248,6 +260,26 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });
     }, []);
 
+    // Check tab-specific auto-fill availability
+    const checkTabAutoFillAvailability = useCallback(async (performanceData: PerformanceData) => {
+        try {
+            const response = await api.post('/performance/autofill/check', performanceData);
+            
+            if (response.data.success) {
+                dispatch({ type: 'SET_TAB_AUTO_FILL_STATUS', payload: response.data.tabStatus });
+                dispatch({ type: 'SET_FILLABLE_TABS', payload: response.data.fillableTabs });
+                dispatch({ type: 'SET_SUFFICIENT_DATA', payload: response.data.globalSufficient });
+            }
+        } catch (error) {
+            console.warn('Error checking tab auto-fill availability:', error);
+        }
+    }, [api]);
+
+    // Check if specific tab can be auto-filled
+    const canAutoFillTab = useCallback((tabName: string): boolean => {
+        return state.tabAutoFillStatus[tabName] || false;
+    }, [state.tabAutoFillStatus]);
+
     const contextValue: AutoFillContextType = {
         state,
         dispatch,
@@ -258,6 +290,8 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         markFieldAsManual,
         isFieldAutoFilled,
         checkSufficientData,
+        checkTabAutoFillAvailability,
+        canAutoFillTab,
         updateSettings
     };
 

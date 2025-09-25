@@ -150,6 +150,7 @@ export const PerformanceValidationProvider: React.FC<{ children: ReactNode }> = 
         }
 
         if (fieldName === 'common.customerInfo.zip' && value) {
+            console.log('Validating zip code:', value);
             if (isNaN(Number(value)) || value <= 0) {
                 return 'Please enter a valid zip code';
             }

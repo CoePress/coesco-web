@@ -31,44 +31,118 @@ export class PerformanceAutoFillService {
     }
 
     /**
+     * Checks if specific tab has sufficient data for auto-fill
+     */
+    static hasTabSufficientData(data: any, tabName: string): boolean {
+        switch (tabName) {
+            case 'rfq':
+                return this.hasRfqSufficientData(data);
+            case 'material-specs':
+                return this.hasMaterialSpecsSufficientData(data);
+            case 'tddbhd':
+                return this.hasTddbhdSufficientData(data);
+            case 'reel-drive':
+                return this.hasReelDriveSufficientData(data);
+            case 'str-utility':
+                return this.hasStrUtilitySufficientData(data);
+            case 'feed':
+                return this.hasFeedSufficientData(data);
+            case 'shear':
+                return this.hasShearSufficientData(data);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * RFQ tab validation - needs basic project info and material specs
+     */
+    private static hasRfqSufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasBasicInfo = data.rfqDetails?.customerName || data.rfqDetails?.projectName;
+        
+        return hasMaterial && hasBasicInfo;
+    }
+
+    /**
+     * Material Specs tab validation - needs material type and thickness
+     */
+    private static hasMaterialSpecsSufficientData(data: any): boolean {
+        return !!(data.common?.material?.materialType && 
+                 data.common?.material?.materialThickness);
+    }
+
+    /**
+     * TDDBHD tab validation - needs material specs and coil data
+     */
+    private static hasTddbhdSufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasCoil = data.common?.coil?.coilWidth || 
+                       data.common?.material?.coilWidth;
+        
+        return hasMaterial && hasCoil;
+    }
+
+    /**
+     * Reel Drive tab validation - needs material and reel configuration
+     */
+    private static hasReelDriveSufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasReelConfig = data.reelDrive?.reel?.model || 
+                             data.common?.equipment?.reel?.model;
+        
+        return hasMaterial && hasReelConfig;
+    }
+
+    /**
+     * Straightener Utility tab validation - needs material data
+     */
+    private static hasStrUtilitySufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasStraightener = data.common?.equipment?.straightener?.model;
+        
+        return hasMaterial && hasStraightener;
+    }
+
+    /**
+     * Feed tab validation - needs material and feed equipment data
+     */
+    private static hasFeedSufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasFeedEquipment = data.common?.equipment?.feed?.model;
+        
+        return hasMaterial && hasFeedEquipment;
+    }
+
+    /**
+     * Shear tab validation - needs material data for shear calculations
+     */
+    private static hasShearSufficientData(data: any): boolean {
+        const hasMaterial = data.common?.material?.materialType && 
+                           data.common?.material?.materialThickness;
+        const hasYieldStrength = data.common?.material?.maxYieldStrength || 
+                                data.common?.material?.yieldStrength;
+        
+        return hasMaterial && hasYieldStrength;
+    }
+
+    /**
      * Determines which tabs can be auto-filled based on available data
      */
     static getAutoFillableTabs(data: any): string[] {
         const tabs: string[] = [];
+        const allTabs = ['rfq', 'material-specs', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
 
-        // RFQ is always fillable if we have basic data
-        if (this.hasSufficientData(data)) {
-            tabs.push('rfq');
-        }
-
-        // Material Specs can be filled if we have material data
-        if (data.common?.material?.materialType && data.common?.material?.materialThickness) {
-            tabs.push('material-specs');
-        }
-
-        // TDDBHD can be filled if we have material specs and coil data
-        if (data.common?.material && data.common?.coil) {
-            tabs.push('tddbhd');
-        }
-
-        // Reel Drive can be filled if we have material and reel data
-        if (data.common?.material && data.reelDrive?.reel) {
-            tabs.push('reel-drive');
-        }
-
-        // Straightener Utility can be filled if we have material data
-        if (data.common?.material) {
-            tabs.push('str-utility');
-        }
-
-        // Feed can be filled if we have material and basic equipment data
-        if (data.common?.material && data.common?.equipment) {
-            tabs.push('feed');
-        }
-
-        // Shear can be filled if we have material data
-        if (data.common?.material) {
-            tabs.push('shear');
+        // Check each tab individually using the specific validation methods
+        for (const tabName of allTabs) {
+            if (this.hasTabSufficientData(data, tabName)) {
+                tabs.push(tabName);
+            }
         }
 
         return tabs;

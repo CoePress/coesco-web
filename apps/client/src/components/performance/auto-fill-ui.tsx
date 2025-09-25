@@ -386,3 +386,107 @@ export const AutoFillControlPanel: React.FC = () => {
         </>
     );
 };
+
+// Tab Auto-Fill Indicator Component
+interface TabAutoFillIndicatorProps {
+    tabName: string;
+    label?: string;
+    className?: string;
+}
+
+export const TabAutoFillIndicator: React.FC<TabAutoFillIndicatorProps> = ({
+    tabName,
+    label,
+    className = ''
+}) => {
+    const { canAutoFillTab, state } = useAutoFill();
+    
+    const canFill = canAutoFillTab(tabName);
+    const isInFillableList = state.fillableTabs.includes(tabName);
+    
+    if (!canFill && !isInFillableList) {
+        return null;
+    }
+
+    return (
+        <div className={`inline-flex items-center gap-1 ${className}`}>
+            <div className={`w-2 h-2 rounded-full ${
+                canFill ? 'bg-green-500' : 'bg-yellow-500'
+            }`} />
+            <span className="text-xs text-gray-600">
+                {canFill ? 'Ready to auto-fill' : 'Partial data available'}
+            </span>
+            {label && (
+                <span className="text-xs text-gray-500">({label})</span>
+            )}
+        </div>
+    );
+};
+
+// Tab Auto-Fill Status Bar Component
+export const TabAutoFillStatusBar: React.FC<{ className?: string }> = ({
+    className = ''
+}) => {
+    const { state } = useAutoFill();
+    
+    if (!state.settings.enabled) {
+        return null;
+    }
+
+    const allTabs = ['rfq', 'material-specs', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
+    const readyTabs = allTabs.filter(tab => state.tabAutoFillStatus[tab]);
+    const partialTabs = state.fillableTabs.filter(tab => !state.tabAutoFillStatus[tab]);
+
+    if (readyTabs.length === 0 && partialTabs.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className={`p-3 bg-blue-50 border border-blue-200 rounded-lg ${className}`}>
+            <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <Text className="font-medium text-blue-900">
+                    Auto-fill Status
+                </Text>
+            </div>
+            
+            {readyTabs.length > 0 && (
+                <div className="mb-2">
+                    <Text className="text-sm text-green-700 mb-1">
+                        Ready to auto-fill ({readyTabs.length} tabs):
+                    </Text>
+                    <div className="flex flex-wrap gap-1">
+                        {readyTabs.map(tab => (
+                            <span 
+                                key={tab} 
+                                className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded"
+                            >
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1" />
+                                {tab.replace('-', ' ')}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            {partialTabs.length > 0 && (
+                <div>
+                    <Text className="text-sm text-yellow-700 mb-1">
+                        Partial data available ({partialTabs.length} tabs):
+                    </Text>
+                    <div className="flex flex-wrap gap-1">
+                        {partialTabs.map(tab => (
+                            <span 
+                                key={tab} 
+                                className="inline-flex items-center px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded"
+                            >
+                                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1" />
+                                {tab.replace('-', ' ')}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};

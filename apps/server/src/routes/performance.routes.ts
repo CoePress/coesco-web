@@ -18,7 +18,8 @@ router.get("/sheets/:sheetId", performanceController.getPerformanceSheet);
 router.patch("/sheets/:sheetId", performanceController.updatePerformanceSheet);
 router.delete("/sheets/:sheetId", performanceController.deletePerformanceSheet);
 
-// Auto-fill endpoint
+// Auto-fill endpoints
+router.post("/autofill/check", performanceController.checkTabAutoFillAvailability);
 router.post("/sheets/:sheetId/autofill", performanceController.autoFillPerformanceSheet);
 
 // Performance Sheet Links

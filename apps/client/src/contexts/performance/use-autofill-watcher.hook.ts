@@ -68,7 +68,7 @@ export function useAutoFillWatcher(
     } = options;
 
     const { id: sheetId } = useParams();
-    const { triggerAutoFill, checkSufficientData, state: autoFillState } = useAutoFill();
+    const { triggerAutoFill, checkSufficientData, checkTabAutoFillAvailability, state: autoFillState } = useAutoFill();
 
     // Track previous values to detect changes
     const previousValuesRef = useRef<Record<string, any>>({});
@@ -226,7 +226,10 @@ export function useAutoFillWatcher(
         // Detect field changes
         const changedFields = detectFieldChanges(performanceData);
 
-        // Only proceed if there are changes
+        // Always check tab availability when data changes
+        checkTabAutoFillAvailability(performanceData);
+
+        // Only proceed with auto-fill trigger if there are changes
         if (changedFields.length === 0) return;
 
         // Calculate data completeness
@@ -251,6 +254,7 @@ export function useAutoFillWatcher(
         detectFieldChanges,
         calculateDataScore,
         checkSufficientData,
+        checkTabAutoFillAvailability,
         shouldTriggerAutoFill,
         debouncedTriggerAutoFill
     ]);
@@ -271,6 +275,8 @@ export function useAutoFillWatcher(
         hasSufficientData: performanceData ? checkSufficientData(performanceData) : false,
         isAutoFilling: autoFillState.isAutoFilling,
         lastAutoFill: autoFillState.lastAutoFillTimestamp,
+        tabAutoFillStatus: autoFillState.tabAutoFillStatus,
+        fillableTabs: autoFillState.fillableTabs,
 
         // Manual trigger function
         manualTrigger: useCallback(() => {

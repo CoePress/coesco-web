@@ -407,14 +407,15 @@ const validateField = (name: string, value: any): string | null => {
   if (name === "common.customer" && !value?.trim()) {
     return "Customer name is required";
   }
-  if (name.includes("email") && value && !/\S+@\S+\.\S+/.test(value)) {
+  if (name.includes("email") && value && value.length >= 3 && !/\S+@\S+\.\S+/.test(value)) {
     return "Invalid email format";
   }
-  if (name.includes("phone") && value && !/^\+?[\d\s\-\(\)]+$/.test(value)) {
+  if (name.includes("phone") && value && value.length >= 3 && !/^\+?[\d\s\-\(\)]{3,}$/.test(value)) {
     return "Invalid phone format";
   }
-  if (name.includes("zip") && value && !/^\d{5}(-\d{4})?$/.test(value)) {
-    return "Invalid ZIP code format";
+  if (name.includes("zip") && value && value.length >= 3 && !/^([A-Za-z0-9\- ]{3,10})$/.test(value)) {
+    console.log('Validating zip code:', value);
+    return "Invalid ZIP/Postal code format";
   }
   return null;
 };
