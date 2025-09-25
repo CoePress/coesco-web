@@ -32,7 +32,6 @@ const Contacts = () => {
     setBatchSize(50);
   }, [searchQuery]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (activeDropdown && !(event.target as Element)?.closest('.relative')) {
@@ -62,7 +61,6 @@ const Contacts = () => {
       });
       
       if (result !== null) {
-        // Update the contact in the local state
         setLegacyContacts(prev => 
           prev?.map(contact => 
             contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
@@ -90,7 +88,6 @@ const Contacts = () => {
       });
       
       if (result !== null) {
-        // Update the contact in the local state
         setLegacyContacts(prev => 
           prev?.map(contact => 
             contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
@@ -121,7 +118,6 @@ const Contacts = () => {
       });
       
       if (result !== null) {
-        // Remove the contact from the local state
         setLegacyContacts(prev => 
           prev?.filter(contact => 
             !(contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId)
@@ -143,7 +139,6 @@ const Contacts = () => {
   };
 
   const handleContactAdded = (newContact: any) => {
-    // Adapt the new contact to our format and add it to the list
     const adaptedContact = adaptLegacyContact(newContact, legacyCompanies || [], (legacyContacts?.length || 0));
     if (adaptedContact) {
       setLegacyContacts(prev => [adaptedContact, ...(prev || [])]);
@@ -163,21 +158,17 @@ const Contacts = () => {
   };
 
   const adaptLegacyContact = (raw: any, companies: any[] = [], index: number = 0) => {
-    // Handle null/undefined raw data
     if (!raw) {
       console.warn('Received null/undefined contact data');
       return null;
     }
 
-    // Find the company for this contact
     const company = companies.find(comp => comp?.Company_ID === raw?.Company_ID);
-    
-    // Create unique ID using Cont_Id and fallback to index for duplicates
     const contactId = raw.Cont_Id || `contact_${index}`;
     const uniqueId = `${contactId}_${raw.Company_ID || 0}_${index}`;
     
     return {
-      id: uniqueId, // Use unique composite ID
+      id: uniqueId,
       originalId: raw.Cont_Id || 0,
       companyId: raw.Company_ID || 0,
       companyName: company?.CustDlrName || (raw.Company_ID ? `Company ${raw.Company_ID}` : 'Unknown Company'),
@@ -201,32 +192,24 @@ const Contacts = () => {
       createInit: raw.CreateInit || "",
       modifyDate: raw.ModifyDate,
       modifyInit: raw.ModifyInit || "",
-      // Keep all original fields
       ...raw
     };
   };
 
-  // Fetch contacts with addresses for map view
   const fetchContactsWithAddresses = async (limit: number = 50) => {
     try {
-      // Step 1: Fetch contacts from std.Contacts table
-      const contactsResponse = await fetch(
-        `http://localhost:8080/api/legacy/std/Contacts?sort=Cont_Id&order=desc&limit=${limit}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const rawContacts = await api.get(`/legacy/std/Contacts`, {
+        sort: 'Cont_Id',
+        order: 'desc',
+        limit: limit
+      });
 
-      if (!contactsResponse.ok) {
-        throw new Error(`Contacts fetch failed: ${contactsResponse.status}`);
+      if (!rawContacts) {
+        throw new Error('Contacts fetch failed');
       }
 
-      const rawContacts = await contactsResponse.json();
       const contacts = Array.isArray(rawContacts) ? rawContacts.filter(contact => contact != null) : [];
       
-      // Step 2: Get unique combinations of Address_ID and Company_ID from contacts
       const addressContactPairs = contacts
         .filter(contact => contact?.Address_ID && contact?.Address_ID > 0 && contact?.Company_ID)
         .map(contact => ({
@@ -235,25 +218,19 @@ const Contacts = () => {
           key: `${contact.Address_ID}_${contact.Company_ID}`
         }));
       
-      // Remove duplicates based on the key
       const uniqueAddressPairs = addressContactPairs.filter((pair, index, arr) => 
         index === arr.findIndex(p => p.key === pair.key)
       );
       
-      // Step 3: Fetch addresses from base.Address table using custom filter with both Address_ID and Company_ID
       const addressPromises = uniqueAddressPairs.map(async (pair) => {
         try {
-          const addressResponse = await fetch(
-            `http://localhost:8080/api/legacy/base/Address/filter/custom?Address_ID=${pair.addressId}&Company_ID=${pair.companyId}&limit=1`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          );
+          const rawAddress = await api.get('/legacy/base/Address/filter/custom', {
+            Address_ID: pair.addressId,
+            Company_ID: pair.companyId,
+            limit: 1
+          });
 
-          if (addressResponse.ok) {
-            const rawAddress = await addressResponse.json();
+          if (rawAddress) {
             const addresses = Array.isArray(rawAddress) ? rawAddress : [];
             return addresses.length > 0 ? { id: pair.addressId, companyId: pair.companyId, key: pair.key, data: addresses[0] } : null;
           }
@@ -269,9 +246,7 @@ const Contacts = () => {
       
       addressResults.forEach(result => {
         if (result) {
-          // Use composite key for accurate address lookup
           addressMap.set(result.key, result.data);
-          // Also set by Address_ID for backward compatibility
           addressMap.set(result.id, result.data);
         }
       });
@@ -287,46 +262,36 @@ const Contacts = () => {
     let cancelled = false;
     (async () => {
       try {
-        // Fetch contacts and companies in parallel
-        const [contactsResponse, companiesResponse] = await Promise.all([
-          fetch(
-            `http://localhost:8080/api/legacy/std/Contacts?sort=Cont_Id&order=desc&limit=50`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          ),
-          fetch(
-            `http://localhost:8080/api/legacy/base/Company?sort=Company_ID&order=desc&limit=10`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-            }
-          )
+        const [rawContacts, rawCompanies] = await Promise.all([
+          api.get('/legacy/std/Contacts', {
+            sort: 'Cont_Id',
+            order: 'desc',
+            limit: 50
+          }),
+          api.get('/legacy/base/Company', {
+            sort: 'Company_ID',
+            order: 'desc',
+            limit: 10
+          })
         ]);
 
         let companiesData = [];
-        if (companiesResponse.ok) {
-          const rawCompanies = await companiesResponse.json();
+        if (rawCompanies) {
           companiesData = Array.isArray(rawCompanies) ? rawCompanies : [];
           if (!cancelled) setLegacyCompanies(companiesData);
         } else {
-          console.error("Legacy companies fetch failed:", companiesResponse.status, await companiesResponse.text());
+          console.error("Legacy companies fetch failed");
         }
 
-        if (contactsResponse.ok) {
-          const rawContacts = await contactsResponse.json();
+        if (rawContacts) {
           const validContacts = Array.isArray(rawContacts) ? rawContacts.filter(contact => contact != null) : [];
           const mapped = validContacts.map((contact, index) => adaptLegacyContact(contact, companiesData, index)).filter(contact => contact != null);
           if (!cancelled) {
             setLegacyContacts(mapped);
-            // If we got fewer than 50 contacts, we've loaded all available contacts
             setAllContactsLoaded(mapped.length < 50);
           }
         } else {
-          console.error("Legacy contacts fetch failed:", contactsResponse.status, await contactsResponse.text());
+          console.error("Legacy contacts fetch failed");
         }
       } catch (error) {
         console.error("Error fetching Contacts and Companies:", error);
@@ -355,7 +320,6 @@ const Contacts = () => {
     return searchableText.includes(query);
   });
 
-  // Batch loading state
   const [batchSize, setBatchSize] = useState(50);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allContactsLoaded, setAllContactsLoaded] = useState(false);
@@ -372,32 +336,26 @@ const Contacts = () => {
       if (filteredContacts.length > batchSize) {
         setBatchSize(prev => prev + 50);
       } else {
-        // Fetch more contacts from API
-        const contactsResponse = await fetch(
-          `http://localhost:8080/api/legacy/std/Contacts?sort=Cont_Id&order=desc&limit=50&offset=${baseContacts.length}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
+        const rawContacts = await api.get('/legacy/std/Contacts', {
+          sort: 'Cont_Id',
+          order: 'desc',
+          limit: 50,
+          offset: baseContacts.length
+        });
 
-        if (contactsResponse.ok) {
-          const rawContacts = await contactsResponse.json();
+        if (rawContacts) {
           const newContacts = Array.isArray(rawContacts) ? rawContacts : [];
           
           if (newContacts.length === 0) {
-            // No more contacts available
             setAllContactsLoaded(true);
           } else {
-            // Map new contacts and add to existing list
             const validNewContacts = newContacts.filter(contact => contact != null);
             const mappedNewContacts = validNewContacts.map((contact, index) => adaptLegacyContact(contact, legacyCompanies || [], baseContacts.length + index)).filter(contact => contact != null);
             setLegacyContacts(prev => [...(prev || []), ...mappedNewContacts]);
             setBatchSize(prev => prev + mappedNewContacts.length);
           }
         } else {
-          console.error("Failed to load more contacts:", contactsResponse.status);
+          console.error("Failed to load more contacts");
         }
       }
     } catch (error) {
@@ -407,13 +365,12 @@ const Contacts = () => {
     }
   }, [isLoadingMore, hasMoreContacts, baseContacts.length, batchSize, legacyCompanies, filteredContacts.length]);
 
-  // Scroll detection for auto-loading
   const handleScroll = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
     if (!target) return;
     
     const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
     
     if (isNearBottom && hasMoreContacts && !isLoadingMore) {
       loadMoreContacts();
@@ -427,7 +384,6 @@ const Contacts = () => {
 
     const scrollContainer = containerRef.current;
 
-    // Throttle scroll events
     let timeoutId: NodeJS.Timeout;
     const throttledScroll = (e: Event) => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -589,7 +545,6 @@ const Contacts = () => {
       {viewMode === "list" && (
         <div ref={containerRef} className="flex-1 overflow-auto">
           <div className="flex flex-col h-full">
-            {/* Search Input */}
             <div className="p-4 bg-foreground border-b">
               <div className="max-w-lg">
                 <input
@@ -628,6 +583,7 @@ const Contacts = () => {
         <ContactsMapView 
           contacts={baseContacts || []}
           onFetchAddresses={fetchContactsWithAddresses}
+          api={api}
         />
       )}
 
@@ -637,7 +593,6 @@ const Contacts = () => {
         onContactAdded={handleContactAdded}
       />
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && contactToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-foreground rounded-lg border border-border p-6 max-w-md w-full mx-4">
@@ -706,10 +661,12 @@ const Contacts = () => {
 
 const ContactsMapView = ({ 
   contacts, 
-  onFetchAddresses 
+  onFetchAddresses,
+  api
 }: { 
   contacts: any[]; 
-  onFetchAddresses: (limit?: number) => Promise<any> 
+  onFetchAddresses: (limit?: number) => Promise<any>;
+  api: ReturnType<typeof useApi>;
 }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [contactsWithAddresses, setContactsWithAddresses] = useState<any[]>([]);
@@ -774,19 +731,10 @@ const ContactsMapView = ({
         if (postalCodeCacheRef.current.has(cacheKey)) return;
         
         try {
-          const response = await fetch(`http://localhost:8080/api/postal-codes/coordinates/${country}/${postalCode}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-          });
+          const result = await api.get(`/postal-codes/coordinates/${country}/${postalCode}`) as any;
           
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              postalCodeCacheRef.current.set(cacheKey, [result.data.latitude, result.data.longitude]);
-            } else {
-              postalCodeCacheRef.current.set(cacheKey, null);
-            }
+          if (result && result.success && result.data) {
+            postalCodeCacheRef.current.set(cacheKey, [result.data.latitude, result.data.longitude]);
           } else {
             postalCodeCacheRef.current.set(cacheKey, null);
           }
@@ -796,10 +744,6 @@ const ContactsMapView = ({
         }
       }));
       
-      // Small delay between batches to be nice to the API
-      if (i + batchSize < uncachedCodes.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
     }
   };
 
@@ -1262,6 +1206,7 @@ const ContactsMapView = ({
                                 <strong>Phone:</strong> \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}<br>
                                 <strong>Email:</strong> \${contact.contact.Email || 'N/A'}<br>
                                 <strong>Company:</strong> \${contact.contact.Company_ID ? 'Company ' + contact.contact.Company_ID : 'N/A'}<br>
+                                <strong>Created:</strong> \${contact.contact.CreateDate ? new Date(contact.contact.CreateDate).toLocaleDateString() : 'N/A'}<br>
                                 <strong>Address:</strong><br>
                                 <div style="margin-left: 10px; line-height: 1.3;">
                                     \${contact.address ? [
@@ -1299,7 +1244,8 @@ const ContactsMapView = ({
                                 <div style="font-size: 11px; color: #666; margin-bottom: 4px;">
                                     <strong>Title:</strong> \${contact.contact.ConTitle || 'N/A'}<br>
                                     <strong>Phone:</strong> \${contact.contact.PhoneNumber || 'N/A'}\${contact.contact.PhoneExt ? ' x' + contact.contact.PhoneExt : ''}<br>
-                                    <strong>Email:</strong> \${contact.contact.Email || 'N/A'}
+                                    <strong>Email:</strong> \${contact.contact.Email || 'N/A'}<br>
+                                    <strong>Created:</strong> \${contact.contact.CreateDate ? new Date(contact.contact.CreateDate).toLocaleDateString() : 'N/A'}
                                 </div>
                                 <div style="font-size: 10px; color: #888; margin-bottom: 6px;">
                                     <strong>Address:</strong><br>

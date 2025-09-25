@@ -28,5 +28,15 @@
         "type": "int"
       }
     ]
+  },
+  {
+    "database": "std",
+    "table": "Journey_Log",
+    "ids": [
+      {
+        "field": "ID",
+        "type": "uuid"
+      }
+    ]
   }
 ]
