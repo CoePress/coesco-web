@@ -11,17 +11,17 @@ import { ToastProvider } from "./contexts/toast.context.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    {/* <AuthProvider>
+    <AuthProvider>
       <SocketProvider>
         <ThemeProvider>
           <AppProvider>
-            <ToastProvider> */}
+            <ToastProvider>
               <App />
-            {/* </ToastProvider>
+            </ToastProvider>
           </AppProvider>
         </ThemeProvider>
       </SocketProvider>
-    </AuthProvider> */}
+    </AuthProvider>
   </BrowserRouter>
 );
 
