@@ -2,6 +2,7 @@
 import { FormFieldControlType, FormFieldDataType, MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
@@ -82,7 +83,7 @@ async function seedEmployees() {
     const employeeCount = await prisma.employee.count();
 
     if (employeeCount === 2) {
-      await _migrateEmployees();
+      await _migrateEmployees(legacyService);
       await closeDatabaseConnections();
       await microsoftService.sync();
     }

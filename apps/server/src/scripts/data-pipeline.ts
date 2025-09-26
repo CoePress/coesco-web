@@ -10,7 +10,7 @@ import { env } from "@/config/env";
 import { LegacyService } from "@/services/business/legacy.service";
 import { logger } from "@/utils/logger";
 
-const legacyService = new LegacyService();
+let legacyService = new LegacyService();
 
 const mainDatabase = new PrismaClient({
   datasources: {
@@ -1490,8 +1490,14 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
 }
 
 // used elsewhere
-export async function _migrateEmployees(): Promise<MigrationResult> {
-  await legacyService.initialize();
+export async function _migrateEmployees(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  } else {
+    await legacyService.initialize();
+  }
   const hash = await bcrypt.hash("Password123!", 10);
 
   const userMapping: TableMapping = {
@@ -1641,6 +1647,9 @@ export async function _migrateEmployees(): Promise<MigrationResult> {
     errors: userResult.errors + employeeResult.errors,
     errorDetails: [...userResult.errorDetails, ...employeeResult.errorDetails],
   };
+
+  // Restore original service
+  legacyService = originalService;
 
   return result;
 }
