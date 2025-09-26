@@ -194,8 +194,7 @@ export class MachineMonitorService {
       throw new BadRequestError("No machines found");
     }
 
-    // TODO: add status field to machine and remove hardcoded subtraction
-    const machineCount = machines.data.length - 2;
+    const machineCount = machines.data.filter((machine: any) => machine.enabled).length;
     const dailyMachineTarget = 1000 * 60 * 60 * 7.5;
     const dailyFleetTarget = dailyMachineTarget * machineCount;
     const timeframeFleetTarget = dailyFleetTarget * dateRange.totalDays;
@@ -222,7 +221,13 @@ export class MachineMonitorService {
     const activeTime = totalsByState.ACTIVE;
     const unrecordedTime
       = totalFleetDuration - futureFleetDuration - totalStateDuration;
-    totalsByState[MachineState.UNKNOWN] = unrecordedTime;
+
+    // If there's no machine status data at all, assume machines were offline
+    if (totalStateDuration === 0 && machines.data && machines.data.length > 0) {
+      totalsByState[MachineState.OFFLINE] = totalFleetDuration - futureFleetDuration;
+    } else {
+      totalsByState[MachineState.UNKNOWN] = unrecordedTime;
+    }
 
     const divisions = Array.from({ length: divisionCount }, (_, i) => {
       const divisionStart = this.calculateDivisionStart(dateRange.startDate, scale, i);
@@ -285,6 +290,7 @@ export class MachineMonitorService {
       totalAvailableTime,
       unrecordedTime,
     );
+
 
     return {
       success: true,
