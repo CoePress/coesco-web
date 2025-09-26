@@ -43,7 +43,7 @@ const Button = ({
     ghost:
       "border-transparent bg-transparent text-text-muted hover:bg-surface cursor-pointer",
     destructive:
-      "border-error bg-error text-foreground hover:bg-error/80 hover:border-error/80 cursor-pointer",
+      "border-error bg-error/25 text-error hover:bg-error/50 hover:border-error/80 cursor-pointer",
     disabled: "border-border bg-surface text-text-muted cursor-not-allowed",
   };
 

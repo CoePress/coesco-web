@@ -433,14 +433,14 @@ const ProductionDashboard = () => {
   const kpis = [
     {
       title: "Utilization",
-      value: `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
+      value: dateRange.start > startOfToday() ? "-" : `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      change: overview?.kpis?.utilization?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.utilization?.change ?? 0,
     },
     {
       title: "Total Runtime",
-      value: formatDuration(
+      value: dateRange.start > startOfToday() ? "-" : formatDuration(
         overview?.kpis?.averageRuntime?.value
           ? overview.kpis.averageRuntime.value * 8
           : 0
@@ -451,17 +451,17 @@ const ProductionDashboard = () => {
     },
     {
       title: "Average Runtime",
-      value: formatDuration(overview?.kpis?.averageRuntime?.value ?? 0),
+      value: dateRange.start > startOfToday() ? "-" : formatDuration(overview?.kpis?.averageRuntime?.value ?? 0),
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      change: overview?.kpis?.averageRuntime?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.averageRuntime?.change ?? 0,
     },
     {
       title: "Alarms",
-      value: overview?.kpis?.alarmCount?.value ?? 0,
+      value: dateRange.start > startOfToday() ? "-" : overview?.kpis?.alarmCount?.value ?? 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: overview?.kpis?.alarmCount?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.alarmCount?.change ?? 0,
     },
   ];
 
@@ -837,8 +837,12 @@ const ProductionDashboard = () => {
                     <div className="h-full flex items-center justify-center">
                       <Loader />
                     </div>
+                  ) : dateRange.start > startOfToday() ? (
+                    <div className="h-full flex items-center justify-center text-text-muted text-sm">
+                      No data
+                    </div>
                   ) : (
-                    <CustomPieChart 
+                    <CustomPieChart
                       data={stateDistribution.filter(entry => entry.state !== "UNRECORDED").map(entry => ({
                         name: entry.state,
                         value: entry.percentage,
