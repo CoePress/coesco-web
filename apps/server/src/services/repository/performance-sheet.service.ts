@@ -72,6 +72,28 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 		}
 	}
 
+	// Override delete to cascade delete associated links
+	async delete(id: string, tx?: any) {
+		// Use a transaction to ensure atomicity
+		const execute = async (client: any) => {
+			// Delete all associated PerformanceSheetLink records (soft delete)
+			await client.performanceSheetLink.updateMany({
+				where: { performanceSheetId: id },
+				data: { deletedAt: new Date() }
+			});
+			// Delete the PerformanceSheet itself (soft delete)
+			return await client.performanceSheet.update({
+				where: { id },
+				data: { deletedAt: new Date() }
+			});
+		};
+		if (tx) {
+			return await execute(tx);
+		} else {
+			return await prisma.$transaction(execute);
+		}
+	}
+
 	private async runCalculations(inputData: any): Promise<any> {
 		try {
 			const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'main.py');

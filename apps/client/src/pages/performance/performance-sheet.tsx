@@ -47,10 +47,20 @@ const PerformanceSheetContent = () => {
   // Use global performance context
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
-  // Auto-fill watcher integration
+  // Auto-fill watcher integration (debounced, only when editing and data loaded)
+  const [autoFillWatcherEnabled, setAutoFillWatcherEnabled] = useState(false);
+
+  useEffect(() => {
+    if (isEditing && performanceData) {
+      setAutoFillWatcherEnabled(true);
+    } else {
+      setAutoFillWatcherEnabled(false);
+    }
+  }, [isEditing, performanceData]);
+
   useAutoFillWatcher(performanceData, {
-    enabled: isEditing, // Only watch when editing
-    debounceMs: 3000,   // 3 second debounce
+    enabled: autoFillWatcherEnabled && !!performanceData,
+    debounceMs: 3500,   // 3.5 second debounce to further reduce API calls
     requireMinimumFields: 4
   });
 
@@ -258,9 +268,9 @@ const PerformanceSheetContent = () => {
         {!addMode ? (
           <div>
             <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {links.map((link, idx) => (
+              {links.map((link) => (
                 <div
-                  key={idx}
+                  key={link.entityType + '-' + link.entityId}
                   className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
                   <span className="font-medium capitalize text-text-muted">
                     {link.entityType}

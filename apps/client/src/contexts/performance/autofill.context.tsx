@@ -264,7 +264,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
     const checkTabAutoFillAvailability = useCallback(async (performanceData: PerformanceData) => {
         try {
             const response = await api.post('/performance/autofill/check', performanceData);
-            
+
             if (response.data.success) {
                 dispatch({ type: 'SET_TAB_AUTO_FILL_STATUS', payload: response.data.tabStatus });
                 dispatch({ type: 'SET_FILLABLE_TABS', payload: response.data.fillableTabs });

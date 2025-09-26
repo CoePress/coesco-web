@@ -26,7 +26,7 @@ export const REQUIRED_CHECKBOX_FIELDS: readonly FieldPath[] = [
 // Debounce delays for different operations
 export const DEBOUNCE_DELAYS = {
     CALCULATION: 100,   // Fast for real-time calculations
-    SAVE: 1500,         // Slower for persistence
+    SAVE: 3000,         // Increased to 3s for persistence to reduce lag and backend calls
     SEARCH: 300,        // Standard for search inputs
     FIELD_VALIDATION: 150 // Quick validation feedback
 } as const;

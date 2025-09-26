@@ -219,15 +219,22 @@ export function useAutoFillWatcher(
         }, debounceMs);
     }, [sheetId, triggerAutoFill, debounceMs]);
 
-    // Watch for performance data changes
+    // Debounced tab check
+    const tabCheckDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         if (!performanceData) return;
 
         // Detect field changes
         const changedFields = detectFieldChanges(performanceData);
 
-        // Always check tab availability when data changes
-        checkTabAutoFillAvailability(performanceData);
+        // Debounce tab availability check
+        if (tabCheckDebounceRef.current) {
+            clearTimeout(tabCheckDebounceRef.current);
+        }
+        tabCheckDebounceRef.current = setTimeout(() => {
+            checkTabAutoFillAvailability(performanceData);
+        }, 3500); // 3.5 seconds debounce for tab check
 
         // Only proceed with auto-fill trigger if there are changes
         if (changedFields.length === 0) return;

@@ -58,10 +58,10 @@ export class PerformanceAutoFillService {
      * RFQ tab validation - needs basic project info and material specs
      */
     private static hasRfqSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
         const hasBasicInfo = data.rfqDetails?.customerName || data.rfqDetails?.projectName;
-        
+
         return hasMaterial && hasBasicInfo;
     }
 
@@ -69,19 +69,19 @@ export class PerformanceAutoFillService {
      * Material Specs tab validation - needs material type and thickness
      */
     private static hasMaterialSpecsSufficientData(data: any): boolean {
-        return !!(data.common?.material?.materialType && 
-                 data.common?.material?.materialThickness);
+        return !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
     }
 
     /**
      * TDDBHD tab validation - needs material specs and coil data
      */
     private static hasTddbhdSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
-        const hasCoil = data.common?.coil?.coilWidth || 
-                       data.common?.material?.coilWidth;
-        
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
+        const hasCoil = data.common?.coil?.coilWidth ||
+            data.common?.material?.coilWidth;
+
         return hasMaterial && hasCoil;
     }
 
@@ -89,11 +89,11 @@ export class PerformanceAutoFillService {
      * Reel Drive tab validation - needs material and reel configuration
      */
     private static hasReelDriveSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
-        const hasReelConfig = data.reelDrive?.reel?.model || 
-                             data.common?.equipment?.reel?.model;
-        
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
+        const hasReelConfig = data.reelDrive?.reel?.model ||
+            data.common?.equipment?.reel?.model;
+
         return hasMaterial && hasReelConfig;
     }
 
@@ -101,10 +101,10 @@ export class PerformanceAutoFillService {
      * Straightener Utility tab validation - needs material data
      */
     private static hasStrUtilitySufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
         const hasStraightener = data.common?.equipment?.straightener?.model;
-        
+
         return hasMaterial && hasStraightener;
     }
 
@@ -112,10 +112,10 @@ export class PerformanceAutoFillService {
      * Feed tab validation - needs material and feed equipment data
      */
     private static hasFeedSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
         const hasFeedEquipment = data.common?.equipment?.feed?.model;
-        
+
         return hasMaterial && hasFeedEquipment;
     }
 
@@ -123,11 +123,11 @@ export class PerformanceAutoFillService {
      * Shear tab validation - needs material data for shear calculations
      */
     private static hasShearSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType && 
-                           data.common?.material?.materialThickness;
-        const hasYieldStrength = data.common?.material?.maxYieldStrength || 
-                                data.common?.material?.yieldStrength;
-        
+        const hasMaterial = data.common?.material?.materialType &&
+            data.common?.material?.materialThickness;
+        const hasYieldStrength = data.common?.material?.maxYieldStrength ||
+            data.common?.material?.yieldStrength;
+
         return hasMaterial && hasYieldStrength;
     }
 
