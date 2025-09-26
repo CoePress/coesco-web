@@ -30,6 +30,7 @@ import {
   StatusBadge,
 } from "@/components";
 import CustomPieChart from "@/components/charts/pie-chart";
+import DateRangePicker from "@/components/ui/date-range-picker";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
@@ -556,16 +557,24 @@ const ProductionDashboard = () => {
     }
   }, [utilizationOverTime, chartView]);
 
+  const handleDateRangeChange = (startDate: Date, endDate: Date) => {
+    setDateRange({ start: startDate, end: endDate });
+  };
+
   const Actions = () => {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
+        <DateRangePicker
+          startDate={dateRange.start}
+          endDate={dateRange.end}
+          onChange={handleDateRangeChange}
+        />
         <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
-          <MapIcon size={16} /> 
+          <MapIcon size={16} />
           Map
         </Button>
-        <Button onClick={refresh} variant="primary">
-          <RefreshCcw size={16} /> 
-          Refresh
+        <Button onClick={refresh} variant="primary" className="px-2">
+          <RefreshCcw size={16} />
         </Button>
       </div>
     );
