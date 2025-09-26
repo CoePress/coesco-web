@@ -51,7 +51,7 @@ const Button = ({
     [key in NonNullable<ButtonProps["size"]>]: string;
   } = {
     sm: "px-2 py-1 text-sm",
-    md: "px-3 py-1.5 text-sm",
+    md: "px-3 py-1.5 text-sm min-h-[34px]",
     lg: "px-4 py-2 text-base",
   };
 

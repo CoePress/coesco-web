@@ -223,7 +223,7 @@ const DateRangePicker = ({
 
   return (
     <div className="relative" ref={pickerRef}>
-      <div className={`flex items-center gap-1 ${className}`}>
+      <div className={`flex items-center gap-2 ${className}`}>
         <Button onClick={goToPreviousDay} variant="secondary-outline" className="px-2">
           <ChevronLeft size={16} />
         </Button>

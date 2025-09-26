@@ -564,15 +564,15 @@ const ProductionDashboard = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2 items-center">
+        {/* <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
+          <MapIcon size={16} />
+          Map
+        </Button> */}
         <DateRangePicker
           startDate={dateRange.start}
           endDate={dateRange.end}
           onChange={handleDateRangeChange}
         />
-        <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
-          <MapIcon size={16} />
-          Map
-        </Button>
         <Button onClick={refresh} variant="primary" className="px-2">
           <RefreshCcw size={16} />
         </Button>
