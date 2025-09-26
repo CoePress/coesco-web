@@ -75,7 +75,7 @@ import { Edit, Plus, User, Trash2, Search } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
-import { DeleteJourneyModal } from "./journeys/components";
+import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { AddJourneyContactModal } from "@/components";
 
 function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any }) {
