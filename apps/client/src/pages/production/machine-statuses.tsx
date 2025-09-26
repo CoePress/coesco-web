@@ -8,7 +8,7 @@ import {  IApiResponse } from "@/utils/types";
 import { MachineStatus } from "@coesco/types";
 import { format, startOfToday, isSameDay } from "date-fns";
 import { RefreshCcw, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const MachineStatuses = () => {
   const parseDateParam = (param: string | null, fallback: Date) => {
@@ -33,7 +33,6 @@ const MachineStatuses = () => {
   const [limit] = useState(25);
   const [sort, setSort] = useState("startTime");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [selectedState, _setSelectedState] = useState("");
   const [selectedMachine, setSelectedMachine] = useState(initialValues.machine);
   const [dateRange, setDateRange] = useState({
     start: initialValues.startDate,

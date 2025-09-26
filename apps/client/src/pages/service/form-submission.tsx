@@ -542,7 +542,7 @@ const FormSubmission = () => {
             </div>
 
             {/* Sections */}
-            {getCurrentPage().sections.map((section: any, sectionIndex: number) => (
+            {getCurrentPage().sections.map((section: any) => (
           <Card key={section.id} className="">
             <div className="space-y-6">
                 {section.fields.map((field: any) => (
