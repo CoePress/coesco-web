@@ -2,6 +2,7 @@ import {
   Calendar,
   CheckCircle,
   Edit,
+  Lock,
   Mail,
   Notebook,
   Phone,
@@ -11,6 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
+import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@coesco/types";
@@ -96,7 +98,7 @@ const CompanyDetails = () => {
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [tempValues, setTempValues] = useState<Record<string, any>>({});
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'credit' | 'interactions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions'>('overview');
   
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
@@ -112,10 +114,22 @@ const CompanyDetails = () => {
   
   const [showInactiveContacts, setShowInactiveContacts] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState("");
+  
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [editingAddressData, setEditingAddressData] = useState<any>({});
+  
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  
+  // Zip code lookup states for editing only
+  const [editZipLookupResults, setEditZipLookupResults] = useState<{city: string[], stateProv: string[], country: string[]}>({city: [], stateProv: [], country: []});
+  const [isEditLookingUpZip, setIsEditLookingUpZip] = useState(false);
 
   const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
   const [availableRsmsList, setAvailableRsmsList] = useState<string[]>([]);
   const rsmApi = useApi();
+
+  const [companyAddresses, setCompanyAddresses] = useState<any[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const getContactName = (contact: any) => `${contact.FirstName || ""} ${contact.LastName || ""}`.trim();
   const getContactInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'C';
@@ -218,13 +232,15 @@ const CompanyDetails = () => {
 
   useEffect(() => {
     if (!id || id === "undefined" || id === "null") {
+      setIsInitialLoading(false);
       return;
     }
     
     let cancelled = false;
     const fetchCompanyData = async () => {
       try {
-        const [companyData, contactsData, journeysData, callHistoryData] = await Promise.all([
+        setIsInitialLoading(true);
+        const [companyData, contactsData, journeysData, callHistoryData, addressesData] = await Promise.all([
           api.get(`/legacy/std/Company/filter/custom`, { 
             filterField: 'Company_ID', 
             filterValue: id, 
@@ -244,6 +260,11 @@ const CompanyDetails = () => {
             filterField: 'Company_ID', 
             filterValue: id,
             limit: 200
+          }),
+          api.get(`/legacy/std/Address/filter/custom`, { 
+            filterField: 'Company_ID', 
+            filterValue: id,
+            limit: 100
           })
         ]);
 
@@ -256,6 +277,9 @@ const CompanyDetails = () => {
 
           const processedCallHistory = Array.isArray(callHistoryData) ? callHistoryData : [];
           setCallHistory(processedCallHistory);
+
+          const processedAddresses = Array.isArray(addressesData) ? addressesData : [];
+          setCompanyAddresses(processedAddresses);
 
           const processedCompanyData = Array.isArray(companyData) ? companyData[0] : companyData;
           
@@ -283,6 +307,11 @@ const CompanyDetails = () => {
       } catch (error) {
         console.error('Error fetching company data:', error);
         setCallHistory([]);
+        setCompanyAddresses([]);
+      } finally {
+        if (!cancelled) {
+          setIsInitialLoading(false);
+        }
       }
     };
 
@@ -1144,7 +1173,202 @@ const CompanyDetails = () => {
     setNewContactData({});
   };
 
-  if (api.loading) {
+  const handleEditAddress = (address: any) => {
+    setEditingAddressId(address.Address_ID);
+    setEditingAddressData({ ...address });
+    // Reset zip lookup results
+    setEditZipLookupResults({city: [], stateProv: [], country: []});
+    // If there's already a zip code, trigger lookup
+    if (address.ZipCode) {
+      lookupZipCode(address.ZipCode);
+    }
+  };
+
+  const handleAddressDataChange = (fieldName: string, value: any) => {
+    console.log(`Updating ${fieldName} to:`, value, 'Current state:', editingAddressData);
+    setEditingAddressData(prev => ({ ...prev, [fieldName]: value }));
+    
+    // Trigger zip code lookup when zip code changes
+    if (fieldName === 'ZipCode') {
+      lookupZipCode(value);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    if (!editingAddressId) return;
+    
+    try {
+      const addressBeingEdited = companyAddresses.find(a => a.Address_ID === editingAddressId);
+      if (!addressBeingEdited) return;
+
+      const updateData = {
+        AddressName: editingAddressData.AddressName || '',
+        Address1: editingAddressData.Address1 || '',
+        Address2: editingAddressData.Address2 || '',
+        Address3: editingAddressData.Address3 || '',
+        City: editingAddressData.City || '',
+        State: editingAddressData.State || '',
+        Country: editingAddressData.Country || 'USA',
+        ZipCode: editingAddressData.ZipCode || '',
+        PhoneNumber: editingAddressData.PhoneNumber || '',
+        FaxPhoneNum: editingAddressData.FaxPhoneNum || '',
+        CanShip: (editingAddressData.CanShip === 1 || editingAddressData.CanShip === true) ? 1 : 0,
+        CanBill: (editingAddressData.CanBill === 1 || editingAddressData.CanBill === true) ? 1 : 0,
+        Notes: editingAddressData.Notes || '',
+        BillToNum: parseInt(editingAddressData.BillToNum) || 0,
+        BillToId: parseInt(editingAddressData.BillToId) || 0,
+        ShipInstr: editingAddressData.ShipInstr || '',
+        Directions: editingAddressData.Directions || '',
+        OriginalVia: editingAddressData.OriginalVia || '',
+        EmailInvoiceTo: editingAddressData.EmailInvoiceTo || '',
+        SystemNotes: editingAddressData.SystemNotes || ''
+      };
+      
+      const result = await api.patch(`/legacy/std/Address/filter/custom?Company_ID=${addressBeingEdited.Company_ID}&Address_ID=${editingAddressId}`, updateData);
+      
+      if (result !== null) {
+        const updatedAddresses = companyAddresses.map(address => 
+          address.Address_ID === editingAddressId ? { ...address, ...updateData } : address
+        );
+        setCompanyAddresses(updatedAddresses);
+        setEditingAddressId(null);
+        setEditingAddressData({});
+        setEditZipLookupResults({city: [], stateProv: [], country: []});
+      }
+    } catch (error) {
+      console.error('Error saving address:', error);
+      alert('Error saving address. Please try again.');
+    }
+  };
+
+  const handleCancelAddressEdit = () => {
+    setEditingAddressId(null);
+    setEditingAddressData({});
+    // Reset zip lookup results
+    setEditZipLookupResults({city: [], stateProv: [], country: []});
+  };
+
+  const handleAddAddress = () => {
+    setIsAddingAddress(true);
+  };
+
+  const lookupZipCode = async (zipCode: string) => {
+    if (!zipCode || zipCode.length < 5) {
+      setEditZipLookupResults({city: [], stateProv: [], country: []});
+      return;
+    }
+    
+    try {
+      setIsEditLookingUpZip(true);
+      
+      const zipData = await api.get(`/legacy/std/ZipCode/filter/custom`, {
+        filterField: 'ZipCode',
+        filterValue: zipCode,
+        limit: 100
+      });
+      
+      if (zipData && Array.isArray(zipData) && zipData.length > 0) {
+        // Extract unique values for each field
+        const cities = [...new Set(zipData.map(item => item.City).filter(Boolean))];
+        const stateProvs = [...new Set(zipData.map(item => item.StateProv).filter(Boolean))];
+        const countries = [...new Set(zipData.map(item => item.Country).filter(Boolean))];
+        
+        const results = {
+          city: cities,
+          stateProv: stateProvs,
+          country: countries
+        };
+        
+        setEditZipLookupResults(results);
+        
+        // Auto-populate fields - single option locks field, multiple options default to first
+        setEditingAddressData(prev => ({
+          ...prev,
+          City: cities.length >= 1 ? cities[0] : prev.City,
+          State: stateProvs.length >= 1 ? stateProvs[0] : prev.State,
+          Country: countries.length >= 1 ? countries[0] : prev.Country
+        }));
+      } else {
+        setEditZipLookupResults({city: [], stateProv: [], country: []});
+      }
+    } catch (error) {
+      console.error('Error looking up zip code:', error);
+      setEditZipLookupResults({city: [], stateProv: [], country: []});
+    } finally {
+      setIsEditLookingUpZip(false);
+    }
+  };
+
+
+
+  const handleCancelNewAddress = () => {
+    setIsAddingAddress(false);
+  };
+
+  const handleAddressAdded = (address: any) => {
+    // Refresh addresses after adding
+    refreshAddresses();
+  };
+
+  const refreshAddresses = async () => {
+    try {
+      console.log('Refreshing address data...');
+      const addressesData = await api.get(`/legacy/std/Address/filter/custom`, { 
+        filterField: 'Company_ID', 
+        filterValue: id,
+        limit: 100
+      });
+      
+      if (addressesData) {
+        const processedAddresses = Array.isArray(addressesData) ? addressesData : [];
+        setCompanyAddresses(processedAddresses);
+        console.log('Addresses refreshed:', processedAddresses.length, 'records');
+      }
+    } catch (error) {
+      console.error('Error refreshing addresses:', error);
+    }
+  };
+
+  const handleDeleteAddress = async (address: any) => {
+    if (!address.Address_ID) {
+      console.error('Cannot delete address: missing Address_ID');
+      return;
+    }
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete address "${address.AddressName || 'Unnamed Address'}"?`);
+    if (!confirmDelete) return;
+    
+    try {
+      console.log('Deleting address with Address_ID:', address.Address_ID, 'and Company_ID:', address.Company_ID);
+      
+      const result = await api.delete(`/legacy/std/Address/filter/custom`, {
+        params: {
+          Address_ID: address.Address_ID,
+          Company_ID: address.Company_ID
+        }
+      });
+      
+      if (result !== null) {
+        const updatedAddresses = companyAddresses.filter(a => a.Address_ID !== address.Address_ID);
+        setCompanyAddresses(updatedAddresses);
+        console.log('Address deleted successfully');
+      } else {
+        console.error('Failed to delete address record');
+        alert('Failed to delete address record. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      alert('Error deleting address record. Please try again.');
+    }
+  };
+
+  if (isInitialLoading) {
     return (
       <div className="flex flex-1 bg-background items-center justify-center">
         <div className="text-text">Loading company details...</div>
@@ -1409,6 +1633,15 @@ const CompanyDetails = () => {
                   : 'border-transparent text-text-muted hover:text-primary'
               }`}>
               Overview
+            </button>
+            <button 
+              onClick={() => setActiveTab('addresses')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'addresses' 
+                  ? 'border-primary/50 text-primary' 
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Addresses
             </button>
             <button 
               onClick={() => setActiveTab('interactions')}
@@ -1862,6 +2095,407 @@ const CompanyDetails = () => {
               )}
             </div>
           </section>
+          ) : activeTab === 'addresses' ? (
+            <section className="flex-1 space-y-2">
+              {/* Addresses */}
+              <div
+                className="bg-foreground rounded-lg border border-border p-4"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Company Addresses ({companyAddresses.length})</h4>
+                  <button 
+                    type="button"
+                    onClick={handleAddAddress}
+                    className="text-xs text-info border border-info px-2 py-1 rounded hover:bg-info/10">
+                    + Add Address
+                  </button>
+                </div>
+                
+                
+                {companyAddresses.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {companyAddresses.map((address, index) => {
+                      const isEditing = editingAddressId === address.Address_ID;
+                      const displayData = isEditing ? editingAddressData : address;
+                      
+                      return (
+                        <div key={`address-${address.Address_ID || index}`} className="bg-surface p-4 rounded-lg border border-border">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editingAddressData.AddressName || ''}
+                                  onChange={(e) => handleAddressDataChange('AddressName', e.target.value)}
+                                  className="text-sm font-semibold bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full mb-2"
+                                  placeholder="Address name"
+                                />
+                              ) : (
+                                displayData.AddressName && (
+                                  <div className="text-sm font-semibold text-text mb-2">{displayData.AddressName}</div>
+                                )
+                              )}
+                              
+                              <div className="text-sm text-text space-y-1">
+                                {isEditing ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={editingAddressData.Address1 || ''}
+                                      onChange={(e) => handleAddressDataChange('Address1', e.target.value)}
+                                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
+                                      placeholder="Address line 1"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={editingAddressData.Address2 || ''}
+                                      onChange={(e) => handleAddressDataChange('Address2', e.target.value)}
+                                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
+                                      placeholder="Address line 2"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={editingAddressData.Address3 || ''}
+                                      onChange={(e) => handleAddressDataChange('Address3', e.target.value)}
+                                      className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary mb-1"
+                                      placeholder="Address line 3"
+                                    />
+                                    <div className="mb-1">
+                                      <div className="relative">
+                                        <input
+                                          type="text"
+                                          value={editingAddressData.ZipCode || ''}
+                                          onChange={(e) => handleAddressDataChange('ZipCode', e.target.value)}
+                                          onKeyDown={handleKeyDown}
+                                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full pr-8"
+                                          placeholder="ZIP code"
+                                        />
+                                        {isEditLookingUpZip && (
+                                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                            <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1">
+                                      {editZipLookupResults.city.length > 1 ? (
+                                        <select
+                                          value={editingAddressData.City || ''}
+                                          onChange={(e) => handleAddressDataChange('City', e.target.value)}
+                                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                        >
+                                          {editZipLookupResults.city.map(city => (
+                                            <option key={city} value={city}>{city}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <div className="relative w-full">
+                                          <input
+                                            type="text"
+                                            value={editingAddressData.City || ''}
+                                            onKeyDown={handleKeyDown}
+                                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                                            placeholder="City"
+                                            readOnly
+                                            title="City is automatically populated from ZIP code"
+                                          />
+                                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                                        </div>
+                                      )}
+                                      {editZipLookupResults.stateProv.length > 1 ? (
+                                        <select
+                                          value={editingAddressData.State || ''}
+                                          onChange={(e) => handleAddressDataChange('State', e.target.value)}
+                                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                        >
+                                          {editZipLookupResults.stateProv.map(state => (
+                                            <option key={state} value={state}>{state}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <div className="relative w-full">
+                                          <input
+                                            type="text"
+                                            value={editingAddressData.State || ''}
+                                            onKeyDown={handleKeyDown}
+                                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                                            placeholder="State"
+                                            readOnly
+                                            title="State is automatically populated from ZIP code"
+                                          />
+                                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="mt-1">
+                                      {editZipLookupResults.country.length > 1 ? (
+                                        <select
+                                          value={editingAddressData.Country || ''}
+                                          onChange={(e) => handleAddressDataChange('Country', e.target.value)}
+                                          className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary w-full"
+                                        >
+                                          {editZipLookupResults.country.map(country => (
+                                            <option key={country} value={country}>{country}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <div className="relative w-full">
+                                          <input
+                                            type="text"
+                                            value={editingAddressData.Country || ''}
+                                            onKeyDown={handleKeyDown}
+                                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1 pr-7 text-text-muted focus:outline-none cursor-not-allowed"
+                                            placeholder="Country"
+                                            readOnly
+                                            title="Country is automatically populated from ZIP code"
+                                          />
+                                          <Lock size={12} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {displayData.Address1 && <div>{displayData.Address1}</div>}
+                                    {displayData.Address2 && <div>{displayData.Address2}</div>}
+                                    {displayData.Address3 && <div>{displayData.Address3}</div>}
+                                    {(displayData.City || displayData.State || displayData.ZipCode) && (
+                                      <div className="font-medium">
+                                        {[displayData.City, displayData.State, displayData.ZipCode].filter(Boolean).join(', ')}
+                                      </div>
+                                    )}
+                                    {displayData.Country && displayData.Country !== 'USA' && (
+                                      <div className="font-medium">{displayData.Country}</div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 ml-3">
+                              <div className="text-xs text-text-muted">ID: {address.Address_ID}</div>
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleSaveAddress}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={handleCancelAddressEdit}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={() => handleEditAddress(address)}
+                                  >
+                                    <Edit size={12} />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteAddress(address)}
+                                  >
+                                    <Trash2 size={12} />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {isEditing ? (
+                            <div className="space-y-3 mb-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="tel"
+                                  value={editingAddressData.PhoneNumber || ''}
+                                  onChange={(e) => handleAddressDataChange('PhoneNumber', e.target.value)}
+                                  className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  placeholder="Phone number"
+                                />
+                                <input
+                                  type="tel"
+                                  value={editingAddressData.FaxPhoneNum || ''}
+                                  onChange={(e) => handleAddressDataChange('FaxPhoneNum', e.target.value)}
+                                  className="text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                  placeholder="Fax number"
+                                />
+                              </div>
+                              <input
+                                type="email"
+                                value={editingAddressData.EmailInvoiceTo || ''}
+                                onChange={(e) => handleAddressDataChange('EmailInvoiceTo', e.target.value)}
+                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                placeholder="Invoice email"
+                              />
+                              <input
+                                type="number"
+                                value={editingAddressData.BillToNum || ''}
+                                onChange={(e) => handleAddressDataChange('BillToNum', e.target.value)}
+                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                                placeholder="Bill to number"
+                              />
+                              <div className="flex items-center gap-4">
+                                <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingAddressData.CanShip == 1 || editingAddressData.CanShip === true}
+                                    onChange={(e) => {
+                                      const newValue = e.target.checked ? 1 : 0;
+                                      console.log('Edit CanShip checkbox changed to:', newValue);
+                                      handleAddressDataChange('CanShip', newValue);
+                                    }}
+                                    className="rounded border-border text-primary focus:ring-primary"
+                                  />
+                                  <span>Can Ship</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingAddressData.CanBill == 1 || editingAddressData.CanBill === true}
+                                    onChange={(e) => {
+                                      const newValue = e.target.checked ? 1 : 0;
+                                      console.log('Edit CanBill checkbox changed to:', newValue);
+                                      handleAddressDataChange('CanBill', newValue);
+                                    }}
+                                    className="rounded border-border text-primary focus:ring-primary"
+                                  />
+                                  <span>Can Bill</span>
+                                </label>
+                              </div>
+                              <textarea
+                                value={editingAddressData.Notes || ''}
+                                onChange={(e) => handleAddressDataChange('Notes', e.target.value)}
+                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary resize-none"
+                                rows={2}
+                                placeholder="Notes"
+                              />
+                              <textarea
+                                value={editingAddressData.ShipInstr || ''}
+                                onChange={(e) => handleAddressDataChange('ShipInstr', e.target.value)}
+                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary resize-none"
+                                rows={2}
+                                placeholder="Shipping instructions"
+                              />
+                              <textarea
+                                value={editingAddressData.Directions || ''}
+                                onChange={(e) => handleAddressDataChange('Directions', e.target.value)}
+                                className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary resize-none"
+                                rows={2}
+                                placeholder="Directions"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              {(displayData.PhoneNumber || displayData.FaxPhoneNum) && (
+                                <div className="text-sm text-text-muted space-y-1 mb-3 py-2 border-y border-border">
+                                  {displayData.PhoneNumber && (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">📞</span>
+                                      <a href={`tel:${displayData.PhoneNumber}`} className="text-info hover:underline">
+                                        {displayData.PhoneNumber}
+                                      </a>
+                                    </div>
+                                  )}
+                                  {displayData.FaxPhoneNum && (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">📠</span>
+                                      <span>{displayData.FaxPhoneNum}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {((displayData.CanShip == 1 || displayData.CanShip === true) || (displayData.CanBill == 1 || displayData.CanBill === true) || displayData.BillToNum) && (
+                                <div className="space-y-2 mb-3">
+                                  <div className="flex flex-wrap gap-2">
+                                    {(displayData.CanShip == 1 || displayData.CanShip === true) && (
+                                      <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                                        ✅ Can Ship
+                                      </span>
+                                    )}
+                                    {(displayData.CanBill == 1 || displayData.CanBill === true) && (
+                                      <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                                        💳 Can Bill
+                                      </span>
+                                    )}
+                                  </div>
+                                  {displayData.BillToNum && displayData.BillToNum !== 0 && (
+                                    <div className="text-xs text-text-muted">
+                                      <span className="font-medium">Bill To #:</span> {displayData.BillToNum}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {displayData.EmailInvoiceTo && (
+                                <div className="mb-3">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Invoice Email:</div>
+                                  <div className="text-sm">
+                                    <a href={`mailto:${displayData.EmailInvoiceTo}`} className="text-info hover:underline">
+                                      {displayData.EmailInvoiceTo}
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.Notes && (
+                                <div className="mb-3">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Notes:</div>
+                                  <div className="text-sm text-text bg-background p-2 rounded border">
+                                    {displayData.Notes}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.ShipInstr && (
+                                <div className="mb-3">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Shipping Instructions:</div>
+                                  <div className="text-sm text-text bg-background p-2 rounded border">
+                                    {displayData.ShipInstr}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.Directions && (
+                                <div className="mb-3">
+                                  <div className="text-xs font-medium text-text-muted mb-1">Directions:</div>
+                                  <div className="text-sm text-text bg-background p-2 rounded border">
+                                    {displayData.Directions}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {displayData.SystemNotes && (
+                                <div>
+                                  <div className="text-xs font-medium text-text-muted mb-1">System Notes:</div>
+                                  <div className="text-xs text-text-muted bg-background p-2 rounded border">
+                                    {displayData.SystemNotes}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-4xl text-text-muted/50 mb-4">🏢</div>
+                    <div className="text-text-muted">No addresses found for this company</div>
+                  </div>
+                )}
+              </div>
+            </section>
           ) : activeTab === 'interactions' ? (
             <section className="flex-1 space-y-2">
               {/* Interaction History - Call History */}
@@ -2579,6 +3213,14 @@ const CompanyDetails = () => {
           </div>
         </Modal>
       )}
+      
+      {/* Add Address Modal */}
+      <AddAddressModal
+        isOpen={isAddingAddress}
+        onClose={handleCancelNewAddress}
+        onAddressAdded={handleAddressAdded}
+        companyId={id}
+      />
     </div>
   );
 };

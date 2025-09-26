@@ -38,5 +38,19 @@
         "type": "uuid"
       }
     ]
+  },
+  {
+    "database": "std",
+    "table": "Address",
+    "ids": [
+      {
+        "field": "Company_ID",
+        "type": "int"
+      },
+      {
+        "field": "Address_ID",
+        "type": "int"
+      }
+    ]
   }
 ]
