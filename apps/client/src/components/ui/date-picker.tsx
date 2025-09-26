@@ -181,7 +181,7 @@ const DatePicker = ({
           onClick={() => handleDateClick(day)}
           disabled={isDisabled}
           className={`
-            h-8 w-8 rounded-lg text-sm font-medium
+            h-8 w-8 rounded-sm text-sm font-medium
             transition-all duration-150
             ${isSelected
               ? 'bg-primary text-background'
@@ -212,8 +212,8 @@ const DatePicker = ({
           placeholder={placeholder}
           disabled={disabled}
           className={`
-            w-full px-4 py-2 pr-10
-            bg-surface border border-border rounded-lg
+            w-full px-3 py-1.5 pr-10 min-h-[34px]
+            bg-surface border border-border rounded-sm
             text-text placeholder:text-text-muted
             focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
             disabled:opacity-50 disabled:cursor-not-allowed
@@ -232,13 +232,13 @@ const DatePicker = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 p-4 bg-foreground border border-border rounded-lg shadow-xl">
+        <div className="absolute z-50 mt-2 p-4 bg-foreground border border-border rounded-sm shadow-xl">
           <div className="w-64">
             <div className="flex items-center justify-between mb-4">
               <button
                 type="button"
                 onClick={handlePreviousMonth}
-                className="p-1 hover:bg-surface rounded-lg transition-colors"
+                className="p-1 hover:bg-surface rounded-sm transition-colors"
               >
                 <ChevronLeft size={18} className="text-text-muted" />
               </button>
@@ -250,7 +250,7 @@ const DatePicker = ({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1 hover:bg-surface rounded-lg transition-colors"
+                className="p-1 hover:bg-surface rounded-sm transition-colors"
               >
                 <ChevronRight size={18} className="text-text-muted" />
               </button>

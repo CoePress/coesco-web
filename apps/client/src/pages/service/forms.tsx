@@ -1,4 +1,4 @@
-import { FileTextIcon, ClipboardListIcon, PlusCircleIcon, CheckCircleIcon, UsersIcon } from "lucide-react";
+import { PlusCircleIcon } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -8,7 +8,6 @@ import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useToast } from "@/hooks/use-toast";
 
 const Forms = () => {
@@ -121,37 +120,6 @@ const Forms = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const kpis = [
-    {
-      title: "Total Forms",
-      value: "24",
-      description: "Active forms in system",
-      icon: <ClipboardListIcon size={16} />,
-      change: 12.5,
-    },
-    {
-      title: "Total Submissions",
-      value: "1,438",
-      description: "Submissions collected this month",
-      icon: <FileTextIcon size={16} />,
-      change: 8.2,
-    },
-    {
-      title: "Completion Rate",
-      value: "89%",
-      description: "Forms completed vs started",
-      icon: <CheckCircleIcon size={16} />,
-      change: -2.1,
-    },
-    {
-      title: "Active Users",
-      value: "156",
-      description: "Users who filled forms this month",
-      icon: <UsersIcon size={16} />,
-      change: 5.3,
-    },
-  ];
-
   const Actions = () => {
     return (
       <div className="flex gap-2">
@@ -223,12 +191,6 @@ const Forms = () => {
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">
-        <Metrics>
-          {kpis.map((metric) => (
-            <MetricsCard {...metric} />
-          ))}
-        </Metrics>
-
         <Toolbar
           onSearch={handleSearch}
           searchPlaceholder="Search forms..."

@@ -568,8 +568,9 @@ model Form {
   createdById String
   updatedById String
 
-  pages       FormPage[]
-  submissions FormSubmission[]
+  pages            FormPage[]
+  submissions      FormSubmission[]
+  conditionalRules FormConditionalRule[]
 
   @@map("forms")
 }
@@ -688,6 +689,48 @@ model FormSubmission {
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@map("form_submissions")
+}
+
+model FormConditionalRule {
+  id          String              @id @default(uuid())
+  formId      String
+  name        String?
+  targetType  ConditionalTarget   // What to show/hide
+  targetId    String              // ID of page/section/field
+  action      ConditionalAction   // What to do
+  conditions  Json                // Array of conditions
+  operator    ConditionalOperator @default(AND)
+  priority    Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  createdById String
+  updatedById String
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, targetId])
+  @@map("form_conditional_rules")
+}
+
+enum ConditionalTarget {
+  PAGE
+  SECTION
+  FIELD
+}
+
+enum ConditionalAction {
+  SHOW
+  HIDE
+  ENABLE
+  DISABLE
+  REQUIRE
+  OPTIONAL
+}
+
+enum ConditionalOperator {
+  AND
+  OR
 }
 
 enum AuditAction {

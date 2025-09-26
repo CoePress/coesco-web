@@ -1,5 +1,52 @@
 {
   "title": "V2 Service Technician Daily Report v23",
+  "conditionalRules": [
+    {
+      "name": "Show Customer 2 Page",
+      "targetType": "PAGE",
+      "targetLabel": "Customer Information 2",
+      "action": "SHOW",
+      "conditions": [
+        {
+          "fieldVariable": "2nd Customer",
+          "operator": "equals",
+          "value": "yes"
+        }
+      ],
+      "operator": "AND",
+      "priority": 1
+    },
+    {
+      "name": "Show Third Customer Question",
+      "targetType": "PAGE",
+      "targetLabel": "Did you visit another customer?",
+      "action": "SHOW",
+      "conditions": [
+        {
+          "fieldVariable": "2nd Customer",
+          "operator": "equals",
+          "value": "yes"
+        }
+      ],
+      "operator": "AND",
+      "priority": 2
+    },
+    {
+      "name": "Show Customer 3 Page",
+      "targetType": "PAGE",
+      "targetLabel": "Customer Information 3",
+      "action": "SHOW",
+      "conditions": [
+        {
+          "fieldVariable": "Third Customer",
+          "operator": "equals",
+          "value": "yes"
+        }
+      ],
+      "operator": "AND",
+      "priority": 3
+    }
+  ],
   "pages": [
     {
       "sequence": 1,
@@ -272,7 +319,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": false
+              "isHiddenOnReport": false,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             },
             {
               "sequence": 17,
@@ -317,7 +374,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": true
+              "isHiddenOnReport": true,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             }
           ]
         }
@@ -505,7 +572,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": false
+              "isHiddenOnReport": false,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             },
             {
               "sequence": 17,
@@ -550,7 +627,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": true
+              "isHiddenOnReport": true,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             }
           ]
         }
@@ -738,7 +825,17 @@
               "isRequired": true,
               "isReadOnly": false,
               "isHiddenOnDevice": false,
-              "isHiddenOnReport": false
+              "isHiddenOnReport": false,
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                },
+                {
+                  "label": "No",
+                  "value": "no"
+                }
+              ]
             },
             {
               "sequence": 17,

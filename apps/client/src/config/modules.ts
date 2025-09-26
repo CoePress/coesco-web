@@ -256,31 +256,31 @@ const serviceModule: Module = {
   status: "active",
   pages: [
     {
-      slug: "forms",
+      slug: null,
       label: "Forms",
       icon: FileIcon,
       component: Forms,
       children: [
         {
-          slug: ":id",
+          slug: "forms/:id",
           label: "Form Details",
           icon: FileCogIcon,
           component: FormDetails,
         },
         {
-          slug: ":id/build",
+          slug: "forms/:id/build",
           label: "Form Details",
           icon: FileCogIcon,
           component: FormBuilder,
         },
         {
-          slug: ":id/submissions",
+          slug: "forms/:id/submissions",
           label: "Form Submissions",
           icon: FileCheck2Icon,
           component: FormSubmissions,
         },
         {
-          slug: ":id/submit",
+          slug: "forms/:id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
           component: FormSubmission,
