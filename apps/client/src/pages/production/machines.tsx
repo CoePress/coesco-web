@@ -4,6 +4,8 @@ import StatusBadge from "@/components/ui/status-badge";
 import Modal from "@/components/ui/modal";
 import MachineForm from "@/components/forms/machine-form";
 import { useApi } from "@/hooks/use-api";
+import { useSocket } from "@/contexts/socket.context";
+import { getVariantFromStatus } from "@/utils";
 import { PlusIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { IApiResponse } from "@/utils/types";
@@ -24,6 +26,15 @@ const Machines = () => {
   });
 
   const { get, loading, error } = useApi();
+  const { machineStates, subscribeToMachineStates, unsubscribeFromMachineStates } = useSocket();
+
+  useEffect(() => {
+    subscribeToMachineStates();
+
+    return () => {
+      unsubscribeFromMachineStates();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchMachines = async () => {
@@ -81,13 +92,29 @@ const Machines = () => {
     },
     {
       key: "enabled",
-      header: "Status",
+      header: "Active",
       render: (_, row) => (
-        <StatusBadge 
-          label={row.enabled ? "Enabled" : "Disabled"}
+        <StatusBadge
+          label={row.enabled ? "True" : "False"}
           variant={row.enabled ? "success" : "default"}
         />
       )
+    },
+    {
+      key: "realTimeStatus",
+      header: "Live Status",
+      render: (_, row) => {
+        const realTimeData = machineStates.find(
+          (state) => state.machineId === row.id
+        );
+        const status = realTimeData?.state || "OFFLINE";
+        return (
+          <StatusBadge
+            label={status}
+            variant={getVariantFromStatus(status) as "error" | "success" | "warning" | "info"}
+          />
+        );
+      }
     },
     {
       key: "actions",

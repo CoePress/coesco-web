@@ -2,13 +2,12 @@
 import { FormFieldControlType, FormFieldDataType, MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
-
-// contextStorage.enterWith(SYSTEM_CONTEXT);
 
 const microsoftService = new MicrosoftService();
 
@@ -42,7 +41,7 @@ const machines = [
     name: "Doosan 3100LS",
     type: MachineType.LATHE,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/doosan/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/doosan/current",
     enabled: true,
   },
   {
@@ -50,7 +49,7 @@ const machines = [
     name: "Kuraki Boring Mill",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/kuraki/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/kuraki/current",
     enabled: false,
   },
   {
@@ -58,7 +57,7 @@ const machines = [
     name: "OKK",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/okk/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/okk/current",
     enabled: true,
   },
   {
@@ -66,7 +65,7 @@ const machines = [
     name: "Niigata HN80",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/hn80/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/hn80/current",
     enabled: true,
   },
   {
@@ -74,7 +73,7 @@ const machines = [
     name: "Niigata SPN630",
     type: MachineType.MILL,
     controllerType: MachineControllerType.FANUC,
-    connectionUrl: "http://10.231.200.81:5000/api/v1/spn630/current",
+    connectionUrl: "http://10.231.200.38:5000/api/v1/spn630/current",
     enabled: false,
   },
 ];
@@ -84,7 +83,7 @@ async function seedEmployees() {
     const employeeCount = await prisma.employee.count();
 
     if (employeeCount === 2) {
-      await _migrateEmployees();
+      await _migrateEmployees(legacyService);
       await closeDatabaseConnections();
       await microsoftService.sync();
     }
@@ -280,6 +279,9 @@ async function seedServiceTechDailyForm() {
         },
       });
 
+      // Track page labels to IDs for conditional rules
+      const pageLabelMap = new Map<string, string>();
+
       for (const page of serviceTechDailyTemplate.pages) {
         const formPage = await prisma.formPage.create({
           data: {
@@ -290,6 +292,9 @@ async function seedServiceTechDailyForm() {
             updatedById: "system",
           },
         });
+
+        // Map page label to ID
+        pageLabelMap.set(page.label, formPage.id);
 
         for (const section of page.sections) {
           const formSection = await prisma.formSection.create({
@@ -322,6 +327,51 @@ async function seedServiceTechDailyForm() {
             });
           }
         }
+      }
+
+      // CREATE THE FUCKING CONDITIONAL RULES
+      logger.info("=== SEEDING CONDITIONAL RULES ===");
+      logger.info("template.conditionalRules exists:", !!(serviceTechDailyTemplate as any).conditionalRules);
+      logger.info("Available page labels:", Array.from(pageLabelMap.keys()));
+
+      const conditionalRules = (serviceTechDailyTemplate as any).conditionalRules;
+      if (conditionalRules) {
+        logger.info("Processing", conditionalRules.length, "conditional rules...");
+
+        for (const ruleTemplate of conditionalRules) {
+          logger.info("\n--- Processing rule:", ruleTemplate.name);
+          logger.info("Looking for page with label:", ruleTemplate.targetLabel);
+
+          const targetId = pageLabelMap.get(ruleTemplate.targetLabel);
+          logger.info("Found targetId:", targetId);
+
+          if (!targetId) {
+            logger.error(`FAILED: Could not find page with label: "${ruleTemplate.targetLabel}"`);
+            continue;
+          }
+
+          try {
+            const createdRule = await prisma.formConditionalRule.create({
+              data: {
+                formId: form.id,
+                name: ruleTemplate.name,
+                targetType: ruleTemplate.targetType,
+                targetId,
+                action: ruleTemplate.action,
+                conditions: ruleTemplate.conditions,
+                operator: ruleTemplate.operator,
+                priority: ruleTemplate.priority,
+                createdById: "system",
+                updatedById: "system",
+              },
+            });
+            logger.info("SUCCESS: Created rule with ID:", createdRule.id);
+          } catch (error) {
+            logger.error("FAILED: Error creating rule:", error);
+          }
+        }
+      } else {
+        logger.info("NO CONDITIONAL RULES FOUND IN TEMPLATE");
       }
 
       logger.info(`Seeded Service Tech Daily form with ${serviceTechDailyTemplate.pages.length} pages`);

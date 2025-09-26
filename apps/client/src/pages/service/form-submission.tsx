@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, X, ChevronDown, ChevronUp, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
+
+interface GPSLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: string;
+}
 
 const FormSubmission = () => {
   const { id } = useParams();
@@ -14,11 +21,11 @@ const FormSubmission = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<GPSLocation | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [pages, setPages] = useState<any[]>([]);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
@@ -30,6 +37,34 @@ const FormSubmission = () => {
   );
 
   const storageKey = useMemo(() => `form-submission-${id}`, [id]);
+
+  // Get user's GPS location
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const locationData: GPSLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          timestamp: new Date().toISOString(),
+        };
+        setUserLocation(locationData);
+        console.log('GPS Location obtained:', locationData);
+      },
+      (error) => {
+        console.error('Location error:', error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
+  };
 
   const saveToLocalStorage = (values: Record<string, any>) => {
     if (!id) return;
@@ -96,34 +131,32 @@ const FormSubmission = () => {
   };
 
   useEffect(() => {
+    getUserLocation();
     fetchForm();
   }, [id]);
 
   // Auto-save on form value changes
   useEffect(() => {
-    if (Object.keys(formValues).length > 0) {
+    if (getFilledFieldsCount() > 0) {
       saveToLocalStorage(formValues);
     }
   }, [formValues, currentPageIndex]);
 
-  const toggleSection = (sectionId: string) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
-  };
 
   const handleFieldChange = (fieldId: string, value: any) => {
     setFormValues(prev => {
-      const newValues = {
-        ...prev,
-        [fieldId]: value
-      };
+      const newValues = { ...prev };
+      // If value is empty, remove the key entirely
+      if (value === '' || value === null || value === undefined) {
+        delete newValues[fieldId];
+      } else {
+        newValues[fieldId] = value;
+      }
       // Save to local storage will happen via useEffect
       return newValues;
     });
     // Clear error when field is filled
-    if (errors[fieldId]) {
+    if (errors[fieldId] && value) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[fieldId];
@@ -175,7 +208,10 @@ const FormSubmission = () => {
         formId: id,
         status: 'submitted',
         submittedAt: new Date().toISOString(),
-        data: formValues
+        data: {
+          ...formValues,
+          _gpsLocation: userLocation || null
+        }
       };
 
       // Post submission to API
@@ -201,7 +237,7 @@ const FormSubmission = () => {
 
   const handleCancel = () => {
     // Check if any fields have been filled
-    const hasFilledFields = Object.keys(formValues).length > 0;
+    const hasFilledFields = getFilledFieldsCount() > 0;
 
     if (hasFilledFields) {
       setShowCancelModal(true);
@@ -221,6 +257,13 @@ const FormSubmission = () => {
         return pageTotal + (section.fields?.length || 0);
       }, 0);
     }, 0);
+  };
+
+  const getFilledFieldsCount = () => {
+    return Object.entries(formValues).filter(([_, value]) => {
+      // Count as filled only if value is not empty/null/undefined
+      return value !== '' && value !== null && value !== undefined;
+    }).length;
   };
 
   const getCurrentPage = () => pages[currentPageIndex];
@@ -244,6 +287,21 @@ const FormSubmission = () => {
     const value = formValues[field.id] || '';
     const hasError = !!errors[field.id];
     const fieldType = field.controlType;
+
+    // Special handling for GPS location field
+    if (field.label === 'Current Location (GPS)') {
+      return (
+        <div className="w-full">
+          <div className="px-3 py-1.5 min-h-[34px] flex items-center bg-surface border border-border rounded-sm text-text">
+            {userLocation ? (
+              <span className="font-mono">{userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}</span>
+            ) : (
+              <span className="text-text-muted">Getting GPS location...</span>
+            )}
+          </div>
+        </div>
+      );
+    }
 
     switch (fieldType) {
       case 'INPUT':
@@ -282,7 +340,7 @@ const FormSubmission = () => {
             <select
               value={value}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              className={`w-full px-4 py-2 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
+              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
             >
               <option value="">Select {field.label.toLowerCase()}</option>
               {dropdownOptions.map((option: any, index: number) => {
@@ -321,7 +379,7 @@ const FormSubmission = () => {
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               rows={4}
-              className={`w-full px-4 py-2 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none`}
+              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none`}
             />
             {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
           </div>
@@ -330,7 +388,7 @@ const FormSubmission = () => {
       case 'CAMERA':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
+            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
               <Camera className="mx-auto text-text-muted mb-3" size={32} />
               <p className="text-text-muted mb-2">Click to upload photos</p>
               <p className="text-xs text-text-muted">or drag and drop</p>
@@ -354,7 +412,7 @@ const FormSubmission = () => {
       case 'SIGNATURE_PAD':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
+            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
               <PenTool className="mx-auto text-text-muted mb-3" size={32} />
               <p className="text-text-muted mb-2">Click to add signature</p>
               <p className="text-xs text-text-muted">Draw your signature</p>
@@ -373,10 +431,15 @@ const FormSubmission = () => {
     }
   };
 
-  const getFieldIcon = (fieldType: string) => {
+  const getFieldIcon = (fieldType: string, field?: any) => {
     switch (fieldType) {
       case 'INPUT':
-      case 'TEXTBOX': return <FileText size={16} />;
+      case 'TEXTBOX':
+        // Check if this is a GPS field by label
+        if (field && field.label === 'Current Location (GPS)') {
+          return <MapPin size={16} />;
+        }
+        return <FileText size={16} />;
       case 'DATE_SELECTOR': return <Calendar size={16} />;
       case 'DROPDOWN': return <List size={16} />;
       case 'MULTI_SELECT': return <CheckSquare size={16} />;
@@ -432,13 +495,13 @@ const FormSubmission = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
-            <span>{Object.keys(formValues).length} / {getTotalFields()} fields</span>
+            <span>{getFilledFieldsCount()} / {getTotalFields()} fields</span>
           </div>
           <div className="w-full bg-foreground rounded-full h-2">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(Object.keys(formValues).length / getTotalFields()) * 100}%`
+                width: `${(getFilledFieldsCount() / getTotalFields()) * 100}%`
               }}
             />
           </div>
@@ -479,34 +542,13 @@ const FormSubmission = () => {
             </div>
 
             {/* Sections */}
-            {getCurrentPage().sections.map((section: any, sectionIndex: number) => (
-          <Card key={section.id} className="overflow-hidden">
-            <div 
-              className="flex items-center justify-between cursor-pointer hover:bg-foreground/50 transition-colors -m-6 p-6"
-              onClick={() => toggleSection(section.id)}
-            >
-              <div className="flex items-center space-x-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">
-                  Section {sectionIndex + 1}
-                </span>
-                <div>
-                  <h3 className="text-lg font-semibold text-text">{section.title}</h3>
-                  {section.description && (
-                    <p className="text-sm text-text-muted">{section.description}</p>
-                  )}
-                </div>
-              </div>
-              <button className="p-2 hover:bg-foreground rounded-lg transition-colors">
-                {collapsedSections[section.id] ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-              </button>
-            </div>
-
-            {!collapsedSections[section.id] && (
-              <div className="pt-4 mt-6 border-t border-border space-y-6">
+            {getCurrentPage().sections.map((section: any) => (
+          <Card key={section.id} className="">
+            <div className="space-y-6">
                 {section.fields.map((field: any) => (
                   <div key={field.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.controlType)}</div>
+                      <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
                       <label className="text-text font-medium">
                         {field.label}
                         {field.isRequired && <span className="text-error ml-1">*</span>}
@@ -516,14 +558,13 @@ const FormSubmission = () => {
                   </div>
                 ))}
               </div>
-            )}
           </Card>
             ))}
           </>
         )}
 
         {Object.keys(errors).length > 0 && (
-          <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+          <div className="bg-error/10 border border-error/20 rounded-sm p-4">
             <p className="text-error font-medium">Please fix the following errors:</p>
             <ul className="list-disc list-inside mt-2 text-error text-sm">
               {Object.values(errors).map((error, index) => (
@@ -546,7 +587,7 @@ const FormSubmission = () => {
             Are you sure you want to cancel? Your progress has been saved and you can continue later.
           </p>
           <p className="text-text-muted text-sm">
-            {Object.keys(formValues).length} field(s) have been filled out.
+            {getFilledFieldsCount()} field(s) have been filled out.
           </p>
           <div className="flex gap-2 justify-end">
             <Button

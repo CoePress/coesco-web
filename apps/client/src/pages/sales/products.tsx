@@ -97,7 +97,7 @@ const Products = () => {
   );
 
   const filter = useMemo(() => JSON.stringify({
-    type: productType.charAt(0).toUpperCase() + productType.slice(1),
+    type: productType === 'services' ? 'Service' : productType.charAt(0).toUpperCase() + productType.slice(1),
   }), [productType]);
 
   const fetchProducts = async () => {

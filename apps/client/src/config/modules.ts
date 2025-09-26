@@ -28,7 +28,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, ServiceDashboard, Sessions } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -253,40 +253,34 @@ const serviceModule: Module = {
   slug: "service",
   label: "Service",
   icon: WrenchIcon,
-  status: "development" as const,
+  status: "active",
   pages: [
     {
       slug: null,
-      label: "Dashboard",
-      icon: LayoutDashboardIcon,
-      component: ServiceDashboard,
-    },
-    {
-      slug: "forms",
       label: "Forms",
       icon: FileIcon,
       component: Forms,
       children: [
         {
-          slug: ":id",
+          slug: "forms/:id",
           label: "Form Details",
           icon: FileCogIcon,
           component: FormDetails,
         },
         {
-          slug: ":id/build",
+          slug: "forms/:id/build",
           label: "Form Details",
           icon: FileCogIcon,
           component: FormBuilder,
         },
         {
-          slug: ":id/submissions",
+          slug: "forms/:id/submissions",
           label: "Form Submissions",
           icon: FileCheck2Icon,
           component: FormSubmissions,
         },
         {
-          slug: ":id/submit",
+          slug: "forms/:id/submit",
           label: "Form Submit",
           icon: FileCheck2Icon,
           component: FormSubmission,
@@ -309,6 +303,12 @@ const sandboxModule: Module = {
       label: "Sandbox",
       icon: CodeIcon,
       component: Sandbox,
+    },
+    {
+      slug: "timezone",
+      label: "Timezone",
+      icon: PaintBucketIcon,
+      component: Timezone,
     },
     {
       slug: "design-elements",

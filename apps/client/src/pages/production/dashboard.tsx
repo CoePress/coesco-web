@@ -5,7 +5,6 @@ import {
   RefreshCcw,
   Clock,
   Filter,
-  MapIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -30,6 +29,7 @@ import {
   StatusBadge,
 } from "@/components";
 import CustomPieChart from "@/components/charts/pie-chart";
+import DateRangePicker from "@/components/ui/date-range-picker";
 import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
 import { formatDuration, getStatusColor, getVariantFromStatus } from "@/utils";
@@ -400,11 +400,14 @@ const ProductionDashboard = () => {
   const fetchOverview = async () => {
     setLoading(true);
     setError(null);
+    const timezoneOffset = new Date().getTimezoneOffset();
+
     const response = await get("/production/overview", {
       startDate: dateRange.start.toISOString().slice(0, 10),
       endDate: dateRange.end.toISOString().slice(0, 10),
       view: chartView,
       filter: chartView !== "all" ? chartView : undefined,
+      timezoneOffset: timezoneOffset,
     });
     
     if (response?.success) {
@@ -430,14 +433,14 @@ const ProductionDashboard = () => {
   const kpis = [
     {
       title: "Utilization",
-      value: `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
+      value: dateRange.start > startOfToday() ? "-" : `${overview?.kpis?.utilization?.value?.toFixed(2) ?? 0}%`,
       description: "Utilization of machines",
       icon: <Gauge size={16} />,
-      change: overview?.kpis?.utilization?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.utilization?.change ?? 0,
     },
     {
       title: "Total Runtime",
-      value: formatDuration(
+      value: dateRange.start > startOfToday() ? "-" : formatDuration(
         overview?.kpis?.averageRuntime?.value
           ? overview.kpis.averageRuntime.value * 8
           : 0
@@ -448,17 +451,17 @@ const ProductionDashboard = () => {
     },
     {
       title: "Average Runtime",
-      value: formatDuration(overview?.kpis?.averageRuntime?.value ?? 0),
+      value: dateRange.start > startOfToday() ? "-" : formatDuration(overview?.kpis?.averageRuntime?.value ?? 0),
       description: "Average runtime of machines",
       icon: <Clock size={16} />,
-      change: overview?.kpis?.averageRuntime?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.averageRuntime?.change ?? 0,
     },
     {
       title: "Alarms",
-      value: overview?.kpis?.alarmCount?.value ?? 0,
+      value: dateRange.start > startOfToday() ? "-" : overview?.kpis?.alarmCount?.value ?? 0,
       description: "Number of alarms",
       icon: <AlertTriangle size={16} />,
-      change: overview?.kpis?.alarmCount?.change ?? 0,
+      change: dateRange.start > startOfToday() ? 0 : overview?.kpis?.alarmCount?.change ?? 0,
     },
   ];
 
@@ -553,16 +556,24 @@ const ProductionDashboard = () => {
     }
   }, [utilizationOverTime, chartView]);
 
+  const handleDateRangeChange = (startDate: Date, endDate: Date) => {
+    setDateRange({ start: startDate, end: endDate });
+  };
+
   const Actions = () => {
     return (
-      <div className="flex gap-2">
-        <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
-          <MapIcon size={16} /> 
+      <div className="flex gap-2 items-center">
+        {/* <Button onClick={() => setIsMapModalOpen(true)} variant="secondary-outline">
+          <MapIcon size={16} />
           Map
-        </Button>
-        <Button onClick={refresh} variant="primary">
-          <RefreshCcw size={16} /> 
-          Refresh
+        </Button> */}
+        <DateRangePicker
+          startDate={dateRange.start}
+          endDate={dateRange.end}
+          onChange={handleDateRangeChange}
+        />
+        <Button onClick={refresh} variant="primary" className="px-2">
+          <RefreshCcw size={16} />
         </Button>
       </div>
     );
@@ -826,8 +837,12 @@ const ProductionDashboard = () => {
                     <div className="h-full flex items-center justify-center">
                       <Loader />
                     </div>
+                  ) : dateRange.start > startOfToday() ? (
+                    <div className="h-full flex items-center justify-center text-text-muted text-sm">
+                      No data
+                    </div>
                   ) : (
-                    <CustomPieChart 
+                    <CustomPieChart
                       data={stateDistribution.filter(entry => entry.state !== "UNRECORDED").map(entry => ({
                         name: entry.state,
                         value: entry.percentage,

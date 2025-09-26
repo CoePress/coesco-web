@@ -22,10 +22,10 @@ $fanucSo      = Join-Path $scriptDir "..\apps\fanuc\FanucAdapter\native\libfwlib
 # -------------------------------
 function Deploy-Fanuc {
     Write-Host "`n🚀 Deploying FanucAdapter..."
-
+    
     # Step 0: Build
     Write-Host "Publishing FanucAdapter for linux-arm..."
-    dotnet publish $fanucProject -c Release -r linux-arm --self-contained true -o (Join-Path $scriptDir "apps\fanuc\FanucAdapter\out\linux-arm")
+    dotnet publish $fanucProject -c Release -r linux-arm --self-contained true -o $fanucBuild
 
     # Step 1: Reset remote
     Write-Host "Resetting $fanucRoot..."
@@ -58,41 +58,41 @@ function Deploy-Fanuc {
     Write-Host "✅ Fanuc deployment complete. Staged at $fanucRoot"
 }
 
-function Deploy-Server {
-   Write-Host "`n🚀 Deploying Server..."
+# function Deploy-Server {
+#    Write-Host "`n🚀 Deploying Server..."
 
-   $serverProject = Join-Path $scriptDir "..\apps\server"
+#    $serverProject = Join-Path $scriptDir "..\apps\server"
    
-   pushd $serverProject
-   npm run build
-   popd
+#    pushd $serverProject
+#    npm run build
+#    popd
 
-   # Only delete contents EXCEPT .env file
-   Write-Host "Cleaning server directory (preserving .env)..."
-   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && find . -mindepth 1 -not -name '.env' -delete"
+#    # Only delete contents EXCEPT .env file
+#    Write-Host "Cleaning server directory (preserving .env)..."
+#    ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && find . -mindepth 1 -not -name '.env' -delete"
 
-   Write-Host "Copying with scp (excluding .env)..."
-   Get-ChildItem $serverProject | Where-Object { $_.Name -ne ".env" } | ForEach-Object {
-       if ($_.PSIsContainer) {
-           scp -r $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
-       } else {
-           scp $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
-       }
-   }
+#    Write-Host "Copying with scp (excluding .env)..."
+#    Get-ChildItem $serverProject | Where-Object { $_.Name -ne ".env" } | ForEach-Object {
+#        if ($_.PSIsContainer) {
+#            scp -r $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
+#        } else {
+#            scp $_.FullName "$($linuxUser)@$($linuxHost):$serverRoot/"
+#        }
+#    }
 
-   ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && npm install && npm start"
+#    ssh "$($linuxUser)@$($linuxHost)" "cd $serverRoot && npm install && npm start"
 
-   Write-Host "✅ Server deployment complete."
-}
+#    Write-Host "✅ Server deployment complete."
+# }
 
 # -------------------------------
 # Dispatch
 # -------------------------------
 switch ($App) {
     "fanuc" { Deploy-Fanuc }
-    "server" { Deploy-Server }
+    # "server" { Deploy-Server }
     "both" {
         Deploy-Fanuc
-        Deploy-Server
+        # Deploy-Server
     }
 }

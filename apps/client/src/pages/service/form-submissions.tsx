@@ -1,4 +1,4 @@
-import { FileTextIcon, CalendarIcon, UserIcon, CheckCircleIcon, ClockIcon, XCircleIcon, ArrowLeft } from "lucide-react";
+import { CalendarIcon, UserIcon, ClockIcon, ArrowLeft } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 
@@ -7,7 +7,6 @@ import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
 import { Filter } from "@/components/feature/toolbar";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils";
 
@@ -233,37 +232,6 @@ const FormSubmissions = () => {
     return filtered;
   }, [submissions, searchQuery]);
 
-  const kpis = [
-    {
-      title: "Total Submissions",
-      value: pagination.total.toString(),
-      description: "All form submissions",
-      icon: <FileTextIcon size={16} />,
-      change: 12.5,
-    },
-    {
-      title: "Pending Review",
-      value: submissions.filter(s => s.status === 'pending').length.toString(),
-      description: "Awaiting review",
-      icon: <ClockIcon size={16} />,
-      change: -5.2,
-    },
-    {
-      title: "Approved",
-      value: submissions.filter(s => s.status === 'approved').length.toString(),
-      description: "Approved submissions",
-      icon: <CheckCircleIcon size={16} />,
-      change: 8.7,
-    },
-    {
-      title: "Rejected",
-      value: submissions.filter(s => s.status === 'rejected').length.toString(),
-      description: "Rejected submissions",
-      icon: <XCircleIcon size={16} />,
-      change: -2.1,
-    },
-  ];
-
   return (
     <div className="w-full flex flex-1 flex-col overflow-hidden">
       <PageHeader
@@ -281,12 +249,6 @@ const FormSubmissions = () => {
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
-        <Metrics>
-          {kpis.map((metric, index) => (
-            <MetricsCard key={index} {...metric} />
-          ))}
-        </Metrics>
-
         <Toolbar
           onSearch={handleSearch}
           searchPlaceholder="Search submissions..."
