@@ -5,7 +5,6 @@ import {
   RefreshCcw,
   Clock,
   Filter,
-  MapIcon,
 } from "lucide-react";
 import {
   LineChart,
