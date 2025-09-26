@@ -19,7 +19,7 @@
     {
       "name": "Show Third Customer Question",
       "targetType": "PAGE",
-      "targetLabel": "Did you visit another customer?",
+      "targetLabel": "Did you visit a third customer?",
       "action": "SHOW",
       "conditions": [
         {
@@ -359,7 +359,7 @@
     },
     {
       "sequence": 3,
-      "label": "Did you visit another customer?",
+      "label": "Did you visit a second customer?",
       "sections": [
         {
           "sequence": 1,
@@ -612,7 +612,7 @@
     },
     {
       "sequence": 5,
-      "label": "Did you visit another customer?",
+      "label": "Did you visit a third customer?",
       "sections": [
         {
           "sequence": 1,

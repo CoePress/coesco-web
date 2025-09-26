@@ -5,12 +5,13 @@ import {
   differenceInDays,
   differenceInMilliseconds,
 } from "date-fns";
-import { __prod__ } from "@/config/env";
 import { exec } from "node:child_process";
 import { platform } from "node:os";
 import { promisify } from "node:util";
 
 import type { IDateRange, IQueryParams } from "@/types";
+
+import { __prod__ } from "@/config/env";
 
 export function deriveTableNames(modelName: string): string[] {
   const snake = modelName.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
@@ -52,13 +53,14 @@ export function createDateRange(startDate: string, endDate: string, timezoneOffs
     // To get midnight EDT in UTC time, we need to ADD 4 hours (240 minutes)
     const offsetMs = (timezoneOffset || 0) * 60 * 1000;
 
-    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
-    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+    const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+    const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
 
     // Midnight EDT (00:00) is 04:00 UTC, so we ADD the offset
     startDateLocal = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0) + offsetMs);
     endDateLocal = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999) + offsetMs);
-  } else {
+  }
+  else {
     // Development server is in EDT/EST - just create local dates
     startDateLocal = new Date(`${startDate}T00:00:00`);
     endDateLocal = new Date(`${endDate}T23:59:59.999`);

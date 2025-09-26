@@ -2,6 +2,9 @@
 export * from './form-field-restrictions';
 export * from './form-field-control-type';
 export * from './form-field-data-type';
+export * from './conditional-target';
+export * from './conditional-action';
+export * from './conditional-operator';
 export * from './audit-action';
 export * from './company-status';
 export * from './industry';
@@ -30,6 +33,7 @@ export * from './contact';
 export * from './draft';
 export * from './employee';
 export * from './form';
+export * from './form-conditional-rule';
 export * from './form-field';
 export * from './form-page';
 export * from './form-section';

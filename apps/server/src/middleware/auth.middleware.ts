@@ -47,7 +47,7 @@ export const protect = asyncHandler(
           lastName: "Account",
           title: "System",
           email: "system@cpec.com",
-          initials: "sys"
+          initials: "sys",
         },
         () => next(),
       );
@@ -86,7 +86,7 @@ export const protect = asyncHandler(
         email: emp.email!,
         title: emp.title,
         number: emp.number,
-        initials: emp.initials
+        initials: emp.initials,
       };
 
       req.user = { id: user.id, role: user.role };

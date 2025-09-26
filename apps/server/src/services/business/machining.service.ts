@@ -225,7 +225,8 @@ export class MachineMonitorService {
     // If there's no machine status data at all, assume machines were offline
     if (totalStateDuration === 0 && machines.data && machines.data.length > 0) {
       totalsByState[MachineState.OFFLINE] = totalFleetDuration - futureFleetDuration;
-    } else {
+    }
+    else {
       totalsByState[MachineState.UNKNOWN] = unrecordedTime;
     }
 
@@ -243,9 +244,10 @@ export class MachineMonitorService {
       if (scale === TimeScale.HOUR) {
         // For hours, use the index as the client hour (0 = midnight, 1 = 1am, etc)
         const clientHour = i % 12 || 12;
-        const clientAmPm = i < 12 ? 'AM' : 'PM';
+        const clientAmPm = i < 12 ? "AM" : "PM";
         label = `${clientHour}:00 ${clientAmPm}`;
-      } else {
+      }
+      else {
         label = this.formatDivisionLabel(divisionStart, scale);
       }
 
@@ -290,7 +292,6 @@ export class MachineMonitorService {
       totalAvailableTime,
       unrecordedTime,
     );
-
 
     return {
       success: true,

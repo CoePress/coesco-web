@@ -278,6 +278,9 @@ async function seedServiceTechDailyForm() {
         },
       });
 
+      // Track page labels to IDs for conditional rules
+      const pageLabelMap = new Map<string, string>();
+
       for (const page of serviceTechDailyTemplate.pages) {
         const formPage = await prisma.formPage.create({
           data: {
@@ -288,6 +291,9 @@ async function seedServiceTechDailyForm() {
             updatedById: "system",
           },
         });
+
+        // Map page label to ID
+        pageLabelMap.set(page.label, formPage.id);
 
         for (const section of page.sections) {
           const formSection = await prisma.formSection.create({
@@ -320,6 +326,51 @@ async function seedServiceTechDailyForm() {
             });
           }
         }
+      }
+
+      // CREATE THE FUCKING CONDITIONAL RULES
+      logger.info("=== SEEDING CONDITIONAL RULES ===");
+      logger.info("template.conditionalRules exists:", !!(serviceTechDailyTemplate as any).conditionalRules);
+      logger.info("Available page labels:", Array.from(pageLabelMap.keys()));
+
+      const conditionalRules = (serviceTechDailyTemplate as any).conditionalRules;
+      if (conditionalRules) {
+        logger.info("Processing", conditionalRules.length, "conditional rules...");
+
+        for (const ruleTemplate of conditionalRules) {
+          logger.info("\n--- Processing rule:", ruleTemplate.name);
+          logger.info("Looking for page with label:", ruleTemplate.targetLabel);
+
+          const targetId = pageLabelMap.get(ruleTemplate.targetLabel);
+          logger.info("Found targetId:", targetId);
+
+          if (!targetId) {
+            logger.error(`FAILED: Could not find page with label: "${ruleTemplate.targetLabel}"`);
+            continue;
+          }
+
+          try {
+            const createdRule = await prisma.formConditionalRule.create({
+              data: {
+                formId: form.id,
+                name: ruleTemplate.name,
+                targetType: ruleTemplate.targetType,
+                targetId,
+                action: ruleTemplate.action,
+                conditions: ruleTemplate.conditions,
+                operator: ruleTemplate.operator,
+                priority: ruleTemplate.priority,
+                createdById: "system",
+                updatedById: "system",
+              },
+            });
+            logger.info("SUCCESS: Created rule with ID:", createdRule.id);
+          } catch (error) {
+            logger.error("FAILED: Error creating rule:", error);
+          }
+        }
+      } else {
+        logger.info("NO CONDITIONAL RULES FOUND IN TEMPLATE");
       }
 
       logger.info(`Seeded Service Tech Daily form with ${serviceTechDailyTemplate.pages.length} pages`);

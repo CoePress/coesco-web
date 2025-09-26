@@ -1,10 +1,10 @@
 interface FormConditionalRule {
   id: string;
-  targetType: 'PAGE' | 'SECTION' | 'FIELD';
+  targetType: "PAGE" | "SECTION" | "FIELD";
   targetId: string;
-  action: 'SHOW' | 'HIDE' | 'ENABLE' | 'DISABLE' | 'REQUIRE' | 'OPTIONAL';
+  action: "SHOW" | "HIDE" | "ENABLE" | "DISABLE" | "REQUIRE" | "OPTIONAL";
   conditions: Condition[];
-  operator: 'AND' | 'OR';
+  operator: "AND" | "OR";
   priority: number;
   isActive: boolean;
 }
@@ -44,22 +44,22 @@ export class ConditionalRulesEvaluator {
         }
 
         switch (rule.action) {
-          case 'SHOW':
+          case "SHOW":
             results[rule.targetId].visible = true;
             break;
-          case 'HIDE':
+          case "HIDE":
             results[rule.targetId].visible = false;
             break;
-          case 'ENABLE':
+          case "ENABLE":
             results[rule.targetId].enabled = true;
             break;
-          case 'DISABLE':
+          case "DISABLE":
             results[rule.targetId].enabled = false;
             break;
-          case 'REQUIRE':
+          case "REQUIRE":
             results[rule.targetId].required = true;
             break;
-          case 'OPTIONAL':
+          case "OPTIONAL":
             results[rule.targetId].required = false;
             break;
         }
@@ -69,12 +69,13 @@ export class ConditionalRulesEvaluator {
     return results;
   }
 
-  private evaluateConditions(conditions: Condition[], operator: 'AND' | 'OR'): boolean {
-    if (conditions.length === 0) return true;
+  private evaluateConditions(conditions: Condition[], operator: "AND" | "OR"): boolean {
+    if (conditions.length === 0)
+      return true;
 
     const results = conditions.map(condition => this.evaluateCondition(condition));
 
-    return operator === 'AND'
+    return operator === "AND"
       ? results.every(r => r)
       : results.some(r => r);
   }
@@ -84,29 +85,29 @@ export class ConditionalRulesEvaluator {
     const { operator, value } = condition;
 
     switch (operator) {
-      case 'equals':
+      case "equals":
         return fieldValue === value;
-      case 'not_equals':
+      case "not_equals":
         return fieldValue !== value;
-      case 'contains':
-        return String(fieldValue || '').includes(String(value));
-      case 'not_contains':
-        return !String(fieldValue || '').includes(String(value));
-      case 'greater_than':
+      case "contains":
+        return String(fieldValue || "").includes(String(value));
+      case "not_contains":
+        return !String(fieldValue || "").includes(String(value));
+      case "greater_than":
         return Number(fieldValue) > Number(value);
-      case 'less_than':
+      case "less_than":
         return Number(fieldValue) < Number(value);
-      case 'greater_than_or_equal':
+      case "greater_than_or_equal":
         return Number(fieldValue) >= Number(value);
-      case 'less_than_or_equal':
+      case "less_than_or_equal":
         return Number(fieldValue) <= Number(value);
-      case 'is_empty':
-        return !fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined;
-      case 'is_not_empty':
-        return fieldValue && fieldValue !== '' && fieldValue !== null && fieldValue !== undefined;
-      case 'in':
+      case "is_empty":
+        return !fieldValue || fieldValue === "" || fieldValue === null || fieldValue === undefined;
+      case "is_not_empty":
+        return fieldValue && fieldValue !== "" && fieldValue !== null && fieldValue !== undefined;
+      case "in":
         return Array.isArray(value) && value.includes(fieldValue);
-      case 'not_in':
+      case "not_in":
         return Array.isArray(value) && !value.includes(fieldValue);
       default:
         console.warn(`Unknown operator: ${operator}`);
@@ -116,7 +117,7 @@ export class ConditionalRulesEvaluator {
 
   getVisiblePages(pageIds: string[]): string[] {
     const ruleResults = this.evaluateRules();
-    return pageIds.filter(pageId => {
+    return pageIds.filter((pageId) => {
       const result = ruleResults[pageId];
       return result ? result.visible : true; // Default to visible if no rules
     });

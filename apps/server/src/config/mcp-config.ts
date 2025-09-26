@@ -762,6 +762,73 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "form-conditional-rule",
+    description: "Schema for FormConditionalRule entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      formId: {
+        type: "string",
+        required: true,
+      },
+      name: {
+        type: "string",
+        required: false,
+      },
+      targetType: {
+        type: "conditionaltarget",
+        required: true,
+      },
+      targetId: {
+        type: "string",
+        required: true,
+      },
+      action: {
+        type: "conditionalaction",
+        required: true,
+      },
+      conditions: {
+        type: "json",
+        required: true,
+      },
+      operator: {
+        type: "conditionaloperator",
+        required: true,
+        hasDefault: true,
+      },
+      priority: {
+        type: "int",
+        required: true,
+        hasDefault: true,
+      },
+      isActive: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
     name: "form-field",
     description: "Schema for FormField entity",
     schema: {

@@ -6,7 +6,7 @@ router.get("/hours", async (req, res) => {
   const { date, timezone, timezoneOffset } = req.query;
 
   // Parse the date
-  const [year, month, day] = (date as string).split('-').map(Number);
+  const [year, month, day] = (date as string).split("-").map(Number);
 
   // Create 24 hours starting at midnight CLIENT time
   const hours = [];
@@ -21,11 +21,11 @@ router.get("/hours", async (req, res) => {
 
     // Format labels
     const clientHour = i % 12 || 12;
-    const clientAmPm = i < 12 ? 'AM' : 'PM';
+    const clientAmPm = i < 12 ? "AM" : "PM";
     const clientLabel = `${clientHour}:00 ${clientAmPm}`;
 
     const utcHour = hourDate.getUTCHours() % 12 || 12;
-    const utcAmPm = hourDate.getUTCHours() < 12 ? 'AM' : 'PM';
+    const utcAmPm = hourDate.getUTCHours() < 12 ? "AM" : "PM";
     const utcLabel = `${utcHour}:00 ${utcAmPm}`;
 
     hours.push({
@@ -44,9 +44,9 @@ router.get("/hours", async (req, res) => {
     data: {
       clientTimezone: timezone,
       clientOffset: timezoneOffset,
-      date: date,
-      hours
-    }
+      date,
+      hours,
+    },
   });
 });
 
@@ -60,7 +60,7 @@ router.get("/timezone", async (req, res) => {
   const dateFromString = new Date(`${date}T00:00:00`);
   const dateFromStringUTC = new Date(`${date}T00:00:00Z`);
 
-  const [year, month, day] = (date as string).split('-').map(Number);
+  const [year, month, day] = (date as string).split("-").map(Number);
   const dateFromUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
   const dateFromLocal = new Date(year, month - 1, day, 0, 0, 0, 0);
 
