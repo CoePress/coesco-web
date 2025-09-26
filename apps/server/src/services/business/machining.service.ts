@@ -151,10 +151,10 @@ export class MachineMonitorService {
     }
   }
 
-  async getMachineOverview(startDate: string, endDate: string, view: string) {
+  async getMachineOverview(startDate: string, endDate: string, view: string, timezoneOffset?: number) {
     view = view || "all";
     const now = new Date();
-    const dateRange = createDateRange(startDate, endDate);
+    const dateRange = createDateRange(startDate, endDate, timezoneOffset);
 
     const { scale, divisionCount } = this.getOverviewScale(
       dateRange.startDate,
@@ -224,19 +224,32 @@ export class MachineMonitorService {
       = totalFleetDuration - futureFleetDuration - totalStateDuration;
     totalsByState[MachineState.UNKNOWN] = unrecordedTime;
 
-    const divisions = Array.from({ length: divisionCount }, (_, i) => ({
-      start: this.calculateDivisionStart(dateRange.startDate, scale, i),
-      end: this.calculateDivisionEnd(
+    const divisions = Array.from({ length: divisionCount }, (_, i) => {
+      const divisionStart = this.calculateDivisionStart(dateRange.startDate, scale, i);
+      const divisionEnd = this.calculateDivisionEnd(
         dateRange.startDate,
         scale,
         i,
         dateRange.endDate,
-      ),
-      label: this.formatDivisionLabel(
-        this.calculateDivisionStart(dateRange.startDate, scale, i),
-        scale,
-      ),
-    }));
+      );
+
+      // Format label based on CLIENT time (what hour it is for them)
+      let label: string;
+      if (scale === TimeScale.HOUR) {
+        // For hours, use the index as the client hour (0 = midnight, 1 = 1am, etc)
+        const clientHour = i % 12 || 12;
+        const clientAmPm = i < 12 ? 'AM' : 'PM';
+        label = `${clientHour}:00 ${clientAmPm}`;
+      } else {
+        label = this.formatDivisionLabel(divisionStart, scale);
+      }
+
+      return {
+        start: divisionStart,
+        end: divisionEnd,
+        label,
+      };
+    });
 
     const previousTotalsByState = this.calculateStatusTotals(
       previousStates.data,
@@ -261,6 +274,7 @@ export class MachineMonitorService {
       view,
       machines.data,
       scale,
+      timezoneOffset,
     );
 
     const totalAvailableTime
@@ -894,7 +908,7 @@ export class MachineMonitorService {
     const start = new Date(startDate);
     switch (scale) {
       case TimeScale.HOUR:
-        start.setHours(start.getHours() + index);
+        start.setUTCHours(start.getUTCHours() + index);
         break;
       case TimeScale.DAY:
         start.setDate(start.getDate() + index);
@@ -948,19 +962,20 @@ export class MachineMonitorService {
   private formatDivisionLabel(date: Date, scale: string): string {
     const formatters = {
       [TimeScale.HOUR]: (d: Date) => {
-        const hours = d.getHours() % 12 || 12;
-        const ampm = d.getHours() < 12 ? "AM" : "PM";
+        const hours = d.getUTCHours() % 12 || 12;
+        const ampm = d.getUTCHours() < 12 ? "AM" : "PM";
         return `${hours}:00 ${ampm}`;
       },
       [TimeScale.DAY]: (d: Date) =>
-        d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
       [TimeScale.WEEK]: (d: Date) =>
         `Week of ${d.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
+          timeZone: "UTC",
         })}`,
       [TimeScale.MONTH]: (d: Date) =>
-        d.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }),
       [TimeScale.QUARTER]: (d: Date) =>
         `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`,
       [TimeScale.YEAR]: (d: Date) => d.getFullYear().toString(),
@@ -973,33 +988,34 @@ export class MachineMonitorService {
     startDate: Date,
     endDate: Date,
     scale: string,
+    timezoneOffset?: number,
   ): string {
     const formatters = {
       [TimeScale.HOUR]: (start: Date, end: Date) => {
-        const startHours = start.getHours() % 12 || 12;
-        const startAmpm = start.getHours() < 12 ? "AM" : "PM";
+        // Calculate the client's hour based on the start date and timezone offset
+        // This should match what we show in the label
+        const startUtcHours = start.getUTCHours();
+        const offsetHours = (timezoneOffset || 0) / 60;
+        const clientStartHour = (startUtcHours - offsetHours + 24) % 24;
+        const clientEndHour = (clientStartHour + 1) % 24;
 
-        const adjustedEnd = new Date(end);
-        if (
-          end.getMinutes() > 0
-          || end.getSeconds() > 0
-          || end.getMilliseconds() > 0
-        ) {
-          adjustedEnd.setHours(end.getHours() + 1, 0, 0, 0);
-        }
+        const startHours = clientStartHour % 12 || 12;
+        const startAmpm = clientStartHour < 12 ? "AM" : "PM";
+        const endHours = clientEndHour % 12 || 12;
+        const endAmpm = clientEndHour < 12 ? "AM" : "PM";
 
-        const endHours = adjustedEnd.getHours() % 12 || 12;
-        const endAmpm = adjustedEnd.getHours() < 12 ? "AM" : "PM";
         return `${startHours}:00 ${startAmpm} - ${endHours}:00 ${endAmpm}`;
       },
       [TimeScale.DAY]: (start: Date, end: Date) => {
         const startStr = start.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
+          timeZone: "UTC",
         });
         const endStr = end.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
+          timeZone: "UTC",
         });
         return `${startStr} - ${endStr}`;
       },
@@ -1007,10 +1023,12 @@ export class MachineMonitorService {
         const startStr = start.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
+          timeZone: "UTC",
         });
         const endStr = end.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
+          timeZone: "UTC",
         });
         return `${startStr} - ${endStr}`;
       },
@@ -1018,10 +1036,12 @@ export class MachineMonitorService {
         const startStr = start.toLocaleDateString("en-US", {
           month: "long",
           year: "numeric",
+          timeZone: "UTC",
         });
         const endStr = end.toLocaleDateString("en-US", {
           month: "long",
           year: "numeric",
+          timeZone: "UTC",
         });
         return `${startStr} - ${endStr}`;
       },
@@ -1167,6 +1187,7 @@ export class MachineMonitorService {
     view: string = "all",
     machines: any[],
     scale: string,
+    timezoneOffset?: number,
   ) {
     if (view === "all") {
       return divisions.map((division) => {
@@ -1189,6 +1210,7 @@ export class MachineMonitorService {
             division.start,
             division.end,
             scale,
+            timezoneOffset,
           ),
           start: division.start,
           end: division.end,
@@ -1241,6 +1263,7 @@ export class MachineMonitorService {
           division.start,
           division.end,
           scale,
+          timezoneOffset,
         ),
         start: division.start,
         end: division.end,

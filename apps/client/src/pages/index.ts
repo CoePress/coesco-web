@@ -40,3 +40,4 @@ export { default as Resources } from "./utility/resources";
 export { default as WarehouseDashboard } from "./warehouse/dashboard";
 export { default as Inventory } from "./warehouse/inventory";
 export { default as Transactions } from "./warehouse/transactions";
+export { default as Timezone } from "./sandbox/timezone";

@@ -400,11 +400,14 @@ const ProductionDashboard = () => {
   const fetchOverview = async () => {
     setLoading(true);
     setError(null);
+    const timezoneOffset = new Date().getTimezoneOffset();
+
     const response = await get("/production/overview", {
       startDate: dateRange.start.toISOString().slice(0, 10),
       endDate: dateRange.end.toISOString().slice(0, 10),
       view: chartView,
       filter: chartView !== "all" ? chartView : undefined,
+      timezoneOffset: timezoneOffset,
     });
     
     if (response?.success) {

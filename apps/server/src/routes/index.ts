@@ -17,12 +17,14 @@ import postalCodeRoutes from "./postal-code.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
+import testRoutes from "./test.route";
 import userSettingsRoutes from "./user-settings.routes";
 
 const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
+router.use("/test", testRoutes);
 router.use(protect); // all routes below this are protected
 router.use("/admin", adminRoutes);
 router.use("/audit", auditLogRoutes);

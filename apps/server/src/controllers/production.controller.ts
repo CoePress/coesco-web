@@ -82,11 +82,12 @@ export class ProductionController {
 
   async getOverview(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate, view = "all" } = req.query;
+      const { startDate, endDate, view = "all", timezoneOffset } = req.query;
       const result = await machiningService.getMachineOverview(
         startDate as string,
         endDate as string,
         view as string,
+        timezoneOffset ? Number(timezoneOffset) : undefined,
       );
       res.status(200).json(result);
     }
