@@ -25,7 +25,9 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES } from "./constants";
 import { getPriorityConfig } from "./utils";
-import { DeleteJourneyModal, TrackJourneyModal, UntrackJourneyModal } from "./components";
+import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
+import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
+import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 
 // const columnIdPrefix = "column-";

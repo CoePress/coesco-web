@@ -1186,7 +1186,7 @@ const CompanyDetails = () => {
 
   const handleAddressDataChange = (fieldName: string, value: any) => {
     console.log(`Updating ${fieldName} to:`, value, 'Current state:', editingAddressData);
-    setEditingAddressData(prev => ({ ...prev, [fieldName]: value }));
+    setEditingAddressData((prev: any) => ({ ...prev, [fieldName]: value }));
     
     // Trigger zip code lookup when zip code changes
     if (fieldName === 'ZipCode') {
@@ -1288,7 +1288,7 @@ const CompanyDetails = () => {
         setEditZipLookupResults(results);
         
         // Auto-populate fields - single option locks field, multiple options default to first
-        setEditingAddressData(prev => ({
+        setEditingAddressData((prev: any) => ({
           ...prev,
           City: cities.length >= 1 ? cities[0] : prev.City,
           State: stateProvs.length >= 1 ? stateProvs[0] : prev.State,
@@ -1311,7 +1311,7 @@ const CompanyDetails = () => {
     setIsAddingAddress(false);
   };
 
-  const handleAddressAdded = (address: any) => {
+  const handleAddressAdded = (_address: any) => {
     // Refresh addresses after adding
     refreshAddresses();
   };

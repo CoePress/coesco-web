@@ -5,7 +5,9 @@ import { Button, StatusBadge } from "@/components";
 import Table from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/utils";
 import { getPriorityConfig } from "./utils";
-import { DeleteJourneyModal, TrackJourneyModal, UntrackJourneyModal } from "./components";
+import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
+import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
+import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
 
 const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: string) => void }) => {
