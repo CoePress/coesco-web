@@ -948,8 +948,8 @@ export class MachineMonitorService {
   private formatDivisionLabel(date: Date, scale: string): string {
     const formatters = {
       [TimeScale.HOUR]: (d: Date) => {
-        const hours = (d.getUTCHours() - 4 + 24) % 12 || 12;
-        const ampm = (d.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+        const hours = d.getHours() % 12 || 12;
+        const ampm = d.getHours() < 12 ? "AM" : "PM";
         return `${hours}:00 ${ampm}`;
       },
       [TimeScale.DAY]: (d: Date) =>
@@ -976,22 +976,20 @@ export class MachineMonitorService {
   ): string {
     const formatters = {
       [TimeScale.HOUR]: (start: Date, end: Date) => {
-        const startHours = (start.getUTCHours() - 4 + 24) % 12 || 12;
-        const startAmpm
-          = (start.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+        const startHours = start.getHours() % 12 || 12;
+        const startAmpm = start.getHours() < 12 ? "AM" : "PM";
 
         const adjustedEnd = new Date(end);
         if (
-          end.getUTCMinutes() > 0
-          || end.getUTCSeconds() > 0
-          || end.getUTCMilliseconds() > 0
+          end.getMinutes() > 0
+          || end.getSeconds() > 0
+          || end.getMilliseconds() > 0
         ) {
-          adjustedEnd.setUTCHours(end.getUTCHours() + 1, 0, 0, 0);
+          adjustedEnd.setHours(end.getHours() + 1, 0, 0, 0);
         }
 
-        const endHours = (adjustedEnd.getUTCHours() - 4 + 24) % 12 || 12;
-        const endAmpm
-          = (adjustedEnd.getUTCHours() - 4 + 24) % 24 < 12 ? "AM" : "PM";
+        const endHours = adjustedEnd.getHours() % 12 || 12;
+        const endAmpm = adjustedEnd.getHours() < 12 ? "AM" : "PM";
         return `${startHours}:00 ${startAmpm} - ${endHours}:00 ${endAmpm}`;
       },
       [TimeScale.DAY]: (start: Date, end: Date) => {
