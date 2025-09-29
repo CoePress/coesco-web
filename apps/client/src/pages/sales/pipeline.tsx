@@ -49,7 +49,12 @@ const Pipeline = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
-        get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 100 }),
+        get('/legacy/base/Journey', { 
+          sort: 'CreateDT', 
+          order: 'desc', 
+          limit: 100,
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+        }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
       
@@ -73,7 +78,8 @@ const Pipeline = () => {
       const raw = await refetchApi.get('/legacy/base/Journey', { 
         sort: 'CreateDT', 
         order: 'desc', 
-        limit: 100 
+        limit: 100,
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
       });
       
       if (raw !== null) {
@@ -163,31 +169,22 @@ const Pipeline = () => {
       customerId,
       companyName,
       confidence,
+      Quote_Number: raw.Quote_Number,
+      Journey_Stage: raw.Journey_Stage,
+      RSM: raw.RSM,
+      Journey_Status: raw.Journey_Status,
       Project_Name: raw.Project_Name,
       Target_Account: raw.Target_Account,
-      Journey_Stage: raw.Journey_Stage,
-      Journey_Type: raw.Journey_Type,
-      Journey_Value: raw.Journey_Value,
-      Priority: raw.Priority,
-      Lead_Source: raw.Lead_Source,
-      Equipment_Type: raw.Equipment_Type,
-      Quote_Type: raw.Quote_Type,
-      RSM: raw.RSM,
-      RSM_Territory: raw.RSM_Territory,
-      Quote_Number: raw.Quote_Number,
-      Qty_of_Items: raw.Qty_of_Items,
-      CreateDT: raw.CreateDT,
-      Quote_Presentation_Date: raw.Quote_Presentation_Date,
-      Expected_Decision_Date: raw.Expected_Decision_Date,
-      Action_Date: raw.Action_Date,
-      Journey_Status: raw.Journey_Status,
-      Notes: raw.Notes,
-      Industry: raw.Industry,
-      Chance_To_Secure_order: raw.Chance_To_Secure_order,
       Company_ID: raw.Company_ID,
+      CreateDT: raw.CreateDT,
+      Action_Date: raw.Action_Date,
+      Expected_Decision_Date: raw.Expected_Decision_Date,
+      Chance_To_Secure_order: raw.Chance_To_Secure_order,
+      Industry: raw.Industry,
       Dealer: raw.Dealer,
       Dealer_Name: raw.Dealer_Name,
-      Dealer_ID: raw.Dealer_ID,
+      Equipment_Type: raw.Equipment_Type,
+      Lead_Source: raw.Lead_Source,
     };
   };
 
@@ -200,7 +197,8 @@ const Pipeline = () => {
         const raw = await initialFetchApi.get('/legacy/base/Journey', { 
           sort: 'CreateDT', 
           order: 'desc', 
-          limit: 100 
+          limit: 100,
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
         });
         
         if (!cancelled && raw !== null) {
@@ -213,11 +211,12 @@ const Pipeline = () => {
 
       const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
         filterField: 'Category',
-        filterValue: 'RSM'
+        filterValue: 'RSM',
+        fields: 'Description'
       });
       
       if (!cancelled && Array.isArray(rsmData)) {
-        const rsmValues = rsmData.map(item => item.Name || item.Value || item.Description).filter(Boolean);
+        const rsmValues = rsmData.map(item => item.Description).filter(Boolean);
         setAvailableRsms(rsmValues);
       }
     })();
@@ -277,6 +276,7 @@ const Pipeline = () => {
   const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
+  const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
 
 
   const filteredJourneys = useMemo(() => {
@@ -488,6 +488,10 @@ const Pipeline = () => {
     saveToLocalStorage('sortDirection', sortDirection);
   }, [sortDirection]);
   
+  useEffect(() => {
+    saveToLocalStorage('showTags', showTags);
+  }, [showTags]);
+  
   // For kanban view, filter visible stages
   const visibleStageIds = filters.visibleStages;
 
@@ -552,6 +556,10 @@ const Pipeline = () => {
   }, [del]);
 
   const stageUpdateApi = useApi();
+  
+  const handleTagsUpdated = useCallback(() => {
+    console.log('Tags updated, triggering refresh');
+  }, []);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     try {
@@ -814,6 +822,9 @@ const Pipeline = () => {
             setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
             setIsFilterModalOpen={setIsFilterModalOpen}
+            showTags={showTags}
+            setShowTags={setShowTags}
+            viewMode={viewMode}
           />
           <KanbanView
             journeys={kanbanJourneys}
@@ -824,6 +835,8 @@ const Pipeline = () => {
             onDeleteJourney={handleDeleteJourney}
             onStageUpdate={handleStageUpdate}
             setIdsByStage={setIdsByStage}
+            showTags={showTags}
+            onTagsUpdated={handleTagsUpdated}
           />
         </div>
       )}
@@ -841,6 +854,7 @@ const Pipeline = () => {
             setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
             setIsFilterModalOpen={setIsFilterModalOpen}
+            viewMode={viewMode}
           />
           <ListView
             journeys={listJourneys}
@@ -907,7 +921,12 @@ const Pipeline = () => {
             // Refresh the journeys data after successful import
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
-                get('/legacy/base/Journey', { sort: 'CreateDT', order: 'desc', limit: 100 })
+                get('/legacy/base/Journey', { 
+                  sort: 'CreateDT', 
+                  order: 'desc', 
+                  limit: 100,
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+                })
               ]);
               
               if (journeysData) {

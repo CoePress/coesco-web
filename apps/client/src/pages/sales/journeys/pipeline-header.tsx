@@ -1,5 +1,5 @@
 import { Button, Input, Select } from "@/components";
-import { Filter } from "lucide-react";
+import { Filter, Tags } from "lucide-react";
 import { VALID_JOURNEY_STATUS } from "./constants";
 
 interface PipelineHeaderProps {
@@ -13,6 +13,9 @@ interface PipelineHeaderProps {
   setJourneyStatusFilter: (status: string) => void;
   employee: any;
   setIsFilterModalOpen: (open: boolean) => void;
+  showTags?: boolean;
+  setShowTags?: (show: boolean) => void;
+  viewMode?: string;
 }
 
 export const PipelineHeader = ({ 
@@ -25,7 +28,10 @@ export const PipelineHeader = ({
   journeyStatusFilter,
   setJourneyStatusFilter,
   employee, 
-  setIsFilterModalOpen 
+  setIsFilterModalOpen,
+  showTags,
+  setShowTags,
+  viewMode
 }: PipelineHeaderProps) => (
   <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground">
     <div className="flex items-center gap-4">
@@ -74,6 +80,17 @@ export const PipelineHeader = ({
       </div>
     </div>
     <div className="flex items-center gap-2">
+      {viewMode === "kanban" && showTags !== undefined && setShowTags && (
+        <Button
+          variant={showTags ? "secondary" : "secondary-outline"}
+          size="sm"
+          onClick={() => setShowTags(!showTags)}
+          className="flex items-center gap-2"
+        >
+          <Tags size={14} />
+          {showTags ? "Hide Tags" : "Show Tags"}
+        </Button>
+      )}
       <Button
         variant="secondary-outline"
         size="sm"

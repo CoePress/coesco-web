@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["referentialActions"]
 }
 
@@ -152,6 +152,20 @@ model PermissionException {
   @@index([userId])
   @@index([permissionId])
   @@map("permission_exceptions")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  description String
+  parentTable String
+  parentId    String
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([parentTable, parentId, description])
+  @@index([parentTable, parentId])
+  @@map("tag")
 }
 
 // CRM
@@ -695,10 +709,10 @@ model FormConditionalRule {
   id          String              @id @default(uuid())
   formId      String
   name        String?
-  targetType  ConditionalTarget   // What to show/hide
-  targetId    String              // ID of page/section/field
-  action      ConditionalAction   // What to do
-  conditions  Json                // Array of conditions
+  targetType  ConditionalTarget // What to show/hide
+  targetId    String // ID of page/section/field
+  action      ConditionalAction // What to do
+  conditions  Json // Array of conditions
   operator    ConditionalOperator @default(AND)
   priority    Int                 @default(0)
   isActive    Boolean             @default(true)
@@ -849,7 +863,6 @@ enum UserRole {
   USER
   ADMIN
 }
-
 
 // CoilType
 model CoilType {
