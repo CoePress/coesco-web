@@ -238,17 +238,14 @@ const FormSubmissionView = () => {
     switch (field.controlType) {
       case 'SIGNATURE_PAD':
         if (!value) return <span className="text-text-muted italic">No signature</span>;
-        if (value === 'SIGNATURE_PLACEHOLDER') {
-          return <span className="text-success">✓ Signature captured</span>;
-        }
-        if (value.startsWith('data:image/')) {
+        if (typeof value === 'string' && value.startsWith('data:image/')) {
           return (
             <div className="border border-border rounded p-2 bg-white inline-block">
               <img
                 src={value}
                 alt="Signature"
-                className="max-w-[200px] max-h-[100px] object-contain"
-                style={{ imageRendering: 'crisp-edges' }}
+                className="max-w-[400px] max-h-[200px] object-contain"
+                style={{ imageRendering: 'auto' }}
               />
             </div>
           );

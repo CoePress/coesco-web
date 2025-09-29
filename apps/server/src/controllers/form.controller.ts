@@ -96,6 +96,92 @@ export class FormController {
   createFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
     const { formId } = req.params;
     const result = await formSubmissionService.create({ ...req.body, formId });
+    const submission = result.data;
+
+    // Process file uploads in answers
+    if (submission.answers && typeof submission.answers === 'object') {
+      const answers = submission.answers as Record<string, any>;
+      const updatedAnswers = { ...answers };
+      let hasFileChanges = false;
+
+      for (const [key, value] of Object.entries(answers)) {
+        // Handle camera uploads (array of file references)
+        if (Array.isArray(value) && value.length > 0 && value[0]?.filename) {
+          const { fileStorageService } = await import('@/services');
+
+          // Convert temp file references to StoredFile format with actual paths
+          const tempFiles = value.map((file: any) => ({
+            id: file.id || '',
+            originalName: file.originalName || file.filename,
+            filename: file.filename,
+            path: `uploads/forms/${submission.formId}/temp/images/${file.filename}`,
+            mimetype: file.mimetype || 'image/jpeg',
+            size: file.size || 0,
+            hash: '',
+            uploadedAt: new Date(),
+          }));
+
+          const permanentFiles = await fileStorageService.moveTempToPermanent(
+            submission.formId,
+            submission.id,
+            tempFiles
+          );
+
+          // Update URLs to point to permanent location
+          updatedAnswers[key] = permanentFiles.map((file: any) => ({
+            id: file.id,
+            originalName: file.originalName,
+            filename: file.filename,
+            url: fileStorageService.generateFileUrl(submission.formId, submission.id, file.filename),
+            mimetype: file.mimetype,
+            size: file.size,
+          }));
+          hasFileChanges = true;
+        }
+
+        // Handle sketch pad (single file URL)
+        if (typeof value === 'string' && value.includes('/temp/')) {
+          const { fileStorageService } = await import('@/services');
+
+          // Extract filename from temp URL
+          const urlParts = value.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          const category = urlParts.includes('sketches') ? 'sketches' : 'images';
+
+          const tempFile = {
+            id: '',
+            originalName: filename,
+            filename: filename,
+            path: `uploads/forms/${submission.formId}/temp/${category}/${filename}`,
+            mimetype: 'image/png',
+            size: 0,
+            hash: '',
+            uploadedAt: new Date(),
+          };
+
+          await fileStorageService.moveTempToPermanent(
+            submission.formId,
+            submission.id,
+            [tempFile]
+          );
+
+          // Update URL to point to permanent location
+          updatedAnswers[key] = fileStorageService.generateFileUrl(
+            submission.formId,
+            submission.id,
+            filename
+          );
+          hasFileChanges = true;
+        }
+      }
+
+      // Update submission with new URLs if there were file changes
+      if (hasFileChanges) {
+        const updated = await formSubmissionService.update(submission.id, { answers: updatedAnswers });
+        return res.status(201).json(updated);
+      }
+    }
+
     res.status(201).json(result);
   });
 

@@ -11,11 +11,11 @@ import { MicrosoftService } from "./business/microsoft.service";
 import { QuotingService } from "./business/quoting.service";
 import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
+import { FileStorageService } from "./core/file-storage.service";
 import { LockingService } from "./core/locking.service";
 import { MCPService } from "./core/mcp.service";
 import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
-import { FileStorageService } from "./core/file-storage.service";
 
 // Business
 export const agentService = new AgentService();
