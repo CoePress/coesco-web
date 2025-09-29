@@ -4,5 +4,9 @@
     "source.fixAll.eslint": "always"
   },
   "eslint.useFlatConfig": true,
-  "eslint.validate": ["javascript", "typescript"]
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  "claudeCodeChat.permissions.yoloMode": false
 }

@@ -265,7 +265,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         try {
             const response = await api.post('/performance/autofill/check', performanceData);
 
-            if (response.data.success) {
+            if (response && response.success) {
                 dispatch({ type: 'SET_TAB_AUTO_FILL_STATUS', payload: response.data.tabStatus });
                 dispatch({ type: 'SET_FILLABLE_TABS', payload: response.data.fillableTabs });
                 dispatch({ type: 'SET_SUFFICIENT_DATA', payload: response.data.globalSufficient });

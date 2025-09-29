@@ -187,6 +187,7 @@ export const BasicInfoSection: React.FC<RFQSectionProps> = ({
                         onChange={handleFieldChange}
                         disabled={!isEditing}
                         options={[
+                            { value: "", label: "" },
                             { value: "1", label: "1" },
                             { value: "2", label: "2" },
                             { value: "3", label: "3" },
@@ -198,13 +199,18 @@ export const BasicInfoSection: React.FC<RFQSectionProps> = ({
                     />
                 </div>
                 <div>
-                    <Input
+                    <Select
                         label="Shifts per day"
                         name="common.customerInfo.shiftsPerDay"
                         value={localData.common?.customerInfo?.shiftsPerDay?.toString() || ""}
                         onChange={handleFieldChange}
-                        type="number"
                         disabled={!isEditing}
+                        options={[
+                            { value: "", label: "" },
+                            { value: "1", label: "1" },
+                            { value: "2", label: "2" },
+                            { value: "3", label: "3" }
+                        ]}
                     />
                 </div>
             </div>

@@ -491,19 +491,16 @@ export const usePerformanceDataService = (
   // This prevents the infinite loop where both parent and child fetch data
 
   // Use global data instead of local state
-  const localData = performanceData || initialData;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  // Update localDataRef whenever localData changes
+  const [localData, setLocalData] = useState<PerformanceData>(performanceData || initialData);
+
   // Refs for cleanup and debouncing
   const localDataRef = useRef(localData);
   const pendingChangesRef = useRef<Record<string, any>>({});
-
-  // Update localDataRef whenever localData changes
-  React.useEffect(() => {
-    localDataRef.current = localData;
-  }, [localData]);
 
   // Initialize with initial data if needed
   React.useEffect(() => {
@@ -514,12 +511,11 @@ export const usePerformanceDataService = (
 
   // Debounced function for calculations and save (consolidated to reduce API calls)
   const debouncedSave = useCallback(
-    debounce(async () => {
+    debounce(async (dataToSave) => {
       if (!performanceSheetId || !isEditing) return;
 
       try {
-        const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: dataToSave });
 
         // Handle calculated values from backend - update global context
         if (response) {
@@ -532,6 +528,7 @@ export const usePerformanceDataService = (
         setLastSaved(new Date());
         setIsDirty(false);
         pendingChangesRef.current = {};
+        setPerformanceData(dataToSave);
 
         // Clear any general errors on successful save
         setFieldErrors(prev => {
@@ -561,6 +558,14 @@ export const usePerformanceDataService = (
     const checked = (e.target as HTMLInputElement).checked;
     const actualValue = type === "checkbox" ? checked : value;
 
+    setLocalData(prev => {
+      const updated = setNestedValue(prev, name, value);
+      localDataRef.current = updated;
+      setIsDirty(true);
+      debouncedSave(updated);
+      return updated;
+    });
+
     // Clear field error
     if (fieldErrors[name]) {
       setFieldErrors(prev => {
@@ -586,9 +591,6 @@ export const usePerformanceDataService = (
     // Track pending changes
     pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
     setIsDirty(true);
-
-    // Trigger calculations and save with balanced timing (consolidate API calls)
-    debouncedSave();
   }, [isEditing, fieldErrors, debouncedSave, setPerformanceData]);
 
   // Manual save function (for immediate saves)
@@ -596,8 +598,7 @@ export const usePerformanceDataService = (
     if (!performanceSheetId || !isEditing) return;
 
     try {
-      const updatedData = JSON.parse(JSON.stringify(localDataRef.current));
-      const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+      const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: localData });
 
       if (response) {
         setPerformanceData(prevData => deepMerge(prevData, response));
@@ -624,10 +625,13 @@ export const usePerformanceDataService = (
 
     setPerformanceData(prevData => setNestedValue(prevData, fieldPath, value));
     pendingChangesRef.current[fieldPath] = value;
-    setIsDirty(true);
-
-    // Trigger calculations and save with balanced timing (consolidate API calls)
-    debouncedSave();
+    setLocalData(prev => {
+      const updated = setNestedValue(prev, fieldPath, value);
+      localDataRef.current = updated;
+      setIsDirty(true);
+      debouncedSave(updated);
+      return updated;
+    });
   }, [isEditing, debouncedSave, setPerformanceData]);
 
   // Get field value by path
