@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
 import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
+import { __dev__ } from '@/config/env';
 
 interface GPSLocation {
   latitude: number;
@@ -42,7 +43,6 @@ const FormSubmission = () => {
 
   const storageKey = useMemo(() => `form-submission-${id}`, [id]);
 
-  // Get user's GPS location
   const getUserLocation = () => {
     if (!navigator.geolocation) {
       return;
@@ -100,26 +100,133 @@ const FormSubmission = () => {
     localStorage.removeItem(storageKey);
   };
 
+  const autoFillForm = () => {
+    if (!__dev__) return;
+
+    const testData: Record<string, any> = {};
+
+    testData['2nd Customer'] = 'no';
+    testData['Third Customer'] = 'no';
+    testData['In House'] = 'no';
+
+    pages.forEach((page: any) => {
+      if (page.label === 'Customer Information 2' ||
+          page.label === 'Customer Information 3' ||
+          page.label === 'Did you visit a third customer?') {
+        return;
+      }
+
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          const fieldKey = field.variable || field.id;
+
+          if (testData[fieldKey] !== undefined) return;
+
+          switch (field.controlType) {
+            case 'DROPDOWN':
+              const options = Array.isArray(field.options) ? field.options : [];
+              if (options.length > 0) {
+                const firstOption = options[0];
+                if (typeof firstOption === 'string') {
+                  testData[fieldKey] = firstOption;
+                } else if (firstOption && typeof firstOption === 'object') {
+                  if (fieldKey === '2nd Customer' || fieldKey === 'Third Customer' || fieldKey === 'In House') {
+                    const noOption = options.find((opt: any) => opt.value === 'no');
+                    testData[fieldKey] = noOption ? noOption.value : firstOption.value;
+                  } else {
+                    testData[fieldKey] = firstOption.value;
+                  }
+                }
+              }
+              break;
+
+            case 'DATE_SELECTOR':
+              testData[fieldKey] = new Date().toISOString().split('T')[0];
+              break;
+
+            case 'TIME_SELECTOR':
+              if (field.label.toLowerCase().includes('start')) {
+                testData[fieldKey] = '08:00';
+              } else if (field.label.toLowerCase().includes('end')) {
+                testData[fieldKey] = '17:00';
+              } else {
+                testData[fieldKey] = '12:00';
+              }
+              break;
+
+            case 'TEXTBOX':
+            case 'INPUT':
+              if (field.variable === 'Tech Name' || field.label === 'Technician Name') {
+                const techOptions = Array.isArray(field.options) ? field.options : [];
+                if (techOptions.length > 0) {
+                  const firstTech = techOptions[0];
+                  testData[fieldKey] = typeof firstTech === 'object' ? firstTech.value : 'Test Technician';
+                } else {
+                  testData[fieldKey] = 'Test Technician';
+                }
+              } else if (field.label.includes('Customer Name') || field.variable.includes('Company Name')) {
+                testData[fieldKey] = 'Test Company Inc.';
+              } else if (field.label.includes('Service Job Number') || field.variable.includes('Service Number')) {
+                testData[fieldKey] = 'SVC-' + Math.floor(Math.random() * 10000);
+              } else if (field.label.includes('Machine Serial') || field.variable.includes('Machine Number')) {
+                testData[fieldKey] = 'MSN-' + Math.floor(Math.random() * 100000);
+              } else if (field.label.includes('Customer Contact')) {
+                testData[fieldKey] = 'John Doe';
+              } else if (field.label.includes('Customer Email')) {
+                testData[fieldKey] = 'test@example.com';
+              } else if (field.label.includes('Customer Phone')) {
+                testData[fieldKey] = '555-0100';
+              } else if (field.label.includes('Type Customer Name')) {
+                testData[fieldKey] = 'John Doe';
+              } else if (field.label.includes('Current Location') && !field.label.includes('GPS')) {
+                testData[fieldKey] = '123 Test Street, Test City, TC 12345';
+              } else if (field.label.includes('Daily Summary')) {
+                testData[fieldKey] = 'Completed routine maintenance and system checks. All systems operational.';
+              } else {
+                testData[fieldKey] = 'Test ' + field.label;
+              }
+              break;
+
+            case 'TEXT_AREA':
+              if (field.label.includes('Report') || field.variable === 'Remarks') {
+                testData[fieldKey] = 'Performed scheduled maintenance. Checked all systems and components. Everything is working properly. No issues found.';
+              } else {
+                testData[fieldKey] = 'Test notes for ' + field.label;
+              }
+              break;
+
+            case 'STAMP':
+              break;
+
+            case 'SIGNATURE_PAD':
+              testData[fieldKey] = 'SIGNATURE_PLACEHOLDER';
+              break;
+
+            case 'CAMERA':
+            case 'SKETCH_PAD':
+              break;
+
+            default:
+              testData[fieldKey] = 'Test ' + field.label;
+          }
+        });
+      });
+    });
+
+    setFormValues(testData);
+    toast.success('Form auto-filled with test data');
+  };
+
   const fetchForm = async () => {
-    console.log('fetchForm called with id:', id);
     if (!id) {
-      console.log('No ID, returning early');
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    console.log('Fetching form and rules for ID:', id);
-
-    // Fetch form data first
     const formResponse = await get(`/forms/${id}`, { include });
-    console.log('Form response:', formResponse);
-
-    // Then fetch conditional rules
-    console.log('Now fetching conditional rules...');
     const rulesResponse = await get(`/forms/${id}/conditional-rules`);
-    console.log('Rules response:', rulesResponse);
 
     if (formResponse?.success && formResponse.data) {
       setFormData(formResponse.data);
@@ -132,7 +239,6 @@ const FormSubmission = () => {
       })) || [];
       setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
 
-      // Set initial required fields based on form definition
       const initialRequired = new Set<string>();
       pagesData.forEach((page: any) => {
         page.sections.forEach((section: any) => {
@@ -145,7 +251,6 @@ const FormSubmission = () => {
       });
       setRequiredFields(initialRequired);
 
-      // Check for saved progress after form is loaded
       const saved = loadFromLocalStorage();
       if (saved && saved.formValues && Object.keys(saved.formValues).length > 0) {
         setSavedProgress(saved);
@@ -155,24 +260,19 @@ const FormSubmission = () => {
       setError(formResponse?.error || "Failed to fetch form");
     }
 
-    // Set conditional rules if available
     if (rulesResponse?.success && rulesResponse.data) {
-      // The backend returns either an array directly or wrapped in items
       const rules = Array.isArray(rulesResponse.data) ? rulesResponse.data : (rulesResponse.data.items || []);
       setConditionalRules(rules);
-      console.log('Loaded conditional rules:', rules);
     }
 
     setLoading(false);
   };
 
-  // Evaluate conditional rules whenever form values change
   const evaluateConditionalRules = () => {
     const newHidden = new Set<string>();
     const newDisabled = new Set<string>();
     const newRequired = new Set<string>();
 
-    // Start with initially required fields
     pages.forEach((page: any) => {
       page.sections.forEach((section: any) => {
         section.fields.forEach((field: any) => {
@@ -183,40 +283,33 @@ const FormSubmission = () => {
       });
     });
 
-    // Initially hide all pages/sections/fields that have SHOW rules
     conditionalRules.forEach((rule: any) => {
       if (!rule.isActive) return;
       if (rule.action === 'SHOW') {
-        // Initially hide elements that need to be shown conditionally
         newHidden.add(rule.targetId);
       }
     });
 
-    // Apply conditional rules based on form values
     conditionalRules.forEach((rule: any) => {
       if (!rule.isActive) return;
 
       const conditions = Array.isArray(rule.conditions) ? rule.conditions :
                         (rule.conditions ? [rule.conditions] : []);
 
-      // Evaluate conditions based on operator (AND/OR)
       let conditionsMet = false;
       if (rule.operator === 'OR') {
         conditionsMet = conditions.some((condition: any) =>
           evaluateCondition(condition, formValues)
         );
       } else {
-        // Default to AND
         conditionsMet = conditions.every((condition: any) =>
           evaluateCondition(condition, formValues)
         );
       }
 
       if (conditionsMet) {
-        // Apply the action
         switch (rule.action) {
           case 'SHOW':
-            // Remove from hidden (show the element)
             newHidden.delete(rule.targetId);
             break;
           case 'HIDE':
@@ -238,28 +331,20 @@ const FormSubmission = () => {
       }
     });
 
-    // Handle cascading dependencies - if "2nd Customer" is not "yes",
-    // then "Third Customer" field's value should be ignored
     if (formValues["2nd Customer"] !== "yes") {
-      // Find and hide any rules that depend on "Third Customer"
       conditionalRules.forEach((rule: any) => {
         const conditions = Array.isArray(rule.conditions) ? rule.conditions :
                           (rule.conditions ? [rule.conditions] : []);
 
-        // Check if this rule depends on "Third Customer"
         const dependsOnThirdCustomer = conditions.some((condition: any) =>
           condition.fieldVariable === "Third Customer"
         );
 
         if (dependsOnThirdCustomer && rule.action === 'SHOW') {
-          // Force hide elements that depend on Third Customer when 2nd Customer is not yes
           newHidden.add(rule.targetId);
         }
       });
     }
-
-    console.log('Hidden elements:', Array.from(newHidden));
-    console.log('Current form values:', formValues);
 
     setHiddenElements(newHidden);
     setDisabledElements(newDisabled);
@@ -267,13 +352,10 @@ const FormSubmission = () => {
   };
 
   const evaluateCondition = (condition: any, values: Record<string, any>) => {
-    // The condition uses fieldVariable from the API
     const fieldVariable = condition.fieldVariable || condition.field;
     const fieldValue = values[fieldVariable];
     const operator = condition.operator;
     const value = condition.value;
-
-    console.log('Evaluating condition:', { fieldVariable, fieldValue, operator, value });
 
     switch (operator) {
       case 'equals':
@@ -306,21 +388,16 @@ const FormSubmission = () => {
   };
 
   useEffect(() => {
-    console.log('useEffect triggered with id:', id);
     getUserLocation();
-    console.log('About to call fetchForm...');
     fetchForm();
-    console.log('fetchForm call completed');
   }, [id]);
 
-  // Evaluate rules when form values or rules change
   useEffect(() => {
     if (conditionalRules.length > 0) {
       evaluateConditionalRules();
     }
   }, [formValues, conditionalRules]);
 
-  // Auto-save on form value changes
   useEffect(() => {
     if (getFilledFieldsCount() > 0) {
       saveToLocalStorage(formValues);
@@ -329,22 +406,17 @@ const FormSubmission = () => {
 
 
   const handleFieldChange = (field: any, value: any) => {
-    // Use the field's variable name as the key
     const fieldKey = field.variable || field.id;
 
     setFormValues(prev => {
       const newValues = { ...prev };
-      // If value is empty, remove the key entirely
       if (value === '' || value === null || value === undefined) {
         delete newValues[fieldKey];
       } else {
         newValues[fieldKey] = value;
       }
-      console.log('Form values updated:', newValues);
-      // Save to local storage will happen via useEffect
       return newValues;
     });
-    // Clear error when field is filled
     if (errors[fieldKey] && value) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -375,18 +447,14 @@ const FormSubmission = () => {
     const newErrors: Record<string, string> = {};
 
     pages.forEach(page => {
-      // Skip hidden pages
       if (hiddenElements.has(page.id)) return;
 
       page.sections.forEach((section: any) => {
-        // Skip hidden sections
         if (hiddenElements.has(section.id)) return;
 
         section.fields.forEach((field: any) => {
-          // Skip hidden fields
           if (hiddenElements.has(field.id)) return;
 
-          // Check if field is required (either originally or by conditional rule)
           if (requiredFields.has(field.id) && !formValues[field.id]) {
             newErrors[field.id] = `${field.label} is required`;
           }
@@ -402,25 +470,42 @@ const FormSubmission = () => {
     if (!validateForm() || !id) return;
 
     try {
-      // Create submission data structure
+      const visibleFieldVariables = new Set<string>();
+
+      pages.forEach((page: any) => {
+        if (hiddenElements.has(page.id)) return;
+        page.sections.forEach((section: any) => {
+          if (hiddenElements.has(section.id)) return;
+          section.fields.forEach((field: any) => {
+            if (hiddenElements.has(field.id)) return;
+            const fieldKey = field.variable || field.id;
+            visibleFieldVariables.add(fieldKey);
+          });
+        });
+      });
+
+      const filteredFormValues = Object.fromEntries(
+        Object.entries(formValues).filter(([fieldKey]) =>
+          visibleFieldVariables.has(fieldKey)
+        )
+      );
+
       const submissionData = {
         formId: id,
         status: 'submitted',
         submittedAt: new Date().toISOString(),
         data: {
-          ...formValues,
+          ...filteredFormValues,
           _gpsLocation: userLocation || null
         }
       };
 
-      // Post submission to API
       const response = await post(`/forms/${id}/submissions`, submissionData);
 
       if (response?.success) {
-        // Clear local storage on successful submission
         clearLocalStorage();
         toast.success('Form submitted successfully!');
-        navigate('/service/forms');
+        navigate('/service');
       } else {
         const errorMessage = response?.error || 'Failed to submit form';
         toast.error(errorMessage);
@@ -435,31 +520,27 @@ const FormSubmission = () => {
   };
 
   const handleCancel = () => {
-    // Check if any fields have been filled
     const hasFilledFields = getFilledFieldsCount() > 0;
 
     if (hasFilledFields) {
       setShowCancelModal(true);
     } else {
-      navigate('/service/forms/');
+      navigate('/service/');
     }
   };
 
   const confirmCancel = () => {
     setShowCancelModal(false);
-    navigate('/service/forms/');
+    navigate('/service/');
   };
 
   const getTotalFields = () => {
     return pages.reduce((total: number, page: any) => {
-      // Skip hidden pages
       if (hiddenElements.has(page.id)) return total;
 
       return total + page.sections.reduce((pageTotal: number, section: any) => {
-        // Skip hidden sections
         if (hiddenElements.has(section.id)) return pageTotal;
 
-        // Count only non-hidden fields
         const visibleFields = section.fields?.filter((field: any) =>
           !hiddenElements.has(field.variable || field.id)
         ) || [];
@@ -470,13 +551,29 @@ const FormSubmission = () => {
   };
 
   const getFilledFieldsCount = () => {
-    return Object.entries(formValues).filter(([_, value]) => {
-      // Count as filled only if value is not empty/null/undefined
-      return value !== '' && value !== null && value !== undefined;
+    const visibleFieldVariables = new Set<string>();
+
+    pages.forEach((page: any) => {
+      if (hiddenElements.has(page.id)) return;
+
+      page.sections.forEach((section: any) => {
+        if (hiddenElements.has(section.id)) return;
+
+        section.fields.forEach((field: any) => {
+          if (hiddenElements.has(field.id)) return;
+
+          const fieldKey = field.variable || field.id;
+          visibleFieldVariables.add(fieldKey);
+        });
+      });
+    });
+
+    return Object.entries(formValues).filter(([fieldKey, value]) => {
+      return visibleFieldVariables.has(fieldKey) &&
+             value !== '' && value !== null && value !== undefined;
     }).length;
   };
 
-  // Get only visible pages
   const getVisiblePages = () => {
     return pages.filter((page: any) => !hiddenElements.has(page.id));
   };
@@ -512,7 +609,6 @@ const FormSubmission = () => {
     const fieldType = field.controlType;
     const isDisabled = disabledElements.has(fieldKey) || field.isReadOnly;
 
-    // Special handling for GPS location field
     if (field.label === 'Current Location (GPS)') {
       return (
         <div className="w-full">
@@ -558,7 +654,6 @@ const FormSubmission = () => {
         );
 
       case 'DROPDOWN':
-        // Handle options - could be an array directly or nested in the options object
         const dropdownOptions = Array.isArray(field.options) ? field.options : [];
 
         return (
@@ -571,7 +666,6 @@ const FormSubmission = () => {
             >
               <option value="">Select {field.label.toLowerCase()}</option>
               {dropdownOptions.map((option: any, index: number) => {
-                // Handle both string options and object options
                 if (typeof option === 'string') {
                   return <option key={option} value={option}>{option}</option>;
                 } else if (option && typeof option === 'object') {
@@ -664,7 +758,6 @@ const FormSubmission = () => {
     switch (fieldType) {
       case 'INPUT':
       case 'TEXTBOX':
-        // Check if this is a GPS field by label
         if (field && field.label === 'Current Location (GPS)') {
           return <MapPin size={16} />;
         }
@@ -681,6 +774,12 @@ const FormSubmission = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
+      {__dev__ && (
+        <Button onClick={autoFillForm} variant="secondary">
+          <Wand2 size={16} />
+          <span>Auto-fill</span>
+        </Button>
+      )}
       <Button onClick={handleCancel} variant="secondary-outline">
         <X size={16} />
         <span>Cancel</span>
@@ -720,7 +819,6 @@ const FormSubmission = () => {
       />
 
       <div className="space-y-4 p-4 max-w-4xl mx-auto w-full">
-        {/* Progress indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
@@ -736,7 +834,6 @@ const FormSubmission = () => {
           </div>
         </div>
 
-        {/* Page navigation */}
         {getVisiblePages().length > 1 && (
           <div className="flex items-center justify-between mb-4">
             <Button
@@ -765,12 +862,10 @@ const FormSubmission = () => {
 
         {getCurrentPage() && (
           <>
-            {/* Page title */}
             <div className="mb-4">
               <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
             </div>
 
-            {/* Sections */}
             {getCurrentPage().sections
               .filter((section: any) => !hiddenElements.has(section.id))
               .map((section: any) => (
@@ -808,7 +903,6 @@ const FormSubmission = () => {
         )}
       </div>
 
-      {/* Cancel Confirmation Modal */}
       <Modal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
@@ -839,7 +933,6 @@ const FormSubmission = () => {
         </div>
       </Modal>
 
-      {/* Continue Progress Modal */}
       <Modal
         isOpen={showContinueModal}
         onClose={() => {}}
