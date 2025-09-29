@@ -3,6 +3,7 @@ import type { FormSubmission } from "@prisma/client";
 
 import { BadRequestError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
+import { fileStorageService } from "@/services";
 
 import { BaseService } from "./_base.service";
 
@@ -24,5 +25,95 @@ export class FormSubmissionService extends BaseService<FormSubmission> {
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)
       throw new BadRequestError("updatedById is required");
+  }
+
+  async create(data: FormSubmissionAttributes): Promise<any> {
+    await this.validate(data);
+
+    const submission = await this.model.create({ data });
+
+    // Process file uploads in answers
+    if (submission.answers && typeof submission.answers === 'object') {
+      const answers = submission.answers as Record<string, any>;
+      const updatedAnswers = { ...answers };
+      let hasFileChanges = false;
+
+      for (const [key, value] of Object.entries(answers)) {
+        // Handle camera uploads (array of file references)
+        if (Array.isArray(value) && value.length > 0 && value[0]?.filename) {
+          // Convert temp file references to StoredFile format with actual paths
+          const tempFiles = value.map((file: any) => ({
+            id: file.id || '',
+            originalName: file.originalName || file.filename,
+            filename: file.filename,
+            path: `uploads/forms/${submission.formId}/temp/images/${file.filename}`,
+            mimetype: file.mimetype || 'image/jpeg',
+            size: file.size || 0,
+            hash: '',
+            uploadedAt: new Date(),
+          }));
+
+          const permanentFiles = await fileStorageService.moveTempToPermanent(
+            submission.formId,
+            submission.id,
+            tempFiles
+          );
+
+          // Update URLs to point to permanent location
+          updatedAnswers[key] = permanentFiles.map((file: any) => ({
+            id: file.id,
+            originalName: file.originalName,
+            filename: file.filename,
+            url: fileStorageService.generateFileUrl(submission.formId, submission.id, file.filename),
+            mimetype: file.mimetype,
+            size: file.size,
+          }));
+          hasFileChanges = true;
+        }
+
+        // Handle sketch pad (single file URL)
+        if (typeof value === 'string' && value.includes('/temp/')) {
+          // Extract filename from temp URL: /api/v1/files/forms/{formId}/temp/{filename}
+          const urlParts = value.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          const category = urlParts[urlParts.length - 2] === 'sketches' ? 'sketches' : 'images';
+
+          const tempFile = {
+            id: '',
+            originalName: filename,
+            filename: filename,
+            path: `uploads/forms/${submission.formId}/temp/${category}/${filename}`,
+            mimetype: 'image/png',
+            size: 0,
+            hash: '',
+            uploadedAt: new Date(),
+          };
+
+          await fileStorageService.moveTempToPermanent(
+            submission.formId,
+            submission.id,
+            [tempFile]
+          );
+
+          // Update URL to point to permanent location
+          updatedAnswers[key] = fileStorageService.generateFileUrl(
+            submission.formId,
+            submission.id,
+            filename
+          );
+          hasFileChanges = true;
+        }
+      }
+
+      // Update submission with new URLs if there were file changes
+      if (hasFileChanges) {
+        return await this.model.update({
+          where: { id: submission.id },
+          data: { answers: updatedAnswers }
+        });
+      }
+    }
+
+    return submission;
   }
 }

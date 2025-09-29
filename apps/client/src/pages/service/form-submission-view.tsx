@@ -256,7 +256,29 @@ const FormSubmissionView = () => {
         return <span className="text-text">{value}</span>;
 
       case 'CAMERA':
-        return <span className="text-text-muted">Images attached</span>;
+        if (!value || !Array.isArray(value) || value.length === 0) {
+          return <span className="text-text-muted italic">No images</span>;
+        }
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+            {value.map((file: any, index: number) => (
+              <div key={file.id || index} className="border border-border rounded overflow-hidden">
+                <img
+                  src={file.url}
+                  alt={file.originalName || `Image ${index + 1}`}
+                  className="w-full h-32 object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                  onClick={() => window.open(file.url, '_blank')}
+                  title={file.originalName}
+                />
+                {file.originalName && (
+                  <div className="p-1 bg-surface text-xs text-text-muted truncate">
+                    {file.originalName}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
 
       case 'MULTI_SELECT':
         return <span className="text-text">{value ? 'Yes' : 'No'}</span>;
@@ -279,6 +301,23 @@ const FormSubmissionView = () => {
         }
         return <span className="text-text">{value}</span>;
 
+      case 'SKETCH_PAD':
+        if (!value) return <span className="text-text-muted italic">No sketch</span>;
+        if (typeof value === 'string' && value.startsWith('/api/')) {
+          return (
+            <div className="border border-border rounded p-2 bg-white inline-block">
+              <img
+                src={value}
+                alt="Sketch"
+                className="max-w-[400px] max-h-[300px] object-contain cursor-pointer hover:opacity-75 transition-opacity"
+                onClick={() => window.open(value, '_blank')}
+                title="Click to view full size"
+              />
+            </div>
+          );
+        }
+        return <span className="text-success">✓ Sketch saved</span>;
+
       default:
         return <span className="text-text">{value}</span>;
     }
@@ -298,6 +337,7 @@ const FormSubmissionView = () => {
       case 'TEXT_AREA': return <FileText size={16} />;
       case 'CAMERA': return <Camera size={16} />;
       case 'SIGNATURE_PAD': return <PenTool size={16} />;
+      case 'SKETCH_PAD': return <PenTool size={16} />;
       default: return null;
     }
   };
