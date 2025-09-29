@@ -59,7 +59,7 @@ export class LegacyController {
       }
 
       // Handle multiple filters format (any query param that's not a standard param)
-      const reservedParams = ["limit", "offset", "sort", "order"];
+      const reservedParams = ["limit", "offset", "sort", "order", "fields"];
       Object.entries(queryParams).forEach(([key, value]) => {
         if (!reservedParams.includes(key) && value !== undefined) {
           filters[key] = String(value);

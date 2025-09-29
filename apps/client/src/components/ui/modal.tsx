@@ -8,6 +8,7 @@ type ModalProps = {
   children: React.ReactNode;
   size?: "xs" | "sm" | "md" | "lg";
   overflow?: "visible" | "auto";
+  backdropClosable?: boolean;
 };
 
 const Modal = ({
@@ -17,6 +18,7 @@ const Modal = ({
   children,
   size = "md",
   overflow = "auto",
+  backdropClosable = false,
 }: ModalProps) => {
   if (!isOpen) return null;
 
@@ -27,8 +29,17 @@ const Modal = ({
     lg: "w-[1000px]",
   };
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (backdropClosable && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-background/35 backdrop-blur-xs z-50 text-text px-4">
+    <div 
+      className="fixed inset-0 flex items-center justify-center bg-background/35 backdrop-blur-xs z-50 text-text px-4"
+      onClick={handleOverlayClick}
+    >
       <Card
         className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}>
         <div className="flex items-center justify-between mb-2 flex-shrink-0">
