@@ -30,6 +30,10 @@ const FormSubmission = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
+  const [conditionalRules, setConditionalRules] = useState<any[]>([]);
+  const [hiddenElements, setHiddenElements] = useState<Set<string>>(new Set());
+  const [disabledElements, setDisabledElements] = useState<Set<string>>(new Set());
+  const [requiredFields, setRequiredFields] = useState<Set<string>>(new Set());
 
   const include = useMemo(
     () => ["pages.sections.fields"],
@@ -97,18 +101,29 @@ const FormSubmission = () => {
   };
 
   const fetchForm = async () => {
-    if (!id) return;
+    console.log('fetchForm called with id:', id);
+    if (!id) {
+      console.log('No ID, returning early');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
-    const response = await get(`/forms/${id}`, {
-      include
-    });
+    console.log('Fetching form and rules for ID:', id);
 
-    if (response?.success && response.data) {
-      setFormData(response.data);
-      const pagesData = response.data.pages?.map((page: any) => ({
+    // Fetch form data first
+    const formResponse = await get(`/forms/${id}`, { include });
+    console.log('Form response:', formResponse);
+
+    // Then fetch conditional rules
+    console.log('Now fetching conditional rules...');
+    const rulesResponse = await get(`/forms/${id}/conditional-rules`);
+    console.log('Rules response:', rulesResponse);
+
+    if (formResponse?.success && formResponse.data) {
+      setFormData(formResponse.data);
+      const pagesData = formResponse.data.pages?.map((page: any) => ({
         ...page,
         sections: page.sections?.map((section: any) => ({
           ...section,
@@ -117,6 +132,19 @@ const FormSubmission = () => {
       })) || [];
       setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
 
+      // Set initial required fields based on form definition
+      const initialRequired = new Set<string>();
+      pagesData.forEach((page: any) => {
+        page.sections.forEach((section: any) => {
+          section.fields.forEach((field: any) => {
+            if (field.isRequired) {
+              initialRequired.add(field.id);
+            }
+          });
+        });
+      });
+      setRequiredFields(initialRequired);
+
       // Check for saved progress after form is loaded
       const saved = loadFromLocalStorage();
       if (saved && saved.formValues && Object.keys(saved.formValues).length > 0) {
@@ -124,16 +152,173 @@ const FormSubmission = () => {
         setShowContinueModal(true);
       }
     } else {
-      setError(response?.error || "Failed to fetch form");
+      setError(formResponse?.error || "Failed to fetch form");
+    }
+
+    // Set conditional rules if available
+    if (rulesResponse?.success && rulesResponse.data) {
+      // The backend returns either an array directly or wrapped in items
+      const rules = Array.isArray(rulesResponse.data) ? rulesResponse.data : (rulesResponse.data.items || []);
+      setConditionalRules(rules);
+      console.log('Loaded conditional rules:', rules);
     }
 
     setLoading(false);
   };
 
+  // Evaluate conditional rules whenever form values change
+  const evaluateConditionalRules = () => {
+    const newHidden = new Set<string>();
+    const newDisabled = new Set<string>();
+    const newRequired = new Set<string>();
+
+    // Start with initially required fields
+    pages.forEach((page: any) => {
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          if (field.isRequired) {
+            newRequired.add(field.id);
+          }
+        });
+      });
+    });
+
+    // Initially hide all pages/sections/fields that have SHOW rules
+    conditionalRules.forEach((rule: any) => {
+      if (!rule.isActive) return;
+      if (rule.action === 'SHOW') {
+        // Initially hide elements that need to be shown conditionally
+        newHidden.add(rule.targetId);
+      }
+    });
+
+    // Apply conditional rules based on form values
+    conditionalRules.forEach((rule: any) => {
+      if (!rule.isActive) return;
+
+      const conditions = Array.isArray(rule.conditions) ? rule.conditions :
+                        (rule.conditions ? [rule.conditions] : []);
+
+      // Evaluate conditions based on operator (AND/OR)
+      let conditionsMet = false;
+      if (rule.operator === 'OR') {
+        conditionsMet = conditions.some((condition: any) =>
+          evaluateCondition(condition, formValues)
+        );
+      } else {
+        // Default to AND
+        conditionsMet = conditions.every((condition: any) =>
+          evaluateCondition(condition, formValues)
+        );
+      }
+
+      if (conditionsMet) {
+        // Apply the action
+        switch (rule.action) {
+          case 'SHOW':
+            // Remove from hidden (show the element)
+            newHidden.delete(rule.targetId);
+            break;
+          case 'HIDE':
+            newHidden.add(rule.targetId);
+            break;
+          case 'ENABLE':
+            newDisabled.delete(rule.targetId);
+            break;
+          case 'DISABLE':
+            newDisabled.add(rule.targetId);
+            break;
+          case 'REQUIRE':
+            newRequired.add(rule.targetId);
+            break;
+          case 'OPTIONAL':
+            newRequired.delete(rule.targetId);
+            break;
+        }
+      }
+    });
+
+    // Handle cascading dependencies - if "2nd Customer" is not "yes",
+    // then "Third Customer" field's value should be ignored
+    if (formValues["2nd Customer"] !== "yes") {
+      // Find and hide any rules that depend on "Third Customer"
+      conditionalRules.forEach((rule: any) => {
+        const conditions = Array.isArray(rule.conditions) ? rule.conditions :
+                          (rule.conditions ? [rule.conditions] : []);
+
+        // Check if this rule depends on "Third Customer"
+        const dependsOnThirdCustomer = conditions.some((condition: any) =>
+          condition.fieldVariable === "Third Customer"
+        );
+
+        if (dependsOnThirdCustomer && rule.action === 'SHOW') {
+          // Force hide elements that depend on Third Customer when 2nd Customer is not yes
+          newHidden.add(rule.targetId);
+        }
+      });
+    }
+
+    console.log('Hidden elements:', Array.from(newHidden));
+    console.log('Current form values:', formValues);
+
+    setHiddenElements(newHidden);
+    setDisabledElements(newDisabled);
+    setRequiredFields(newRequired);
+  };
+
+  const evaluateCondition = (condition: any, values: Record<string, any>) => {
+    // The condition uses fieldVariable from the API
+    const fieldVariable = condition.fieldVariable || condition.field;
+    const fieldValue = values[fieldVariable];
+    const operator = condition.operator;
+    const value = condition.value;
+
+    console.log('Evaluating condition:', { fieldVariable, fieldValue, operator, value });
+
+    switch (operator) {
+      case 'equals':
+      case '=':
+        return fieldValue === value;
+      case 'not_equals':
+      case '!=':
+        return fieldValue !== value;
+      case 'contains':
+        return fieldValue && String(fieldValue).includes(value);
+      case 'not_contains':
+        return !fieldValue || !String(fieldValue).includes(value);
+      case 'empty':
+        return !fieldValue || fieldValue === '';
+      case 'not_empty':
+        return fieldValue && fieldValue !== '';
+      case 'greater_than':
+      case '>':
+        return Number(fieldValue) > Number(value);
+      case 'less_than':
+      case '<':
+        return Number(fieldValue) < Number(value);
+      case 'in':
+        return Array.isArray(value) && value.includes(fieldValue);
+      case 'not_in':
+        return Array.isArray(value) && !value.includes(fieldValue);
+      default:
+        return false;
+    }
+  };
+
   useEffect(() => {
+    console.log('useEffect triggered with id:', id);
     getUserLocation();
+    console.log('About to call fetchForm...');
     fetchForm();
+    console.log('fetchForm call completed');
   }, [id]);
+
+  // Evaluate rules when form values or rules change
+  useEffect(() => {
+    if (conditionalRules.length > 0) {
+      evaluateConditionalRules();
+    }
+  }, [formValues, conditionalRules]);
 
   // Auto-save on form value changes
   useEffect(() => {
@@ -143,23 +328,27 @@ const FormSubmission = () => {
   }, [formValues, currentPageIndex]);
 
 
-  const handleFieldChange = (fieldId: string, value: any) => {
+  const handleFieldChange = (field: any, value: any) => {
+    // Use the field's variable name as the key
+    const fieldKey = field.variable || field.id;
+
     setFormValues(prev => {
       const newValues = { ...prev };
       // If value is empty, remove the key entirely
       if (value === '' || value === null || value === undefined) {
-        delete newValues[fieldId];
+        delete newValues[fieldKey];
       } else {
-        newValues[fieldId] = value;
+        newValues[fieldKey] = value;
       }
+      console.log('Form values updated:', newValues);
       // Save to local storage will happen via useEffect
       return newValues;
     });
     // Clear error when field is filled
-    if (errors[fieldId] && value) {
+    if (errors[fieldKey] && value) {
       setErrors(prev => {
         const newErrors = { ...prev };
-        delete newErrors[fieldId];
+        delete newErrors[fieldKey];
         return newErrors;
       });
     }
@@ -186,9 +375,19 @@ const FormSubmission = () => {
     const newErrors: Record<string, string> = {};
 
     pages.forEach(page => {
+      // Skip hidden pages
+      if (hiddenElements.has(page.id)) return;
+
       page.sections.forEach((section: any) => {
+        // Skip hidden sections
+        if (hiddenElements.has(section.id)) return;
+
         section.fields.forEach((field: any) => {
-          if (field.isRequired && !formValues[field.id]) {
+          // Skip hidden fields
+          if (hiddenElements.has(field.id)) return;
+
+          // Check if field is required (either originally or by conditional rule)
+          if (requiredFields.has(field.id) && !formValues[field.id]) {
             newErrors[field.id] = `${field.label} is required`;
           }
         });
@@ -253,8 +452,19 @@ const FormSubmission = () => {
 
   const getTotalFields = () => {
     return pages.reduce((total: number, page: any) => {
+      // Skip hidden pages
+      if (hiddenElements.has(page.id)) return total;
+
       return total + page.sections.reduce((pageTotal: number, section: any) => {
-        return pageTotal + (section.fields?.length || 0);
+        // Skip hidden sections
+        if (hiddenElements.has(section.id)) return pageTotal;
+
+        // Count only non-hidden fields
+        const visibleFields = section.fields?.filter((field: any) =>
+          !hiddenElements.has(field.variable || field.id)
+        ) || [];
+
+        return pageTotal + visibleFields.length;
       }, 0);
     }, 0);
   };
@@ -266,9 +476,21 @@ const FormSubmission = () => {
     }).length;
   };
 
-  const getCurrentPage = () => pages[currentPageIndex];
+  // Get only visible pages
+  const getVisiblePages = () => {
+    return pages.filter((page: any) => !hiddenElements.has(page.id));
+  };
 
-  const canGoNext = () => currentPageIndex < pages.length - 1;
+  const getCurrentPage = () => {
+    const visiblePages = getVisiblePages();
+    return visiblePages[currentPageIndex];
+  };
+
+  const canGoNext = () => {
+    const visiblePages = getVisiblePages();
+    return currentPageIndex < visiblePages.length - 1;
+  };
+
   const canGoPrevious = () => currentPageIndex > 0;
 
   const goToNextPage = () => {
@@ -284,9 +506,11 @@ const FormSubmission = () => {
   };
 
   const renderFieldInput = (field: any) => {
-    const value = formValues[field.id] || '';
-    const hasError = !!errors[field.id];
+    const fieldKey = field.variable || field.id;
+    const value = formValues[fieldKey] || '';
+    const hasError = !!errors[fieldKey];
     const fieldType = field.controlType;
+    const isDisabled = disabledElements.has(fieldKey) || field.isReadOnly;
 
     // Special handling for GPS location field
     if (field.label === 'Current Location (GPS)') {
@@ -310,11 +534,12 @@ const FormSubmission = () => {
           <div className="w-full">
             <Input
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               className={hasError ? 'border-error' : ''}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -323,11 +548,12 @@ const FormSubmission = () => {
           <div className="w-full">
             <DatePicker
               value={value}
-              onChange={(date) => handleFieldChange(field.id, date)}
+              onChange={(date) => handleFieldChange(field, date)}
               placeholder={`Select ${field.label.toLowerCase()}`}
               className={hasError ? 'border-error' : ''}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -339,8 +565,9 @@ const FormSubmission = () => {
           <div className="w-full">
             <select
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
+              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
             >
               <option value="">Select {field.label.toLowerCase()}</option>
               {dropdownOptions.map((option: any, index: number) => {
@@ -353,7 +580,7 @@ const FormSubmission = () => {
                 return null;
               })}
             </select>
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -363,8 +590,9 @@ const FormSubmission = () => {
             <input
               type="checkbox"
               checked={value || false}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+              onChange={(e) => handleFieldChange(field, e.target.checked)}
               className="w-5 h-5 bg-surface border border-border rounded text-primary focus:ring-2 focus:ring-primary/50"
+              disabled={isDisabled}
             />
             <span className="text-text">{field.label}</span>
             {hasError && <span className="text-error text-sm ml-2">{errors[field.id]}</span>}
@@ -376,12 +604,13 @@ const FormSubmission = () => {
           <div className="w-full">
             <textarea
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               rows={4}
-              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none`}
+              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -396,7 +625,7 @@ const FormSubmission = () => {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={(e) => handleFieldChange(field.id, e.target.files)}
+                onChange={(e) => handleFieldChange(field, e.target.files)}
                 className="hidden"
               />
             </div>
@@ -405,7 +634,7 @@ const FormSubmission = () => {
                 {value.length} file(s) selected
               </div>
             )}
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -422,7 +651,7 @@ const FormSubmission = () => {
                 ✓ Signature added
               </div>
             )}
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -508,7 +737,7 @@ const FormSubmission = () => {
         </div>
 
         {/* Page navigation */}
-        {pages.length > 1 && (
+        {getVisiblePages().length > 1 && (
           <div className="flex items-center justify-between mb-4">
             <Button
               onClick={goToPreviousPage}
@@ -520,7 +749,7 @@ const FormSubmission = () => {
               Previous
             </Button>
             <div className="text-sm text-text-muted">
-              Page {currentPageIndex + 1} of {pages.length}
+              Page {currentPageIndex + 1} of {getVisiblePages().length}
             </div>
             <Button
               onClick={goToNextPage}
@@ -542,24 +771,28 @@ const FormSubmission = () => {
             </div>
 
             {/* Sections */}
-            {getCurrentPage().sections.map((section: any) => (
-          <Card key={section.id} className="">
-            <div className="space-y-6">
-                {section.fields.map((field: any) => (
-                  <div key={field.id} className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
-                      <label className="text-text font-medium">
-                        {field.label}
-                        {field.isRequired && <span className="text-error ml-1">*</span>}
-                      </label>
-                    </div>
-                    {renderFieldInput(field)}
+            {getCurrentPage().sections
+              .filter((section: any) => !hiddenElements.has(section.id))
+              .map((section: any) => (
+                <Card key={section.id} className="">
+                  <div className="space-y-6">
+                    {section.fields
+                      .filter((field: any) => !hiddenElements.has(field.id))
+                      .map((field: any) => (
+                        <div key={field.id} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
+                            <label className="text-text font-medium">
+                              {field.label}
+                              {requiredFields.has(field.id) && <span className="text-error ml-1">*</span>}
+                            </label>
+                          </div>
+                          {renderFieldInput(field)}
+                        </div>
+                      ))}
                   </div>
-                ))}
-              </div>
-          </Card>
-            ))}
+                </Card>
+              ))}
           </>
         )}
 

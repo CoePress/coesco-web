@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { formFieldService, formPageService, formSectionService, formService, formSubmissionService } from "@/services/repository";
+import { formFieldService, formPageService, formSectionService, formService, formSubmissionService, formConditionalRuleService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
 
 export class FormController {
@@ -106,6 +106,38 @@ export class FormController {
 
   deleteFormSubmission = asyncWrapper(async (req: Request, res: Response) => {
     const result = await formSubmissionService.delete(req.params.submissionId);
+    res.status(200).json(result);
+  });
+
+  // Form Conditional Rules
+  getFormConditionalRules = asyncWrapper(async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const query = {
+      ...req.query,
+      filter: JSON.stringify({ formId }),
+    };
+    const result = await formConditionalRuleService.getAll(query);
+    res.status(200).json(result);
+  });
+
+  getFormConditionalRule = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formConditionalRuleService.getById(req.params.ruleId, req.query);
+    res.status(200).json(result);
+  });
+
+  createFormConditionalRule = asyncWrapper(async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const result = await formConditionalRuleService.create({ ...req.body, formId });
+    res.status(201).json(result);
+  });
+
+  updateFormConditionalRule = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formConditionalRuleService.update(req.params.ruleId, req.body);
+    res.status(200).json(result);
+  });
+
+  deleteFormConditionalRule = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await formConditionalRuleService.delete(req.params.ruleId);
     res.status(200).json(result);
   });
 }

@@ -93,7 +93,7 @@
             {
               "sequence": 3,
               "label": "Did you work only in house today?",
-              "variable": "In House?",
+              "variable": "In House",
               "dataType": "text",
               "controlType": "dropdown",
               "isRequired": true,
@@ -368,7 +368,7 @@
             {
               "sequence": 1,
               "label": "Did you visit a second customer?",
-              "variable": "2nd Customer?",
+              "variable": "2nd Customer",
               "dataType": "text",
               "controlType": "dropdown",
               "isRequired": true,
