@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
+import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -199,7 +199,8 @@ const FormSubmission = () => {
               break;
 
             case 'SIGNATURE_PAD':
-              testData[fieldKey] = 'SIGNATURE_PLACEHOLDER';
+              // Generate a simple test signature as base64 data URL
+              testData[fieldKey] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
               break;
 
             case 'CAMERA':
@@ -738,16 +739,12 @@ const FormSubmission = () => {
       case 'SIGNATURE_PAD':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
-              <PenTool className="mx-auto text-text-muted mb-3" size={32} />
-              <p className="text-text-muted mb-2">Click to add signature</p>
-              <p className="text-xs text-text-muted">Draw your signature</p>
-            </div>
-            {value && (
-              <div className="mt-2 text-sm text-success">
-                ✓ Signature added
-              </div>
-            )}
+            <SignaturePad
+              value={value}
+              onChange={(signature) => handleFieldChange(field, signature)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
