@@ -20,6 +20,8 @@ export { default as Loader } from "./ui/loader";
 export { default as Modal } from "./ui/modal";
 export { default as Select } from "./ui/select";
 export { SignaturePad } from "./ui/signature-pad";
+export { CameraUpload } from "./ui/camera-upload";
+export { SketchPad } from "./ui/sketch-pad";
 export { default as StatusBadge } from "./ui/status-badge";
 export { default as Table } from "./ui/table";
 export { default as Tabs } from "./ui/tabs";

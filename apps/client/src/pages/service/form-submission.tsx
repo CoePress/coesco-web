@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad } from '@/components';
+import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
@@ -204,7 +204,11 @@ const FormSubmission = () => {
               break;
 
             case 'CAMERA':
+              // Will be handled by CameraUpload component
+              break;
+
             case 'SKETCH_PAD':
+              // Will be handled by SketchPad component
               break;
 
             default:
@@ -715,23 +719,13 @@ const FormSubmission = () => {
       case 'CAMERA':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
-              <Camera className="mx-auto text-text-muted mb-3" size={32} />
-              <p className="text-text-muted mb-2">Click to upload photos</p>
-              <p className="text-xs text-text-muted">or drag and drop</p>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleFieldChange(field, e.target.files)}
-                className="hidden"
-              />
-            </div>
-            {value && (
-              <div className="mt-2 text-sm text-text-muted">
-                {value.length} file(s) selected
-              </div>
-            )}
+            <CameraUpload
+              formId={id || ''}
+              value={value || []}
+              onChange={(files) => handleFieldChange(field, files)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
             {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
@@ -742,6 +736,20 @@ const FormSubmission = () => {
             <SignaturePad
               value={value}
               onChange={(signature) => handleFieldChange(field, signature)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
+          </div>
+        );
+
+      case 'SKETCH_PAD':
+        return (
+          <div className="w-full">
+            <SketchPad
+              formId={id || ''}
+              value={value}
+              onChange={(sketchUrl) => handleFieldChange(field, sketchUrl)}
               disabled={isDisabled}
               className={hasError ? 'border-error' : ''}
             />
