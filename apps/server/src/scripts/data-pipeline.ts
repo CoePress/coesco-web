@@ -1495,7 +1495,8 @@ export async function _migrateEmployees(legacyServiceInstance?: LegacyService): 
 
   if (legacyServiceInstance) {
     legacyService = legacyServiceInstance;
-  } else {
+  }
+  else {
     await legacyService.initialize();
   }
   const hash = await bcrypt.hash("Password123!", 10);

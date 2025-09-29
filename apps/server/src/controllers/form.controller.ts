@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { formFieldService, formPageService, formSectionService, formService, formSubmissionService, formConditionalRuleService } from "@/services/repository";
+import { formConditionalRuleService, formFieldService, formPageService, formSectionService, formService, formSubmissionService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
 
 export class FormController {

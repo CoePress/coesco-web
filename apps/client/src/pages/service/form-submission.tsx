@@ -446,16 +446,20 @@ const FormSubmission = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    pages.forEach(page => {
-      if (hiddenElements.has(page.id)) return;
+    // Only validate currently visible pages
+    const visiblePages = getVisiblePages();
 
+    visiblePages.forEach(page => {
       page.sections.forEach((section: any) => {
         if (hiddenElements.has(section.id)) return;
 
         section.fields.forEach((field: any) => {
           if (hiddenElements.has(field.id)) return;
 
-          if (requiredFields.has(field.id) && !formValues[field.id]) {
+          const fieldKey = field.variable || field.id;
+
+          // Only validate required fields that are currently visible and active
+          if (requiredFields.has(field.id) && !formValues[fieldKey]) {
             newErrors[field.id] = `${field.label} is required`;
           }
         });
@@ -493,8 +497,7 @@ const FormSubmission = () => {
       const submissionData = {
         formId: id,
         status: 'submitted',
-        submittedAt: new Date().toISOString(),
-        data: {
+        answers: {
           ...filteredFormValues,
           _gpsLocation: userLocation || null
         }

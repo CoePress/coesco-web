@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from "@prisma/client";
 
 interface FormTemplate {
   title: string;
@@ -8,12 +8,12 @@ interface FormTemplate {
 
 interface ConditionalRuleTemplate {
   name: string;
-  targetType: 'PAGE' | 'SECTION' | 'FIELD';
+  targetType: "PAGE" | "SECTION" | "FIELD";
   targetSequence?: number;
   targetId?: string;
-  action: 'SHOW' | 'HIDE' | 'ENABLE' | 'DISABLE' | 'REQUIRE' | 'OPTIONAL';
+  action: "SHOW" | "HIDE" | "ENABLE" | "DISABLE" | "REQUIRE" | "OPTIONAL";
   conditions: ConditionTemplate[];
-  operator: 'AND' | 'OR';
+  operator: "AND" | "OR";
   priority: number;
 }
 
@@ -51,14 +51,14 @@ interface FieldTemplate {
 export async function seedFormFromTemplate(
   prisma: PrismaClient,
   template: FormTemplate,
-  createdById: string
+  createdById: string,
 ): Promise<string> {
   // Create the form
   const form = await prisma.form.create({
     data: {
       name: template.title,
       description: `Generated from template: ${template.title}`,
-      status: 'published',
+      status: "published",
       createdById,
       updatedById: createdById,
     },
@@ -121,11 +121,13 @@ export async function seedFormFromTemplate(
     for (const ruleTemplate of template.conditionalRules) {
       let targetId: string;
 
-      if (ruleTemplate.targetType === 'PAGE' && ruleTemplate.targetSequence) {
+      if (ruleTemplate.targetType === "PAGE" && ruleTemplate.targetSequence) {
         targetId = pageIdMap.get(ruleTemplate.targetSequence)!;
-      } else if (ruleTemplate.targetId) {
+      }
+      else if (ruleTemplate.targetId) {
         targetId = ruleTemplate.targetId;
-      } else {
+      }
+      else {
         continue; // Skip if we can't determine target
       }
 
