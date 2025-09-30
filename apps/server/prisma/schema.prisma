@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["referentialActions"]
+  previewFeatures = ["referentialActions"] // this is needed for generate-services.ts - DO NOT REMOVE
 }
 
 datasource db {
@@ -562,7 +562,7 @@ model Form {
   id          String   @id @default(uuid())
   name        String
   description String?
-  status      String   @default("draft") // draft, published, archived
+  status      FormStatus   @default(DRAFT)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdById String
@@ -573,6 +573,12 @@ model Form {
   conditionalRules FormConditionalRule[]
 
   @@map("forms")
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 model FormPage {

@@ -80,9 +80,14 @@ export class FormController {
   // Form Submissions
   getFormSubmissions = asyncWrapper(async (req: Request, res: Response) => {
     const { formId } = req.params;
+
+    const existingFilter = req.query.filter
+      ? JSON.parse(req.query.filter as string)
+      : {};
+
     const query = {
       ...req.query,
-      filter: JSON.stringify({ formId }),
+      filter: JSON.stringify({ ...existingFilter, formId }),
     };
     const result = await formSubmissionService.getAll(query);
     res.status(200).json(result);

@@ -14,17 +14,20 @@ const PageHeader = ({ title, description, actions, goBack = false }: Props) => {
   return (
     <div className="flex items-center justify-between bg-foreground p-2 min-h-[57px] border-b border-border">
       <div className="flex flex-col gap-1 text-nowrap">
-        <div className="flex gap-2">
-          <h1 className="font-semibold text-text leading-none">{title}</h1>
+        <h1 className="font-semibold text-text leading-none">{title}</h1>
+        <div className="flex items-center gap-2">
           {goBack && (
-            <button
-              onClick={() => navigate(-1)}
-              className="leading-none text-xs text-text-muted cursor-pointer hover:underline">
-              Go Back
-            </button>
+            <>
+              <button
+                onClick={() => navigate(-1)}
+                className="leading-none text-xs text-text-muted cursor-pointer hover:underline">
+                Go Back
+              </button>
+              <span className="text-xs text-text-muted leading-none">|</span>
+            </>
           )}
+          <p className="text-xs text-text-muted leading-none">{description}</p>
         </div>
-        <p className="text-xs text-text-muted leading-none">{description}</p>
       </div>
 
       {actions && <>{actions}</>}
