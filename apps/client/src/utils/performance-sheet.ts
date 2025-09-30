@@ -501,6 +501,21 @@ export const usePerformanceDataService = (
   // Refs for cleanup and debouncing
   const localDataRef = useRef(localData);
   const pendingChangesRef = useRef<Record<string, any>>({});
+  const performanceSheetIdRef = useRef(performanceSheetId);
+  const isEditingRef = useRef(isEditing);
+
+  // Keep refs in sync with state
+  React.useEffect(() => {
+    localDataRef.current = localData;
+  }, [localData]);
+
+  React.useEffect(() => {
+    performanceSheetIdRef.current = performanceSheetId;
+  }, [performanceSheetId]);
+
+  React.useEffect(() => {
+    isEditingRef.current = isEditing;
+  }, [isEditing]);
 
   // Initialize with initial data if needed
   React.useEffect(() => {
@@ -510,25 +525,34 @@ export const usePerformanceDataService = (
   }, [initialData, localData.referenceNumber, setPerformanceData]);
 
   // Debounced function for calculations and save (consolidated to reduce API calls)
-  const debouncedSave = useCallback(
-    debounce(async (dataToSave) => {
-      if (!performanceSheetId || !isEditing) return;
+  const debouncedSave = useRef(
+    debounce(async (dataToSave: PerformanceData) => {
+      console.log('💾 Debounced save triggered');
+
+      // Use refs to get current values
+      const currentSheetId = performanceSheetIdRef.current;
+      const currentIsEditing = isEditingRef.current;
+
+      if (!currentSheetId || !currentIsEditing) {
+        console.log('❌ Save blocked:', { performanceSheetId: currentSheetId, isEditing: currentIsEditing });
+        return;
+      }
 
       try {
-        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: dataToSave });
+        const response = await api.patch(`${endpoint}/${currentSheetId}`, { data: dataToSave });
 
-        // Handle calculated values from backend - update global context
+        // Backend returns calculated data directly (not wrapped)
+        // Merge calculated values from backend into the data
         if (response) {
-          setPerformanceData(prevData => {
-            const merged = deepMerge(prevData, response);
-            return merged;
-          });
+          const mergedData = deepMerge(dataToSave, response);
+          setPerformanceData(mergedData);
+          setLocalData(mergedData);
+          console.log('✅ Save successful, data merged');
         }
 
         setLastSaved(new Date());
         setIsDirty(false);
         pendingChangesRef.current = {};
-        setPerformanceData(dataToSave);
 
         // Clear any general errors on successful save
         setFieldErrors(prev => {
@@ -538,15 +562,14 @@ export const usePerformanceDataService = (
         });
 
       } catch (error) {
-        console.error('Error running calculations and saving performance data:', error);
+        console.error('❌ Error running calculations and saving performance data:', error);
         setFieldErrors(prev => ({
           ...prev,
           _general: 'Failed to save changes. Please try again.'
         }));
       }
-    }, DEBOUNCE_DELAYS.SAVE), // Use consistent save delay to prevent excessive API calls during typing
-    [performanceSheetId, isEditing, api, setPerformanceData]
-  );
+    }, DEBOUNCE_DELAYS.SAVE) // Use consistent save delay to prevent excessive API calls during typing
+  ).current;
 
   // Change handler for form fields
   const handleFieldChange = useCallback((
@@ -557,17 +580,14 @@ export const usePerformanceDataService = (
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     const actualValue = type === "checkbox" ? checked : value;
+    const processedValue = type === "checkbox" ? (checked ? "true" : "false") : value;
 
-    setLocalData(prev => {
-      const updated = setNestedValue(prev, name, value);
-      localDataRef.current = updated;
-      setIsDirty(true);
-      debouncedSave(updated);
-      return updated;
-    });
-
-    // Clear field error
-    if (fieldErrors[name]) {
+    // Validate field
+    const error = validateField(name, actualValue);
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [name]: error }));
+    } else if (fieldErrors[name]) {
+      // Clear field error
       setFieldErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
@@ -575,23 +595,21 @@ export const usePerformanceDataService = (
       });
     }
 
-    // Validate field
-    const error = validateField(name, actualValue);
-    if (error) {
-      setFieldErrors(prev => ({ ...prev, [name]: error }));
-      return;
-    }
+    // Update local state immediately for instant UI feedback
+    const updated = setNestedValue(localDataRef.current, name, processedValue);
+    localDataRef.current = updated;
+    setLocalData(updated);
 
     // Update global state immediately
-    setPerformanceData(prevData => {
-      const processedValue = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
-      return setNestedValue(prevData, name, processedValue);
-    });
+    setPerformanceData(updated);
 
-    // Track pending changes
-    pendingChangesRef.current[name] = type === "checkbox" ? (actualValue ? "true" : "false") : actualValue;
+    // Mark as dirty and track pending changes
     setIsDirty(true);
-  }, [isEditing, fieldErrors, debouncedSave, setPerformanceData]);
+    pendingChangesRef.current[name] = processedValue;
+
+    // Debounce the backend save
+    debouncedSave(updated);
+  }, [isEditing, fieldErrors, setPerformanceData]);
 
   // Manual save function (for immediate saves)
   const saveImmediately = useCallback(async () => {
@@ -600,8 +618,12 @@ export const usePerformanceDataService = (
     try {
       const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: localData });
 
+      // Backend returns calculated data directly (not wrapped)
+      // Merge calculated values from backend into the data
       if (response) {
-        setPerformanceData(prevData => deepMerge(prevData, response));
+        const mergedData = deepMerge(localData, response);
+        setPerformanceData(mergedData);
+        setLocalData(mergedData);
       }
 
       setLastSaved(new Date());
@@ -617,21 +639,26 @@ export const usePerformanceDataService = (
       }));
       throw error;
     }
-  }, [performanceSheetId, isEditing, api, setPerformanceData]);
+  }, [performanceSheetId, isEditing, api, setPerformanceData, localData]);
 
   // Update specific field programmatically
   const updateField = useCallback((fieldPath: string, value: any) => {
     if (!isEditing) return;
 
-    setPerformanceData(prevData => setNestedValue(prevData, fieldPath, value));
+    // Update local state immediately for instant UI feedback
+    const updated = setNestedValue(localDataRef.current, fieldPath, value);
+    localDataRef.current = updated;
+    setLocalData(updated);
+
+    // Update global state immediately
+    setPerformanceData(updated);
+
+    // Mark as dirty and track pending changes
+    setIsDirty(true);
     pendingChangesRef.current[fieldPath] = value;
-    setLocalData(prev => {
-      const updated = setNestedValue(prev, fieldPath, value);
-      localDataRef.current = updated;
-      setIsDirty(true);
-      debouncedSave(updated);
-      return updated;
-    });
+
+    // Debounce the backend save
+    debouncedSave(updated);
   }, [isEditing, debouncedSave, setPerformanceData]);
 
   // Get field value by path
@@ -667,6 +694,16 @@ export const usePerformanceDataService = (
   const getFieldError = useCallback((fieldName: string) => {
     return fieldErrors[fieldName];
   }, [fieldErrors]);
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      // Cancel any pending debounced saves
+      if (debouncedSave.cancel) {
+        debouncedSave.cancel();
+      }
+    };
+  }, []);
 
   // Service state object
   const state: PerformanceDataServiceState = {

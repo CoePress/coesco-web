@@ -72,30 +72,88 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 		}
 	}
 
-	// Override delete to cascade delete associated links
+	// Override delete to cascade delete associated links and version
 	async delete(id: string, tx?: any) {
+		console.log('🗑️ Deleting performance sheet:', id);
+
 		// Use a transaction to ensure atomicity
 		const execute = async (client: any) => {
+			// First, get the sheet to find its versionId
+			const sheet = await client.performanceSheet.findUnique({
+				where: { id },
+				select: { versionId: true, deletedAt: true }
+			});
+
+			console.log('📋 Found sheet:', sheet);
+
+			if (!sheet) {
+				console.error('❌ Sheet not found:', id);
+				throw new Error(`PerformanceSheet ${id} not found`);
+			}
+
+			if (sheet.deletedAt) {
+				console.warn('⚠️ Sheet already deleted:', id);
+				return { success: true, message: 'Sheet already deleted' };
+			}
+
 			// Delete all associated PerformanceSheetLink records (soft delete)
-			await client.performanceSheetLink.updateMany({
+			console.log('🔗 Deleting associated links...');
+			const linksResult = await client.performanceSheetLink.updateMany({
 				where: { performanceSheetId: id },
 				data: { deletedAt: new Date() }
 			});
+			console.log(`✅ Deleted ${linksResult.count} links`);
+
 			// Delete the PerformanceSheet itself (soft delete)
-			return await client.performanceSheet.update({
+			console.log('📄 Soft deleting sheet...');
+			await client.performanceSheet.update({
 				where: { id },
 				data: { deletedAt: new Date() }
 			});
+			console.log('✅ Sheet soft deleted');
+
+			// Check if any other non-deleted sheets are using this version
+			const otherSheetsUsingVersion = await client.performanceSheet.count({
+				where: {
+					versionId: sheet.versionId,
+					deletedAt: null,
+					id: { not: id }
+				}
+			});
+
+			console.log(`📊 Other sheets using version: ${otherSheetsUsingVersion}`);
+
+			// If no other sheets are using this version, soft delete it
+			if (otherSheetsUsingVersion === 0) {
+				console.log('🗂️ Deleting version (no other sheets using it)...');
+				await client.performanceSheetVersion.update({
+					where: { id: sheet.versionId },
+					data: { deletedAt: new Date() }
+				});
+				console.log('✅ Version deleted');
+			} else {
+				console.log('ℹ️ Version kept (still in use by other sheets)');
+			}
 		};
 		if (tx) {
-			return await execute(tx);
+			await execute(tx);
 		} else {
-			return await prisma.$transaction(execute);
+			await prisma.$transaction(execute);
 		}
+		console.log('✅ Delete transaction completed successfully');
+		return { success: true };
 	}
 
 	private async runCalculations(inputData: any): Promise<any> {
 		try {
+			// Fix field name mismatches before sending to Python
+			if (inputData.common?.equipment?.feed) {
+				// Copy lineType to typeOfLine if typeOfLine is empty
+				if (inputData.common.equipment.feed.lineType && !inputData.common.equipment.feed.typeOfLine) {
+					inputData.common.equipment.feed.typeOfLine = inputData.common.equipment.feed.lineType;
+				}
+			}
+
 			const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'main.py');
 			const inputJson = JSON.stringify(inputData);
 
@@ -164,9 +222,13 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 					if (inputData.tddbhd.coil) {
 						inputData.tddbhd.coil.coilWeight = tddbhdCalc.calculated_coil_weight;
 					}
-					// Also update common.coil if this should be there
+					// Also update common.coil
 					if (inputData.common?.coil) {
 						inputData.common.coil.maxCoilWeight = tddbhdCalc.calculated_coil_weight;
+					}
+					// Also update common.material.coilWeight
+					if (inputData.common?.material) {
+						inputData.common.material.coilWeight = tddbhdCalc.calculated_coil_weight;
 					}
 				}
 				if (tddbhdCalc.coil_od !== undefined) {

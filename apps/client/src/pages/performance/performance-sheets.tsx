@@ -9,6 +9,7 @@ import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { initialPerformanceData } from "@/contexts/performance.context";
+import { DEFAULT_PERFORMANCE_SHEET_SECTIONS } from "@/constants/performance-sheet-sections";
 
 const PerformanceSheets = () => {
   const { entities: performanceSheets, refresh } = useGetEntities("/performance/sheets");
@@ -66,7 +67,7 @@ const PerformanceSheets = () => {
     try {
       // Create a performance sheet version first (required by the data model)
       const versionResponse = await api.post("/performance/versions", {
-        sections: {}, // Empty sections for now
+        sections: DEFAULT_PERFORMANCE_SHEET_SECTIONS,
         createdById: user?.id,
         updatedById: user?.id
       });
@@ -244,7 +245,78 @@ const PerformanceSheets = () => {
         rowHeight={60}
         containerHeight={500}
       />
-      {/* ...existing code for modals... */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setName("");
+        }}
+        title="New Performance Sheet"
+        size="xs">
+        <div className="py-4 flex flex-col gap-4">
+          <Input
+            label="Name"
+            name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Enter performance sheet name..."
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="secondary-outline"
+              size="md"
+              onClick={() => {
+                setModalOpen(false);
+                setName("");
+              }}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleCreateSheet}
+              disabled={!name.trim() || isCreating}
+            >
+              {isCreating ? "Creating..." : "Create Performance Sheet"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, sheetId: "", sheetName: "" })}
+        title="Delete Performance Sheet"
+        size="xs"
+      >
+        <div className="py-4">
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to delete "{deleteConfirmation.sheetName}"? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              size="md"
+              onClick={() => setDeleteConfirmation({ isOpen: false, sheetId: "", sheetName: "" })}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="md"
+              onClick={() => handleDeleteSheet(deleteConfirmation.sheetId)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

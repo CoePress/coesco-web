@@ -113,9 +113,9 @@ export const isRequiredFieldEmpty = (value: unknown, fieldName: string): boolean
         return value.trim() === '';
     }
 
-    // For numbers that are 0, consider them as filled (0 is a valid value)
+    // For numbers, consider 0 as empty for required fields (needs user input)
     if (typeof value === 'number') {
-        return false;
+        return value === 0;
     }
 
     // For checkboxes (boolean values), we need to check if they're explicitly set

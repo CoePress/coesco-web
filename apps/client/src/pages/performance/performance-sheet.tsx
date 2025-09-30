@@ -59,7 +59,7 @@ const PerformanceSheetContent = () => {
   }, [isEditing, performanceData]);
 
   useAutoFillWatcher(performanceData, {
-    enabled: autoFillWatcherEnabled && !!performanceData,
+    enabled: false, // Disabled autofill to prevent issues
     debounceMs: 3500,   // 3.5 second debounce to further reduce API calls
     requireMinimumFields: 4
   });
@@ -224,9 +224,6 @@ const PerformanceSheetContent = () => {
   const Actions = () => {
     return (
       <div className="flex items-center gap-3">
-        {/* Auto-fill controls - only show when editing */}
-        {isEditing && <AutoFillControlPanel />}
-
         <div className="flex gap-2">
           <Button onClick={isEditing ? handleSave : handleEdit}>
             {isEditing ? <Save size={16} /> : <Lock size={16} />}
