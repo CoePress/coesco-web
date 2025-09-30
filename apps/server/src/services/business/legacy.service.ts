@@ -342,13 +342,9 @@ export class LegacyService {
       const result = await connection.query(query);
       const records = result || [];
 
-      // More accurate pagination check: if we got fewer records than requested,
-      // we've reached the end. Only set hasMore to true if we got exactly
-      // the batch size AND we know there could be more records
       const hasMore = records.length === batchSize;
       const nextOffset = offset + records.length;
 
-      // Include total count if provided in params (passed from data-pipeline)
       const totalCount = params.totalCount;
 
       return {

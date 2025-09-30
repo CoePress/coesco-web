@@ -16,8 +16,6 @@ export class FormService extends BaseService<Form> {
   protected async validate(entity: FormAttributes): Promise<void> {
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.status)
-      throw new BadRequestError("status is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");
     if (!entity.updatedById)

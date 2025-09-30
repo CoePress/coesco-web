@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
-import { Button, Input, Card, PageHeader, Modal, DatePicker } from '@/components';
+import { Save, X, Camera, PenTool, Calendar, FileText, CheckSquare, List, ChevronLeft, ChevronRight, MapPin, Wand2 } from 'lucide-react';
+import { Button, Input, Card, PageHeader, Modal, DatePicker, SignaturePad, CameraUpload, SketchPad } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { IApiResponse } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
+import { __dev__ } from '@/config/env';
 
 interface GPSLocation {
   latitude: number;
@@ -30,6 +31,10 @@ const FormSubmission = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
+  const [conditionalRules, setConditionalRules] = useState<any[]>([]);
+  const [hiddenElements, setHiddenElements] = useState<Set<string>>(new Set());
+  const [disabledElements, setDisabledElements] = useState<Set<string>>(new Set());
+  const [requiredFields, setRequiredFields] = useState<Set<string>>(new Set());
 
   const include = useMemo(
     () => ["pages.sections.fields"],
@@ -38,7 +43,6 @@ const FormSubmission = () => {
 
   const storageKey = useMemo(() => `form-submission-${id}`, [id]);
 
-  // Get user's GPS location
   const getUserLocation = () => {
     if (!navigator.geolocation) {
       return;
@@ -96,19 +100,142 @@ const FormSubmission = () => {
     localStorage.removeItem(storageKey);
   };
 
+  const autoFillForm = () => {
+    if (!__dev__) return;
+
+    const testData: Record<string, any> = {};
+
+    testData['2nd Customer'] = 'no';
+    testData['Third Customer'] = 'no';
+    testData['In House'] = 'no';
+
+    pages.forEach((page: any) => {
+      if (page.label === 'Customer Information 2' ||
+          page.label === 'Customer Information 3' ||
+          page.label === 'Did you visit a third customer?') {
+        return;
+      }
+
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          const fieldKey = field.variable || field.id;
+
+          if (testData[fieldKey] !== undefined) return;
+
+          switch (field.controlType) {
+            case 'DROPDOWN':
+              const options = Array.isArray(field.options) ? field.options : [];
+              if (options.length > 0) {
+                const firstOption = options[0];
+                if (typeof firstOption === 'string') {
+                  testData[fieldKey] = firstOption;
+                } else if (firstOption && typeof firstOption === 'object') {
+                  if (fieldKey === '2nd Customer' || fieldKey === 'Third Customer' || fieldKey === 'In House') {
+                    const noOption = options.find((opt: any) => opt.value === 'no');
+                    testData[fieldKey] = noOption ? noOption.value : firstOption.value;
+                  } else {
+                    testData[fieldKey] = firstOption.value;
+                  }
+                }
+              }
+              break;
+
+            case 'DATE_SELECTOR':
+              testData[fieldKey] = new Date().toISOString().split('T')[0];
+              break;
+
+            case 'TIME_SELECTOR':
+              if (field.label.toLowerCase().includes('start')) {
+                testData[fieldKey] = '08:00';
+              } else if (field.label.toLowerCase().includes('end')) {
+                testData[fieldKey] = '17:00';
+              } else {
+                testData[fieldKey] = '12:00';
+              }
+              break;
+
+            case 'TEXTBOX':
+            case 'INPUT':
+              if (field.variable === 'Tech Name' || field.label === 'Technician Name') {
+                const techOptions = Array.isArray(field.options) ? field.options : [];
+                if (techOptions.length > 0) {
+                  const firstTech = techOptions[0];
+                  testData[fieldKey] = typeof firstTech === 'object' ? firstTech.value : 'Test Technician';
+                } else {
+                  testData[fieldKey] = 'Test Technician';
+                }
+              } else if (field.label.includes('Customer Name') || field.variable.includes('Company Name')) {
+                testData[fieldKey] = 'Test Company Inc.';
+              } else if (field.label.includes('Service Job Number') || field.variable.includes('Service Number')) {
+                testData[fieldKey] = 'SVC-' + Math.floor(Math.random() * 10000);
+              } else if (field.label.includes('Machine Serial') || field.variable.includes('Machine Number')) {
+                testData[fieldKey] = 'MSN-' + Math.floor(Math.random() * 100000);
+              } else if (field.label.includes('Customer Contact')) {
+                testData[fieldKey] = 'John Doe';
+              } else if (field.label.includes('Customer Email')) {
+                testData[fieldKey] = 'test@example.com';
+              } else if (field.label.includes('Customer Phone')) {
+                testData[fieldKey] = '555-0100';
+              } else if (field.label.includes('Type Customer Name')) {
+                testData[fieldKey] = 'John Doe';
+              } else if (field.label.includes('Current Location') && !field.label.includes('GPS')) {
+                testData[fieldKey] = '123 Test Street, Test City, TC 12345';
+              } else if (field.label.includes('Daily Summary')) {
+                testData[fieldKey] = 'Completed routine maintenance and system checks. All systems operational.';
+              } else {
+                testData[fieldKey] = 'Test ' + field.label;
+              }
+              break;
+
+            case 'TEXT_AREA':
+              if (field.label.includes('Report') || field.variable === 'Remarks') {
+                testData[fieldKey] = 'Performed scheduled maintenance. Checked all systems and components. Everything is working properly. No issues found.';
+              } else {
+                testData[fieldKey] = 'Test notes for ' + field.label;
+              }
+              break;
+
+            case 'STAMP':
+              break;
+
+            case 'SIGNATURE_PAD':
+              // Generate a simple test signature as base64 data URL
+              testData[fieldKey] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+              break;
+
+            case 'CAMERA':
+              // Will be handled by CameraUpload component
+              break;
+
+            case 'SKETCH_PAD':
+              // Will be handled by SketchPad component
+              break;
+
+            default:
+              testData[fieldKey] = 'Test ' + field.label;
+          }
+        });
+      });
+    });
+
+    setFormValues(testData);
+    toast.success('Form auto-filled with test data');
+  };
+
   const fetchForm = async () => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
-    const response = await get(`/forms/${id}`, {
-      include
-    });
+    const formResponse = await get(`/forms/${id}`, { include });
+    const rulesResponse = await get(`/forms/${id}/conditional-rules`);
 
-    if (response?.success && response.data) {
-      setFormData(response.data);
-      const pagesData = response.data.pages?.map((page: any) => ({
+    if (formResponse?.success && formResponse.data) {
+      setFormData(formResponse.data);
+      const pagesData = formResponse.data.pages?.map((page: any) => ({
         ...page,
         sections: page.sections?.map((section: any) => ({
           ...section,
@@ -117,17 +244,152 @@ const FormSubmission = () => {
       })) || [];
       setPages(pagesData.sort((a: any, b: any) => a.sequence - b.sequence));
 
-      // Check for saved progress after form is loaded
+      const initialRequired = new Set<string>();
+      pagesData.forEach((page: any) => {
+        page.sections.forEach((section: any) => {
+          section.fields.forEach((field: any) => {
+            if (field.isRequired) {
+              initialRequired.add(field.id);
+            }
+          });
+        });
+      });
+      setRequiredFields(initialRequired);
+
       const saved = loadFromLocalStorage();
       if (saved && saved.formValues && Object.keys(saved.formValues).length > 0) {
         setSavedProgress(saved);
         setShowContinueModal(true);
       }
     } else {
-      setError(response?.error || "Failed to fetch form");
+      setError(formResponse?.error || "Failed to fetch form");
+    }
+
+    if (rulesResponse?.success && rulesResponse.data) {
+      const rules = Array.isArray(rulesResponse.data) ? rulesResponse.data : (rulesResponse.data.items || []);
+      setConditionalRules(rules);
     }
 
     setLoading(false);
+  };
+
+  const evaluateConditionalRules = () => {
+    const newHidden = new Set<string>();
+    const newDisabled = new Set<string>();
+    const newRequired = new Set<string>();
+
+    pages.forEach((page: any) => {
+      page.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          if (field.isRequired) {
+            newRequired.add(field.id);
+          }
+        });
+      });
+    });
+
+    conditionalRules.forEach((rule: any) => {
+      if (!rule.isActive) return;
+      if (rule.action === 'SHOW') {
+        newHidden.add(rule.targetId);
+      }
+    });
+
+    conditionalRules.forEach((rule: any) => {
+      if (!rule.isActive) return;
+
+      const conditions = Array.isArray(rule.conditions) ? rule.conditions :
+                        (rule.conditions ? [rule.conditions] : []);
+
+      let conditionsMet = false;
+      if (rule.operator === 'OR') {
+        conditionsMet = conditions.some((condition: any) =>
+          evaluateCondition(condition, formValues)
+        );
+      } else {
+        conditionsMet = conditions.every((condition: any) =>
+          evaluateCondition(condition, formValues)
+        );
+      }
+
+      if (conditionsMet) {
+        switch (rule.action) {
+          case 'SHOW':
+            newHidden.delete(rule.targetId);
+            break;
+          case 'HIDE':
+            newHidden.add(rule.targetId);
+            break;
+          case 'ENABLE':
+            newDisabled.delete(rule.targetId);
+            break;
+          case 'DISABLE':
+            newDisabled.add(rule.targetId);
+            break;
+          case 'REQUIRE':
+            newRequired.add(rule.targetId);
+            break;
+          case 'OPTIONAL':
+            newRequired.delete(rule.targetId);
+            break;
+        }
+      }
+    });
+
+    if (formValues["2nd Customer"] !== "yes") {
+      conditionalRules.forEach((rule: any) => {
+        const conditions = Array.isArray(rule.conditions) ? rule.conditions :
+                          (rule.conditions ? [rule.conditions] : []);
+
+        const dependsOnThirdCustomer = conditions.some((condition: any) =>
+          condition.fieldVariable === "Third Customer"
+        );
+
+        if (dependsOnThirdCustomer && rule.action === 'SHOW') {
+          newHidden.add(rule.targetId);
+        }
+      });
+    }
+
+    setHiddenElements(newHidden);
+    setDisabledElements(newDisabled);
+    setRequiredFields(newRequired);
+  };
+
+  const evaluateCondition = (condition: any, values: Record<string, any>) => {
+    const fieldVariable = condition.fieldVariable || condition.field;
+    const fieldValue = values[fieldVariable];
+    const operator = condition.operator;
+    const value = condition.value;
+
+    switch (operator) {
+      case 'equals':
+      case '=':
+        return fieldValue === value;
+      case 'not_equals':
+      case '!=':
+        return fieldValue !== value;
+      case 'contains':
+        return fieldValue && String(fieldValue).includes(value);
+      case 'not_contains':
+        return !fieldValue || !String(fieldValue).includes(value);
+      case 'empty':
+        return !fieldValue || fieldValue === '';
+      case 'not_empty':
+        return fieldValue && fieldValue !== '';
+      case 'greater_than':
+      case '>':
+        return Number(fieldValue) > Number(value);
+      case 'less_than':
+      case '<':
+        return Number(fieldValue) < Number(value);
+      case 'in':
+        return Array.isArray(value) && value.includes(fieldValue);
+      case 'not_in':
+        return Array.isArray(value) && !value.includes(fieldValue);
+      default:
+        return false;
+    }
   };
 
   useEffect(() => {
@@ -135,7 +397,12 @@ const FormSubmission = () => {
     fetchForm();
   }, [id]);
 
-  // Auto-save on form value changes
+  useEffect(() => {
+    if (conditionalRules.length > 0) {
+      evaluateConditionalRules();
+    }
+  }, [formValues, conditionalRules]);
+
   useEffect(() => {
     if (getFilledFieldsCount() > 0) {
       saveToLocalStorage(formValues);
@@ -143,23 +410,22 @@ const FormSubmission = () => {
   }, [formValues, currentPageIndex]);
 
 
-  const handleFieldChange = (fieldId: string, value: any) => {
+  const handleFieldChange = (field: any, value: any) => {
+    const fieldKey = field.variable || field.id;
+
     setFormValues(prev => {
       const newValues = { ...prev };
-      // If value is empty, remove the key entirely
       if (value === '' || value === null || value === undefined) {
-        delete newValues[fieldId];
+        delete newValues[fieldKey];
       } else {
-        newValues[fieldId] = value;
+        newValues[fieldKey] = value;
       }
-      // Save to local storage will happen via useEffect
       return newValues;
     });
-    // Clear error when field is filled
-    if (errors[fieldId] && value) {
+    if (errors[fieldKey] && value) {
       setErrors(prev => {
         const newErrors = { ...prev };
-        delete newErrors[fieldId];
+        delete newErrors[fieldKey];
         return newErrors;
       });
     }
@@ -185,10 +451,20 @@ const FormSubmission = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    pages.forEach(page => {
+    // Only validate currently visible pages
+    const visiblePages = getVisiblePages();
+
+    visiblePages.forEach(page => {
       page.sections.forEach((section: any) => {
+        if (hiddenElements.has(section.id)) return;
+
         section.fields.forEach((field: any) => {
-          if (field.isRequired && !formValues[field.id]) {
+          if (hiddenElements.has(field.id)) return;
+
+          const fieldKey = field.variable || field.id;
+
+          // Only validate required fields that are currently visible and active
+          if (requiredFields.has(field.id) && !formValues[fieldKey]) {
             newErrors[field.id] = `${field.label} is required`;
           }
         });
@@ -203,25 +479,41 @@ const FormSubmission = () => {
     if (!validateForm() || !id) return;
 
     try {
-      // Create submission data structure
+      const visibleFieldVariables = new Set<string>();
+
+      pages.forEach((page: any) => {
+        if (hiddenElements.has(page.id)) return;
+        page.sections.forEach((section: any) => {
+          if (hiddenElements.has(section.id)) return;
+          section.fields.forEach((field: any) => {
+            if (hiddenElements.has(field.id)) return;
+            const fieldKey = field.variable || field.id;
+            visibleFieldVariables.add(fieldKey);
+          });
+        });
+      });
+
+      const filteredFormValues = Object.fromEntries(
+        Object.entries(formValues).filter(([fieldKey]) =>
+          visibleFieldVariables.has(fieldKey)
+        )
+      );
+
       const submissionData = {
         formId: id,
         status: 'submitted',
-        submittedAt: new Date().toISOString(),
-        data: {
-          ...formValues,
+        answers: {
+          ...filteredFormValues,
           _gpsLocation: userLocation || null
         }
       };
 
-      // Post submission to API
       const response = await post(`/forms/${id}/submissions`, submissionData);
 
       if (response?.success) {
-        // Clear local storage on successful submission
         clearLocalStorage();
         toast.success('Form submitted successfully!');
-        navigate('/service/forms');
+        navigate('/service');
       } else {
         const errorMessage = response?.error || 'Failed to submit form';
         toast.error(errorMessage);
@@ -236,39 +528,74 @@ const FormSubmission = () => {
   };
 
   const handleCancel = () => {
-    // Check if any fields have been filled
     const hasFilledFields = getFilledFieldsCount() > 0;
 
     if (hasFilledFields) {
       setShowCancelModal(true);
     } else {
-      navigate('/service/forms/');
+      navigate('/service/');
     }
   };
 
   const confirmCancel = () => {
     setShowCancelModal(false);
-    navigate('/service/forms/');
+    navigate('/service/');
   };
 
   const getTotalFields = () => {
     return pages.reduce((total: number, page: any) => {
+      if (hiddenElements.has(page.id)) return total;
+
       return total + page.sections.reduce((pageTotal: number, section: any) => {
-        return pageTotal + (section.fields?.length || 0);
+        if (hiddenElements.has(section.id)) return pageTotal;
+
+        const visibleFields = section.fields?.filter((field: any) =>
+          !hiddenElements.has(field.variable || field.id)
+        ) || [];
+
+        return pageTotal + visibleFields.length;
       }, 0);
     }, 0);
   };
 
   const getFilledFieldsCount = () => {
-    return Object.entries(formValues).filter(([_, value]) => {
-      // Count as filled only if value is not empty/null/undefined
-      return value !== '' && value !== null && value !== undefined;
+    const visibleFieldVariables = new Set<string>();
+
+    pages.forEach((page: any) => {
+      if (hiddenElements.has(page.id)) return;
+
+      page.sections.forEach((section: any) => {
+        if (hiddenElements.has(section.id)) return;
+
+        section.fields.forEach((field: any) => {
+          if (hiddenElements.has(field.id)) return;
+
+          const fieldKey = field.variable || field.id;
+          visibleFieldVariables.add(fieldKey);
+        });
+      });
+    });
+
+    return Object.entries(formValues).filter(([fieldKey, value]) => {
+      return visibleFieldVariables.has(fieldKey) &&
+             value !== '' && value !== null && value !== undefined;
     }).length;
   };
 
-  const getCurrentPage = () => pages[currentPageIndex];
+  const getVisiblePages = () => {
+    return pages.filter((page: any) => !hiddenElements.has(page.id));
+  };
 
-  const canGoNext = () => currentPageIndex < pages.length - 1;
+  const getCurrentPage = () => {
+    const visiblePages = getVisiblePages();
+    return visiblePages[currentPageIndex];
+  };
+
+  const canGoNext = () => {
+    const visiblePages = getVisiblePages();
+    return currentPageIndex < visiblePages.length - 1;
+  };
+
   const canGoPrevious = () => currentPageIndex > 0;
 
   const goToNextPage = () => {
@@ -284,11 +611,12 @@ const FormSubmission = () => {
   };
 
   const renderFieldInput = (field: any) => {
-    const value = formValues[field.id] || '';
-    const hasError = !!errors[field.id];
+    const fieldKey = field.variable || field.id;
+    const value = formValues[fieldKey] || '';
+    const hasError = !!errors[fieldKey];
     const fieldType = field.controlType;
+    const isDisabled = disabledElements.has(fieldKey) || field.isReadOnly;
 
-    // Special handling for GPS location field
     if (field.label === 'Current Location (GPS)') {
       return (
         <div className="w-full">
@@ -310,11 +638,12 @@ const FormSubmission = () => {
           <div className="w-full">
             <Input
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               className={hasError ? 'border-error' : ''}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -323,28 +652,28 @@ const FormSubmission = () => {
           <div className="w-full">
             <DatePicker
               value={value}
-              onChange={(date) => handleFieldChange(field.id, date)}
+              onChange={(date) => handleFieldChange(field, date)}
               placeholder={`Select ${field.label.toLowerCase()}`}
               className={hasError ? 'border-error' : ''}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
       case 'DROPDOWN':
-        // Handle options - could be an array directly or nested in the options object
         const dropdownOptions = Array.isArray(field.options) ? field.options : [];
 
         return (
           <div className="w-full">
             <select
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
+              className={`w-full px-3 py-1.5 min-h-[34px] bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
             >
               <option value="">Select {field.label.toLowerCase()}</option>
               {dropdownOptions.map((option: any, index: number) => {
-                // Handle both string options and object options
                 if (typeof option === 'string') {
                   return <option key={option} value={option}>{option}</option>;
                 } else if (option && typeof option === 'object') {
@@ -353,7 +682,7 @@ const FormSubmission = () => {
                 return null;
               })}
             </select>
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -363,8 +692,9 @@ const FormSubmission = () => {
             <input
               type="checkbox"
               checked={value || false}
-              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+              onChange={(e) => handleFieldChange(field, e.target.checked)}
               className="w-5 h-5 bg-surface border border-border rounded text-primary focus:ring-2 focus:ring-primary/50"
+              disabled={isDisabled}
             />
             <span className="text-text">{field.label}</span>
             {hasError && <span className="text-error text-sm ml-2">{errors[field.id]}</span>}
@@ -376,53 +706,54 @@ const FormSubmission = () => {
           <div className="w-full">
             <textarea
               value={value}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
               placeholder={`Enter ${field.label.toLowerCase()}`}
               rows={4}
-              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none`}
+              className={`w-full px-3 py-1.5 bg-surface border ${hasError ? 'border-error' : 'border-border'} rounded-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
             />
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
       case 'CAMERA':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
-              <Camera className="mx-auto text-text-muted mb-3" size={32} />
-              <p className="text-text-muted mb-2">Click to upload photos</p>
-              <p className="text-xs text-text-muted">or drag and drop</p>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleFieldChange(field.id, e.target.files)}
-                className="hidden"
-              />
-            </div>
-            {value && (
-              <div className="mt-2 text-sm text-text-muted">
-                {value.length} file(s) selected
-              </div>
-            )}
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            <CameraUpload
+              formId={id || ''}
+              value={value || []}
+              onChange={(files) => handleFieldChange(field, files)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
       case 'SIGNATURE_PAD':
         return (
           <div className="w-full">
-            <div className={`border-2 border-dashed ${hasError ? 'border-error' : 'border-border'} rounded-sm p-8 text-center hover:border-primary/50 transition-colors cursor-pointer`}>
-              <PenTool className="mx-auto text-text-muted mb-3" size={32} />
-              <p className="text-text-muted mb-2">Click to add signature</p>
-              <p className="text-xs text-text-muted">Draw your signature</p>
-            </div>
-            {value && (
-              <div className="mt-2 text-sm text-success">
-                ✓ Signature added
-              </div>
-            )}
-            {hasError && <span className="text-error text-sm mt-1">{errors[field.id]}</span>}
+            <SignaturePad
+              value={value}
+              onChange={(signature) => handleFieldChange(field, signature)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
+          </div>
+        );
+
+      case 'SKETCH_PAD':
+        return (
+          <div className="w-full">
+            <SketchPad
+              formId={id || ''}
+              value={value}
+              onChange={(sketchUrl) => handleFieldChange(field, sketchUrl)}
+              disabled={isDisabled}
+              className={hasError ? 'border-error' : ''}
+            />
+            {hasError && <span className="text-error text-sm mt-1">{errors[fieldKey]}</span>}
           </div>
         );
 
@@ -435,7 +766,6 @@ const FormSubmission = () => {
     switch (fieldType) {
       case 'INPUT':
       case 'TEXTBOX':
-        // Check if this is a GPS field by label
         if (field && field.label === 'Current Location (GPS)') {
           return <MapPin size={16} />;
         }
@@ -452,6 +782,12 @@ const FormSubmission = () => {
 
   const Actions = () => (
     <div className="flex gap-2">
+      {__dev__ && (
+        <Button onClick={autoFillForm} variant="secondary">
+          <Wand2 size={16} />
+          <span>Auto-fill</span>
+        </Button>
+      )}
       <Button onClick={handleCancel} variant="secondary-outline">
         <X size={16} />
         <span>Cancel</span>
@@ -491,7 +827,6 @@ const FormSubmission = () => {
       />
 
       <div className="space-y-4 p-4 max-w-4xl mx-auto w-full">
-        {/* Progress indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-text-muted mb-2">
             <span>Form Progress</span>
@@ -507,8 +842,7 @@ const FormSubmission = () => {
           </div>
         </div>
 
-        {/* Page navigation */}
-        {pages.length > 1 && (
+        {getVisiblePages().length > 1 && (
           <div className="flex items-center justify-between mb-4">
             <Button
               onClick={goToPreviousPage}
@@ -520,7 +854,7 @@ const FormSubmission = () => {
               Previous
             </Button>
             <div className="text-sm text-text-muted">
-              Page {currentPageIndex + 1} of {pages.length}
+              Page {currentPageIndex + 1} of {getVisiblePages().length}
             </div>
             <Button
               onClick={goToNextPage}
@@ -536,30 +870,32 @@ const FormSubmission = () => {
 
         {getCurrentPage() && (
           <>
-            {/* Page title */}
             <div className="mb-4">
               <h2 className="text-xl font-semibold text-text">{getCurrentPage().title}</h2>
             </div>
 
-            {/* Sections */}
-            {getCurrentPage().sections.map((section: any) => (
-          <Card key={section.id} className="">
-            <div className="space-y-6">
-                {section.fields.map((field: any) => (
-                  <div key={field.id} className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
-                      <label className="text-text font-medium">
-                        {field.label}
-                        {field.isRequired && <span className="text-error ml-1">*</span>}
-                      </label>
-                    </div>
-                    {renderFieldInput(field)}
+            {getCurrentPage().sections
+              .filter((section: any) => !hiddenElements.has(section.id))
+              .map((section: any) => (
+                <Card key={section.id} className="">
+                  <div className="space-y-6">
+                    {section.fields
+                      .filter((field: any) => !hiddenElements.has(field.id))
+                      .map((field: any) => (
+                        <div key={field.id} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="text-text-muted">{getFieldIcon(field.controlType, field)}</div>
+                            <label className="text-text font-medium">
+                              {field.label}
+                              {requiredFields.has(field.id) && <span className="text-error ml-1">*</span>}
+                            </label>
+                          </div>
+                          {renderFieldInput(field)}
+                        </div>
+                      ))}
                   </div>
-                ))}
-              </div>
-          </Card>
-            ))}
+                </Card>
+              ))}
           </>
         )}
 
@@ -575,7 +911,6 @@ const FormSubmission = () => {
         )}
       </div>
 
-      {/* Cancel Confirmation Modal */}
       <Modal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
@@ -606,7 +941,6 @@ const FormSubmission = () => {
         </div>
       </Modal>
 
-      {/* Continue Progress Modal */}
       <Modal
         isOpen={showContinueModal}
         onClose={() => {}}

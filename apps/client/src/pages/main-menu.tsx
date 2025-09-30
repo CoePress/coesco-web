@@ -154,25 +154,29 @@ const MainMenu = () => {
         </Button>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 flex justify-between p-2 bg-background md:hidden">
-        <Button
-          variant="secondary-outline"
-          onClick={() => navigate("/chat")}
-          className="flex-1 mx-1">
-          <MessageCircle size={16} />
-        </Button>
-        <Button
-          variant="secondary-outline"
-          onClick={toggleTheme}
-          className="flex-1 mx-1">
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </Button>
-        <Button
-          variant="secondary-outline"
-          onClick={handleLogout}
-          className="flex-1 mx-1">
-          <LogOut size={16} />
-        </Button>
+      <div className="md:hidden bg-foreground border-t border-border fixed bottom-0 left-0 right-0">
+        <nav className="flex items-center justify-around h-16 px-2">
+          <button
+            onClick={() => navigate("/chat")}
+            className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+            <MessageCircle size={20} />
+            <span className="text-xs">Chat</span>
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="text-xs">Theme</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+            <LogOut size={20} />
+            <span className="text-xs">Logout</span>
+          </button>
+        </nav>
       </div>
 
       <Modal

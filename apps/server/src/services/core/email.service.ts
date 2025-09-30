@@ -34,7 +34,7 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
-      secure: true,
+      secure: env.SMTP_PORT === 465,
     } as nodemailer.TransportOptions);
   }
 
@@ -135,6 +135,72 @@ export class EmailService {
       subject: "Weekly Production Overview Report - Coe Press Equipment",
       templateName: "production",
       variables: mockData,
+    });
+  }
+
+  async sendBugReport(options: {
+    title: string;
+    description: string;
+    userEmail?: string;
+    screenshot?: string;
+    url?: string;
+    userAgent?: string;
+  }): Promise<EmailResult> {
+    const { title, description, userEmail, screenshot, url, userAgent } = options;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">Bug Report</h2>
+
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Title</h3>
+          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">${title}</p>
+        </div>
+
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Description</h3>
+          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; white-space: pre-wrap;">${description}</p>
+        </div>
+
+        ${userEmail ? `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Reported By</h3>
+          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">${userEmail}</p>
+        </div>
+        ` : ''}
+
+        ${url ? `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Page URL</h3>
+          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; word-break: break-all;">${url}</p>
+        </div>
+        ` : ''}
+
+        ${userAgent ? `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Browser</h3>
+          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">${userAgent}</p>
+        </div>
+        ` : ''}
+
+        ${screenshot ? `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #333; margin-bottom: 5px;">Screenshot</h3>
+          <img src="${screenshot}" alt="Bug Screenshot" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        </div>
+        ` : ''}
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
+          <p>Report submitted on ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    `;
+
+    return this.sendEmail({
+      from: "noreply@cpec.com",
+      to: "jar@cpec.com",
+      subject: `Bug Report: ${title}`,
+      html,
     });
   }
 

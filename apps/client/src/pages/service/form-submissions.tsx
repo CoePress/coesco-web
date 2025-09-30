@@ -1,6 +1,6 @@
-import { CalendarIcon, UserIcon, ClockIcon, ArrowLeft } from "lucide-react";
+import { CalendarIcon, UserIcon, ClockIcon } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { PageHeader, StatusBadge, Table, Toolbar } from "@/components";
 import { TableColumn } from "@/components/ui/table";
@@ -9,15 +9,18 @@ import { IApiResponse } from "@/utils/types";
 import { Filter } from "@/components/feature/toolbar";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils";
+import { useAuth } from "@/contexts/auth.context";
 
 const FormSubmissions = () => {
   const { id: formId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { employee } = useAuth();
+
   const [sort, setSort] = useState<string>("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    createdById: employee.id,
     status: '',
     formId: '',
     dateRange: ''
@@ -42,16 +45,10 @@ const FormSubmissions = () => {
     []
   );
 
-  console.log("Test")
-
   const filter = useMemo(() => {
-    const filterObj: any = {};
-    if (filterValues.status) {
-      filterObj.status = filterValues.status;
-    }
-    if (filterValues.formId) {
-      filterObj.formId = filterValues.formId;
-    }
+    const filterObj = Object.fromEntries(
+      Object.entries(filterValues).filter(([_, value]) => value)
+    );
     return Object.keys(filterObj).length > 0 ? JSON.stringify(filterObj) : undefined;
   }, [filterValues]);
 
@@ -183,10 +180,6 @@ const FormSubmissions = () => {
     // TODO: Implement actual export functionality
   };
 
-  const clearFilters = () => {
-    setFilterValues({ status: '', formId: '', dateRange: '' });
-  };
-
   const filters: Filter[] = [
     {
       key: 'status',
@@ -237,15 +230,8 @@ const FormSubmissions = () => {
       <PageHeader
         title="Form Submissions"
         description={`${pagination.total} total submissions`}
-        actions={
-          <button
-            onClick={() => navigate(`/service/forms/${formId}`)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted hover:text-text border border-border rounded hover:bg-surface transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to Form
-          </button>
-        }
+        goBack
+        goBackTo={`/service/forms/${formId}`}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
@@ -257,16 +243,6 @@ const FormSubmissions = () => {
           filterValues={filterValues}
           showExport={true}
           onExport={handleExport}
-          actions={
-            Object.values(filterValues).some(v => v) && (
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm text-text-muted hover:text-text border border-border rounded hover:bg-surface transition-colors"
-              >
-                Clear Filters
-              </button>
-            )
-          }
         />
 
         <div className="flex-1 overflow-hidden">

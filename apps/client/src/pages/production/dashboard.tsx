@@ -601,8 +601,8 @@ const ProductionDashboard = () => {
         </Metrics>
 
         <div className="flex-1 flex flex-col gap-2">
-          <div className="flex-1 grid grid-cols-4 gap-2">
-            <div className="bg-foreground rounded border border-border col-span-3 flex flex-col">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="bg-foreground rounded border border-border md:col-span-3 flex flex-col min-h-[250px]">
               <div className="p-2 border-b flex items-center justify-between">
                 <h3 className="text-sm text-text-muted">
                   Utilization Over Time
@@ -624,7 +624,7 @@ const ProductionDashboard = () => {
                         ? "bg-primary text-primary-foreground"
                         : "bg-surface text-text-muted hover:bg-surface/80"
                     }`}>
-                    By Group
+                    Group
                   </button>
                   <button
                     onClick={() => setChartView("machine")}
@@ -633,7 +633,7 @@ const ProductionDashboard = () => {
                         ? "bg-primary text-primary-foreground"
                         : "bg-surface text-text-muted hover:bg-surface/80"
                     }`}>
-                    By Machine
+                    Machine
                   </button>
                   <div
                     className="relative"
@@ -827,7 +827,7 @@ const ProductionDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-foreground rounded border border-border flex flex-col">
+            <div className="bg-foreground rounded border border-border flex flex-col min-h-[250px]">
               <div className="p-2 border-b flex items-center justify-between">
                 <h3 className="text-sm text-text-muted">State Distribution</h3>
               </div>
@@ -868,8 +868,8 @@ const ProductionDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="flex-1 grid grid-cols-4 gap-2">
-            <div className="bg-foreground rounded border border-border col-span-3 flex flex-col">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="bg-foreground rounded border border-border md:col-span-3 flex flex-col">
               <div className="p-2 border-b flex items-center justify-between">
                 <h3 className="text-sm text-text-muted">Machines (Live)</h3>
               </div>

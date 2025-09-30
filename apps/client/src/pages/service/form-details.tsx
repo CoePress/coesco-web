@@ -73,12 +73,14 @@ const FormDetails = () => {
             <FileText size={16} />
             <span>View Submissions</span>
           </Button>
-          <Button
-            onClick={() => navigate("submit")}
-          >
-            <Plus size={16} />
-            <span>New Submission</span>
-          </Button>
+          {formData?.status === 'PUBLISHED' && (
+            <Button
+              onClick={() => navigate("submit")}
+            >
+              <Plus size={16} />
+              <span>New Submission</span>
+            </Button>
+          )}
         </>
       </div>
     );
@@ -107,8 +109,10 @@ const FormDetails = () => {
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={formData.name}
-        description={formData.description}
+        description={formData.description || "-"}
         actions={<Actions />}
+        goBack
+        goBackTo='/service'
       />
 
       {error && (

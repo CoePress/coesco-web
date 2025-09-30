@@ -33,4 +33,11 @@ router.post("/:formId/pages/:pageId/sections/:sectionId/fields", formController.
 router.patch("/:formId/pages/:pageId/sections/:sectionId/fields/:fieldId", formController.updateFormField);
 router.delete("/:formId/pages/:pageId/sections/:sectionId/fields/:fieldId", formController.deleteFormField);
 
+// Form Conditional Rules
+router.get("/:formId/conditional-rules", formController.getFormConditionalRules);
+router.get("/:formId/conditional-rules/:ruleId", formController.getFormConditionalRule);
+router.post("/:formId/conditional-rules", formController.createFormConditionalRule);
+router.patch("/:formId/conditional-rules/:ruleId", formController.updateFormConditionalRule);
+router.delete("/:formId/conditional-rules/:ruleId", formController.deleteFormConditionalRule);
+
 export default router;

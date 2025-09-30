@@ -21,6 +21,7 @@ export function useApi<T = any>() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [response, setResponse] = useState<T | null>(null);
 
   const request = async (
     method: HttpMethod,
@@ -56,6 +57,7 @@ export function useApi<T = any>() {
       }
 
       setSuccess(true);
+      setResponse(response.data);
       return response.data;
     }
     catch (error) {
@@ -67,6 +69,7 @@ export function useApi<T = any>() {
           : "An error occurred. Please try again.";
 
       setError(errorMessage);
+      setResponse(null);
       return null;
     }
     finally {
@@ -112,6 +115,7 @@ export function useApi<T = any>() {
     loading,
     error,
     success,
+    response,
     request,
     get,
     post,

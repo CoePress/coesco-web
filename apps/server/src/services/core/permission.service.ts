@@ -67,7 +67,6 @@ export const PERMISSIONS = {
 type PermissionValue = string;
 interface NestedPermissions { [key: string]: PermissionValue | NestedPermissions }
 
-// Flatten the permissions object to get all permission strings
 function flattenPermissions(obj: NestedPermissions, prefix = ""): string[] {
   const result: string[] = [];
 
@@ -85,10 +84,8 @@ function flattenPermissions(obj: NestedPermissions, prefix = ""): string[] {
 
 export const ALL_PERMISSIONS = flattenPermissions(PERMISSIONS);
 
-// Role-based permission mappings
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   [UserRole.ADMIN]: [
-    // Full system access
     PERMISSIONS.system.all,
     PERMISSIONS.users.manage,
     PERMISSIONS.employees.manage,
@@ -100,7 +97,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.reports.export,
   ],
   [UserRole.USER]: [
-    // Basic user permissions
     PERMISSIONS.employees.read,
     PERMISSIONS.legacy.read,
     PERMISSIONS.pipeline.read,
@@ -113,18 +109,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
 };
 
 export class PermissionService {
-  /**
-   * Check if a role has a specific permission
-   */
   hasPermission(role: UserRole, permission: string): boolean {
     const rolePermissions = ROLE_PERMISSIONS[role] || [];
 
-    // Check for exact permission match
     if (rolePermissions.includes(permission)) {
       return true;
     }
 
-    // Check for wildcard permissions (e.g., system.all covers system.settings)
     return rolePermissions.some((rolePermission) => {
       if (rolePermission.endsWith(".all")) {
         const basePermission = rolePermission.replace(".all", "");
@@ -138,23 +129,14 @@ export class PermissionService {
     });
   }
 
-  /**
-   * Check if a role has any of the provided permissions
-   */
   hasAnyPermission(role: UserRole, permissions: string[]): boolean {
     return permissions.some(permission => this.hasPermission(role, permission));
   }
 
-  /**
-   * Check if a role has all of the provided permissions
-   */
   hasAllPermissions(role: UserRole, permissions: string[]): boolean {
     return permissions.every(permission => this.hasPermission(role, permission));
   }
 
-  /**
-   * Get all permissions for a role
-   */
   getRolePermissions(role: UserRole): string[] {
     const rolePermissions = ROLE_PERMISSIONS[role] || [];
     const expandedPermissions = new Set<string>();
@@ -162,14 +144,12 @@ export class PermissionService {
     for (const permission of rolePermissions) {
       if (permission.endsWith(".all")) {
         const basePermission = permission.replace(".all", "");
-        // Add all permissions that start with this base
         ALL_PERMISSIONS
           .filter(p => p.startsWith(`${basePermission}.`))
           .forEach(p => expandedPermissions.add(p));
       }
       else if (permission.endsWith(".manage")) {
         const basePermission = permission.replace(".manage", "");
-        // Add all CRUD permissions for this resource
         ALL_PERMISSIONS
           .filter(p => p.startsWith(`${basePermission}.`))
           .forEach(p => expandedPermissions.add(p));
@@ -182,23 +162,14 @@ export class PermissionService {
     return Array.from(expandedPermissions);
   }
 
-  /**
-   * Check if a permission exists in the system
-   */
   isValidPermission(permission: string): boolean {
     return ALL_PERMISSIONS.includes(permission);
   }
 
-  /**
-   * Get permissions by category (e.g., "users", "system")
-   */
   getPermissionsByCategory(category: string): string[] {
     return ALL_PERMISSIONS.filter(permission => permission.startsWith(`${category}.`));
   }
 
-  /**
-   * Parse permission to get category and action
-   */
   parsePermission(permission: string): { category: string; action: string } {
     const parts = permission.split(".");
     if (parts.length < 2) {
@@ -211,9 +182,6 @@ export class PermissionService {
     };
   }
 
-  /**
-   * Get all available permissions
-   */
   async getAllPermissions() {
     return {
       success: true,
@@ -224,9 +192,6 @@ export class PermissionService {
     };
   }
 
-  /**
-   * Get permissions by role with expanded view
-   */
   async getAllRolePermissions() {
     const expandedRolePermissions: Record<string, string[]> = {};
 
@@ -243,9 +208,6 @@ export class PermissionService {
     };
   }
 
-  /**
-   * Check multiple permissions for a role
-   */
   async checkPermissions(role: UserRole, permissions: string[], requireAll = false) {
     if (!Array.isArray(permissions)) {
       return {
@@ -275,9 +237,6 @@ export class PermissionService {
     };
   }
 
-  /**
-   * Get current user's permissions
-   */
   async getUserPermissions(role: UserRole) {
     return {
       success: true,
@@ -289,9 +248,6 @@ export class PermissionService {
     };
   }
 
-  /**
-   * Get permissions for a specific category
-   */
   async getCategoryPermissions(category: string) {
     const categoryPermissions = this.getPermissionsByCategory(category);
 

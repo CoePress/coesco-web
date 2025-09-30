@@ -738,7 +738,7 @@ export const SCHEMAS: ISchema[] = [
         required: false,
       },
       status: {
-        type: "string",
+        type: "formstatus",
         required: true,
         hasDefault: true,
       },
@@ -1003,7 +1003,7 @@ export const SCHEMAS: ISchema[] = [
         required: true,
       },
       status: {
-        type: "string",
+        type: "formsubmissionstatus",
         required: true,
         hasDefault: true,
       },

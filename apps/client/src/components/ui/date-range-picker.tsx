@@ -241,7 +241,7 @@ const DateRangePicker = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 p-4 bg-foreground border border-border rounded-lg shadow-xl">
+        <div className="absolute right-0 z-50 mt-2 p-4 bg-foreground border border-border rounded-lg shadow-xl">
           <div className="w-80">
             <div className="flex items-center justify-between mb-4">
               <button

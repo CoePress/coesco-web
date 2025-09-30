@@ -1,25 +1,47 @@
 import { useState } from "react";
 import { Button } from "@/components";
 import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
+import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 
 type BugReportFormProps = {
-  onSubmit: (data: { title: string; description: string; email?: string }) => void;
   onCancel: () => void;
   screenshot?: string | null;
 };
 
-const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) => {
+const BugReportForm = ({ onCancel, screenshot }: BugReportFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [annotatedScreenshot, setAnnotatedScreenshot] = useState<string | null>(null);
+  const { post, loading } = useApi();
+  const { addToast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
-    
-    onSubmit({
+
+    const result = await post("/email/bug-report", {
       title: title.trim(),
       description: description.trim(),
+      screenshot: annotatedScreenshot || screenshot,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
     });
+
+    if (result) {
+      addToast({
+        title: "Bug report submitted",
+        message: "Thank you for reporting this issue!",
+        variant: "success",
+      });
+      onCancel();
+    } else {
+      addToast({
+        title: "Failed to submit bug report",
+        message: "Please try again later",
+        variant: "error",
+      });
+    }
   };
 
   return (
@@ -61,23 +83,26 @@ const BugReportForm = ({ onSubmit, onCancel, screenshot }: BugReportFormProps) =
           </label>
           <ScreenshotAnnotator
             screenshot={screenshot}
-            onAnnotatedScreenshot={() => {}}
+            onAnnotatedScreenshot={setAnnotatedScreenshot}
           />
         </div>
       )}
 
       <div className="flex gap-2 justify-end pt-2">
         <Button
+          type="button"
           variant="secondary-outline"
           onClick={onCancel}
+          disabled={loading}
         >
           Cancel
         </Button>
         <Button
+          type="submit"
           variant="primary"
-          disabled={!title.trim() || !description.trim()}
+          disabled={!title.trim() || !description.trim() || loading}
         >
-          Submit Report
+          {loading ? "Submitting..." : "Submit Report"}
         </Button>
       </div>
     </form>

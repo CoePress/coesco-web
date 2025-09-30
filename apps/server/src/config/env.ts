@@ -26,7 +26,7 @@ const envSchema = z.object({
   FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
 
   SMTP_HOST: z.string(),
-  SMTP_PORT: z.string(),
+  SMTP_PORT: z.string().transform(Number),
 
   OPENAI_API_KEY: z.string(),
   ANTHROPIC_API_KEY: z.string(),
