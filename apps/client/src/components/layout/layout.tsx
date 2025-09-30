@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
     <div
       className={`h-full bg-foreground border-r border-border shadow-sm transition-[width] duration-300 ease-in-out overflow-hidden select-none ${
         isOpen ? "w-60" : "w-[50px]"
-      } md:relative absolute z-50`}>
+      } md:relative absolute z-50 hidden md:block`}>
       <div className="flex flex-col h-full">
         <div className={`flex items-center h-[57px] border-b border-border px-2 ${
           isOpen ? "justify-between" : "justify-center"
@@ -199,7 +199,7 @@ const Layout = ({ children }: LayoutProps) => {
   const commandBarRef = useRef<HTMLDivElement>(null);
   const screenshotAreaRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
-  const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { sidebarExpanded, toggleSidebar } = useAppContext();
   const { toasts, removeToast } = useToast();
 
@@ -304,7 +304,7 @@ const Layout = ({ children }: LayoutProps) => {
   const defaultModule = currentModule?.slug || "production";
 
   return (
-    <div ref={screenshotAreaRef} className="flex h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
+    <div ref={screenshotAreaRef} className="flex flex-col md:flex-row h-[100dvh] w-screen bg-background text-foreground font-sans antialiased">
       <Sidebar
         isOpen={sidebarExpanded}
         setIsOpen={toggleSidebar}
@@ -328,6 +328,45 @@ const Layout = ({ children }: LayoutProps) => {
         )}
 
         <div className="flex-1 flex flex-col overflow-auto">{children}</div>
+
+        {/* Mobile Footer Menu */}
+        <div className="md:hidden bg-foreground border-t border-border">
+          <nav className="flex items-center justify-around h-16 px-2">
+            <Link
+              to="/"
+              className={`flex flex-col items-center gap-1 p-2 rounded transition-colors ${
+                location.pathname === "/" ? "text-primary" : "text-text-muted"
+              }`}>
+              <Home size={20} />
+              <span className="text-xs">Home</span>
+            </Link>
+
+            {currentModule?.pages?.slice(0, 3).map((page) => {
+              const fullPath = `/${currentModule.slug}${page.slug ? `/${page.slug}` : ""}`;
+              const trimmedPath = fullPath.replace(/\/$/, "");
+              const isActive = location.pathname.replace(/\/$/, "") === trimmedPath;
+
+              return (
+                <Link
+                  key={page.slug || "index"}
+                  to={trimmedPath}
+                  className={`flex flex-col items-center gap-1 p-2 rounded transition-colors ${
+                    isActive ? "text-primary" : "text-text-muted"
+                  }`}>
+                  {page.icon && <page.icon size={20} />}
+                  <span className="text-xs">{page.label}</span>
+                </Link>
+              );
+            })}
+
+            <button
+              onClick={toggleTheme}
+              className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+              <span className="text-xs">Theme</span>
+            </button>
+          </nav>
+        </div>
       </div>
       
       {hoveredTooltip && (
