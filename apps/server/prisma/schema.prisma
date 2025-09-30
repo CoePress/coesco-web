@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["referentialActions"]
 }
 
@@ -559,12 +559,12 @@ model NtfyDevice {
 }
 
 model Form {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
   name        String
   description String?
-  status      FormStatus   @default(DRAFT)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      FormStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   createdById String
   updatedById String
 
@@ -682,12 +682,12 @@ enum FormFieldDataType {
 }
 
 model FormSubmission {
-  id          String    @id @default(uuid())
+  id          String               @id @default(uuid())
   formId      String
-  status      String    @default("draft")
-  answers     Json      @default("{}")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status      FormSubmissionStatus @default(DRAFT)
+  answers     Json                 @default("{}")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   deletedAt   DateTime?
   createdById String
   updatedById String
@@ -697,14 +697,20 @@ model FormSubmission {
   @@map("form_submissions")
 }
 
+enum FormSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  ARCHIVED
+}
+
 model FormConditionalRule {
   id          String              @id @default(uuid())
   formId      String
   name        String?
-  targetType  ConditionalTarget   // What to show/hide
-  targetId    String              // ID of page/section/field
-  action      ConditionalAction   // What to do
-  conditions  Json                // Array of conditions
+  targetType  ConditionalTarget
+  targetId    String
+  action      ConditionalAction
+  conditions  Json
   operator    ConditionalOperator @default(AND)
   priority    Int                 @default(0)
   isActive    Boolean             @default(true)
@@ -856,8 +862,6 @@ enum UserRole {
   ADMIN
 }
 
-
-// CoilType
 model CoilType {
   id          String  @id @default(uuid())
   description String?
@@ -887,7 +891,6 @@ model ProductClass {
   @@map("product_classes")
 }
 
-// OptGroup
 model OptionCategory {
   id           String  @id @default(uuid())
   name         String  @unique
@@ -904,7 +907,6 @@ model OptionCategory {
   @@map("option_categories")
 }
 
-// OptGrp
 model ProductClassOptionCategory {
   productClassId   String
   optionCategoryId String
@@ -1000,7 +1002,6 @@ enum ItemType {
   Service
 }
 
-// QData
 model QuoteHeader {
   id                String            @id @default(uuid())
   journeyId         String?
@@ -1034,7 +1035,6 @@ enum QuoteHeaderStatus {
   CLOSED
 }
 
-// QRev
 model QuoteDetails {
   id            String      @id @default(uuid())
   quoteHeaderId String
@@ -1057,7 +1057,6 @@ model QuoteDetails {
   @@map("quote_details")
 }
 
-// QRev & OtherEqu
 model QuoteItem {
   id              String    @id @default(uuid())
   quoteDetailsId  String

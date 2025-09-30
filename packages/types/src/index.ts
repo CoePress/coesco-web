@@ -3,6 +3,7 @@ export * from './form-status';
 export * from './form-field-restrictions';
 export * from './form-field-control-type';
 export * from './form-field-data-type';
+export * from './form-submission-status';
 export * from './conditional-target';
 export * from './conditional-action';
 export * from './conditional-operator';

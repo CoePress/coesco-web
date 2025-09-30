@@ -1,8 +1,10 @@
 // Auto-generated from Prisma schema
+import { FormSubmissionStatus } from './form-submission-status';
+
 export interface FormSubmission {
   id?: string;
   formId: string;
-  status?: string;
+  status?: FormSubmissionStatus;
   answers?: any;
   createdAt?: Date | string;
   updatedAt: Date | string;

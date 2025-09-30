@@ -378,48 +378,6 @@ export type Update${model.name}Input = Partial<Create${model.name}Input>;
 
   const indexFile = path.resolve(srcDir, "index.ts");
   fs.writeFileSync(indexFile, `// Auto-generated database types\n${modelExports.join("\n")}\n`);
-
-  const packageJsonFile = path.resolve(packagesDir, "package.json");
-  if (!fs.existsSync(packageJsonFile)) {
-    const packageJson = {
-      name: "@coesco/types",
-      version: "1.0.0",
-      description: "Shared database types",
-      main: "./dist/index.js",
-      types: "./dist/index.d.ts",
-      scripts: {
-        "build": "tsc",
-        "build:watch": "tsc --watch",
-      },
-      devDependencies: {
-        typescript: "^5.0.0",
-      },
-    };
-    fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
-    console.log("Created package.json for types package");
-  }
-
-  const tsconfigFile = path.resolve(packagesDir, "tsconfig.json");
-  if (!fs.existsSync(tsconfigFile)) {
-    const tsconfig = {
-      compilerOptions: {
-        target: "es2020",
-        module: "commonjs",
-        lib: ["es2020"],
-        declaration: true,
-        outDir: "./dist",
-        rootDir: "./src",
-        strict: true,
-        esModuleInterop: true,
-        skipLibCheck: true,
-        forceConsistentCasingInFileNames: true,
-      },
-      include: ["src/**/*"],
-      exclude: ["node_modules", "dist"],
-    };
-    fs.writeFileSync(tsconfigFile, JSON.stringify(tsconfig, null, 2));
-    console.log("Created tsconfig.json for types package");
-  }
 }
 
 async function main() {
