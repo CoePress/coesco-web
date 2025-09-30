@@ -235,6 +235,7 @@ const FormSubmissions = () => {
         title="Form Submissions"
         description={`${pagination.total} total submissions`}
         goBack
+        goBackTo={`/service/forms/${formId}`}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">

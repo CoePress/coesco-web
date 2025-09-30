@@ -109,9 +109,10 @@ const FormDetails = () => {
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={formData.name}
-        description={formData.description}
+        description={formData.description || "-"}
         actions={<Actions />}
         goBack
+        goBackTo='/service'
       />
 
       {error && (

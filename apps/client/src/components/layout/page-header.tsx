@@ -6,10 +6,19 @@ type Props = {
   description: string;
   actions?: ReactNode;
   goBack?: boolean;
+  goBackTo?: string;
 };
 
-const PageHeader = ({ title, description, actions, goBack = false }: Props) => {
+const PageHeader = ({ title, description, actions, goBack = false, goBackTo }: Props) => {
   const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    if (goBackTo) {
+      navigate(goBackTo);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between bg-foreground p-2 min-h-[57px] border-b border-border">
@@ -19,7 +28,7 @@ const PageHeader = ({ title, description, actions, goBack = false }: Props) => {
           {goBack && (
             <>
               <button
-                onClick={() => navigate(-1)}
+                onClick={handleGoBack}
                 className="leading-none text-xs text-text-muted cursor-pointer hover:underline">
                 Go Back
               </button>
