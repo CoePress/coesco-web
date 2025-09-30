@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, memo, useEffect } from "react";
-import { MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Trash2, Tags } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -28,7 +28,9 @@ import { getPriorityConfig } from "./utils";
 import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { TrackJourneyModal } from "@/components/modals/track-journey-modal";
 import { UntrackJourneyModal } from "@/components/modals/untrack-journey-modal";
+import { AddTagsModal } from "@/components/modals/add-tags-modal";
 import { useJourneyTracking } from "@/hooks/use-journey-tracking";
+import { useApi } from "@/hooks/use-api";
 
 // const columnIdPrefix = "column-";
 
@@ -59,6 +61,8 @@ const JourneyCard = memo(({
   onClick,
   onDelete,
   style,
+  showTags = false,
+  onTagsUpdated,
   ...dragProps
 }: {
   journey: any;
@@ -67,13 +71,18 @@ const JourneyCard = memo(({
   onClick?: () => void;
   onDelete?: (journeyId: string) => void;
   style?: React.CSSProperties;
+  showTags?: boolean;
+  onTagsUpdated?: () => void;
 } & any) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [showUntrackModal, setShowUntrackModal] = useState(false);
+  const [showTagsModal, setShowTagsModal] = useState(false);
+  const [tags, setTags] = useState<any[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isTracked, trackingInfo, refreshTracking, setIsTracked } = useJourneyTracking(journey?.id);
+  const api = useApi();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -90,16 +99,47 @@ const JourneyCard = memo(({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen]);
+
+  const fetchTags = async () => {
+    try {
+      const response = await api.get('/tags', {
+        filter: JSON.stringify({
+          parentTable: 'journeys',
+          parentId: journey.id.toString()
+        })
+      });
+      
+      if (response && response.data && Array.isArray(response.data)) {
+        setTags(response.data);
+      } else {
+        setTags([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      setTags([]);
+    }
+  };
+
+  useEffect(() => {
+    if (showTags && journey?.id) {
+      fetchTags();
+    }
+  }, [showTags, journey?.id]);
+
+  const handleTagsUpdated = () => {
+    fetchTags();
+    onTagsUpdated?.();
+  };
   
   const priorityConfig = useMemo(() => getPriorityConfig(journey.priority), [journey.priority]);
   
   return (
     <div
       style={style}
-      onClick={showDeleteConfirm ? undefined : onClick}
+      onClick={showDeleteConfirm || showTagsModal ? undefined : onClick}
       className={`bg-foreground rounded shadow-sm border border-border p-3 select-none mb-2 
         hover:shadow-md hover:bg-opacity-90 hover:border-neutral-500 transition-all duration-200 ${
-          showDeleteConfirm ? 'cursor-default' : 'cursor-move'
+          showDeleteConfirm || showTagsModal ? 'cursor-default' : 'cursor-move'
         }`}
       {...dragProps}
     >
@@ -132,6 +172,24 @@ const JourneyCard = memo(({
       <div className="text-xs text-neutral-400">
         Close date: {formatDate(journey.closeDate)}
       </div>
+      {showTags && (
+        <div className="mt-2">
+          {tags.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="bg-primary text-white px-2 py-0.5 rounded-full text-xs"
+                >
+                  {tag.description}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-neutral-400 italic">No tags</div>
+          )}
+        </div>
+      )}
       <div className="flex justify-between items-center mt-2 pt-2 border-t">
         <div className="text-xs text-neutral-400">
           Last activity: {formatDate(journey.updatedAt)}
@@ -167,6 +225,17 @@ const JourneyCard = memo(({
                 >
                   <Eye size={14} />
                   {isTracked ? 'Stop Tracking' : 'Track Journey'}
+                </button>
+                <button
+                  className="w-full px-3 py-2 text-left text-sm text-neutral-400 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMenuOpen(false);
+                    setShowTagsModal(true);
+                  }}
+                >
+                  <Tags size={14} />
+                  Add Tags
                 </button>
                 <button
                   className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -215,6 +284,18 @@ const JourneyCard = memo(({
           refreshTracking();
         }}
       />
+      
+      <AddTagsModal
+        isOpen={showTagsModal}
+        onClose={() => {
+          console.log('AddTagsModal onClose called');
+          setShowTagsModal(false);
+        }}
+        journeyId={journey.id.toString()}
+        onTagsUpdated={handleTagsUpdated}
+      />
+      {/* Debug: Always show modal state */}
+      {console.log('showTagsModal state:', showTagsModal)}
     </div>
   );
 });
@@ -223,10 +304,14 @@ const SortableItem = memo(({
   journey,
   customersById,
   onDelete,
+  showTags = false,
+  onTagsUpdated,
 }: {
   journey: any;
   customersById: Map<string, any>;
   onDelete?: (journeyId: string) => void;
+  showTags?: boolean;
+  onTagsUpdated?: () => void;
 }) => {
   const navigate = useNavigate();
   const customer = customersById?.get(String(journey.customerId));
@@ -255,6 +340,8 @@ const SortableItem = memo(({
       isDragging={isDragging}
       onClick={handleClick}
       onDelete={onDelete}
+      showTags={showTags}
+      onTagsUpdated={onTagsUpdated}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -268,9 +355,11 @@ const SortableItem = memo(({
 const DragPreview = memo(({
   journey,
   customersById,
+  showTags = false,
 }: {
   journey: any;
   customersById: Map<string, any>;
+  showTags?: boolean;
 }) => {
   const customer = customersById?.get(String(journey.customerId));
   return (
@@ -278,6 +367,7 @@ const DragPreview = memo(({
       journey={journey}
       customer={customer}
       isDragging
+      showTags={showTags}
       className="select-none"
     />
   );
@@ -292,6 +382,8 @@ interface KanbanViewProps {
   onDeleteJourney: (journeyId: string) => void;
   onStageUpdate: (journeyId: string, newStage: number) => Promise<void>;
   setIdsByStage: (updater: (prev: Record<number, string[]>) => Record<number, string[]>) => void;
+  showTags?: boolean;
+  onTagsUpdated?: () => void;
 }
 
 export const KanbanView = ({
@@ -303,6 +395,8 @@ export const KanbanView = ({
   onDeleteJourney,
   onStageUpdate,
   setIdsByStage,
+  showTags = false,
+  onTagsUpdated,
 }: KanbanViewProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -481,6 +575,8 @@ export const KanbanView = ({
                           journey={journey}
                           customersById={customersById}
                           onDelete={onDeleteJourney}
+                          showTags={showTags}
+                          onTagsUpdated={onTagsUpdated}
                         />
                       ) : null;
                     })}
@@ -506,7 +602,7 @@ export const KanbanView = ({
       <DragOverlay>
         {activeId && (() => {
           const journey = journeys.find((d) => d.id.toString() === activeId);
-          return journey ? <DragPreview journey={journey} customersById={customersById} /> : null;
+          return journey ? <DragPreview journey={journey} customersById={customersById} showTags={showTags} /> : null;
         })()}
       </DragOverlay>
     </DndContext>

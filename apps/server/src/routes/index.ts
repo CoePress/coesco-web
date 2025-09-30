@@ -19,6 +19,7 @@ import postalCodeRoutes from "./postal-code.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
+import tagRoutes from "./tag.routes";
 import testRoutes from "./test.route";
 import userSettingsRoutes from "./user-settings.routes";
 
@@ -44,5 +45,6 @@ router.use("/permissions", permissionRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
 router.use("/settings", userSettingsRoutes);
+router.use("/tags", tagRoutes);
 
 export default router;

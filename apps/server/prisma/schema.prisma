@@ -1,5 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["referentialActions"]
 }
 
@@ -152,6 +153,20 @@ model PermissionException {
   @@index([userId])
   @@index([permissionId])
   @@map("permission_exceptions")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  description String
+  parentTable String
+  parentId    String
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([parentTable, parentId, description])
+  @@index([parentTable, parentId])
+  @@map("tag")
 }
 
 // CRM

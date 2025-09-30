@@ -2486,6 +2486,42 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "tag",
+    description: "Schema for Tag entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      description: {
+        type: "string",
+        required: true,
+      },
+      parentTable: {
+        type: "string",
+        required: true,
+      },
+      parentId: {
+        type: "string",
+        required: true,
+      },
+      createdBy: {
+        type: "string",
+        required: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
     name: "user",
     description: "Schema for User entity",
     schema: {

@@ -234,16 +234,22 @@ export class LegacyService {
 
   async getAll(database: string, table: string, params: any) {
     const limit = params.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
+    
+    let fieldSelection = "*";
+    if (params.fields && typeof params.fields === 'string') {
+      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(', ');
+    }
 
     let whereClause = "";
-    if (params.filter) {
+    if (params.filter && typeof params.filter === 'string') {
       const [field, value] = params.filter.split("=");
       const comparator = "=";
       whereClause = `WHERE ${field} ${comparator} ${value}`;
     }
 
     const query = `
-    SELECT *
+    SELECT ${fieldSelection}
     FROM PUB.${table}
     ${whereClause}
     ${this.buildOrderQuery(params)}
@@ -393,6 +399,13 @@ export class LegacyService {
 
   async getAllByCustomFilter(database: string, table: string, filters: Record<string, string>, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
+    
+    let fieldSelection = "*";
+    if (params?.fields && typeof params.fields === 'string') {
+      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(', ');
+    }
+    
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
@@ -409,7 +422,7 @@ export class LegacyService {
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
     const query = `
-      SELECT *
+      SELECT ${fieldSelection}
       FROM PUB.${table}
       ${whereClause}
       ${params ? this.buildOrderQuery(params) : ""}

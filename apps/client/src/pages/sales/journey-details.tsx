@@ -2442,6 +2442,152 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
   );
 }
 
+function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: any }) {
+  const [tags, setTags] = useState<any[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const api = useApi();
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      if (!journey?.ID && !journey?.id) return;
+      
+      setIsLoading(true);
+      try {
+        const journeyId = journey.ID || journey.id;
+        const tagData = await api.get('/tags', {
+          filter: JSON.stringify({
+            parentTable: 'journeys',
+            parentId: journeyId
+          })
+        });
+        
+        if (tagData?.success && Array.isArray(tagData.data)) {
+          setTags(tagData.data);
+        }
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+        setTags([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTags();
+  }, [journey?.ID, journey?.id]);
+
+  const handleAddTag = async () => {
+    if (!newTagInput.trim() || !journey?.ID && !journey?.id) return;
+    
+    setIsSaving(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const tagDescription = newTagInput.trim().toUpperCase();
+      
+      const newTag = await api.post('/tags', {
+        description: tagDescription,
+        parentTable: 'journeys',
+        parentId: journeyId,
+        createdBy: employee?.initials || 'unknown'
+      });
+      
+      if (newTag?.success && newTag.data) {
+        setTags(prev => [...prev, newTag.data]);
+        setNewTagInput("");
+      }
+    } catch (error) {
+      console.error("Error adding tag:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string) => {
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/tags/${tagId}`);
+      
+      if (result !== null) {
+        setTags(prev => prev.filter(tag => tag.id !== tagId));
+      }
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddTag();
+    }
+  };
+
+  if (!journey) return null;
+
+  return (
+    <div className="flex flex-1 flex-col p-4">
+      <div className="bg-foreground rounded shadow-sm border p-4">
+        <h3 className="text-lg font-semibold text-text mb-4">Journey Tags</h3>
+        
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text"
+              placeholder="Enter tag name..."
+              value={newTagInput}
+              onChange={(e) => setNewTagInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isSaving}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAddTag}
+              disabled={!newTagInput.trim() || isSaving}
+            >
+              {isSaving ? "Adding..." : "Add Tag"}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {isLoading ? (
+              <div className="text-sm text-text-muted">Loading tags...</div>
+            ) : tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="inline-flex items-center gap-2 bg-primary text-white px-3 py-1 rounded-full text-sm"
+                  >
+                    <span>{tag.description}</span>
+                    <button
+                      onClick={() => handleDeleteTag(tag.id)}
+                      disabled={isSaving}
+                      className="hover:bg-red-600 rounded-full p-1 transition-colors"
+                      title="Remove tag"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-text-muted">No tags added to this journey yet.</div>
+            )}
+          </div>
+
+          <div className="text-xs text-text-muted mt-4">
+            Tags are automatically converted to uppercase and help categorize and organize journeys.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function JourneyActionsTab({ journey }: { journey: any | null }) {
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -2724,6 +2870,7 @@ const JourneyDetailsPage = () => {
           { label: "Details", value: "details" },
           { label: "Quote Info", value: "quotes" },
           { label: "History", value: "history" },
+          { label: "Tags", value: "tags" },
           { label: "Journey Actions", value: "actions" },
         ]}
       />
@@ -2743,6 +2890,7 @@ const JourneyDetailsPage = () => {
         )}
         {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
         {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
+        {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
         {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
       </>
     </div>
