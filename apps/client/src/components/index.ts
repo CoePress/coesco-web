@@ -11,6 +11,7 @@ export { default as PageHeader } from "./layout/page-header";
 export { AdminRoute, ProtectedRoute, PublicRoute } from "./layout/routes";
 export { AddContactModal } from "./modals/add-contact-modal";
 export { AddJourneyContactModal } from "./modals/create-journey-contact-modal";
+export { CreateCompanyModal } from "./modals/create-company-modal";
 export { default as AdvancedDropdown } from "./ui/advanced-dropdown";
 export { default as Button } from "./ui/button";
 export { default as Card } from "./ui/card";

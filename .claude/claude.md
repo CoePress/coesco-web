@@ -19,5 +19,5 @@
 
 - When building & styling components and pages in client, always reference the theme within src/index.css
 - Only use status colors (error, success, warning, info) when appropriate, these should never be used for non-status elements
-- Minimize comment additions
-- Do not attempt to start the server
+- Do not add comments unless specified
+- Do not attempt to start a server instance
