@@ -292,7 +292,7 @@ const CompanyDetails = () => {
               phone: primaryContact?.PhoneNumber || processedCompanyData.BillToPhone || "",
               email: primaryContact?.Email || "",
               website: primaryContact?.Website || "",
-              active: processedCompanyData.Active,
+              active: Number(processedCompanyData.Active) === 1,
               isDealer: processedCompanyData.IsDealer,
               creditStatus: processedCompanyData.CreditStatus,
               creditLimit: processedCompanyData.CreditLimit,
@@ -817,8 +817,8 @@ const CompanyDetails = () => {
     
     try {
       const updateData: Record<string, any> = {
-        Active: tempValues.active,
-        IsDealer: tempValues.isDealer,
+        Active: tempValues.active ? 1 : 0,
+        IsDealer: tempValues.isDealer ? 1 : 0,
         CreditStatus: tempValues.creditStatus,
         CreditLimit: parseFloat(tempValues.creditLimit) || 0,
         AcctBalance: parseFloat(tempValues.acctBalance) || 0,

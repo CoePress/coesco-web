@@ -263,11 +263,13 @@ const SalesDashboard = () => {
       ]);
 
       if (journeysResponse) {
-        setJourneys(Array.isArray(journeysResponse) ? journeysResponse : []);
+        const journeyData = Array.isArray(journeysResponse) ? journeysResponse : (journeysResponse.data || []);
+        setJourneys(journeyData);
       }
       
       if (companiesResponse) {
-        setCompanies(Array.isArray(companiesResponse) ? companiesResponse : []);
+        const companyData = Array.isArray(companiesResponse) ? companiesResponse : (companiesResponse.data || []);
+        setCompanies(companyData);
       }
     } catch (error) {
       console.error("Error refreshing dashboard data:", error);

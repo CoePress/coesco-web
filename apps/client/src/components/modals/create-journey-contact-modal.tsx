@@ -53,7 +53,6 @@ export const AddJourneyContactModal = ({
       const result = await post("/legacy/std/Journey_Contact", journeyContactData);
 
       if (result) {
-        
         // Reset form
         setFormData({
           Contact_Name: "",
@@ -65,9 +64,11 @@ export const AddJourneyContactModal = ({
           IsPrimary: false,
         });
 
-        // Notify parent component with the data we sent (since API just returns true)
         if (onContactAdded) {
-          onContactAdded(journeyContactData);
+          onContactAdded({
+            ...journeyContactData,
+            _needsRefresh: true // Flag to indicate this needs to be fetched from API
+          });
         }
 
         onClose();

@@ -19,9 +19,9 @@ export const PRIORITY_CONFIG = {
 export const VALID_EQUIPMENT_TYPES = ["Standard", "Custom", "Unknown"];
 
 export const VALID_QUOTE_TYPES = [
+  "Standard more than 6 months",
   "Standard less than 6 months",
-  "Budgetary", 
-  "Standard more than 6 months"
+  "Budgetary"
 ];
 
 export const VALID_LEAD_SOURCES = [
@@ -130,4 +130,46 @@ export const VALID_JOURNEY_STATUS = [
   "on hold",
   "open",
   "won"
+];
+
+export const VALID_CONFIDENCE_LEVELS = [
+  "Closed Won",
+  "Closed Lost", 
+  "90%",
+  "75%",
+  "50%",
+  "25%"
+];
+
+export const VALID_REASON_WON = [
+  "Coe Quality",
+  "Customer Relationship",
+  "Pricing",
+  "Coe Controls",
+  "Lead Time"
+];
+
+export const VALID_REASON_LOST = [
+  "Competitor Price",
+  "Project Dropped",
+  "Outside of Budget",
+  "Bought Used",
+  "Spam",
+  "No Response",
+  "Work not awarded",
+  "Project Outsourced",
+  "Lead Time",
+  "Competitor Relationship",
+  "Not a fit",
+  "Other",
+  "Different COE Equipment Selected",
+  "Coe Controls",
+  "Parts/Svc Opportunity"
+];
+
+export const VALID_PRESENTATION_METHODS = [
+  "In Person",
+  "Web Meeting",
+  "Phone",
+  "Email"
 ];

@@ -66,31 +66,30 @@ export const CreateJourneyModal = ({
       const result = await post("/legacy/std/Journey", payload);
 
       if (result && result.ID) {
-        // Create the journey object for immediate display using the server response
         const newJourney = {
+          ...result,
           ...payload,
-          ID: result.ID, // Use the auto-generated ID from the server
-          CreateDT: new Date().toISOString(),
-          Action_Date: actionDate || new Date().toISOString(),
-          Journey_Value: 0, // Default value
-          Priority: 'C', // Default priority
-          Quote_Number: '', // Default empty
-          Chance_To_Secure_order: null, // Default empty
-          // Add other fields that might be expected
-          Expected_Decision_Date: null,
-          Quote_Presentation_Date: null,
-          Date_PO_Received: null,
-          Journey_Start_Date: startDate || new Date().toISOString(),
-          Journey_Status: 'Active',
-          RSM_Territory: '',
-          Dealer: '',
-          Dealer_Name: '',
-          Dealer_ID: null,
-          Qty_of_Items: 0,
+          ID: result.ID,
+          id: result.ID,
+          CreateDT: result.CreateDT || new Date().toISOString(),
+          Action_Date: result.Action_Date || actionDate || new Date().toISOString(),
+          Journey_Start_Date: result.Journey_Start_Date || startDate || new Date().toISOString(),
+          Journey_Value: result.Journey_Value || 0,
+          Priority: result.Priority || 'C',
+          Journey_Status: result.Journey_Status || 'Active',
+          Quote_Number: result.Quote_Number || '',
+          Chance_To_Secure_order: result.Chance_To_Secure_order || null,
+          Expected_Decision_Date: result.Expected_Decision_Date || null,
+          Quote_Presentation_Date: result.Quote_Presentation_Date || null,
+          Date_PO_Received: result.Date_PO_Received || null,
+          RSM_Territory: result.RSM_Territory || '',
+          Dealer: result.Dealer || '',
+          Dealer_Name: result.Dealer_Name || '',
+          Dealer_ID: result.Dealer_ID || null,
+          Qty_of_Items: result.Qty_of_Items || 0,
         };
         onSuccess?.(newJourney);
         onClose();
-        // Reset form
         setName("");
         setStartDate("");
         setJourneyType("");

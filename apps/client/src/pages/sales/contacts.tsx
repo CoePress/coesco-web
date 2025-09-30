@@ -208,21 +208,22 @@ const Contacts = () => {
         throw new Error('Contacts fetch failed');
       }
 
-      const contacts = Array.isArray(rawContacts) ? rawContacts.filter(contact => contact != null) : [];
+      const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
+      const contacts = contactsArray.filter((contact: any) => contact != null);
       
       const addressContactPairs = contacts
-        .filter(contact => contact?.Address_ID && contact?.Address_ID > 0 && contact?.Company_ID)
-        .map(contact => ({
+        .filter((contact: any) => contact?.Address_ID && contact?.Address_ID > 0 && contact?.Company_ID)
+        .map((contact: any) => ({
           addressId: contact.Address_ID,
           companyId: contact.Company_ID,
           key: `${contact.Address_ID}_${contact.Company_ID}`
         }));
       
-      const uniqueAddressPairs = addressContactPairs.filter((pair, index, arr) => 
-        index === arr.findIndex(p => p.key === pair.key)
+      const uniqueAddressPairs = addressContactPairs.filter((pair: any, index: number, arr: any[]) => 
+        index === arr.findIndex((p: any) => p.key === pair.key)
       );
       
-      const addressPromises = uniqueAddressPairs.map(async (pair) => {
+      const addressPromises = uniqueAddressPairs.map(async (pair: any) => {
         try {
           const rawAddress = await api.get('/legacy/base/Address/filter/custom', {
             Address_ID: pair.addressId,
@@ -277,15 +278,17 @@ const Contacts = () => {
 
         let companiesData = [];
         if (rawCompanies) {
-          companiesData = Array.isArray(rawCompanies) ? rawCompanies : [];
+          const companiesArray = rawCompanies.data ? rawCompanies.data : (Array.isArray(rawCompanies) ? rawCompanies : []);
+          companiesData = companiesArray;
           if (!cancelled) setLegacyCompanies(companiesData);
         } else {
           console.error("Legacy companies fetch failed");
         }
 
         if (rawContacts) {
-          const validContacts = Array.isArray(rawContacts) ? rawContacts.filter(contact => contact != null) : [];
-          const mapped = validContacts.map((contact, index) => adaptLegacyContact(contact, companiesData, index)).filter(contact => contact != null);
+          const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
+          const validContacts = contactsArray.filter((contact: any) => contact != null);
+          const mapped = validContacts.map((contact: any, index: number) => adaptLegacyContact(contact, companiesData, index)).filter((contact: any) => contact != null);
           if (!cancelled) {
             setLegacyContacts(mapped);
             setAllContactsLoaded(mapped.length < 50);
@@ -302,7 +305,7 @@ const Contacts = () => {
 
   const baseContacts = legacyContacts || [];
 
-  const filteredContacts = baseContacts.filter(contact => {
+  const filteredContacts = baseContacts.filter((contact: any) => {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase().trim();
@@ -344,13 +347,13 @@ const Contacts = () => {
         });
 
         if (rawContacts) {
-          const newContacts = Array.isArray(rawContacts) ? rawContacts : [];
+          const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
           
-          if (newContacts.length === 0) {
+          if (contactsArray.length === 0) {
             setAllContactsLoaded(true);
           } else {
-            const validNewContacts = newContacts.filter(contact => contact != null);
-            const mappedNewContacts = validNewContacts.map((contact, index) => adaptLegacyContact(contact, legacyCompanies || [], baseContacts.length + index)).filter(contact => contact != null);
+            const validNewContacts = contactsArray.filter((contact: any) => contact != null);
+            const mappedNewContacts = validNewContacts.map((contact: any, index: number) => adaptLegacyContact(contact, legacyCompanies || [], baseContacts.length + index)).filter((contact: any) => contact != null);
             setLegacyContacts(prev => [...(prev || []), ...mappedNewContacts]);
             setBatchSize(prev => prev + mappedNewContacts.length);
           }

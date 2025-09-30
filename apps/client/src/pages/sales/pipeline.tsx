@@ -59,12 +59,13 @@ const Pipeline = () => {
       ]);
       
       if (journeysData) {
-        // Apply the same mapping as the working fetch
-        setJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
+        const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
+        setJourneys(journeysArray.map(adaptLegacyJourney));
       }
       
       if (customersData) {
-        setCustomers(Array.isArray(customersData) ? customersData : []);
+        const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
+        setCustomers(customersArray);
       }
     };
     
@@ -83,7 +84,8 @@ const Pipeline = () => {
       });
       
       if (raw !== null) {
-        const mapped = Array.isArray(raw) ? raw.map(adaptLegacyJourney) : [];
+        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        const mapped = journeysArray.map(adaptLegacyJourney);
         setLegacyJourneys(mapped);
         return true;
       } else {
@@ -202,7 +204,8 @@ const Pipeline = () => {
         });
         
         if (!cancelled && raw !== null) {
-          const mapped = Array.isArray(raw) ? raw.map(adaptLegacyJourney) : [];
+          const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+          const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
         }
       } catch (error) {
@@ -215,8 +218,9 @@ const Pipeline = () => {
         fields: 'Description'
       });
       
-      if (!cancelled && Array.isArray(rsmData)) {
-        const rsmValues = rsmData.map(item => item.Description).filter(Boolean);
+      if (!cancelled && rsmData) {
+        const rsmArray = rsmData.data ? rsmData.data : (Array.isArray(rsmData) ? rsmData : []);
+        const rsmValues = rsmArray.map((item: any) => item.Description).filter(Boolean);
         setAvailableRsms(rsmValues);
       }
     })();
@@ -930,8 +934,10 @@ const Pipeline = () => {
               ]);
               
               if (journeysData) {
-                setJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
-                setLegacyJourneys(Array.isArray(journeysData) ? journeysData.map(adaptLegacyJourney) : []);
+                const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
+                const mappedJourneys = journeysArray.map(adaptLegacyJourney);
+                setJourneys(mappedJourneys);
+                setLegacyJourneys(mappedJourneys);
               }
             };
             

@@ -21,10 +21,10 @@
   },
   {
     "database": "std",
-    "table": "Address",
+    "table": "Company",
     "ids": [
       {
-        "field": "Address_ID",
+        "field": "Company_ID",
         "type": "int"
       }
     ]
