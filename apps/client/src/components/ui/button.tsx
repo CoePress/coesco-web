@@ -17,6 +17,7 @@ type ButtonProps = {
   as?: "button" | "a";
   href?: string;
   className?: string;
+  type?: "button" | "submit" | "reset";
 };
 
 const Button = ({
@@ -28,6 +29,7 @@ const Button = ({
   as = "button",
   href = "#",
   className,
+  type = "button",
 }: ButtonProps) => {
   const variantStyles: {
     [key in NonNullable<ButtonProps["variant"]>]: string;
@@ -79,7 +81,7 @@ const Button = ({
       onClick={onClick}
       disabled={disabled}
       className={`${finalStyles} ${className}`}
-      type="button">
+      type={type}>
       {children}
     </button>
   );

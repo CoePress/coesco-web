@@ -27,6 +27,7 @@ type TableProps<T> = {
   onSortChange?: (sort: string, order: "asc" | "desc") => void;
   loading?: boolean;
   emptyMessage?: string;
+  error?: string | null;
 };
 
 const Table = <T extends Record<string, any>>({
@@ -48,6 +49,7 @@ const Table = <T extends Record<string, any>>({
   onSortChange,
   loading = false,
   emptyMessage = "No records found",
+  error,
 }: TableProps<T>) => {
   const handleToggleAll = () => {
     if (!onSelectionChange) return;
@@ -127,6 +129,14 @@ const Table = <T extends Record<string, any>>({
                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
                   <div className="flex items-center justify-center h-full">
                     <Loader />
+                  </div>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={columns.length + (selectable ? 1 : 0)} className="h-96">
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-error">{error}</p>
                   </div>
                 </td>
               </tr>

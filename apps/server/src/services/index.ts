@@ -16,6 +16,7 @@ import { LockingService } from "./core/locking.service";
 import { MCPService } from "./core/mcp.service";
 import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
+import { EmailService } from "./core/email.service";
 
 // Business
 export const agentService = new AgentService();
@@ -30,6 +31,7 @@ export const quotingService = new QuotingService();
 // Core
 export const authService = new AuthService();
 export const cacheService = new CacheService();
+export const emailService = new EmailService();
 export const fileStorageService = new FileStorageService();
 export const lockingService = new LockingService();
 export const mcpService = new MCPService();

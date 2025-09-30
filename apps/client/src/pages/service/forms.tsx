@@ -1,4 +1,3 @@
-import { PlusCircleIcon } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -13,75 +12,45 @@ import { FormStatus } from "@coesco/types";
 
 const Forms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "name">("name");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const { get: getForms, response: forms, loading: formsLoading, error: formsError } = useApi<IApiResponse<any[]>>();
+  const { post: createForm, loading: createFormLoading, error: createFormError } = useApi<IApiResponse<any[]>>();
 
-  const [forms, setForms] = useState<any[]>([]);
-  const [_loading, setLoading] = useState<boolean>(true);
-  const [_error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    total: number;
-    totalPages: number;
-    page: number;
-    limit: number;
-  }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
-  const [createLoading, setCreateLoading] = useState<boolean>(false);
+  const [params, setParams] = useState({
+    sort: "name" as "createdAt" | "updatedAt" | "name",
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+    filter: { status: "" },
+    include: [] as string[]
+  });
 
-  const { get, post } = useApi<IApiResponse<any[]>>();
-  const toast = useToast();
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
 
-  const include = useMemo(
-    () => [],
-    []
-  );
+    const activeFilters = Object.fromEntries(
+      Object.entries(params.filter).filter(([_, value]) => value)
+    );
+    
+    if (Object.keys(activeFilters).length > 0) {
+      q.filter = JSON.stringify(activeFilters);
+    }
+
+    if (params.include.length > 0) {
+      q.include = JSON.stringify(params.include);
+    }
+
+    return q;
+  }, [params]);
 
   const fetchForms = async () => {
-    setLoading(true);
-    setError(null);
-    const response = await get("/forms", {
-      include,
-      sort,
-      order,
-      page,
-      limit,
-    });
-    
-    if (response?.success) {
-      setForms(response.data || []);
-      if (response.meta) {
-        setPagination({
-          total: response.meta.total || 0,
-          totalPages: response.meta.totalPages || 0,
-          page: response.meta.page || 1,
-          limit: response.meta.limit || 25,
-        });
-      }
-    } else {
-      const errorMessage = response?.error || "Failed to fetch forms";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    }
-    setLoading(false);
+    await getForms("/forms", queryParams);
   };
   
-  const refresh = () => {
-    fetchForms();
-  };
-  
-  const createForm = async (params: any) => {
-    setCreateLoading(true);
-    const response = await post("/forms", params);
-    setCreateLoading(false);
-    return response?.success ? response.data : null;
-  };
-  
-  useEffect(() => {
-    fetchForms();
-  }, [include, sort, order, page, limit]);
-
   const columns: TableColumn<any>[] = [
     {
       key: "name",
@@ -121,31 +90,29 @@ const Forms = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const Actions = () => {
-    return (
-      <div className="flex gap-2">
-        <Button onClick={toggleModal}>
-          <PlusCircleIcon size={20} /> Create New
-        </Button>
-      </div>
-    );
-  };
-
   const handleSearch = (query: string) => {
     console.log('Searching for:', query)
   }
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilterValues(prev => ({
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
       ...prev,
-      [key]: value
+      ...updates
     }))
   }
 
-  const handleExport = () => {
-    console.log('Exporting forms...', filteredForms)
-    // TODO: Implement actual export functionality
+  const handleFilterChange = (key: string, value: string) => {
+    handleParamsChange({
+      filter: { ...params.filter, [key]: value }
+    })
   }
+
+  const handleExport = () => {
+    console.log('Exporting forms...', forms)
+  }
+
+  const formStatuses = Object.keys(FormStatus)
+  const formStatusOptions = formStatuses.map((status) =>{ return { value: status, label: status }})
 
   const filters: Filter[] = [
     {
@@ -153,42 +120,21 @@ const Forms = () => {
       label: 'Status',
       options: [
         { value: '', label: 'All Statuses' },
-        { value: 'draft', label: 'Draft' },
-        { value: 'published', label: 'Published' },
-        { value: 'archived', label: 'Archived' }
+        ...formStatusOptions
       ],
-      placeholder: 'Filter by status'
+      placeholder: 'Form Status'
     },
-    {
-      key: 'dateRange',
-      label: 'Date Range',
-      options: [
-        { value: '', label: 'All Time' },
-        { value: 'today', label: 'Today' },
-        { value: 'yesterday', label: 'Yesterday' },
-        { value: 'last7days', label: 'Last 7 Days' },
-        { value: 'last30days', label: 'Last 30 Days' },
-        { value: 'thisMonth', label: 'This Month' },
-        { value: 'lastMonth', label: 'Last Month' },
-        { value: 'thisQuarter', label: 'This Quarter' },
-        { value: 'thisYear', label: 'This Year' }
-      ],
-      placeholder: 'Filter by date'
-    }
   ]
 
-  const filteredForms = useMemo(() => {
-    // For now, just return forms as-is since filtering should be done server-side
-    // TODO: Implement server-side filtering by passing filterValues to useGetEntities
-    return forms || []
-  }, [forms])
+  useEffect(() => {
+    fetchForms();
+  }, [params]);
 
   return (
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Forms"
-        description={`${forms?.length} total forms`}
-        actions={<Actions />}
+        description={`${forms?.data?.length} total forms`}
       />
 
       <div className="p-2 gap-2 flex flex-col flex-1">
@@ -197,25 +143,29 @@ const Forms = () => {
           searchPlaceholder="Search forms..."
           filters={filters}
           onFilterChange={handleFilterChange}
-          filterValues={filterValues}
+          filterValues={params.filter}
           showExport={true}
           onExport={handleExport}
         />
 
         <Table
           columns={columns}
-          data={filteredForms}
-          total={pagination.total}
+          data={forms?.data || []}
+          total={forms?.meta?.total || 0}
           idField="id"
           pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          onPageChange={setPage}
-          sort={sort}
-          order={order}
+          loading={formsLoading}
+          error={formsError}
+          currentPage={forms?.meta?.page}
+          totalPages={forms?.meta?.totalPages}
+          onPageChange={(page) => handleParamsChange({ page })}
+          sort={params.sort}
+          order={params.order}
           onSortChange={(newSort, newOrder) => {
-            setSort(newSort as "createdAt" | "updatedAt");
-            setOrder(newOrder as "asc" | "desc");
+            handleParamsChange({
+              sort: newSort as any,
+              order: newOrder as any
+            });
           }}
           className="rounded border overflow-clip"
           emptyMessage="No forms found"
@@ -226,9 +176,9 @@ const Forms = () => {
         <CreateFormModal
           isOpen={isModalOpen}
           onClose={toggleModal}
-          onSuccess={refresh}
-          createForm={createForm}
-          loading={createLoading}
+          onSuccess={fetchForms}
+          createForm={(data) => createForm("/forms", data)}
+          loading={createFormLoading}
         />
       )}
     </div>
@@ -247,32 +197,28 @@ const CreateFormModal = ({
   onSuccess: () => void;
   createForm: (params: any) => Promise<any>;
   loading: boolean;
-}) => {
-  const [nameValue, setNameValue] = useState("");
-  const [descriptionValue, setDescriptionValue] = useState("");
-  const [isCreateDisabledState, setIsCreateDisabledState] = useState(true);
+  }) => {
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    status: FormStatus.DRAFT,
+  })
+  
   const toast = useToast();
 
-  useEffect(() => {
-    const checkDisabled = () => {
-      if (loading) return true;
-      return !nameValue.trim();
-    };
-
-    setIsCreateDisabledState(checkDisabled());
-  }, [nameValue, loading]);
+  const handleChange = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({
+      ...prev,
+      ...updates
+    }))
+  }
 
   const handleCreateForm = async () => {
-    const data: any = {
-      name: nameValue.trim(),
-      description: descriptionValue.trim() || undefined,
-      status: FormStatus.DRAFT,
-    };
-
     try {
-      const result = await createForm(data);
-      if (result) {
-        toast.success(`Form "${nameValue}" created successfully!`);
+      const response = await createForm(formData);
+      if (response?.success) {
+        toast.success(`Form "${formData.name}" created successfully!`);
         onClose();
         onSuccess();
       } else {
@@ -285,8 +231,11 @@ const CreateFormModal = ({
   };
 
   const resetForm = () => {
-    setNameValue("");
-    setDescriptionValue("");
+    setFormData({
+      name: "",
+      description: "",
+      status: FormStatus.DRAFT,
+    })
   };
 
   useEffect(() => {
@@ -301,25 +250,23 @@ const CreateFormModal = ({
       onClose={onClose}
       title="Create New Form"
       size="xs">
-      {/* Form Name */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Form Name *</label>
         <input
           type="text"
-          value={nameValue}
-          onChange={(e) => setNameValue(e.target.value)}
+          value={formData.name}
+          onChange={(e) => handleChange({ name: e.target.value })}
           placeholder="Enter form name"
           className="w-full px-3 py-2 border rounded-md"
         />
       </div>
 
 
-      {/* Description */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-text">Description (Optional)</label>
         <textarea
-          value={descriptionValue}
-          onChange={(e) => setDescriptionValue(e.target.value)}
+          value={formData.description}
+          onChange={(e) => handleChange({ description: e.target.value })}
           placeholder="Enter form description"
           className="w-full px-3 py-2 border rounded-md h-20 resize-none"
         />
@@ -327,7 +274,7 @@ const CreateFormModal = ({
 
       <Button
         onClick={handleCreateForm}
-        disabled={isCreateDisabledState}
+        disabled={formData.name === ""}
         variant="primary"
         className="w-full">
         {loading ? "Creating..." : "Create Form"}

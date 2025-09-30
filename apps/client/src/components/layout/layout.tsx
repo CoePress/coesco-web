@@ -168,13 +168,18 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
       
       <Modal
         isOpen={isBugModalOpen}
-        onClose={() => setIsBugModalOpen(false)}
+        onClose={() => {
+          setIsBugModalOpen(false);
+          setScreenshot(null);
+        }}
         title="Report Bug"
         size="md"
       >
         <BugReportForm
-          onSubmit={() => {}}
-          onCancel={() => setIsBugModalOpen(false)}
+          onCancel={() => {
+            setIsBugModalOpen(false);
+            setScreenshot(null);
+          }}
           screenshot={screenshot}
         />
       </Modal>
