@@ -5,148 +5,116 @@ import {
 import { Link } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 
-import { Table, Button, PageHeader } from "@/components";
+import { Table, Button, PageHeader, Input } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
-import type { IApiResponse } from "@/utils/types";
 
 const Companies = () => {
-  const [companies, setCompanies] = useState<any[] | null>(null);
-  const [legacyCompanies, setLegacyCompanies] = useState<any[] | null>(null);
-  const [_legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
-  const companiesApi = useApi();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
+  const [sort, setSort] = useState("name");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [legacyCompanies, setLegacyCompanies] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
   const legacyApi = useApi();
 
-  const adaptLegacyCompany = (raw: any, contacts: any[] = []) => {
-    const companyContacts = contacts.filter(contact => contact.Company_ID === raw.Company_ID);
-    const primaryContact = companyContacts.find(contact => contact.Type === 'A') || companyContacts[0];
-    
+  const adaptLegacyCompany = (raw: any) => {
     return {
       id: raw.Company_ID,
       name: raw.CustDlrName || `Company ${raw.Company_ID}`,
-      phone: primaryContact?.PhoneNumber || raw.BillToPhone || "",
-      email: primaryContact?.Email || "",
-      website: primaryContact?.Website || "",
-      dealer: raw.Dealer,
       active: raw.Active,
-      isDealer: raw.IsDealer,
-      isExcDealer: raw.IsExcDealer,
-      creditStatus: raw.CreditStatus,
-      creditNote: raw.CreditNote,
-      onHoldBy: raw.OnHoldBy,
-      onHoldDate: raw.OnHoldDate,
-      offHoldBy: raw.OffHoldBy,
-      offHoldDate: raw.OffHoldDate,
-      classification: raw.Classification,
-      custType: raw.CustType,
-      lastCreditStat: raw.LastCreditStat,
-      coeRSM: raw.CoeRSM,
-      discounted: raw.Discounted,
-      notes: raw.Notes,
-      shipInstr: raw.ShipInstr,
-      billToExt: raw.BillToExt,
-      creditLimit: raw.CreditLimit,
-      acctBalance: raw.AcctBalance,
-      balanceDate: raw.BalanceDate,
-      termsCode: raw.TermsCode,
-      exported: raw.Exported,
-      systemNotes: raw.SystemNotes,
-      // Additional contact info
-      primaryContact,
-      allContacts: companyContacts,
+      createDate: raw.CreateDate,
     };
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const modernCompaniesResponse = await companiesApi.get("/crm/companies");
-        if (modernCompaniesResponse) {
-          const data = modernCompaniesResponse as IApiResponse<any[]>;
-          setCompanies(data.data || []);
-        }
+  const fetchAllCompanies = useCallback(async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      const params: any = {
+        page,
+        limit,
+        sort: sort === "name" ? "CustDlrName" : "Company_ID",
+        order,
+        fields: "Company_ID,CustDlrName,Active,CreateDate"
+      };
 
-        const [legacyCompaniesResponse, contactsResponse] = await Promise.all([
-          legacyApi.get("/legacy/base/Company", {
-            sort: "Company_ID",
-            order: "desc"
-          }),
-          legacyApi.get("/legacy/base/Contacts", {
-            sort: "Company_ID",
-            order: "desc",
-            limit: 500
-          })
-        ]);
-
-        let contactsData = [];
-        if (contactsResponse) {
-          contactsData = Array.isArray(contactsResponse) ? contactsResponse : [];
-          setLegacyContacts(contactsData);
-        }
-
-        if (legacyCompaniesResponse) {
-          const rawCompanies = Array.isArray(legacyCompaniesResponse) ? legacyCompaniesResponse : [];
-          const mapped = rawCompanies.map(company => adaptLegacyCompany(company, contactsData));
-          setLegacyCompanies(mapped);
-        }
-      } catch (error) {
-        console.error("Error fetching Companies and Contacts:", error);
+      if (debouncedSearchTerm) {
+        params.filter = `CustDlrName LIKE %${debouncedSearchTerm}%`;
       }
-    };
 
-    fetchData();
-  }, []);
+      const legacyCompaniesResponse = await legacyApi.get("/legacy/base/Company", params);
 
-  const baseCompanies = legacyCompanies?.length ? legacyCompanies : (companies ?? []);
-
-  const [batchSize, setBatchSize] = useState(500);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
-  const displayedCompanies = baseCompanies.slice(0, batchSize);
-  const hasMoreCompanies = baseCompanies.length > batchSize;
-
-  const loadMoreCompanies = useCallback(() => {
-    if (isLoadingMore || !hasMoreCompanies) return;
-    
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setBatchSize(prev => prev + 200);
-      setIsLoadingMore(false);
-    }, 300);
-  }, [isLoadingMore, hasMoreCompanies]);
-
-  const handleScroll = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-    
-    if (isNearBottom && hasMoreCompanies && !isLoadingMore) {
-      loadMoreCompanies();
+      if (legacyCompaniesResponse) {
+        // Handle paginated response structure from legacy service
+        const isApiResponse = legacyCompaniesResponse && typeof legacyCompaniesResponse === 'object' && 'data' in legacyCompaniesResponse;
+        
+        if (isApiResponse) {
+          // New paginated response format
+          const rawCompanies = Array.isArray(legacyCompaniesResponse.data) ? legacyCompaniesResponse.data : [];
+          const mapped = rawCompanies.map((company: any) => adaptLegacyCompany(company));
+          setLegacyCompanies(mapped);
+          
+          if (legacyCompaniesResponse.meta) {
+            setPagination({
+              page: legacyCompaniesResponse.meta.page,
+              totalPages: legacyCompaniesResponse.meta.totalPages,
+              total: legacyCompaniesResponse.meta.total,
+              limit: legacyCompaniesResponse.meta.limit
+            });
+          }
+        } else {
+          // Fallback for non-paginated responses (shouldn't happen with new implementation)
+          const rawCompanies = Array.isArray(legacyCompaniesResponse) ? legacyCompaniesResponse : [];
+          const mapped = rawCompanies.map((company: any) => adaptLegacyCompany(company));
+          setLegacyCompanies(mapped);
+          
+          setPagination({
+            page: 1,
+            totalPages: Math.ceil(mapped.length / limit),
+            total: mapped.length,
+            limit: limit
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching Companies:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [hasMoreCompanies, isLoadingMore, loadMoreCompanies]);
+  }, [isLoading, legacyApi, page, limit, sort, order, debouncedSearchTerm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchInput);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchAllCompanies();
+  }, [page, limit, sort, order, debouncedSearchTerm]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm]);
+
+  const allCompanies = legacyCompanies;
+  
+  // Use companies directly since pagination is handled server-side
+  const filteredCompanies = allCompanies;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const scrollContainer = containerRef.current;
-
-    let timeoutId: NodeJS.Timeout;
-    const throttledScroll = (e: Event) => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => handleScroll(e), 100);
-    };
-
-    scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', throttledScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [handleScroll]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -158,33 +126,24 @@ const Companies = () => {
       ),
     },
     {
-      key: "phone",
-      header: "Phone",
-      className: "hover:underline",
-      render: (_, row) =>
-        row.phone ? <Link to={`tel:${row.phone}`}>{row.phone}</Link> : "-",
+      key: "active",
+      header: "Active",
+      render: (_, row) => (
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          row.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+        }`}>
+          {row.active ? 'Active' : 'Inactive'}
+        </span>
+      ),
     },
     {
-      key: "email",
-      header: "Email",
-      className: "hover:underline",
-      render: (_, row) =>
-        row.email ? <Link to={`mailto:${row.email}`}>{row.email}</Link> : "-",
-    },
-    {
-      key: "website",
-      header: "Website",
-      className: "hover:underline",
-      render: (_, row) =>
-        row.website ? (
-          <Link
-            to={row.website}
-            target="_blank">
-            {row.website}
-          </Link>
-        ) : (
-          "-"
-        ),
+      key: "createDate",
+      header: "Created",
+      render: (_, row) => {
+        if (!row.createDate) return "-";
+        const date = new Date(row.createDate);
+        return date.toLocaleDateString();
+      },
     },
     {
       key: "actions",
@@ -211,34 +170,39 @@ const Companies = () => {
     <div className="w-full flex flex-1 flex-col">
       <PageHeader
         title="Companies"
-        description={baseCompanies ? `${baseCompanies?.length} total companies` : ""}
+        description={`Showing ${filteredCompanies.length} of ${pagination.total} companies`}
         actions={<Actions />}
       />
+
+      {/* Search Bar */}
+      <div className="px-6 py-4 border-b">
+        <Input
+          placeholder="Search companies..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
 
       <div ref={containerRef} className="flex-1 overflow-auto">
         <div className="flex flex-col h-full">
           <Table<any>
             columns={columns}
-            data={displayedCompanies || []}
-            total={baseCompanies?.length || 0}
+            data={filteredCompanies || []}
+            total={pagination.total}
             idField="id"
             className="bg-foreground rounded shadow-sm border flex-shrink-0"
+            pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            sort={sort}
+            order={order}
+            onSortChange={(newSort, newOrder) => {
+              setSort(newSort);
+              setOrder(newOrder);
+            }}
           />
-          {hasMoreCompanies && (
-            <div className="p-4 bg-foreground flex justify-center flex-shrink-0">
-              <Button
-                variant="secondary-outline"
-                onClick={loadMoreCompanies}
-                disabled={isLoadingMore}
-                className="min-w-32"
-              >
-                {isLoadingMore 
-                  ? "Loading..." 
-                  : `Load ${Math.min(200, baseCompanies.length - batchSize)} More (${baseCompanies.length - batchSize} remaining)`
-                }
-              </Button>
-            </div>
-          )}
         </div>
       </div>
     </div>

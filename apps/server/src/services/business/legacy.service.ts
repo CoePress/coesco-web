@@ -233,7 +233,9 @@ export class LegacyService {
   }
 
   async getAll(database: string, table: string, params: any) {
-    const limit = params.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
+    const page = params.page || 1;
+    const limit = params.limit || 25;
+    const offset = (page - 1) * limit;
     
     let fieldSelection = "*";
     if (params.fields && typeof params.fields === 'string') {
@@ -243,18 +245,29 @@ export class LegacyService {
 
     let whereClause = "";
     if (params.filter && typeof params.filter === 'string') {
-      const [field, value] = params.filter.split("=");
-      const comparator = "=";
-      whereClause = `WHERE ${field} ${comparator} ${value}`;
+      if (params.filter.includes(' LIKE ')) {
+        const [field, value] = params.filter.split(' LIKE ');
+        const quotedValue = value.startsWith("'") ? value : `'${value}'`;
+        whereClause = `WHERE ${field} LIKE ${quotedValue}`;
+      } else {
+        const [field, value] = params.filter.split("=");
+        whereClause = `WHERE ${field} = ${value}`;
+      }
     }
 
-    const query = `
-    SELECT ${fieldSelection}
-    FROM PUB.${table}
-    ${whereClause}
-    ${this.buildOrderQuery(params)}
-    ${limit}
-  `;
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM PUB.${table}
+      ${whereClause}
+    `;
+
+    const dataQuery = `
+      SELECT ${fieldSelection}
+      FROM PUB.${table}
+      ${whereClause}
+      ${this.buildOrderQuery(params)}
+      OFFSET ${offset} ROWS FETCH FIRST ${limit} ROWS ONLY
+    `;
 
     try {
       const connection = this.getDatabaseConnection(database);
@@ -262,8 +275,30 @@ export class LegacyService {
         logger.warn(`No connection available for database: ${database}`);
         return null;
       }
-      const result = await connection.query(query);
-      return result;
+
+      const [countResult, dataResult] = await Promise.all([
+        connection.query(countQuery),
+        connection.query(dataQuery)
+      ]) as [any[], any[]];
+
+      const countRow = countResult?.[0] as Record<string, any> | undefined;
+      const total = countRow?.total 
+        ?? countRow?.TOTAL 
+        ?? countRow?.Total 
+        ?? 0;
+
+      const totalCount = Number(total) || 0;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return {
+        data: dataResult || [],
+        meta: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages
+        }
+      };
     }
     catch (err) {
       logger.error("Error fetching data:", err);
@@ -293,9 +328,10 @@ export class LegacyService {
       }
       const result: any = await connection.query(query);
 
-      const count = result?.[0]?.total
-        ?? result?.[0]?.TOTAL
-        ?? result?.[0]?.Total
+      const countRow = (result as any[])?.[0] as any;
+      const count = countRow?.total
+        ?? countRow?.TOTAL
+        ?? countRow?.Total
         ?? 0;
       return Number(count) || 0;
     }
@@ -372,6 +408,7 @@ export class LegacyService {
     const fieldSelection = fields && fields.length > 0 ? fields.join(",") : "*";
 
     // To help prevent bullshit temporarily
+    // TODO: This can be updated to use a mapping
     let idField = "ID";
     if (table.toLowerCase() === "company") {
       idField = "Company_ID";
@@ -645,9 +682,10 @@ export class LegacyService {
     try {
       const result: any = await this.getDatabaseConnection(database)?.query(query);
 
-      const maxValue = result?.[0]?.LargestValue
-        ?? result?.[0]?.LARGESTVALUE
-        ?? result?.[0]?.largestvalue
+      const maxRow = (result as any[])?.[0] as any;
+      const maxValue = maxRow?.LargestValue
+        ?? maxRow?.LARGESTVALUE
+        ?? maxRow?.largestvalue
         ?? null;
 
       return maxValue !== null ? Number(maxValue) : null;
