@@ -738,7 +738,7 @@ export const SCHEMAS: ISchema[] = [
         required: false,
       },
       status: {
-        type: "string",
+        type: "formstatus",
         required: true,
         hasDefault: true,
       },

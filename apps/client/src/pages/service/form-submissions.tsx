@@ -180,10 +180,6 @@ const FormSubmissions = () => {
     // TODO: Implement actual export functionality
   };
 
-  const clearFilters = () => {
-    setFilterValues({ status: '', formId: '', dateRange: '' });
-  };
-
   const filters: Filter[] = [
     {
       key: 'status',
@@ -247,16 +243,6 @@ const FormSubmissions = () => {
           filterValues={filterValues}
           showExport={true}
           onExport={handleExport}
-          actions={
-            Object.values(filterValues).some(v => v) && (
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm text-text-muted hover:text-text border border-border rounded hover:bg-surface transition-colors"
-              >
-                Clear Filters
-              </button>
-            )
-          }
         />
 
         <div className="flex-1 overflow-hidden">

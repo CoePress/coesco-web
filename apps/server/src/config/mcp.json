@@ -726,7 +726,7 @@
           "required": false
         },
         "status": {
-          "type": "string",
+          "type": "formstatus",
           "required": true,
           "hasDefault": true
         },

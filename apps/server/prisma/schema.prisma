@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["referentialActions"] // this is needed for generate-services.ts - DO NOT REMOVE
+  previewFeatures = ["referentialActions"]
 }
 
 datasource db {

@@ -1,9 +1,11 @@
 // Auto-generated from Prisma schema
+import { FormStatus } from './form-status';
+
 export interface Form {
   id?: string;
   name: string;
   description?: string;
-  status?: string;
+  status?: FormStatus;
   createdAt?: Date | string;
   updatedAt: Date | string;
   createdById: string;

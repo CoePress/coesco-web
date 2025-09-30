@@ -9,6 +9,7 @@ import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import { useToast } from "@/hooks/use-toast";
+import { FormStatus } from "@coesco/types";
 
 const Forms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -262,14 +263,14 @@ const CreateFormModal = ({
   }, [nameValue, loading]);
 
   const handleCreateForm = async () => {
-    const params: any = {
+    const data: any = {
       name: nameValue.trim(),
       description: descriptionValue.trim() || undefined,
-      status: "draft",
+      status: FormStatus.DRAFT,
     };
 
     try {
-      const result = await createForm(params);
+      const result = await createForm(data);
       if (result) {
         toast.success(`Form "${nameValue}" created successfully!`);
         onClose();

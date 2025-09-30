@@ -1,5 +1,5 @@
 /* eslint-disable node/prefer-global/process */
-import { FormFieldControlType, FormFieldDataType, MachineControllerType, MachineType } from "@prisma/client";
+import { FormFieldControlType, FormFieldDataType, FormStatus, MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
@@ -273,13 +273,12 @@ async function seedServiceTechDailyForm() {
         data: {
           name: serviceTechDailyTemplate.title,
           description: "Service Technician Daily Report Form",
-          status: "published",
+          status: FormStatus.PUBLISHED,
           createdById: "system",
           updatedById: "system",
         },
       });
 
-      // Track page labels to IDs for conditional rules
       const pageLabelMap = new Map<string, string>();
 
       for (const page of serviceTechDailyTemplate.pages) {
