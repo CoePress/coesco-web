@@ -3,9 +3,9 @@
 ## Repository Structure
 
 ├── apps/
-│   ├── client/       # React frontend
-│   ├── fanuc/        # C# fanuc adapter (DO NOT TOUCH)
-│   └── server/       # Node backend
+│ ├── client/    # React frontend
+│ ├── fanuc/     # C# fanuc adapter (DO NOT TOUCH)
+│ └── server/    # Node backend
 
 ## Tech Stack
 
@@ -19,3 +19,5 @@
 
 - When building & styling components and pages in client, always reference the theme within src/index.css
 - Only use status colors (error, success, warning, info) when appropriate, these should never be used for non-status elements
+- Minimize comment additions
+- Do not attempt to start the server
