@@ -713,12 +713,6 @@ export class MachineMonitorService {
       };
     }
     catch (error: any) {
-      if (error.name === "CanceledError") {
-        return null;
-      }
-      else {
-        logger.error(`Request to ${url} failed: ${error.message}`);
-      }
       return null;
     }
     finally {
