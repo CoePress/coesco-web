@@ -22,7 +22,7 @@ import { formatCurrency } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth.context";
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -753,9 +753,9 @@ const Pipeline = () => {
     console.log('Final RSM full names map:', rsmFullNames);
 
     // Fetch contact data for each journey
-    const journeyContacts = new Map<string, { Contact_Name: string; Contact_Email: string }>();
+    const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string }>>();
     console.log('Fetching contact data for journeys...');
-    
+
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
@@ -765,55 +765,78 @@ const Pipeline = () => {
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,IsPrimary'
           });
-          
+
           console.log(`Contact data for journey ${journey.id}:`, contactData);
-          
+
           if (contactData && Array.isArray(contactData) && contactData.length > 0) {
-            let selectedContact;
-            
             if (options.includePrimaryContactOnly) {
               // Find primary contact
-              selectedContact = contactData.find(contact => contact.IsPrimary === true || contact.IsPrimary === 'true' || contact.IsPrimary === 1);
+              let selectedContact = contactData.find(contact => contact.IsPrimary === true || contact.IsPrimary === 'true' || contact.IsPrimary === 1);
               if (!selectedContact) {
                 // If no primary contact found, use the first contact
                 selectedContact = contactData[0];
               }
-            } else {
-              // Use the first contact
-              selectedContact = contactData[0];
-            }
-            
-            if (selectedContact) {
-              journeyContacts.set(journey.id.toString(), {
+
+              journeyContacts.set(journey.id.toString(), [{
                 Contact_Name: selectedContact.Contact_Name || '',
                 Contact_Email: selectedContact.Contact_Email || ''
-              });
+              }]);
+            } else {
+              // Include all contacts
+              journeyContacts.set(journey.id.toString(), contactData.map(contact => ({
+                Contact_Name: contact.Contact_Name || '',
+                Contact_Email: contact.Contact_Email || ''
+              })));
             }
+          } else {
+            // Set empty contact data if no contacts found
+            journeyContacts.set(journey.id.toString(), [{
+              Contact_Name: '',
+              Contact_Email: ''
+            }]);
           }
         } catch (error) {
           console.error(`Error fetching contact data for journey ${journey.id}:`, error);
           // Set empty contact data on error
-          journeyContacts.set(journey.id.toString(), {
+          journeyContacts.set(journey.id.toString(), [{
             Contact_Name: '',
             Contact_Email: ''
-          });
+          }]);
         }
       })
     );
 
     console.log('Final journey contacts map:', journeyContacts);
 
-    const rows = filteredJourneys.map(journey => {
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Pipeline Export');
+
+    // Prepare data rows
+    const formatDateOnly = (dateString: any) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    };
+
+    const dataRows = filteredJourneys.map(journey => {
       const customer = customersById.get(String(journey.customerId));
       const rsmFullName = journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '';
-      const contact = journeyContacts.get(journey.id.toString()) || { Contact_Name: '', Contact_Email: '' };
-      
+      const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '' }];
+
+      // Combine all contact names and emails into single cells with line breaks
+      const contactNames = contacts.map(c => c.Contact_Name).filter(Boolean).join('\n');
+      const contactEmails = contacts.map(c => c.Contact_Email).filter(Boolean).join('\n');
+
       return [
         journey.Quote_Number || '',
-        journey.CreateDT ? new Date(journey.CreateDT) : '',
-        journey.Action_Date ? new Date(journey.Action_Date) : '',
+        formatDateOnly(journey.CreateDT),
+        formatDateOnly(journey.Action_Date),
         journey.Chance_To_Secure_order || '',
-        journey.Expected_Decision_Date ? new Date(journey.Expected_Decision_Date) : '',
+        formatDateOnly(journey.Expected_Decision_Date),
         journey.Journey_Stage || stageLabel(journey.stage),
         rsmFullName,
         journey.Industry || '',
@@ -823,74 +846,106 @@ const Pipeline = () => {
         journey.Lead_Source || '',
         Number(journey.Journey_Value || journey.value || 0),
         journey.Next_Steps || '',
-        contact.Contact_Name,
-        contact.Contact_Email
+        contactNames,
+        contactEmails
       ];
     });
 
-    // Create worksheet data
-    const wsData = [headers, ...rows];
-    
-    // Create workbook and worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Set column widths (auto-fit with reasonable limits)
-    const colWidths = headers.map((header, index) => {
-      const maxLength = Math.max(
-        header.length,
-        ...rows.map(row => String(row[index] || '').length)
-      );
-      return { wch: Math.min(Math.max(maxLength + 1, 8), 25) }; // Min 8, max 25 characters
+    // Add table
+    const lastColumn = String.fromCharCode(64 + headers.length);
+    const lastRow = dataRows.length + 1;
+
+    worksheet.addTable({
+      name: 'PipelineTable',
+      ref: `A1:${lastColumn}${lastRow}`,
+      headerRow: true,
+      totalsRow: false,
+      style: {
+        theme: 'TableStyleLight16',
+        showRowStripes: true,
+      },
+      columns: headers.map(header => ({ name: header, filterButton: true })),
+      rows: dataRows
     });
-    ws['!cols'] = colWidths;
-    
-    // Add autofilter to entire data range (enables sorting and filtering)
-    const dataRange = `A1:${XLSX.utils.encode_col(headers.length - 1)}${wsData.length}`;
-    ws['!autofilter'] = { ref: dataRange };
-    
-    // Format data columns for proper sorting
-    for (let col = 0; col < headers.length; col++) {
-      const headerName = headers[col];
-      for (let row = 1; row <= rows.length; row++) {
-        const dataCellRef = XLSX.utils.encode_cell({ r: row, c: col });
-        if (!ws[dataCellRef]) continue;
-        
-        // Format date columns
-        if (headerName === 'CreateDate' || headerName === 'ActionDate' || headerName === 'Est PO Date') {
-          if (ws[dataCellRef].v && ws[dataCellRef].v instanceof Date) {
-            ws[dataCellRef].t = 'd'; // Set cell type to date
-            ws[dataCellRef].z = 'mm/dd/yyyy'; // Date format
-          }
-        }
-        
-        // Format confidence as number
-        if (headerName === 'Confidence' && ws[dataCellRef].v) {
-          const confValue = parseFloat(ws[dataCellRef].v);
-          if (!isNaN(confValue)) {
-            ws[dataCellRef].v = confValue;
-            ws[dataCellRef].t = 'n'; // Set cell type to number
-          }
-        }
-        
-        // Format Projected Value as currency
-        if (headerName === 'Projected Value' && ws[dataCellRef].v !== undefined) {
-          const currencyValue = Number(ws[dataCellRef].v);
-          if (!isNaN(currencyValue)) {
-            ws[dataCellRef].v = currencyValue;
-            ws[dataCellRef].t = 'n'; // Set cell type to number
-            ws[dataCellRef].z = '$#,##0.00'; // Currency format
-          }
-        }
+
+    // Auto-fit columns based on content first
+    worksheet.columns.forEach((column, index) => {
+      let maxLength = headers[index].length;
+
+      worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell) => {
+        const cellValue = cell.value ? String(cell.value) : '';
+        // Handle multiline text (split by newline and get longest line)
+        const lines = cellValue.split('\n');
+        const longestLine = Math.max(...lines.map(line => line.length));
+        maxLength = Math.max(maxLength, longestLine);
+      });
+
+      // Set width with reasonable min/max bounds
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Format all cells and calculate row heights
+    worksheet.eachRow((row, rowNumber) => {
+      // Format header row
+      if (rowNumber === 1) {
+        row.height = 15;
+        row.eachCell((cell) => {
+          cell.font = { bold: true };
+          cell.alignment = { wrapText: true, vertical: 'top' };
+        });
+        return;
       }
-    }
-    
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Pipeline Export');
-    
+
+      // Calculate max height needed for this row based on all cells
+      let maxLines = 1;
+      row.eachCell((cell, colNumber) => {
+        // Set wrap text for all cells
+        cell.alignment = { wrapText: true, vertical: 'top' };
+
+        const headerName = headers[colNumber - 1];
+
+        // Format Projected Value as currency
+        if (headerName === 'Projected Value') {
+          cell.numFmt = '$#,##0.00';
+        }
+
+        // Count lines in this cell, accounting for both \n and wrapping
+        const cellValue = cell.value ? String(cell.value) : '';
+        const columnWidth = worksheet.getColumn(colNumber).width || 10;
+
+        // Approximate character width (Excel uses roughly 7 pixels per character for default font)
+        const charsPerLine = Math.floor(columnWidth);
+
+        let totalLines = 0;
+        const explicitLines = cellValue.split('\n');
+
+        explicitLines.forEach(line => {
+          if (line.length === 0) {
+            totalLines += 1;
+          } else {
+            // Calculate how many wrapped lines this text will take
+            const wrappedLines = Math.ceil(line.length / charsPerLine);
+            totalLines += wrappedLines;
+          }
+        });
+
+        maxLines = Math.max(maxLines, totalLines);
+      });
+
+      // Set row height based on max lines found (15 units per line)
+      row.height = Math.max(maxLines * 15, 15);
+    });
+
     // Generate Excel file and download
     const fileName = `pipeline-export-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
   }, [filteredJourneys, customersById]);
 
   const HeaderActions = () => (
