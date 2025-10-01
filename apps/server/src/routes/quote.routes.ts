@@ -4,6 +4,9 @@ import { quoteController } from "@/controllers";
 
 const router = Router();
 
+// Metrics
+router.get("/metrics", quoteController.getMetrics);
+
 // Quotes
 router.post("/", quoteController.createQuote);
 router.get("/", quoteController.getQuotes);

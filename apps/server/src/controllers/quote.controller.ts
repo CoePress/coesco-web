@@ -77,4 +77,9 @@ export class QuoteController {
     res.setHeader("Content-Disposition", `attachment; filename=quote-${req.params.id}.pdf`);
     res.send(pdfBuffer);
   });
+
+  getMetrics = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await quotingService.getQuoteMetrics();
+    res.status(200).json(result);
+  });
 }

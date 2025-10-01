@@ -115,8 +115,10 @@ const Table = <T extends Record<string, any>>({
                   }>
                   <div className="flex items-center gap-1">
                     {column.header}
-                    {sort === column.key && (
-                      <span>{order === "asc" ? "↑" : "↓"}</span>
+                    {onSortChange && column.header.toLowerCase() !== "actions" && (
+                      <span className="w-3 inline-block text-center">
+                        {sort === column.key ? (order === "asc" ? "↑" : "↓") : ""}
+                      </span>
                     )}
                   </div>
                 </th>

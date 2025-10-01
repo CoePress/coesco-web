@@ -481,4 +481,84 @@ export class QuotingService {
 
     return "A";
   }
+
+  async getQuoteMetrics() {
+    const headersResult = await quoteHeaderService.getAll({
+      filter: { status: "OPEN" },
+    });
+
+    if (!headersResult.success || !headersResult.data?.length) {
+      return {
+        success: true,
+        data: {
+          totalQuoteValue: 0,
+          totalQuoteCount: 0,
+          averageQuoteValue: 0,
+          quotesByStatus: {
+            DRAFT: 0,
+            APPROVED: 0,
+            SENT: 0,
+            ACCEPTED: 0,
+          },
+        },
+      };
+    }
+
+    let totalValue = 0;
+    const statusCounts: Record<string, number> = {
+      DRAFT: 0,
+      APPROVED: 0,
+      SENT: 0,
+      ACCEPTED: 0,
+      REVISED: 0,
+      REJECTED: 0,
+      CANCELLED: 0,
+      EXPIRED: 0,
+    };
+
+    await Promise.all(
+      headersResult.data.map(async (header: QuoteHeader) => {
+        const latestRevisionResult = await quoteDetailsService.getAll({
+          filter: { quoteHeaderId: header.id },
+          sort: "revision",
+          order: "desc",
+          limit: 1,
+        });
+
+        const latestRevision = latestRevisionResult.data?.[0];
+        if (latestRevision) {
+          const itemsResult = await quoteItemService.getAll({
+            filter: { quoteDetailsId: latestRevision.id },
+          });
+
+          if (itemsResult.success && itemsResult.data) {
+            const revisionTotal = itemsResult.data.reduce(
+              (sum: number, item: QuoteItem) =>
+                sum + Number(item.unitPrice) * item.quantity,
+              0,
+            );
+            totalValue += revisionTotal;
+          }
+
+          const status = latestRevision.status;
+          if (status && status in statusCounts) {
+            statusCounts[status]++;
+          }
+        }
+      }),
+    );
+
+    const totalCount = headersResult.data.length;
+    const averageValue = totalCount > 0 ? totalValue / totalCount : 0;
+
+    return {
+      success: true,
+      data: {
+        totalQuoteValue: totalValue,
+        totalQuoteCount: totalCount,
+        averageQuoteValue: averageValue,
+        quotesByStatus: statusCounts,
+      },
+    };
+  }
 }

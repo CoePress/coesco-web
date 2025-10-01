@@ -11,80 +11,70 @@ import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { format } from "date-fns";
+import { QuoteHeaderStatus, QuoteStatus } from "@coesco/types";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sort, setSort] = useState<"createdAt" | "updatedAt" | "year">("createdAt");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  
-  const [quotes, setQuotes] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [_error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    total: number;
-    totalPages: number;
-    page: number;
-    limit: number;
-  }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
-  const [createLoading, setCreateLoading] = useState<boolean>(false);
-  
-  const { get, post } = useApi<IApiResponse<any[]>>();
+  const { get: getQuotes, response: quotes, loading: quotesLoading, error: quotesError } = useApi<IApiResponse<any[]>>();
+  const { post: createQuote, loading: createQuoteLoading, error: createQuoteError } = useApi<IApiResponse<any[]>>();
+  const { get: getMetrics, response: metrics, loading: metricsLoading } = useApi<IApiResponse<any>>();
 
-  const include = useMemo(
-    () => [],
-    []
-  );
+  const [params, setParams] = useState({
+    sort: "createdAt" as "createdAt" | "updatedAt" | "year",
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+    filter: { status: "OPEN" },
+    include: [] as string[],
+    search: "",
+    searchFields: ["number", "year"] as string[]
+  });
 
-  const filter = useMemo(() => JSON.stringify({
-    status: "OPEN",
-  }), []);
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
 
+    const activeFilters = Object.fromEntries(
+      Object.entries(params.filter).filter(([_, value]) => value)
+    );
+
+    if (Object.keys(activeFilters).length > 0) {
+      q.filter = JSON.stringify(activeFilters);
+    }
+
+    if (params.include.length > 0) {
+      q.include = JSON.stringify(params.include);
+    }
+
+    if (params.search) {
+      q.search = params.search;
+      q.searchFields = JSON.stringify(params.searchFields);
+    }
+
+    return q;
+  }, [params]);
 
   const fetchQuotes = async () => {
-    setLoading(true);
-    setError(null);
-    const response = await get("/quotes", {
-      include,
-      filter,
-      sort,
-      order,
-      page,
-      limit,
-    });
-    
-    if (response?.success) {
-      setQuotes(response.data || []);
-      if (response.meta) {
-        setPagination({
-          total: response.meta.total || 0,
-          totalPages: response.meta.totalPages || 0,
-          page: response.meta.page || 1,
-          limit: response.meta.limit || 25,
-        });
-      }
-    } else {
-      setError(response?.error || "Failed to fetch quotes");
-    }
-    setLoading(false);
+    await getQuotes("/quotes", queryParams);
   };
-  
+
+  const fetchMetrics = async () => {
+    await getMetrics("/quotes/metrics");
+  };
+
   const refresh = () => {
     fetchQuotes();
+    fetchMetrics();
   };
-  
-  const createQuote = async (params: any) => {
-    setCreateLoading(true);
-    const response = await post("/quotes", params);
-    setCreateLoading(false);
-    return response?.success ? response.data : null;
-  };
-  
+
   useEffect(() => {
     fetchQuotes();
-  }, [include, filter, sort, order, page, limit]);
+    fetchMetrics();
+  }, [params]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -160,36 +150,36 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const kpis = [
-    {
-      title: "Monthly Revenue",
-      value: formatCurrency(92000, false),
-      description: "Total revenue this month",
-      icon: <DollarSignIcon size={16} />,
-      change: 12.5,
-    },
-    {
-      title: "Total Quotes",
-      value: "118",
-      description: "Active quotes this month",
-      icon: <FileTextIcon size={16} />,
-      change: 8.2,
-    },
-    {
-      title: "Conversion Rate",
-      value: "78%",
-      description: "Quote to deal conversion",
-      icon: <TrendingUpIcon size={16} />,
-      change: -2.1,
-    },
-    {
-      title: "Active Deals",
-      value: "47",
-      description: "Deals in pipeline",
-      icon: <UsersIcon size={16} />,
-      change: 5.3,
-    },
-  ];
+  const kpis = useMemo(() => {
+    const metricsData = metrics?.data;
+
+    return [
+      {
+        title: "Total Quote Value",
+        value: metricsLoading ? "-" : formatCurrency(metricsData?.totalQuoteValue || 0, false),
+        description: "Total value of open quotes",
+        icon: <DollarSignIcon size={16} />,
+      },
+      {
+        title: "Total Quotes",
+        value: metricsLoading ? "-" : (metricsData?.totalQuoteCount || 0).toString(),
+        description: "Open quotes",
+        icon: <FileTextIcon size={16} />,
+      },
+      {
+        title: "Average Quote Value",
+        value: metricsLoading ? "-" : formatCurrency(metricsData?.averageQuoteValue || 0, false),
+        description: "Average value per quote",
+        icon: <TrendingUpIcon size={16} />,
+      },
+      {
+        title: "Approved Quotes",
+        value: metricsLoading ? "-" : (metricsData?.quotesByStatus?.APPROVED || 0).toString(),
+        description: "Quotes approved",
+        icon: <UsersIcon size={16} />,
+      },
+    ];
+  }, [metrics, metricsLoading]);
 
   const Actions = () => {
     return (
@@ -202,68 +192,51 @@ const Quotes = () => {
   };
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query)
+    handleParamsChange({
+      search: query,
+      page: 1
+    })
   }
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilterValues(prev => ({
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
       ...prev,
-      [key]: value
+      ...updates
     }))
   }
 
-  const handleExport = () => {
-    console.log('Exporting quotes...', filteredQuotes)
-    // TODO: Implement actual export functionality
+  const handleFilterChange = (key: string, value: string) => {
+    handleParamsChange({
+      filter: { ...params.filter, [key]: value }
+    })
   }
+
+  const quoteRevisionStatuses = Object.keys(QuoteStatus)
+  const quoteRevisionStatusOptions = quoteRevisionStatuses.map((status) => { return { value: status, label: status } })
+  const quoteStatuses = Object.keys(QuoteHeaderStatus)
+  const quoteStatusOptions = quoteStatuses.map((status) =>{ return { value: status, label: status }})
 
   const filters: Filter[] = [
     {
-      key: 'status',
-      label: 'Status',
+      key: 'quote-status',
+      label: 'Quote Status',
       options: [
-        { value: '', label: 'All Statuses' },
-        { value: 'draft', label: 'Draft' },
-        { value: 'pending', label: 'Pending' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' },
-        { value: 'expired', label: 'Expired' }
+        { value: '', label: 'All' },
+        ...quoteStatusOptions
       ],
-      placeholder: 'Filter by status'
+      placeholder: 'Quote Status'
     },
     {
-      key: 'revision',
-      label: 'Revision',
+      key: 'quote-revision-status',
+      label: 'Rev. Status',
       options: [
-        { value: '', label: 'All Revisions' },
-        { value: '0', label: 'Original' },
-        { value: '1', label: 'Revision 1' },
-        { value: '2', label: 'Revision 2' },
-        { value: '3+', label: '3+' }
+        { value: '', label: 'All' },
+        ...quoteRevisionStatusOptions
       ],
-      placeholder: 'Filter by revision'
+      placeholder: 'Revision Status'
     },
-    {
-      key: 'dateRange',
-      label: 'Date Range',
-      options: [
-        { value: '', label: 'All Time' },
-        { value: 'today', label: 'Today' },
-        { value: 'yesterday', label: 'Yesterday' },
-        { value: 'last7days', label: 'Last 7 Days' },
-        { value: 'last30days', label: 'Last 30 Days' },
-        { value: 'thisMonth', label: 'This Month' },
-        { value: 'lastMonth', label: 'Last Month' },
-        { value: 'thisQuarter', label: 'This Quarter' },
-        { value: 'thisYear', label: 'This Year' }
-      ],
-      placeholder: 'Filter by date'
-    }
   ]
 
-  const filteredQuotes = useMemo(() => {
-    return quotes || []
-  }, [quotes])
 
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
@@ -285,29 +258,30 @@ const Quotes = () => {
           searchPlaceholder="Search quotes..."
           filters={filters}
           onFilterChange={handleFilterChange}
-          filterValues={filterValues}
-          showExport={true}
-          onExport={handleExport}
+          filterValues={params.filter}
         />
 
         <div className="flex-1 overflow-hidden">
           <Table
             columns={columns}
-            data={filteredQuotes}
-            total={pagination.total}
+            data={quotes?.data || []}
+            total={quotes?.meta?.total || 0}
             idField="id"
             pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-            sort={sort}
-            order={order}
+            loading={quotesLoading}
+            error={quotesError}
+            currentPage={quotes?.meta?.page}
+            totalPages={quotes?.meta?.totalPages}
+            onPageChange={(page) => handleParamsChange({ page })}
+            sort={params.sort}
+            order={params.order}
             onSortChange={(newSort, newOrder) => {
-              setSort(newSort as "createdAt" | "updatedAt");
-              setOrder(newOrder as "asc" | "desc");
+              handleParamsChange({
+                sort: newSort as any,
+                order: newOrder as any
+              });
             }}
             className="rounded border overflow-clip"
-            loading={loading}
             emptyMessage="No quotes found"
           />
         </div>
@@ -318,8 +292,9 @@ const Quotes = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={refresh}
-          createQuote={createQuote}
-          loading={createLoading}
+          createQuote={(data) => createQuote("/quotes", data)}
+          loading={createQuoteLoading}
+          error={createQuoteError}
         />
       )}
     </div>
@@ -332,12 +307,14 @@ const CreateQuoteModal = ({
   onSuccess,
   createQuote,
   loading,
+  error,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   createQuote: (params: any) => Promise<any>;
   loading: boolean;
+  error: string | null;
 }) => {
   const [customerValue, setCustomerValue] = useState<
     string | { create: true; label: string }
@@ -478,7 +455,7 @@ const CreateQuoteModal = ({
       }
     }
     const result = await createQuote(params);
-    if (result) {
+    if (result?.success) {
       onClose();
       onSuccess();
       refreshCompanies();
@@ -619,6 +596,12 @@ const CreateQuoteModal = ({
               ).label.trim())) &&
           "Quote will be created as part of the selected journey."}
       </div>
+
+      {error && (
+        <div className="text-xs text-error bg-error/10 p-3 rounded">
+          {error}
+        </div>
+      )}
 
       <Button
         onClick={handleCreateQuote}
