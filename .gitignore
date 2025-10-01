@@ -28,9 +28,6 @@ build
 dist
 bin/
 obj/
-out/
-apps/server/src/services/repository/
-
 
 # Debug
 npm-debug.log*
