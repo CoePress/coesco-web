@@ -3,7 +3,7 @@ import type { Quote, QuoteItem, QuoteTerms } from "@prisma/client";
 
 import type { IQueryParams } from "@/types";
 
-import { quoteRevisionService, quoteService, quoteItemService, quoteTermsService } from "@/services/repository";
+import { quoteItemService, quoteRevisionService, quoteService, quoteTermsService } from "@/services/repository";
 
 export class QuotingService {
   async createQuote(data: any) {

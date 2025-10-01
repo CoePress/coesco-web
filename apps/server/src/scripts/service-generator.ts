@@ -53,6 +53,49 @@ export async function getEnums() {
   return dmmf.datamodel.enums;
 }
 
+function parseAnnotations(model: any) {
+  const annotations: any = {};
+
+  if (model.documentation) {
+    // Parse @transform
+    const transformMatch = model.documentation.match(/@transform\(([^)]+)\)/);
+    if (transformMatch) {
+      const transforms = transformMatch[1].split(",").map((t: string) => t.trim());
+      annotations.transforms = {};
+      transforms.forEach((transform: string) => {
+        const [name, sql] = transform.split(":").map((s: string) => s.trim());
+        annotations.transforms[name] = sql;
+      });
+    }
+
+    // Parse @searchFields
+    const searchFieldsMatch = model.documentation.match(/@searchFields\(([^)]+)\)/);
+    if (searchFieldsMatch) {
+      const fields = searchFieldsMatch[1].split(",").map((f: string) => f.trim());
+      annotations.searchFields = fields.map((field: string) => {
+        const [name, weight] = field.split(":").map((s: string) => s.trim());
+        return { field: name, weight: Number.parseInt(weight, 10) };
+      });
+    }
+
+    // Parse @sortFields
+    const sortFieldsMatch = model.documentation.match(/@sortFields\(([^)]+)\)/);
+    if (sortFieldsMatch) {
+      const fields = sortFieldsMatch[1].split(",").map((f: string) => f.trim());
+      annotations.sortFields = {};
+      fields.forEach((field: string) => {
+        const match = field.match(/(\w+):\s*\[([^\]]+)\]/);
+        if (match) {
+          const [, name, fieldsStr] = match;
+          annotations.sortFields[name] = fieldsStr.split(",").map((s: string) => s.trim());
+        }
+      });
+    }
+  }
+
+  return annotations;
+}
+
 async function generateValidations(model: any) {
   const lines: string[] = [];
 
@@ -71,6 +114,67 @@ async function generateValidations(model: any) {
   });
 
   return lines.map(line => `\t\t${line}`).join("\n");
+}
+
+async function generateSearchFields(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.searchFields || annotations.searchFields.length === 0) {
+    return "";
+  }
+
+  const fields = annotations.searchFields
+    .map((sf: any) => `{ field: "${sf.field}", weight: ${sf.weight} }`)
+    .join(", ");
+
+  return `\tprotected getSearchFields(): (string | { field: string; weight: number })[] {
+\t\treturn [${fields}];
+\t}
+`;
+}
+
+async function generateTransforms(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.transforms || Object.keys(annotations.transforms).length === 0) {
+    return "";
+  }
+
+  const entries = Object.entries(annotations.transforms)
+    .map(([name, sql]: [string, any]) => `\t\t${name}: "${sql}"`)
+    .join(",\n");
+
+  return `\tprotected getTransforms(): Record<string, string> {
+\t\treturn {
+${entries}
+\t\t};
+\t}
+`;
+}
+
+async function generateTransformSort(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.sortFields || Object.keys(annotations.sortFields).length === 0) {
+    return "";
+  }
+
+  const cases = Object.entries(annotations.sortFields)
+    .map(([name, fields]: [string, any]) => {
+      const orderByFields = fields
+        .map((field: string) => `{ ${field}: order || "asc" }`)
+        .join(", ");
+      return `\t\tif (sort === "${name}") {
+\t\t\treturn [${orderByFields}];
+\t\t}`;
+    })
+    .join("\n");
+
+  return `\tprotected transformSort(sort?: string, order?: "asc" | "desc"): any {
+${cases}
+\t\treturn super.transformSort(sort, order);
+\t}
+`;
 }
 
 function getTimestampComment(): string {
@@ -110,6 +214,11 @@ async function generateServiceFiles(models: any, relationships: any) {
     const kebabName = toKebabCase(model.name);
     const serviceFile = path.resolve(directory, `${kebabName}.service.ts`);
     const validations = await generateValidations(model);
+    const transforms = await generateTransforms(model);
+    const searchFields = await generateSearchFields(model);
+    const transformSort = await generateTransformSort(model);
+
+    const methods = [transforms, transformSort, searchFields].filter(m => m).join("\n");
 
     const newBody = `import { ${model.name} } from "@prisma/client";
 import { BaseService } from "./_base.service";
@@ -126,7 +235,8 @@ export class ${model.name}Service extends BaseService<${model.name}> {
 \tprotected async validate(entity: ${model.name}Attributes): Promise<void> {
 ${validations}
 \t}
-}`.trim();
+
+${methods}}`.trim();
 
     if (fs.existsSync(serviceFile)) {
       const existing = fs.readFileSync(serviceFile, "utf-8");

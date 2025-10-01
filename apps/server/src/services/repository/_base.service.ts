@@ -277,11 +277,44 @@ export class BaseService<T> {
     const columns = await this.getColumns();
     const scope = await this.getScope(columns);
 
-    const finalWhere = { AND: [where ?? {}, scope ?? {}] };
+    let finalWhere = { AND: [where ?? {}, scope ?? {}] };
+
+    // Handle computed field search
+    if (params?.search && searchFields) {
+      const transforms = this.getTransforms();
+      const computedFields = searchFields.filter((sf) => {
+        const fieldName = typeof sf === "string" ? sf : sf.field;
+        return transforms[fieldName];
+      });
+
+      if (computedFields.length > 0) {
+        const computedSearchConditions = computedFields.map((sf) => {
+          const fieldName = typeof sf === "string" ? sf : sf.field;
+          const sql = transforms[fieldName];
+          return Prisma.sql`${Prisma.raw(sql)} ILIKE ${`%${params.search}%`}`;
+        });
+
+        // Combine regular field search (from where.OR) with computed field search
+        const existingOr = where?.OR || [];
+        finalWhere = {
+          AND: [
+            {
+              OR: [
+                ...existingOr,
+                ...computedSearchConditions.map(sql => ({ AND: [Prisma.raw(`(${sql})`)] })),
+              ],
+            },
+            scope ?? {},
+          ],
+        };
+      }
+    }
+
+    const transformedOrderBy = this.transformSort(params?.sort, params?.order) ?? orderBy;
 
     const query: any = {
       where: finalWhere,
-      orderBy,
+      orderBy: transformedOrderBy,
       take,
       skip,
     };
@@ -333,5 +366,15 @@ export class BaseService<T> {
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {
     return [];
+  }
+
+  protected transformSort(sort?: string, order?: "asc" | "desc"): any {
+    if (!sort)
+      return undefined;
+    return { [sort]: order || "asc" };
+  }
+
+  protected getTransforms(): Record<string, string> {
+    return {};
   }
 }

@@ -389,6 +389,9 @@ model Quote {
 
   @@unique([year, number])
   @@map("quote_headers")
+  /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
+  /// @searchFields(year: 2, number: 3, quoteNumber: 5)
+  /// @sortFields(quoteNumber: [year, number])
 }
 
 enum QuoteStatus {
