@@ -9,6 +9,7 @@ interface PipelineHeaderProps {
   setRsmFilter: (filter: string) => void;
   setRsmFilterDisplay: (display: string) => void;
   availableRsms: string[];
+  rsmDisplayNames?: Map<string, string>;
   journeyStatusFilter: string;
   setJourneyStatusFilter: (status: string) => void;
   employee: any;
@@ -25,6 +26,7 @@ export const PipelineHeader = ({
   setRsmFilter, 
   setRsmFilterDisplay, 
   availableRsms, 
+  rsmDisplayNames,
   journeyStatusFilter,
   setJourneyStatusFilter,
   employee, 
@@ -44,15 +46,30 @@ export const PipelineHeader = ({
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-text-muted">RSM</label>
         <Select
-          value={rsmFilterDisplay}
+          value={(() => {
+            // Convert display value back to actual value for Select component
+            if (rsmFilterDisplay === 'my-journeys' || rsmFilterDisplay === "") return rsmFilterDisplay;
+            // Find the initials that match the display name
+            if (rsmDisplayNames) {
+              for (const [initials, displayName] of rsmDisplayNames) {
+                if (displayName === rsmFilterDisplay) return initials;
+              }
+            }
+            return rsmFilterDisplay; // fallback
+          })()}
           onChange={(e) => {
             if (e.target.value === 'my-journeys') {
               const userInitials = employee?.number;
               setRsmFilter(userInitials || "");
               setRsmFilterDisplay('my-journeys');
+            } else if (e.target.value === "") {
+              setRsmFilter("");
+              setRsmFilterDisplay("");
             } else {
-              setRsmFilter(e.target.value);
-              setRsmFilterDisplay(e.target.value);
+              // e.target.value contains the initials (the value)
+              const initials = e.target.value;
+              setRsmFilter(initials);
+              setRsmFilterDisplay(rsmDisplayNames?.get(initials) || initials);
             }
           }}
           options={(() => {
@@ -60,7 +77,10 @@ export const PipelineHeader = ({
               { value: "", label: "All" },
               { value: "my-journeys", label: "Me    " }
             ];
-            const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ value: rsm, label: rsm + " " }));
+            const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ 
+              value: rsm, 
+              label: rsmDisplayNames?.get(rsm) || rsm 
+            }));
             return [...baseOptions, ...rsmOptions];
           })()}
           className="w-48"
