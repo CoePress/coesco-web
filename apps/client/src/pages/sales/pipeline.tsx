@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
 import { ImportExcelModal } from "@/components/modals/import-excel-modal";
+import { ExportExcelModal } from "@/components/modals/export-excel-modal";
 import { KanbanView } from "./journeys/KanbanView";
 import { ListView } from "./journeys/ListView";
 import { ProjectionsView } from "./journeys/ProjectionsView";
@@ -35,11 +36,14 @@ const Pipeline = () => {
   const toggleJourneyModal = () => setIsJourneyModalOpen(prev => !prev);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const toggleImportModal = () => setIsImportModalOpen(prev => !prev);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const toggleExportModal = () => setIsExportModalOpen(prev => !prev);
   const navigate = useNavigate();
 
   const { employee } = useAuth();
   const { put, get, delete: del } = useApi();
   const rsmApi = useApi(); // Separate API instance for RSM fetching
+  const employeeApi = useApi(); // API instance for employee data fetching
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
 
@@ -53,7 +57,7 @@ const Pipeline = () => {
           sort: 'CreateDT', 
           order: 'desc', 
           limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
         }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
@@ -188,6 +192,7 @@ const Pipeline = () => {
       Dealer_Name: raw.Dealer_Name,
       Equipment_Type: raw.Equipment_Type,
       Lead_Source: raw.Lead_Source,
+      Next_Steps: raw.Next_Steps,
     };
   };
 
@@ -201,7 +206,7 @@ const Pipeline = () => {
           sort: 'CreateDT', 
           order: 'desc', 
           limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
         });
         
         if (!cancelled && raw !== null) {
@@ -223,6 +228,37 @@ const Pipeline = () => {
         const rsmArray = rsmData.data ? rsmData.data : (Array.isArray(rsmData) ? rsmData : []);
         const rsmValues = rsmArray.map((item: any) => item.Description).filter(Boolean);
         setAvailableRsms(rsmValues);
+        
+        // Fetch full names for RSMs
+        const displayNamesMap = new Map<string, string>();
+        await Promise.all(
+          rsmValues.map(async (initials: string) => {
+            try {
+              const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
+                filterField: 'EmpInitials',
+                filterValue: initials,
+                limit: 1,
+                fields: 'EmpFirstName,EmpMiddleInt,EmpLastName'
+              });
+              
+              if (employeeData?.[0]) {
+                const emp = employeeData[0];
+                const fullName = [
+                  emp.EmpFirstName,
+                  emp.EmpMiddleInt,
+                  emp.EmpLastName
+                ].filter(Boolean).join(' ');
+                displayNamesMap.set(initials, `${fullName} (${initials})`);
+              } else {
+                displayNamesMap.set(initials, initials);
+              }
+            } catch (error) {
+              console.error(`Error fetching employee data for ${initials}:`, error);
+              displayNamesMap.set(initials, initials);
+            }
+          })
+        );
+        setRsmDisplayNames(displayNamesMap);
       }
     })();
     return () => { cancelled = true; };
@@ -278,6 +314,7 @@ const Pipeline = () => {
   const [rsmFilter, setRsmFilter] = useState<string>(() => getFromLocalStorage('rsmFilter', ''));
   const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage('rsmFilterDisplay', ''));
   const [availableRsms, setAvailableRsms] = useState<string[]>([]);
+  const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
   const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
@@ -648,7 +685,7 @@ const Pipeline = () => {
   const pageDescription = `${filteredJourneys.length} Journeys`;
 
 
-  const exportToExcel = useCallback(() => {
+  const exportToExcel = useCallback(async (options: { includePrimaryContactOnly: boolean }) => {
     const headers = [
       'Quote Number',
       'CreateDate', 
@@ -661,11 +698,116 @@ const Pipeline = () => {
       'Dealer',
       'Customer',
       'Equipment',
-      'Lead Source'
+      'Lead Source',
+      'Projected Value',
+      'Journey Steps',
+      'Contact Name',
+      'Contact Email'
     ];
+
+    // Get unique RSM initials from journeys
+    const uniqueRsmInitials = [...new Set(
+      filteredJourneys
+        .map(journey => journey.RSM)
+        .filter(rsm => rsm && rsm.trim())
+    )];
+
+    console.log('Unique RSM initials found:', uniqueRsmInitials);
+
+    // Fetch full employee data for each RSM
+    const rsmFullNames = new Map<string, string>();
+    
+    await Promise.all(
+      uniqueRsmInitials.map(async (initials) => {
+        try {
+          console.log(`Fetching employee data for initials: ${initials}`);
+          const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
+            filterField: 'EmpInitials',
+            filterValue: initials,
+            limit: 1,
+            fields: 'EmpFirstName,EmpMiddleInt,EmpLastName'
+          });
+          
+          console.log(`Employee data for ${initials}:`, employeeData);
+          
+          if (employeeData?.[0]) {
+            const emp = employeeData[0];
+            const fullName = [
+              emp.EmpFirstName,
+              emp.EmpMiddleInt,
+              emp.EmpLastName
+            ].filter(Boolean).join(' ');
+            console.log(`Full name for ${initials}: "${fullName}"`);
+            rsmFullNames.set(initials, fullName || initials);
+          } else {
+            console.log(`No employee data found for ${initials}, using initials`);
+            rsmFullNames.set(initials, initials);
+          }
+        } catch (error) {
+          console.error(`Error fetching employee data for ${initials}:`, error);
+          rsmFullNames.set(initials, initials);
+        }
+      })
+    );
+
+    console.log('Final RSM full names map:', rsmFullNames);
+
+    // Fetch contact data for each journey
+    const journeyContacts = new Map<string, { Contact_Name: string; Contact_Email: string }>();
+    console.log('Fetching contact data for journeys...');
+    
+    await Promise.all(
+      filteredJourneys.map(async (journey) => {
+        try {
+          console.log(`Fetching contacts for journey ID: ${journey.id}`);
+          const contactData = await employeeApi.get('/legacy/base/Journey_Contact/filter/custom', {
+            filterField: 'Jrn_ID',
+            filterValue: journey.id,
+            fields: 'Contact_Name,Contact_Email,IsPrimary'
+          });
+          
+          console.log(`Contact data for journey ${journey.id}:`, contactData);
+          
+          if (contactData && Array.isArray(contactData) && contactData.length > 0) {
+            let selectedContact;
+            
+            if (options.includePrimaryContactOnly) {
+              // Find primary contact
+              selectedContact = contactData.find(contact => contact.IsPrimary === true || contact.IsPrimary === 'true' || contact.IsPrimary === 1);
+              if (!selectedContact) {
+                // If no primary contact found, use the first contact
+                selectedContact = contactData[0];
+              }
+            } else {
+              // Use the first contact
+              selectedContact = contactData[0];
+            }
+            
+            if (selectedContact) {
+              journeyContacts.set(journey.id.toString(), {
+                Contact_Name: selectedContact.Contact_Name || '',
+                Contact_Email: selectedContact.Contact_Email || ''
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching contact data for journey ${journey.id}:`, error);
+          // Set empty contact data on error
+          journeyContacts.set(journey.id.toString(), {
+            Contact_Name: '',
+            Contact_Email: ''
+          });
+        }
+      })
+    );
+
+    console.log('Final journey contacts map:', journeyContacts);
 
     const rows = filteredJourneys.map(journey => {
       const customer = customersById.get(String(journey.customerId));
+      const rsmFullName = journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '';
+      const contact = journeyContacts.get(journey.id.toString()) || { Contact_Name: '', Contact_Email: '' };
+      
       return [
         journey.Quote_Number || '',
         journey.CreateDT ? new Date(journey.CreateDT) : '',
@@ -673,12 +815,16 @@ const Pipeline = () => {
         journey.Chance_To_Secure_order || '',
         journey.Expected_Decision_Date ? new Date(journey.Expected_Decision_Date) : '',
         journey.Journey_Stage || stageLabel(journey.stage),
-        journey.RSM || '',
+        rsmFullName,
         journey.Industry || '',
         journey.Dealer || journey.Dealer_Name || journey.dealer || '',
         customer?.name || journey.companyName || journey.Target_Account || '',
         journey.Equipment_Type || '',
-        journey.Lead_Source || ''
+        journey.Lead_Source || '',
+        Number(journey.Journey_Value || journey.value || 0),
+        journey.Next_Steps || '',
+        contact.Contact_Name,
+        contact.Contact_Email
       ];
     });
 
@@ -726,6 +872,16 @@ const Pipeline = () => {
             ws[dataCellRef].t = 'n'; // Set cell type to number
           }
         }
+        
+        // Format Projected Value as currency
+        if (headerName === 'Projected Value' && ws[dataCellRef].v !== undefined) {
+          const currencyValue = Number(ws[dataCellRef].v);
+          if (!isNaN(currencyValue)) {
+            ws[dataCellRef].v = currencyValue;
+            ws[dataCellRef].t = 'n'; // Set cell type to number
+            ws[dataCellRef].z = '$#,##0.00'; // Currency format
+          }
+        }
       }
     }
     
@@ -766,7 +922,7 @@ const Pipeline = () => {
       <Button
         variant="secondary-outline"
         size="sm"
-        onClick={exportToExcel}
+        onClick={toggleExportModal}
       >
         <Download size={16} />
         Export
@@ -823,6 +979,7 @@ const Pipeline = () => {
             setRsmFilter={setRsmFilter}
             setRsmFilterDisplay={setRsmFilterDisplay}
             availableRsms={availableRsms}
+            rsmDisplayNames={rsmDisplayNames}
             journeyStatusFilter={journeyStatusFilter}
             setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
@@ -855,6 +1012,7 @@ const Pipeline = () => {
             setRsmFilter={setRsmFilter}
             setRsmFilterDisplay={setRsmFilterDisplay}
             availableRsms={availableRsms}
+            rsmDisplayNames={rsmDisplayNames}
             journeyStatusFilter={journeyStatusFilter}
             setJourneyStatusFilter={setJourneyStatusFilter}
             employee={employee}
@@ -930,7 +1088,7 @@ const Pipeline = () => {
                   sort: 'CreateDT', 
                   order: 'desc', 
                   limit: 100,
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
                 })
               ]);
               
@@ -989,6 +1147,13 @@ const Pipeline = () => {
           filters={filters}
           onApply={(newFilters) => { setFilters(newFilters); setIsFilterModalOpen(false); }}
           onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
+      {isExportModalOpen && (
+        <ExportExcelModal
+          isOpen={isExportModalOpen}
+          onClose={toggleExportModal}
+          onExport={exportToExcel}
         />
       )}
     </div>

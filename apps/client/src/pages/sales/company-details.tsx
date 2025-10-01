@@ -124,8 +124,10 @@ const CompanyDetails = () => {
   const [editZipLookupResults, setEditZipLookupResults] = useState<{city: string[], stateProv: string[], country: string[]}>({city: [], stateProv: [], country: []});
   const [isEditLookingUpZip, setIsEditLookingUpZip] = useState(false);
 
+  const [coeRsmEmployee, setCoeRsmEmployee] = useState<{name: string, empNum: number} | null>(null);
   const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
-  const [availableRsmsList, setAvailableRsmsList] = useState<string[]>([]);
+  const [isCustomRsmInput, setIsCustomRsmInput] = useState(false);
+  const employeeApi = useApi();
   const rsmApi = useApi();
 
   const [companyAddresses, setCompanyAddresses] = useState<any[]>([]);
@@ -322,23 +324,54 @@ const CompanyDetails = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (!company?.coeRSM) {
+        setCoeRsmEmployee(null);
+        return;
+      }
+
+      try {
+        const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
+          filterField: 'EmpNum',
+          filterValue: company.coeRSM,
+          limit: 1
+        });
+        
+        if (!cancelled && Array.isArray(employeeData) && employeeData.length > 0) {
+          const employee = employeeData[0];
+          setCoeRsmEmployee({
+            name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || `Employee ${employee.EmpNum}`,
+            empNum: employee.EmpNum
+          });
+        } else {
+          setCoeRsmEmployee(null);
+        }
+      } catch (error) {
+        console.error('Error fetching employee data:', error);
+        setCoeRsmEmployee(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [company?.coeRSM]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       try {
         const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
           filterField: 'Category',
-          filterValue: 'RSM'
+          filterValue: 'RSM',
+          fields: 'Description'
         });
         
         if (!cancelled && Array.isArray(rsmData) && rsmData.length > 0) {
-          
           const rsmInitials = rsmData.map(item => item.Description).filter(Boolean);
           
           if (rsmInitials.length > 0) {
-            setAvailableRsmsList(rsmInitials);
-            
             const employeePromises = rsmInitials.map(initials => 
               rsmApi.get('/legacy/std/Employee/filter/custom', {
                 filterField: 'EmpInitials',
-                filterValue: initials
+                filterValue: initials,
+                fields: 'EmpFirstName,EmpLastName,EmpNum'
               })
             );
             
@@ -362,6 +395,7 @@ const CompanyDetails = () => {
           }
         }
       } catch (error) {
+        console.error('Error fetching RSM data:', error);
         setAvailableRsms([]);
       }
     })();
@@ -799,6 +833,7 @@ const CompanyDetails = () => {
 
   const handleStartEditing = () => {
     setIsEditingAll(true);
+    setIsCustomRsmInput(false);
     setTempValues({
       active: company.active,
       isDealer: company.isDealer,
@@ -833,6 +868,7 @@ const CompanyDetails = () => {
       if (result) {
         setCompany({ ...company, ...tempValues });
         setIsEditingAll(false);
+        setIsCustomRsmInput(false);
         setTempValues({});
       }
     } catch (error) {
@@ -841,6 +877,7 @@ const CompanyDetails = () => {
 
   const handleCancelAll = () => {
     setIsEditingAll(false);
+    setIsCustomRsmInput(false);
     setTempValues({});
   };
 
@@ -1593,26 +1630,58 @@ const CompanyDetails = () => {
             <div className="flex flex-col gap-1">
               <span className="text-text-muted">COE RSM</span>
               {isEditingAll ? (
-                <select
-                  value={tempValues.coeRSM || ''}
-                  onChange={(e) => handleTempValueChange('coeRSM', e.target.value)}
-                  className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
-                >
-                  <option value="">Select RSM...</option>
-                  {availableRsms.map(rsm => (
-                    <option key={rsm.empNum} value={rsm.empNum}>
-                      {rsm.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomRsmInput(false)}
+                      className={`px-3 py-1 text-xs rounded ${
+                        !isCustomRsmInput 
+                          ? 'bg-primary text-white' 
+                          : 'bg-surface text-text border border-border'
+                      }`}
+                    >
+                      Select RSM
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomRsmInput(true)}
+                      className={`px-3 py-1 text-xs rounded ${
+                        isCustomRsmInput 
+                          ? 'bg-primary text-white' 
+                          : 'bg-surface text-text border border-border'
+                      }`}
+                    >
+                      Custom Employee #
+                    </button>
+                  </div>
+                  {isCustomRsmInput ? (
+                    <input
+                      type="number"
+                      value={tempValues.coeRSM || ''}
+                      onChange={(e) => handleTempValueChange('coeRSM', e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                      placeholder="Enter Employee Number"
+                    />
+                  ) : (
+                    <select
+                      value={tempValues.coeRSM || ''}
+                      onChange={(e) => handleTempValueChange('coeRSM', e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
+                    >
+                      <option value="">Select RSM...</option>
+                      {availableRsms.map(rsm => (
+                        <option key={rsm.empNum} value={rsm.empNum}>
+                          {rsm.name} (#{rsm.empNum})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               ) : (
                 <input
                   type="text"
-                  value={(() => {
-                    if (!company.coeRSM) return "-";
-                    const rsm = availableRsms.find(r => r.empNum === parseInt(company.coeRSM));
-                    return rsm ? rsm.name : company.coeRSM;
-                  })()}
+                  value={coeRsmEmployee ? coeRsmEmployee.name : (company.coeRSM ? company.coeRSM : "-")}
                   readOnly
                   className="w-full bg-foreground text-text focus:outline-none px-2 py-1 placeholder:text-text-muted/50"
                 />
@@ -3170,7 +3239,7 @@ const CompanyDetails = () => {
               });
             }
           }}
-          availableRsms={availableRsmsList}
+          availableRsms={availableRsms.map(rsm => ({ value: rsm.initials, label: `${rsm.name} (${rsm.initials})` }))}
           companyId={id}
           companyName={company?.name}
         />
@@ -3356,7 +3425,7 @@ const CreateJourneyModal = ({
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newJourney?: any) => void;
-  availableRsms: string[];
+  availableRsms: { value: string; label: string }[];
   companyId?: string;
   companyName?: string;
 }) => {
@@ -3407,6 +3476,7 @@ const CreateJourneyModal = ({
       if (result) {
         const newJourney = {
           ...payload,
+          ...result,
           CreateDT: new Date().toISOString(),
           Action_Date: actionDate || new Date().toISOString(),
           Journey_Value: 0,
@@ -3498,10 +3568,7 @@ const CreateJourneyModal = ({
               required
               value={rsm}
               onChange={(e) => setRsm(e.target.value)}
-              options={availableRsms.filter(rsm => rsm && rsm.trim()).map(rsm => ({ 
-                value: rsm, 
-                label: rsm 
-              }))}
+              options={availableRsms.filter(rsm => rsm.value && rsm.value.trim())}
             />
           </div>
 
