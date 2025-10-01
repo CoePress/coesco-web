@@ -2,5 +2,4 @@ dist
 prisma/generated
 logs
 node_modules
-
 .env

@@ -199,10 +199,22 @@ export const ListView = ({
       header: "Company",
       render: (value: string, row: any) => {
         const customer = customersById.get(String(value));
+        let companyDisplay = "";
+        
+        if (value && value !== "0" && customer?.name) {
+          companyDisplay = customer.name;
+        } else if (row.companyName) {
+          companyDisplay = row.companyName;
+        } else if (row.target_account) {
+          companyDisplay = row.target_account;
+        } else {
+          companyDisplay = "NA";
+        }
+        
         return (
           <div>
             <div className="text-sm text-neutral-400">
-              {customer?.name ?? row.companyName ?? ""}
+              {companyDisplay}
             </div>
             <div className="text-xs text-neutral-400">{row.contact}</div>
           </div>
