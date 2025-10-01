@@ -1,9 +1,9 @@
 /* eslint-disable node/prefer-global/buffer */
-import type { QuoteHeader, QuoteItem, QuoteTerms } from "@prisma/client";
+import type { Quote, QuoteItem, QuoteTerms } from "@prisma/client";
 
 import type { IQueryParams } from "@/types";
 
-import { quoteDetailsService, quoteHeaderService, quoteItemService, quoteTermsService } from "@/services/repository";
+import { quoteRevisionService, quoteService, quoteItemService, quoteTermsService } from "@/services/repository";
 
 export class QuotingService {
   async createQuote(data: any) {
@@ -12,7 +12,7 @@ export class QuotingService {
 
     const quoteNumber = await this.getNextQuoteNumber(isDraft);
 
-    const headerResult = await quoteHeaderService.create({
+    const quoteResult = await quoteService.create({
       ...data,
       year: currentYear,
       number: quoteNumber,
@@ -21,72 +21,18 @@ export class QuotingService {
       legacy: data.legacy || {},
     });
 
-    if (!headerResult.success) {
-      throw new Error("Failed to create quote header");
+    if (!quoteResult.success) {
+      throw new Error("Failed to create quote");
     }
 
-    const detailsResult = await quoteDetailsService.create({
+    const revisionResult = await quoteRevisionService.create({
       ...data,
-      quoteHeaderId: headerResult.data.id,
+      quoteId: quoteResult.data.id,
       revision: "A",
       status: data.status || "DRAFT",
     });
 
-    if (!detailsResult.success) {
-      throw new Error("Failed to create quote details");
-    }
-
-    if (data.items?.length) {
-      await Promise.all(
-        data.items.map((item: any) =>
-          quoteItemService.create({
-            ...item,
-            quoteDetailsId: detailsResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    if (data.terms?.length) {
-      await Promise.all(
-        data.terms.map((term: any) =>
-          quoteTermsService.create({
-            ...term,
-            quoteDetailsId: detailsResult.data.id,
-          }),
-        ),
-      );
-    }
-
-    return {
-      success: true,
-      data: {
-        ...headerResult.data,
-        latestRevision: detailsResult.data,
-        revision: detailsResult.data.revision,
-        status: detailsResult.data.status,
-        totalAmount: detailsResult.data.totalAmount || 0,
-      },
-    };
-  }
-
-  async createQuoteRevision(quoteHeaderId: string, data: any) {
-    const headerResult = await quoteHeaderService.getById(quoteHeaderId);
-
-    if (!headerResult.success || !headerResult.data) {
-      throw new Error("Quote header not found");
-    }
-
-    const nextRevision = await this.getNextQuoteRevision(headerResult.data.number, Number.parseInt(headerResult.data.year));
-
-    const detailsResult = await quoteDetailsService.create({
-      ...data,
-      quoteHeaderId,
-      revision: nextRevision,
-      status: data.status || "DRAFT",
-    });
-
-    if (!detailsResult.success) {
+    if (!revisionResult.success) {
       throw new Error("Failed to create quote revision");
     }
 
@@ -95,7 +41,7 @@ export class QuotingService {
         data.items.map((item: any) =>
           quoteItemService.create({
             ...item,
-            quoteDetailsId: detailsResult.data.id,
+            quoteRevisionId: revisionResult.data.id,
           }),
         ),
       );
@@ -106,23 +52,77 @@ export class QuotingService {
         data.terms.map((term: any) =>
           quoteTermsService.create({
             ...term,
-            quoteDetailsId: detailsResult.data.id,
+            quoteRevisionId: revisionResult.data.id,
           }),
         ),
       );
     }
 
-    return detailsResult.data;
+    return {
+      success: true,
+      data: {
+        ...quoteResult.data,
+        latestRevision: revisionResult.data,
+        revision: revisionResult.data.revision,
+        status: revisionResult.data.status,
+        totalAmount: revisionResult.data.totalAmount || 0,
+      },
+    };
   }
 
-  async getAllQuotesWithLatestRevision(params?: IQueryParams<QuoteHeader>) {
-    const headersResult = await quoteHeaderService.getAll(params);
+  async createQuoteRevision(quoteId: string, data: any) {
+    const quoteResult = await quoteService.getById(quoteId);
 
-    if (!headersResult.success || !headersResult.data?.length) {
+    if (!quoteResult.success || !quoteResult.data) {
+      throw new Error("Quote not found");
+    }
+
+    const nextRevision = await this.getNextQuoteRevision(quoteResult.data.number, Number.parseInt(quoteResult.data.year));
+
+    const revisionResult = await quoteRevisionService.create({
+      ...data,
+      quoteId,
+      revision: nextRevision,
+      status: data.status || "DRAFT",
+    });
+
+    if (!revisionResult.success) {
+      throw new Error("Failed to create quote revision");
+    }
+
+    if (data.items?.length) {
+      await Promise.all(
+        data.items.map((item: any) =>
+          quoteItemService.create({
+            ...item,
+            quoteRevisionId: revisionResult.data.id,
+          }),
+        ),
+      );
+    }
+
+    if (data.terms?.length) {
+      await Promise.all(
+        data.terms.map((term: any) =>
+          quoteTermsService.create({
+            ...term,
+            quoteRevisionId: revisionResult.data.id,
+          }),
+        ),
+      );
+    }
+
+    return revisionResult.data;
+  }
+
+  async getAllQuotesWithLatestRevision(params?: IQueryParams<Quote>) {
+    const quotesResult = await quoteService.getAll(params);
+
+    if (!quotesResult.success || !quotesResult.data?.length) {
       return {
         success: true,
         data: [],
-        meta: headersResult.meta || {
+        meta: quotesResult.meta || {
           page: 1,
           limit: 25,
           total: 0,
@@ -132,9 +132,9 @@ export class QuotingService {
     }
 
     const quotesWithRevisions = await Promise.all(
-      headersResult.data.map(async (header: QuoteHeader) => {
-        const latestRevisionResult = await quoteDetailsService.getAll({
-          filter: { quoteHeaderId: header.id },
+      quotesResult.data.map(async (quote: Quote) => {
+        const latestRevisionResult = await quoteRevisionService.getAll({
+          filter: { quoteId: quote.id },
           sort: "revision",
           order: "desc",
           limit: 1,
@@ -143,7 +143,7 @@ export class QuotingService {
         const latestRevision = latestRevisionResult.data?.[0] || null;
 
         return {
-          ...header,
+          ...quote,
           revision: latestRevision?.revision || "A",
           revisionStatus: latestRevision?.status || "DRAFT",
           totalAmount: latestRevision?.totalAmount || 0,
@@ -155,20 +155,20 @@ export class QuotingService {
     return {
       success: true,
       data: quotesWithRevisions,
-      meta: headersResult.meta,
+      meta: quotesResult.meta,
     };
   }
 
   async getQuoteWithDetails(id: string) {
-    const headerResult = await quoteHeaderService.getById(id);
+    const quoteResult = await quoteService.getById(id);
 
-    if (!headerResult.success || !headerResult.data) {
+    if (!quoteResult.success || !quoteResult.data) {
       throw new Error("Quote not found");
     }
 
     // Get the latest revision
-    const latestRevisionResult = await quoteDetailsService.getAll({
-      filter: { quoteHeaderId: id },
+    const latestRevisionResult = await quoteRevisionService.getAll({
+      filter: { quoteId: id },
       sort: "revision",
       order: "desc",
       limit: 1,
@@ -182,14 +182,14 @@ export class QuotingService {
 
     // Get items and terms for the latest revision
     const [itemsResult, termsResult] = await Promise.all([
-      quoteItemService.getAll({ filter: { quoteDetailsId: latestRevision.id } }),
-      quoteTermsService.getAll({ filter: { quoteDetailsId: latestRevision.id } }),
+      quoteItemService.getAll({ filter: { quoteRevisionId: latestRevision.id } }),
+      quoteTermsService.getAll({ filter: { quoteRevisionId: latestRevision.id } }),
     ]);
 
     return {
       success: true,
       data: {
-        ...headerResult.data,
+        ...quoteResult.data,
         latestRevision: {
           ...latestRevision,
           items: itemsResult.data || [],
@@ -212,14 +212,14 @@ export class QuotingService {
 
     const latestRevision = quoteResult.data.latestRevision;
 
-    // Update quote details
-    const detailsResult = await quoteDetailsService.update(latestRevision.id, data);
+    // Update quote revision
+    const revisionResult = await quoteRevisionService.update(latestRevision.id, data);
 
     // Update items if provided
     if (data.items) {
       // Delete existing items
       const existingItems = await quoteItemService.getAll({
-        filter: { quoteDetailsId: latestRevision.id },
+        filter: { quoteRevisionId: latestRevision.id },
       });
 
       if (existingItems.success && existingItems.data) {
@@ -234,7 +234,7 @@ export class QuotingService {
           data.items.map((item: any) =>
             quoteItemService.create({
               ...item,
-              quoteDetailsId: latestRevision.id,
+              quoteRevisionId: latestRevision.id,
             }),
           ),
         );
@@ -245,7 +245,7 @@ export class QuotingService {
     if (data.terms) {
       // Delete existing terms
       const existingTerms = await quoteTermsService.getAll({
-        filter: { quoteDetailsId: latestRevision.id },
+        filter: { quoteRevisionId: latestRevision.id },
       });
 
       if (existingTerms.success && existingTerms.data) {
@@ -260,24 +260,24 @@ export class QuotingService {
           data.terms.map((term: any) =>
             quoteTermsService.create({
               ...term,
-              quoteDetailsId: latestRevision.id,
+              quoteRevisionId: latestRevision.id,
             }),
           ),
         );
       }
     }
 
-    return detailsResult;
+    return revisionResult;
   }
 
   async deleteQuote(id: string) {
-    const result = await quoteHeaderService.delete(id);
+    const result = await quoteService.delete(id);
     return result;
   }
 
   async getQuoteRevisions(id: string) {
-    const revisionsResult = await quoteDetailsService.getAll({
-      filter: { quoteHeaderId: id },
+    const revisionsResult = await quoteRevisionService.getAll({
+      filter: { quoteId: id },
       sort: "revision",
       order: "asc",
     });
@@ -285,34 +285,34 @@ export class QuotingService {
     return revisionsResult;
   }
 
-  async getQuoteRevision(quoteHeaderId: string, revisionId: string) {
-    const revisionResult = await quoteDetailsService.getById(revisionId);
+  async getQuoteRevision(quoteId: string, revisionId: string) {
+    const revisionResult = await quoteRevisionService.getById(revisionId);
 
     if (!revisionResult.success || !revisionResult.data) {
       throw new Error("Quote revision not found");
     }
 
     // Verify the revision belongs to the quote
-    if (revisionResult.data.quoteHeaderId !== quoteHeaderId) {
+    if (revisionResult.data.quoteId !== quoteId) {
       throw new Error("Quote revision not found");
     }
 
-    // Get header info
-    const headerResult = await quoteHeaderService.getById(quoteHeaderId);
-    if (!headerResult.success || !headerResult.data) {
+    // Get quote info
+    const quoteResult = await quoteService.getById(quoteId);
+    if (!quoteResult.success || !quoteResult.data) {
       throw new Error("Quote not found");
     }
 
     // Get items and terms for this revision
     const [itemsResult, termsResult] = await Promise.all([
-      quoteItemService.getAll({ filter: { quoteDetailsId: revisionId } }),
-      quoteTermsService.getAll({ filter: { quoteDetailsId: revisionId } }),
+      quoteItemService.getAll({ filter: { quoteRevisionId: revisionId } }),
+      quoteTermsService.getAll({ filter: { quoteRevisionId: revisionId } }),
     ]);
 
     return {
       success: true,
       data: {
-        ...headerResult.data,
+        ...quoteResult.data,
         latestRevision: {
           ...revisionResult.data,
           items: itemsResult.data || [],
@@ -331,7 +331,7 @@ export class QuotingService {
       throw new Error("Quote or latest revision not found");
     }
 
-    const result = await quoteDetailsService.update(quoteResult.data.latestRevision.id, {
+    const result = await quoteRevisionService.update(quoteResult.data.latestRevision.id, {
       status: "APPROVED",
     });
 
@@ -344,7 +344,7 @@ export class QuotingService {
       throw new Error("Quote or latest revision not found");
     }
 
-    const result = await quoteDetailsService.update(quoteResult.data.latestRevision.id, {
+    const result = await quoteRevisionService.update(quoteResult.data.latestRevision.id, {
       status: "ACCEPTED",
     });
 
@@ -357,7 +357,7 @@ export class QuotingService {
       throw new Error("Quote or latest revision not found");
     }
 
-    const result = await quoteDetailsService.update(quoteResult.data.latestRevision.id, {
+    const result = await quoteRevisionService.update(quoteResult.data.latestRevision.id, {
       status: "REJECTED",
     });
 
@@ -370,7 +370,7 @@ export class QuotingService {
       throw new Error("Quote or latest revision not found");
     }
 
-    const result = await quoteDetailsService.update(quoteResult.data.latestRevision.id, {
+    const result = await quoteRevisionService.update(quoteResult.data.latestRevision.id, {
       status: "SENT",
       sentById: data.sentById,
     });
@@ -390,7 +390,7 @@ export class QuotingService {
   async getNextQuoteNumber(isDraft: boolean = false): Promise<string> {
     const currentYear = new Date().getFullYear().toString();
 
-    const quotesResult = await quoteHeaderService.getAll({
+    const quotesResult = await quoteService.getAll({
       filter: {
         year: currentYear,
         number: {
@@ -423,7 +423,7 @@ export class QuotingService {
   async getNextQuoteRevision(quoteNumber: string, year?: number): Promise<string> {
     const currentYear = (year || new Date().getFullYear()).toString();
 
-    const headerResult = await quoteHeaderService.getAll({
+    const quoteResult = await quoteService.getAll({
       filter: {
         year: currentYear,
         number: quoteNumber,
@@ -431,15 +431,15 @@ export class QuotingService {
       limit: 1,
     });
 
-    if (!headerResult.success || !headerResult.data?.length) {
+    if (!quoteResult.success || !quoteResult.data?.length) {
       return "A";
     }
 
-    const quoteHeaderId = headerResult.data[0].id;
+    const quoteId = quoteResult.data[0].id;
 
-    const revisionsResult = await quoteDetailsService.getAll({
+    const revisionsResult = await quoteRevisionService.getAll({
       filter: {
-        quoteHeaderId,
+        quoteId,
       } as any,
       sort: "revision",
       order: "desc",
@@ -483,11 +483,11 @@ export class QuotingService {
   }
 
   async getQuoteMetrics() {
-    const headersResult = await quoteHeaderService.getAll({
+    const quotesResult = await quoteService.getAll({
       filter: { status: "OPEN" },
     });
 
-    if (!headersResult.success || !headersResult.data?.length) {
+    if (!quotesResult.success || !quotesResult.data?.length) {
       return {
         success: true,
         data: {
@@ -517,9 +517,9 @@ export class QuotingService {
     };
 
     await Promise.all(
-      headersResult.data.map(async (header: QuoteHeader) => {
-        const latestRevisionResult = await quoteDetailsService.getAll({
-          filter: { quoteHeaderId: header.id },
+      quotesResult.data.map(async (quote: Quote) => {
+        const latestRevisionResult = await quoteRevisionService.getAll({
+          filter: { quoteId: quote.id },
           sort: "revision",
           order: "desc",
           limit: 1,
@@ -528,7 +528,7 @@ export class QuotingService {
         const latestRevision = latestRevisionResult.data?.[0];
         if (latestRevision) {
           const itemsResult = await quoteItemService.getAll({
-            filter: { quoteDetailsId: latestRevision.id },
+            filter: { quoteRevisionId: latestRevision.id },
           });
 
           if (itemsResult.success && itemsResult.data) {
@@ -548,7 +548,7 @@ export class QuotingService {
       }),
     );
 
-    const totalCount = headersResult.data.length;
+    const totalCount = quotesResult.data.length;
     const averageValue = totalCount > 0 ? totalValue / totalCount : 0;
 
     return {

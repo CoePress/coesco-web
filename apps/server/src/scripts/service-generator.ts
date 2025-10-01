@@ -376,8 +376,27 @@ export type Update${model.name}Input = Partial<Create${model.name}Input>;
     console.log(`Generated type: ${model.name}`);
   }
 
+  // Generate auto-generated index
+  const autoGenIndexFile = path.resolve(srcDir, "_auto-generated.ts");
+  fs.writeFileSync(autoGenIndexFile, `// Auto-generated database types - DO NOT EDIT\n${modelExports.join("\n")}\n`);
+
+  // Update main index file to export from both auto-generated and custom
   const indexFile = path.resolve(srcDir, "index.ts");
-  fs.writeFileSync(indexFile, `// Auto-generated database types\n${modelExports.join("\n")}\n`);
+  const indexContent = `// Main types index
+// This file exports both auto-generated types and custom types
+
+// Auto-generated types from Prisma schema
+export * from './_auto-generated';
+
+// Custom static types (add your custom type exports below)
+export * from './custom';
+`;
+
+  // Only create index.ts if it doesn't exist, to avoid overwriting custom exports
+  if (!fs.existsSync(indexFile)) {
+    fs.writeFileSync(indexFile, indexContent);
+    console.log("Created main index file");
+  }
 }
 
 async function main() {

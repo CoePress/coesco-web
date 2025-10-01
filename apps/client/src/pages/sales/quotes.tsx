@@ -11,7 +11,7 @@ import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { format } from "date-fns";
-import { QuoteHeaderStatus, QuoteStatus } from "@coesco/types";
+import { QuoteStatus, QuoteRevisionStatus } from "@coesco/types";
 
 const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -211,9 +211,9 @@ const Quotes = () => {
     })
   }
 
-  const quoteRevisionStatuses = Object.keys(QuoteStatus)
+  const quoteRevisionStatuses = Object.keys(QuoteRevisionStatus)
   const quoteRevisionStatusOptions = quoteRevisionStatuses.map((status) => { return { value: status, label: status } })
-  const quoteStatuses = Object.keys(QuoteHeaderStatus)
+  const quoteStatuses = Object.keys(QuoteStatus)
   const quoteStatusOptions = quoteStatuses.map((status) =>{ return { value: status, label: status }})
 
   const filters: Filter[] = [

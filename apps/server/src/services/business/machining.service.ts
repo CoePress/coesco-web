@@ -1,6 +1,6 @@
 import type { Machine, Prisma } from "@prisma/client";
 
-import { MachineControllerType, MachineState, TimeScale } from "@prisma/client";
+import { MachineControllerType, MachineState } from "@prisma/client";
 import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
@@ -13,6 +13,7 @@ import { prisma } from "@/utils/prisma";
 
 import { cacheService, socketService } from "../";
 import { machineService, machineStatusService } from "../repository";
+import { TimeScale } from "@/types/enums";
 
 interface CachedMachineState {
   state: MachineState;
