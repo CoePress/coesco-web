@@ -1,7 +1,7 @@
 // Auto-generated from Prisma schema
-import { QuoteHeaderStatus } from './quote-header-status';
+import { QuoteStatus } from './quote-status';
 
-export interface QuoteHeader {
+export interface Quote {
   id?: string;
   journeyId?: string;
   year: string;
@@ -15,7 +15,7 @@ export interface QuoteHeader {
   dealerAddressId?: string;
   priority?: string;
   confidence?: number;
-  status?: QuoteHeaderStatus;
+  status?: QuoteStatus;
   createdAt?: Date | string;
   updatedAt: Date | string;
   deletedAt?: Date | string;
@@ -24,5 +24,5 @@ export interface QuoteHeader {
   legacy?: any;
 }
 
-export type CreateQuoteHeaderInput = Omit<QuoteHeader, "id" | "createdAt" | "updatedAt">;
-export type UpdateQuoteHeaderInput = Partial<CreateQuoteHeaderInput>;
+export type CreateQuoteInput = Omit<Quote, "id" | "createdAt" | "updatedAt">;
+export type UpdateQuoteInput = Partial<CreateQuoteInput>;

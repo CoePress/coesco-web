@@ -1,7 +1,7 @@
 // Auto-generated from Prisma schema
 export interface QuoteItem {
   id?: string;
-  quoteDetailsId: string;
+  quoteRevisionId: string;
   configurationId?: string;
   itemId?: string;
   model?: string;

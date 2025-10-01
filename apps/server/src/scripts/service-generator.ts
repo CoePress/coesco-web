@@ -38,7 +38,60 @@ export async function getModels() {
 
   const datamodel = fs.readFileSync(schemaPath, "utf-8");
   const dmmf = await getDMMF({ datamodel });
-  return dmmf.datamodel.models;
+
+  // Manually parse annotations from schema file
+  const models = dmmf.datamodel.models.map((model: any) => {
+    const annotations = extractAnnotationsFromSchema(datamodel, model.name);
+    return { ...model, customAnnotations: annotations };
+  });
+
+  return models;
+}
+
+function extractAnnotationsFromSchema(schemaContent: string, modelName: string) {
+  // Find the model start
+  const modelStartRegex = new RegExp(`model\\s+${modelName}\\s*\\{`, "m");
+  const startMatch = modelStartRegex.exec(schemaContent);
+
+  if (!startMatch)
+    return null;
+
+  const startIndex = startMatch.index;
+
+  // Find the model end by counting braces
+  let braceCount = 0;
+  let inModel = false;
+  let endIndex = startIndex;
+
+  for (let i = startIndex; i < schemaContent.length; i++) {
+    if (schemaContent[i] === "{") {
+      braceCount++;
+      inModel = true;
+    }
+    if (schemaContent[i] === "}") {
+      braceCount--;
+      if (braceCount === 0 && inModel) {
+        endIndex = i;
+        break;
+      }
+    }
+  }
+
+  // Extract a bit more after the closing brace to catch trailing comments
+  const extraLines = 10;
+  const afterBrace = schemaContent.substring(endIndex + 1, schemaContent.length);
+  const afterLines = afterBrace.split("\n").slice(0, extraLines);
+
+  const modelBlock = `${schemaContent.substring(startIndex, endIndex + 1)}\n${afterLines.join("\n")}`;
+  const lines = modelBlock.split("\n");
+
+  // Find all /// comments
+  const comments = lines
+    .filter(line => line.trim().startsWith("///"))
+    .map(line => line.trim().substring(3).trim())
+    .join(" ");
+
+  return comments || null;
 }
 
 export async function getEnums() {
@@ -51,6 +104,100 @@ export async function getEnums() {
   const datamodel = fs.readFileSync(schemaPath, "utf-8");
   const dmmf = await getDMMF({ datamodel });
   return dmmf.datamodel.enums;
+}
+
+function parseAnnotations(model: any) {
+  const annotations: any = {};
+
+  // Use custom annotations from manual parsing, fallback to documentation
+  const docSource = model.customAnnotations || model.documentation || "";
+
+  if (docSource) {
+    // Parse @transform - handle nested parentheses
+    const transformMatch = docSource.match(/@transform\((.*?)\)(?:\s|$)/s);
+    if (transformMatch) {
+      let content = transformMatch[1];
+      let depth = 0;
+      let endIndex = 0;
+
+      // Find the actual end by counting parentheses
+      for (let i = 0; i < transformMatch[0].length; i++) {
+        if (transformMatch[0][i] === "(")
+          depth++;
+        if (transformMatch[0][i] === ")") {
+          depth--;
+          if (depth === 0) {
+            endIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Re-extract with correct bounds
+      const fullMatch = docSource.match(/@transform\((.+?)\)(?=\s*@|\s*$)/s);
+      if (fullMatch) {
+        content = fullMatch[1];
+        // Split by commas that are not inside parentheses
+        const transforms: string[] = [];
+        let current = "";
+        let parenDepth = 0;
+
+        for (let i = 0; i < content.length; i++) {
+          const char = content[i];
+          if (char === "(")
+            parenDepth++;
+          if (char === ")")
+            parenDepth--;
+          if (char === "," && parenDepth === 0) {
+            transforms.push(current.trim());
+            current = "";
+          }
+          else {
+            current += char;
+          }
+        }
+        if (current.trim())
+          transforms.push(current.trim());
+
+        annotations.transforms = {};
+        transforms.forEach((transform: string) => {
+          const colonIndex = transform.indexOf(":");
+          if (colonIndex > 0) {
+            const name = transform.substring(0, colonIndex).trim();
+            const sql = transform.substring(colonIndex + 1).trim();
+            annotations.transforms[name] = sql;
+          }
+        });
+      }
+    }
+
+    // Parse @searchFields
+    const searchFieldsMatch = docSource.match(/@searchFields\(([^)]+)\)/);
+    if (searchFieldsMatch) {
+      const fields = searchFieldsMatch[1].split(",").map((f: string) => f.trim());
+      annotations.searchFields = fields.map((field: string) => {
+        const [name, weight] = field.split(":").map((s: string) => s.trim());
+        return { field: name, weight: Number.parseInt(weight, 10) };
+      });
+    }
+
+    // Parse @sortFields - don't split by comma, parse entire content
+    const sortFieldsMatch = docSource.match(/@sortFields\(([^)]+)\)/);
+    if (sortFieldsMatch) {
+      const content = sortFieldsMatch[1];
+      annotations.sortFields = {};
+
+      // Match pattern: fieldName: [field1, field2, ...]
+      const fieldRegex = /(\w+)\s*:\s*\[([^\]]+)\]/g;
+      let match;
+      while ((match = fieldRegex.exec(content)) !== null) {
+        const [, name, fieldsStr] = match;
+        annotations.sortFields[name] = fieldsStr.split(",").map((s: string) => s.trim());
+      }
+    }
+  }
+
+  return annotations;
 }
 
 async function generateValidations(model: any) {
@@ -71,6 +218,67 @@ async function generateValidations(model: any) {
   });
 
   return lines.map(line => `\t\t${line}`).join("\n");
+}
+
+async function generateSearchFields(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.searchFields || annotations.searchFields.length === 0) {
+    return "";
+  }
+
+  const fields = annotations.searchFields
+    .map((sf: any) => `{ field: "${sf.field}", weight: ${sf.weight} }`)
+    .join(", ");
+
+  return `\tprotected getSearchFields(): (string | { field: string; weight: number })[] {
+\t\treturn [${fields}];
+\t}
+`;
+}
+
+async function generateTransforms(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.transforms || Object.keys(annotations.transforms).length === 0) {
+    return "";
+  }
+
+  const entries = Object.entries(annotations.transforms)
+    .map(([name, sql]: [string, any]) => `\t\t${name}: "${sql}"`)
+    .join(",\n");
+
+  return `\tprotected getTransforms(): Record<string, string> {
+\t\treturn {
+${entries}
+\t\t};
+\t}
+`;
+}
+
+async function generateTransformSort(model: any) {
+  const annotations = parseAnnotations(model);
+
+  if (!annotations.sortFields || Object.keys(annotations.sortFields).length === 0) {
+    return "";
+  }
+
+  const cases = Object.entries(annotations.sortFields)
+    .map(([name, fields]: [string, any]) => {
+      const orderByFields = fields
+        .map((field: string) => `{ ${field}: order || "asc" }`)
+        .join(", ");
+      return `\t\tif (sort === "${name}") {
+\t\t\treturn [${orderByFields}];
+\t\t}`;
+    })
+    .join("\n");
+
+  return `\tprotected transformSort(sort?: string, order?: "asc" | "desc"): any {
+${cases}
+\t\treturn super.transformSort(sort, order);
+\t}
+`;
 }
 
 function getTimestampComment(): string {
@@ -110,6 +318,17 @@ async function generateServiceFiles(models: any, relationships: any) {
     const kebabName = toKebabCase(model.name);
     const serviceFile = path.resolve(directory, `${kebabName}.service.ts`);
     const validations = await generateValidations(model);
+    const transforms = await generateTransforms(model);
+    const searchFields = await generateSearchFields(model);
+    const transformSort = await generateTransformSort(model);
+
+    if (model.customAnnotations) {
+      console.log(`${model.name} annotations:`, model.customAnnotations);
+      const annotations = parseAnnotations(model);
+      console.log(`${model.name} parsed:`, JSON.stringify(annotations, null, 2));
+    }
+
+    const methods = [transforms, transformSort, searchFields].filter(m => m).join("\n");
 
     const newBody = `import { ${model.name} } from "@prisma/client";
 import { BaseService } from "./_base.service";
@@ -126,7 +345,8 @@ export class ${model.name}Service extends BaseService<${model.name}> {
 \tprotected async validate(entity: ${model.name}Attributes): Promise<void> {
 ${validations}
 \t}
-}`.trim();
+
+${methods}}`.trim();
 
     if (fs.existsSync(serviceFile)) {
       const existing = fs.readFileSync(serviceFile, "utf-8");
@@ -376,8 +596,27 @@ export type Update${model.name}Input = Partial<Create${model.name}Input>;
     console.log(`Generated type: ${model.name}`);
   }
 
+  // Generate auto-generated index
+  const autoGenIndexFile = path.resolve(srcDir, "_auto-generated.ts");
+  fs.writeFileSync(autoGenIndexFile, `// Auto-generated database types - DO NOT EDIT\n${modelExports.join("\n")}\n`);
+
+  // Update main index file to export from both auto-generated and custom
   const indexFile = path.resolve(srcDir, "index.ts");
-  fs.writeFileSync(indexFile, `// Auto-generated database types\n${modelExports.join("\n")}\n`);
+  const indexContent = `// Main types index
+// This file exports both auto-generated types and custom types
+
+// Auto-generated types from Prisma schema
+export * from './_auto-generated';
+
+// Custom static types (add your custom type exports below)
+export * from './custom';
+`;
+
+  // Only create index.ts if it doesn't exist, to avoid overwriting custom exports
+  if (!fs.existsSync(indexFile)) {
+    fs.writeFileSync(indexFile, indexContent);
+    console.log("Created main index file");
+  }
 }
 
 async function main() {

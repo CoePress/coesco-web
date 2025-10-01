@@ -14,8 +14,8 @@ export class QuoteItemService extends BaseService<QuoteItem> {
   protected modelName = "quoteItem";
 
   protected async validate(entity: QuoteItemAttributes): Promise<void> {
-    if (!entity.quoteDetailsId)
-      throw new BadRequestError("quoteDetailsId is required");
+    if (!entity.quoteRevisionId)
+      throw new BadRequestError("quoteRevisionId is required");
     if (!entity.quantity)
       throw new BadRequestError("quantity is required");
     if (!entity.unitPrice)

@@ -16,16 +16,34 @@ export class BaseService<T> {
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const searchFields = this.getSearchFields();
-    const { query, finalWhere, page, take } = await this.buildQueryParams(
+    const { query, countQuery, page, take, hasComputedSearch } = await this.buildQueryParams(
       params,
       searchFields,
     );
 
     const client = tx ?? this.model;
 
+    if (hasComputedSearch && params?.search) {
+      // When searching computed fields, fetch all matching records and filter in-memory
+      const allItems = await client.findMany(query);
+      const total = allItems.length;
+      const totalPages = take ? Math.ceil(total / take) : 1;
+
+      return {
+        success: true,
+        data: allItems,
+        meta: {
+          page,
+          limit: take,
+          total,
+          totalPages,
+        },
+      };
+    }
+
     const [items, total] = await Promise.all([
       client.findMany(query),
-      client.count({ where: finalWhere }),
+      client.count(countQuery),
     ]);
 
     const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
@@ -270,10 +288,24 @@ export class BaseService<T> {
     params?: IQueryParams<T>,
     searchFields?: (string | { field: string; weight: number })[],
   ): Promise<any> {
+    const transformedOrderBy = this.transformSort(params?.sort, params?.order);
+    const transforms = this.getTransforms();
+
+    // Filter out computed fields from search
+    const regularSearchFields = searchFields?.filter((sf) => {
+      const fieldName = typeof sf === "string" ? sf : sf.field;
+      return !transforms[fieldName];
+    });
+
+    const queryParams = transformedOrderBy
+      ? { ...params, sort: undefined, order: undefined }
+      : params ?? {};
+
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
-      params ?? {},
-      searchFields,
+      queryParams,
+      regularSearchFields,
     );
+
     const columns = await this.getColumns();
     const scope = await this.getScope(columns);
 
@@ -281,7 +313,7 @@ export class BaseService<T> {
 
     const query: any = {
       where: finalWhere,
-      orderBy,
+      orderBy: transformedOrderBy ?? orderBy,
       take,
       skip,
     };
@@ -291,7 +323,9 @@ export class BaseService<T> {
     else if (include)
       query.include = include;
 
-    return { query, finalWhere, page, take };
+    const countQuery = { where: finalWhere };
+
+    return { query, countQuery, page, take, hasComputedSearch: false };
   }
 
   private async log(
@@ -333,5 +367,15 @@ export class BaseService<T> {
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {
     return [];
+  }
+
+  protected transformSort(sort?: string, order?: "asc" | "desc"): any {
+    if (!sort)
+      return undefined;
+    return { [sort]: order || "asc" };
+  }
+
+  protected getTransforms(): Record<string, string> {
+    return {};
   }
 }

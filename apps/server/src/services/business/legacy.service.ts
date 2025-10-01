@@ -126,9 +126,10 @@ export class LegacyService {
     // Helper function to attempt connection with 500ms timeout
     const connectFast = async (connStr: string, dbName: string) => {
       try {
+        logger.info(`Attempting to connect to ${dbName} database...`);
         const connectionPromise = odbc.connect(connStr);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 2500),
+          setTimeout(() => reject(new Error(`Connection timeout after 1500ms`)), 10000),
         );
 
         const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
@@ -136,10 +137,13 @@ export class LegacyService {
         return connection;
       }
       catch (err) {
-        logger.warn(`Failed to connect to ${dbName} database, continuing without it`);
+        logger.error(`Failed to connect to ${dbName} database:`, err);
+        logger.warn(`Continuing without ${dbName} database connection`);
         return undefined;
       }
     };
+
+    logger.info("Initializing legacy service database connections...");
 
     // Connect to all databases in parallel with 1500ms timeout each
     const [std, job, quote] = await Promise.all([
@@ -151,6 +155,19 @@ export class LegacyService {
     this.stdConnection = std;
     this.jobConnection = job;
     this.quoteConnection = quote;
+
+    const connectedDatabases = [
+      std ? "STD" : null,
+      job ? "JOB" : null,
+      quote ? "QUOTE" : null,
+    ].filter(Boolean);
+
+    if (connectedDatabases.length === 0) {
+      logger.error("Failed to connect to any databases");
+    }
+    else {
+      logger.info(`Successfully connected to: ${connectedDatabases.join(", ")}`);
+    }
   }
 
   async create(database: string, table: string, data: any) {
@@ -236,20 +253,21 @@ export class LegacyService {
     const page = params.page || 1;
     const limit = params.limit || 25;
     const offset = (page - 1) * limit;
-    
+
     let fieldSelection = "*";
-    if (params.fields && typeof params.fields === 'string') {
-      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
-      fieldSelection = fields.join(', ');
+    if (params.fields && typeof params.fields === "string") {
+      const fields = params.fields.split(",").map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(", ");
     }
 
     let whereClause = "";
-    if (params.filter && typeof params.filter === 'string') {
-      if (params.filter.includes(' LIKE ')) {
-        const [field, value] = params.filter.split(' LIKE ');
+    if (params.filter && typeof params.filter === "string") {
+      if (params.filter.includes(" LIKE ")) {
+        const [field, value] = params.filter.split(" LIKE ");
         const quotedValue = value.startsWith("'") ? value : `'${value}'`;
         whereClause = `WHERE ${field} LIKE ${quotedValue}`;
-      } else {
+      }
+      else {
         const [field, value] = params.filter.split("=");
         whereClause = `WHERE ${field} = ${value}`;
       }
@@ -278,13 +296,13 @@ export class LegacyService {
 
       const [countResult, dataResult] = await Promise.all([
         connection.query(countQuery),
-        connection.query(dataQuery)
+        connection.query(dataQuery),
       ]) as [any[], any[]];
 
       const countRow = countResult?.[0] as Record<string, any> | undefined;
-      const total = countRow?.total 
-        ?? countRow?.TOTAL 
-        ?? countRow?.Total 
+      const total = countRow?.total
+        ?? countRow?.TOTAL
+        ?? countRow?.Total
         ?? 0;
 
       const totalCount = Number(total) || 0;
@@ -296,8 +314,8 @@ export class LegacyService {
           page,
           limit,
           total: totalCount,
-          totalPages
-        }
+          totalPages,
+        },
       };
     }
     catch (err) {
@@ -436,13 +454,13 @@ export class LegacyService {
 
   async getAllByCustomFilter(database: string, table: string, filters: Record<string, string>, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
-    
+
     let fieldSelection = "*";
-    if (params?.fields && typeof params.fields === 'string') {
-      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
-      fieldSelection = fields.join(', ');
+    if (params?.fields && typeof params.fields === "string") {
+      const fields = params.fields.split(",").map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(", ");
     }
-    
+
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");

@@ -1,9 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npm run build:*)",
-      "Bash(cat:*)"
-    ],
+    "allow": [],
     "deny": [],
     "ask": [
       "Bash(mkdir:*)",

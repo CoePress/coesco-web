@@ -58,7 +58,7 @@ export async function seedFormFromTemplate(
     data: {
       name: template.title,
       description: `Generated from template: ${template.title}`,
-      status: "published",
+      status: "PUBLISHED",
       createdById,
       updatedById: createdById,
     },
@@ -138,7 +138,7 @@ export async function seedFormFromTemplate(
           targetType: ruleTemplate.targetType as any,
           targetId,
           action: ruleTemplate.action as any,
-          conditions: ruleTemplate.conditions,
+          conditions: ruleTemplate.conditions as any,
           operator: ruleTemplate.operator as any,
           priority: ruleTemplate.priority,
           createdById,

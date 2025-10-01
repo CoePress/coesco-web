@@ -2064,66 +2064,8 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
-    name: "quote-details",
-    description: "Schema for QuoteDetails entity",
-    schema: {
-      id: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      quoteHeaderId: {
-        type: "string",
-        required: true,
-      },
-      revision: {
-        type: "string",
-        required: true,
-        hasDefault: true,
-      },
-      quoteDate: {
-        type: "datetime",
-        required: false,
-      },
-      status: {
-        type: "quotestatus",
-        required: true,
-        hasDefault: true,
-      },
-      approvedById: {
-        type: "string",
-        required: false,
-      },
-      sentById: {
-        type: "string",
-        required: false,
-      },
-      createdAt: {
-        type: "datetime",
-        required: true,
-        hasDefault: true,
-      },
-      updatedAt: {
-        type: "datetime",
-        required: true,
-      },
-      deletedAt: {
-        type: "datetime",
-        required: false,
-      },
-      createdById: {
-        type: "string",
-        required: true,
-      },
-      updatedById: {
-        type: "string",
-        required: true,
-      },
-    },
-  },
-  {
-    name: "quote-header",
-    description: "Schema for QuoteHeader entity",
+    name: "quote",
+    description: "Schema for Quote entity",
     schema: {
       id: {
         type: "string",
@@ -2181,7 +2123,7 @@ export const SCHEMAS: ISchema[] = [
         hasDefault: true,
       },
       status: {
-        type: "quoteheaderstatus",
+        type: "quotestatus",
         required: true,
         hasDefault: true,
       },
@@ -2222,7 +2164,7 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
-      quoteDetailsId: {
+      quoteRevisionId: {
         type: "string",
         required: true,
       },
@@ -2296,13 +2238,71 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
-      quoteDetailsId: {
+      quoteRevisionId: {
         type: "string",
         required: true,
       },
       body: {
         type: "string",
         required: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "quote-revision",
+    description: "Schema for QuoteRevision entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      quoteId: {
+        type: "string",
+        required: true,
+      },
+      revision: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      quoteDate: {
+        type: "datetime",
+        required: false,
+      },
+      status: {
+        type: "quoterevisionstatus",
+        required: true,
+        hasDefault: true,
+      },
+      approvedById: {
+        type: "string",
+        required: false,
+      },
+      sentById: {
+        type: "string",
+        required: false,
       },
       createdAt: {
         type: "datetime",
@@ -2336,7 +2336,7 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
-      quoteDetailsId: {
+      quoteRevisionId: {
         type: "string",
         required: true,
       },

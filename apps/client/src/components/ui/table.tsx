@@ -83,7 +83,7 @@ const Table = <T extends Record<string, any>>({
           className={`min-w-full text-text-muted text-sm ${
             (loading || data.length === 0) ? 'h-full' : ''
           }`}>
-          <thead className="bg-foreground sticky top-0 z-10" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
+          <thead className="bg-foreground sticky top-0 z-10 select-none" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
             <tr>
               {selectable && (
                 <th
@@ -115,8 +115,10 @@ const Table = <T extends Record<string, any>>({
                   }>
                   <div className="flex items-center gap-1">
                     {column.header}
-                    {sort === column.key && (
-                      <span>{order === "asc" ? "↑" : "↓"}</span>
+                    {onSortChange && column.header.toLowerCase() !== "actions" && (
+                      <span className="w-3 inline-block text-center">
+                        {sort === column.key ? (order === "asc" ? "↑" : "↓") : ""}
+                      </span>
                     )}
                   </div>
                 </th>

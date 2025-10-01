@@ -1,7 +1,7 @@
 // Auto-generated from Prisma schema
 export interface QuoteNote {
   id?: string;
-  quoteDetailsId: string;
+  quoteRevisionId: string;
   body: string;
   createdAt?: Date | string;
   updatedAt: Date | string;

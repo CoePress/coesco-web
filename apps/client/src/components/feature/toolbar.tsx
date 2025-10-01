@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Search, Download } from 'lucide-react'
 import Select from '../ui/select'
 import Button from '../ui/button'
@@ -28,31 +28,50 @@ type Props = {
   className?: string;
 }
 
-const Toolbar = ({ 
-  onSearch, 
-  searchPlaceholder = "Search...", 
+const Toolbar = ({
+  onSearch,
+  searchPlaceholder = "Search...",
   filters,
   onFilterChange,
   filterValues = {},
   showExport = false,
   onExport,
   actions,
-  children, 
-  className = "" 
+  children,
+  className = ""
 }: Props) => {
   const [searchQuery, setSearchQuery] = useState('')
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchQuery(value)
-    onSearch?.(value)
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current)
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      onSearch?.(value)
+    }, 300)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current)
+      }
       onSearch?.(searchQuery)
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current)
+      }
+    }
+  }, [])
 
   const handleFilterChange = (key: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
     onFilterChange?.(key, e.target.value)

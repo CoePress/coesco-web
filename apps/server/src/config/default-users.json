@@ -1,0 +1,86 @@
+[
+  {
+    "username": "admin",
+    "password": "admin123",
+    "employee": {
+      "firstName": "Default",
+      "lastName": "Admin",
+      "email": "admin@cpec.com",
+      "title": "Administrator",
+      "number": "ADM001"
+    },
+    "role": "ADMIN"
+  },
+  {
+    "username": "user",
+    "password": "user123",
+    "employee": {
+      "firstName": "Regular",
+      "lastName": "User",
+      "email": "user@cpec.com",
+      "title": "Employee",
+      "number": "USR001"
+    },
+    "role": "USER"
+  },
+  {
+    "username": "jsmith",
+    "password": "user123",
+    "employee": {
+      "firstName": "John",
+      "lastName": "Smith",
+      "email": "john.smith@cpec.com",
+      "title": "Sales Manager",
+      "number": "EMP001"
+    },
+    "role": "USER"
+  },
+  {
+    "username": "mjohnson",
+    "password": "user123",
+    "employee": {
+      "firstName": "Mary",
+      "lastName": "Johnson",
+      "email": "mary.johnson@cpec.com",
+      "title": "Production Supervisor",
+      "number": "EMP002"
+    },
+    "role": "USER"
+  },
+  {
+    "username": "rdavis",
+    "password": "user123",
+    "employee": {
+      "firstName": "Robert",
+      "lastName": "Davis",
+      "email": "robert.davis@cpec.com",
+      "title": "Quality Control",
+      "number": "EMP003"
+    },
+    "role": "USER"
+  },
+  {
+    "username": "swilson",
+    "password": "user123",
+    "employee": {
+      "firstName": "Sarah",
+      "lastName": "Wilson",
+      "email": "sarah.wilson@cpec.com",
+      "title": "Operations Manager",
+      "number": "EMP004"
+    },
+    "role": "USER"
+  },
+  {
+    "username": "dbrown",
+    "password": "user123",
+    "employee": {
+      "firstName": "David",
+      "lastName": "Brown",
+      "email": "david.brown@cpec.com",
+      "title": "Maintenance Technician",
+      "number": "EMP005"
+    },
+    "role": "USER"
+  }
+]

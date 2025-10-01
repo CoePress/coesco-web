@@ -1,12 +1,13 @@
 import type { Machine, Prisma } from "@prisma/client";
 
-import { MachineControllerType, MachineState, TimeScale } from "@prisma/client";
+import { MachineControllerType, MachineState } from "@prisma/client";
 import axios from "axios";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 
 import { env } from "@/config/env";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { TimeScale } from "@/types/enums";
 import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
@@ -712,12 +713,6 @@ export class MachineMonitorService {
       };
     }
     catch (error: any) {
-      if (error.name === "CanceledError") {
-        return null;
-      }
-      else {
-        logger.error(`Request to ${url} failed: ${error.message}`);
-      }
       return null;
     }
     finally {

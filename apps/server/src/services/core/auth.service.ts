@@ -5,10 +5,12 @@ import { UserRole } from "@prisma/client";
 import { compare, hash } from "bcrypt";
 import { sign, verify } from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { IAuthResponse, IAuthTokens } from "@/types";
 
-import { env } from "@/config/env";
+import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
 
@@ -291,80 +293,49 @@ export class AuthService {
   }
 
   async initializeDefaultUser(): Promise<void> {
-    const adminEmail = "admin@cpec.com";
-    const adminUsername = "admin";
-
-    const existingAdmin = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: adminUsername },
-          { employee: { email: adminEmail } },
-        ],
-      },
-      include: { employee: true },
-    });
-
-    if (!existingAdmin) {
-      const hashedAdminPassword = await hash("admin123", 12);
-
-      await prisma.employee.create({
-        data: {
-          firstName: "Default",
-          lastName: "Admin",
-          initials: "DA",
-          email: adminEmail,
-          title: "Administrator",
-          number: "ADM001",
-          user: {
-            create: {
-              username: adminUsername,
-              password: hashedAdminPassword,
-              role: UserRole.ADMIN,
-              isActive: true,
-            },
-          },
-          createdById: "system",
-          updatedById: "system",
-        },
-      });
+    if (!__dev__) {
+      return;
     }
 
-    const userEmail = "user@cpec.com";
-    const userUsername = "user";
+    const defaultUsersPath = join(process.cwd(), "src/config/default-users.json");
+    const defaultUsers = JSON.parse(readFileSync(defaultUsersPath, "utf-8"));
 
-    const existingRegularUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: userUsername },
-          { employee: { email: userEmail } },
-        ],
-      },
-      include: { employee: true },
-    });
-
-    if (!existingRegularUser) {
-      const hashedUserPassword = await hash("user123", 12);
-
-      await prisma.employee.create({
-        data: {
-          firstName: "Regular",
-          lastName: "User",
-          initials: "RU",
-          email: userEmail,
-          title: "Employee",
-          number: "USR001",
-          user: {
-            create: {
-              username: userUsername,
-              password: hashedUserPassword,
-              role: UserRole.USER,
-              isActive: true,
-            },
-          },
-          createdById: "system",
-          updatedById: "system",
+    for (const userData of defaultUsers) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { username: userData.username },
+            { employee: { email: userData.employee.email } },
+          ],
         },
+        include: { employee: true },
       });
+
+      if (!existingUser) {
+        const hashedPassword = await hash(userData.password, 12);
+        const initials = `${userData.employee.firstName.charAt(0)}${userData.employee.lastName.charAt(0)}`.toUpperCase();
+
+        await prisma.employee.create({
+          data: {
+            firstName: userData.employee.firstName,
+            lastName: userData.employee.lastName,
+            initials,
+            email: userData.employee.email,
+            title: userData.employee.title,
+            number: userData.employee.number,
+            user: {
+              create: {
+                username: userData.username,
+                password: hashedPassword,
+                role: userData.role as UserRole,
+                isActive: true,
+              },
+            },
+            createdById: "system",
+            updatedById: "system",
+          },
+        });
+      }
     }
   }
 
