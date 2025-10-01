@@ -38,7 +38,33 @@ export async function getModels() {
 
   const datamodel = fs.readFileSync(schemaPath, "utf-8");
   const dmmf = await getDMMF({ datamodel });
-  return dmmf.datamodel.models;
+
+  // Manually parse annotations from schema file
+  const models = dmmf.datamodel.models.map((model: any) => {
+    const annotations = extractAnnotationsFromSchema(datamodel, model.name);
+    return { ...model, customAnnotations: annotations };
+  });
+
+  return models;
+}
+
+function extractAnnotationsFromSchema(schemaContent: string, modelName: string) {
+  const modelRegex = new RegExp(`model\\s+${modelName}\\s*\\{[\\s\\S]*?\\n\\}`, "m");
+  const modelMatch = schemaContent.match(modelRegex);
+
+  if (!modelMatch)
+    return null;
+
+  const modelBlock = modelMatch[0];
+  const lines = modelBlock.split("\n");
+
+  // Find all /// comments within the model block
+  const comments = lines
+    .filter(line => line.trim().startsWith("///"))
+    .map(line => line.trim().substring(3).trim())
+    .join(" ");
+
+  return comments || null;
 }
 
 export async function getEnums() {
@@ -56,20 +82,27 @@ export async function getEnums() {
 function parseAnnotations(model: any) {
   const annotations: any = {};
 
-  if (model.documentation) {
+  // Use custom annotations from manual parsing, fallback to documentation
+  const docSource = model.customAnnotations || model.documentation || "";
+
+  if (docSource) {
     // Parse @transform
-    const transformMatch = model.documentation.match(/@transform\(([^)]+)\)/);
+    const transformMatch = docSource.match(/@transform\(([^)]+)\)/);
     if (transformMatch) {
       const transforms = transformMatch[1].split(",").map((t: string) => t.trim());
       annotations.transforms = {};
       transforms.forEach((transform: string) => {
-        const [name, sql] = transform.split(":").map((s: string) => s.trim());
-        annotations.transforms[name] = sql;
+        const colonIndex = transform.indexOf(":");
+        if (colonIndex > 0) {
+          const name = transform.substring(0, colonIndex).trim();
+          const sql = transform.substring(colonIndex + 1).trim();
+          annotations.transforms[name] = sql;
+        }
       });
     }
 
     // Parse @searchFields
-    const searchFieldsMatch = model.documentation.match(/@searchFields\(([^)]+)\)/);
+    const searchFieldsMatch = docSource.match(/@searchFields\(([^)]+)\)/);
     if (searchFieldsMatch) {
       const fields = searchFieldsMatch[1].split(",").map((f: string) => f.trim());
       annotations.searchFields = fields.map((field: string) => {
@@ -79,7 +112,7 @@ function parseAnnotations(model: any) {
     }
 
     // Parse @sortFields
-    const sortFieldsMatch = model.documentation.match(/@sortFields\(([^)]+)\)/);
+    const sortFieldsMatch = docSource.match(/@sortFields\(([^)]+)\)/);
     if (sortFieldsMatch) {
       const fields = sortFieldsMatch[1].split(",").map((f: string) => f.trim());
       annotations.sortFields = {};

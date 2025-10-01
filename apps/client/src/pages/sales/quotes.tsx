@@ -20,14 +20,13 @@ const Quotes = () => {
   const { get: getMetrics, response: metrics, loading: metricsLoading } = useApi<IApiResponse<any>>();
 
   const [params, setParams] = useState({
-    sort: "createdAt" as "createdAt" | "updatedAt" | "year",
+    sort: "createdAt" as "createdAt" | "updatedAt" | "year" | "quoteNumber",
     order: "desc" as "asc" | "desc",
     page: 1,
     limit: 25,
     filter: { status: "OPEN" },
     include: [] as string[],
-    search: "",
-    searchFields: ["number", "year"] as string[]
+    search: ""
   });
 
   const queryParams = useMemo(() => {
@@ -52,7 +51,6 @@ const Quotes = () => {
 
     if (params.search) {
       q.search = params.search;
-      q.searchFields = JSON.stringify(params.searchFields);
     }
 
     return q;

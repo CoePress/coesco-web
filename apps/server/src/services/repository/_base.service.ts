@@ -270,8 +270,16 @@ export class BaseService<T> {
     params?: IQueryParams<T>,
     searchFields?: (string | { field: string; weight: number })[],
   ): Promise<any> {
+    // Check if we need to transform the sort field
+    const transformedOrderBy = this.transformSort(params?.sort, params?.order);
+
+    // If transformSort returned something, don't let buildQuery create orderBy
+    const queryParams = transformedOrderBy
+      ? { ...params, sort: undefined, order: undefined }
+      : params ?? {};
+
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
-      params ?? {},
+      queryParams,
       searchFields,
     );
     const columns = await this.getColumns();
@@ -310,11 +318,9 @@ export class BaseService<T> {
       }
     }
 
-    const transformedOrderBy = this.transformSort(params?.sort, params?.order) ?? orderBy;
-
     const query: any = {
       where: finalWhere,
-      orderBy: transformedOrderBy,
+      orderBy: transformedOrderBy ?? orderBy,
       take,
       skip,
     };

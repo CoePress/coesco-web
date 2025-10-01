@@ -29,4 +29,15 @@ export class QuoteService extends BaseService<Quote> {
     if (!entity.legacy)
       throw new BadRequestError("legacy is required");
   }
+
+  protected getTransforms(): Record<string, string> {
+    return {
+      2: "undefined",
+      quoteNumber: "CONCAT(RIGHT(year",
+    };
+  }
+
+  protected getSearchFields(): (string | { field: string; weight: number })[] {
+    return [{ field: "year", weight: 2 }, { field: "number", weight: 3 }, { field: "quoteNumber", weight: 5 }];
+  }
 }
