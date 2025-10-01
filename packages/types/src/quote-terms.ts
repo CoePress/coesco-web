@@ -1,7 +1,7 @@
 // Auto-generated from Prisma schema
 export interface QuoteTerms {
   id?: string;
-  quoteDetailsId: string;
+  quoteRevisionId: string;
   percentage?: number;
   netDays?: number;
   amount?: number;

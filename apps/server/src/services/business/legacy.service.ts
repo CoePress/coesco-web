@@ -236,20 +236,21 @@ export class LegacyService {
     const page = params.page || 1;
     const limit = params.limit || 25;
     const offset = (page - 1) * limit;
-    
+
     let fieldSelection = "*";
-    if (params.fields && typeof params.fields === 'string') {
-      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
-      fieldSelection = fields.join(', ');
+    if (params.fields && typeof params.fields === "string") {
+      const fields = params.fields.split(",").map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(", ");
     }
 
     let whereClause = "";
-    if (params.filter && typeof params.filter === 'string') {
-      if (params.filter.includes(' LIKE ')) {
-        const [field, value] = params.filter.split(' LIKE ');
+    if (params.filter && typeof params.filter === "string") {
+      if (params.filter.includes(" LIKE ")) {
+        const [field, value] = params.filter.split(" LIKE ");
         const quotedValue = value.startsWith("'") ? value : `'${value}'`;
         whereClause = `WHERE ${field} LIKE ${quotedValue}`;
-      } else {
+      }
+      else {
         const [field, value] = params.filter.split("=");
         whereClause = `WHERE ${field} = ${value}`;
       }
@@ -278,13 +279,13 @@ export class LegacyService {
 
       const [countResult, dataResult] = await Promise.all([
         connection.query(countQuery),
-        connection.query(dataQuery)
+        connection.query(dataQuery),
       ]) as [any[], any[]];
 
       const countRow = countResult?.[0] as Record<string, any> | undefined;
-      const total = countRow?.total 
-        ?? countRow?.TOTAL 
-        ?? countRow?.Total 
+      const total = countRow?.total
+        ?? countRow?.TOTAL
+        ?? countRow?.Total
         ?? 0;
 
       const totalCount = Number(total) || 0;
@@ -296,8 +297,8 @@ export class LegacyService {
           page,
           limit,
           total: totalCount,
-          totalPages
-        }
+          totalPages,
+        },
       };
     }
     catch (err) {
@@ -436,13 +437,13 @@ export class LegacyService {
 
   async getAllByCustomFilter(database: string, table: string, filters: Record<string, string>, params?: any) {
     const limit = params?.limit ? `FETCH FIRST ${params.limit} ROWS ONLY` : "";
-    
+
     let fieldSelection = "*";
-    if (params?.fields && typeof params.fields === 'string') {
-      const fields = params.fields.split(',').map((field: string) => `"${field.trim()}"`);
-      fieldSelection = fields.join(', ');
+    if (params?.fields && typeof params.fields === "string") {
+      const fields = params.fields.split(",").map((field: string) => `"${field.trim()}"`);
+      fieldSelection = fields.join(", ");
     }
-    
+
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
       const escapedValue = String(value).replace(/'/g, "''");
