@@ -398,7 +398,7 @@ enum QuoteStatus {
 
 model QuoteRevision {
   id            String              @id @default(uuid())
-  quoteHeaderId String
+  quoteId String
   revision      String              @default("A")
   quoteDate     DateTime?
   status        QuoteRevisionStatus @default(DRAFT)
@@ -410,11 +410,11 @@ model QuoteRevision {
   createdById   String
   updatedById   String
 
-  quote Quote?       @relation(fields: [quoteHeaderId], references: [id])
+  quote Quote?       @relation(fields: [quoteId], references: [id])
   items QuoteItem[]
   terms QuoteTerms[]
 
-  @@unique([quoteHeaderId, revision])
+  @@unique([quoteId, revision])
   @@map("quote_details")
 }
 

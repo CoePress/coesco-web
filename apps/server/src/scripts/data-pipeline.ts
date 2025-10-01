@@ -1,7 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import type { ItemType } from "@prisma/client";
 
-import { PrismaClient, QuoteHeaderStatus, QuoteStatus } from "@prisma/client";
+import { PrismaClient, QuoteRevisionStatus, QuoteStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -958,7 +958,7 @@ async function _migrateQuotes(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QData",
-    targetTable: "quoteHeader",
+    targetTable: "quote",
     fieldMappings: [
       {
         from: "QYear",
@@ -1018,7 +1018,7 @@ async function _migrateQuotes(): Promise<MigrationResult> {
       const closed = original.Canceled === "1" || original.LostToComp === "1" || original.Shipped === "1";
 
       if (closed) {
-        data.status = QuoteHeaderStatus.CLOSED;
+        data.status = QuoteStatus.CLOSED;
       }
 
       data.createdAt = new Date(original.CreateDate || original.ModifyDate);
@@ -1046,15 +1046,15 @@ async function updateQuoteRevisionStatuses(): Promise<void> {
   try {
     logger.info("Updating quote revision statuses...");
 
-    const quoteHeaders = await mainDatabase.quoteHeader.findMany({
+    const quotes = await mainDatabase.quote.findMany({
       select: { id: true },
     });
 
     let updateCount = 0;
 
-    for (const header of quoteHeaders) {
-      const revisions = await mainDatabase.quoteDetails.findMany({
-        where: { quoteHeaderId: header.id },
+    for (const quote of quotes) {
+      const revisions = await mainDatabase.quoteRevision.findMany({
+        where: { quoteId: quote.id },
         orderBy: { revision: "desc" },
       });
 
@@ -1062,9 +1062,9 @@ async function updateQuoteRevisionStatuses(): Promise<void> {
         continue;
 
       for (let i = 1; i < revisions.length; i++) {
-        await mainDatabase.quoteDetails.update({
+        await mainDatabase.quoteRevision.update({
           where: { id: revisions[i].id },
-          data: { status: QuoteStatus.REVISED },
+          data: { status: QuoteRevisionStatus.REVISED },
         });
         updateCount++;
       }
@@ -1082,7 +1082,7 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
   const mapping: TableMapping = {
     sourceDatabase: "quote",
     sourceTable: "QRev",
-    targetTable: "quoteDetails",
+    targetTable: "quoteRevision",
     fieldMappings: [
       {
         from: "QRev",
@@ -1098,20 +1098,20 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
-      const quoteHeader = await findReferencedRecord("quoteHeader", {
+      const quote = await findReferencedRecord("quote", {
         year: original.QYear?.toString(),
         number: original.QNum?.toString(),
       });
 
-      if (!quoteHeader) {
-        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+      if (!quote) {
+        logger.warn(`No quote found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
         return null;
       }
 
-      data._tempQuoteHeaderId = quoteHeader.id;
+      data._tempQuoteId = quote.id;
 
-      data.quoteHeaderId = quoteHeader.id;
-      data.status = QuoteStatus.DRAFT; // Default all to DRAFT initially
+      data.quoteId = quote.id;
+      data.status = QuoteRevisionStatus.DRAFT; // Default all to DRAFT initially
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
@@ -1125,7 +1125,7 @@ async function _migrateQuoteRevisions(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteHeaderId: data._tempQuoteHeaderId },
+        { quoteId: data._tempQuoteId },
         { revision: data.revision },
       ],
     }),
@@ -1165,30 +1165,30 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
-      const quoteHeader = await findReferencedRecord("quoteHeader", {
+      const quote = await findReferencedRecord("quote", {
         year: original.QYear?.toString(),
         number: original.QNum?.toString(),
       });
 
-      if (!quoteHeader) {
-        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+      if (!quote) {
+        logger.warn(`No quote found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
         return null;
       }
 
-      const quoteDetails = await findReferencedRecord("quoteDetails", {
-        quoteHeaderId: quoteHeader.id,
+      const quoteRevision = await findReferencedRecord("quoteRevision", {
+        quoteId: quote.id,
         revision: original.QRev?.toString().trim(),
       });
 
-      if (!quoteDetails) {
-        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${original.QRev}`);
+      if (!quoteRevision) {
+        logger.warn(`No quoteRevision found for quote ${quote.id}, revision: ${original.QRev}`);
         return null;
       }
 
-      data._tempQuoteDetailsId = quoteDetails.id;
+      data._tempQuoteRevisionId = quoteRevision.id;
       data._tempLineNumber = data.lineNumber;
 
-      data.quoteDetailsId = quoteDetails.id;
+      data.quoteRevisionId = quoteRevision.id;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
@@ -1204,7 +1204,7 @@ async function _migrateQuoteItems(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteDetailsId: data._tempQuoteDetailsId },
+        { quoteRevisionId: data._tempQuoteRevisionId },
         { lineNumber: data._tempLineNumber },
       ],
     }),
@@ -1251,30 +1251,30 @@ async function _migrateCustomQuoteItems(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
-      const quoteHeader = await findReferencedRecord("quoteHeader", {
+      const quote = await findReferencedRecord("quote", {
         year: original.QYear?.toString(),
         number: original.QNum?.toString(),
       });
 
-      if (!quoteHeader) {
-        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+      if (!quote) {
+        logger.warn(`No quote found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
         return null;
       }
 
-      const quoteDetails = await findReferencedRecord("quoteDetails", {
-        quoteHeaderId: quoteHeader.id,
+      const quoteRevision = await findReferencedRecord("quoteRevision", {
+        quoteId: quote.id,
         revision: original.QRev?.toString().trim(),
       });
 
-      if (!quoteDetails) {
-        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${original.QRev}`);
+      if (!quoteRevision) {
+        logger.warn(`No quoteRevision found for quote ${quote.id}, revision: ${original.QRev}`);
         return null;
       }
 
-      data._tempQuoteDetailsId = quoteDetails.id;
+      data._tempQuoteRevisionId = quoteRevision.id;
       data._tempLineNumber = data.lineNumber;
 
-      data.quoteDetailsId = quoteDetails.id;
+      data.quoteRevisionId = quoteRevision.id;
       data.isCustom = true;
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
@@ -1291,7 +1291,7 @@ async function _migrateCustomQuoteItems(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteDetailsId: data._tempQuoteDetailsId },
+        { quoteRevisionId: data._tempQuoteRevisionId },
         { lineNumber: data._tempLineNumber },
       ],
     }),
@@ -1345,29 +1345,29 @@ async function _migrateQuoteTerms(): Promise<MigrationResult> {
       },
     ],
     beforeSave: async (data, original) => {
-      const quoteHeader = await findReferencedRecord("quoteHeader", {
+      const quote = await findReferencedRecord("quote", {
         year: original.QYear?.toString(),
         number: original.QNum?.toString(),
       });
 
-      if (!quoteHeader) {
-        logger.warn(`No quoteHeader found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
+      if (!quote) {
+        logger.warn(`No quote found for QYear: ${original.QYear}, QNum: ${original.QNum}`);
         return null;
       }
 
-      const quote = await findReferencedRecord("quoteDetails", {
-        quoteHeaderId: quoteHeader.id,
+      const quoteRevision = await findReferencedRecord("quoteRevision", {
+        quoteId: quote.id,
         revision: original.QRev?.toString().toUpperCase() || "A",
       });
 
-      if (!quote) {
-        logger.warn(`No quoteDetails found for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev || "A"}`);
+      if (!quoteRevision) {
+        logger.warn(`No quoteRevision found for QYear: ${original.QYear}, QNum: ${original.QNum}, QRev: ${original.QRev || "A"}`);
         return null;
       }
 
-      data._tempQuoteDetailsId = quote.id;
+      data._tempQuoteRevisionId = quoteRevision.id;
 
-      data.quoteDetailsId = quote.id;
+      data.quoteRevisionId = quoteRevision.id;
       data.createdAt = new Date();
       data.updatedAt = new Date();
 
@@ -1376,7 +1376,7 @@ async function _migrateQuoteTerms(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteDetailsId: data._tempQuoteDetailsId },
+        { quoteRevisionId: data._tempQuoteRevisionId },
         { netDays: data.netDays },
         { dueOrder: data.dueOrder },
       ],
@@ -1429,31 +1429,31 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
         year = yearNum < 50 ? `20${year.slice(2)}` : `19${year.slice(2)}`;
       }
 
-      const quoteHeader = await findReferencedRecord("quoteHeader", {
+      const quote = await findReferencedRecord("quote", {
         year,
         number,
       });
 
-      if (!quoteHeader) {
-        logger.warn(`No quoteHeader found for year: ${year}, number: ${number}`);
+      if (!quote) {
+        logger.warn(`No quote found for year: ${year}, number: ${number}`);
         return null;
       }
 
-      const quoteDetails = await findReferencedRecord("quoteDetails", {
-        quoteHeaderId: quoteHeader.id,
+      const quoteRevision = await findReferencedRecord("quoteRevision", {
+        quoteId: quote.id,
         revision,
       });
 
-      if (!quoteDetails) {
-        logger.warn(`No quoteDetails found for header ${quoteHeader.id}, revision: ${revision}`);
+      if (!quoteRevision) {
+        logger.warn(`No quoteRevision found for quote ${quote.id}, revision: ${revision}`);
         return null;
       }
 
       const timestamp = createDateFromSeconds(original.NoteDate, original.NoteTime);
 
-      data._tempQuoteDetailsId = quoteDetails.id;
+      data._tempQuoteRevisionId = quoteRevision.id;
 
-      data.quoteDetailsId = quoteDetails.id;
+      data.quoteRevisionId = quoteRevision.id;
       data.createdAt = timestamp || new Date();
       data.updatedAt = timestamp || new Date();
       data.createdById = original.NoteCreater?.toString() || "system";
@@ -1477,7 +1477,7 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
     skipDuplicates: true,
     duplicateCheck: data => ({
       AND: [
-        { quoteDetailsId: data._tempQuoteDetailsId },
+        { quoteRevisionId: data._tempQuoteRevisionId },
         { body: data.body },
         { createdAt: data.createdAt },
       ],

@@ -3,7 +3,7 @@ import { QuoteRevisionStatus } from './quote-revision-status';
 
 export interface QuoteRevision {
   id?: string;
-  quoteHeaderId: string;
+  quoteId: string;
   revision?: string;
   quoteDate?: Date | string;
   status?: QuoteRevisionStatus;

@@ -2278,7 +2278,7 @@ export const SCHEMAS: ISchema[] = [
         required: true,
         hasDefault: true,
       },
-      quoteHeaderId: {
+      quoteId: {
         type: "string",
         required: true,
       },

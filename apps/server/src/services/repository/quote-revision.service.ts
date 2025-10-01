@@ -14,8 +14,8 @@ export class QuoteRevisionService extends BaseService<QuoteRevision> {
   protected modelName = "quoteRevision";
 
   protected async validate(entity: QuoteRevisionAttributes): Promise<void> {
-    if (!entity.quoteHeaderId)
-      throw new BadRequestError("quoteHeaderId is required");
+    if (!entity.quoteId)
+      throw new BadRequestError("quoteId is required");
     if (!entity.revision)
       throw new BadRequestError("revision is required");
     if (!entity.createdById)
