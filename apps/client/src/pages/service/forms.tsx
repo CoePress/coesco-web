@@ -13,7 +13,7 @@ import { FormStatus } from "@coesco/types";
 const Forms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getForms, response: forms, loading: formsLoading, error: formsError } = useApi<IApiResponse<any[]>>();
-  const { post: createForm, loading: createFormLoading, error: createFormError } = useApi<IApiResponse<any[]>>();
+  const { post: createForm, loading: createFormLoading } = useApi<IApiResponse<any[]>>();
 
   const [params, setParams] = useState({
     sort: "name" as "createdAt" | "updatedAt" | "name",

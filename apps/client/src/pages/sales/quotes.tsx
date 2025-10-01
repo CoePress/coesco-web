@@ -1,15 +1,14 @@
-import { DollarSignIcon, FileTextIcon, PlusCircleIcon, TrendingUpIcon, UsersIcon } from "lucide-react";
+import { PlusCircleIcon} from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { AdvancedDropdown, Button, Modal, StatusBadge, Table, Toolbar } from "@/components";
-import { formatCurrency, formatQuoteNumber } from "@/utils";
+import { formatQuoteNumber } from "@/utils";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
 import PageHeader from "@/components/layout/page-header";
 import { Filter } from "@/components/feature/toolbar";
-import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { format } from "date-fns";
 import { QuoteStatus, QuoteRevisionStatus } from "@coesco/types";
 
