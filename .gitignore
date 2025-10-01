@@ -26,7 +26,8 @@ coverage
 out/
 build
 dist
-
+bin/
+obj/
 
 # Debug
 npm-debug.log*
@@ -38,11 +39,6 @@ yarn-error.log*
 *.pem
 
 dump.rdb
-
-# Build outputs
-bin/
-obj/
-out/
 
 # Visual Studio / VS Code
 .vscode/
