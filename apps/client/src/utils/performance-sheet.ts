@@ -603,12 +603,23 @@ export const usePerformanceDataService = (
     // Update global state immediately
     setPerformanceData(updated);
 
+    // Syncs - only sync maxCoilWeight -> coilWeight, not the reverse
+    let finalUpdated = updated;
+    if (name === "common.coil.maxCoilWeight") {
+      finalUpdated = setNestedValue(updated, "common.material.coilWeight", processedValue);
+      localDataRef.current = finalUpdated;
+      setLocalData(finalUpdated);
+      setPerformanceData(finalUpdated);
+      // Track both field changes
+      pendingChangesRef.current["common.material.coilWeight"] = processedValue;
+    }
+
     // Mark as dirty and track pending changes
     setIsDirty(true);
     pendingChangesRef.current[name] = processedValue;
 
     // Debounce the backend save
-    debouncedSave(updated);
+    debouncedSave(finalUpdated);
   }, [isEditing, fieldErrors, setPerformanceData]);
 
   // Manual save function (for immediate saves)

@@ -131,7 +131,7 @@ def check_min_material_width(min_material_width, width):
     return "PASS" if min_material_width <= width else "FAIL"
 
 def check_air_pressure(air_pressure):
-    return "PASS" if air_pressure <= 120 else "FAIL"
+    return "PASS" if air_pressure > 120 else "FAIL"
 
 def check_rewind_torque(rewind_torque, torque_at_mandrel):
     return "PASS" if rewind_torque < torque_at_mandrel else "FAIL"

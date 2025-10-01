@@ -253,7 +253,22 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           label="Type of Roll"
           name="materialSpecs.straightener.rolls.typeOfRoll"
           value={localData.materialSpecs?.straightener?.rolls?.typeOfRoll || ""}
-          onChange={handleFieldChange}
+          onChange={e => {
+            handleFieldChange(e);
+            const value = e.target.value;
+            let numRolls = 0;
+            if (value.includes("7 Roll")) numRolls = 7;
+            else if (value.includes("9 Roll")) numRolls = 9;
+            else if (value.includes("11 Roll")) numRolls = 11;
+            if (numRolls) {
+              handleFieldChange({
+                target: {
+                  name: "common.equipment.straightener.numberOfRolls",
+                  value: numRolls.toString()
+                }
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+          }}
           options={ROLL_TYPE_OPTIONS}
           placeholder="Select type of roll..."
           disabled={!isEditing}

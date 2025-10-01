@@ -188,6 +188,7 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				}
 				if (rfqCalc.max !== undefined && inputData.common.feedRates.max) {
 					inputData.common.feedRates.max.fpm = rfqCalc.max;
+					inputData.common.material.reqMaxFPM = rfqCalc.max;
 				}
 			}
 
