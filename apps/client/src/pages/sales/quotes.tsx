@@ -17,7 +17,7 @@ const Quotes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { get: getQuotes, response: quotes, loading: quotesLoading, error: quotesError } = useApi<IApiResponse<any[]>>();
   const { post: createQuote, loading: createQuoteLoading, error: createQuoteError } = useApi<IApiResponse<any[]>>();
-  const { get: getMetrics, response: metrics, loading: metricsLoading } = useApi<IApiResponse<any>>();
+  // const { get: getMetrics, response: metrics, loading: metricsLoading } = useApi<IApiResponse<any>>();
 
   const [params, setParams] = useState({
     sort: "createdAt" as "createdAt" | "updatedAt" | "year" | "quoteNumber",
@@ -60,18 +60,18 @@ const Quotes = () => {
     await getQuotes("/quotes", queryParams);
   };
 
-  const fetchMetrics = async () => {
-    await getMetrics("/quotes/metrics");
-  };
+  // const fetchMetrics = async () => {
+  //   await getMetrics("/quotes/metrics");
+  // };
 
   const refresh = () => {
     fetchQuotes();
-    fetchMetrics();
+    // fetchMetrics();
   };
 
   useEffect(() => {
     fetchQuotes();
-    fetchMetrics();
+    // fetchMetrics();
   }, [params]);
 
   const columns: TableColumn<any>[] = [
@@ -148,36 +148,36 @@ const Quotes = () => {
     setIsModalOpen(!isModalOpen);
   };
 
-  const kpis = useMemo(() => {
-    const metricsData = metrics?.data;
+  // const kpis = useMemo(() => {
+  //   const metricsData = metrics?.data;
 
-    return [
-      {
-        title: "Total Quote Value",
-        value: metricsLoading ? "-" : formatCurrency(metricsData?.totalQuoteValue || 0, false),
-        description: "Total value of open quotes",
-        icon: <DollarSignIcon size={16} />,
-      },
-      {
-        title: "Total Quotes",
-        value: metricsLoading ? "-" : (metricsData?.totalQuoteCount || 0).toString(),
-        description: "Open quotes",
-        icon: <FileTextIcon size={16} />,
-      },
-      {
-        title: "Average Quote Value",
-        value: metricsLoading ? "-" : formatCurrency(metricsData?.averageQuoteValue || 0, false),
-        description: "Average value per quote",
-        icon: <TrendingUpIcon size={16} />,
-      },
-      {
-        title: "Approved Quotes",
-        value: metricsLoading ? "-" : (metricsData?.quotesByStatus?.APPROVED || 0).toString(),
-        description: "Quotes approved",
-        icon: <UsersIcon size={16} />,
-      },
-    ];
-  }, [metrics, metricsLoading]);
+  //   return [
+  //     {
+  //       title: "Total Quote Value",
+  //       value: metricsLoading ? "-" : formatCurrency(metricsData?.totalQuoteValue || 0, false),
+  //       description: "Total value of open quotes",
+  //       icon: <DollarSignIcon size={16} />,
+  //     },
+  //     {
+  //       title: "Total Quotes",
+  //       value: metricsLoading ? "-" : (metricsData?.totalQuoteCount || 0).toString(),
+  //       description: "Open quotes",
+  //       icon: <FileTextIcon size={16} />,
+  //     },
+  //     {
+  //       title: "Average Quote Value",
+  //       value: metricsLoading ? "-" : formatCurrency(metricsData?.averageQuoteValue || 0, false),
+  //       description: "Average value per quote",
+  //       icon: <TrendingUpIcon size={16} />,
+  //     },
+  //     {
+  //       title: "Approved Quotes",
+  //       value: metricsLoading ? "-" : (metricsData?.quotesByStatus?.APPROVED || 0).toString(),
+  //       description: "Quotes approved",
+  //       icon: <UsersIcon size={16} />,
+  //     },
+  //   ];
+  // }, [metrics, metricsLoading]);
 
   const Actions = () => {
     return (
@@ -245,11 +245,11 @@ const Quotes = () => {
       />
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
-        <Metrics>
+        {/* <Metrics>
           {kpis.map((metric) => (
             <MetricsCard {...metric} />
           ))}
-        </Metrics>
+        </Metrics> */}
 
         <Toolbar
           onSearch={handleSearch}

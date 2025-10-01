@@ -1662,16 +1662,16 @@ async function main() {
     await legacyService.initialize();
     // const coilTypes = await _migrateCoilTypes();
     // const productClasses = await _migrateProductClasses();
-    const equipmentItems = await _migrateEquipListToItems();
+    // const equipmentItems = await _migrateEquipListToItems();
     // const optionCategories = await _migrateOptionCategories();
     // const optionHeaders = await _migrateOptionHeaders();
     // const optionDetails = await _migrateOptionDetails();
     const quoteHeaders = await _migrateQuotes();
     const quotes = await _migrateQuoteRevisions();
-    const quoteItems = await _migrateQuoteItems();
-    const customQuoteItems = await _migrateCustomQuoteItems();
-    const quoteTerms = await _migrateQuoteTerms();
-    const quoteNotes = await _migrateQuoteNotes();
+    // const quoteItems = await _migrateQuoteItems();
+    // const customQuoteItems = await _migrateCustomQuoteItems();
+    // const quoteTerms = await _migrateQuoteTerms();
+    // const quoteNotes = await _migrateQuoteNotes();
 
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
@@ -1679,16 +1679,16 @@ async function main() {
     logger.info(`Migration Results (${duration}s):`);
     // logger.info(`Coil Types: ${coilTypes.created} created, ${coilTypes.skipped} skipped, ${coilTypes.errors} errors`);
     // logger.info(`Product Classes: ${productClasses.created} created, ${productClasses.skipped} skipped, ${productClasses.errors} errors`);
-    logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
+    // logger.info(`Equipment Items: ${equipmentItems.created} created, ${equipmentItems.skipped} skipped, ${equipmentItems.errors} errors`);
     // logger.info(`Option Categories: ${optionCategories.created} created, ${optionCategories.skipped} skipped, ${optionCategories.errors} errors`);
     // logger.info(`Option Headers: ${optionHeaders.created} created, ${optionHeaders.skipped} skipped, ${optionHeaders.errors} errors`);
     // logger.info(`Option Details: ${optionDetails.created} created, ${optionDetails.skipped} skipped, ${optionDetails.errors} errors`);
     logger.info(`Quote Headers: ${quoteHeaders.created} created, ${quoteHeaders.skipped} skipped, ${quoteHeaders.errors} errors`);
     logger.info(`Quote Revisions: ${quotes.created} created, ${quotes.skipped} skipped, ${quotes.errors} errors`);
-    logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
-    logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
-    logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
-    logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
+    // logger.info(`Quote Items: ${quoteItems.created} created, ${quoteItems.skipped} skipped, ${quoteItems.errors} errors`);
+    // logger.info(`Custom Quote Items: ${customQuoteItems.created} created, ${customQuoteItems.skipped} skipped, ${customQuoteItems.errors} errors`);
+    // logger.info(`Quote Terms: ${quoteTerms.created} created, ${quoteTerms.skipped} skipped, ${quoteTerms.errors} errors`);
+    // logger.info(`Quote Notes: ${quoteNotes.created} created, ${quoteNotes.skipped} skipped, ${quoteNotes.errors} errors`);
   }
   catch (error) {
     logger.error("Error in main:", error);

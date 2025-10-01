@@ -16,16 +16,34 @@ export class BaseService<T> {
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const searchFields = this.getSearchFields();
-    const { query, finalWhere, page, take } = await this.buildQueryParams(
+    const { query, countQuery, page, take, hasComputedSearch } = await this.buildQueryParams(
       params,
       searchFields,
     );
 
     const client = tx ?? this.model;
 
+    if (hasComputedSearch && params?.search) {
+      // When searching computed fields, fetch all matching records and filter in-memory
+      const allItems = await client.findMany(query);
+      const total = allItems.length;
+      const totalPages = take ? Math.ceil(total / take) : 1;
+
+      return {
+        success: true,
+        data: allItems,
+        meta: {
+          page,
+          limit: take,
+          total,
+          totalPages,
+        },
+      };
+    }
+
     const [items, total] = await Promise.all([
       client.findMany(query),
-      client.count({ where: finalWhere }),
+      client.count(countQuery),
     ]);
 
     const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
@@ -270,53 +288,28 @@ export class BaseService<T> {
     params?: IQueryParams<T>,
     searchFields?: (string | { field: string; weight: number })[],
   ): Promise<any> {
-    // Check if we need to transform the sort field
     const transformedOrderBy = this.transformSort(params?.sort, params?.order);
+    const transforms = this.getTransforms();
 
-    // If transformSort returned something, don't let buildQuery create orderBy
+    // Filter out computed fields from search
+    const regularSearchFields = searchFields?.filter((sf) => {
+      const fieldName = typeof sf === "string" ? sf : sf.field;
+      return !transforms[fieldName];
+    });
+
     const queryParams = transformedOrderBy
       ? { ...params, sort: undefined, order: undefined }
       : params ?? {};
 
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
       queryParams,
-      searchFields,
+      regularSearchFields,
     );
+
     const columns = await this.getColumns();
     const scope = await this.getScope(columns);
 
-    let finalWhere = { AND: [where ?? {}, scope ?? {}] };
-
-    // Handle computed field search
-    if (params?.search && searchFields) {
-      const transforms = this.getTransforms();
-      const computedFields = searchFields.filter((sf) => {
-        const fieldName = typeof sf === "string" ? sf : sf.field;
-        return transforms[fieldName];
-      });
-
-      if (computedFields.length > 0) {
-        const computedSearchConditions = computedFields.map((sf) => {
-          const fieldName = typeof sf === "string" ? sf : sf.field;
-          const sql = transforms[fieldName];
-          return Prisma.sql`${Prisma.raw(sql)} ILIKE ${`%${params.search}%`}`;
-        });
-
-        // Combine regular field search (from where.OR) with computed field search
-        const existingOr = where?.OR || [];
-        finalWhere = {
-          AND: [
-            {
-              OR: [
-                ...existingOr,
-                ...computedSearchConditions.map(sql => ({ AND: [Prisma.raw(`(${sql})`)] })),
-              ],
-            },
-            scope ?? {},
-          ],
-        };
-      }
-    }
+    const finalWhere = { AND: [where ?? {}, scope ?? {}] };
 
     const query: any = {
       where: finalWhere,
@@ -330,7 +323,9 @@ export class BaseService<T> {
     else if (include)
       query.include = include;
 
-    return { query, finalWhere, page, take };
+    const countQuery = { where: finalWhere };
+
+    return { query, countQuery, page, take, hasComputedSearch: false };
   }
 
   private async log(

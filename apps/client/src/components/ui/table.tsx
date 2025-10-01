@@ -83,7 +83,7 @@ const Table = <T extends Record<string, any>>({
           className={`min-w-full text-text-muted text-sm ${
             (loading || data.length === 0) ? 'h-full' : ''
           }`}>
-          <thead className="bg-foreground sticky top-0 z-10" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
+          <thead className="bg-foreground sticky top-0 z-10 select-none" style={{boxShadow: '0 1px 0 0 var(--border)'}}>
             <tr>
               {selectable && (
                 <th
