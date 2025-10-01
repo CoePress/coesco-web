@@ -171,6 +171,7 @@ const Pipeline = () => {
       customerId,
       companyName,
       confidence,
+      target_account: raw.Target_Account,
       Quote_Number: raw.Quote_Number,
       Journey_Stage: raw.Journey_Stage,
       RSM: raw.RSM,
@@ -236,7 +237,7 @@ const Pipeline = () => {
       baseJourneys.forEach(j => {
         const cid = String(j.customerId ?? "");
         const name = j.companyName;
-        if (cid && name && !map.has(cid)) {
+        if (cid && cid !== "0" && name && !map.has(cid)) {
           map.set(cid, { id: cid, name });
         }
       });

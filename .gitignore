@@ -26,6 +26,10 @@ coverage
 out/
 build
 dist
+bin/
+obj/
+out/
+apps/server/src/services/repository/
 
 
 # Debug
@@ -38,11 +42,6 @@ yarn-error.log*
 *.pem
 
 dump.rdb
-
-# Build outputs
-bin/
-obj/
-out/
 
 # Visual Studio / VS Code
 .vscode/
