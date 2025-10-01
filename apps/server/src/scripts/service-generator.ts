@@ -49,16 +49,43 @@ export async function getModels() {
 }
 
 function extractAnnotationsFromSchema(schemaContent: string, modelName: string) {
-  const modelRegex = new RegExp(`model\\s+${modelName}\\s*\\{[\\s\\S]*?\\n\\}`, "m");
-  const modelMatch = schemaContent.match(modelRegex);
+  // Find the model start
+  const modelStartRegex = new RegExp(`model\\s+${modelName}\\s*\\{`, "m");
+  const startMatch = modelStartRegex.exec(schemaContent);
 
-  if (!modelMatch)
+  if (!startMatch)
     return null;
 
-  const modelBlock = modelMatch[0];
+  const startIndex = startMatch.index;
+
+  // Find the model end by counting braces
+  let braceCount = 0;
+  let inModel = false;
+  let endIndex = startIndex;
+
+  for (let i = startIndex; i < schemaContent.length; i++) {
+    if (schemaContent[i] === "{") {
+      braceCount++;
+      inModel = true;
+    }
+    if (schemaContent[i] === "}") {
+      braceCount--;
+      if (braceCount === 0 && inModel) {
+        endIndex = i;
+        break;
+      }
+    }
+  }
+
+  // Extract a bit more after the closing brace to catch trailing comments
+  const extraLines = 10;
+  const afterBrace = schemaContent.substring(endIndex + 1, schemaContent.length);
+  const afterLines = afterBrace.split("\n").slice(0, extraLines);
+
+  const modelBlock = `${schemaContent.substring(startIndex, endIndex + 1)}\n${afterLines.join("\n")}`;
   const lines = modelBlock.split("\n");
 
-  // Find all /// comments within the model block
+  // Find all /// comments
   const comments = lines
     .filter(line => line.trim().startsWith("///"))
     .map(line => line.trim().substring(3).trim())
@@ -86,19 +113,62 @@ function parseAnnotations(model: any) {
   const docSource = model.customAnnotations || model.documentation || "";
 
   if (docSource) {
-    // Parse @transform
-    const transformMatch = docSource.match(/@transform\(([^)]+)\)/);
+    // Parse @transform - handle nested parentheses
+    const transformMatch = docSource.match(/@transform\((.*?)\)(?:\s|$)/s);
     if (transformMatch) {
-      const transforms = transformMatch[1].split(",").map((t: string) => t.trim());
-      annotations.transforms = {};
-      transforms.forEach((transform: string) => {
-        const colonIndex = transform.indexOf(":");
-        if (colonIndex > 0) {
-          const name = transform.substring(0, colonIndex).trim();
-          const sql = transform.substring(colonIndex + 1).trim();
-          annotations.transforms[name] = sql;
+      let content = transformMatch[1];
+      let depth = 0;
+      let endIndex = 0;
+
+      // Find the actual end by counting parentheses
+      for (let i = 0; i < transformMatch[0].length; i++) {
+        if (transformMatch[0][i] === "(")
+          depth++;
+        if (transformMatch[0][i] === ")") {
+          depth--;
+          if (depth === 0) {
+            endIndex = i;
+            break;
+          }
         }
-      });
+      }
+
+      // Re-extract with correct bounds
+      const fullMatch = docSource.match(/@transform\((.+?)\)(?=\s*@|\s*$)/s);
+      if (fullMatch) {
+        content = fullMatch[1];
+        // Split by commas that are not inside parentheses
+        const transforms: string[] = [];
+        let current = "";
+        let parenDepth = 0;
+
+        for (let i = 0; i < content.length; i++) {
+          const char = content[i];
+          if (char === "(")
+            parenDepth++;
+          if (char === ")")
+            parenDepth--;
+          if (char === "," && parenDepth === 0) {
+            transforms.push(current.trim());
+            current = "";
+          }
+          else {
+            current += char;
+          }
+        }
+        if (current.trim())
+          transforms.push(current.trim());
+
+        annotations.transforms = {};
+        transforms.forEach((transform: string) => {
+          const colonIndex = transform.indexOf(":");
+          if (colonIndex > 0) {
+            const name = transform.substring(0, colonIndex).trim();
+            const sql = transform.substring(colonIndex + 1).trim();
+            annotations.transforms[name] = sql;
+          }
+        });
+      }
     }
 
     // Parse @searchFields
@@ -111,18 +181,19 @@ function parseAnnotations(model: any) {
       });
     }
 
-    // Parse @sortFields
+    // Parse @sortFields - don't split by comma, parse entire content
     const sortFieldsMatch = docSource.match(/@sortFields\(([^)]+)\)/);
     if (sortFieldsMatch) {
-      const fields = sortFieldsMatch[1].split(",").map((f: string) => f.trim());
+      const content = sortFieldsMatch[1];
       annotations.sortFields = {};
-      fields.forEach((field: string) => {
-        const match = field.match(/(\w+):\s*\[([^\]]+)\]/);
-        if (match) {
-          const [, name, fieldsStr] = match;
-          annotations.sortFields[name] = fieldsStr.split(",").map((s: string) => s.trim());
-        }
-      });
+
+      // Match pattern: fieldName: [field1, field2, ...]
+      const fieldRegex = /(\w+)\s*:\s*\[([^\]]+)\]/g;
+      let match;
+      while ((match = fieldRegex.exec(content)) !== null) {
+        const [, name, fieldsStr] = match;
+        annotations.sortFields[name] = fieldsStr.split(",").map((s: string) => s.trim());
+      }
     }
   }
 
@@ -250,6 +321,12 @@ async function generateServiceFiles(models: any, relationships: any) {
     const transforms = await generateTransforms(model);
     const searchFields = await generateSearchFields(model);
     const transformSort = await generateTransformSort(model);
+
+    if (model.customAnnotations) {
+      console.log(`${model.name} annotations:`, model.customAnnotations);
+      const annotations = parseAnnotations(model);
+      console.log(`${model.name} parsed:`, JSON.stringify(annotations, null, 2));
+    }
 
     const methods = [transforms, transformSort, searchFields].filter(m => m).join("\n");
 

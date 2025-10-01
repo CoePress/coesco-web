@@ -32,9 +32,15 @@ export class QuoteService extends BaseService<Quote> {
 
   protected getTransforms(): Record<string, string> {
     return {
-      2: "undefined",
-      quoteNumber: "CONCAT(RIGHT(year",
+      quoteNumber: "CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0'))",
     };
+  }
+
+  protected transformSort(sort?: string, order?: "asc" | "desc"): any {
+    if (sort === "quoteNumber") {
+      return [{ year: order || "asc" }, { number: order || "asc" }];
+    }
+    return super.transformSort(sort, order);
   }
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {
