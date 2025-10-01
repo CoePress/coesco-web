@@ -869,10 +869,10 @@ const Pipeline = () => {
     });
 
     // Auto-fit columns based on content first
-    worksheet.columns.forEach((column, index) => {
+    worksheet.columns.forEach((column: any, index: any) => {
       let maxLength = headers[index].length;
 
-      worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell) => {
+      worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell: any) => {
         const cellValue = cell.value ? String(cell.value) : '';
         // Handle multiline text (split by newline and get longest line)
         const lines = cellValue.split('\n');
@@ -885,11 +885,11 @@ const Pipeline = () => {
     });
 
     // Format all cells and calculate row heights
-    worksheet.eachRow((row, rowNumber) => {
+    worksheet.eachRow((row: any, rowNumber: any) => {
       // Format header row
       if (rowNumber === 1) {
         row.height = 15;
-        row.eachCell((cell) => {
+        row.eachCell((cell: any) => {
           cell.font = { bold: true };
           cell.alignment = { wrapText: true, vertical: 'top' };
         });
@@ -898,7 +898,7 @@ const Pipeline = () => {
 
       // Calculate max height needed for this row based on all cells
       let maxLines = 1;
-      row.eachCell((cell, colNumber) => {
+      row.eachCell((cell: any, colNumber: any) => {
         // Set wrap text for all cells
         cell.alignment = { wrapText: true, vertical: 'top' };
 

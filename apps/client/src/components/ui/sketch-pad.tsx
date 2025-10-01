@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PenTool, Eraser, RotateCcw, Save, X, Palette, Circle } from 'lucide-react';
+import { PenTool, Eraser, RotateCcw, Save, X } from 'lucide-react';
 import Button from './button';
 import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
@@ -141,7 +141,7 @@ export const SketchPad: React.FC<SketchPadProps> = ({
   const clearSketch = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
