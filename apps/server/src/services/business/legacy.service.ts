@@ -164,7 +164,8 @@ export class LegacyService {
 
     if (connectedDatabases.length === 0) {
       logger.error("Failed to connect to any databases");
-    } else {
+    }
+    else {
       logger.info(`Successfully connected to: ${connectedDatabases.join(", ")}`);
     }
   }

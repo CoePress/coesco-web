@@ -6,6 +6,7 @@ import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
+import defaultUsers from "@/config/default-users.json";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
@@ -81,8 +82,9 @@ const machines = [
 async function seedEmployees() {
   try {
     const employeeCount = await prisma.employee.count();
+    const defaultUserCount = defaultUsers.length;
 
-    if (employeeCount === 2) {
+    if (employeeCount <= defaultUserCount) {
       await _migrateEmployees(legacyService);
       await closeDatabaseConnections();
       await microsoftService.sync();

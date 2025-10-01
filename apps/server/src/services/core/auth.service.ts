@@ -297,7 +297,7 @@ export class AuthService {
       return;
     }
 
-    const defaultUsersPath = join(__dirname, "../../config/default-users.json");
+    const defaultUsersPath = join(process.cwd(), "src/config/default-users.json");
     const defaultUsers = JSON.parse(readFileSync(defaultUsersPath, "utf-8"));
 
     for (const userData of defaultUsers) {
