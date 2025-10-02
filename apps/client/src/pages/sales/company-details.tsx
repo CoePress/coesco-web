@@ -697,6 +697,9 @@ const CompanyDetails = () => {
   };
 
   const handleContactDataChange = (fieldName: string, value: any) => {
+    if (fieldName === 'FirstName' || fieldName === 'LastName') {
+      value = value.trimStart();
+    }
     setEditingContactData({ ...editingContactData, [fieldName]: value });
   };
 
@@ -757,6 +760,9 @@ const CompanyDetails = () => {
   };
 
   const handleNewContactDataChange = (fieldName: string, value: any) => {
+    if (fieldName === 'FirstName' || fieldName === 'LastName') {
+      value = value.trimStart();
+    }
     setNewContactData({ ...newContactData, [fieldName]: value });
   };
 
@@ -1522,8 +1528,8 @@ const CompanyDetails = () => {
                                     </>
                                   ) : (
                                     <>
-                                      <Link 
-                                        to={`/sales/contacts/${contact.Cont_Id}_${contact.Company_ID}_${contact.Address_ID || 0}`}
+                                      <Link
+                                        to={`/sales/contacts/${contact.Company_ID}_${contact.Cont_Id}`}
                                         className="text-primary hover:underline"
                                       >
                                         {fullName || "Unnamed Contact"}

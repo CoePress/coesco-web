@@ -15,22 +15,29 @@ import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
 
 const Contacts = () => {
-  const [legacyContacts, setLegacyContacts] = useState<any[] | null>(null);
-  const [legacyCompanies, setLegacyCompanies] = useState<any[] | null>(null);
-  
+  const [page, setPage] = useState(1);
+  const [limit] = useState(25);
+  const [sort, setSort] = useState("fullName");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [legacyContacts, setLegacyContacts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
+
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [showAddContactModal, setShowAddContactModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const api = useApi();
-
-  useEffect(() => {
-    setBatchSize(50);
-  }, [searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -138,12 +145,6 @@ const Contacts = () => {
     }
   };
 
-  const handleContactAdded = (newContact: any) => {
-    const adaptedContact = adaptLegacyContact(newContact, legacyCompanies || [], (legacyContacts?.length || 0));
-    if (adaptedContact) {
-      setLegacyContacts(prev => [adaptedContact, ...(prev || [])]);
-    }
-  };
 
   const getContactTypeName = (type: string) => {
     switch (type?.toUpperCase()) {
@@ -157,21 +158,20 @@ const Contacts = () => {
     }
   };
 
-  const adaptLegacyContact = (raw: any, companies: any[] = [], index: number = 0) => {
+  const adaptLegacyContact = (raw: any, companyName: string, index: number = 0) => {
     if (!raw) {
       console.warn('Received null/undefined contact data');
       return null;
     }
 
-    const company = companies.find(comp => comp?.Company_ID === raw?.Company_ID);
     const contactId = raw.Cont_Id || `contact_${index}`;
     const uniqueId = `${contactId}_${raw.Company_ID || 0}_${index}`;
-    
+
     return {
       id: uniqueId,
       originalId: raw.Cont_Id || 0,
       companyId: raw.Company_ID || 0,
-      companyName: company?.CustDlrName || (raw.Company_ID ? `Company ${raw.Company_ID}` : 'Unknown Company'),
+      companyName,
       addressId: raw.Address_ID || 0,
       firstName: raw.FirstName || "",
       lastName: raw.LastName || "",
@@ -196,6 +196,115 @@ const Contacts = () => {
     };
   };
 
+  const fetchAllContacts = useCallback(async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      let sortField = "COALESCE(NULLIF(FirstName, ''), LastName)";
+
+      if (sort === "companyName") {
+        sortField = "Company_ID";
+      } else if (sort === "typeName") {
+        sortField = "Type";
+      } else if (sort === "phoneNumber") {
+        sortField = "PhoneNumber";
+      } else if (sort === "email") {
+        sortField = "Email";
+      }
+
+      const params: any = {
+        page,
+        limit,
+        sort: sortField,
+        order,
+        fields: "Cont_Id,Company_ID,Address_ID,FirstName,LastName,Type,Notes,PhoneNumber,PhoneExt,FaxPhoneNum,Email,Website,ConTitle,AltPhone,AltDesc,MoreAddress,CreateDate,CreateInit,ModifyDate,ModifyInit"
+      };
+
+      if (debouncedSearchTerm) {
+        params.filter = `FirstName LIKE '%${debouncedSearchTerm}%' OR LastName LIKE '%${debouncedSearchTerm}%'`;
+      }
+
+      const rawContacts = await api.get("/legacy/std/Contacts", params);
+
+      if (rawContacts) {
+        const isApiResponse = rawContacts && typeof rawContacts === 'object' && 'data' in rawContacts;
+
+        if (isApiResponse) {
+          const contactsArray = Array.isArray(rawContacts.data) ? rawContacts.data : [];
+          const validContacts = contactsArray.filter((contact: any) => contact != null);
+
+          const uniqueCompanyIds = [...new Set(validContacts.map((c: any) => c.Company_ID).filter(Boolean))];
+
+          let companyMap = new Map<number, string>();
+          if (uniqueCompanyIds.length > 0) {
+            try {
+              const companyPromises = uniqueCompanyIds.map(async (companyId) => {
+                try {
+                  const companyResponse = await api.get('/legacy/base/Company/filter/custom', {
+                    Company_ID: companyId,
+                    fields: 'Company_ID,CustDlrName',
+                    limit: 1
+                  });
+
+                  const companies = Array.isArray(companyResponse) ? companyResponse : [];
+                  return companies.length > 0 ? companies[0] : null;
+                } catch (error) {
+                  console.error(`Error fetching company ${companyId}:`, error);
+                  return null;
+                }
+              });
+
+              const companies = await Promise.all(companyPromises);
+              companies.forEach((company: any) => {
+                if (company?.Company_ID && company?.CustDlrName) {
+                  companyMap.set(company.Company_ID, company.CustDlrName);
+                }
+              });
+            } catch (error) {
+              console.error("Error fetching company names:", error);
+            }
+          }
+
+          const mapped = validContacts.map((contact: any, index: number) => {
+            const companyName = companyMap.get(contact.Company_ID) || (contact.Company_ID ? `Company ${contact.Company_ID}` : 'Unknown Company');
+            return adaptLegacyContact(contact, companyName, index);
+          }).filter((contact: any) => contact != null);
+
+          setLegacyContacts(mapped);
+
+          if (rawContacts.meta) {
+            setPagination({
+              page: rawContacts.meta.page,
+              totalPages: rawContacts.meta.totalPages,
+              total: rawContacts.meta.total,
+              limit: rawContacts.meta.limit
+            });
+          }
+        } else {
+          const contactsArray = Array.isArray(rawContacts) ? rawContacts : [];
+          const validContacts = contactsArray.filter((contact: any) => contact != null);
+          const mapped = validContacts.map((contact: any, index: number) => {
+            const companyName = contact.Company_ID ? `Company ${contact.Company_ID}` : 'Unknown Company';
+            return adaptLegacyContact(contact, companyName, index);
+          }).filter((contact: any) => contact != null);
+          setLegacyContacts(mapped);
+
+          setPagination({
+            page: 1,
+            totalPages: Math.ceil(mapped.length / limit),
+            total: mapped.length,
+            limit: limit
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching Contacts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, api, page, limit, sort, order, debouncedSearchTerm]);
+
   const fetchContactsWithAddresses = async (limit: number = 50) => {
     try {
       const rawContacts = await api.get(`/legacy/std/Contacts`, {
@@ -210,7 +319,7 @@ const Contacts = () => {
 
       const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
       const contacts = contactsArray.filter((contact: any) => contact != null);
-      
+
       const addressContactPairs = contacts
         .filter((contact: any) => contact?.Address_ID && contact?.Address_ID > 0 && contact?.Company_ID)
         .map((contact: any) => ({
@@ -218,11 +327,11 @@ const Contacts = () => {
           companyId: contact.Company_ID,
           key: `${contact.Address_ID}_${contact.Company_ID}`
         }));
-      
-      const uniqueAddressPairs = addressContactPairs.filter((pair: any, index: number, arr: any[]) => 
+
+      const uniqueAddressPairs = addressContactPairs.filter((pair: any, index: number, arr: any[]) =>
         index === arr.findIndex((p: any) => p.key === pair.key)
       );
-      
+
       const addressPromises = uniqueAddressPairs.map(async (pair: any) => {
         try {
           const rawAddress = await api.get('/legacy/base/Address/filter/custom', {
@@ -244,7 +353,7 @@ const Contacts = () => {
 
       const addressResults = await Promise.all(addressPromises);
       const addressMap = new Map();
-      
+
       addressResults.forEach(result => {
         if (result) {
           addressMap.set(result.key, result.data);
@@ -260,146 +369,29 @@ const Contacts = () => {
   };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [rawContacts, rawCompanies] = await Promise.all([
-          api.get('/legacy/std/Contacts', {
-            sort: 'Cont_Id',
-            order: 'desc',
-            limit: 50
-          }),
-          api.get('/legacy/base/Company', {
-            sort: 'Company_ID',
-            order: 'desc',
-            limit: 10
-          })
-        ]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchInput);
+    }, 300);
 
-        let companiesData = [];
-        if (rawCompanies) {
-          const companiesArray = rawCompanies.data ? rawCompanies.data : (Array.isArray(rawCompanies) ? rawCompanies : []);
-          companiesData = companiesArray;
-          if (!cancelled) setLegacyCompanies(companiesData);
-        } else {
-          console.error("Legacy companies fetch failed");
-        }
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-        if (rawContacts) {
-          const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
-          const validContacts = contactsArray.filter((contact: any) => contact != null);
-          const mapped = validContacts.map((contact: any, index: number) => adaptLegacyContact(contact, companiesData, index)).filter((contact: any) => contact != null);
-          if (!cancelled) {
-            setLegacyContacts(mapped);
-            setAllContactsLoaded(mapped.length < 50);
-          }
-        } else {
-          console.error("Legacy contacts fetch failed");
-        }
-      } catch (error) {
-        console.error("Error fetching Contacts and Companies:", error);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => {
+    fetchAllContacts();
+  }, [page, limit, sort, order, debouncedSearchTerm]);
 
-  const baseContacts = legacyContacts || [];
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm]);
 
-  const filteredContacts = baseContacts.filter((contact: any) => {
-    if (!searchQuery.trim()) return true;
-    
-    const query = searchQuery.toLowerCase().trim();
-    const searchableText = [
-      contact.fullName,
-      contact.firstName,
-      contact.lastName,
-      contact.email,
-      contact.phoneNumber,
-      contact.title,
-      contact.companyName,
-      contact.typeName
-    ].filter(Boolean).join(' ').toLowerCase();
-    
-    return searchableText.includes(query);
-  });
-
-  const [batchSize, setBatchSize] = useState(50);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [allContactsLoaded, setAllContactsLoaded] = useState(false);
-  
-  const displayedContacts = filteredContacts.slice(0, batchSize);
-  const hasMoreContacts = filteredContacts.length > batchSize || (!allContactsLoaded && !searchQuery.trim());
-
-  const loadMoreContacts = useCallback(async () => {
-    if (isLoadingMore || !hasMoreContacts) return;
-    
-    setIsLoadingMore(true);
-    
-    try {
-      if (filteredContacts.length > batchSize) {
-        setBatchSize(prev => prev + 50);
-      } else {
-        const rawContacts = await api.get('/legacy/std/Contacts', {
-          sort: 'Cont_Id',
-          order: 'desc',
-          limit: 50,
-          offset: baseContacts.length
-        });
-
-        if (rawContacts) {
-          const contactsArray = rawContacts.data ? rawContacts.data : (Array.isArray(rawContacts) ? rawContacts : []);
-          
-          if (contactsArray.length === 0) {
-            setAllContactsLoaded(true);
-          } else {
-            const validNewContacts = contactsArray.filter((contact: any) => contact != null);
-            const mappedNewContacts = validNewContacts.map((contact: any, index: number) => adaptLegacyContact(contact, legacyCompanies || [], baseContacts.length + index)).filter((contact: any) => contact != null);
-            setLegacyContacts(prev => [...(prev || []), ...mappedNewContacts]);
-            setBatchSize(prev => prev + mappedNewContacts.length);
-          }
-        } else {
-          console.error("Failed to load more contacts");
-        }
-      }
-    } catch (error) {
-      console.error("Error loading more contacts:", error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [isLoadingMore, hasMoreContacts, baseContacts.length, batchSize, legacyCompanies, filteredContacts.length]);
-
-  const handleScroll = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-    
-    if (isNearBottom && hasMoreContacts && !isLoadingMore) {
-      loadMoreContacts();
-    }
-  }, [hasMoreContacts, isLoadingMore, loadMoreContacts]);
+  const allContacts = legacyContacts;
+  const filteredContacts = allContacts;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    if (!containerRef.current) return;
 
-    const scrollContainer = containerRef.current;
-
-    let timeoutId: NodeJS.Timeout;
-    const throttledScroll = (e: Event) => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => handleScroll(e), 100);
-    };
-
-    scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', throttledScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [handleScroll]);
+  const handleContactAdded = () => {
+    fetchAllContacts();
+  };
 
   const columns: TableColumn<any>[] = [
     {
@@ -532,59 +524,51 @@ const Contacts = () => {
   );
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex flex-1 flex-col overflow-hidden">
       <PageHeader
         title="Contacts"
-        description={
-          searchQuery.trim() 
-            ? `Showing ${filteredContacts.length} of ${baseContacts.length} contacts`
-            : baseContacts 
-              ? `${baseContacts?.length} total contacts` 
-              : "Loading contacts..."
-        }
+        description={`Showing ${filteredContacts.length} of ${pagination.total} contacts`}
         actions={<HeaderActions />}
       />
 
       {viewMode === "list" && (
-        <div ref={containerRef} className="flex-1 overflow-auto">
-          <div className="flex flex-col h-full">
-            <div className="p-4 bg-foreground border-b">
-              <div className="max-w-lg">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, email, phone, title or company"
-                  className="w-full px-3 py-2 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted"
-                />
-              </div>
-            </div>
-            
+        <>
+          <div className="px-6 py-4 border-b flex-shrink-0">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by name, email, phone, title or company"
+              className="w-full px-3 py-2 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted max-w-md"
+              autoComplete="off"
+            />
+          </div>
+
+          <div ref={containerRef} className="flex-1 overflow-auto min-h-0">
             <Table<any>
               columns={columns}
-              data={displayedContacts || []}
-              total={filteredContacts?.length || 0}
+              data={filteredContacts || []}
+              total={pagination.total}
               idField="id"
-              className="bg-foreground rounded shadow-sm border flex-shrink-0"
+              className="bg-foreground rounded shadow-sm border"
+              pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+              sort={sort}
+              order={order}
+              onSortChange={(newSort, newOrder) => {
+                setSort(newSort);
+                setOrder(newOrder);
+              }}
             />
-            {hasMoreContacts && (
-              <div className="p-4 bg-foreground flex justify-center flex-shrink-0">
-                <Button
-                  variant="secondary-outline"
-                  onClick={loadMoreContacts}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? "Loading..." : `Load More (${displayedContacts.length} of ${searchQuery.trim() ? filteredContacts.length : (allContactsLoaded ? baseContacts.length : baseContacts.length + '+')} contacts)`}
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
+        </>
       )}
 
       {viewMode === "map" && (
-        <ContactsMapView 
-          contacts={baseContacts || []}
+        <ContactsMapView
+          contacts={allContacts || []}
           onFetchAddresses={fetchContactsWithAddresses}
           api={api}
         />
@@ -777,10 +761,6 @@ const ContactsMapView = ({
             };
           });
           setContactsWithAddresses(combined);
-          console.log('ContactsMapView: Loaded contacts with addresses:', combined.length);
-          console.log('ContactsMapView: Sample contact with address:', combined[0]);
-          console.log('ContactsMapView: Address map keys:', Array.from(result.addressMap.keys()));
-          console.log('ContactsMapView: Sample address data:', combined.find((c: any) => c.address));
         }
       } catch (error) {
         console.error('Error loading address data:', error);
@@ -943,9 +923,6 @@ const ContactsMapView = ({
           coordinates: coords
         };
       });
-
-    console.log('ContactsMapView: Creating map with pre-computed coordinates:', contactsWithCoordinates.length);
-    console.log('ContactsMapView: Postal code cache size:', postalCodeCacheRef.current.size);
 
     const mapHTML = `
 <!DOCTYPE html>
@@ -1221,7 +1198,7 @@ const ContactsMapView = ({
                                 \${contact.contact.Notes ? '<strong>Notes:</strong> ' + contact.contact.Notes + '<br>' : ''}
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; display: inline-block;">
+                                <a href="/sales/contacts/\${contact.contact.Company_ID}_\${contact.contact.Cont_Id}" target="_parent" style="background: #007cba; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; display: inline-block;">
                                     View Full Contact Details
                                 </a>
                             </div>
@@ -1261,7 +1238,7 @@ const ContactsMapView = ({
                                     </div>
                                 </div>
                                 <div style="text-align: center;">
-                                    <a href="/sales/contacts/\${contact.contact.Cont_Id}_\${contact.contact.Company_ID}_\${contact.contact.Address_ID || 0}" target="_parent" style="background: #007cba; color: white; padding: 4px 8px; text-decoration: none; border-radius: 3px; font-size: 10px; display: inline-block;">
+                                    <a href="/sales/contacts/\${contact.contact.Company_ID}_\${contact.contact.Cont_Id}" target="_parent" style="background: #007cba; color: white; padding: 4px 8px; text-decoration: none; border-radius: 3px; font-size: 10px; display: inline-block;">
                                         View Details
                                     </a>
                                 </div>
@@ -1377,7 +1354,6 @@ const ContactsMapView = ({
       contactsData: filteredDataWithCoords
     }, '*');
 
-    console.log('ContactsMapView: Updating map with filtered contacts:', filteredDataWithCoords.length);
   }, [selectedContactType, searchQuery, filteredContactsWithAddresses, contactsWithAddresses, isInitialLoad]);
 
   const contactsWithValidAddresses = contactsWithAddresses.filter(item => 
