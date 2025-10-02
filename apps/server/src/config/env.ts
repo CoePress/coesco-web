@@ -9,10 +9,10 @@ dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  PORT: z.string().regex(/^\d+$/).transform(Number).default("8080"),
+  PORT: z.string().regex(/^\d+$/).transform(Number),
   DATABASE_URL: z.string().url(),
   REDIS_HOST: z.string(),
-  REDIS_PORT: z.string().transform(Number).default("6379"),
+  REDIS_PORT: z.string().transform(Number),
   REDIS_URL: z.string(),
   LOGS_DIR: z.string(),
   AZURE_TENANT_ID: z.string(),
@@ -23,7 +23,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("1d"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   FANUC_ADAPTER_HOST: z.string(),
-  FANUC_ADAPTER_PORT: z.string().transform(Number).default("1435"),
+  FANUC_ADAPTER_PORT: z.string().transform(Number),
 
   SMTP_HOST: z.string(),
   SMTP_PORT: z.string().transform(Number),
@@ -31,27 +31,27 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string(),
   ANTHROPIC_API_KEY: z.string(),
 
-  ODBC_DRIVER: z.string().default("Progress OpenEdge 12.8 Driver"),
-  PROSQL_USER: z.string().default("sqltst"),
-  PROSQL_PASSWORD: z.string().default("password"),
+  ODBC_DRIVER: z.string(),
+  PROSQL_USER: z.string(),
+  PROSQL_PASSWORD: z.string(),
 
-  STD_HOST: z.string().default("coescoplk"),
-  STD_PORT: z.string().default("52551"),
-  STD_DB: z.string().default("base"),
+  STD_HOST: z.string(),
+  STD_PORT: z.string(),
+  STD_DB: z.string(),
 
-  JOB_HOST: z.string().default("coescoplk"),
-  JOB_PORT: z.string().default("52552"),
-  JOB_DB: z.string().default("job"),
+  JOB_HOST: z.string(),
+  JOB_PORT: z.string(),
+  JOB_DB: z.string(),
 
-  QUOTE_HOST: z.string().default("coescoplk"),
-  QUOTE_PORT: z.string().default("52555"),
-  QUOTE_DB: z.string().default("quotesys"),
+  QUOTE_HOST: z.string(),
+  QUOTE_PORT: z.string(),
+  QUOTE_DB: z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error("❌ Invalid environment variables:", parsed.error.format());
+  console.error("Invalid environment variables:", parsed.error.format());
   process.exit(1);
 }
 
