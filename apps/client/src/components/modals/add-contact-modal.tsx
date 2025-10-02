@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal, Button } from "@/components";
+import { useApi } from "@/hooks/use-api";
 
 interface AddContactModalProps {
   isOpen: boolean;
@@ -9,13 +10,14 @@ interface AddContactModalProps {
   addressId?: string | number;
 }
 
-export const AddContactModal = ({ 
-  isOpen, 
-  onClose, 
+export const AddContactModal = ({
+  isOpen,
+  onClose,
   onContactAdded,
   companyId,
-  addressId 
+  addressId
 }: AddContactModalProps) => {
+  const api = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     Company_ID: companyId || "",
@@ -36,19 +38,31 @@ export const AddContactModal = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/legacy/std/Contacts",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(formData),
-        }
-      );
+      // Find the highest Cont_Id for this company
+      const existingContacts = await api.get("/legacy/std/Contacts/filter/custom", {
+        Company_ID: formData.Company_ID,
+        sort: "Cont_Id",
+        order: "desc",
+        limit: 1,
+        fields: "Cont_Id"
+      });
 
-      if (response.ok) {
-        const newContact = await response.json();
-        
+      let nextContId = 1;
+      if (existingContacts && Array.isArray(existingContacts) && existingContacts.length > 0) {
+        const highestContId = existingContacts[0].Cont_Id;
+        nextContId = highestContId + 1;
+      }
+
+      const trimmedData = {
+        ...formData,
+        Cont_Id: nextContId,
+        FirstName: formData.FirstName.trim(),
+        LastName: formData.LastName.trim(),
+      };
+
+      const newContact = await api.post("/legacy/std/Contacts", trimmedData);
+
+      if (newContact) {
         // Reset form
         setFormData({
           Company_ID: companyId || "",
@@ -71,8 +85,6 @@ export const AddContactModal = ({
 
         onClose();
       } else {
-        const errorText = await response.text();
-        console.error("Failed to create contact:", response.status, errorText);
         alert("Failed to create contact. Please try again.");
       }
     } catch (error) {
@@ -112,12 +124,17 @@ export const AddContactModal = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              First Name
+              First Name <span className="text-error">*</span>
             </label>
             <input
               type="text"
               value={formData.FirstName}
-              onChange={(e) => setFormData(prev => ({ ...prev, FirstName: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length === 0 || value[0] !== ' ') {
+                  setFormData(prev => ({ ...prev, FirstName: value }));
+                }
+              }}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={20}
               required
@@ -126,12 +143,17 @@ export const AddContactModal = ({
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              Last Name
+              Last Name <span className="text-error">*</span>
             </label>
             <input
               type="text"
               value={formData.LastName}
-              onChange={(e) => setFormData(prev => ({ ...prev, LastName: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length === 0 || value[0] !== ' ') {
+                  setFormData(prev => ({ ...prev, LastName: value }));
+                }
+              }}
               className="w-full rounded border border-border px-3 py-2 text-sm bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               maxLength={25}
               required
@@ -142,7 +164,7 @@ export const AddContactModal = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              Contact Type
+              Contact Type <span className="text-error">*</span>
             </label>
             <select
               value={formData.Type}
@@ -159,7 +181,7 @@ export const AddContactModal = ({
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">
-              Company ID
+              Company ID <span className="text-error">*</span>
             </label>
             <input
               type="number"

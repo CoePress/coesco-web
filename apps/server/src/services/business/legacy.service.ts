@@ -262,7 +262,10 @@ export class LegacyService {
 
     let whereClause = "";
     if (params.filter && typeof params.filter === "string") {
-      if (params.filter.includes(" LIKE ")) {
+      if (params.filter.includes(" OR ")) {
+        whereClause = `WHERE ${params.filter}`;
+      }
+      else if (params.filter.includes(" LIKE ")) {
         const [field, value] = params.filter.split(" LIKE ");
         const quotedValue = value.startsWith("'") ? value : `'${value}'`;
         whereClause = `WHERE ${field} LIKE ${quotedValue}`;
