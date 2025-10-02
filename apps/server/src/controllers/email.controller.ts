@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { emailService } from "@/services";
+import { emailService, jiraService } from "@/services";
 
 export class EmailController {
   async sendEmail(req: Request, res: Response, next: NextFunction) {
@@ -17,7 +17,8 @@ export class EmailController {
   async sendBugReport(req: Request, res: Response, next: NextFunction) {
     try {
       const { title, description, userEmail, screenshot, url, userAgent } = req.body;
-      const result = await emailService.sendBugReport({
+
+      const result = await jiraService.createBugIssue({
         title,
         description,
         userEmail,
