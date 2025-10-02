@@ -20,6 +20,7 @@ interface EditFormData {
   AltDesc: string;
   Notes: string;
   MoreAddress: string;
+  Address_ID: string;
 }
 
 const ContactDetails = () => {
@@ -27,6 +28,7 @@ const ContactDetails = () => {
   const [contactData, setContactData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
   const [addressData, setAddressData] = useState<any>(null);
+  const [availableAddresses, setAvailableAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -49,7 +51,8 @@ const ContactDetails = () => {
     AltPhone: "",
     AltDesc: "",
     Notes: "",
-    MoreAddress: ""
+    MoreAddress: "",
+    Address_ID: ""
   });
   
   const api = useApi();
@@ -92,7 +95,8 @@ const ContactDetails = () => {
       AltPhone: contact?.AltPhone || "",
       AltDesc: contact?.AltDesc || "",
       Notes: contact?.Notes || "",
-      MoreAddress: contact?.MoreAddress || ""
+      MoreAddress: contact?.MoreAddress || "",
+      Address_ID: contact?.Address_ID || ""
     });
   };
 
@@ -101,11 +105,28 @@ const ContactDetails = () => {
 
     setIsSaving(true);
     try {
-      
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, editForm);
+      const trimmedData = {
+        ...editForm,
+        FirstName: editForm.FirstName.trim(),
+        LastName: editForm.LastName.trim(),
+      };
+
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, trimmedData);
       if (result !== null) {
-        // Update local contact data
-        setContactData({ ...contactData, ...editForm });
+        // Update local contact data with new values
+        const updatedContactData = { ...contactData, ...trimmedData };
+        setContactData(updatedContactData);
+
+        // Update address data based on the new Address_ID
+        if (trimmedData.Address_ID) {
+          const selectedAddress = availableAddresses.find((addr: any) =>
+            String(addr.Address_ID) === String(trimmedData.Address_ID)
+          );
+          setAddressData(selectedAddress || null);
+        } else {
+          setAddressData(null);
+        }
+
         setIsEditing(false);
       }
     } catch (error) {
@@ -118,6 +139,14 @@ const ContactDetails = () => {
   const handleCancel = () => {
     setIsEditing(false);
     initializeEditForm(contactData);
+
+    // Reset address data to original
+    if (contactData.Address_ID) {
+      const originalAddress = availableAddresses.find((addr: any) => addr.Address_ID === contactData.Address_ID);
+      setAddressData(originalAddress || null);
+    } else {
+      setAddressData(null);
+    }
   };
 
   const handleEdit = () => {
@@ -174,29 +203,24 @@ const ContactDetails = () => {
 
   const fetchContactData = async () => {
     if (!contactId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Parse composite ID format: "contId_companyId_addressId" or "contId_addressId" or just "contId"
+      // Parse composite ID format: "companyId_contId"
       const parts = contactId.includes('_') ? contactId.split('_') : [contactId];
-      const actualContactId = parts[0];
-      const expectedCompanyId = parts.length === 3 ? parts[1] : null;
-      const expectedAddressId = parts.length === 3 ? parts[2] : (parts.length === 2 ? parts[1] : null);
-      
+      const expectedCompanyId = parts.length === 2 ? parts[0] : null;
+      const actualContactId = parts.length === 2 ? parts[1] : parts[0];
+
       const queryParams: Record<string, string> = {
         Cont_Id: actualContactId
       };
-      
+
       if (expectedCompanyId) {
         queryParams.Company_ID = expectedCompanyId;
       }
-      
-      if (expectedAddressId) {
-        queryParams.Address_ID = expectedAddressId;
-      }
-      
+
       const rawContactResponse = await api.get('/legacy/std/Contacts/filter/custom', queryParams);
       
       if (rawContactResponse) {
@@ -226,16 +250,23 @@ const ContactDetails = () => {
           }
         }
 
-        // Fetch address data if we have an Address_ID
-        if (rawContact?.Address_ID) {
+        // Fetch all addresses for the company
+        if (rawContact?.Company_ID) {
           try {
-            const addressResults = await api.get('/legacy/base/Address/filter/custom', {
-              Address_ID: rawContact.Address_ID,
+            const allAddresses = await api.get('/legacy/base/Address/filter/custom', {
               Company_ID: rawContact.Company_ID
             });
-            
-            if (addressResults && addressResults.length > 0) {
-              setAddressData(addressResults[0]);
+
+            if (allAddresses && allAddresses.length > 0) {
+              setAvailableAddresses(allAddresses);
+
+              // Set the current address data if Address_ID exists
+              if (rawContact.Address_ID) {
+                const currentAddress = allAddresses.find((addr: any) => addr.Address_ID === rawContact.Address_ID);
+                if (currentAddress) {
+                  setAddressData(currentAddress);
+                }
+              }
             }
           } catch (addressError) {
             console.warn("Could not fetch address data:", addressError);
@@ -357,14 +388,24 @@ const ContactDetails = () => {
                         type="text"
                         className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                         value={editForm.FirstName}
-                        onChange={(e) => setEditForm(s => ({ ...s, FirstName: e.target.value }))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length === 0 || value[0] !== ' ') {
+                            setEditForm(s => ({ ...s, FirstName: value }));
+                          }
+                        }}
                         placeholder="First Name"
                       />
                       <input
                         type="text"
                         className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
                         value={editForm.LastName}
-                        onChange={(e) => setEditForm(s => ({ ...s, LastName: e.target.value }))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length === 0 || value[0] !== ' ') {
+                            setEditForm(s => ({ ...s, LastName: value }));
+                          }
+                        }}
                         placeholder="Last Name"
                       />
                     </div>
@@ -419,7 +460,33 @@ const ContactDetails = () => {
 
               <div>
                 <div className="text-sm text-text-muted">Address ID</div>
-                <div className="text-text font-mono">{contactData.Address_ID || "-"}</div>
+                {isEditing && availableAddresses.length > 0 ? (
+                  <select
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                    value={editForm.Address_ID}
+                    onChange={(e) => {
+                      const newAddressId = e.target.value;
+                      setEditForm(s => ({ ...s, Address_ID: newAddressId }));
+
+                      // Update addressData preview
+                      const selectedAddress = availableAddresses.find((addr: any) => addr.Address_ID === newAddressId);
+                      if (selectedAddress) {
+                        setAddressData(selectedAddress);
+                      } else {
+                        setAddressData(null);
+                      }
+                    }}
+                  >
+                    <option value="">No Address</option>
+                    {availableAddresses.map((addr: any) => (
+                      <option key={addr.Address_ID} value={addr.Address_ID}>
+                        {addr.Address_ID} - {[addr.Address1, addr.City, addr.State].filter(Boolean).join(', ')}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-text font-mono">{contactData.Address_ID || "-"}</div>
+                )}
               </div>
             </div>
           </div>
@@ -492,11 +559,6 @@ const ContactDetails = () => {
                       )}
                     </div>
                   </div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-text-muted">Address ID</div>
-                  <div className="text-text font-mono">{contactData.Address_ID}</div>
                 </div>
               </div>
             ) : contactData.Address_ID ? (

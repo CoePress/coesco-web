@@ -264,7 +264,7 @@ const Companies = () => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex flex-1 flex-col overflow-hidden">
       <PageHeader
         title="Companies"
         description={`Showing ${filteredCompanies.length} of ${pagination.total} companies`}
@@ -272,7 +272,7 @@ const Companies = () => {
       />
 
       {/* Search Bar */}
-      <div className="px-6 py-4 border-b">
+      <div className="px-6 py-4 border-b flex-shrink-0">
         <Input
           placeholder="Search companies..."
           value={searchInput}
@@ -281,26 +281,24 @@ const Companies = () => {
         />
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-auto">
-        <div className="flex flex-col h-full">
-          <Table<any>
-            columns={columns}
-            data={filteredCompanies || []}
-            total={pagination.total}
-            idField="id"
-            className="bg-foreground rounded shadow-sm border flex-shrink-0"
-            pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-            sort={sort}
-            order={order}
-            onSortChange={(newSort, newOrder) => {
-              setSort(newSort);
-              setOrder(newOrder);
-            }}
-          />
-        </div>
+      <div ref={containerRef} className="flex-1 overflow-auto min-h-0">
+        <Table<any>
+          columns={columns}
+          data={filteredCompanies || []}
+          total={pagination.total}
+          idField="id"
+          className="bg-foreground rounded shadow-sm border"
+          pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          sort={sort}
+          order={order}
+          onSortChange={(newSort, newOrder) => {
+            setSort(newSort);
+            setOrder(newOrder);
+          }}
+        />
       </div>
 
       <CreateCompanyModal

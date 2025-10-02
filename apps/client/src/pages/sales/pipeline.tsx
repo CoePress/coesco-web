@@ -688,13 +688,13 @@ const Pipeline = () => {
   const exportToExcel = useCallback(async (options: { includePrimaryContactOnly: boolean }) => {
     const headers = [
       'Quote Number',
-      'CreateDate', 
+      'CreateDate',
       'ActionDate',
       'Confidence',
       'Est PO Date',
       'Stage',
       'RSM',
-      'Industry', 
+      'Industry',
       'Dealer',
       'Customer',
       'Equipment',
@@ -702,7 +702,8 @@ const Pipeline = () => {
       'Projected Value',
       'Journey Steps',
       'Contact Name',
-      'Contact Email'
+      'Contact Email',
+      'Contact Position'
     ];
 
     // Get unique RSM initials from journeys
@@ -750,10 +751,7 @@ const Pipeline = () => {
       })
     );
 
-    console.log('Final RSM full names map:', rsmFullNames);
-
-    // Fetch contact data for each journey
-    const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string }>>();
+    const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string; Contact_Position: string }>>();
     console.log('Fetching contact data for journeys...');
 
     await Promise.all(
@@ -763,7 +761,7 @@ const Pipeline = () => {
           const contactData = await employeeApi.get('/legacy/base/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
-            fields: 'Contact_Name,Contact_Email,IsPrimary'
+            fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
           });
 
           console.log(`Contact data for journey ${journey.id}:`, contactData);
@@ -779,20 +777,23 @@ const Pipeline = () => {
 
               journeyContacts.set(journey.id.toString(), [{
                 Contact_Name: selectedContact.Contact_Name || '',
-                Contact_Email: selectedContact.Contact_Email || ''
+                Contact_Email: selectedContact.Contact_Email || '',
+                Contact_Position: selectedContact.Contact_Position || ''
               }]);
             } else {
               // Include all contacts
               journeyContacts.set(journey.id.toString(), contactData.map(contact => ({
                 Contact_Name: contact.Contact_Name || '',
-                Contact_Email: contact.Contact_Email || ''
+                Contact_Email: contact.Contact_Email || '',
+                Contact_Position: contact.Contact_Position || ''
               })));
             }
           } else {
             // Set empty contact data if no contacts found
             journeyContacts.set(journey.id.toString(), [{
               Contact_Name: '',
-              Contact_Email: ''
+              Contact_Email: '',
+              Contact_Position: ''
             }]);
           }
         } catch (error) {
@@ -800,19 +801,16 @@ const Pipeline = () => {
           // Set empty contact data on error
           journeyContacts.set(journey.id.toString(), [{
             Contact_Name: '',
-            Contact_Email: ''
+            Contact_Email: '',
+            Contact_Position: ''
           }]);
         }
       })
     );
 
-    console.log('Final journey contacts map:', journeyContacts);
-
-    // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Pipeline Export');
 
-    // Prepare data rows
     const formatDateOnly = (dateString: any) => {
       if (!dateString) return '';
       const date = new Date(dateString);
@@ -825,11 +823,11 @@ const Pipeline = () => {
     const dataRows = filteredJourneys.map(journey => {
       const customer = customersById.get(String(journey.customerId));
       const rsmFullName = journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '';
-      const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '' }];
+      const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
 
-      // Combine all contact names and emails into single cells with line breaks
       const contactNames = contacts.map(c => c.Contact_Name).filter(Boolean).join('\n');
-      const contactEmails = contacts.map(c => c.Contact_Email).filter(Boolean).join('\n');
+      const contactEmails = contacts.map(c => c.Contact_Email || '').join('\n');
+      const contactPositions = contacts.map(c => c.Contact_Position || '').join('\n');
 
       return [
         journey.Quote_Number || '',
@@ -847,7 +845,8 @@ const Pipeline = () => {
         Number(journey.Journey_Value || journey.value || 0),
         journey.Next_Steps || '',
         contactNames,
-        contactEmails
+        contactEmails,
+        contactPositions
       ];
     });
 
