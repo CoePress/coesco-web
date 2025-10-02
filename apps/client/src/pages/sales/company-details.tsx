@@ -1,17 +1,13 @@
 import {
-  Calendar,
-  CheckCircle,
   Edit,
   Lock,
-  Mail,
-  Notebook,
-  Phone,
   Trash2,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
+import DatePicker from "@/components/ui/date-picker";
 import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
@@ -28,12 +24,6 @@ const CREDIT_STATUS_OPTIONS = [
 
 // TODO: what the fuck do these codes mean
 const TERMS_CODE_OPTIONS = ['30', '45', '01', '60', '90', '40', '50', '70'];
-
-const MOCK_MENTION_OPTIONS = [
-  { id: 1, name: "John Doe", email: "john@example.com" },
-  { id: 2, name: "Jane Smith", email: "jane@example.com" },
-  { id: 3, name: "Bob Johnson", email: "bob@example.com" },
-];
 
 const getContactTypeName = (type: ContactType | string | null | undefined): string => {
   switch (type?.toUpperCase()) {
@@ -67,38 +57,17 @@ const CompanyDetails = () => {
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
   const [callHistory, setCallHistory] = useState<any[]>([]);
-  const [activeModal, setActiveModal] = useState<{
-    type: string;
-    isOpen: boolean;
-  }>({ type: "", isOpen: false });
-  
+
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
 
-  const [noteContent, setNoteContent] = useState("");
-  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
-  const [mentionSearch, setMentionSearch] = useState("");
-  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [mirrorContent, setMirrorContent] = useState("");
-  const mirrorRef = useRef<HTMLDivElement>(null);
-  const [mentionDropdownIndex, setMentionDropdownIndex] = useState(0);
-
-  const [emailRecipients, setEmailRecipients] = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailBody, setEmailBody] = useState("");
-
-  const [meetingTitle, setMeetingTitle] = useState("");
-  const [meetingDate, setMeetingDate] = useState("");
-  const [meetingHour, setMeetingHour] = useState(9);
-  const [meetingMinute, setMeetingMinute] = useState(0);
-  const [meetingAmPm, setMeetingAmPm] = useState("AM");
-  const [meetingDuration, setMeetingDuration] = useState(15);
-
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [tempValues, setTempValues] = useState<Record<string, any>>({});
-  
-  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions'>('overview');
+
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [tempNotes, setTempNotes] = useState<string>('');
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'notes'>('overview');
   
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
@@ -295,14 +264,15 @@ const CompanyDetails = () => {
               email: primaryContact?.Email || "",
               website: primaryContact?.Website || "",
               active: Number(processedCompanyData.Active) === 1,
-              isDealer: processedCompanyData.IsDealer,
+              isDealer: Number(processedCompanyData.IsDealer) || 0,
               creditStatus: processedCompanyData.CreditStatus,
               creditLimit: processedCompanyData.CreditLimit,
               acctBalance: processedCompanyData.AcctBalance,
               termsCode: processedCompanyData.TermsCode,
               coeRSM: processedCompanyData.CoeRSM,
               balanceDate: processedCompanyData.BalanceDate,
-              creditNote: processedCompanyData.CreditNote
+              creditNote: processedCompanyData.CreditNote,
+              notes: processedCompanyData.Notes
             });
           }
         }
@@ -402,434 +372,6 @@ const CompanyDetails = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const handleOpenModal = (type: string) => {
-    setActiveModal({ type, isOpen: true });
-  };
-
-  const handleCloseModal = () => {
-    setActiveModal({ type: "", isOpen: false });
-    setNoteContent("");
-    setShowMentionDropdown(false);
-    setEmailRecipients("");
-    setEmailSubject("");
-    setEmailBody("");
-    setMeetingTitle("");
-    setMeetingDate("");
-    setMeetingHour(9);
-    setMeetingMinute(0);
-    setMeetingAmPm("AM");
-    setMeetingDuration(15);
-  };
-
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setNoteContent(value);
-
-    const cursorPosition = e.target.selectionStart;
-    const textBeforeCursor = value.slice(0, cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
-
-    let mirrorHtml = value
-      .slice(0, lastAtIndex)
-      .replace(/\n/g, "<br/>")
-      .replace(/ /g, "&nbsp;");
-    if (lastAtIndex !== -1) {
-      mirrorHtml += '<span id="mention-marker">@</span>';
-      mirrorHtml += value
-        .slice(lastAtIndex + 1, cursorPosition)
-        .replace(/\n/g, "<br/>")
-        .replace(/ /g, "&nbsp;");
-    }
-    setMirrorContent(mirrorHtml);
-
-    if (lastAtIndex !== -1) {
-      const charBeforeAt =
-        lastAtIndex === 0 ? "" : textBeforeCursor[lastAtIndex - 1];
-      const searchText = textBeforeCursor.slice(lastAtIndex + 1);
-      const isInMention = searchText.includes("<") && !searchText.includes(">");
-      const validTrigger =
-        lastAtIndex === 0 || charBeforeAt === " " || charBeforeAt === "\n";
-      const atFollowedBySpace = searchText.startsWith(" ");
-      if (
-        validTrigger &&
-        !atFollowedBySpace &&
-        !searchText.includes(" ") &&
-        !isInMention
-      ) {
-        setMentionSearch(searchText);
-        setTimeout(() => {
-          const textarea = textareaRef.current;
-          const marker = mirrorRef.current?.querySelector("#mention-marker");
-          if (textarea && marker && mirrorRef.current) {
-            const markerRect = marker.getBoundingClientRect();
-            const mirrorRect = mirrorRef.current.getBoundingClientRect();
-            setMentionPosition({
-              top: markerRect.top - mirrorRect.top - textarea.scrollTop + 24,
-              left: markerRect.left - mirrorRect.left - textarea.scrollLeft,
-            });
-          }
-        }, 0);
-        setShowMentionDropdown(true);
-      } else {
-        setShowMentionDropdown(false);
-      }
-    } else {
-      setShowMentionDropdown(false);
-    }
-  };
-
-  const insertMention = (mention: {
-    id: number;
-    name: string;
-    email: string;
-  }) => {
-    if (!textareaRef.current) return;
-
-    const cursorPosition = textareaRef.current.selectionStart;
-    const textBeforeCursor = noteContent.slice(0, cursorPosition);
-    const textAfterCursor = noteContent.slice(cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
-
-    const newContent =
-      textBeforeCursor.slice(0, lastAtIndex) +
-      `@<${mention.id}> ` +
-      textAfterCursor;
-
-    setNoteContent(newContent);
-    setShowMentionDropdown(false);
-
-    setTimeout(() => {
-      if (textareaRef.current) {
-        const newPosition = lastAtIndex + mention.id.toString().length + 4;
-        textareaRef.current.selectionStart = newPosition;
-        textareaRef.current.selectionEnd = newPosition;
-        textareaRef.current.focus();
-      }
-    }, 0);
-  };
-
-  const filteredMentionOptions = MOCK_MENTION_OPTIONS.filter(
-    (option) =>
-      option.name.toLowerCase().includes(mentionSearch.toLowerCase()) ||
-      option.email.toLowerCase().includes(mentionSearch.toLowerCase())
-  );
-
-  const handleTextareaKeyDown = (
-    e: React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (!showMentionDropdown) return;
-    if (filteredMentionOptions.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setMentionDropdownIndex(
-        (prev) => (prev + 1) % filteredMentionOptions.length
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setMentionDropdownIndex(
-        (prev) =>
-          (prev - 1 + filteredMentionOptions.length) %
-          filteredMentionOptions.length
-      );
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      insertMention(filteredMentionOptions[mentionDropdownIndex]);
-      setMentionDropdownIndex(0);
-    }
-  };
-
-  const getModalContent = () => {
-    switch (activeModal.type) {
-      case "note":
-        return (
-          <div className="flex flex-col gap-2 relative">
-            <textarea
-              ref={textareaRef}
-              value={noteContent}
-              onChange={handleNoteChange}
-              className="w-full h-60 bg-background border border-border rounded p-3 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto relative z-0"
-              placeholder="Write your notes here... Use @ to mention someone"
-              onKeyDown={handleTextareaKeyDown}
-            />
-            {/* Hidden mirror div for mention positioning */}
-            <div
-              ref={mirrorRef}
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: 300,
-                color: "transparent",
-                background: "transparent",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                pointerEvents: "none",
-                overflow: "hidden",
-                zIndex: -1,
-                font: "inherit",
-                padding: 12,
-                borderRadius: 8,
-                border: "1px solid transparent",
-                visibility: "hidden",
-              }}
-              dangerouslySetInnerHTML={{ __html: mirrorContent + "<br />" }}
-            />
-            {showMentionDropdown && (
-              <div
-                className="absolute bg-foreground border border-border rounded shadow-lg max-h-[200px] overflow-y-auto w-64 z-10"
-                style={{
-                  top: mentionPosition.top,
-                  left: mentionPosition.left,
-                }}>
-                {filteredMentionOptions.length > 0 ? (
-                  filteredMentionOptions.map((option, idx) => (
-                    <button
-                      key={option.id}
-                      onClick={() => insertMention(option)}
-                      className={`w-full px-3 py-2 text-left hover:bg-surface flex flex-col${
-                        mentionDropdownIndex === idx ? " bg-surface" : ""
-                      }`}>
-                      <span className="text-text">{option.name}</span>
-                      <span className="text-text-muted text-xs">
-                        {option.email}
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-text-muted text-sm">
-                    No matching users found
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCloseModal}>
-                Submit
-              </Button>
-            </div>
-          </div>
-        );
-      case "email":
-        return (
-          <div className="flex flex-col gap-2 relative">
-            <input
-              type="text"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Recipients (comma separated)"
-              value={emailRecipients}
-              onChange={(e) => setEmailRecipients(e.target.value)}
-            />
-            <input
-              type="text"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Subject"
-              value={emailSubject}
-              onChange={(e) => setEmailSubject(e.target.value)}
-            />
-            <textarea
-              className="w-full h-40 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
-              placeholder="Write your email here..."
-              value={emailBody}
-              onChange={(e) => setEmailBody(e.target.value)}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCloseModal}>
-                Send
-              </Button>
-            </div>
-          </div>
-        );
-      case "call":
-        return (
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Phone number"
-            />
-            <textarea
-              className="w-full h-24 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
-              placeholder="Call notes (optional)"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCloseModal}>
-                Log Call
-              </Button>
-            </div>
-          </div>
-        );
-      case "task":
-        return (
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Task title"
-            />
-            <textarea
-              className="w-full h-24 bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary resize-none overflow-y-auto"
-              placeholder="Task details"
-            />
-            <input
-              type="date"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Due date"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCloseModal}>
-                Create Task
-              </Button>
-            </div>
-          </div>
-        );
-      case "meeting":
-        return (
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              className="w-full bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-              placeholder="Meeting title"
-              value={meetingTitle}
-              onChange={(e) => setMeetingTitle(e.target.value)}
-            />
-            <div className="flex flex-row gap-2">
-              <div className="flex flex-col items-center">
-                <label className="block text-xs text-text-muted mb-1">
-                  Date
-                </label>
-                <MiniCalendar
-                  selected={meetingDate}
-                  onSelect={setMeetingDate}
-                />
-                {meetingDate && (
-                  <div className="mt-1 text-xs text-info">
-                    Selected: {meetingDate}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-2 flex-1">
-                <label className="block text-xs text-text-muted">
-                  Start Time
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-                    value={meetingHour}
-                    onChange={(e) => setMeetingHour(Number(e.target.value))}>
-                    {[...Array(12)].map((_, i) => (
-                      <option
-                        key={i + 1}
-                        value={i + 1}>
-                        {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="self-center">:</span>
-                  <select
-                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-                    value={meetingMinute}
-                    onChange={(e) => setMeetingMinute(Number(e.target.value))}>
-                    {[0, 15, 30, 45].map((min) => (
-                      <option
-                        key={min}
-                        value={min}>
-                        {min.toString().padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-                    value={meetingAmPm}
-                    onChange={(e) => setMeetingAmPm(e.target.value)}>
-                    {["AM", "PM"].map((ampm) => (
-                      <option
-                        key={ampm}
-                        value={ampm}>
-                        {ampm}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <label className="block text-xs text-text-muted mt-2">
-                  Duration
-                </label>
-                <select
-                  className="bg-background border border-border rounded p-2 text-text focus:outline-none focus:border-primary"
-                  value={meetingDuration}
-                  onChange={(e) => setMeetingDuration(Number(e.target.value))}>
-                  {[15, 30, 45, 60, 75, 90, 105, 120].map((min) => (
-                    <option
-                      key={min}
-                      value={min}>
-                      {min} minutes
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-2">
-              <Button
-                variant="secondary-outline"
-                onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCloseModal}>
-                Schedule
-              </Button>
-            </div>
-          </div>
-        );
-      case "more":
-        return <div>More Modal Content</div>;
-      default:
-        return null;
-    }
-  };
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    const mirror = mirrorRef.current;
-    if (textarea && mirror) {
-      mirror.scrollTop = textarea.scrollTop;
-      mirror.scrollLeft = textarea.scrollLeft;
-    }
-  }, [noteContent]);
-
-  useEffect(() => {
-    setMentionDropdownIndex(0);
-  }, [showMentionDropdown, mentionSearch]);
 
   const handleStartEditing = () => {
     setIsEditingAll(true);
@@ -843,7 +385,8 @@ const CompanyDetails = () => {
       termsCode: company.termsCode,
       coeRSM: company.coeRSM,
       balanceDate: company.balanceDate,
-      creditNote: company.creditNote
+      creditNote: company.creditNote,
+      notes: company.notes
     });
   };
 
@@ -853,20 +396,33 @@ const CompanyDetails = () => {
     try {
       const updateData: Record<string, any> = {
         Active: tempValues.active ? 1 : 0,
-        IsDealer: tempValues.isDealer ? 1 : 0,
+        IsDealer: parseInt(tempValues.isDealer) || 0,
         CreditStatus: tempValues.creditStatus,
         CreditLimit: parseFloat(tempValues.creditLimit) || 0,
         AcctBalance: parseFloat(tempValues.acctBalance) || 0,
         TermsCode: tempValues.termsCode,
         CoeRSM: parseInt(tempValues.coeRSM) || 0,
         BalanceDate: tempValues.balanceDate || null,
-        CreditNote: tempValues.creditNote || null
+        CreditNote: tempValues.creditNote || null,
+        Notes: tempValues.notes || null
       };
       
       const result = await api.patch(`/legacy/std/Company/${id}`, updateData);
-      
+
       if (result) {
-        setCompany({ ...company, ...tempValues });
+        setCompany({
+          ...company,
+          active: tempValues.active,
+          isDealer: parseInt(tempValues.isDealer) || 0,
+          creditStatus: tempValues.creditStatus,
+          creditLimit: tempValues.creditLimit,
+          acctBalance: tempValues.acctBalance,
+          termsCode: tempValues.termsCode,
+          coeRSM: tempValues.coeRSM,
+          balanceDate: tempValues.balanceDate,
+          creditNote: tempValues.creditNote,
+          notes: tempValues.notes
+        });
         setIsEditingAll(false);
         setIsCustomRsmInput(false);
         setTempValues({});
@@ -883,6 +439,39 @@ const CompanyDetails = () => {
 
   const handleTempValueChange = (fieldName: string, value: any) => {
     setTempValues({ ...tempValues, [fieldName]: value });
+  };
+
+  const handleStartEditingNotes = () => {
+    setIsEditingNotes(true);
+    setTempNotes(company.notes || '');
+  };
+
+  const handleSaveNotes = async () => {
+    if (!company || !id) return;
+
+    try {
+      const updateData = {
+        Notes: tempNotes || null
+      };
+
+      const result = await api.patch(`/legacy/std/Company/${id}`, updateData);
+
+      if (result) {
+        setCompany({
+          ...company,
+          notes: tempNotes
+        });
+        setIsEditingNotes(false);
+        setTempNotes('');
+      }
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    }
+  };
+
+  const handleCancelNotesEdit = () => {
+    setIsEditingNotes(false);
+    setTempNotes('');
   };
 
   const handleEditCall = (call: any) => {
@@ -1441,48 +1030,6 @@ const CompanyDetails = () => {
             </a>
           )}
 
-          <div className="flex items-center justify-center gap-2 px-2">
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => handleOpenModal("note")}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <Notebook size={16} />
-              </button>
-              <span className="text-text-muted text-xs">Note</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => handleOpenModal("email")}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <Mail size={16} />
-              </button>
-              <span className="text-text-muted text-xs">Email</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => handleOpenModal("call")}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <Phone size={16} />
-              </button>
-              <span className="text-text-muted text-xs">Call</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => handleOpenModal("task")}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <CheckCircle size={16} />
-              </button>
-              <span className="text-text-muted text-xs">Task</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => handleOpenModal("meeting")}
-                className="text-primary text-sm hover:underline p-3 rounded-lg bg-primary/25 hover:bg-primary/35 cursor-pointer">
-                <Calendar size={16} />
-              </button>
-              <span className="text-text-muted text-xs">Meet</span>
-            </div>
-          </div>
         </div>
 
         <div className="p-2 flex-1 overflow-y-auto">
@@ -1549,12 +1096,12 @@ const CompanyDetails = () => {
               <span className="text-text-muted">Is Dealer</span>
               {isEditingAll ? (
                 <select
-                  value={tempValues.isDealer ? 'true' : 'false'}
-                  onChange={(e) => handleTempValueChange('isDealer', e.target.value === 'true')}
+                  value={tempValues.isDealer || 0}
+                  onChange={(e) => handleTempValueChange('isDealer', parseInt(e.target.value))}
                   className="w-full bg-background border border-border rounded px-2 py-1 text-text focus:outline-none focus:border-primary"
                 >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value={1}>Yes</option>
+                  <option value={0}>No</option>
                 </select>
               ) : (
                 <input
@@ -1721,14 +1268,23 @@ const CompanyDetails = () => {
               }`}>
               Interaction History
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('credit')}
               className={`pb-2 border-b-2 font-semibold cursor-pointer ${
-                activeTab === 'credit' 
-                  ? 'border-primary/50 text-primary' 
+                activeTab === 'credit'
+                  ? 'border-primary/50 text-primary'
                   : 'border-transparent text-text-muted hover:text-primary'
               }`}>
               Credit Details
+            </button>
+            <button
+              onClick={() => setActiveTab('notes')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'notes'
+                  ? 'border-primary/50 text-primary'
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Notes
             </button>
           </div>
         </div>
@@ -3047,7 +2603,7 @@ const CompanyDetails = () => {
                 )}
               </div>
             </section>
-          ) : (
+          ) : activeTab === 'credit' ? (
             <section className="flex-1 space-y-2">
               {/* Credit Details */}
               <div
@@ -3205,20 +2761,64 @@ const CompanyDetails = () => {
                 </div>
               </div>
             </section>
-          )}
-        </div>
+          ) : activeTab === 'notes' ? (
+            <section className="flex-1 space-y-2">
+              {/* Notes Section */}
+              <div
+                className="bg-foreground rounded-lg border border-border p-4"
+                style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-text">Company Notes</h4>
+                  {isEditingNotes ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleSaveNotes}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="secondary-outline"
+                        size="sm"
+                        onClick={handleCancelNotesEdit}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="secondary-outline"
+                      size="sm"
+                      onClick={handleStartEditingNotes}
+                    >
+                      <Edit size={16} />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-text-muted font-medium mb-2">Notes</span>
+                  {isEditingNotes ? (
+                    <textarea
+                      value={tempNotes}
+                      onChange={(e) => setTempNotes(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-3 py-2 text-text focus:outline-none focus:border-primary resize-none"
+                      rows={20}
+                      placeholder="Enter company notes..."
+                    />
+                  ) : (
+                    <div className="w-full bg-surface text-text px-3 py-2 rounded border min-h-[400px] whitespace-pre-wrap">
+                      {company.notes || "No notes available"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : null
+        }</div>
       </main>
 
-      <Modal
-        isOpen={activeModal.isOpen}
-        onClose={handleCloseModal}
-        title={`${
-          activeModal.type.charAt(0).toUpperCase() + activeModal.type.slice(1)
-        }`}
-        size="sm">
-        {getModalContent()}
-      </Modal>
-      
       {/* Journey Creation Modal */}
       {isJourneyModalOpen && (
         <CreateJourneyModal
@@ -3290,126 +2890,6 @@ const CompanyDetails = () => {
         onAddressAdded={handleAddressAdded}
         companyId={id}
       />
-    </div>
-  );
-};
-
-const MiniCalendar = ({
-  selected,
-  onSelect,
-}: {
-  selected: string;
-  onSelect: (date: string) => void;
-}) => {
-  const today = new Date();
-  const [month, setMonth] = useState(today.getMonth());
-  const [year, setYear] = useState(today.getFullYear());
-
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const daysInMonth = lastDayOfMonth.getDate();
-  const startDay = firstDayOfMonth.getDay();
-
-  const weeks: (number | null)[][] = [];
-  let week: (number | null)[] = Array(startDay).fill(null);
-  for (let day = 1; day <= daysInMonth; day++) {
-    week.push(day);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
-  }
-  if (week.length) weeks.push([...week, ...Array(7 - week.length).fill(null)]);
-
-  const handlePrev = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else {
-      setMonth((m) => m - 1);
-    }
-  };
-  const handleNext = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else {
-      setMonth((m) => m + 1);
-    }
-  };
-
-  const isSelected = (day: number) => {
-    if (!selected) return false;
-    const d = new Date(selected);
-    return (
-      d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
-    );
-  };
-
-  return (
-    <div className="inline-block p-2 border border-border rounded bg-background">
-      <div className="flex justify-between items-center mb-1">
-        <button
-          type="button"
-          className="px-2"
-          onClick={handlePrev}>
-          &lt;
-        </button>
-        <span className="font-semibold text-sm">
-          {new Date(year, month).toLocaleString("default", {
-            month: "long",
-            year: "numeric",
-          })}
-        </span>
-        <button
-          type="button"
-          className="px-2"
-          onClick={handleNext}>
-          &gt;
-        </button>
-      </div>
-      <div className="grid grid-cols-7 text-xs mb-1">
-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-          <div
-            key={d}
-            className="text-center text-text-muted">
-            {d}
-          </div>
-        ))}
-      </div>
-      {weeks.map((w, i) => (
-        <div
-          key={i}
-          className="grid grid-cols-7 mb-1">
-          {w.map((day, j) =>
-            day ? (
-              <button
-                key={j}
-                className={`w-7 h-7 rounded text-sm ${
-                  isSelected(day) ? "bg-primary text-white" : "hover:bg-surface"
-                } ${
-                  day === today.getDate() &&
-                  month === today.getMonth() &&
-                  year === today.getFullYear()
-                    ? "border border-primary"
-                    : ""
-                }`}
-                onClick={() =>
-                  onSelect(
-                    `${year}-${String(month + 1).padStart(2, "0")}-${String(
-                      day
-                    ).padStart(2, "0")}`
-                  )
-                }
-                type="button">
-                {day}
-              </button>
-            ) : (
-              <div key={j} />
-            )
-          )}
-        </div>
-      ))}
     </div>
   );
 };
@@ -3534,11 +3014,11 @@ const CreateJourneyModal = ({
 
           <div className="space-y-1">
             <label className="text-sm font-medium text-text">Start Date</label>
-            <input
-              type="date"
-              className="w-full rounded border border-border px-3 py-2 text-sm"
+            <DatePicker
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={setStartDate}
+              placeholder="Select start date"
+              className="text-sm"
             />
           </div>
 
@@ -3679,11 +3159,11 @@ const CreateJourneyModal = ({
 
           <div className="space-y-1">
             <label className="text-sm font-medium text-text">Action Date</label>
-            <input
-              type="date"
-              className="w-full rounded border border-border px-3 py-2 text-sm"
+            <DatePicker
               value={actionDate}
-              onChange={(e) => setActionDate(e.target.value)}
+              onChange={setActionDate}
+              placeholder="Select action date"
+              className="text-sm"
             />
           </div>
 
