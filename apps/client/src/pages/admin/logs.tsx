@@ -74,7 +74,8 @@ const Logs = () => {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
+      className: "w-1",
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -83,7 +84,7 @@ const Logs = () => {
             setSelectedLog(row);
             setIsDetailsModalOpen(true);
           }}>
-          View Details
+          View
         </Button>
       ),
     },
@@ -192,17 +193,17 @@ const Logs = () => {
                     <div className="space-y-4">
                       {Object.entries(selectedLog.diff).map(([key, value]) => (
                         <div key={key} className="border-b border-border pb-3 last:border-b-0">
-                          <div className="text-sm font-medium text-text-muted mb-2">{key}</div>
+                          <div className="text-sm font-medium text-text mb-2">{key}</div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <div className="text-xs text-red-600 font-medium mb-1">Old Value:</div>
-                              <div className="bg-red-50 border border-red-200 rounded p-2 font-mono text-xs">
+                              <div className="text-xs text-error font-medium mb-1">Old Value:</div>
+                              <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
                                 {JSON.stringify((value as any)?.old, null, 2) || 'null'}
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-green-600 font-medium mb-1">New Value:</div>
-                              <div className="bg-green-50 border border-green-200 rounded p-2 font-mono text-xs">
+                              <div className="text-xs text-success font-medium mb-1">New Value:</div>
+                              <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
                                 {JSON.stringify((value as any)?.new, null, 2) || 'null'}
                               </div>
                             </div>
@@ -217,17 +218,6 @@ const Logs = () => {
                   <div className="text-text-muted text-sm">Invalid change data</div>
                 )}
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                variant="secondary-outline"
-                onClick={() => {
-                  setIsDetailsModalOpen(false);
-                  setSelectedLog(null);
-                }}>
-                Close
-              </Button>
             </div>
           </div>
         )}

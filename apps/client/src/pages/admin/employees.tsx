@@ -110,6 +110,7 @@ const Employees = () => {
     {
       key: "actions",
       header: "",
+      className: "w-1",
       render: (_, row) => (
         <Button
           variant="secondary-outline"
