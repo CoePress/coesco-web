@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ToggleSwitch, Button } from "@/components";
+import { ToggleSwitch, Button, Input } from "@/components";
+import Textarea from "@/components/ui/text-area";
 import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
 import { Trash2 } from "lucide-react";
 
@@ -19,37 +20,27 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <label htmlFor="bug-title" className="text-sm font-medium text-text">
-          Title *
-        </label>
-        <input
-          id="bug-title"
-          type="text"
-          value={formData.title}
-          onChange={(e) => onFormDataChange({ ...formData, title: e.target.value })}
-          placeholder="Brief description of the issue"
-          className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          autoComplete="off"
-          required
-        />
-      </div>
+      <Input
+        id="bug-title"
+        label="Title"
+        type="text"
+        value={formData.title}
+        onChange={(e) => onFormDataChange({ ...formData, title: e.target.value })}
+        placeholder="Brief description of the issue"
+        autoComplete="off"
+        required
+      />
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="bug-description" className="text-sm font-medium text-text">
-          Description *
-        </label>
-        <textarea
-          id="bug-description"
-          value={formData.description}
-          onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
-          placeholder="Detailed description of the bug, including steps to reproduce"
-          rows={4}
-          className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical"
-          autoComplete="off"
-          required
-        />
-      </div>
+      <Textarea
+        id="bug-description"
+        label="Description"
+        value={formData.description}
+        onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
+        placeholder="Detailed description of the bug, including steps to reproduce"
+        rows={4}
+        autoComplete="off"
+        required
+      />
 
       {screenshot && (
         <div className="flex flex-col gap-2">

@@ -11,6 +11,7 @@ interface TextareaProps {
   className?: string;
   rows?: number;
   placeholder?: string;
+  autoComplete?: string;
 }
 
 const Textarea = ({
@@ -26,6 +27,7 @@ const Textarea = ({
   className = "",
   rows = 3,
   placeholder = "",
+  autoComplete,
 }: TextareaProps) => {
   return (
     <div className="w-full">
@@ -48,6 +50,7 @@ const Textarea = ({
         disabled={disabled}
         rows={rows}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         className={`w-full text-sm px-3 py-1.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-foreground text-text disabled:bg-surface disabled:text-text-muted ${error ? "border-error" : "border-border"} ${className}`}
       />
       {error && <p className="mt-1 text-sm text-error">{error}</p>}
