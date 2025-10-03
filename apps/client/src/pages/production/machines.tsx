@@ -1,31 +1,60 @@
-import { Button, Loader, PageHeader, Table, Modal, ToggleSwitch } from "@/components";
+import { Button, PageHeader, Table, Modal, ToggleSwitch } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/status-badge";
 import { useApi } from "@/hooks/use-api";
 import { useSocket } from "@/contexts/socket.context";
 import { getVariantFromStatus } from "@/utils";
 import { PlusIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { IApiResponse } from "@/utils/types";
 import { useToast } from "@/hooks/use-toast";
+import { MachineControllerType, MachineType } from "@coesco/types";
 
 const Machines = () => {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [sort, setSort] = useState("name");
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMachine, setSelectedMachine] = useState<any>(null);
-  const [machines, setMachines] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({
+  const { get: getMachines, response: machines, loading, error } = useApi<IApiResponse<any[]>>();
+  const { machineStates, subscribeToMachineStates, unsubscribeFromMachineStates } = useSocket();
+
+  const [params, setParams] = useState({
+    sort: "name" as string,
+    order: "asc" as "asc" | "desc",
     page: 1,
-    totalPages: 0,
-    total: 0,
-    limit: 25
+    limit: 25,
+    filter: {},
+    include: [] as string[]
   });
 
-  const { get, loading, error } = useApi();
-  const { machineStates, subscribeToMachineStates, unsubscribeFromMachineStates } = useSocket();
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
+
+    const activeFilters = Object.fromEntries(
+      Object.entries(params.filter).filter(([_, value]) => value)
+    );
+
+    if (Object.keys(activeFilters).length > 0) {
+      q.filter = JSON.stringify(activeFilters);
+    }
+
+    if (params.include.length > 0) {
+      q.include = JSON.stringify(params.include);
+    }
+
+    return q;
+  }, [params]);
+
+  const fetchMachines = async () => {
+    await getMachines("/production/machines", queryParams);
+  };
+
+  const refresh = () => {
+    fetchMachines();
+  };
 
   useEffect(() => {
     subscribeToMachineStates();
@@ -36,40 +65,8 @@ const Machines = () => {
   }, []);
 
   useEffect(() => {
-    const fetchMachines = async () => {
-      const response = await get("/production/machines", {
-        page,
-        limit,
-        sort,
-        order
-      });
-
-      if (response) {
-        const data = response as IApiResponse<any[]>;
-        setMachines(data.data || []);
-        if (data.meta) {
-          setPagination({
-            page: data.meta.page || 1,
-            totalPages: data.meta.totalPages || 0,
-            total: data.meta.total || 0,
-            limit: data.meta.limit || 25
-          });
-        }
-      }
-    };
-
     fetchMachines();
-  }, [page, limit, sort, order]);
-
-  if (loading) {
-    return (
-      <div className="w-full flex flex-1 flex-col items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
-
-  if (error) return <div>Error</div>;
+  }, [params]);
 
 
   const columns: TableColumn<any>[] = [
@@ -154,57 +151,46 @@ const Machines = () => {
     setSelectedMachine(null);
   };
 
-  const refresh = () => {
-    const fetchMachines = async () => {
-      const response = await get("/production/machines", {
-        page,
-        limit,
-        sort,
-        order
-      });
-
-      if (response) {
-        const data = response as IApiResponse<any[]>;
-        setMachines(data.data || []);
-        if (data.meta) {
-          setPagination({
-            page: data.meta.page || 1,
-            totalPages: data.meta.totalPages || 0,
-            total: data.meta.total || 0,
-            limit: data.meta.limit || 25
-          });
-        }
-      }
-    };
-
-    fetchMachines();
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
+      ...prev,
+      ...updates
+    }));
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Machines"
         description="Manage all machines"
         actions={<Actions />}
       />
 
-      <div className="w-full flex flex-1 flex-col">
-        <Table
-          columns={columns}
-          data={machines || []}
-          total={machines?.length || 0}
-                  idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort);
-          setOrder(newOrder);
-        }}
-        />
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <div className="flex-1 overflow-hidden">
+          <Table
+            columns={columns}
+            data={machines?.data || []}
+            total={machines?.meta?.total || 0}
+            idField="id"
+            pagination
+            loading={loading}
+            error={error}
+            currentPage={machines?.meta?.page}
+            totalPages={machines?.meta?.totalPages}
+            onPageChange={(page) => handleParamsChange({ page })}
+            sort={params.sort}
+            order={params.order}
+            onSortChange={(newSort, newOrder) => {
+              handleParamsChange({
+                sort: newSort as any,
+                order: newOrder as any
+              });
+            }}
+            className="rounded border overflow-clip"
+            emptyMessage="No machines found"
+          />
+        </div>
       </div>
 
       {isModalOpen && (
@@ -351,12 +337,17 @@ const EditMachineModal = ({
 
         <div>
           <label className="text-sm text-text-muted mb-2 block">Type</label>
-          <input
-            type="text"
+          <select
             value={formData.type}
             onChange={(e) => handleChange({ type: e.target.value })}
-            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface"
-          />
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            <option value="">Select type</option>
+            {Object.keys(MachineType).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -366,9 +357,11 @@ const EditMachineModal = ({
             onChange={(e) => handleChange({ controllerType: e.target.value })}
             className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
             <option value="">Select controller type</option>
-            <option value="MAZAK">MAZAK</option>
-            <option value="FANUC">FANUC</option>
-            <option value="OTHER">OTHER</option>
+            {Object.keys(MachineControllerType).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
         </div>
 

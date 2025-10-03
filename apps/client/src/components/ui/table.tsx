@@ -6,6 +6,7 @@ export type TableColumn<T> = {
   header: string;
   render?: (value: T[keyof T], row: T) => React.ReactNode;
   className?: string;
+  sortable?: boolean;
 };
 
 type TableProps<T> = {
@@ -97,32 +98,35 @@ const Table = <T extends Record<string, any>>({
                   />
                 </th>
               )}
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
-                    column.header.toLowerCase() === "actions" ? "w-1" : ""
-                  } ${
-                    onSortChange && column.header.toLowerCase() !== "actions"
-                      ? "cursor-pointer hover:bg-surface"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    onSortChange &&
-                    column.header.toLowerCase() !== "actions" &&
-                    handleSort(column.key)
-                  }>
-                  <div className="flex items-center gap-1">
-                    {column.header}
-                    {onSortChange && column.header.toLowerCase() !== "actions" && (
-                      <span className="w-3 inline-block text-center">
-                        {sort === column.key ? (order === "asc" ? "↑" : "↓") : ""}
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
+              {columns.map((column) => {
+                const isSortable = column.sortable !== false && column.header.toLowerCase() !== "actions";
+                return (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-nowrap ${
+                      column.header.toLowerCase() === "actions" ? "w-1" : ""
+                    } ${
+                      onSortChange && isSortable
+                        ? "cursor-pointer hover:bg-surface"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      onSortChange &&
+                      isSortable &&
+                      handleSort(column.key)
+                    }>
+                    <div className="flex items-center gap-1">
+                      {column.header}
+                      {onSortChange && isSortable && (
+                        <span className="w-3 inline-block text-center">
+                          {sort === column.key ? (order === "asc" ? "↑" : "↓") : ""}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-border relative h-full">
