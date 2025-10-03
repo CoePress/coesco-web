@@ -533,47 +533,49 @@ const Contacts = () => {
         <MapPin size={16} />
         Map
       </Button>
-      <div className="relative">
-        <Button
-          variant="secondary-outline"
-          size="sm"
-          onClick={() => setShowColumnMenu(!showColumnMenu)}
-        >
-          <Settings size={16} />
-          Columns
-        </Button>
-        {showColumnMenu && (
-          <div className="absolute right-0 top-10 z-50 bg-foreground border border-border rounded-md shadow-lg py-2 min-w-[180px]">
-            <div className="px-3 py-1 text-xs font-semibold text-text-muted">Show Columns</div>
-            {Object.entries(visibleColumns).map(([key, value]) => (
-              <label
-                key={key}
-                className="flex items-center gap-2 px-3 py-2 hover:bg-surface cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={value}
-                  onChange={(e) =>
-                    setVisibleColumns((prev) => ({
-                      ...prev,
-                      [key]: e.target.checked,
-                    }))
-                  }
-                  className="rounded border-border"
-                />
-                <span className="text-sm text-text capitalize">
-                  {key === 'fullName' ? 'Name' :
-                   key === 'companyName' ? 'Company' :
-                   key === 'typeName' ? 'Type' :
-                   key === 'phoneNumber' ? 'Phone' :
-                   key === 'email' ? 'Email' :
-                   key === 'notes' ? 'Notes' : key}
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
+      {viewMode === "list" && (
+        <div className="relative">
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={() => setShowColumnMenu(!showColumnMenu)}
+          >
+            <Settings size={16} />
+            Columns
+          </Button>
+          {showColumnMenu && (
+            <div className="absolute right-0 top-10 z-50 bg-foreground border border-border rounded-md shadow-lg py-2 min-w-[180px]">
+              <div className="px-3 py-1 text-xs font-semibold text-text-muted">Show Columns</div>
+              {Object.entries(visibleColumns).map(([key, value]) => (
+                <label
+                  key={key}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-surface cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) =>
+                      setVisibleColumns((prev) => ({
+                        ...prev,
+                        [key]: e.target.checked,
+                      }))
+                    }
+                    className="rounded border-border"
+                  />
+                  <span className="text-sm text-text capitalize">
+                    {key === 'fullName' ? 'Name' :
+                     key === 'companyName' ? 'Company' :
+                     key === 'typeName' ? 'Type' :
+                     key === 'phoneNumber' ? 'Phone' :
+                     key === 'email' ? 'Email' :
+                     key === 'notes' ? 'Notes' : key}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <Button
         variant="primary"
         size="sm"
@@ -794,10 +796,8 @@ const ContactsMapView = ({
             if (zipData.Latitude && zipData.Longitude) {
               const lat = parseFloat(zipData.Latitude);
               const lng = parseFloat(zipData.Longitude);
-              console.log(`Found coordinates for ${postalCode} (${queryCountry}):`, [lat, lng]);
               postalCodeCacheRef.current.set(cacheKey, [lat, lng]);
             } else {
-              console.log(`No coordinates in result for ${postalCode} (${queryCountry}):`, zipData);
               postalCodeCacheRef.current.set(cacheKey, null);
             }
           } else {
@@ -969,8 +969,6 @@ const ContactsMapView = ({
 
       // Batch lookup all postal codes before creating the map
       await batchLookupPostalCodes(postalCodesToLookup);
-
-      console.log('Postal code cache after batch lookup:', postalCodeCacheRef.current);
 
       // Pre-compute all coordinates to avoid API calls in the map
       const contactsWithCoordinates = contactsData.map(item => {
