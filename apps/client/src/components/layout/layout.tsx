@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Modal, Button } from "@/components";
 import BugReportForm from "@/components/forms/bug-report-form";
 import { useApi } from "@/hooks/use-api";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -210,67 +211,12 @@ const Layout = ({ children }: LayoutProps) => {
     setIsCommandBarOpen(false);
   };
 
-  const navigateUpOneLevel = () => {
-    const currentPath = location.pathname;
-
-    if (currentPath === "/") return;
-
-    const pathWithoutTrailingSlash = currentPath.endsWith("/")
-      ? currentPath.slice(0, -1)
-      : currentPath;
-
-    const lastSlashIndex = pathWithoutTrailingSlash.lastIndexOf("/");
-
-    if (lastSlashIndex <= 0) {
-      navigate("/");
-    } else {
-      const parentPath = pathWithoutTrailingSlash.slice(0, lastSlashIndex);
-      navigate(parentPath);
-    }
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === "/") {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsCommandBarOpen(!isCommandBarOpen);
-        return;
-      }
-
-      // Toggle theme with Ctrl+T/Cmd+T
-      if (e.altKey && e.key === "t") {
-        e.preventDefault();
-        toggleTheme();
-        return;
-      }
-
-      // Toggle sidebar with Ctrl+B/Cmd+B
-      if (e.altKey && e.key === "[") {
-        e.preventDefault();
-        toggleSidebar();
-        return;
-      }
-
-      // Go back a page with Escape when command bar is closed
-      if (e.key === "Escape" && !isCommandBarOpen) {
-        navigateUpOneLevel();
-        return;
-      }
-
-      // Close command bar with Escape when it's open
-      if (e.key === "Escape" && isCommandBarOpen) {
-        setIsCommandBarOpen(false);
-        return;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown, { capture: true });
-    };
-  }, [isCommandBarOpen, location.pathname, toggleTheme, toggleSidebar]);
+  useKeyboardShortcuts({
+    isCommandBarOpen,
+    setIsCommandBarOpen,
+    toggleTheme,
+    toggleSidebar,
+  });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
