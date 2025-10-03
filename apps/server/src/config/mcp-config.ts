@@ -744,6 +744,11 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: false,
       },
+      isSalaried: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
       isActive: {
         type: "boolean",
         required: true,

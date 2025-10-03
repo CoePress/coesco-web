@@ -26,6 +26,8 @@ export class EmployeeService extends BaseService<Employee> {
       throw new BadRequestError("initials is required");
     if (!entity.title)
       throw new BadRequestError("title is required");
+    if (!entity.isSalaried)
+      throw new BadRequestError("isSalaried is required");
     if (!entity.isActive)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)

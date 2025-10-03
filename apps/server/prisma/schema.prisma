@@ -73,6 +73,7 @@ model Employee {
   terminationDate DateTime?
   departmentId    String?
   managerId       String?
+  isSalaried      Boolean   @default(false)
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
