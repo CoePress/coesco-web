@@ -225,7 +225,6 @@ const CreateFormModal = ({
         toast.error('Failed to create form. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating form:', error);
       toast.error('An unexpected error occurred while creating the form.');
     }
   };

@@ -1489,6 +1489,60 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+export async function _migrateDepartments(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const mapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "Employee",
+    targetTable: "department",
+    fieldMappings: [
+      {
+        from: "DeptCode",
+        to: "code",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const code = original.DeptCode?.toString().trim();
+
+      if (!code || code === "") {
+        return null;
+      }
+
+      const existingDept = await findReferencedRecord("department", { code });
+      if (existingDept) {
+        return null;
+      }
+
+      data.name = code;
+      data.description = code;
+      data.createdById = "system";
+      data.updatedById = "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      code: data.code,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  legacyService = originalService;
+
+  return result;
+}
+
 // used elsewhere
 export async function _migrateEmployees(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
   const originalService = legacyService;
@@ -1568,6 +1622,26 @@ export async function _migrateEmployees(legacyServiceInstance?: LegacyService): 
         transform: value => value?.trim(),
         required: true,
       },
+      {
+        from: "HireDate",
+        to: "hireDate",
+        transform: value => value ? new Date(value) : null,
+      },
+      {
+        from: "StartDate",
+        to: "startDate",
+        transform: value => value ? new Date(value) : null,
+      },
+      {
+        from: "TermDate",
+        to: "terminationDate",
+        transform: value => value ? new Date(value) : null,
+      },
+      {
+        from: "Salaried",
+        to: "isSalaried",
+        transform: value => value === true || value === "true" || value === 1 || value === "1",
+      },
     ],
     beforeSave: async (data, original) => {
       if (!original.EmpInitials || original.EmpInitials.trim() === "") {
@@ -1584,6 +1658,18 @@ export async function _migrateEmployees(legacyServiceInstance?: LegacyService): 
 
       data.userId = user.id;
       data.email = `${original.EmpInitials}@cpec.com`;
+
+      const deptCode = original.DeptCode?.toString().trim();
+      if (deptCode && deptCode !== "") {
+        const department = await findReferencedRecord("department", { code: deptCode });
+        if (department) {
+          data.departmentId = department.id;
+        }
+        else {
+          logger.warn(`No department found for code: ${deptCode}`);
+        }
+      }
+
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";
@@ -1650,6 +1736,124 @@ export async function _migrateEmployees(legacyServiceInstance?: LegacyService): 
   };
 
   // Restore original service
+  legacyService = originalService;
+
+  return result;
+}
+
+export async function _migrateEmployeeManagers(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const _migrateEmployeeManagersInternal = async (): Promise<MigrationResult> => {
+    const mapping: TableMapping = {
+      sourceDatabase: "std",
+      sourceTable: "EmpMgr",
+      targetTable: "employee",
+      fieldMappings: [],
+      beforeSave: async (data, original) => {
+        const empNum = original.EmpNum?.toString().trim();
+        const mgrNum = original.MgrNum?.toString().trim();
+
+        if (!empNum || !mgrNum) {
+          return null;
+        }
+
+        const employee = await findReferencedRecord("employee", { number: empNum });
+        const manager = await findReferencedRecord("employee", { number: mgrNum });
+
+        if (!employee) {
+          logger.warn(`Employee not found for number: ${empNum}`);
+          return null;
+        }
+
+        if (!manager) {
+          logger.warn(`Manager not found for number: ${mgrNum}`);
+          return null;
+        }
+
+        return {
+          id: employee.id,
+          managerId: manager.id,
+        };
+      },
+      batchSize: 100,
+    };
+
+    const result: MigrationResult = {
+      total: 0,
+      created: 0,
+      skipped: 0,
+      errors: 0,
+      errorDetails: [],
+    };
+
+    try {
+      logger.info("Starting employee manager relationship migration...");
+
+      const params = {
+        filter: null,
+        sort: null,
+        order: null,
+        offset: 0,
+        page: 1,
+        limit: 10000,
+      };
+
+      const totalCount = await legacyService.getCount("std", "EmpMgr", params);
+      logger.info(`Found ${totalCount} manager relationships`);
+
+      const response = await legacyService.getAll("std", "EmpMgr", params);
+
+      if (!response || !response.data || response.data.length === 0) {
+        logger.warn("No manager relationships found");
+        return result;
+      }
+
+      const records = response.data;
+      result.total = records.length;
+
+      for (const record of records) {
+        try {
+          const mappedData = await mapping.beforeSave?.({}, record);
+
+          if (!mappedData) {
+            result.skipped++;
+            continue;
+          }
+
+          await mainDatabase.employee.update({
+            where: { id: mappedData.id },
+            data: { managerId: mappedData.managerId },
+          });
+
+          result.created++;
+        }
+        catch (error: any) {
+          logger.error(`Error updating manager for employee ${record.EmpNum}:`, error.message);
+          result.errors++;
+          result.errorDetails.push({ record: { EmpNum: record.EmpNum }, error: error.message });
+        }
+      }
+
+      logger.info(`Manager migration complete: ${result.created} updated, ${result.skipped} skipped, ${result.errors} errors`);
+    }
+    catch (error: any) {
+      logger.error("Fatal error during manager migration:", error.message);
+      throw error;
+    }
+
+    return result;
+  };
+
+  const result = await _migrateEmployeeManagersInternal();
+
   legacyService = originalService;
 
   return result;

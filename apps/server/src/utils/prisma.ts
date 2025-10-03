@@ -162,7 +162,8 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
 
       if (value === "true") {
         value = true;
-      } else if (value === "false") {
+      }
+      else if (value === "false") {
         value = false;
       }
 
@@ -177,7 +178,8 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
           current = current[parts[i]];
         }
         current[parts[parts.length - 1]] = value;
-      } else {
+      }
+      else {
         processedFilter[key] = value;
       }
     });
@@ -198,7 +200,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
 
     if (params.sort.includes(".")) {
       const parts = params.sort.split(".");
-      let orderBy: any = {};
+      const orderBy: any = {};
       let current = orderBy;
 
       for (let i = 0; i < parts.length - 1; i++) {
@@ -208,7 +210,8 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
       current[parts[parts.length - 1]] = order;
 
       result.orderBy = orderBy;
-    } else {
+    }
+    else {
       result.orderBy = { [params.sort]: order };
     }
   }

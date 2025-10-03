@@ -30,7 +30,7 @@ export class JiraService {
     try {
       const { title, description, userEmail, screenshot, url, userAgent } = options;
 
-      let descriptionContent: any[] = [
+      const descriptionContent: any[] = [
         {
           type: "paragraph",
           content: [
@@ -148,7 +148,7 @@ export class JiraService {
 
       const transitionsData = await transitionsResponse.json();
       const bugsTransition = transitionsData.transitions.find(
-        (t: any) => t.name === "Bugs" || t.to.name === "Bugs"
+        (t: any) => t.name === "Bugs" || t.to.name === "Bugs",
       );
 
       if (!bugsTransition) {

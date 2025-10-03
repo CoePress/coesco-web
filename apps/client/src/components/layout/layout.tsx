@@ -117,14 +117,13 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
           <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
             <button
               onClick={async () => {
-                onTooltipMouseLeave(); // Hide tooltip when opening modal
+                onTooltipMouseLeave();
                 try {
                   if (!screenshotAreaRef.current) return;
                   setIsCapturing(true);
                   const dataUrl = await htmlToImage.toPng(screenshotAreaRef.current);
                   setScreenshot(dataUrl);
                 } catch (error) {
-                  console.warn('Screenshot failed:', error);
                   setScreenshot(null);
                 } finally {
                   setIsCapturing(false);

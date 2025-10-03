@@ -61,7 +61,6 @@ export function useApi<T = any>() {
       return response.data;
     }
     catch (error) {
-      console.error(`API request error for ${method} ${endpoint}:`, error);
       const errorMessage
         = error instanceof AxiosError
           ? error.response?.data?.message

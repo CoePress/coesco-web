@@ -233,7 +233,6 @@ const OptionRules = () => {
         />
       </div>
 
-      {/* Create/Edit Rule Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -258,7 +257,6 @@ const OptionRules = () => {
         )}
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -287,7 +285,6 @@ const OptionRules = () => {
   );
 };
 
-// Rule Form Component
 interface RuleFormProps {
   rule?: OptionRuleRow | null;
   onSave: (data: any) => void;

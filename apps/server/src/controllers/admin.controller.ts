@@ -44,11 +44,12 @@ export class AdminController {
       const employeeData: any = {};
       const userData: any = {};
 
-      Object.keys(body).forEach(key => {
+      Object.keys(body).forEach((key) => {
         if (key.startsWith("user.")) {
           const userField = key.replace("user.", "");
           userData[userField] = body[key];
-        } else {
+        }
+        else {
           employeeData[key] = body[key];
         }
       });

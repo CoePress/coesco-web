@@ -32,7 +32,6 @@ export function useNotifications(): NotificationHook {
 
   const requestPermission = async (): Promise<boolean> => {
     if (!isSupported) {
-      console.warn("Notifications are not supported in this browser");
       return false;
     }
 
@@ -42,19 +41,16 @@ export function useNotifications(): NotificationHook {
       return result === "granted";
     }
     catch (error) {
-      console.error("Error requesting notification permission:", error);
       return false;
     }
   };
 
   const notify = (options: NotificationOptions): boolean => {
     if (!isSupported) {
-      console.warn("Notifications are not supported in this browser");
       return false;
     }
 
     if (permission !== "granted") {
-      console.warn("Notification permission not granted");
       return false;
     }
 
@@ -69,7 +65,6 @@ export function useNotifications(): NotificationHook {
       return true;
     }
     catch (error) {
-      console.error("Error showing notification:", error);
       return false;
     }
   };

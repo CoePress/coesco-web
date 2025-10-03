@@ -31,8 +31,6 @@ const MachineForm = ({ machine, onClose }: MachineFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add API call to create/update machine
-    console.log("Form submitted:", formData);
     onClose();
   };
 
