@@ -191,25 +191,38 @@ const Logs = () => {
                 {selectedLog.diff && typeof selectedLog.diff === 'object' ? (
                   Object.keys(selectedLog.diff).length > 0 ? (
                     <div className="space-y-4">
-                      {Object.entries(selectedLog.diff).map(([key, value]) => (
-                        <div key={key} className="border-b border-border pb-3 last:border-b-0">
-                          <div className="text-sm font-medium text-text mb-2">{key}</div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <div className="text-xs text-error font-medium mb-1">Old Value:</div>
-                              <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
-                                {JSON.stringify((value as any)?.old, null, 2) || 'null'}
+                      {Object.entries(selectedLog.diff).map(([key, value]) => {
+                        const beforeVal = (value as any)?.before;
+                        const afterVal = (value as any)?.after;
+
+                        const formatValue = (val: any) => {
+                          if (val === null || val === undefined) return 'null';
+                          if (typeof val === 'string') return val;
+                          if (typeof val === 'boolean') return val.toString();
+                          if (typeof val === 'number') return val.toString();
+                          return JSON.stringify(val, null, 2);
+                        };
+
+                        return (
+                          <div key={key} className="border-b border-border pb-3 last:border-b-0">
+                            <div className="text-sm font-medium text-text mb-2">{key}</div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <div className="text-xs text-error font-medium mb-1">Before:</div>
+                                <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
+                                  {formatValue(beforeVal)}
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-success font-medium mb-1">New Value:</div>
-                              <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
-                                {JSON.stringify((value as any)?.new, null, 2) || 'null'}
+                              <div>
+                                <div className="text-xs text-success font-medium mb-1">After:</div>
+                                <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
+                                  {formatValue(afterVal)}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-text-muted text-sm">No changes recorded</div>
