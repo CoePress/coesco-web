@@ -229,7 +229,7 @@ const Products = () => {
     return (
       <div className="flex gap-2">
         {productType === 'equipment' && (
-          <Button 
+          <Button
             variant="primary"
             onClick={() => navigate('/sales/products/configuration-builder')}
           >
@@ -237,9 +237,6 @@ const Products = () => {
             Configuration Builder
           </Button>
         )}
-        <Button variant="primary">
-        Add Product
-        </Button>
       </div>
     )
   }
