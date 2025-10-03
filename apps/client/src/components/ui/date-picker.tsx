@@ -35,7 +35,8 @@ const DatePicker = ({
 
   useEffect(() => {
     if (value) {
-      const date = new Date(value);
+      const [year, month, day] = value.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
       setSelectedDate(date);
       setViewMonth(date);
       setInputValue(formatDateForDisplay(date));
@@ -184,12 +185,12 @@ const DatePicker = ({
             h-8 w-8 rounded-sm text-sm font-medium
             transition-all duration-150
             ${isSelected
-              ? 'bg-primary text-background'
+              ? 'bg-primary text-background cursor-pointer'
               : isCurrentDay
-              ? 'bg-primary/20 text-primary hover:bg-primary/30'
+              ? 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
               : isDisabled
               ? 'text-text-muted cursor-not-allowed opacity-40'
-              : 'text-text hover:bg-foreground'
+              : 'text-text hover:bg-foreground cursor-pointer'
             }
           `}
         >
@@ -225,7 +226,7 @@ const DatePicker = ({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer"
         >
           <Calendar size={18} />
         </button>
@@ -238,7 +239,7 @@ const DatePicker = ({
               <button
                 type="button"
                 onClick={handlePreviousMonth}
-                className="p-1 hover:bg-surface rounded-sm transition-colors"
+                className="p-1 hover:bg-surface rounded-sm transition-colors cursor-pointer"
               >
                 <ChevronLeft size={18} className="text-text-muted" />
               </button>
@@ -250,7 +251,7 @@ const DatePicker = ({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1 hover:bg-surface rounded-sm transition-colors"
+                className="p-1 hover:bg-surface rounded-sm transition-colors cursor-pointer"
               >
                 <ChevronRight size={18} className="text-text-muted" />
               </button>
@@ -281,7 +282,7 @@ const DatePicker = ({
                     setIsOpen(false);
                   }
                 }}
-                className="text-xs text-primary hover:underline font-medium"
+                className="text-xs text-primary hover:underline font-medium cursor-pointer"
               >
                 Today
               </button>
@@ -293,7 +294,7 @@ const DatePicker = ({
                   onChange('');
                   setIsOpen(false);
                 }}
-                className="text-xs text-text-muted hover:text-text transition-colors"
+                className="text-xs text-text-muted hover:text-text transition-colors cursor-pointer"
               >
                 Clear
               </button>
