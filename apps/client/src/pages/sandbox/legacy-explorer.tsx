@@ -2,43 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Table, Toolbar, Button } from "@/components";
 import type { TableColumn } from "@/components/ui/table";
 import type { Filter } from "@/components";
+import { useApi } from "@/hooks/use-api";
 
 type Row = Record<string, any>;
 
-type TableDef = {
-  label: string;
-  path: string;
-};
-
-type DatabaseDef = {
-  label: string;
-  baseUrl: string;
-  tables: TableDef[];
-};
-
-const DATABASES: Record<string, DatabaseDef> = {
-  jsonplaceholder: {
-    label: "JSONPlaceholder",
-    baseUrl: "https://jsonplaceholder.typicode.com",
-    tables: [
-      { label: "Posts", path: "/posts" },
-      { label: "Comments", path: "/comments" },
-      { label: "Albums", path: "/albums" },
-      { label: "Photos", path: "/photos" },
-      { label: "Todos", path: "/todos" },
-      { label: "Users", path: "/users" },
-    ],
-  },
-  fakestore: {
-    label: "Fake Store API",
-    baseUrl: "https://fakestoreapi.com",
-    tables: [
-      { label: "Products", path: "/products" },
-      { label: "Carts", path: "/carts" },
-      { label: "Users", path: "/users" },
-    ],
-  },
-};
+type DatabaseOption = "std" | "quote" | "job";
 
 function isPlainObject(value: unknown): value is Record<string, any> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -59,13 +27,8 @@ function flattenRow(row: Row, prefix = ""): Row {
   return flat;
 }
 
-function inferColumns(rows: Row[]): string[] {
-  const keys = new Set<string>();
-  rows.slice(0, 25).forEach((r) => {
-    const flat = flattenRow(r);
-    Object.keys(flat).forEach((k) => keys.add(k));
-  });
-  return Array.from(keys);
+function inferColumns(fields: string[]): string[] {
+  return fields;
 }
 
 function toCSV(rows: Row[], columns: string[]): string {
@@ -98,16 +61,6 @@ function download(filename: string, content: string, mime = "text/plain") {
   URL.revokeObjectURL(url);
 }
 
-// -------------------------- Data IO --------------------------
-
-async function fetchFromWeb(baseUrl: string, path: string): Promise<Row[]> {
-  const res = await fetch(baseUrl + path);
-  if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
-  const data = await res.json();
-  if (Array.isArray(data)) return data as Row[];
-  if (isPlainObject(data)) return [data as Row];
-  return [{ value: data }];
-}
 
 
 const ToggleChip: React.FC<{
@@ -134,72 +87,94 @@ const ToggleChip: React.FC<{
 );
 
 const LegacyExplorer: React.FC = () => {
-  const [dbKey, setDbKey] = useState<string>("jsonplaceholder");
-  const [tablePath, setTablePath] = useState<string>(DATABASES["jsonplaceholder"].tables[0].path);
-
+  const [database, setDatabase] = useState<DatabaseOption>("std");
+  const [tables, setTables] = useState<string[]>([]);
+  const [selectedTable, setSelectedTable] = useState<string>("");
+  const [fields, setFields] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [pageSize, _setPageSize] = useState(25);
 
-  const allColumns = useMemo(() => inferColumns(rawRows), [rawRows]);
+  const tablesApi = useApi<string[]>();
+  const fieldsApi = useApi<string[]>();
+  const dataApi = useApi<{ data: Row[]; meta: { page: number; limit: number; total: number; totalPages: number } }>();
+
+  const allColumns = useMemo(() => inferColumns(fields), [fields]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
 
   useEffect(() => {
     if (allColumns.length && visibleColumns.length === 0) {
-      setVisibleColumns(allColumns.slice(0, 8));
+      setVisibleColumns(allColumns);
     } else if (!allColumns.length) {
       setVisibleColumns([]);
     }
   }, [allColumns]);
 
-  const refresh = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setPage(1);
-      const db = DATABASES[dbKey];
-      const data = await fetchFromWeb(db.baseUrl, tablePath);
-      setRawRows(data);
-    } catch (e: any) {
-      setError(e?.message ?? String(e));
-      setRawRows([]);
-    } finally {
-      setLoading(false);
+  const fetchTables = async () => {
+    if (!database) return;
+    const data = await tablesApi.get(`/legacy/${database}/tables`);
+    if (data) {
+      setTables(data);
+      if (data.length > 0) {
+        setSelectedTable(data[0]);
+      }
+    }
+  };
+
+  const fetchFields = async () => {
+    if (!database || !selectedTable) return;
+    const data = await fieldsApi.get(`/legacy/${database}/${selectedTable}/fields`);
+    if (data) {
+      setFields(data);
+    }
+  };
+
+  const fetchData = async (pageNum: number = page) => {
+    if (!database || !selectedTable) return;
+    const result = await dataApi.get(`/legacy/${database}/${selectedTable}`, { page: pageNum, limit: pageSize });
+    if (result?.data) {
+      setRawRows(result.data);
     }
   };
 
   useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbKey, tablePath]);
+    if (database) {
+      setTables([]);
+      setSelectedTable("");
+      setFields([]);
+      setRawRows([]);
+      fetchTables();
+    }
+  }, [database]);
 
-  const total = rawRows.length;
-  const totalPages = Math.ceil(total / pageSize);
-  const start = (page - 1) * pageSize;
-  const end = Math.min(page * pageSize, total);
-  const pageRows = useMemo(() => rawRows.slice(start, end), [rawRows, start, end]);
+  useEffect(() => {
+    if (selectedTable) {
+      setFields([]);
+      setRawRows([]);
+      fetchFields();
+    }
+  }, [selectedTable]);
+
+  const total = dataApi.response?.meta?.total ?? 0;
+  const totalPages = dataApi.response?.meta?.totalPages ?? 0;
 
   const toggleColumn = (col: string) => {
     setVisibleColumns((prev) => (prev.includes(col) ? prev.filter((c) => c !== col) : [...prev, col]));
   };
 
   const exportCSV = (scope: "page" | "all" = "all") => {
-    const rows = scope === "page" ? pageRows : rawRows;
+    const rows = rawRows;
     const csv = toCSV(rows, visibleColumns.length ? visibleColumns : allColumns);
     download(`export_${scope}.csv`, csv, "text/csv");
   };
 
   useEffect(() => {
-    const first = DATABASES[dbKey].tables[0]?.path ?? "";
-    setTablePath(first);
-  }, [dbKey]);
+    if (rawRows.length > 0) {
+      fetchData(page);
+    }
+  }, [page]);
 
-  const db = DATABASES[dbKey];
-
-  // Prepare columns for Table component
   const tableColumns: TableColumn<Row>[] = useMemo(() => {
     return visibleColumns.map((col) => ({
       key: col,
@@ -215,92 +190,94 @@ const LegacyExplorer: React.FC = () => {
     }));
   }, [visibleColumns]);
 
-  // Prepare data for Table component
   const tableData = useMemo(() => {
-    return pageRows.map((row, index) => {
+    return rawRows.map((row, index) => {
       const flatRow = flattenRow(row);
       return {
         ...flatRow,
-        _id: index // Add unique identifier for table component
+        _id: index
       };
     });
-  }, [pageRows]);
+  }, [rawRows]);
 
-  // Prepare filters for Toolbar
-  const filters: Filter[] = [
+  const databaseOptions: Filter[] = [
     {
       key: "database",
       label: "Database",
-      options: Object.entries(DATABASES).map(([key, db]) => ({
-        value: key,
-        label: db.label
-      }))
-    },
+      options: [
+        { value: "std", label: "std" },
+        { value: "quote", label: "quotesys" },
+        { value: "job", label: "Job" }
+      ]
+    }
+  ];
+
+  const filters: Filter[] = [
     {
       key: "table",
       label: "Table",
-      options: db.tables.map((table) => ({
-        value: table.path,
-        label: table.label
+      options: tables.map((table) => ({
+        value: table,
+        label: table
       }))
     }
   ];
 
-  const handleFilterChange = (key: string, value: string) => {
-    if (key === "database") {
-      setDbKey(value);
-    } else if (key === "table") {
-      setTablePath(value);
+  const toggleFieldSelection = () => {
+    if (visibleColumns.length === 0) {
+      setVisibleColumns(allColumns);
+    } else {
+      setVisibleColumns([]);
     }
   };
 
-  const filterValues = {
-    database: dbKey,
-    table: tablePath
-  };
+  const loading = tablesApi.loading || fieldsApi.loading || dataApi.loading;
+  const error = tablesApi.error || fieldsApi.error || dataApi.error;
 
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
-        <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-text-muted">Endpoint Preview</span>
-            <input
-              value={db.baseUrl + tablePath}
-              readOnly
-              className="w-full rounded border border-border bg-surface px-3 py-2 text-text-muted"
-            />
-          </label>
-        </div>
-
         <Toolbar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          filterValues={filterValues}
-          showExport
+          filters={tables.length > 0 ? [...databaseOptions, ...filters] : databaseOptions}
+          onFilterChange={(key, value) => {
+            if (key === "database") {
+              setDatabase(value as DatabaseOption);
+            } else if (key === "table") {
+              setSelectedTable(value);
+            }
+          }}
+          filterValues={{ database, table: selectedTable }}
+          showExport={rawRows.length > 0}
           onExport={() => exportCSV("all")}
           actions={
-            <div className="flex items-center gap-2">
-              <Button onClick={refresh} disabled={loading} variant="primary">
-                {loading ? "Loading…" : "Run Query"}
+            selectedTable && (
+              <Button onClick={fetchData} disabled={!selectedTable || dataApi.loading} variant="primary">
+                {dataApi.loading ? "Loading…" : "Load Data"}
               </Button>
-            </div>
+            )
           }
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-text-muted">Fields:</span>
-            <div className="flex max-h-28 flex-wrap gap-2 overflow-auto">
-              {allColumns.map((c) => (
-                <ToggleChip
-                  key={c}
-                  label={c}
-                  checked={visibleColumns.includes(c)}
-                  onChange={() => toggleColumn(c)}
-                />
-              ))}
+        />
+
+        {fields.length > 0 && (
+          <div className="flex items-center justify-between gap-2 p-3 rounded border border-border bg-foreground">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <span className="text-sm font-medium text-text-muted">Fields:</span>
+              <div className="flex max-h-32 flex-wrap gap-2 overflow-auto">
+                {allColumns.map((c) => (
+                  <ToggleChip
+                    key={c}
+                    label={c}
+                    checked={visibleColumns.includes(c)}
+                    onChange={() => toggleColumn(c)}
+                  />
+                ))}
+              </div>
             </div>
+            <Button onClick={toggleFieldSelection} variant="primary">
+              {visibleColumns.length === 0 ? "Select All" : "Clear All Selections"}
+            </Button>
           </div>
-        </Toolbar>
+        )}
 
         {error && (
           <div className="rounded border border-[color:var(--error)]/30 bg-[color:var(--error)]/10 p-3 text-sm text-[color:var(--error)]">
@@ -308,21 +285,23 @@ const LegacyExplorer: React.FC = () => {
           </div>
         )}
 
-        <div className="flex-1 overflow-hidden">
-          <Table
-            columns={tableColumns}
-            data={tableData}
-            total={total}
-            pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            loading={loading}
-            emptyMessage="No data available"
-            idField="_id"
-            className="rounded border overflow-clip"
-          />
-        </div>
+        {rawRows.length > 0 && (
+          <div className="flex-1 overflow-hidden">
+            <Table
+              columns={tableColumns}
+              data={tableData}
+              total={total}
+              pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              loading={loading}
+              emptyMessage="No data available"
+              idField="_id"
+              className="rounded border overflow-clip"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
