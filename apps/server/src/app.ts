@@ -23,7 +23,7 @@ const server = createServer(app);
 
 app.set("trust proxy", 1);
 
-const origin = __dev__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : "https://portal.cpec.com";
+const origin = __dev__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : ["https://portal.cpec.com", "https://cpec-portal.netlify.app"];
 
 const corsOptions = {
   origin,

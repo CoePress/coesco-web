@@ -7,7 +7,6 @@ import {
   ActivityIcon,
   BoxIcon,
   Building2,
-  ChartNoAxesCombined,
   CodeIcon,
   ComputerIcon,
   DollarSignIcon,
@@ -28,7 +27,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Devices, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, Permissions, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, Reports, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -60,7 +59,7 @@ const adminModule: Module = {
   slug: "admin",
   label: "Admin",
   icon: ShieldIcon,
-  status: "active" as const,
+  status: "active",
   pages: [
     {
       slug: null,
@@ -121,7 +120,7 @@ const productionModule: Module = {
   slug: "production",
   label: "Production",
   icon: FactoryIcon,
-  status: "active" as const,
+  status: "active",
   pages: [
     {
       slug: null,
@@ -149,7 +148,7 @@ const salesModule: Module = {
   slug: "sales",
   label: "Sales",
   icon: DollarSignIcon,
-  status: "development" as const,
+  status: "active",
   pages: [
     {
       slug: null,
@@ -211,7 +210,7 @@ const salesModule: Module = {
     },
     {
       slug: "products",
-      label: "Product Catalog",
+      label: "Products",
       icon: BoxIcon,
       component: Products,
       children: [
@@ -227,19 +226,19 @@ const salesModule: Module = {
         },
       ],
     },
-    {
-      slug: "performance-sheets",
-      label: "Performance Sheets",
-      icon: ChartNoAxesCombined,
-      component: PerformanceSheets,
-      children: [
-        {
-          slug: ":id",
-          label: "Performance Sheet Details",
-          component: PerformanceSheet,
-        },
-      ],
-    },
+    // {
+    //   slug: "performance-sheets",
+    //   label: "Performance Sheets",
+    //   icon: ChartNoAxesCombined,
+    //   component: PerformanceSheets,
+    //   children: [
+    //     {
+    //       slug: ":id",
+    //       label: "Performance Sheet Details",
+    //       component: PerformanceSheet,
+    //     },
+    //   ],
+    // },
   ],
 };
 
@@ -297,7 +296,7 @@ const sandboxModule: Module = {
   slug: "sandbox",
   label: "Sandbox",
   icon: CodeIcon,
-  status: "development" as const,
+  status: "development",
   pages: [
     {
       slug: null,
