@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components";
-import { Trash2, Square } from "lucide-react";
 
 type ScreenshotAnnotatorProps = {
   screenshot: string;
   onAnnotatedScreenshot: (annotatedDataUrl: string) => void;
+  clearTrigger?: number;
 };
 
 type Rectangle = {
@@ -14,13 +13,19 @@ type Rectangle = {
   height: number;
 };
 
-const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot }: ScreenshotAnnotatorProps) => {
+const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot, clearTrigger }: ScreenshotAnnotatorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [rectangles, setRectangles] = useState<Rectangle[]>([]);
   const [currentRect, setCurrentRect] = useState<Rectangle | null>(null);
-  const [drawMode, setDrawMode] = useState(true);
+
+  useEffect(() => {
+    if (clearTrigger !== undefined) {
+      setRectangles([]);
+      setCurrentRect(null);
+    }
+  }, [clearTrigger]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -33,7 +38,7 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot }: ScreenshotAn
 
       canvas.width = img.width;
       canvas.height = img.height;
-      
+
       ctx.drawImage(img, 0, 0);
       redrawAnnotations();
     };
@@ -81,8 +86,6 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot }: ScreenshotAn
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawMode) return;
-    
     const pos = getMousePos(e);
     setIsDrawing(true);
     setCurrentRect({
@@ -94,8 +97,8 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot }: ScreenshotAn
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !currentRect || !drawMode) return;
-    
+    if (!isDrawing || !currentRect) return;
+
     const pos = getMousePos(e);
     setCurrentRect({
       ...currentRect,
@@ -106,52 +109,25 @@ const ScreenshotAnnotator = ({ screenshot, onAnnotatedScreenshot }: ScreenshotAn
 
   const handleMouseUp = () => {
     if (!isDrawing || !currentRect) return;
-    
+
     if (Math.abs(currentRect.width) > 5 && Math.abs(currentRect.height) > 5) {
       setRectangles([...rectangles, currentRect]);
     }
-    
+
     setCurrentRect(null);
     setIsDrawing(false);
   };
 
-  const clearAnnotations = () => {
-    setRectangles([]);
-    setCurrentRect(null);
-  };
-
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex gap-2 items-center">
-        <Button
-          variant={drawMode ? "primary" : "secondary-outline"}
-          size="sm"
-          onClick={() => setDrawMode(!drawMode)}
-        >
-          <Square size={14} />
-          {drawMode ? "Drawing" : "View Only"}
-        </Button>
-        <Button
-          variant="secondary-outline"
-          size="sm"
-          onClick={clearAnnotations}
-          disabled={rectangles.length === 0}
-        >
-          <Trash2 size={14} />
-          Clear
-        </Button>
-      </div>
-      
-      <div ref={containerRef} className="border border-border rounded overflow-hidden bg-surface">
-        <canvas
-          ref={canvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className="w-full h-auto cursor-crosshair"
-          style={{ display: 'block' }}
-        />
-      </div>
+    <div ref={containerRef} className="border border-border rounded overflow-hidden bg-surface">
+      <canvas
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        className="w-full h-auto cursor-crosshair"
+        style={{ display: 'block' }}
+      />
     </div>
   );
 };

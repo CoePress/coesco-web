@@ -7,6 +7,7 @@ import {
   Button,
   Modal,
   Toolbar,
+  ToggleSwitch,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
@@ -367,20 +368,12 @@ const EditEmployeeModal = ({
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="isActive"
-            checked={formData.isActive}
-            onChange={(e) => handleChange({ isActive: e.target.checked })}
-            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-          />
-          <label
-            htmlFor="isActive"
-            className="text-sm text-text-muted">
-            Active Account
-          </label>
-        </div>
+        <ToggleSwitch
+          checked={formData.isActive}
+          onChange={(checked) => handleChange({ isActive: checked })}
+          label="Active"
+          id="isActive"
+        />
 
         <div className="flex justify-end gap-2">
           <Button

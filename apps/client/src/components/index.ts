@@ -28,4 +28,5 @@ export { default as Table } from "./ui/table";
 export { default as Tabs } from "./ui/tabs";
 export { default as Text } from "./ui/text";
 export { default as Toast } from "./ui/toast";
+export { default as ToggleSwitch } from "./ui/toggle-switch";
 export { default as Tooltip } from "./ui/tooltip";
