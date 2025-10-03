@@ -5,6 +5,7 @@ import {
   List as ListIcon,
   MapPin,
   Trash2,
+  Settings,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -36,13 +37,26 @@ const Contacts = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState({
+    fullName: true,
+    companyName: true,
+    typeName: true,
+    phoneNumber: true,
+    email: true,
+    notes: false,
+  });
 
   const api = useApi();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown && !(event.target as Element)?.closest('.relative')) {
+      const target = event.target as Element;
+      if (activeDropdown && !target?.closest('.relative')) {
         setActiveDropdown(null);
+      }
+      if (showColumnMenu && !target?.closest('.relative')) {
+        setShowColumnMenu(false);
       }
     };
 
@@ -50,7 +64,7 @@ const Contacts = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeDropdown]);
+  }, [activeDropdown, showColumnMenu]);
 
   const handleDeleteContact = (contact: any) => {
     setContactToDelete(contact);
@@ -393,13 +407,13 @@ const Contacts = () => {
     fetchAllContacts();
   };
 
-  const columns: TableColumn<any>[] = [
+  const allColumns: TableColumn<any>[] = [
     {
       key: "fullName",
       header: "Name",
-      className: "text-primary hover:underline",
+      className: "text-primary hover:underline w-[22%]",
       render: (_, row) => (
-        <Link to={`/sales/contacts/${row.originalId}_${row.companyId}_${row.addressId}`}>
+        <Link to={`/sales/contacts/${row.companyId}_${row.originalId}`}>
           <div className="font-medium">{row.fullName}</div>
           {row.title && <div className="text-xs text-text-muted">{row.title}</div>}
         </Link>
@@ -408,7 +422,7 @@ const Contacts = () => {
     {
       key: "companyName",
       header: "Company",
-      className: "hover:underline",
+      className: "hover:underline w-[22%]",
       render: (_, row) => (
         <Link to={`/sales/companies/${row.companyId}`} className="flex items-center gap-1">
           <Building2 size={14} />
@@ -419,6 +433,7 @@ const Contacts = () => {
     {
       key: "typeName",
       header: "Type",
+      className: "w-[8%]",
       render: (_, row) => (
         <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
           row.type === ContactType.Accounting ? 'bg-blue-100 text-blue-800' :
@@ -436,7 +451,7 @@ const Contacts = () => {
     {
       key: "phoneNumber",
       header: "Phone",
-      className: "hover:underline",
+      className: "hover:underline w-[10%]",
       render: (_, row) => {
         const phone = row.phoneNumber;
         const ext = row.phoneExt;
@@ -447,13 +462,14 @@ const Contacts = () => {
     {
       key: "email",
       header: "Email",
-      className: "hover:underline",
+      className: "hover:underline w-[18%]",
       render: (_, row) =>
         row.email ? <Link to={`mailto:${row.email}`}>{row.email}</Link> : "-",
     },
     {
       key: "notes",
       header: "Notes",
+      className: "w-[15%]",
       render: (_, row) => (
         <div className="text-sm max-w-xs truncate" title={row.notes}>
           {row.notes || "-"}
@@ -463,9 +479,10 @@ const Contacts = () => {
     {
       key: "actions",
       header: "",
+      className: "w-[5%]",
       render: (_, row) => (
         <div className="relative">
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               setActiveDropdown(activeDropdown === row.id ? null : row.id);
@@ -474,7 +491,7 @@ const Contacts = () => {
           >
             <MoreHorizontal size={16} />
           </button>
-          
+
           {activeDropdown === row.id && (
             <div className="absolute right-0 top-8 z-10 bg-foreground border border-border rounded-md shadow-lg py-1 min-w-[120px]">
               <button
@@ -494,6 +511,10 @@ const Contacts = () => {
     },
   ];
 
+  const columns = allColumns.filter(col =>
+    col.key === 'actions' || visibleColumns[col.key as keyof typeof visibleColumns]
+  );
+
   const HeaderActions = () => (
     <div className="flex gap-2">
       <Button
@@ -512,8 +533,49 @@ const Contacts = () => {
         <MapPin size={16} />
         Map
       </Button>
-      <Button 
-        variant="primary" 
+      <div className="relative">
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={() => setShowColumnMenu(!showColumnMenu)}
+        >
+          <Settings size={16} />
+          Columns
+        </Button>
+        {showColumnMenu && (
+          <div className="absolute right-0 top-10 z-50 bg-foreground border border-border rounded-md shadow-lg py-2 min-w-[180px]">
+            <div className="px-3 py-1 text-xs font-semibold text-text-muted">Show Columns</div>
+            {Object.entries(visibleColumns).map(([key, value]) => (
+              <label
+                key={key}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-surface cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={value}
+                  onChange={(e) =>
+                    setVisibleColumns((prev) => ({
+                      ...prev,
+                      [key]: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-border"
+                />
+                <span className="text-sm text-text capitalize">
+                  {key === 'fullName' ? 'Name' :
+                   key === 'companyName' ? 'Company' :
+                   key === 'typeName' ? 'Type' :
+                   key === 'phoneNumber' ? 'Phone' :
+                   key === 'email' ? 'Email' :
+                   key === 'notes' ? 'Notes' : key}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <Button
+        variant="primary"
         size="sm"
         onClick={() => setShowAddContactModal(true)}
       >
@@ -540,7 +602,7 @@ const Contacts = () => {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by name, email, phone, title or company"
               className="w-full px-3 py-2 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted max-w-md"
-              autoComplete="off"
+              autoComplete="no"
             />
           </div>
 
@@ -703,26 +765,43 @@ const ContactsMapView = ({
   const batchLookupPostalCodes = async (postalCodes: Array<{country: string, postalCode: string}>) => {
     const uniqueCodes = [...new Set(postalCodes.map(p => `${p.country}_${p.postalCode}`))];
     const uncachedCodes = uniqueCodes.filter(key => !postalCodeCacheRef.current.has(key));
-    
+
     if (uncachedCodes.length === 0) return;
-    
+
     // Process in smaller batches to avoid overwhelming the API
     const batchSize = 10;
     for (let i = 0; i < uncachedCodes.length; i += batchSize) {
       const batch = uncachedCodes.slice(i, i + batchSize);
-      
+
       await Promise.all(batch.map(async (key) => {
         const [country, postalCode] = key.split('_');
         const cacheKey = `${country}_${postalCode}`;
-        
+
         if (postalCodeCacheRef.current.has(cacheKey)) return;
-        
+
+        const queryCountry = country === 'US' ? 'USA' : country;
+
         try {
-          const result = await api.get(`/postal-codes/coordinates/${country}/${postalCode}`) as any;
-          
-          if (result && result.success && result.data) {
-            postalCodeCacheRef.current.set(cacheKey, [result.data.latitude, result.data.longitude]);
+          const result = await api.get('/legacy/std/ZipData/filter/custom', {
+            ZipCode: postalCode,
+            Country: queryCountry,
+            fields: 'ZipCode,PrimaryCity,StateProv,Country,Latitude,Longitude',
+            limit: 1
+          }) as any;
+
+          if (result && Array.isArray(result) && result.length > 0) {
+            const zipData = result[0];
+            if (zipData.Latitude && zipData.Longitude) {
+              const lat = parseFloat(zipData.Latitude);
+              const lng = parseFloat(zipData.Longitude);
+              console.log(`Found coordinates for ${postalCode} (${queryCountry}):`, [lat, lng]);
+              postalCodeCacheRef.current.set(cacheKey, [lat, lng]);
+            } else {
+              console.log(`No coordinates in result for ${postalCode} (${queryCountry}):`, zipData);
+              postalCodeCacheRef.current.set(cacheKey, null);
+            }
           } else {
+            console.log(`No result found for ${postalCode} (${queryCountry})`);
             postalCodeCacheRef.current.set(cacheKey, null);
           }
         } catch (error) {
@@ -730,7 +809,7 @@ const ContactsMapView = ({
           postalCodeCacheRef.current.set(cacheKey, null);
         }
       }));
-      
+
     }
   };
 
@@ -740,7 +819,6 @@ const ContactsMapView = ({
       try {
         const result = await onFetchAddresses(50);
         if (result && result.contacts && result.addressMap) {
-          // Combine contacts with their addresses
           const validContacts = result.contacts.filter((contact: any) => contact != null);
           const combined = validContacts.map((contact: any, index: number) => {
             // Try composite key first, fallback to Address_ID for backward compatibility
@@ -891,6 +969,8 @@ const ContactsMapView = ({
 
       // Batch lookup all postal codes before creating the map
       await batchLookupPostalCodes(postalCodesToLookup);
+
+      console.log('Postal code cache after batch lookup:', postalCodeCacheRef.current);
 
       // Pre-compute all coordinates to avoid API calls in the map
       const contactsWithCoordinates = contactsData.map(item => {
@@ -1275,8 +1355,6 @@ const ContactsMapView = ({
                 createMarkersFromData(event.data.contactsData);
             }
         });
-        
-        console.log('Contacts map loaded with', contactsData.length, 'contacts');
     </script>
 </body>
 </html>`;
