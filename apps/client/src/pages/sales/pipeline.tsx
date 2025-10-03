@@ -221,6 +221,7 @@ const Pipeline = () => {
       const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
         filterField: 'Category',
         filterValue: 'RSM',
+        Use_Status: 'NOT:Historical',
         fields: 'Description'
       });
       

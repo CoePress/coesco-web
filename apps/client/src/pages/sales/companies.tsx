@@ -123,7 +123,7 @@ const Companies = () => {
     {
       key: "name",
       header: "Name",
-      className: "text-primary hover:underline",
+      className: "text-primary hover:underline w-[40%]",
       render: (_, row) => (
         <Link to={`/sales/companies/${row.id}`}>{row.name}</Link>
       ),
@@ -131,6 +131,7 @@ const Companies = () => {
     {
       key: "active",
       header: "Active",
+      className: "w-[15%]",
       render: (_, row) => (
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           row.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
@@ -142,6 +143,7 @@ const Companies = () => {
     {
       key: "createDate",
       header: "Created",
+      className: "w-[20%]",
       render: (_, row) => {
         if (!row.createDate) return "-";
         const date = new Date(row.createDate);
@@ -151,6 +153,7 @@ const Companies = () => {
     {
       key: "actions",
       header: "",
+      className: "w-[25%]",
       render: (_, row) => (
         <div className="flex gap-1">
           {row.active ? (
@@ -170,7 +173,7 @@ const Companies = () => {
                 e.stopPropagation();
                 handleActivateCompany(row);
               }}
-              className="px-2 py-1 text-xs text-success border border-success/30 rounded hover:bg-success/10 transition-colors"
+              className="px-2 py-1 text-xs text-success border border-success/30 rounded hover:bg-success/10 transition-colors mr-[15px]"
               title="Activate company"
             >
               Activate
@@ -278,6 +281,7 @@ const Companies = () => {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           className="max-w-md"
+          autoComplete="no"
         />
       </div>
 

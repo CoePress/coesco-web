@@ -5,18 +5,17 @@ import {
   DollarSign,
   List,
   RefreshCcw,
+  Info,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  Legend,
 } from "recharts";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -46,6 +45,8 @@ const SalesDashboard = () => {
   const [journeys, setJourneys] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [showMetricInfo, setShowMetricInfo] = useState(false);
   const api = useApi();
 
   useEffect(() => {
@@ -112,45 +113,129 @@ const SalesDashboard = () => {
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
 
-  const wonJourneys = journeys.filter(j => j.Journey_Status === 'won');
-  const lostJourneys = journeys.filter(j => j.Journey_Status === 'lost');
+  const wonJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+  const lostJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
   const closedJourneys = [...wonJourneys, ...lostJourneys];
   
   const monthlyRevenue = thisMonthJourneys.reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
   const totalQuotes = activeJourneys.length;
   const totalJourneysWithValue = activeJourneys.filter(j => (j.Journey_Value || 0) > 0).length;
-  const conversionRate = closedJourneys.length > 0 ? (wonJourneys.length / closedJourneys.length) * 100 : 0;
+  const conversionRate = closedJourneys.length > 0 ? (wonJourneys.length / (wonJourneys.length + lostJourneys.length)) * 100 : 0;
 
-  // Calculate monthly performance data
+  // Calculate performance data based on selected timeframe
   const monthlyData = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-    
-    const monthJourneys = journeys.filter(j => {
-      if (!j.Journey_Start_Date) return false;
-      const jDate = new Date(j.Journey_Start_Date);
-      return jDate.getMonth() === date.getMonth() && jDate.getFullYear() === date.getFullYear();
-    });
-    
-    const monthSales = monthJourneys
-      .filter(j => j.Journey_Status === 'won')
-      .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
-    
-    const monthQuotes = monthJourneys.length;
-    const monthJourneysWithValue = monthJourneys.filter(j => (j.Journey_Value || 0) > 0).length;
-    const monthConversion = monthJourneys.length > 0 
-      ? (monthJourneys.filter(j => j.Journey_Status === 'won').length / monthJourneys.length) * 100 
-      : 0;
 
-    monthlyData.push({
-      month: monthName,
-      sales: monthSales,
-      quotes: monthQuotes * 1000, // Multiply for visualization scale
-      conversion: Math.round(monthConversion),
-      journeys: monthJourneysWithValue
-    });
+  if (timeframe === 'daily') {
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
+
+      const dayJourneys = journeys.filter(j => {
+        if (!j.Journey_Start_Date) return false;
+        const jDate = new Date(j.Journey_Start_Date);
+        return jDate.toDateString() === date.toDateString();
+      });
+
+      const daySales = dayJourneys
+        .filter(j => j.Journey_Status === 'won')
+        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+      const dayQuotes = dayJourneys.length;
+      const dayJourneysWithValue = dayJourneys.filter(j => {
+        const stage = String(j.Journey_Stage || '').toLowerCase();
+        return !stage.includes('closed won') &&
+               !stage.includes('job lost') &&
+               !stage.includes('closed lost') &&
+               !stage.includes('post installation');
+      }).length;
+      const dayConversion = dayJourneys.length > 0
+        ? (dayJourneys.filter(j => j.Journey_Status === 'won').length / dayJourneys.length) * 100
+        : 0;
+
+      monthlyData.push({
+        month: dayLabel,
+        sales: daySales,
+        quotes: dayQuotes * 1000,
+        conversion: Math.round(dayConversion),
+        journeys: dayJourneysWithValue
+      });
+    }
+  } else if (timeframe === 'weekly') {
+    for (let i = 11; i >= 0; i--) {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - (i * 7));
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 6);
+
+      const weekLabel = `${startDate.getMonth() + 1}/${startDate.getDate()}`;
+
+      const weekJourneys = journeys.filter(j => {
+        if (!j.Journey_Start_Date) return false;
+        const jDate = new Date(j.Journey_Start_Date);
+        return jDate >= startDate && jDate <= endDate;
+      });
+
+      const weekSales = weekJourneys
+        .filter(j => j.Journey_Status === 'won')
+        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+      const weekQuotes = weekJourneys.length;
+      const weekJourneysWithValue = weekJourneys.filter(j => {
+        const stage = String(j.Journey_Stage || '').toLowerCase();
+        return !stage.includes('closed won') &&
+               !stage.includes('job lost') &&
+               !stage.includes('closed lost') &&
+               !stage.includes('post installation');
+      }).length;
+      const weekConversion = weekJourneys.length > 0
+        ? (weekJourneys.filter(j => j.Journey_Status === 'won').length / weekJourneys.length) * 100
+        : 0;
+
+      monthlyData.push({
+        month: weekLabel,
+        sales: weekSales,
+        quotes: weekQuotes * 1000,
+        conversion: Math.round(weekConversion),
+        journeys: weekJourneysWithValue
+      });
+    }
+  } else {
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+
+      const monthJourneys = journeys.filter(j => {
+        if (!j.Journey_Start_Date) return false;
+        const jDate = new Date(j.Journey_Start_Date);
+        return jDate.getMonth() === date.getMonth() && jDate.getFullYear() === date.getFullYear();
+      });
+
+      const monthSales = monthJourneys
+        .filter(j => j.Journey_Status === 'won')
+        .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+      const monthQuotes = monthJourneys.length;
+      const monthJourneysWithValue = monthJourneys.filter(j => {
+        const stage = String(j.Journey_Stage || '').toLowerCase();
+        return !stage.includes('closed won') &&
+               !stage.includes('job lost') &&
+               !stage.includes('closed lost') &&
+               !stage.includes('post installation');
+      }).length;
+      const monthConversion = monthJourneys.length > 0
+        ? (monthJourneys.filter(j => j.Journey_Status === 'won').length / monthJourneys.length) * 100
+        : 0;
+
+      monthlyData.push({
+        month: monthName,
+        sales: monthSales,
+        quotes: monthQuotes * 1000,
+        conversion: Math.round(monthConversion),
+        journeys: monthJourneysWithValue
+      });
+    }
   }
 
   // Get top journeys
@@ -197,54 +282,33 @@ const SalesDashboard = () => {
   );
   
   console.log("Stage distribution:", stageDistribution);
-
-  // Won vs Lost vs Open data
-  const wonJourneysCount = wonJourneys.length;
-  const lostJourneysCount = lostJourneys.length;
-  const openJourneysCount = activeJourneys.length;
-  const totalJourneysCount = journeys.length;
   
-  const wonPercentage = totalJourneysCount > 0 ? Math.round((wonJourneysCount / totalJourneysCount) * 100) : 0;
-  const lostPercentage = totalJourneysCount > 0 ? Math.round((lostJourneysCount / totalJourneysCount) * 100) : 0;
-  const openPercentage = totalJourneysCount > 0 ? Math.round((openJourneysCount / totalJourneysCount) * 100) : 0;
-  
-  const wonLostData = [
-    { name: "Won", value: wonPercentage },
-    { name: "Lost", value: lostPercentage },
-    { name: "Open", value: openPercentage },
-  ];
   const kpis = [
     {
       title: "Monthly Revenue",
       value: formatCurrency(monthlyRevenue, false),
       description: "Total revenue this month",
       icon: <DollarSign size={16} />,
-      change: 0, // Would need historical data to calculate change
     },
     {
       title: "Total Quotes",
       value: totalQuotes.toString(),
       description: "Active quotes in pipeline",
       icon: <FileText size={16} />,
-      change: 0, // Would need historical data to calculate change
     },
     {
       title: "Conversion Rate",
       value: `${Math.round(conversionRate)}%`,
       description: "Journey win rate",
       icon: <TrendingUp size={16} />,
-      change: 0, // Would need historical data to calculate change
     },
     {
       title: "Active Journeys",
       value: totalJourneysWithValue.toString(),
       description: "Journeys with values in pipeline",
       icon: <Users size={16} />,
-      change: 0, // Would need historical data to calculate change
     },
   ];
-
-  const COLORS = ["var(--success)", "var(--error)", "var(--primary)"];
 
   const refreshData = async () => {
     setIsLoading(true);
@@ -322,152 +386,155 @@ const SalesDashboard = () => {
           ))}
         </Metrics>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
-          <div className="md:col-span-2 lg:col-span-3 w-full h-full bg-foreground rounded border flex flex-col min-h-[250px]">
-            <div className="p-2 border-b">
+        <div className="w-full h-full bg-foreground rounded border flex flex-col min-h-[250px] flex-1">
+          <div className="p-2 border-b flex justify-between items-center">
+            <div className="flex items-center gap-2">
               <h3 className="text-sm text-text-muted">Performance Overview</h3>
+              <button
+                onClick={() => setShowMetricInfo(!showMetricInfo)}
+                className="text-text-muted hover:text-primary transition-colors">
+                <Info size={16} />
+              </button>
             </div>
-
-            <div className="p-2 flex-1">
-              <ResponsiveContainer
-                width="100%"
-                height="100%">
-                <BarChart
-                  data={monthlyData}
-                  margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--border)"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    stroke="var(--text-muted)"
-                    tick={{ fontSize: 12 }}
-                    tickMargin={5}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="var(--text-muted)"
-                    tick={{ fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={60}
-                    tickFormatter={(value) => {
-                      if (value >= 1000000) {
-                        return `$${(value / 1000000).toFixed(1)}M`;
-                      } else if (value >= 1000) {
-                        return `$${(value / 1000).toFixed(0)}K`;
-                      }
-                      return `$${value}`;
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--foreground)",
-                      color: "var(--text-muted)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "4px",
-                    }}
-                    formatter={(value, name) => {
-                      const numValue = Number(value);
-                      if (name === 'sales') {
-                        return [formatCurrency(numValue), 'Sales'];
-                      }
-                      if (name === 'quotes') {
-                        return [Math.round(numValue / 1000), 'Quotes'];
-                      }
-                      return [value, name];
-                    }}
-                  />
-                  <Bar
-                    dataKey="sales"
-                    fill="var(--primary)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="quotes"
-                    fill="var(--secondary)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex gap-1">
+              <Button
+                variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
+                size="sm"
+                onClick={() => setTimeframe('daily')}>
+                Daily
+              </Button>
+              <Button
+                variant={timeframe === 'weekly' ? 'primary' : 'secondary-outline'}
+                size="sm"
+                onClick={() => setTimeframe('weekly')}>
+                Weekly
+              </Button>
+              <Button
+                variant={timeframe === 'monthly' ? 'primary' : 'secondary-outline'}
+                size="sm"
+                onClick={() => setTimeframe('monthly')}>
+                Monthly
+              </Button>
             </div>
           </div>
 
-          <div className="w-full bg-foreground rounded border">
-            <div className="p-2 border-b">
-              <h3 className="text-sm text-text-muted">Journey Status</h3>
-            </div>
-            <div className="p-2 flex flex-col items-center justify-center h-[250px]">
-              <ResponsiveContainer
-                width="100%"
-                height="100%">
-                <PieChart>
-                  <Pie
-                    data={wonLostData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="80%"
-                    stroke="var(--border)"
-                    strokeWidth={1}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                    dataKey="value">
-                    {wonLostData.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload || !payload.length) return null;
-                      const entry = payload[0];
-                      return (
-                        <div
-                          style={{
-                            background: "var(--foreground)",
-                            color: "var(--text-muted)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 4,
-                            padding: 8,
-                          }}>
-                          <div
-                            style={{
-                              fontWeight: 500,
-                              color:
-                                COLORS[
-                                  payload[0].payload.name === "Won" ? 0 : 1
-                                ],
-                            }}>
-                            {entry.payload.name}
-                          </div>
-                          <div className="mt-1">
-                            <p>{entry.value}%</p>
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex gap-2 mt-2 flex-wrap justify-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-success"></div>
-                  <span className="text-xs text-text-muted">Won ({wonPercentage}%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-error"></div>
-                  <span className="text-xs text-text-muted">Lost ({lostPercentage}%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary"></div>
-                  <span className="text-xs text-text-muted">Open ({openPercentage}%)</span>
-                </div>
+          {showMetricInfo && (
+            <div className="p-3 bg-surface border-b text-xs text-text-muted space-y-2">
+              <div>
+                <span className="font-medium text-success">Revenue:</span> Total value of all won journeys within the time period
+              </div>
+              <div>
+                <span className="font-medium text-warning">Active Journeys:</span> Number of journeys excluding Closed Won, Job Lost, Closed Lost, and Post Installation stages
+              </div>
+              <div>
+                <span className="font-medium text-error">Conversion Rate:</span> Percentage of journeys won out of total journeys in the period
               </div>
             </div>
+          )}
+
+          <div className="p-2 flex-1">
+            <ResponsiveContainer
+              width="100%"
+              height="100%">
+              <LineChart
+                data={monthlyData}
+                margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                />
+                <XAxis
+                  dataKey="month"
+                  stroke="var(--text-muted)"
+                  tick={{ fontSize: 12 }}
+                  tickMargin={5}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="left"
+                  stroke="var(--text-muted)"
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={60}
+                  tickFormatter={(value) => {
+                    if (value >= 1000000) {
+                      return `$${(value / 1000000).toFixed(1)}M`;
+                    } else if (value >= 1000) {
+                      return `$${(value / 1000).toFixed(0)}K`;
+                    }
+                    return `$${value}`;
+                  }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="var(--text-muted)"
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "var(--foreground)",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "4px",
+                  }}
+                  formatter={(value, name) => {
+                    const numValue = Number(value);
+                    if (name === 'sales') {
+                      return [formatCurrency(numValue), 'Revenue'];
+                    }
+                    if (name === 'journeys') {
+                      return [numValue, 'Active Journeys'];
+                    }
+                    if (name === 'conversion') {
+                      return [`${numValue}%`, 'Conversion Rate'];
+                    }
+                    return [value, name];
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: '12px' }}
+                  formatter={(value) => {
+                    if (value === 'sales') return 'Revenue';
+                    if (value === 'journeys') return 'Active Journeys';
+                    if (value === 'conversion') return 'Conversion Rate';
+                    return value;
+                  }}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="var(--success)"
+                  strokeWidth={2}
+                  dot={{ fill: "var(--success)", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="journeys"
+                  stroke="var(--warning)"
+                  strokeWidth={2}
+                  dot={{ fill: "var(--warning)", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="conversion"
+                  stroke="var(--error)"
+                  strokeWidth={2}
+                  dot={{ fill: "var(--error)", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

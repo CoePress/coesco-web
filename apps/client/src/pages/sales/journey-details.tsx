@@ -238,7 +238,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       try {
         const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
           filterField: 'Category',
-          filterValue: 'RSM'
+          filterValue: 'RSM',
+          Use_Status: 'NOT:Historical'
         });
         
         if (!cancelled && Array.isArray(rsmData)) {
