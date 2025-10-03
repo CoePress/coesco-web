@@ -131,13 +131,15 @@ const MainMenu = () => {
       </div>
 
       <div className="absolute bottom-2 right-2 flex-col gap-2 hidden md:flex">
-        <Button
-          variant="secondary-outline"
-          onClick={() => navigate("/chat")}
-          className="w-32">
-          <MessageCircle size={16} />
-          ChatPLK
-        </Button>
+        {__dev__ && (
+          <Button
+            variant="secondary-outline"
+            onClick={() => navigate("/chat")}
+            className="w-32">
+            <MessageCircle size={16} />
+            ChatPLK
+          </Button>
+        )}
         <Button
           variant="secondary-outline"
           onClick={toggleTheme}
@@ -156,12 +158,14 @@ const MainMenu = () => {
 
       <div className="md:hidden bg-foreground border-t border-border fixed bottom-0 left-0 right-0">
         <nav className="flex items-center justify-around h-16 px-2">
-          <button
-            onClick={() => navigate("/chat")}
-            className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
-            <MessageCircle size={20} />
-            <span className="text-xs">Chat</span>
-          </button>
+          {__dev__ && (
+            <button
+              onClick={() => navigate("/chat")}
+              className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+              <MessageCircle size={20} />
+              <span className="text-xs">Chat</span>
+            </button>
+          )}
 
           <button
             onClick={toggleTheme}

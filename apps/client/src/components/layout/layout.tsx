@@ -11,8 +11,10 @@ import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../feature/command-bar";
 import ToastContainer from "@/components/ui/toast-container";
 import { useToast } from "@/hooks/use-toast";
-import Modal from "@/components/ui/modal";
+import { Modal, Button } from "@/components";
 import BugReportForm from "@/components/forms/bug-report-form";
+import { useApi } from "@/hooks/use-api";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -20,15 +22,16 @@ type SidebarProps = {
   onTooltipMouseEnter: (e: React.MouseEvent, text: string) => void;
   onTooltipMouseLeave: () => void;
   screenshotAreaRef: React.RefObject<HTMLDivElement>;
+  setIsBugModalOpen: (open: boolean) => void;
+  setScreenshot: (screenshot: string | null) => void;
+  isCapturing: boolean;
+  setIsCapturing: (capturing: boolean) => void;
 };
 
-const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, screenshotAreaRef }: SidebarProps) => {
+const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, screenshotAreaRef, setIsBugModalOpen, setScreenshot, isCapturing, setIsCapturing }: SidebarProps) => {
   let sidebarLabel = "Dashboard";
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
-  const [screenshot, setScreenshot] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
 
   const trimmer = (path: string) => {
     return path.replace(/\/$/, "");
@@ -166,23 +169,6 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
           </div>
       </div>
       
-      <Modal
-        isOpen={isBugModalOpen}
-        onClose={() => {
-          setIsBugModalOpen(false);
-          setScreenshot(null);
-        }}
-        title="Report Bug"
-        size="md"
-      >
-        <BugReportForm
-          onCancel={() => {
-            setIsBugModalOpen(false);
-            setScreenshot(null);
-          }}
-          screenshot={screenshot}
-        />
-      </Modal>
     </div>
   );
 };
@@ -194,6 +180,11 @@ type LayoutProps = {
 const Layout = ({ children }: LayoutProps) => {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<{text: string, rect: DOMRect} | null>(null);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [formData, setFormData] = useState({ title: "", description: "", annotatedScreenshot: null as string | null, includeScreenshot: true });
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
@@ -201,7 +192,8 @@ const Layout = ({ children }: LayoutProps) => {
 
   const { theme, toggleTheme } = useTheme();
   const { sidebarExpanded, toggleSidebar } = useAppContext();
-  const { toasts, removeToast } = useToast();
+  const { toasts, removeToast, addToast } = useToast();
+  const { post, loading } = useApi();
 
   const handleTooltipMouseEnter = (e: React.MouseEvent, text: string) => {
     if (!sidebarExpanded) {
@@ -219,67 +211,12 @@ const Layout = ({ children }: LayoutProps) => {
     setIsCommandBarOpen(false);
   };
 
-  const navigateUpOneLevel = () => {
-    const currentPath = location.pathname;
-
-    if (currentPath === "/") return;
-
-    const pathWithoutTrailingSlash = currentPath.endsWith("/")
-      ? currentPath.slice(0, -1)
-      : currentPath;
-
-    const lastSlashIndex = pathWithoutTrailingSlash.lastIndexOf("/");
-
-    if (lastSlashIndex <= 0) {
-      navigate("/");
-    } else {
-      const parentPath = pathWithoutTrailingSlash.slice(0, lastSlashIndex);
-      navigate(parentPath);
-    }
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === "/") {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsCommandBarOpen(!isCommandBarOpen);
-        return;
-      }
-
-      // Toggle theme with Ctrl+T/Cmd+T
-      if (e.altKey && e.key === "t") {
-        e.preventDefault();
-        toggleTheme();
-        return;
-      }
-
-      // Toggle sidebar with Ctrl+B/Cmd+B
-      if (e.altKey && e.key === "[") {
-        e.preventDefault();
-        toggleSidebar();
-        return;
-      }
-
-      // Go back a page with Escape when command bar is closed
-      if (e.key === "Escape" && !isCommandBarOpen) {
-        navigateUpOneLevel();
-        return;
-      }
-
-      // Close command bar with Escape when it's open
-      if (e.key === "Escape" && isCommandBarOpen) {
-        setIsCommandBarOpen(false);
-        return;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown, { capture: true });
-    };
-  }, [isCommandBarOpen, location.pathname, toggleTheme, toggleSidebar]);
+  useKeyboardShortcuts({
+    isCommandBarOpen,
+    setIsCommandBarOpen,
+    toggleTheme,
+    toggleSidebar,
+  });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -311,6 +248,10 @@ const Layout = ({ children }: LayoutProps) => {
         onTooltipMouseEnter={handleTooltipMouseEnter}
         onTooltipMouseLeave={handleTooltipMouseLeave}
         screenshotAreaRef={screenshotAreaRef}
+        setIsBugModalOpen={setIsBugModalOpen}
+        setScreenshot={setScreenshot}
+        isCapturing={isCapturing}
+        setIsCapturing={setIsCapturing}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         {isCommandBarOpen && (
@@ -369,7 +310,7 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
       </div>
       
-      {hoveredTooltip && (
+      {hoveredTooltip && !isCommandBarOpen && !isBugModalOpen && (
         <div
           className="fixed px-2 py-1 bg-surface border border-border text-text text-xs rounded whitespace-nowrap z-[999] pointer-events-none shadow-lg"
           style={{
@@ -380,11 +321,117 @@ const Layout = ({ children }: LayoutProps) => {
           {hoveredTooltip.text}
         </div>
       )}
-      
-      <ToastContainer 
-        toasts={toasts} 
+
+      {showConfirmation ? (
+        <Modal
+          isOpen={isBugModalOpen}
+          onClose={() => {
+            setIsBugModalOpen(false);
+            setScreenshot(null);
+            setShowConfirmation(false);
+          }}
+          title="Confirm Bug Report"
+          size="xs"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => setShowConfirmation(false)}>
+                Back
+              </Button>
+              <Button
+                onClick={async () => {
+                  const result = await post("/email/bug-report", {
+                    title: formData.title.trim(),
+                    description: formData.description.trim(),
+                    screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
+                    url: window.location.href,
+                    userAgent: navigator.userAgent,
+                  });
+
+                  if (result) {
+                    addToast({
+                      title: "Bug report submitted",
+                      message: "Thank you for reporting this issue!",
+                      variant: "success",
+                    });
+                    setIsBugModalOpen(false);
+                    setScreenshot(null);
+                    setShowConfirmation(false);
+                  } else {
+                    addToast({
+                      title: "Failed to submit bug report",
+                      message: "Please try again later",
+                      variant: "error",
+                    });
+                  }
+                }}
+                disabled={loading}>
+                {loading ? "Submitting..." : "Confirm"}
+              </Button>
+            </div>
+          }>
+          <p className="text-sm text-text">
+            Are you sure you want to submit this bug report?
+          </p>
+
+          <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
+            <div>
+              <span className="text-text-muted block mb-1">Title:</span>
+              <span className="font-medium text-text">{formData.title}</span>
+            </div>
+            <div>
+              <span className="text-text-muted block mb-1">Description:</span>
+              <span className="font-medium text-text whitespace-pre-wrap">{formData.description}</span>
+            </div>
+            {formData.includeScreenshot && (formData.annotatedScreenshot || screenshot) && (
+              <div>
+                <span className="text-text-muted block mb-1">Screenshot:</span>
+                <span className="text-text">Attached</span>
+              </div>
+            )}
+          </div>
+        </Modal>
+      ) : (
+        <Modal
+          isOpen={isBugModalOpen}
+          onClose={() => {
+            setIsBugModalOpen(false);
+            setScreenshot(null);
+            setShowConfirmation(false);
+          }}
+          title="Report Bug"
+          size="md"
+          footer={
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setIsBugModalOpen(false);
+                  setScreenshot(null);
+                  setShowConfirmation(false);
+                }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setShowConfirmation(true)}
+                disabled={!formData.title.trim() || !formData.description.trim()}>
+                Submit Report
+              </Button>
+            </div>
+          }>
+          <BugReportForm
+            screenshot={screenshot}
+            formData={formData}
+            onFormDataChange={setFormData}
+          />
+        </Modal>
+      )}
+
+      <ToastContainer
+        toasts={toasts}
         onRemoveToast={removeToast}
-        position="bottom-right" 
+        position="bottom-right"
       />
     </div>
   );

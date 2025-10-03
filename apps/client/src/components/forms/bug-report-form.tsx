@@ -1,111 +1,83 @@
 import { useState } from "react";
-import { Button } from "@/components";
+import { ToggleSwitch, Button, Input } from "@/components";
+import Textarea from "@/components/ui/text-area";
 import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
-import { useApi } from "@/hooks/use-api";
-import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 
 type BugReportFormProps = {
-  onCancel: () => void;
   screenshot?: string | null;
+  formData: {
+    title: string;
+    description: string;
+    annotatedScreenshot: string | null;
+    includeScreenshot: boolean;
+  };
+  onFormDataChange: (data: any) => void;
 };
 
-const BugReportForm = ({ onCancel, screenshot }: BugReportFormProps) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [annotatedScreenshot, setAnnotatedScreenshot] = useState<string | null>(null);
-  const { post, loading } = useApi();
-  const { addToast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
-
-    const result = await post("/email/bug-report", {
-      title: title.trim(),
-      description: description.trim(),
-      screenshot: annotatedScreenshot || screenshot,
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-    });
-
-    if (result) {
-      addToast({
-        title: "Bug report submitted",
-        message: "Thank you for reporting this issue!",
-        variant: "success",
-      });
-      onCancel();
-    } else {
-      addToast({
-        title: "Failed to submit bug report",
-        message: "Please try again later",
-        variant: "error",
-      });
-    }
-  };
+const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportFormProps) => {
+  const [clearTrigger, setClearTrigger] = useState(0);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <label htmlFor="bug-title" className="text-sm font-medium text-text">
-          Title *
-        </label>
-        <input
-          id="bug-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Brief description of the issue"
-          className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          required
-        />
-      </div>
+    <>
+      <Input
+        id="bug-title"
+        label="Title"
+        type="text"
+        value={formData.title}
+        onChange={(e) => onFormDataChange({ ...formData, title: e.target.value })}
+        placeholder="Brief description of the issue"
+        autoComplete="off"
+        required
+      />
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="bug-description" className="text-sm font-medium text-text">
-          Description *
-        </label>
-        <textarea
-          id="bug-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Detailed description of the bug, including steps to reproduce"
-          rows={6}
-          className="px-3 py-2 border border-border rounded bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical"
-          required
-        />
-      </div>
+      <Textarea
+        id="bug-description"
+        label="Description"
+        value={formData.description}
+        onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
+        placeholder="Detailed description of the bug, including steps to reproduce"
+        rows={4}
+        autoComplete="off"
+        required
+      />
 
       {screenshot && (
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-text">
-            Screenshot (Click and drag to highlight bugs)
-          </label>
-          <ScreenshotAnnotator
-            screenshot={screenshot}
-            onAnnotatedScreenshot={setAnnotatedScreenshot}
-          />
+          <div className="flex items-center justify-between gap-4">
+            <ToggleSwitch
+              checked={formData.includeScreenshot}
+              onChange={(checked) => onFormDataChange({ ...formData, includeScreenshot: checked })}
+              label="Include Screenshot"
+              id="include-screenshot"
+            />
+            {formData.includeScreenshot && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-muted">
+                  Click and drag to highlight bugs
+                </span>
+                <Button
+                  variant="secondary-outline"
+                  size="sm"
+                  onClick={() => {
+                    setClearTrigger(prev => prev + 1);
+                    onFormDataChange({ ...formData, annotatedScreenshot: null });
+                  }}>
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            )}
+          </div>
+          {formData.includeScreenshot && (
+            <ScreenshotAnnotator
+              screenshot={screenshot}
+              onAnnotatedScreenshot={(screenshot) => onFormDataChange({ ...formData, annotatedScreenshot: screenshot })}
+              clearTrigger={clearTrigger}
+            />
+          )}
         </div>
       )}
-
-      <div className="flex gap-2 justify-end pt-2">
-        <Button
-          type="button"
-          variant="secondary-outline"
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={!title.trim() || !description.trim() || loading}
-        >
-          {loading ? "Submitting..." : "Submit Report"}
-        </Button>
-      </div>
-    </form>
+    </>
   );
 };
 

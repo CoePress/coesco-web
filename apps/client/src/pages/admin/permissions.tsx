@@ -183,10 +183,10 @@ const Permissions = () => {
   const TabButton = ({ tab, label, icon: Icon }: { tab: string, label: string, icon: any }) => (
     <button
       onClick={() => setActiveTab(tab as any)}
-      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+      className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer flex items-center gap-2 ${
         activeTab === tab
-          ? 'bg-primary text-white'
-          : 'text-text-muted hover:text-text hover:bg-surface-hover'
+          ? 'bg-primary text-background'
+          : 'text-text-muted hover:text-text'
       }`}
     >
       <Icon size={16} />
@@ -226,149 +226,155 @@ const Permissions = () => {
         actions={<Actions />}
       />
 
-      <div className="flex gap-2 mb-6">
-        <TabButton tab="all" label="All Permissions" icon={Shield} />
-        <TabButton tab="roles" label="Role Permissions" icon={Users} />
-        <TabButton tab="me" label="My Permissions" icon={Eye} />
-        <TabButton tab="check" label="Check Permissions" icon={CheckCircle} />
-      </div>
-
-      {activeTab === 'all' && (
-        <Table
-          columns={permissionColumns}
-          data={allPermissions}
-          idField="category"
-          total={allPermissions.length}
-        />
-      )}
-
-      {activeTab === 'roles' && (
-        <Table
-          columns={roleColumns}
-          data={Object.entries(rolePermissions).map(([role, permissions]) => ({
-            role,
-            permissions
-          }))}
-          idField="role"
-          total={Object.keys(rolePermissions).length}
-        />
-      )}
-
-      {activeTab === 'me' && userPermissions && (
-        <div className="space-y-6">
-          <div className="bg-surface rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Users size={20} className="text-primary" />
-              <div>
-                <h3 className="text-lg font-medium">Your Role</h3>
-                <StatusBadge
-                  label={userPermissions.role}
-                  variant={userPermissions.role === 'ADMIN' ? 'error' : 'success'}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-text-muted mb-2">
-                  Expanded Permissions ({userPermissions.permissions.length})
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {userPermissions.permissions.map(permission => (
-                    <StatusBadge
-                      key={permission}
-                      label={permission}
-                      variant="default"
-                      className="text-xs"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-text-muted mb-2">
-                  Direct Permissions ({userPermissions.rawPermissions.length})
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {userPermissions.rawPermissions.map(permission => (
-                    <StatusBadge
-                      key={permission}
-                      label={permission}
-                      variant="secondary"
-                      className="text-xs"
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <div className="flex gap-1 bg-surface p-1 rounded border border-border w-fit">
+          <TabButton tab="all" label="All Permissions" icon={Shield} />
+          <TabButton tab="roles" label="Role Permissions" icon={Users} />
+          <TabButton tab="me" label="My Permissions" icon={Eye} />
+          <TabButton tab="check" label="Check Permissions" icon={CheckCircle} />
         </div>
-      )}
 
-      {activeTab === 'check' && (
-        <div className="space-y-6">
-          <div className="bg-surface rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4">Check Permissions</h3>
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'all' && (
+            <Table
+              columns={permissionColumns}
+              data={allPermissions}
+              idField="category"
+              total={allPermissions.length}
+              className="rounded border overflow-clip"
+            />
+          )}
 
-            <div className="space-y-4">
-              {checkPermissions.map((permission, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter permission (e.g., users.manage)"
-                    value={permission}
-                    onChange={(e) => {
-                      const newPermissions = [...checkPermissions];
-                      newPermissions[index] = e.target.value;
-                      setCheckPermissions(newPermissions);
-                    }}
-                    className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-                  />
-                  {checkPermissions.length > 1 && (
+          {activeTab === 'roles' && (
+            <Table
+              columns={roleColumns}
+              data={Object.entries(rolePermissions).map(([role, permissions]) => ({
+                role,
+                permissions
+              }))}
+              idField="role"
+              total={Object.keys(rolePermissions).length}
+              className="rounded border overflow-clip"
+            />
+          )}
+
+          {activeTab === 'me' && userPermissions && (
+            <div className="space-y-6 overflow-auto">
+              <div className="bg-surface rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users size={20} className="text-primary" />
+                  <div>
+                    <h3 className="text-lg font-medium">Your Role</h3>
+                    <StatusBadge
+                      label={userPermissions.role}
+                      variant={userPermissions.role === 'ADMIN' ? 'error' : 'success'}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-text-muted mb-2">
+                      Expanded Permissions ({userPermissions.permissions.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {userPermissions.permissions.map(permission => (
+                        <StatusBadge
+                          key={permission}
+                          label={permission}
+                          variant="default"
+                          className="text-xs"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-text-muted mb-2">
+                      Direct Permissions ({userPermissions.rawPermissions.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {userPermissions.rawPermissions.map(permission => (
+                        <StatusBadge
+                          key={permission}
+                          label={permission}
+                          variant="secondary"
+                          className="text-xs"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'check' && (
+            <div className="space-y-6 overflow-auto">
+              <div className="bg-surface rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">Check Permissions</h3>
+
+                <div className="space-y-4">
+                  {checkPermissions.map((permission, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter permission (e.g., users.manage)"
+                        value={permission}
+                        onChange={(e) => {
+                          const newPermissions = [...checkPermissions];
+                          newPermissions[index] = e.target.value;
+                          setCheckPermissions(newPermissions);
+                        }}
+                        className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
+                      />
+                      {checkPermissions.length > 1 && (
+                        <Button
+                          variant="secondary-outline"
+                          size="sm"
+                          onClick={() => {
+                            const newPermissions = checkPermissions.filter((_, i) => i !== index);
+                            setCheckPermissions(newPermissions);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2">
                     <Button
                       variant="secondary-outline"
-                      size="sm"
-                      onClick={() => {
-                        const newPermissions = checkPermissions.filter((_, i) => i !== index);
-                        setCheckPermissions(newPermissions);
-                      }}
+                      onClick={() => setCheckPermissions([...checkPermissions, ''])}
                     >
-                      Remove
+                      Add Permission
                     </Button>
-                  )}
-                </div>
-              ))}
 
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary-outline"
-                  onClick={() => setCheckPermissions([...checkPermissions, ''])}
-                >
-                  Add Permission
-                </Button>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="requireAll"
+                        checked={requireAll}
+                        onChange={(e) => setRequireAll(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <label htmlFor="requireAll" className="text-sm text-text-muted">
+                        Require all permissions
+                      </label>
+                    </div>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="requireAll"
-                    checked={requireAll}
-                    onChange={(e) => setRequireAll(e.target.checked)}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="requireAll" className="text-sm text-text-muted">
-                    Require all permissions
-                  </label>
+                  <Button onClick={checkUserPermissions} disabled={!checkPermissions.some(p => p.trim())}>
+                    Check Permissions
+                  </Button>
                 </div>
               </div>
-
-              <Button onClick={checkUserPermissions} disabled={!checkPermissions.some(p => p.trim())}>
-                Check Permissions
-              </Button>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       <Modal
         isOpen={isCheckModalOpen}

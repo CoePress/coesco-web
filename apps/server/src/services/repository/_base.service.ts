@@ -107,11 +107,13 @@ export class BaseService<T> {
     }));
   }
 
-  async create(data: any, tx?: Prisma.TransactionClient) {
+  async create(data: any, tx?: Prisma.TransactionClient, skipValidation = false) {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
-    await this.validate(payload);
+    if (!skipValidation) {
+      await this.validate(payload);
+    }
 
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
@@ -372,6 +374,21 @@ export class BaseService<T> {
   protected transformSort(sort?: string, order?: "asc" | "desc"): any {
     if (!sort)
       return undefined;
+
+    if (sort.includes(".")) {
+      const parts = sort.split(".");
+      let orderBy: any = {};
+      let current = orderBy;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = order || "asc";
+
+      return orderBy;
+    }
+
     return { [sort]: order || "asc" };
   }
 

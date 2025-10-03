@@ -203,8 +203,9 @@ const Products = () => {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       className: "w-fit whitespace-nowrap",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -229,7 +230,7 @@ const Products = () => {
     return (
       <div className="flex gap-2">
         {productType === 'equipment' && (
-          <Button 
+          <Button
             variant="primary"
             onClick={() => navigate('/sales/products/configuration-builder')}
           >
@@ -237,9 +238,6 @@ const Products = () => {
             Configuration Builder
           </Button>
         )}
-        <Button variant="primary">
-        Add Product
-        </Button>
       </div>
     )
   }

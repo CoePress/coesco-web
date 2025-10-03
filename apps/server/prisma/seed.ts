@@ -5,6 +5,17 @@ import { _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipe
 import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
+import {
+  formConditionalRuleService,
+  formFieldService,
+  formPageService,
+  formSectionService,
+  formService,
+  machineService,
+  permissionService as repoPermissionService,
+  rolePermissionService,
+  roleService,
+} from "@/services/repository";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import defaultUsers from "@/config/default-users.json";
 import { logger } from "@/utils/logger";
@@ -115,13 +126,18 @@ async function seedMachines() {
       });
 
       if (!existing) {
-        await prisma.machine.create({
-          data: {
-            ...machine,
-            createdById: "system",
-            updatedById: "system",
-          },
-        });
+        await machineService.create({
+          slug: machine.slug,
+          name: machine.name,
+          type: machine.type,
+          controllerType: machine.controllerType,
+          connectionUrl: machine.connectionUrl,
+          enabled: machine.enabled,
+          deletedAt: null,
+          createdById: "system",
+          updatedById: "system",
+          deletedById: null,
+        }, undefined, true);
       }
     }
   }
@@ -141,12 +157,11 @@ async function seedPermissions() {
         const [resource, ...actionParts] = permission.split(".");
         const action = actionParts.join(".");
 
-        await prisma.permission.create({
-          data: {
-            resource,
-            action,
-            description: `Permission for ${permission}`,
-          },
+        await repoPermissionService.create({
+          resource,
+          action,
+          description: `Permission for ${permission}`,
+          condition: null,
         });
       }
 
@@ -167,20 +182,16 @@ async function seedRoles() {
     if (!adminRole) {
       logger.info("Seeding roles...");
 
-      const adminRoleData = await prisma.role.create({
-        data: {
-          name: "ADMIN",
-          description: "Full system administrator with all permissions",
-          isSystem: true,
-        },
+      const adminRoleData = await roleService.create({
+        name: "ADMIN",
+        description: "Full system administrator with all permissions",
+        isSystem: true,
       });
 
-      const userRole = await prisma.role.create({
-        data: {
-          name: "USER",
-          description: "Standard user with basic permissions",
-          isSystem: true,
-        },
+      const userRole = await roleService.create({
+        name: "USER",
+        description: "Standard user with basic permissions",
+        isSystem: true,
       });
 
       // Get all permissions for ADMIN role
@@ -188,11 +199,10 @@ async function seedRoles() {
 
       // Admin gets all permissions
       for (const permission of allPermissions) {
-        await prisma.rolePermission.create({
-          data: {
-            roleId: adminRoleData.id,
-            permissionId: permission.id,
-          },
+        await rolePermissionService.create({
+          roleId: adminRoleData.data.id,
+          permissionId: permission.id,
+          condition: null,
         });
       }
 
@@ -215,11 +225,10 @@ async function seedRoles() {
         });
 
         if (permission) {
-          await prisma.rolePermission.create({
-            data: {
-              roleId: userRole.id,
-              permissionId: permission.id,
-            },
+          await rolePermissionService.create({
+            roleId: userRole.data.id,
+            permissionId: permission.id,
+            condition: null,
           });
         }
       }
@@ -271,108 +280,85 @@ async function seedServiceTechDailyForm() {
     if (!existingForm) {
       logger.info("Seeding Service Tech Daily form...");
 
-      const form = await prisma.form.create({
-        data: {
-          name: serviceTechDailyTemplate.title,
-          description: "Service Technician Daily Report Form",
-          status: FormStatus.PUBLISHED,
-          createdById: "system",
-          updatedById: "system",
-        },
+      const form = await formService.create({
+        name: serviceTechDailyTemplate.title,
+        description: "Service Technician Daily Report Form",
+        status: FormStatus.PUBLISHED,
+        createdById: "system",
+        updatedById: "system",
       });
 
       const pageLabelMap = new Map<string, string>();
 
       for (const page of serviceTechDailyTemplate.pages) {
-        const formPage = await prisma.formPage.create({
-          data: {
-            formId: form.id,
-            title: page.label,
-            sequence: page.sequence,
-            createdById: "system",
-            updatedById: "system",
-          },
+        const formPage = await formPageService.create({
+          formId: form.data.id,
+          title: page.label,
+          sequence: page.sequence,
+          createdById: "system",
+          updatedById: "system",
         });
 
-        // Map page label to ID
-        pageLabelMap.set(page.label, formPage.id);
+        pageLabelMap.set(page.label, formPage.data.id);
 
         for (const section of page.sections) {
-          const formSection = await prisma.formSection.create({
-            data: {
-              pageId: formPage.id,
-              title: section.label,
-              sequence: section.sequence,
-              createdById: "system",
-              updatedById: "system",
-            },
+          const formSection = await formSectionService.create({
+            pageId: formPage.data.id,
+            title: section.label,
+            description: null,
+            sequence: section.sequence,
+            createdById: "system",
+            updatedById: "system",
           });
 
           for (const field of section.fields) {
-            await prisma.formField.create({
-              data: {
-                sectionId: formSection.id,
-                label: field.label,
-                variable: field.variable,
-                controlType: mapControlType(field.controlType),
-                dataType: mapDataType(field.dataType),
-                options: field.options ? field.options : undefined,
-                isRequired: field.isRequired,
-                isReadOnly: field.isReadOnly,
-                isHiddenOnDevice: field.isHiddenOnDevice,
-                isHiddenOnReport: field.isHiddenOnReport,
-                sequence: field.sequence,
-                createdById: "system",
-                updatedById: "system",
-              },
-            });
+            await formFieldService.create({
+              sectionId: formSection.data.id,
+              label: field.label,
+              variable: field.variable,
+              controlType: mapControlType(field.controlType),
+              dataType: mapDataType(field.dataType),
+              options: field.options || {},
+              isRequired: field.isRequired,
+              isReadOnly: field.isReadOnly,
+              isHiddenOnDevice: field.isHiddenOnDevice,
+              isHiddenOnReport: field.isHiddenOnReport,
+              sequence: field.sequence,
+              createdById: "system",
+              updatedById: "system",
+            }, undefined, true);
           }
         }
       }
 
-      // CREATE THE FUCKING CONDITIONAL RULES
-      logger.info("=== SEEDING CONDITIONAL RULES ===");
-      logger.info("template.conditionalRules exists:", !!(serviceTechDailyTemplate as any).conditionalRules);
-      logger.info("Available page labels:", Array.from(pageLabelMap.keys()));
-
       const conditionalRules = (serviceTechDailyTemplate as any).conditionalRules;
       if (conditionalRules) {
-        logger.info("Processing", conditionalRules.length, "conditional rules...");
-
         for (const ruleTemplate of conditionalRules) {
-          logger.info("\n--- Processing rule:", ruleTemplate.name);
-          logger.info("Looking for page with label:", ruleTemplate.targetLabel);
-
           const targetId = pageLabelMap.get(ruleTemplate.targetLabel);
-          logger.info("Found targetId:", targetId);
 
           if (!targetId) {
-            logger.error(`FAILED: Could not find page with label: "${ruleTemplate.targetLabel}"`);
+            logger.error(`Could not find page with label: "${ruleTemplate.targetLabel}"`);
             continue;
           }
 
           try {
-            const createdRule = await prisma.formConditionalRule.create({
-              data: {
-                formId: form.id,
-                name: ruleTemplate.name,
-                targetType: ruleTemplate.targetType,
-                targetId,
-                action: ruleTemplate.action,
-                conditions: ruleTemplate.conditions,
-                operator: ruleTemplate.operator,
-                priority: ruleTemplate.priority,
-                createdById: "system",
-                updatedById: "system",
-              },
+            await formConditionalRuleService.create({
+              formId: form.data.id,
+              name: ruleTemplate.name,
+              targetType: ruleTemplate.targetType,
+              targetId,
+              action: ruleTemplate.action,
+              conditions: ruleTemplate.conditions,
+              operator: ruleTemplate.operator,
+              priority: ruleTemplate.priority,
+              isActive: true,
+              createdById: "system",
+              updatedById: "system",
             });
-            logger.info("SUCCESS: Created rule with ID:", createdRule.id);
           } catch (error) {
-            logger.error("FAILED: Error creating rule:", error);
+            logger.error(`Error creating conditional rule "${ruleTemplate.name}":`, error);
           }
         }
-      } else {
-        logger.info("NO CONDITIONAL RULES FOUND IN TEMPLATE");
       }
 
       logger.info(`Seeded Service Tech Daily form with ${serviceTechDailyTemplate.pages.length} pages`);

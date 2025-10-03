@@ -1,12 +1,11 @@
 import { RefreshCcwIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import {
   StatusBadge,
   PageHeader,
   Table,
   Button,
-  Loader,
   Modal,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
@@ -16,24 +15,28 @@ import { format } from "date-fns";
 import { AuditLog } from "@coesco/types";
 
 const Logs = () => {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [sort, setSort] = useState("createdAt");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
-
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    limit: 25,
-  });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const { get } = useApi<IApiResponse<AuditLog[]>>();
+  const { get, response: auditLogs, loading, error } = useApi<IApiResponse<AuditLog[]>>();
+
+  const [params, setParams] = useState({
+    sort: "createdAt" as string,
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+  });
+
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
+
+    return q;
+  }, [params]);
 
   const columns: TableColumn<AuditLog>[] = [
     {
@@ -71,7 +74,9 @@ const Logs = () => {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
+      className: "w-1",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -80,89 +85,75 @@ const Logs = () => {
             setSelectedLog(row);
             setIsDetailsModalOpen(true);
           }}>
-          View Details
+          View
         </Button>
       ),
     },
   ];
 
   const fetchAuditLogs = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    await get("/audit/audit-logs", queryParams);
+  };
 
-      const response = await get("/audit/audit-logs", {
-        page,
-        limit,
-        sort,
-        order,
-      });
-
-      if (response?.success && response.data) {
-        setAuditLogs(response.data as unknown as AuditLog[]);
-        setPagination(prev => ({
-          ...prev,
-          ...response.meta,
-        }));
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch audit logs");
-      setAuditLogs([]);
-    } finally {
-      setLoading(false);
-    }
+  const refresh = () => {
+    fetchAuditLogs();
   };
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [page, limit, sort, order]);
+  }, [params]);
 
-  if (loading) {
-    return (
-      <div className="w-full flex flex-1 flex-col items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div>Error loading audit logs: {error}</div>;
-  }
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
 
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={fetchAuditLogs} variant="secondary-outline">
-          <RefreshCcwIcon size={16} /> Refresh
+        <Button onClick={refresh} variant="primary" className="px-2">
+          <RefreshCcwIcon size={16} />
         </Button>
       </div>
     );
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Audit Logs"
-        description={`${pagination.total} total audit log entries`}
+        description="Track all system changes and user activity"
         actions={<Actions />}
       />
 
-      <Table<AuditLog>
-        columns={columns}
-        data={auditLogs || []}
-        total={pagination.total}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort);
-          setOrder(newOrder);
-        }}
-      />
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <div className="flex-1 overflow-hidden">
+          <Table<AuditLog>
+            columns={columns}
+            data={auditLogs?.data || []}
+            total={auditLogs?.meta?.total || 0}
+            idField="id"
+            pagination
+            loading={loading}
+            error={error}
+            currentPage={auditLogs?.meta?.page}
+            totalPages={auditLogs?.meta?.totalPages}
+            onPageChange={(page) => handleParamsChange({ page })}
+            sort={params.sort}
+            order={params.order}
+            onSortChange={(newSort, newOrder) => {
+              handleParamsChange({
+                sort: newSort as any,
+                order: newOrder as any
+              });
+            }}
+            className="rounded border overflow-clip"
+            emptyMessage="No audit logs found"
+          />
+        </div>
+      </div>
 
       <Modal
         isOpen={isDetailsModalOpen}
@@ -201,25 +192,38 @@ const Logs = () => {
                 {selectedLog.diff && typeof selectedLog.diff === 'object' ? (
                   Object.keys(selectedLog.diff).length > 0 ? (
                     <div className="space-y-4">
-                      {Object.entries(selectedLog.diff).map(([key, value]) => (
-                        <div key={key} className="border-b border-border pb-3 last:border-b-0">
-                          <div className="text-sm font-medium text-text-muted mb-2">{key}</div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <div className="text-xs text-red-600 font-medium mb-1">Old Value:</div>
-                              <div className="bg-red-50 border border-red-200 rounded p-2 font-mono text-xs">
-                                {JSON.stringify((value as any)?.old, null, 2) || 'null'}
+                      {Object.entries(selectedLog.diff).map(([key, value]) => {
+                        const beforeVal = (value as any)?.before;
+                        const afterVal = (value as any)?.after;
+
+                        const formatValue = (val: any) => {
+                          if (val === null || val === undefined) return 'null';
+                          if (typeof val === 'string') return val;
+                          if (typeof val === 'boolean') return val.toString();
+                          if (typeof val === 'number') return val.toString();
+                          return JSON.stringify(val, null, 2);
+                        };
+
+                        return (
+                          <div key={key} className="border-b border-border pb-3 last:border-b-0">
+                            <div className="text-sm font-medium text-text mb-2">{key}</div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <div className="text-xs text-error font-medium mb-1">Before:</div>
+                                <div className="bg-error/10 border border-error/50 rounded p-2 font-mono text-xs text-text">
+                                  {formatValue(beforeVal)}
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-green-600 font-medium mb-1">New Value:</div>
-                              <div className="bg-green-50 border border-green-200 rounded p-2 font-mono text-xs">
-                                {JSON.stringify((value as any)?.new, null, 2) || 'null'}
+                              <div>
+                                <div className="text-xs text-success font-medium mb-1">After:</div>
+                                <div className="bg-success/10 border border-success/50 rounded p-2 font-mono text-xs text-text">
+                                  {formatValue(afterVal)}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-text-muted text-sm">No changes recorded</div>
@@ -228,17 +232,6 @@ const Logs = () => {
                   <div className="text-text-muted text-sm">Invalid change data</div>
                 )}
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                variant="secondary-outline"
-                onClick={() => {
-                  setIsDetailsModalOpen(false);
-                  setSelectedLog(null);
-                }}>
-                Close
-              </Button>
             </div>
           </div>
         )}

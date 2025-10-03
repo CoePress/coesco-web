@@ -6,6 +6,7 @@ type ModalProps = {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   size?: "xs" | "sm" | "md" | "lg";
   overflow?: "visible" | "auto";
   backdropClosable?: boolean;
@@ -16,6 +17,7 @@ const Modal = ({
   onClose,
   title,
   children,
+  footer,
   size = "md",
   overflow = "auto",
   backdropClosable = false,
@@ -36,7 +38,7 @@ const Modal = ({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 flex items-center justify-center bg-background/35 backdrop-blur-xs z-50 text-text px-4"
       onClick={handleOverlayClick}
     >
@@ -52,6 +54,11 @@ const Modal = ({
           </Button>
         </div>
         <div className={`flex flex-col gap-2 flex-1 ${overflow === "visible" ? "overflow-visible" : "overflow-auto"}`}>{children}</div>
+        {footer && (
+          <div className="flex-shrink-0 pt-2 border-t border-border mt-2">
+            {footer}
+          </div>
+        )}
       </Card>
     </div>
   );

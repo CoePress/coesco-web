@@ -30,7 +30,7 @@ export class ProductionController {
 
   async getMachine(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await machineService.getById(req.params.companyId);
+      const result = await machineService.getById(req.params.machineId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -40,7 +40,7 @@ export class ProductionController {
 
   async updateMachine(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await machineService.update(req.params.companyId, req.body);
+      const result = await machineService.update(req.params.machineId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -50,7 +50,7 @@ export class ProductionController {
 
   async deleteMachine(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await machineService.delete(req.params.companyId);
+      const result = await machineService.delete(req.params.machineId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -72,7 +72,7 @@ export class ProductionController {
 
   async getMachineStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await machineStatusService.getById(req.params.companyId);
+      const result = await machineStatusService.getById(req.params.machineStatusId);
       res.status(200).json(result);
     }
     catch (error) {

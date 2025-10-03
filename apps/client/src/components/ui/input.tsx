@@ -16,6 +16,7 @@ type InputProps = {
   readOnly?: boolean;
   min?: number;
   max?: number;
+  autoComplete?: string;
 };
 
 const Input = ({
@@ -34,6 +35,7 @@ const Input = ({
   readOnly = false,
   min,
   max,
+  autoComplete,
 }: InputProps) => {
   return (
     <div className="w-full">
@@ -58,6 +60,7 @@ const Input = ({
         readOnly={readOnly}
         min={min}
         max={max}
+        autoComplete={autoComplete}
         className={`
           w-full text-sm px-3 py-1.5 rounded
           border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent

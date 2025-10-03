@@ -2,7 +2,7 @@ import type { Employee, NtfyDevice, Permission, PermissionException, Role, RoleA
 import type { NextFunction, Request, Response } from "express";
 
 import { deviceService, microsoftService } from "@/services";
-import { employeeService, ntfyDeviceService, permissionExceptionService, permissionService, roleAssignmentService, rolePermissionService, roleService } from "@/services/repository";
+import { employeeService, ntfyDeviceService, permissionExceptionService, permissionService, roleAssignmentService, rolePermissionService, roleService, userService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
 
 export class AdminController {
@@ -30,7 +30,7 @@ export class AdminController {
 
   async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.getById(req.params.deviceId);
+      const result = await employeeService.getById(req.params.employeeId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -40,7 +40,33 @@ export class AdminController {
 
   async updateEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.update(req.params.deviceId, req.body);
+      const { body } = req;
+      const employeeData: any = {};
+      const userData: any = {};
+
+      Object.keys(body).forEach(key => {
+        if (key.startsWith("user.")) {
+          const userField = key.replace("user.", "");
+          userData[userField] = body[key];
+        } else {
+          employeeData[key] = body[key];
+        }
+      });
+
+      const employee = await employeeService.getById(req.params.employeeId);
+      if (!employee.data) {
+        return res.status(404).json({ success: false, error: "Employee not found" });
+      }
+
+      if (Object.keys(userData).length > 0) {
+        await userService.update(employee.data.userId, userData);
+      }
+
+      if (Object.keys(employeeData).length > 0) {
+        await employeeService.update(req.params.employeeId, employeeData);
+      }
+
+      const result = await employeeService.getById(req.params.employeeId, { include: ["user"] });
       res.status(200).json(result);
     }
     catch (error) {
@@ -50,7 +76,7 @@ export class AdminController {
 
   async deleteEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.delete(req.params.deviceId);
+      const result = await employeeService.delete(req.params.employeeId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -92,7 +118,7 @@ export class AdminController {
 
   async getPermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionService.getById(req.params.deviceId);
+      const result = await permissionService.getById(req.params.permissionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -102,7 +128,7 @@ export class AdminController {
 
   async updatePermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionService.update(req.params.deviceId, req.body);
+      const result = await permissionService.update(req.params.permissionId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -112,7 +138,7 @@ export class AdminController {
 
   async deletePermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionService.delete(req.params.deviceId);
+      const result = await permissionService.delete(req.params.permissionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -144,7 +170,7 @@ export class AdminController {
 
   async getRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleService.getById(req.params.deviceId);
+      const result = await roleService.getById(req.params.roleId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -154,7 +180,7 @@ export class AdminController {
 
   async updateRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleService.update(req.params.deviceId, req.body);
+      const result = await roleService.update(req.params.roleId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -164,7 +190,7 @@ export class AdminController {
 
   async deleteRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleService.delete(req.params.deviceId);
+      const result = await roleService.delete(req.params.roleId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -196,7 +222,7 @@ export class AdminController {
 
   async getRolePermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await rolePermissionService.getById(req.params.deviceId);
+      const result = await rolePermissionService.getById(req.params.rolePermissionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -206,7 +232,7 @@ export class AdminController {
 
   async updateRolePermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await rolePermissionService.update(req.params.deviceId, req.body);
+      const result = await rolePermissionService.update(req.params.rolePermissionId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -216,7 +242,7 @@ export class AdminController {
 
   async deleteRolePermission(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await rolePermissionService.delete(req.params.deviceId);
+      const result = await rolePermissionService.delete(req.params.rolePermissionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -248,7 +274,7 @@ export class AdminController {
 
   async getRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleAssignmentService.getById(req.params.deviceId);
+      const result = await roleAssignmentService.getById(req.params.roleAssignmentId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -258,7 +284,7 @@ export class AdminController {
 
   async updateRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleAssignmentService.update(req.params.deviceId, req.body);
+      const result = await roleAssignmentService.update(req.params.roleAssignmentId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -268,7 +294,7 @@ export class AdminController {
 
   async deleteRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roleAssignmentService.delete(req.params.deviceId);
+      const result = await roleAssignmentService.delete(req.params.roleAssignmentId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -300,7 +326,7 @@ export class AdminController {
 
   async getPermissionException(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionExceptionService.getById(req.params.deviceId);
+      const result = await permissionExceptionService.getById(req.params.permissionExceptionId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -310,7 +336,7 @@ export class AdminController {
 
   async updatePermissionException(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionExceptionService.update(req.params.deviceId, req.body);
+      const result = await permissionExceptionService.update(req.params.permissionExceptionId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -320,7 +346,7 @@ export class AdminController {
 
   async deletePermissionException(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await permissionExceptionService.delete(req.params.deviceId);
+      const result = await permissionExceptionService.delete(req.params.permissionExceptionId);
       res.status(200).json(result);
     }
     catch (error) {
