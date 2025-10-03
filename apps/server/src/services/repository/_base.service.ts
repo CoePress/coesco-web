@@ -377,7 +377,7 @@ export class BaseService<T> {
 
     if (sort.includes(".")) {
       const parts = sort.split(".");
-      let orderBy: any = {};
+      const orderBy: any = {};
       let current = orderBy;
 
       for (let i = 0; i < parts.length - 1; i++) {

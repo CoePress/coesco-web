@@ -1489,6 +1489,60 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+export async function _migrateDepartments(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const mapping: TableMapping = {
+    sourceDatabase: "std",
+    sourceTable: "Employee",
+    targetTable: "department",
+    fieldMappings: [
+      {
+        from: "DeptCode",
+        to: "code",
+        transform: value => value?.toString().trim(),
+        required: true,
+      },
+    ],
+    beforeSave: async (data, original) => {
+      const code = original.DeptCode?.toString().trim();
+
+      if (!code || code === "") {
+        return null;
+      }
+
+      const existingDept = await findReferencedRecord("department", { code });
+      if (existingDept) {
+        return null;
+      }
+
+      data.name = code;
+      data.description = code;
+      data.createdById = "system";
+      data.updatedById = "system";
+      return data;
+    },
+    skipDuplicates: true,
+    duplicateCheck: data => ({
+      code: data.code,
+    }),
+    batchSize: 100,
+  };
+
+  const result = await migrateWithMapping(mapping);
+
+  legacyService = originalService;
+
+  return result;
+}
+
 // used elsewhere
 export async function _migrateEmployees(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
   const originalService = legacyService;
@@ -1584,6 +1638,18 @@ export async function _migrateEmployees(legacyServiceInstance?: LegacyService): 
 
       data.userId = user.id;
       data.email = `${original.EmpInitials}@cpec.com`;
+
+      const deptCode = original.DeptCode?.toString().trim();
+      if (deptCode && deptCode !== "") {
+        const department = await findReferencedRecord("department", { code: deptCode });
+        if (department) {
+          data.departmentId = department.id;
+        }
+        else {
+          logger.warn(`No department found for code: ${deptCode}`);
+        }
+      }
+
       data.createdAt = new Date(original.CreateDate || original.ModifyDate || new Date());
       data.updatedAt = new Date(original.ModifyDate || original.CreateDate || new Date());
       data.createdById = original.CreateInit?.toLowerCase() || "system";

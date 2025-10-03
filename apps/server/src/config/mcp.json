@@ -592,6 +592,50 @@
       }
     },
     {
+      "name": "department",
+      "description": "Schema for Department entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        },
+        "code": {
+          "type": "string",
+          "required": true
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        },
+        "deletedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "createdById": {
+          "type": "string",
+          "required": true
+        },
+        "updatedById": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
       "name": "draft",
       "description": "Schema for Draft entity",
       "schema": {
@@ -678,6 +722,14 @@
         },
         "terminationDate": {
           "type": "datetime",
+          "required": false
+        },
+        "departmentId": {
+          "type": "string",
+          "required": false
+        },
+        "managerId": {
+          "type": "string",
           "required": false
         },
         "isActive": {

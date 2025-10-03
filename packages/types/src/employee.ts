@@ -12,6 +12,8 @@ export interface Employee {
   hireDate?: Date | string;
   startDate?: Date | string;
   terminationDate?: Date | string;
+  departmentId?: string;
+  managerId?: string;
   isActive?: boolean;
   createdAt?: Date | string;
   updatedAt: Date | string;

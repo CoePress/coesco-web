@@ -30,7 +30,7 @@ const envSchema = z.object({
 
   OPENAI_API_KEY: z.string(),
   ANTHROPIC_API_KEY: z.string(),
-  
+
   JIRA_API_TOKEN: z.string(),
   JIRA_EMAIL: z.string(),
   JIRA_DOMAIN: z.string(),

@@ -31,6 +31,7 @@ export * from './company';
 export * from './configuration';
 export * from './configuration-option';
 export * from './contact';
+export * from './department';
 export * from './draft';
 export * from './employee';
 export * from './form';
