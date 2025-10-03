@@ -107,11 +107,13 @@ export class BaseService<T> {
     }));
   }
 
-  async create(data: any, tx?: Prisma.TransactionClient) {
+  async create(data: any, tx?: Prisma.TransactionClient, skipValidation = false) {
     const meta = await this.getMetaFields({ for: "create", timestamps: true });
     const payload = { ...data, ...meta };
 
-    await this.validate(payload);
+    if (!skipValidation) {
+      await this.validate(payload);
+    }
 
     const execute = async (client: Prisma.TransactionClient) => {
       const model = (client as any)[this.modelName!];
