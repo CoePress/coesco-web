@@ -1,7 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import { FormFieldControlType, FormFieldDataType, FormStatus, MachineControllerType, MachineType } from "@prisma/client";
 
-import { _migrateEmployees, _migrateDepartments, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
@@ -98,6 +98,7 @@ async function seedEmployees() {
     if (employeeCount <= defaultUserCount) {
       await _migrateDepartments(legacyService);
       await _migrateEmployees(legacyService);
+      await _migrateEmployeeManagers(legacyService);
       await closeDatabaseConnections();
       await microsoftService.sync();
     }
