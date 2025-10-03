@@ -1,12 +1,11 @@
 import { RefreshCcwIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import {
   StatusBadge,
   PageHeader,
   Table,
   Button,
-  Loader,
   Modal,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
@@ -16,24 +15,28 @@ import { format } from "date-fns";
 import { AuditLog } from "@coesco/types";
 
 const Logs = () => {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [sort, setSort] = useState("createdAt");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
-
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    limit: 25,
-  });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const { get } = useApi<IApiResponse<AuditLog[]>>();
+  const { get, response: auditLogs, loading, error } = useApi<IApiResponse<AuditLog[]>>();
+
+  const [params, setParams] = useState({
+    sort: "createdAt" as string,
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+  });
+
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
+
+    return q;
+  }, [params]);
 
   const columns: TableColumn<AuditLog>[] = [
     {
@@ -87,52 +90,28 @@ const Logs = () => {
   ];
 
   const fetchAuditLogs = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    await get("/audit/audit-logs", queryParams);
+  };
 
-      const response = await get("/audit/audit-logs", {
-        page,
-        limit,
-        sort,
-        order,
-      });
-
-      if (response?.success && response.data) {
-        setAuditLogs(response.data as unknown as AuditLog[]);
-        setPagination(prev => ({
-          ...prev,
-          ...response.meta,
-        }));
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch audit logs");
-      setAuditLogs([]);
-    } finally {
-      setLoading(false);
-    }
+  const refresh = () => {
+    fetchAuditLogs();
   };
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [page, limit, sort, order]);
+  }, [params]);
 
-  if (loading) {
-    return (
-      <div className="w-full flex flex-1 flex-col items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div>Error loading audit logs: {error}</div>;
-  }
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
 
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={fetchAuditLogs} variant="secondary-outline">
+        <Button onClick={refresh} variant="secondary-outline">
           <RefreshCcwIcon size={16} /> Refresh
         </Button>
       </div>
@@ -140,29 +119,39 @@ const Logs = () => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Audit Logs"
-        description={`${pagination.total} total audit log entries`}
+        description="Track all system changes and user activity"
         actions={<Actions />}
       />
 
-      <Table<AuditLog>
-        columns={columns}
-        data={auditLogs || []}
-        total={pagination.total}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort);
-          setOrder(newOrder);
-        }}
-      />
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <div className="flex-1 overflow-hidden">
+          <Table<AuditLog>
+            columns={columns}
+            data={auditLogs?.data || []}
+            total={auditLogs?.meta?.total || 0}
+            idField="id"
+            pagination
+            loading={loading}
+            error={error}
+            currentPage={auditLogs?.meta?.page}
+            totalPages={auditLogs?.meta?.totalPages}
+            onPageChange={(page) => handleParamsChange({ page })}
+            sort={params.sort}
+            order={params.order}
+            onSortChange={(newSort, newOrder) => {
+              handleParamsChange({
+                sort: newSort as any,
+                order: newOrder as any
+              });
+            }}
+            className="rounded border overflow-clip"
+            emptyMessage="No audit logs found"
+          />
+        </div>
+      </div>
 
       <Modal
         isOpen={isDetailsModalOpen}
