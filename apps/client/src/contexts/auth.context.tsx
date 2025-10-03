@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         hasCheckedSession.current = true;
       } catch (error: any) {
-        console.log("Session check failed:", error.response?.status);
         setUserState(null);
         setEmployeeState(null);
         hasCheckedSession.current = true;

@@ -177,7 +177,6 @@ const FormSubmissions = () => {
 
   const handleExport = () => {
     console.log('Exporting form submissions...', filteredSubmissions);
-    // TODO: Implement actual export functionality
   };
 
   const filters: Filter[] = [

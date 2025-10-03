@@ -57,7 +57,6 @@ const FormSubmission = () => {
           timestamp: new Date().toISOString(),
         };
         setUserLocation(locationData);
-        console.log('GPS Location obtained:', locationData);
       },
       (error) => {
         console.error('Location error:', error);

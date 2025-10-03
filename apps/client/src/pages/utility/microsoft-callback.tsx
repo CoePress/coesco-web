@@ -34,13 +34,11 @@ const MicrosoftCallback = () => {
         if (response) {
           setUser(response.user, response.employee);
         } else {
-          console.error("Unexpected response format:", response);
           throw new Error("Authentication failed");
         }
 
         navigate("/");
       } catch (error) {
-        console.error("Auth error:", error);
         navigate("/login?error=auth_failed");
       }
     };
