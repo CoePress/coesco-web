@@ -466,9 +466,15 @@ export class LegacyService {
 
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/\W/g, "");
-      const escapedValue = String(value).replace(/'/g, "''");
+      const stringValue = String(value);
 
-      // Check if value contains wildcard characters (% or _)
+      if (stringValue.startsWith("NOT:")) {
+        const actualValue = stringValue.substring(4).replace(/'/g, "''");
+        return `${escapedField} <> '${actualValue}'`;
+      }
+
+      const escapedValue = stringValue.replace(/'/g, "''");
+
       if (escapedValue.includes("%") || escapedValue.includes("_")) {
         return `UPPER(${escapedField}) LIKE UPPER('${escapedValue}')`;
       }
@@ -503,7 +509,6 @@ export class LegacyService {
       return false;
     }
 
-    // Determine the correct ID field name based on the table
     let idField = "ID";
     if (table.toLowerCase() === "company") {
       idField = "Company_ID";
@@ -556,7 +561,6 @@ export class LegacyService {
       return false;
     }
 
-    // Build SET clause
     const setClause = Object.entries(data)
       .map(([field, value]) => {
         if (value === null) {
@@ -619,7 +623,7 @@ export class LegacyService {
 
     const whereConditions = Object.entries(filters).map(([field, value]) => {
       const escapedField = field.replace(/[^\w#]/g, ""); // Sanitize field name (allow # for fields like RefSerial#)
-      const escapedValue = String(value).replace(/'/g, "''"); // Sanitize value
+      const escapedValue = String(value).replace(/'/g, "''");
       return `"${escapedField}" = '${escapedValue}'`;
     });
 
