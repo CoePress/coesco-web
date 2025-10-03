@@ -14,15 +14,13 @@ import { IApiResponse } from "@/utils/types";
 import { format } from "date-fns";
 import { Employee } from "@coesco/types";
 import { Filter } from "@/components/feature/toolbar";
+import { useToast } from "@/hooks/use-toast";
 
 const Employees = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("USER");
-  const [isActive, setIsActive] = useState<boolean>(true);
-  const [updateLoading, setUpdateLoading] = useState<boolean>(false);
 
-  const { get, post, patch, response: employees, loading, error } = useApi<IApiResponse<Employee[]>>();
+  const { get, response: employees, loading, error } = useApi<IApiResponse<Employee[]>>();
 
   const [params, setParams] = useState({
     sort: "lastName" as string,
@@ -115,8 +113,6 @@ const Employees = () => {
           size="sm"
           onClick={() => {
             setSelectedEmployee(row);
-            setSelectedRole(row.user.role);
-            setIsActive(row.user.isActive);
             setIsEditModalOpen(true);
           }}>
           Edit
@@ -131,13 +127,6 @@ const Employees = () => {
 
   const refresh = () => {
     fetchEmployees();
-  };
-
-  const updateEmployee = async (employeeId: string, employeeData: any) => {
-    setUpdateLoading(true);
-    const response = await patch(`/employees/${employeeId}`, employeeData);
-    setUpdateLoading(false);
-    return response?.success ? response.data : null;
   };
 
   useEffect(() => {
@@ -229,77 +218,184 @@ const Employees = () => {
         </div>
       </div>
 
+      {isEditModalOpen && (
+        <EditEmployeeModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          employee={selectedEmployee}
+          onSuccess={refresh}
+        />
+      )}
+    </div>
+  );
+};
+
+const EditEmployeeModal = ({
+  isOpen,
+  onClose,
+  employee,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  employee: any;
+  onSuccess: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    role: employee?.user?.role || "USER",
+    isActive: employee?.user?.isActive ?? true,
+  });
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const { patch: updateEmployee, loading } = useApi<IApiResponse<any>>();
+  const toast = useToast();
+
+  const handleChange = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const hasChanges = () => {
+    return formData.role !== employee?.user?.role || formData.isActive !== employee?.user?.isActive;
+  };
+
+  const handleUpdateEmployee = async () => {
+    try {
+      const response = await updateEmployee(`/admin/employees/${employee.id}`, {
+        "user.role": formData.role.toUpperCase(),
+        "user.isActive": formData.isActive,
+      });
+
+      if (response?.success) {
+        toast.success(`Employee "${employee.firstName} ${employee.lastName}" updated successfully!`);
+        onClose();
+        onSuccess();
+      } else {
+        toast.error('Failed to update employee. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      toast.error('An unexpected error occurred while updating the employee.');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      role: employee?.user?.role || "USER",
+      isActive: employee?.user?.isActive ?? true,
+    });
+    setShowConfirmation(false);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    } else {
+      setFormData({
+        role: employee?.user?.role || "USER",
+        isActive: employee?.user?.isActive ?? true,
+      });
+    }
+  }, [isOpen, employee]);
+
+  if (showConfirmation) {
+    return (
       <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Employee Role"
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Confirm Changes"
         size="xs">
         <div className="space-y-4">
-          <div>
-            <label className="text-sm text-text-muted mb-2 block">
-              Employee
-            </label>
-            <div className="block w-full rounded border border-border px-3 py-2 text-sm text-text-muted bg-surface">
-              {selectedEmployee?.firstName} {selectedEmployee?.lastName}
+          <p className="text-sm text-text">
+            Are you sure you want to update <span className="font-semibold">{employee?.firstName} {employee?.lastName}</span>'s account?
+          </p>
+
+          <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-text-muted">Role:</span>
+              <span className="font-medium text-text">{formData.role}</span>
             </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-text-muted mb-2 block">Role</label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
-              <option value="ADMIN">Admin</option>
-              <option value="USER">User</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <label
-              htmlFor="isActive"
-              className="text-sm text-text-muted">
-              Active Account
-            </label>
+            <div className="flex justify-between">
+              <span className="text-text-muted">Status:</span>
+              <span className="font-medium text-text">{formData.isActive ? "Active" : "Inactive"}</span>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary-outline"
-              onClick={() => setIsEditModalOpen(false)}>
-              Cancel
+              onClick={() => setShowConfirmation(false)}>
+              Back
             </Button>
             <Button
-              onClick={async () => {
-                if (selectedEmployee) {
-                  const updated = await updateEmployee(selectedEmployee.id, {
-                    "user.role": selectedRole.toUpperCase(),
-                    "user.isActive": isActive,
-                  } as any);
-
-                  if (updated) {
-                    setSelectedEmployee(null);
-                    setSelectedRole("USER");
-                    setIsActive(true);
-                    setIsEditModalOpen(false);
-                    refresh();
-                  }
-                }
-              }}
-              disabled={updateLoading}>
-              Save Changes
+              onClick={handleUpdateEmployee}
+              disabled={loading}>
+              {loading ? "Saving..." : "Confirm"}
             </Button>
           </div>
         </div>
       </Modal>
-    </div>
+    );
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Employee Role"
+      size="xs">
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm text-text-muted mb-2 block">
+            Employee
+          </label>
+          <div className="block w-full rounded border border-border px-3 py-2 text-sm text-text-muted bg-surface">
+            {employee?.firstName} {employee?.lastName}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm text-text-muted mb-2 block">Role</label>
+          <select
+            value={formData.role}
+            onChange={(e) => handleChange({ role: e.target.value })}
+            className="block w-full rounded border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-text-muted placeholder:text-text-muted bg-surface">
+            <option value="ADMIN">Admin</option>
+            <option value="USER">User</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) => handleChange({ isActive: e.target.checked })}
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+          />
+          <label
+            htmlFor="isActive"
+            className="text-sm text-text-muted">
+            Active Account
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary-outline"
+            onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => setShowConfirmation(true)}
+            disabled={!hasChanges()}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 };
 
