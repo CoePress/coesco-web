@@ -6,38 +6,62 @@ import {
   PageHeader,
   Table,
   Button,
-  Loader,
   Modal,
+  Toolbar,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";
 import { format } from "date-fns";
 import { Employee } from "@coesco/types";
+import { Filter } from "@/components/feature/toolbar";
 
 const Employees = () => {
-  const [page, setPage] = useState(1);
-  const [limit] = useState(25);
-  const [sort, setSort] = useState("lastName");
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("USER");
   const [isActive, setIsActive] = useState<boolean>(true);
-  
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    total: number;
-    totalPages: number;
-    page: number;
-    limit: number;
-  }>({ page: 1, totalPages: 1, total: 0, limit: 25 });
   const [syncLoading, setSyncLoading] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
-  
-  const { get, post, patch } = useApi<IApiResponse<Employee[]>>();
+
+  const { get, post, patch, response: employees, loading, error } = useApi<IApiResponse<Employee[]>>();
+
+  const [params, setParams] = useState({
+    sort: "lastName" as string,
+    order: "asc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+    filter: { isActive: "true" },
+    include: ["user"] as string[],
+    search: ""
+  });
+
+  const queryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: params.sort,
+      order: params.order,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    };
+
+    const activeFilters = Object.fromEntries(
+      Object.entries(params.filter).filter(([_, value]) => value)
+    );
+
+    if (Object.keys(activeFilters).length > 0) {
+      q.filter = JSON.stringify(activeFilters);
+    }
+
+    if (params.include.length > 0) {
+      q.include = JSON.stringify(params.include);
+    }
+
+    if (params.search) {
+      q.search = params.search;
+    }
+
+    return q;
+  }, [params]);
 
   const columns: TableColumn<any>[] = [
     {
@@ -102,39 +126,14 @@ const Employees = () => {
     },
   ];
 
-  const include = useMemo(() => ["user"], []);
-
   const fetchEmployees = async () => {
-    setLoading(true);
-    setError(null);
-    const response = await get("/admin/employees", {
-      page,
-      limit,
-      sort,
-      order,
-      include,
-    });
-    
-    if (response?.success) {
-      setEmployees(response.data || []);
-      if (response.meta) {
-        setPagination({
-          total: response.meta.total || 0,
-          totalPages: response.meta.totalPages || 0,
-          page: response.meta.page || 1,
-          limit: response.meta.limit || 25,
-        });
-      }
-    } else {
-      setError(response?.error || "Failed to fetch employees");
-    }
-    setLoading(false);
+    await get("/admin/employees", queryParams);
   };
-  
+
   const refresh = () => {
     fetchEmployees();
   };
-  
+
   const syncEmployees = async () => {
     setSyncLoading(true);
     const response = await post("/employees/sync");
@@ -143,34 +142,65 @@ const Employees = () => {
       refresh();
     }
   };
-  
+
   const updateEmployee = async (employeeId: string, employeeData: any) => {
     setUpdateLoading(true);
     const response = await patch(`/employees/${employeeId}`, employeeData);
     setUpdateLoading(false);
     return response?.success ? response.data : null;
   };
-  
+
   useEffect(() => {
     fetchEmployees();
-  }, [page, limit, sort, order, include]);
+  }, [params]);
 
-  if (loading || syncLoading) {
-    return (
-      <div className="w-full flex flex-1 flex-col items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
+  const handleSearch = (query: string) => {
+    handleParamsChange({
+      search: query,
+      page: 1
+    });
+  };
 
-  if (error) {
-    return <div>Error</div>;
-  }
+  const handleParamsChange = (updates: Partial<typeof params>) => {
+    setParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    handleParamsChange({
+      filter: { ...params.filter, [key]: value }
+    });
+  };
+
+  const filters: Filter[] = [
+    {
+      key: 'isActive',
+      label: 'Status',
+      options: [
+        { value: '', label: 'All' },
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ],
+      placeholder: 'Status'
+    },
+    {
+      key: 'user.role',
+      label: 'Role',
+      options: [
+        { value: '', label: 'All' },
+        { value: 'USER', label: 'User' },
+        { value: 'ADMIN', label: 'Admin' }
+      ],
+      placeholder: 'Role'
+    },
+  ];
 
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={syncEmployees}>
+        <Button onClick={syncEmployees} disabled={syncLoading}>
           <RefreshCcw size={16} /> Sync with Microsoft
         </Button>
       </div>
@@ -178,29 +208,47 @@ const Employees = () => {
   };
 
   return (
-    <div className="w-full flex flex-1 flex-col">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Employees"
-        description={`${pagination.total} total employees`}
+        description="Manage employee accounts and permissions"
         actions={<Actions />}
       />
 
-      <Table<Employee>
-        columns={columns}
-        data={employees || []}
-        total={pagination.total}
-        idField="id"
-        pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setPage}
-        sort={sort}
-        order={order}
-        onSortChange={(newSort, newOrder) => {
-          setSort(newSort);
-          setOrder(newOrder);
-        }}
-      />
+      <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
+        <Toolbar
+          onSearch={handleSearch}
+          searchPlaceholder="Search employees..."
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          filterValues={params.filter}
+        />
+
+        <div className="flex-1 overflow-hidden">
+          <Table<Employee>
+            columns={columns}
+            data={employees?.data || []}
+            total={employees?.meta?.total || 0}
+            idField="id"
+            pagination
+            loading={loading}
+            error={error}
+            currentPage={employees?.meta?.page}
+            totalPages={employees?.meta?.totalPages}
+            onPageChange={(page) => handleParamsChange({ page })}
+            sort={params.sort}
+            order={params.order}
+            onSortChange={(newSort, newOrder) => {
+              handleParamsChange({
+                sort: newSort as any,
+                order: newOrder as any
+              });
+            }}
+            className="rounded border overflow-clip"
+            emptyMessage="No employees found"
+          />
+        </div>
+      </div>
 
       <Modal
         isOpen={isEditModalOpen}

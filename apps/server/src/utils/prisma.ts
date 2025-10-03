@@ -143,7 +143,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
   }
 
   if (params.filter) {
-    let filterObj = {};
+    let filterObj: any = {};
     if (typeof params.filter === "string") {
       try {
         filterObj = JSON.parse(params.filter);
@@ -155,7 +155,34 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
     else if (typeof params.filter === "object") {
       filterObj = params.filter;
     }
-    result.where = { ...result.where, ...filterObj };
+
+    const processedFilter: any = {};
+    Object.keys(filterObj).forEach((key) => {
+      let value = filterObj[key];
+
+      if (value === "true") {
+        value = true;
+      } else if (value === "false") {
+        value = false;
+      }
+
+      if (key.includes(".")) {
+        const parts = key.split(".");
+        let current = processedFilter;
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        current[parts[parts.length - 1]] = value;
+      } else {
+        processedFilter[key] = value;
+      }
+    });
+
+    result.where = { ...result.where, ...processedFilter };
   }
 
   if (params.dateFrom || params.dateTo) {
