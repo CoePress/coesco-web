@@ -116,6 +116,7 @@ const Machines = () => {
       key: "actions",
       header: "",
       className: "w-1",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"

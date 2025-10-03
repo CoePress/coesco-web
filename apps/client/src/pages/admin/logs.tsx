@@ -76,6 +76,7 @@ const Logs = () => {
       key: "actions",
       header: "",
       className: "w-1",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -112,8 +113,8 @@ const Logs = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={refresh} variant="secondary-outline">
-          <RefreshCcwIcon size={16} /> Refresh
+        <Button onClick={refresh} variant="primary" className="px-2">
+          <RefreshCcwIcon size={16} />
         </Button>
       </div>
     );

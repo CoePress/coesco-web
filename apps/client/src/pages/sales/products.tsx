@@ -203,8 +203,9 @@ const Products = () => {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       className: "w-fit whitespace-nowrap",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"

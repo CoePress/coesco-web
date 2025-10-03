@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { Employee } from "@coesco/types";
 import { Filter } from "@/components/feature/toolbar";
 import { useToast } from "@/hooks/use-toast";
+import { RefreshCcwIcon } from "lucide-react";
 
 const Employees = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -108,6 +109,7 @@ const Employees = () => {
       key: "actions",
       header: "",
       className: "w-1",
+      sortable: false,
       render: (_, row) => (
         <Button
           variant="secondary-outline"
@@ -177,11 +179,22 @@ const Employees = () => {
     },
   ];
 
+  const Actions = () => {
+    return (
+      <div className="flex gap-2">
+        <Button onClick={refresh} variant="primary" className="px-2">
+          <RefreshCcwIcon size={16} />
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Employees"
         description="Manage employee accounts and permissions"
+        actions={<Actions />}
       />
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
