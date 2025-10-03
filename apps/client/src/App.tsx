@@ -7,6 +7,7 @@ import NotFound from "./pages/not-found";
 import Login from "./pages/login";
 import ChatPage from "./pages/utility/chat";
 import { RecentChats, Resources } from "./pages";
+import { __dev__ } from "./config/env";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -78,22 +79,26 @@ const App = () => {
             withLayout={true}
           />
         }>
-        <Route
-          path="/chat"
-          element={<ChatPage />}
-        />
-        <Route
-          path="/chat/resources"
-          element={<Resources />}
-        />
-        <Route
-          path="/chat/recent"
-          element={<RecentChats />}
-        />
-        <Route
-          path="/chat/c/:id"
-          element={<ChatPage />}
-        />
+        {__dev__ && (
+          <>
+            <Route
+              path="/chat"
+              element={<ChatPage />}
+            />
+            <Route
+              path="/chat/resources"
+              element={<Resources />}
+            />
+            <Route
+              path="/chat/recent"
+              element={<RecentChats />}
+            />
+            <Route
+              path="/chat/c/:id"
+              element={<ChatPage />}
+            />
+          </>
+        )}
         {modules
           .filter((module) => module.slug === "admin")
           .map((module) => (
