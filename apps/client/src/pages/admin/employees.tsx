@@ -1,4 +1,3 @@
-import { RefreshCcw } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 
 import {
@@ -21,7 +20,6 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("USER");
   const [isActive, setIsActive] = useState<boolean>(true);
-  const [syncLoading, setSyncLoading] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
 
   const { get, post, patch, response: employees, loading, error } = useApi<IApiResponse<Employee[]>>();
@@ -135,15 +133,6 @@ const Employees = () => {
     fetchEmployees();
   };
 
-  const syncEmployees = async () => {
-    setSyncLoading(true);
-    const response = await post("/employees/sync");
-    setSyncLoading(false);
-    if (response?.success) {
-      refresh();
-    }
-  };
-
   const updateEmployee = async (employeeId: string, employeeData: any) => {
     setUpdateLoading(true);
     const response = await patch(`/employees/${employeeId}`, employeeData);
@@ -198,22 +187,11 @@ const Employees = () => {
     },
   ];
 
-  const Actions = () => {
-    return (
-      <div className="flex gap-2">
-        <Button onClick={syncEmployees} disabled={syncLoading}>
-          <RefreshCcw size={16} /> Sync with Microsoft
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title="Employees"
         description="Manage employee accounts and permissions"
-        actions={<Actions />}
       />
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
