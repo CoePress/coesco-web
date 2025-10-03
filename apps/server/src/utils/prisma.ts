@@ -168,7 +168,22 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
 
   if (params.sort) {
     const order = params.order || "asc";
-    result.orderBy = { [params.sort]: order };
+
+    if (params.sort.includes(".")) {
+      const parts = params.sort.split(".");
+      let orderBy: any = {};
+      let current = orderBy;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = order;
+
+      result.orderBy = orderBy;
+    } else {
+      result.orderBy = { [params.sort]: order };
+    }
   }
 
   buildSelectOrInclude(params, result);
