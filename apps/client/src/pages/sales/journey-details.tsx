@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES, VALID_JOURNEY_STATUS, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
-import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry } from "./journeys/utils";
+import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, Employee } from "./journeys/utils";
 import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
@@ -130,15 +130,23 @@ import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { AddJourneyContactModal } from "@/components";
 
 function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any }) {
-  const [availableRsms, setAvailableRsms] = useState<string[]>([]);
-  const rsmApi = useApi();
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
+  const api = useApi();
 
   const getValidRSM = (value: string) => {
     if (!value) return "";
-    const normalized = availableRsms.find(rsm => 
-      rsm.toLowerCase() === value.toLowerCase()
+    const normalized = availableRsms.find(rsm =>
+      rsm.initials.toLowerCase() === value.toLowerCase()
     );
-    return normalized || value;
+    return normalized ? normalized.initials : value;
+  };
+
+  const getRsmDisplayName = (value: string) => {
+    if (!value) return "-";
+    const rsm = availableRsms.find(r =>
+      r.initials.toLowerCase() === value.toLowerCase()
+    );
+    return rsm ? `${rsm.name} (${rsm.initials})` : value;
   };
 
   const createDetailsFormData = (journey: any) => ({
@@ -205,14 +213,12 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
 
-  const api = useApi();
-
   useEffect(() => {
     if (journey) {
       if (!isEditingDetails) {
         setDetailsForm(createDetailsFormData(journey));
       }
-      
+
       if (!isEditingCustomer) {
         setCustomerForm({
           companyId: journey?.Company_ID || "",
@@ -221,11 +227,11 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         setCompanyName(journey?.Target_Account || journey?.companyName || "");
         lastFetchedCompanyId.current = journey?.Company_ID || "";
       }
-      
+
       if (!showSavePrompt) {
         setNotes(journey?.Notes ?? journey?.notes ?? "");
       }
-      
+
       if (!showNextStepsSavePrompt) {
         setNextSteps(journey?.Next_Steps ?? "");
       }
@@ -235,20 +241,9 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
-          filterField: 'Category',
-          filterValue: 'RSM',
-          Use_Status: 'NOT:Historical'
-        });
-        
-        if (!cancelled && Array.isArray(rsmData)) {
-          const rsmValues = rsmData.map(item => item.Name || item.Value || item.Description).filter(Boolean);
-          setAvailableRsms(rsmValues);
-        }
-      } catch (error) {
-        console.error("Error fetching RSM data:", error);
-        setAvailableRsms([]);
+      const rsms = await fetchAvailableRsms(api);
+      if (!cancelled) {
+        setAvailableRsms(rsms);
       }
     })();
     return () => { cancelled = true; };
@@ -1029,15 +1024,15 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     }
                   >
                     <option value="">No Value Selected</option>
-                    {detailsForm.rsm && !availableRsms.includes(detailsForm.rsm) && (
+                    {detailsForm.rsm && !availableRsms.find(r => r.initials === detailsForm.rsm) && (
                       <option key={detailsForm.rsm} value={detailsForm.rsm}>{detailsForm.rsm}</option>
                     )}
                     {availableRsms.map(rsm => (
-                      <option key={rsm} value={rsm}>{rsm}</option>
+                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
                     ))}
                   </select>
                 ) : (
-                  <div className="text-sm text-text">{getValidRSM(journey?.RSM) || "-"}</div>
+                  <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM)}</div>
                 )}
               </div>
 
@@ -1053,15 +1048,15 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                   >
                     <option value="">No Value Selected</option>
                     {/* Show current RSM Territory if it's not in the available list */}
-                    {detailsForm.rsmTerritory && !availableRsms.includes(detailsForm.rsmTerritory) && (
+                    {detailsForm.rsmTerritory && !availableRsms.find(r => r.initials === detailsForm.rsmTerritory) && (
                       <option key={detailsForm.rsmTerritory} value={detailsForm.rsmTerritory}>{detailsForm.rsmTerritory}</option>
                     )}
                     {availableRsms.map(rsm => (
-                      <option key={rsm} value={rsm}>{rsm}</option>
+                      <option key={rsm.initials} value={rsm.initials}>{rsm.name} ({rsm.initials})</option>
                     ))}
                   </select>
                 ) : (
-                  <div className="text-sm text-text">{journey?.RSM_Territory?.trim() || "-"}</div>
+                  <div className="text-sm text-text">{getRsmDisplayName(journey?.RSM_Territory)}</div>
                 )}
               </div>
 

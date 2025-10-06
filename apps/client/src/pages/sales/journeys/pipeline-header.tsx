@@ -1,6 +1,7 @@
 import { Button, Input, Select } from "@/components";
 import { Filter, Tags } from "lucide-react";
 import { VALID_JOURNEY_STATUS } from "./constants";
+import { Employee } from "./utils";
 
 interface PipelineHeaderProps {
   searchTerm: string;
@@ -8,7 +9,7 @@ interface PipelineHeaderProps {
   rsmFilterDisplay: string;
   setRsmFilter: (filter: string) => void;
   setRsmFilterDisplay: (display: string) => void;
-  availableRsms: string[];
+  availableRsms: Employee[];
   rsmDisplayNames?: Map<string, string>;
   journeyStatusFilter: string;
   setJourneyStatusFilter: (status: string) => void;
@@ -77,9 +78,9 @@ export const PipelineHeader = ({
               { value: "", label: "All" },
               { value: "my-journeys", label: "Me    " }
             ];
-            const rsmOptions = availableRsms.filter((rsm: string) => rsm && rsm.trim()).map((rsm: string) => ({ 
-              value: rsm, 
-              label: rsmDisplayNames?.get(rsm) || rsm 
+            const rsmOptions = availableRsms.map((rsm: Employee) => ({
+              value: rsm.initials,
+              label: rsmDisplayNames?.get(rsm.initials) || rsm.name
             }));
             return [...baseOptions, ...rsmOptions];
           })()}

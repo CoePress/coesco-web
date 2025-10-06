@@ -17,7 +17,7 @@ import { ListView } from "./journeys/ListView";
 import { ProjectionsView } from "./journeys/ProjectionsView";
 import { PipelineHeader } from "./journeys/pipeline-header";
 import { STAGES } from "./journeys/constants";
-import { fuzzyMatch } from "./journeys/utils";
+import { fuzzyMatch, fetchAvailableRsms, Employee } from "./journeys/utils";
 import { formatCurrency } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useNavigate } from "react-router-dom";
@@ -42,8 +42,7 @@ const Pipeline = () => {
 
   const { employee } = useAuth();
   const { put, get, delete: del } = useApi();
-  const rsmApi = useApi(); // Separate API instance for RSM fetching
-  const employeeApi = useApi(); // API instance for employee data fetching
+  const api = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
 
@@ -202,13 +201,13 @@ const Pipeline = () => {
     let cancelled = false;
     (async () => {
       try {
-        const raw = await initialFetchApi.get('/legacy/base/Journey', { 
-          sort: 'CreateDT', 
-          order: 'desc', 
+        const raw = await initialFetchApi.get('/legacy/base/Journey', {
+          sort: 'CreateDT',
+          order: 'desc',
           limit: 100,
           fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
         });
-        
+
         if (!cancelled && raw !== null) {
           const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
@@ -218,47 +217,15 @@ const Pipeline = () => {
         console.error("Error fetching Journeys:", error);
       }
 
-      const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
-        filterField: 'Category',
-        filterValue: 'RSM',
-        Use_Status: 'NOT:Historical',
-        fields: 'Description'
-      });
-      
-      if (!cancelled && rsmData) {
-        const rsmArray = rsmData.data ? rsmData.data : (Array.isArray(rsmData) ? rsmData : []);
-        const rsmValues = rsmArray.map((item: any) => item.Description).filter(Boolean);
-        setAvailableRsms(rsmValues);
-        
-        // Fetch full names for RSMs
+      const rsms = await fetchAvailableRsms(api);
+
+      if (!cancelled && rsms.length > 0) {
+        setAvailableRsms(rsms);
+
         const displayNamesMap = new Map<string, string>();
-        await Promise.all(
-          rsmValues.map(async (initials: string) => {
-            try {
-              const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
-                filterField: 'EmpInitials',
-                filterValue: initials,
-                limit: 1,
-                fields: 'EmpFirstName,EmpMiddleInt,EmpLastName'
-              });
-              
-              if (employeeData?.[0]) {
-                const emp = employeeData[0];
-                const fullName = [
-                  emp.EmpFirstName,
-                  emp.EmpMiddleInt,
-                  emp.EmpLastName
-                ].filter(Boolean).join(' ');
-                displayNamesMap.set(initials, `${fullName} (${initials})`);
-              } else {
-                displayNamesMap.set(initials, initials);
-              }
-            } catch (error) {
-              console.error(`Error fetching employee data for ${initials}:`, error);
-              displayNamesMap.set(initials, initials);
-            }
-          })
-        );
+        rsms.forEach(rsm => {
+          displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
+        });
         setRsmDisplayNames(displayNamesMap);
       }
     })();
@@ -314,7 +281,7 @@ const Pipeline = () => {
   const [navigationModal, setNavigationModal] = useState<{ isOpen: boolean; journeyName: string; journeyId: string }>({ isOpen: false, journeyName: '', journeyId: '' });
   const [rsmFilter, setRsmFilter] = useState<string>(() => getFromLocalStorage('rsmFilter', ''));
   const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage('rsmFilterDisplay', ''));
-  const [availableRsms, setAvailableRsms] = useState<string[]>([]);
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
   const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
@@ -716,41 +683,18 @@ const Pipeline = () => {
 
     console.log('Unique RSM initials found:', uniqueRsmInitials);
 
-    // Fetch full employee data for each RSM
+    // Use rsmDisplayNames map that was already built from fetchAvailableRsms
     const rsmFullNames = new Map<string, string>();
-    
-    await Promise.all(
-      uniqueRsmInitials.map(async (initials) => {
-        try {
-          console.log(`Fetching employee data for initials: ${initials}`);
-          const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
-            filterField: 'EmpInitials',
-            filterValue: initials,
-            limit: 1,
-            fields: 'EmpFirstName,EmpMiddleInt,EmpLastName'
-          });
-          
-          console.log(`Employee data for ${initials}:`, employeeData);
-          
-          if (employeeData?.[0]) {
-            const emp = employeeData[0];
-            const fullName = [
-              emp.EmpFirstName,
-              emp.EmpMiddleInt,
-              emp.EmpLastName
-            ].filter(Boolean).join(' ');
-            console.log(`Full name for ${initials}: "${fullName}"`);
-            rsmFullNames.set(initials, fullName || initials);
-          } else {
-            console.log(`No employee data found for ${initials}, using initials`);
-            rsmFullNames.set(initials, initials);
-          }
-        } catch (error) {
-          console.error(`Error fetching employee data for ${initials}:`, error);
-          rsmFullNames.set(initials, initials);
-        }
-      })
-    );
+    uniqueRsmInitials.forEach(initials => {
+      const displayName = rsmDisplayNames.get(initials);
+      if (displayName) {
+        // Extract just the name part (before the parentheses)
+        const nameMatch = displayName.match(/^(.+?)\s*\(/);
+        rsmFullNames.set(initials, nameMatch ? nameMatch[1].trim() : initials);
+      } else {
+        rsmFullNames.set(initials, initials);
+      }
+    });
 
     const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string; Contact_Position: string }>>();
     console.log('Fetching contact data for journeys...');
@@ -759,7 +703,7 @@ const Pipeline = () => {
       filteredJourneys.map(async (journey) => {
         try {
           console.log(`Fetching contacts for journey ID: ${journey.id}`);
-          const contactData = await employeeApi.get('/legacy/base/Journey_Contact/filter/custom', {
+          const contactData = await api.get('/legacy/base/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'

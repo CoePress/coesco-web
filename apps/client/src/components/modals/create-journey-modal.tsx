@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Modal, Button, Input, Select } from "@/components";
 import { useApi } from "@/hooks/use-api";
+import { Employee } from "@/pages/sales/journeys/utils";
 
 interface CreateJourneyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newJourney?: any) => void;
-  availableRsms: string[];
+  availableRsms: Employee[];
   companyId?: string;
   companyName?: string;
 }
@@ -162,9 +163,9 @@ export const CreateJourneyModal = ({
               required
               value={rsm}
               onChange={(e) => setRsm(e.target.value)}
-              options={availableRsms.filter(rsm => rsm && rsm.trim()).map(rsm => ({ 
-                value: rsm, 
-                label: rsm 
+              options={availableRsms.map(rsm => ({
+                value: rsm.initials,
+                label: `${rsm.name} (${rsm.initials})`
               }))}
             />
           </div>

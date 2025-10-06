@@ -17,12 +17,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import * as XLSX from 'xlsx';
 import { useApi } from "@/hooks/use-api";
+import { Employee } from "@/pages/sales/journeys/utils";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (importedData: any) => void;
-  availableRsms: string[];
+  availableRsms: Employee[];
 }
 
 interface ColumnMapping {

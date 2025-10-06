@@ -69,26 +69,107 @@ export const getValidIndustry = (value: string) => {
 
 export const fuzzyMatch = (text: string, query: string): boolean => {
   if (!query) return true;
-  
+
   const textLower = text.toLowerCase();
   const queryLower = query.toLowerCase();
-  
+
   if (textLower.includes(queryLower)) return true;
-  
+
   const cleanText = textLower.replace(/[^a-z0-9]/g, '');
   const cleanQuery = queryLower.replace(/[^a-z0-9]/g, '');
-  
+
   if (cleanText.includes(cleanQuery)) return true;
-  
+
   let textIndex = 0;
   let queryIndex = 0;
-  
+
   while (queryIndex < cleanQuery.length && textIndex < cleanText.length) {
     if (cleanText[textIndex] === cleanQuery[queryIndex]) {
       queryIndex++;
     }
     textIndex++;
   }
-  
+
   return queryIndex === cleanQuery.length;
+};
+
+export interface Employee {
+  name: string;
+  empNum: number;
+  initials: string;
+}
+
+export const fetchAvailableRsms = async (api: any, includeHistoric: boolean = false): Promise<Employee[]> => {
+  try {
+    const rsmData = await api.get('/legacy/std/Demographic/filter/custom', {
+      filterField: 'Category',
+      filterValue: 'RSM',
+      ...(includeHistoric ? {} : { Use_Status: 'NOT:Historical' }),
+      fields: 'Description'
+    });
+
+    if (!Array.isArray(rsmData) || rsmData.length === 0) {
+      return [];
+    }
+
+    const rsmInitials = rsmData.map(item => item.Description).filter(Boolean);
+
+    if (rsmInitials.length === 0) {
+      return [];
+    }
+
+    const employeePromises = rsmInitials.map(initials =>
+      api.get('/legacy/std/Employee/filter/custom', {
+        filterField: 'EmpInitials',
+        filterValue: initials,
+        fields: 'EmpFirstName,EmpLastName,EmpNum'
+      })
+    );
+
+    const employeeResults = await Promise.all(employeePromises);
+
+    const rsmOptions = employeeResults
+      .map((result, index) => {
+        if (Array.isArray(result) && result.length > 0) {
+          const employee = result[0];
+          return {
+            name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials || rsmInitials[index],
+            empNum: employee.EmpNum || 0,
+            initials: rsmInitials[index]
+          };
+        }
+        return null;
+      })
+      .filter((rsm): rsm is Employee => rsm !== null && rsm.empNum > 0);
+
+    return rsmOptions;
+  } catch (error) {
+    console.error('Error fetching RSM data:', error);
+    return [];
+  }
+};
+
+export const fetchEmployeeByNumber = async (api: any, empNum: number): Promise<{ name: string; empNum: number } | null> => {
+  if (!empNum) return null;
+
+  try {
+    const employeeData = await api.get('/legacy/std/Employee/filter/custom', {
+      filterField: 'EmpNum',
+      filterValue: empNum,
+      limit: 1
+    });
+
+    if (Array.isArray(employeeData) && employeeData.length > 0) {
+      const employee = employeeData[0];
+      return {
+        name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || `Employee ${employee.EmpNum}`,
+        empNum: employee.EmpNum
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching employee data:', error);
+    return null;
+  }
 };
