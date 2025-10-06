@@ -17,7 +17,7 @@ import { ListView } from "./journeys/ListView";
 import { ProjectionsView } from "./journeys/ProjectionsView";
 import { PipelineHeader } from "./journeys/pipeline-header";
 import { STAGES } from "./journeys/constants";
-import { fuzzyMatch, fetchAvailableRsms, Employee } from "./journeys/utils";
+import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { formatCurrency } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { useNavigate } from "react-router-dom";
@@ -261,7 +261,10 @@ const Pipeline = () => {
         console.error("Error fetching Journeys:", error);
       }
 
-      const rsms = await fetchAvailableRsms(api);
+      const [rsms, statuses] = await Promise.all([
+        fetchAvailableRsms(api),
+        fetchDemographicCategory(api, 'Journey_status')
+      ]);
 
       if (!cancelled && rsms.length > 0) {
         setAvailableRsms(rsms);
@@ -271,6 +274,10 @@ const Pipeline = () => {
           displayNamesMap.set(rsm.initials, `${rsm.name} (${rsm.initials})`);
         });
         setRsmDisplayNames(displayNamesMap);
+      }
+
+      if (!cancelled && statuses.length > 0) {
+        setValidJourneyStatuses(statuses);
       }
     })();
     return () => { cancelled = true; };
@@ -324,6 +331,7 @@ const Pipeline = () => {
   const [rsmFilterDisplay, setRsmFilterDisplay] = useState<string>(() => getFromLocalStorage('rsmFilterDisplay', ''));
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [rsmDisplayNames, setRsmDisplayNames] = useState<Map<string, string>>(new Map());
+  const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
   const [journeyStatusFilter, setJourneyStatusFilter] = useState<string>(() => getFromLocalStorage('journeyStatusFilter', ''));
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
@@ -972,7 +980,7 @@ const Pipeline = () => {
 
       {viewMode === "kanban" && (
         <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
-          <PipelineHeader 
+          <PipelineHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             rsmFilterDisplay={rsmFilterDisplay}
@@ -987,6 +995,7 @@ const Pipeline = () => {
             showTags={showTags}
             setShowTags={setShowTags}
             viewMode={viewMode}
+            validJourneyStatuses={validJourneyStatuses}
           />
           <KanbanView
             journeys={kanbanJourneys}
@@ -1005,7 +1014,7 @@ const Pipeline = () => {
 
       {viewMode === "list" && (
         <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
-          <PipelineHeader 
+          <PipelineHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             rsmFilterDisplay={rsmFilterDisplay}
@@ -1018,6 +1027,7 @@ const Pipeline = () => {
             employee={employee}
             setIsFilterModalOpen={setIsFilterModalOpen}
             viewMode={viewMode}
+            validJourneyStatuses={validJourneyStatuses}
           />
           <ListView
             journeys={listJourneys}

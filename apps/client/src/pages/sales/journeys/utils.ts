@@ -99,6 +99,26 @@ export interface Employee {
   initials: string;
 }
 
+export const fetchDemographicCategory = async (api: any, category: string, includeHistoric: boolean = false): Promise<string[]> => {
+  try {
+    const demographicData = await api.get('/legacy/std/Demographic/filter/custom', {
+      filterField: 'Category',
+      filterValue: category,
+      ...(includeHistoric ? {} : { Use_Status: 'NOT:Historical' }),
+      fields: 'Description'
+    });
+
+    if (!Array.isArray(demographicData) || demographicData.length === 0) {
+      return [];
+    }
+
+    return demographicData.map(item => item.Description).filter(Boolean);
+  } catch (error) {
+    console.error(`Error fetching ${category} data:`, error);
+    return [];
+  }
+};
+
 export const fetchAvailableRsms = async (api: any, includeHistoric: boolean = false): Promise<Employee[]> => {
   try {
     const rsmData = await api.get('/legacy/std/Demographic/filter/custom', {

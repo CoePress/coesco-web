@@ -1,6 +1,5 @@
 import { Button, Input, Select } from "@/components";
 import { Filter, Tags, Info } from "lucide-react";
-import { VALID_JOURNEY_STATUS } from "./constants";
 import { Employee } from "./utils";
 import { useState } from "react";
 
@@ -19,6 +18,7 @@ interface PipelineHeaderProps {
   showTags?: boolean;
   setShowTags?: (show: boolean) => void;
   viewMode?: string;
+  validJourneyStatuses: string[];
 }
 
 export const PipelineHeader = ({
@@ -35,7 +35,8 @@ export const PipelineHeader = ({
   setIsFilterModalOpen,
   showTags,
   setShowTags,
-  viewMode
+  viewMode,
+  validJourneyStatuses
 }: PipelineHeaderProps) => {
   const [showSearchHelp, setShowSearchHelp] = useState(false);
 
@@ -126,7 +127,7 @@ export const PipelineHeader = ({
           onChange={(e) => setJourneyStatusFilter(e.target.value)}
           options={[
             { value: "", label: "All" },
-            ...VALID_JOURNEY_STATUS.map((status: string) => ({ value: status, label: status + " " }))
+            ...validJourneyStatuses.map((status: string) => ({ value: status, label: status + " " }))
           ]}
           className="w-48"
         />

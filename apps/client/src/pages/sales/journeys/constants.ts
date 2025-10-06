@@ -122,16 +122,6 @@ export const VALID_INDUSTRIES = [
   "Medical"
 ];
 
-export const VALID_JOURNEY_STATUS = [
-  "cancelled",
-  "closed",
-  "closed - Duplicate",
-  "lost",
-  "on hold",
-  "open",
-  "won"
-];
-
 export const VALID_CONFIDENCE_LEVELS = [
   "Closed Won",
   "Closed Lost", 

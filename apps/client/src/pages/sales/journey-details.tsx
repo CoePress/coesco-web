@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
-import { STAGES, VALID_JOURNEY_STATUS, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
-import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, Employee } from "./journeys/utils";
+import { STAGES, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
+import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
@@ -129,7 +129,7 @@ import { useAuth } from "@/contexts/auth.context";
 import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { AddJourneyContactModal } from "@/components";
 
-function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any }) {
+function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee, validJourneyStatuses }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any; validJourneyStatuses: string[] }) {
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const api = useApi();
 
@@ -1126,7 +1126,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                     }
                   >
                     <option value="">No Value Selected</option>
-                    {VALID_JOURNEY_STATUS.map(status => (
+                    {validJourneyStatuses.map(status => (
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
@@ -2206,6 +2206,7 @@ const JourneyDetailsPage = () => {
   const [journeyData, setJourneyData] = useState<any>(null);
   const [customerData, setCustomerData] = useState<any>(null);
   const [journeyContacts, setJourneyContacts] = useState<any[]>([]);
+  const [validJourneyStatuses, setValidJourneyStatuses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const api = useApi();
@@ -2282,6 +2283,15 @@ const JourneyDetailsPage = () => {
     fetchJourneyData();
   }, [journeyId]);
 
+  useEffect(() => {
+    (async () => {
+      const statuses = await fetchDemographicCategory(api, 'Journey_status');
+      if (statuses.length > 0) {
+        setValidJourneyStatuses(statuses);
+      }
+    })();
+  }, []);
+
   if (loading) return <div className="flex justify-center items-center h-64">Loading journey details...</div>;
   if (error) return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
   if (!journeyId) return <div className="w-full flex flex-1 flex-col"><PageHeader title="Invalid Journey" description="No journey ID provided in the URL." goBack /></div>;
@@ -2305,7 +2315,7 @@ const JourneyDetailsPage = () => {
           { label: "Journey Actions", value: "actions" },
         ]}
       />
-      {activeTab === "details" && <JourneyDetailsTab journey={journeyData ? { ...journeyData, customer: customerData } : null} journeyContacts={journeyContacts} updateJourney={updateJourney} setJourneyContacts={setJourneyContacts} employee={employee} />}
+      {activeTab === "details" && <JourneyDetailsTab journey={journeyData ? { ...journeyData, customer: customerData } : null} journeyContacts={journeyContacts} updateJourney={updateJourney} setJourneyContacts={setJourneyContacts} employee={employee} validJourneyStatuses={validJourneyStatuses} />}
       {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
       {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
