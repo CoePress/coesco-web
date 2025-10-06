@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   StatusBadge,
@@ -19,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RefreshCcwIcon } from "lucide-react";
 
 const Employees = () => {
+  const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
@@ -114,7 +116,8 @@ const Employees = () => {
         <Button
           variant="secondary-outline"
           size="sm"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setSelectedEmployee(row);
             setIsEditModalOpen(true);
           }}>
@@ -226,6 +229,7 @@ const Employees = () => {
                 order: newOrder as any
               });
             }}
+            onRowClick={(row) => navigate(`/admin/employees/${row.id}`)}
             className="rounded border overflow-clip"
             emptyMessage="No employees found"
           />

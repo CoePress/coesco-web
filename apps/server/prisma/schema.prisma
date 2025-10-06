@@ -23,6 +23,7 @@ model User {
   employee          Employee?
   roles             RoleAssignment[]
   customPermissions PermissionException[]
+  tokens            Token[]
 
   @@map("users")
 }
@@ -40,6 +41,29 @@ model UserSettings {
   updatedAt DateTime @updatedAt
 
   @@map("user_settings")
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  TWO_FACTOR_AUTH
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  userId    String
+  type      TokenType
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, type])
+  @@map("tokens")
 }
 
 model Department {

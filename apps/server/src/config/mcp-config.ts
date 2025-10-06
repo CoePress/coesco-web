@@ -2579,6 +2579,47 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "token",
+    description: "Schema for Token entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: true,
+      },
+      type: {
+        type: "tokentype",
+        required: true,
+      },
+      token: {
+        type: "string",
+        required: true,
+      },
+      expiresAt: {
+        type: "datetime",
+        required: true,
+      },
+      used: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
     name: "user",
     description: "Schema for User entity",
     schema: {

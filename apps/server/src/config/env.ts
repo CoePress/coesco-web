@@ -25,6 +25,8 @@ const envSchema = z.object({
   FANUC_ADAPTER_HOST: z.string(),
   FANUC_ADAPTER_PORT: z.string().transform(Number),
 
+  CLIENT_URL: z.string().url(),
+
   SMTP_HOST: z.string(),
   SMTP_PORT: z.string().transform(Number),
 

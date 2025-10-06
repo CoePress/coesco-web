@@ -1,5 +1,6 @@
 // Auto-generated database types - DO NOT EDIT
 export * from './user-role';
+export * from './token-type';
 export * from './industry';
 export * from './company-status';
 export * from './journey-status';
@@ -70,5 +71,6 @@ export * from './role';
 export * from './role-assignment';
 export * from './role-permission';
 export * from './tag';
+export * from './token';
 export * from './user';
 export * from './user-settings';

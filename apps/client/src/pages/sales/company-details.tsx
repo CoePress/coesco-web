@@ -12,6 +12,7 @@ import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
+import { fetchAvailableRsms, fetchEmployeeByNumber, Employee } from "./journeys/utils";
 
 const CREDIT_STATUS_OPTIONS = [
   { value: 'A', label: 'Call Accouting' },
@@ -89,15 +90,12 @@ const CompanyDetails = () => {
   
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   
-  // Zip code lookup states for editing only
   const [editZipLookupResults, setEditZipLookupResults] = useState<{city: string[], stateProv: string[], country: string[]}>({city: [], stateProv: [], country: []});
   const [isEditLookingUpZip, setIsEditLookingUpZip] = useState(false);
 
   const [coeRsmEmployee, setCoeRsmEmployee] = useState<{name: string, empNum: number} | null>(null);
-  const [availableRsms, setAvailableRsms] = useState<Array<{name: string, empNum: number, initials: string}>>([]);
+  const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
   const [isCustomRsmInput, setIsCustomRsmInput] = useState(false);
-  const employeeApi = useApi();
-  const rsmApi = useApi();
 
   const [companyAddresses, setCompanyAddresses] = useState<any[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -299,25 +297,9 @@ const CompanyDetails = () => {
         return;
       }
 
-      try {
-        const employeeData = await employeeApi.get('/legacy/std/Employee/filter/custom', {
-          filterField: 'EmpNum',
-          filterValue: company.coeRSM,
-          limit: 1
-        });
-        
-        if (!cancelled && Array.isArray(employeeData) && employeeData.length > 0) {
-          const employee = employeeData[0];
-          setCoeRsmEmployee({
-            name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || `Employee ${employee.EmpNum}`,
-            empNum: employee.EmpNum
-          });
-        } else {
-          setCoeRsmEmployee(null);
-        }
-      } catch (error) {
-        console.error('Error fetching employee data:', error);
-        setCoeRsmEmployee(null);
+      const employee = await fetchEmployeeByNumber(api, company.coeRSM);
+      if (!cancelled) {
+        setCoeRsmEmployee(employee);
       }
     })();
     return () => { cancelled = true; };
@@ -326,48 +308,9 @@ const CompanyDetails = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const rsmData = await rsmApi.get('/legacy/std/Demographic/filter/custom', {
-          filterField: 'Category',
-          filterValue: 'RSM',
-          Use_Status: 'NOT:Historical',
-          fields: 'Description'
-        });
-        
-        if (!cancelled && Array.isArray(rsmData) && rsmData.length > 0) {
-          const rsmInitials = rsmData.map(item => item.Description).filter(Boolean);
-          
-          if (rsmInitials.length > 0) {
-            const employeePromises = rsmInitials.map(initials => 
-              rsmApi.get('/legacy/std/Employee/filter/custom', {
-                filterField: 'EmpInitials',
-                filterValue: initials,
-                fields: 'EmpFirstName,EmpLastName,EmpNum'
-              })
-            );
-            
-            const employeeResults = await Promise.all(employeePromises);
-            
-            const rsmOptions = employeeResults
-              .map((result, index) => {
-                if (Array.isArray(result) && result.length > 0) {
-                  const employee = result[0];
-                  return {
-                    name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials || rsmInitials[index],
-                    empNum: employee.EmpNum || 0,
-                    initials: rsmInitials[index]
-                  };
-                }
-                return null;
-              })
-              .filter((rsm): rsm is { name: string; empNum: number; initials: string } => rsm !== null && rsm.empNum > 0);
-            
-            setAvailableRsms(rsmOptions);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching RSM data:', error);
-        setAvailableRsms([]);
+      const rsms = await fetchAvailableRsms(api);
+      if (!cancelled) {
+        setAvailableRsms(rsms);
       }
     })();
     return () => { cancelled = true; };
@@ -809,9 +752,7 @@ const CompanyDetails = () => {
   const handleEditAddress = (address: any) => {
     setEditingAddressId(address.Address_ID);
     setEditingAddressData({ ...address });
-    // Reset zip lookup results
     setEditZipLookupResults({city: [], stateProv: [], country: []});
-    // If there's already a zip code, trigger lookup
     if (address.ZipCode) {
       lookupZipCode(address.ZipCode);
     }
@@ -821,7 +762,6 @@ const CompanyDetails = () => {
     console.log(`Updating ${fieldName} to:`, value, 'Current state:', editingAddressData);
     setEditingAddressData((prev: any) => ({ ...prev, [fieldName]: value }));
     
-    // Trigger zip code lookup when zip code changes
     if (fieldName === 'ZipCode') {
       lookupZipCode(value);
     }

@@ -75,7 +75,7 @@ export class LegacyService {
     }
 
     try {
-      const idMapPath = path.join(__dirname, "../../config/legacy-service-id-map.json");
+      const idMapPath = path.join(process.cwd(), "src/config/legacy-service-id-map.json");
       const idMapData = fs.readFileSync(idMapPath, "utf8");
       this.idMap = JSON.parse(idMapData);
       return this.idMap;
