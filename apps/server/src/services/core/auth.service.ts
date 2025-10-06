@@ -393,6 +393,34 @@ export class AuthService {
       };
     }
 
+    if (!/[A-Z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one uppercase letter",
+      };
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one lowercase letter",
+      };
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one number",
+      };
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one special character",
+      };
+    }
+
     const tokenRecord = await prisma.token.findUnique({
       where: { token },
       include: { user: true },
@@ -440,6 +468,34 @@ export class AuthService {
       return {
         success: false,
         error: "Password must be at least 8 characters long",
+      };
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one uppercase letter",
+      };
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one lowercase letter",
+      };
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one number",
+      };
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one special character",
       };
     }
 

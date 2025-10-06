@@ -81,6 +81,18 @@ const App = () => {
             withLayout={true}
           />
         }>
+        {modules
+          .filter((module) => module.slug === "admin")
+          .map((module) => (
+            <Route
+              key={module.slug}
+              path={`/${module.slug}`}>
+              {generateAllRoutes(module.pages, module.slug)}
+            </Route>
+          ))}
+      </Route>
+
+      <Route element={<ProtectedRoute withLayout={true} />}>
         {__dev__ && (
           <>
             <Route
@@ -99,7 +111,7 @@ const App = () => {
               path="/chat/c/:id"
               element={<ChatPage />}
             />
-            
+
           </>
         )}
         <Route
@@ -110,18 +122,6 @@ const App = () => {
           path="/settings/change-password"
           element={<ChangePassword />}
         />
-        {modules
-          .filter((module) => module.slug === "admin")
-          .map((module) => (
-            <Route
-              key={module.slug}
-              path={`/${module.slug}`}>
-              {generateAllRoutes(module.pages, module.slug)}
-            </Route>
-          ))}
-      </Route>
-
-      <Route element={<ProtectedRoute withLayout={true} />}>
         {modules
           .filter((module) => module.slug !== "admin")
           .map((module) => (
