@@ -24,7 +24,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
+import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -59,7 +59,7 @@ const adminModule: Module = {
   status: "active",
   pages: [
     {
-      slug: null,
+      slug: "employees",
       label: "Employees",
       icon: UsersIcon,
       component: Employees,
@@ -67,7 +67,7 @@ const adminModule: Module = {
         {
           slug: ":id",
           label: "Employee Details",
-          component: JourneyDetails,
+          component: EmployeeDetails,
         },
       ],
     },
@@ -236,7 +236,7 @@ const serviceModule: Module = {
   slug: "service",
   label: "Service",
   icon: WrenchIcon,
-  status: "active",
+  status: "development",
   pages: [
     {
       slug: null,
