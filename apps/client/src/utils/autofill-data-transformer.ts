@@ -46,7 +46,6 @@ export const transformDataForAutofill = (data: PerformanceData): any => {
         );
 
         if (shouldStayString) {
-          console.log(`📝 Keeping as string ${currentPath}: "${value}"`);
           return;
         }
 
@@ -65,7 +64,7 @@ export const transformDataForAutofill = (data: PerformanceData): any => {
         const parsed = shouldBeInteger ? parseInt(value) : parseFloat(value);
         if (!isNaN(parsed)) {
           obj[key] = parsed;
-          console.log(`🔄 Converted ${currentPath}: "${value}" → ${parsed} (${shouldBeInteger ? 'int' : 'float'})`);
+
         }
       }
     }
@@ -86,7 +85,7 @@ export const transformDataForAutofill = (data: PerformanceData): any => {
     if (current[fieldName] === 'true' || current[fieldName] === 'false') {
       const oldValue = current[fieldName];
       current[fieldName] = current[fieldName] === 'true';
-      console.log(`🔄 Converted boolean ${path}: "${oldValue}" → ${current[fieldName]}`);
+
     }
   };
 
@@ -99,8 +98,6 @@ export const transformDataForAutofill = (data: PerformanceData): any => {
   convertBooleanField(transformedData, 'rfq.dies.transferDies');
   convertBooleanField(transformedData, 'rfq.dies.blankingDies');
 
-  console.log('✅ Data transformation complete - all string numbers converted to proper types');
-
   return transformedData;
 };
 
@@ -108,7 +105,7 @@ export const transformDataForAutofill = (data: PerformanceData): any => {
  * Debug helper to show data transformation
  */
 export const debugDataTransformation = (originalData: PerformanceData): void => {
-  console.log('🔄 Data Transformation Debug');
+  console.log('Data Transformation');
   console.log('Original data types:');
 
   const material = originalData.common?.material;

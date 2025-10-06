@@ -162,14 +162,14 @@ export function useAutoFillWatcher(
 
         // Don't trigger if already auto-filling
         if (autoFillState.isAutoFilling) {
-            console.log('shouldTriggerAutoFill: false - already auto-filling');
+
             return false;
         }
 
         // Check if sufficient data exists
         const hasSufficientData = checkSufficientData(data);
         if (!hasSufficientData) {
-            console.log('shouldTriggerAutoFill: false - insufficient data');
+
             return false;
         }
 
@@ -179,11 +179,6 @@ export function useAutoFillWatcher(
         );
 
         if (filledFields.length < requireMinimumFields) {
-            console.log('shouldTriggerAutoFill: false - not enough fields filled', {
-                filledCount: filledFields.length,
-                required: requireMinimumFields,
-                filledFields
-            });
             return false;
         }
 
@@ -191,11 +186,6 @@ export function useAutoFillWatcher(
         const now = Date.now();
         const timeSinceLastTrigger = now - lastTriggerTimeRef.current;
         if (timeSinceLastTrigger < 1500) { // Reduced to 1.5 seconds for better responsiveness
-            console.log('shouldTriggerAutoFill: false - too soon since last trigger', {
-                timeSinceLastTrigger,
-                minimumWait: 1500,
-                lastTrigger: new Date(lastTriggerTimeRef.current).toISOString()
-            });
             return false;
         }
 
@@ -205,13 +195,6 @@ export function useAutoFillWatcher(
         );
 
         const shouldTrigger = highPriorityChanged || filledFields.length >= requireMinimumFields;
-        console.log('shouldTriggerAutoFill:', shouldTrigger, {
-            highPriorityChanged,
-            filledFieldsCount: filledFields.length,
-            requireMinimumFields,
-            changedFields,
-            filledFields
-        });
 
         // Trigger if high-priority field changed or enough fields filled
         return shouldTrigger;
@@ -229,11 +212,11 @@ export function useAutoFillWatcher(
     // Debounced auto-fill trigger
     const debouncedTriggerAutoFill = useCallback((data: PerformanceData) => {
         if (!sheetId) {
-            console.log('debouncedTriggerAutoFill: no sheetId');
+
             return;
         }
 
-        console.log('debouncedTriggerAutoFill: setting up timer', { debounceMs });
+
 
         // Clear existing timer
         if (debounceTimerRef.current) {
@@ -243,10 +226,10 @@ export function useAutoFillWatcher(
         // Set new timer
         debounceTimerRef.current = setTimeout(async () => {
             try {
-                console.log('debouncedTriggerAutoFill: executing autofill');
+
                 await triggerAutoFill(data, sheetId);
                 lastTriggerTimeRef.current = Date.now();
-                console.log('debouncedTriggerAutoFill: autofill completed successfully');
+
             } catch (error) {
                 console.warn('Auto-fill trigger failed:', error);
             }
@@ -284,11 +267,6 @@ export function useAutoFillWatcher(
 
         // Log changes for debugging
         if (process.env.NODE_ENV === 'development') {
-            console.log('Auto-fill watcher:', {
-                changedFields,
-                dataScore: `${dataScore.toFixed(1)}%`,
-                sufficientData: checkSufficientData(performanceData)
-            });
         }
 
         // Check if auto-fill should be triggered

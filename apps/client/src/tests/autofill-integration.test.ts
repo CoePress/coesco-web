@@ -226,7 +226,7 @@ export class AutofillIntegrationTests {
    * Validate that suggestions are engineering-safe and will pass calculations
    */
   private static validateSuggestions(suggestions: Record<string, any>): void {
-    console.log("\n✅ Validating suggestions:");
+    console.log("\nValidating suggestions:");
 
     for (const [fieldPath, value] of Object.entries(suggestions)) {
       // Basic validation
@@ -244,7 +244,7 @@ export class AutofillIntegrationTests {
    * Run all test scenarios
    */
   static runAllTests(): void {
-    console.log("🚀 Running Comprehensive Autofill Integration Tests\n");
+    console.log("Running Comprehensive Autofill Integration Tests\n");
 
     try {
       this.testBasicMaterialSpecsAutofill();
@@ -253,9 +253,9 @@ export class AutofillIntegrationTests {
       this.testCoilWeightSyncAutofill();
       this.testHighPriorityFieldAutofill();
 
-      console.log("\n✅ All tests completed successfully!");
+      console.log("\nAll tests completed successfully!");
     } catch (error) {
-      console.error("\n❌ Test failed:", error);
+      console.error("\nTest failed:", error);
     }
   }
 }

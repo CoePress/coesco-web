@@ -75,7 +75,7 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 	// Override delete to cascade delete associated links and version
 	async delete(id: string, tx?: any) {
-		console.log('🗑️ Deleting performance sheet:', id);
+
 
 		// Use a transaction to ensure atomicity
 		const execute = async (client: any) => {
@@ -85,33 +85,33 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				select: { versionId: true, deletedAt: true }
 			});
 
-			console.log('📋 Found sheet:', sheet);
+
 
 			if (!sheet) {
-				console.error('❌ Sheet not found:', id);
+				console.error('Sheet not found:', id);
 				throw new Error(`PerformanceSheet ${id} not found`);
 			}
 
 			if (sheet.deletedAt) {
-				console.warn('⚠️ Sheet already deleted:', id);
+				console.warn('Sheet already deleted:', id);
 				return { success: true, message: 'Sheet already deleted' };
 			}
 
 			// Delete all associated PerformanceSheetLink records (soft delete)
-			console.log('🔗 Deleting associated links...');
+
 			const linksResult = await client.performanceSheetLink.updateMany({
 				where: { performanceSheetId: id },
 				data: { deletedAt: new Date() }
 			});
-			console.log(`✅ Deleted ${linksResult.count} links`);
+			console.log(`Deleted ${linksResult.count} links`);
 
 			// Delete the PerformanceSheet itself (soft delete)
-			console.log('📄 Soft deleting sheet...');
+
 			await client.performanceSheet.update({
 				where: { id },
 				data: { deletedAt: new Date() }
 			});
-			console.log('✅ Sheet soft deleted');
+			console.log('Sheet soft deleted');
 
 			// Check if any other non-deleted sheets are using this version
 			const otherSheetsUsingVersion = await client.performanceSheet.count({
@@ -122,18 +122,18 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 				}
 			});
 
-			console.log(`📊 Other sheets using version: ${otherSheetsUsingVersion}`);
+
 
 			// If no other sheets are using this version, soft delete it
 			if (otherSheetsUsingVersion === 0) {
-				console.log('🗂️ Deleting version (no other sheets using it)...');
+
 				await client.performanceSheetVersion.update({
 					where: { id: sheet.versionId },
 					data: { deletedAt: new Date() }
 				});
-				console.log('✅ Version deleted');
+				console.log('Version deleted');
 			} else {
-				console.log('ℹ️ Version kept (still in use by other sheets)');
+
 			}
 		};
 		if (tx) {
@@ -141,7 +141,7 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 		} else {
 			await prisma.$transaction(execute);
 		}
-		console.log('✅ Delete transaction completed successfully');
+		console.log('Delete transaction completed successfully');
 		return { success: true };
 	}
 
@@ -924,7 +924,7 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 			return inputData;
 		} catch (error) {
-			console.error('❌ Failed to run Python calculations:', error);
+			console.error('Failed to run Python calculations:', error);
 			// Always return original data if calculations fail - NEVER lose user data
 			return inputData;
 		}

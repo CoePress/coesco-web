@@ -414,7 +414,7 @@ export class ComprehensiveAutofillCoverageTest {
       }
 
     } catch (error) {
-      console.error(`  ❌ ERROR in ${scenarioName}:`, error);
+      console.error(`  ERROR in ${scenarioName}:`, error);
     }
   }
 
@@ -453,7 +453,7 @@ export class ComprehensiveAutofillCoverageTest {
       const priority = AutofillTriggerService.getFieldPriority(fieldName);
       const triggeredTabs = AutofillTriggerService.getTriggeredTabs(fieldName, baseData);
 
-      console.log(`    Can trigger: ${canTrigger ? '✅' : '❌'}`);
+      console.log(`    Can trigger: ${canTrigger ? 'YES' : 'NO'}`);
       console.log(`    Priority: ${priority}`);
       console.log(`    Triggered tabs: ${triggeredTabs.join(', ') || 'none'}`);
     });
@@ -463,7 +463,7 @@ export class ComprehensiveAutofillCoverageTest {
    * Run the complete test suite
    */
   static runComprehensiveTest(): void {
-    console.log("🚀 Running Comprehensive Autofill Coverage Test\n");
+    console.log("Running Comprehensive Autofill Coverage Test\n");
     console.log("This test validates autofill coverage across ALL possible tab visibility scenarios");
     console.log("=".repeat(80));
 
@@ -475,11 +475,11 @@ export class ComprehensiveAutofillCoverageTest {
       this.testConfigurationDrivingFields();
 
       console.log("\n" + "=".repeat(80));
-      console.log("✅ Comprehensive autofill coverage test completed successfully!");
+      console.log("Comprehensive autofill coverage test completed successfully!");
       console.log("📈 All major scenarios have been validated for autofill coverage");
 
     } catch (error) {
-      console.error("\n❌ Comprehensive test failed:", error);
+      console.error("\nComprehensive test failed:", error);
     }
   }
 
@@ -511,7 +511,7 @@ export class ComprehensiveAutofillCoverageTest {
     this.validateScenario("Quick - Press Feed", pressFeedData);
     this.validateScenario("Quick - Standalone Feed", standaloneData);
 
-    console.log("\n✅ Quick validation completed!");
+    console.log("\nQuick validation completed!");
   }
 }
 

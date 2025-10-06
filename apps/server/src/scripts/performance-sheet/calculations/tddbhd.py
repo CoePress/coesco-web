@@ -144,7 +144,7 @@ def check_brake_press(brake_press_required, air_pressure):
     return "PASS" if brake_press_required <= air_pressure else "FAIL"
 
 def check_torque_required(torque_required, failsafe_holding_force):
-    return "PASS" if torque_required < failsafe_holding_force or failsafe_holding_force == 0 else "FAIL"
+    return "PASS" if torque_required < failsafe_holding_force else "FAIL"
 
 def check_tddbhd(reel_type, min_material_width_check, confirmed_min_width, rewind_torque_check, hold_down_force_check, brake_press_check, torque_required_check, hold_down_force_available):
     if reel_type.upper() == "PULLOFF":
@@ -189,7 +189,6 @@ def calculate_tbdbhd(data: tddbhd_input):
                 drive_torque = lookup_drive_torque(drive_key)
             else:
                 raise e
-        print(f"🔧 TDDBHD lookup: reel_model={data.reel_model}, air_clutch_input={data.air_clutch}, air_clutch_used={air_clutch}, hyd_drive={data.hyd_threading_drive}, drive_key={drive_key}", file=sys.stderr)
     except Exception as e:
         return f"ERROR: Lookup failed: {str(e)}"
 

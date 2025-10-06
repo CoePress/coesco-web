@@ -179,24 +179,19 @@ export function transformDataForCalculationEngine(data: any): any {
  * Debug log to show the transformation results
  */
 export function debugTransformation(original: any, transformed: any): void {
-  console.log('🔄 Backend Data Transformation Applied:');
+
 
   const originalMaterial = original?.common?.material;
   const transformedMaterial = transformed?.common?.material;
 
   if (originalMaterial && transformedMaterial) {
-    console.log('Material transformations:');
-    console.log(`  materialThickness: "${originalMaterial.materialThickness}" (${typeof originalMaterial.materialThickness}) → ${transformedMaterial.materialThickness} (${typeof transformedMaterial.materialThickness})`);
-    console.log(`  maxYieldStrength: "${originalMaterial.maxYieldStrength}" (${typeof originalMaterial.maxYieldStrength}) → ${transformedMaterial.maxYieldStrength} (${typeof transformedMaterial.maxYieldStrength})`);
-    console.log(`  coilWidth: "${originalMaterial.coilWidth}" (${typeof originalMaterial.coilWidth}) → ${transformedMaterial.coilWidth} (${typeof transformedMaterial.coilWidth})`);
+    // Material transformation logging removed
   }
 
   const originalFeedRates = original?.common?.feedRates?.average;
   const transformedFeedRates = transformed?.common?.feedRates?.average;
 
   if (originalFeedRates && transformedFeedRates) {
-    console.log('Feed rate transformations:');
-    console.log(`  average.spm: "${originalFeedRates.spm}" (${typeof originalFeedRates.spm}) → ${transformedFeedRates.spm} (${typeof transformedFeedRates.spm})`);
-    console.log(`  average.length: "${originalFeedRates.length}" (${typeof originalFeedRates.length}) → ${transformedFeedRates.length} (${typeof transformedFeedRates.length})`);
+    // Feed rate transformation logging removed
   }
 }

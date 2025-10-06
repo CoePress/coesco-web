@@ -256,7 +256,6 @@ def main():
                 "backplate_diameter": parse_float_with_default(data, ["common", "equipment", "reel", "backplate", "diameter"], "reel", "backplate_diameter"),
             }
             
-            print(f"🔧 TDDBHD main calculation: reel_model={reel_model}, air_clutch={air_clutch_value}, hyd_threading_drive={hyd_threading_drive_value}", file=sys.stderr)
             tddbhd_obj = tddbhd_input(**tddbhd_data)
             tddbhd_result = calculate_tbdbhd(tddbhd_obj)
         except Exception as e:

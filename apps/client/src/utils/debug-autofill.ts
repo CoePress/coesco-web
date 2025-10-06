@@ -9,7 +9,7 @@ import { ValidationAwareAutofillService } from "@/services/validation-aware-auto
 import { getVisibleTabs } from "@/utils/tab-visibility";
 
 export const debugAutofillIssue = () => {
-  console.log("🔍 Debug: Autofill Issue Analysis");
+  console.log("Autofill Issue Analysis");
 
   // User's actual data from the issue
   const userData = {
@@ -107,7 +107,7 @@ export const debugAutofillIssue = () => {
   const visibleTabs = getVisibleTabs(userData);
   console.log("Visible tabs:", visibleTabs.map(tab => tab.value));
 
-  console.log("\n🎯 Step 2: Test changed fields from watcher");
+  console.log("\nStep 2: Test changed fields from watcher");
   const changedFields = [
     "common.equipment.straightener.model",
     "common.equipment.feed.model",
@@ -128,13 +128,13 @@ export const debugAutofillIssue = () => {
     const hasSufficientData = AutofillTriggerService.hasSufficientDataForAutofill(userData);
     const triggeredTabs = AutofillTriggerService.getTriggeredTabs(fieldName, userData);
 
-    console.log(`  Can trigger: ${canTrigger ? '✅' : '❌'}`);
+    console.log(`  Can trigger: ${canTrigger ? 'YES' : 'NO'}`);
     console.log(`  Priority: ${priority} (${isHighPriority ? 'HIGH' : 'low'})`);
-    console.log(`  Sufficient data: ${hasSufficientData ? '✅' : '❌'}`);
+    console.log(`  Sufficient data: ${hasSufficientData ? 'YES' : 'NO'}`);
     console.log(`  Triggered tabs: ${triggeredTabs.join(', ') || 'none'}`);
 
     const shouldTriggerAutofill = canTrigger && (isHighPriority || hasSufficientData);
-    console.log(`  Should trigger autofill: ${shouldTriggerAutofill ? '✅' : '❌'}`);
+    console.log(`  Should trigger autofill: ${shouldTriggerAutofill ? 'YES' : 'NO'}`);
 
     if (shouldTriggerAutofill) {
       const strategy = AutofillTriggerService.getAutofillStrategy(fieldName, userData);
@@ -148,19 +148,19 @@ export const debugAutofillIssue = () => {
     }
   });
 
-  console.log("\n📋 Step 3: Test comprehensive autofill");
+  console.log("\nStep 3: Test comprehensive autofill");
   const comprehensiveSuggestions = ValidationAwareAutofillService.getComprehensiveAutofill(userData, visibleTabs);
   console.log(`Comprehensive suggestions count: ${Object.keys(comprehensiveSuggestions).length}`);
   console.log("Comprehensive suggestions:", comprehensiveSuggestions);
 
-  console.log("\n🔧 Step 4: Test tab-specific autofill");
+  console.log("\nStep 4: Test tab-specific autofill");
   visibleTabs.forEach(tab => {
     const tabSuggestions = ValidationAwareAutofillService.getPassingCalculationValues(userData, tab.value);
     const hasMinData = ValidationAwareAutofillService.hasMinimumRequiredData(userData, tab.value);
     console.log(`${tab.value}: ${Object.keys(tabSuggestions).length} suggestions, hasMinData: ${hasMinData}`);
   });
 
-  console.log("\n💡 Step 5: Check for empty fields that should be filled");
+  console.log("\nStep 5: Check for empty fields that should be filled");
   const allFieldPaths = [
     'rfq.dates.date',
     'rfq.coil.slitEdge',
@@ -177,7 +177,7 @@ export const debugAutofillIssue = () => {
     console.log(`${fieldPath}: "${currentValue}" (meaningful: ${hasMeaningfulValue})`);
   });
 
-  console.log("\n✅ Debug analysis complete!");
+  console.log("\nDebug analysis complete!");
 };
 
 // Usage: Call this function in your component or console to debug autofill issues

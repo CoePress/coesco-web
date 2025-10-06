@@ -417,7 +417,7 @@ const validateField = (name: string, value: any): string | null => {
     return "Invalid phone format";
   }
   if (name.includes("zip") && value && value.length >= 3 && !/^([A-Za-z0-9\- ]{3,10})$/.test(value)) {
-    console.log('Validating zip code:', value);
+
     return "Invalid ZIP/Postal code format";
   }
   return null;
@@ -527,13 +527,13 @@ export const usePerformanceDataService = (
 
     // If user just stopped editing and we need final calculation, trigger it
     if (wasEditing && !isEditing && needsFinalCalculationRef.current) {
-      console.log('🔄 User stopped editing, triggering final calculation save...');
+
 
       // Delay slightly to ensure any pending changes are processed
       setTimeout(() => {
         const currentData = localDataRef.current;
         if (currentData && performanceSheetIdRef.current) {
-          console.log('💾 Executing final calculation save');
+
           debouncedSave(currentData);
         }
       }, 500); // Small delay to ensure all field changes are processed
@@ -550,19 +550,18 @@ export const usePerformanceDataService = (
   // Debounced function for calculations and save (consolidated to reduce API calls)
   const debouncedSave = useRef(
     debounce(async (dataToSave: PerformanceData) => {
-      console.log('💾 Debounced save triggered');
+
 
       // Use refs to get current values
       const currentSheetId = performanceSheetIdRef.current;
       const currentIsEditing = isEditingRef.current;
 
       if (!currentSheetId) {
-        console.log('❌ Save blocked: no sheet ID');
         return;
       }
 
       // Don't block saves just because isEditing is false - autofill needs to save too
-      console.log('💾 Proceeding with save:', { performanceSheetId: currentSheetId, isEditing: currentIsEditing });
+
 
       try {
         const response = await api.patch(`${endpoint}/${currentSheetId}`, { data: dataToSave });
@@ -573,16 +572,14 @@ export const usePerformanceDataService = (
           const mergedData = deepMerge(dataToSave, response);
           setPerformanceData(mergedData);
           setLocalData(mergedData);
-          console.log('✅ Save successful, data merged (user not editing)');
           needsFinalCalculationRef.current = false; // Clear flag since calculations were applied
         } else if (response) {
-          console.log('✅ Save successful, calculations skipped (user is editing)');
           // Mark that we need final calculation when user stops editing
           needsFinalCalculationRef.current = true;
 
           const focusedField = focusedFieldRef.current;
           if (focusedField) {
-            console.log(`🎯 User is focused on field: ${focusedField}, skipping merge to preserve input`);
+
           }
         }
 
@@ -598,7 +595,7 @@ export const usePerformanceDataService = (
         });
 
       } catch (error) {
-        console.error('❌ Error running calculations and saving performance data:', error);
+        console.error('Error running calculations and saving performance data:', error);
         setFieldErrors(prev => ({
           ...prev,
           _general: 'Failed to save changes. Please try again.'
@@ -610,7 +607,7 @@ export const usePerformanceDataService = (
   // Debounced function for autofill calculations
   const debouncedAutofill = useRef(
     debounce(async (dataForAutofill: PerformanceData) => {
-      console.log('🪄 Debounced autofill triggered');
+
 
       const currentSheetId = performanceSheetIdRef.current;
       if (!currentSheetId) return;
@@ -725,7 +722,7 @@ export const usePerformanceDataService = (
     const recentChanges = Object.keys(pendingChangesRef.current);
     if (recentChanges.length === 0) return;
 
-    console.log('🔍 Autofill check - pending changes:', recentChanges);
+
 
     // Find the most recent high-priority change
     let shouldTriggerAutofill = false;
@@ -736,33 +733,32 @@ export const usePerformanceDataService = (
       const isHighPriority = AutofillTriggerService.getFieldPriority(fieldName) >= 70;
       const hasSufficientData = AutofillTriggerService.hasSufficientDataForAutofill(currentData);
 
-      console.log(`📋 Field ${fieldName}: canTrigger=${canTrigger}, isHighPriority=${isHighPriority}, hasSufficientData=${hasSufficientData}`);
+
 
       if (canTrigger && (isHighPriority || hasSufficientData)) {
         shouldTriggerAutofill = true;
         triggeringField = fieldName;
-        console.log(`✅ Autofill triggered by ${fieldName}`);
         break;
       }
     }
 
     if (shouldTriggerAutofill) {
-      console.log('🪄 Triggering autofill from field:', triggeringField);
+
 
       // Get visible tabs to determine what to autofill
       const visibleTabs = getVisibleTabs(currentData);
-      console.log('👁️ Visible tabs:', visibleTabs.map(tab => tab.value));
+
 
       // Get autofill strategy for this field change
       const strategy = AutofillTriggerService.getAutofillStrategy(triggeringField, currentData);
-      console.log('📋 Autofill strategy:', strategy);
+
 
       // Apply immediate suggestions (for simple fields)
       const suggestions = AutofillTriggerService.getSuggestedAutofillFields(currentData, visibleTabs);
-      console.log('💡 Suggestions generated:', Object.keys(suggestions).length, suggestions);
+
 
       if (Object.keys(suggestions).length > 0) {
-        console.log('🎯 Applying autofill suggestions:', suggestions);
+
 
         let updatedWithSuggestions = currentData;
         let hasChanges = false;
@@ -773,7 +769,7 @@ export const usePerformanceDataService = (
           const currentValue = AutofillTriggerService.getNestedValue(currentData, fieldPath);
           const isEmpty = !AutofillTriggerService.hasMeaningfulValue(currentValue);
 
-          console.log(`🔍 Field ${fieldPath}: currentValue="${currentValue}", isEmpty=${isEmpty}, suggestedValue="${suggestedValue}"`);
+
 
           if (isEmpty) {
             updatedWithSuggestions = setNestedValue(updatedWithSuggestions, fieldPath, suggestedValue);
@@ -783,27 +779,27 @@ export const usePerformanceDataService = (
         }
 
         if (hasChanges) {
-          console.log('✅ Applied suggestions to fields:', appliedSuggestions);
+
           localDataRef.current = updatedWithSuggestions;
           setLocalData(updatedWithSuggestions);
           setPerformanceData(updatedWithSuggestions);
         } else {
-          console.log('⚠️ No changes applied - all fields already have values');
+
         }
       } else {
-        console.log('⚠️ No suggestions generated');
+
       }
 
       // Trigger backend calculations for calculated tabs
       if (strategy.calculated.length > 0 && performanceSheetId) {
-        console.log('🔄 Triggering backend calculations for tabs:', strategy.calculated);
+
         debouncedAutofill(currentData);
       }
 
       // Clear processed changes
       pendingChangesRef.current = {};
     } else {
-      console.log('❌ Autofill not triggered - conditions not met');
+
     }
   }, [isEditing, setPerformanceData, performanceSheetId, triggerAutoFill]);
 

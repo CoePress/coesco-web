@@ -135,7 +135,6 @@ const PerformanceSheetContent = () => {
           `/lock/status/performance-sheets/${performanceSheetId}`
         );
         // Lock status fetched but not stored in state for now
-        console.log("Lock status:", data);
       } catch (err) {
         console.error("Failed to fetch lock status:", err);
       }

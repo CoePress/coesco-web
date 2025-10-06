@@ -9,7 +9,7 @@ import { ValidationAwareAutofillService } from "@/services/validation-aware-auto
 
 // Test the user's exact data scenario
 export const quickAutofillTest = () => {
-  console.log("🔧 Quick Autofill Test");
+  console.log("Quick Autofill Test");
 
   // Simulate the user's data with correct types
   const testData = {

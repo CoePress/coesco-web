@@ -283,7 +283,7 @@ def generate_minimum_tddbhd_values(data: Dict[str, Any]) -> Dict[str, Any]:
                         }
                     },
                     "dragBrake": {
-                        "model": "MB2000",
+                        "model": "MB4000",  # Use higher capacity brake model
                         "quantity": 1,
                         "psiAirRequired": 80,
                         "holdingForce": 1200
@@ -327,7 +327,7 @@ def generate_minimum_tddbhd_values(data: Dict[str, Any]) -> Dict[str, Any]:
                 air_pressure=80.0,
                 friction=0.35,
                 decel=8.0,
-                brake_model="Failsafe - Single Stage",  # Use valid brake model from BRAKE_MODEL_OPTIONS
+                brake_model="Failsafe - Double Stage",  # Use double stage for higher holding force to pass torque required check
                 brake_qty=1,
                 hold_down_assy="LD_NARROW",  # Use valid holddown assembly for CPR-040 (H1 family)
                 cylinder="4in Air",  # Use valid cylinder type for H1 family

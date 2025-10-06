@@ -59,7 +59,7 @@ export class LazyLoadingMonitor {
 
         // Log performance in development
         if (process.env.NODE_ENV === 'development') {
-            console.log(`🚀 Lazy load: ${componentName} loaded in ${loadTime.toFixed(2)}ms`);
+            console.log(`Lazy load: ${componentName} loaded in ${loadTime.toFixed(2)}ms`);
         }
     }
 

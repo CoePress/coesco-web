@@ -1284,32 +1284,17 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
     try {
       // Always update local state first for immediate UI feedback
       const updatedData = deepMerge(performanceDataRef.current, updates);
-      console.log('updatePerformanceData: updating local state', {
-        updateKeys: Object.keys(updates),
-        sampleUpdatedData: {
-          'rfq.dates.date': updatedData.rfq?.dates?.date,
-          'tddbhd.coil.coilOD': updatedData.tddbhd?.coil?.coilOD,
-          'feed.feed.accelerationRate': updatedData.feed?.feed?.accelerationRate
-        }
-      });
       setPerformanceData(updatedData);
 
       if (shouldSave && performanceSheetId) {
         // Send updates to backend for calculations
-        console.log('updatePerformanceData: sending to backend', endpoint);
+
         const response = await api.patch(endpoint, { data: updatedData });
 
         if (response) {
           // Backend response should already be in PerformanceData format
           // Just deep merge it with our current data
           const finalData = deepMerge(updatedData, response);
-          console.log('updatePerformanceData: backend response merged', {
-            sampleFinalData: {
-              'rfq.dates.date': finalData.rfq?.dates?.date,
-              'tddbhd.coil.coilOD': finalData.tddbhd?.coil?.coilOD,
-              'feed.feed.accelerationRate': finalData.feed?.feed?.accelerationRate
-            }
-          });
           setPerformanceData(finalData);
           return finalData;
         }
