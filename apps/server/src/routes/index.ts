@@ -21,7 +21,7 @@ import quoteRoutes from "./quote.routes";
 import systemRoutes from "./system.routes";
 import tagRoutes from "./tag.routes";
 import testRoutes from "./test.route";
-import userSettingsRoutes from "./user-settings.routes";
+import settingsRoutes from "./settings.routes";
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.use("/postal-codes", postalCodeRoutes);
 router.use("/permissions", permissionRoutes);
 router.use("/production", productionRoutes);
 router.use("/quotes", quoteRoutes);
-router.use("/settings", userSettingsRoutes);
+router.use("/settings", settingsRoutes);
 router.use("/tags", tagRoutes);
 
 export default router;

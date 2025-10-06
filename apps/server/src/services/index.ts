@@ -18,6 +18,7 @@ import { LockingService } from "./core/locking.service";
 import { MCPService } from "./core/mcp.service";
 import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
+import { SettingsService } from "./business/settings.service";
 
 // Business
 export const agentService = new AgentService();
@@ -28,6 +29,7 @@ export const locationService = new LocationService();
 export const machiningService = new MachineMonitorService();
 export const microsoftService = new MicrosoftService();
 export const quotingService = new QuotingService();
+export const settingsService = new SettingsService();
 
 // Core
 export const authService = new AuthService();

@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { userSettingsService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
 
-export class UserSettingsController {
+export class SettingsController {
   createUserSettings = asyncWrapper(async (req: Request, res: Response) => {
     const result = await userSettingsService.create(req.body);
     res.status(201).json(result);
