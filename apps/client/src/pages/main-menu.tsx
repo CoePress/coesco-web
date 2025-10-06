@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Modal } from "@/components";
 import modules from "@/config/modules";
-import { Moon, Sun, LogOut, Code, MessageCircle } from "lucide-react";
+import { Moon, Sun, LogOut, Code, MessageCircle, SettingsIcon } from "lucide-react";
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth, AuthContext } from "@/contexts/auth.context";
 import { useApi } from "@/hooks/use-api";
@@ -149,6 +149,13 @@ const MainMenu = () => {
         </Button>
         <Button
           variant="secondary-outline"
+          onClick={() => navigate("/settings")}
+          className="w-32">
+          <SettingsIcon size={16} />
+          Settings
+        </Button>
+        <Button
+          variant="secondary-outline"
           onClick={handleLogout}
           className="w-32">
           <LogOut size={16} />
@@ -172,6 +179,13 @@ const MainMenu = () => {
             className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             <span className="text-xs">Theme</span>
+          </button>
+
+          <button
+            onClick={() => navigate("/settings")}
+            className="flex flex-col items-center gap-1 p-2 rounded text-text-muted transition-colors">
+            <SettingsIcon size={20} />
+            <span className="text-xs">Settings</span>
           </button>
 
           <button

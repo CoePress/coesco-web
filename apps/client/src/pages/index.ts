@@ -7,7 +7,6 @@ export { default as Logs } from "./admin/logs";
 export { default as Permissions } from "./admin/permissions";
 export { default as Reports } from "./admin/reports";
 export { default as Sessions } from "./admin/sessions";
-export { default as Settings } from "./admin/settings";
 export { default as Login } from "./login";
 export { default as MainMenu } from "./main-menu";
 export { default as NotFound } from "./not-found";
@@ -42,3 +41,4 @@ export { default as WarehouseDashboard } from "./warehouse/dashboard";
 export { default as Inventory } from "./warehouse/inventory";
 export { default as Transactions } from "./warehouse/transactions";
 export { default as Timezone } from "./sandbox/timezone";
+export { default as Settings } from "./settings"

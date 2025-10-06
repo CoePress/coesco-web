@@ -6,7 +6,7 @@ import MainMenu from "./pages/main-menu";
 import NotFound from "./pages/not-found";
 import Login from "./pages/login";
 import ChatPage from "./pages/utility/chat";
-import { RecentChats, Resources } from "./pages";
+import { RecentChats, Resources, Settings } from "./pages";
 import { __dev__ } from "./config/env";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
@@ -61,11 +61,18 @@ const App = () => {
           element={<Login />}
         />
       </Route>
+      <Route element={<PublicRoute />}>
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+      </Route>
       <Route element={<ProtectedRoute withLayout={false} />}>
         <Route
           path="/"
           element={<MainMenu />}
         />
+
         <Route
           path="*"
           element={<NotFound />}
@@ -97,8 +104,13 @@ const App = () => {
               path="/chat/c/:id"
               element={<ChatPage />}
             />
+            
           </>
         )}
+        <Route
+          path="/settings"
+          element={<Settings />}
+        />
         {modules
           .filter((module) => module.slug === "admin")
           .map((module) => (
