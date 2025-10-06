@@ -1,4 +1,5 @@
 import { PRIORITY_CONFIG, VALID_EQUIPMENT_TYPES, VALID_QUOTE_TYPES, VALID_LEAD_SOURCES, VALID_JOURNEY_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES } from './constants';
+import { useState, useEffect } from 'react';
 
 export const getPriorityConfig = (priority: string) => {
   const p = String(priority ?? "").toUpperCase();
@@ -192,4 +193,100 @@ export const fetchEmployeeByNumber = async (api: any, empNum: number): Promise<{
     console.error('Error fetching employee data:', error);
     return null;
   }
+};
+
+export const useTags = (
+  api: any,
+  parentTable: string,
+  parentId: string | number | undefined,
+  employee: any
+) => {
+  const [tags, setTags] = useState<any[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      if (!parentId) return;
+
+      setIsLoading(true);
+      try {
+        const tagData = await api.get('/tags', {
+          filter: JSON.stringify({
+            parentTable,
+            parentId: String(parentId)
+          })
+        });
+
+        if (tagData?.success && Array.isArray(tagData.data)) {
+          setTags(tagData.data);
+        }
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+        setTags([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTags();
+  }, [parentId, parentTable]);
+
+  const handleAddTag = async () => {
+    if (!newTagInput.trim() || !parentId) return;
+
+    setIsSaving(true);
+    try {
+      const tagDescription = newTagInput.trim().toUpperCase();
+
+      const newTag = await api.post('/tags', {
+        description: tagDescription,
+        parentTable,
+        parentId: String(parentId),
+        createdBy: employee?.initials || 'unknown'
+      });
+
+      if (newTag?.success && newTag.data) {
+        setTags(prev => [...prev, newTag.data]);
+        setNewTagInput("");
+      }
+    } catch (error) {
+      console.error("Error adding tag:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string) => {
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/tags/${tagId}`);
+
+      if (result !== null) {
+        setTags(prev => prev.filter(tag => tag.id !== tagId));
+      }
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddTag();
+    }
+  };
+
+  return {
+    tags,
+    newTagInput,
+    setNewTagInput,
+    isLoading,
+    isSaving,
+    handleAddTag,
+    handleDeleteTag,
+    handleKeyPress
+  };
 };

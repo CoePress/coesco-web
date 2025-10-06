@@ -11,8 +11,9 @@ import DatePicker from "@/components/ui/date-picker";
 import { AddAddressModal } from "@/components/modals/add-address-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
 import { ContactType } from "@/types/enums";
-import { fetchAvailableRsms, fetchEmployeeByNumber, Employee } from "./journeys/utils";
+import { fetchAvailableRsms, fetchEmployeeByNumber, Employee, useTags } from "./journeys/utils";
 
 const CREDIT_STATUS_OPTIONS = [
   { value: 'A', label: 'Call Accouting' },
@@ -50,10 +51,91 @@ const getContactTypeColor = (type: ContactType | string | null | undefined): str
   }
 };
 
+function CompanyTagsTab({ company, employee }: { company: any | null; employee: any }) {
+  const api = useApi();
+
+  const {
+    tags,
+    newTagInput,
+    setNewTagInput,
+    isLoading,
+    isSaving,
+    handleAddTag,
+    handleDeleteTag,
+    handleKeyPress
+  } = useTags(api, 'companies', company?.id, employee);
+
+  if (!company) return null;
+
+  return (
+    <section className="flex-1 space-y-2">
+      <div
+        className="bg-foreground rounded-lg border border-border p-4"
+        style={{ boxShadow: `0 1px 3px var(--shadow)` }}>
+        <h4 className="font-semibold text-text mb-4">Company Tags</h4>
+
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background text-text"
+              placeholder="Enter tag name..."
+              value={newTagInput}
+              onChange={(e) => setNewTagInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isSaving}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAddTag}
+              disabled={!newTagInput.trim() || isSaving}
+            >
+              {isSaving ? "Adding..." : "Add Tag"}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {isLoading ? (
+              <div className="text-sm text-text-muted">Loading tags...</div>
+            ) : tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="inline-flex items-center gap-2 bg-primary text-white px-3 py-1 rounded-full text-sm"
+                  >
+                    <span>{tag.description}</span>
+                    <button
+                      onClick={() => handleDeleteTag(tag.id)}
+                      disabled={isSaving}
+                      className="hover:bg-red-600 rounded-full p-1 transition-colors"
+                      title="Remove tag"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-text-muted">No tags added to this company yet.</div>
+            )}
+          </div>
+
+          <div className="text-xs text-text-muted mt-4">
+            Tags are automatically converted to uppercase and help categorize and organize companies.
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const CompanyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const api = useApi();
+  const { employee } = useAuth();
   const [company, setCompany] = useState<any>(null);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [companyJourneys, setCompanyJourneys] = useState<any[]>([]);
@@ -68,7 +150,7 @@ const CompanyDetails = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [tempNotes, setTempNotes] = useState<string>('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'addresses' | 'credit' | 'interactions' | 'notes' | 'tags'>('overview');
   
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [editingCallData, setEditingCallData] = useState<any>({});
@@ -1232,6 +1314,15 @@ const CompanyDetails = () => {
                   : 'border-transparent text-text-muted hover:text-primary'
               }`}>
               Notes
+            </button>
+            <button
+              onClick={() => setActiveTab('tags')}
+              className={`pb-2 border-b-2 font-semibold cursor-pointer ${
+                activeTab === 'tags'
+                  ? 'border-primary/50 text-primary'
+                  : 'border-transparent text-text-muted hover:text-primary'
+              }`}>
+              Tags
             </button>
           </div>
         </div>
@@ -2762,6 +2853,8 @@ const CompanyDetails = () => {
                 </div>
               </div>
             </section>
+          ) : activeTab === 'tags' ? (
+            <CompanyTagsTab company={company} employee={employee} />
           ) : null
         }</div>
       </main>

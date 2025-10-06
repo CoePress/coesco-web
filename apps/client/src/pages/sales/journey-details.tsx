@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
 import { formatCurrency, formatDate } from "@/utils";
 import { STAGES, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
-import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
+import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchDemographicCategory, Employee, useTags } from "./journeys/utils";
 import { COMPETITION_OPTIONS } from "./journeys/types";
 
 type StageId = (typeof STAGES)[number]["id"];
@@ -1985,86 +1985,18 @@ function JourneyHistoryTab({ journey }: { journey: any | null }) {
 }
 
 function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: any }) {
-  const [tags, setTags] = useState<any[]>([]);
-  const [newTagInput, setNewTagInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const api = useApi();
 
-  useEffect(() => {
-    const fetchTags = async () => {
-      if (!journey?.ID && !journey?.id) return;
-      
-      setIsLoading(true);
-      try {
-        const journeyId = journey.ID || journey.id;
-        const tagData = await api.get('/tags', {
-          filter: JSON.stringify({
-            parentTable: 'journeys',
-            parentId: journeyId
-          })
-        });
-        
-        if (tagData?.success && Array.isArray(tagData.data)) {
-          setTags(tagData.data);
-        }
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-        setTags([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTags();
-  }, [journey?.ID, journey?.id]);
-
-  const handleAddTag = async () => {
-    if (!newTagInput.trim() || !journey?.ID && !journey?.id) return;
-    
-    setIsSaving(true);
-    try {
-      const journeyId = journey.ID || journey.id;
-      const tagDescription = newTagInput.trim().toUpperCase();
-      
-      const newTag = await api.post('/tags', {
-        description: tagDescription,
-        parentTable: 'journeys',
-        parentId: journeyId,
-        createdBy: employee?.initials || 'unknown'
-      });
-      
-      if (newTag?.success && newTag.data) {
-        setTags(prev => [...prev, newTag.data]);
-        setNewTagInput("");
-      }
-    } catch (error) {
-      console.error("Error adding tag:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteTag = async (tagId: string) => {
-    setIsSaving(true);
-    try {
-      const result = await api.delete(`/tags/${tagId}`);
-      
-      if (result !== null) {
-        setTags(prev => prev.filter(tag => tag.id !== tagId));
-      }
-    } catch (error) {
-      console.error("Error deleting tag:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleAddTag();
-    }
-  };
+  const {
+    tags,
+    newTagInput,
+    setNewTagInput,
+    isLoading,
+    isSaving,
+    handleAddTag,
+    handleDeleteTag,
+    handleKeyPress
+  } = useTags(api, 'journeys', journey?.ID || journey?.id, employee);
 
   if (!journey) return null;
 

@@ -118,7 +118,7 @@ const Pipeline = () => {
       const raw = await refetchApi.get('/legacy/base/Journey', {
         sort: 'CreateDT',
         order: 'desc',
-        limit: 100,
+        limit: 150,
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
       });
 
