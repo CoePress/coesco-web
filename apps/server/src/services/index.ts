@@ -9,6 +9,7 @@ import { LocationService } from "./business/location.service";
 import { MachineMonitorService } from "./business/machining.service";
 import { MicrosoftService } from "./business/microsoft.service";
 import { QuotingService } from "./business/quoting.service";
+import { SettingsService } from "./business/settings.service";
 import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { EmailService } from "./core/email.service";
@@ -28,6 +29,7 @@ export const locationService = new LocationService();
 export const machiningService = new MachineMonitorService();
 export const microsoftService = new MicrosoftService();
 export const quotingService = new QuotingService();
+export const settingsService = new SettingsService();
 
 // Core
 export const authService = new AuthService();

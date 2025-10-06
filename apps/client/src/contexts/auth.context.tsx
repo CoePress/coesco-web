@@ -24,6 +24,8 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const PUBLIC_ROUTES = new Set(["/login", "/callback", "/forgot-password"]);
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUserState] = useState<any>(null);
   const [employee, setEmployeeState] = useState<any>(null);
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const checkSession = async () => {
-      if (location.pathname === "/login" || location.pathname === "/callback") {
+      if (PUBLIC_ROUTES.has(location.pathname)) {
         setIsLoading(false);
         return;
       }
@@ -54,7 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       try {
         const response = await get("/auth/session");
-        
+
         if (response) {
           setUserState(response.user);
           setEmployeeState(response.employee);
@@ -67,7 +69,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setEmployeeState(null);
         hasCheckedSession.current = true;
 
-        if (location.pathname !== "/login") {
+        if (!PUBLIC_ROUTES.has(location.pathname)) {
           navigate("/login");
         }
       } finally {

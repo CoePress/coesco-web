@@ -5,7 +5,7 @@ import path from "node:path";
 import zlib from "node:zlib";
 
 import { env } from "@/config/env";
-import { agentService } from "@/services";
+import { agentService, jiraService } from "@/services";
 
 export class SystemController {
   async getLogFiles(req: Request, res: Response, next: NextFunction) {
@@ -48,6 +48,30 @@ export class SystemController {
     try {
       const { employeeId, conversationId, message } = req.body;
       const result = await agentService.processMessage(employeeId, conversationId, message);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async sendBugReport(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { description, userEmail, userName, screenshot, url, userAgent } = req.body;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const title = userName ? `Bug Report - ${userName} - ${dateStr}` : `Bug Report - ${dateStr}`;
+
+      const result = await jiraService.createBugIssue({
+        title,
+        description,
+        userEmail,
+        userName,
+        screenshot,
+        url,
+        userAgent,
+      });
       res.status(200).json(result);
     }
     catch (error) {

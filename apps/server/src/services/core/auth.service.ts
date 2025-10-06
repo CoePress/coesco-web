@@ -14,6 +14,8 @@ import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
 
+import { emailService } from "..";
+
 export class AuthService {
   private msalClient: ConfidentialClientApplication;
 
@@ -337,6 +339,196 @@ export class AuthService {
         });
       }
     }
+  }
+
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    const employee = await prisma.employee.findUnique({
+      where: { email },
+      include: { user: true },
+    });
+
+    if (!employee || !employee.user) {
+      return {
+        success: true,
+        message: "If an account exists with this email, a password reset link has been sent.",
+      };
+    }
+
+    const resetToken = randomUUID();
+    const expiresAt = new Date(Date.now() + 3600000);
+
+    await prisma.token.create({
+      data: {
+        userId: employee.user.id,
+        type: "PASSWORD_RESET",
+        token: resetToken,
+        expiresAt,
+      },
+    });
+
+    await emailService.sendPasswordReset({
+      to: email,
+      resetToken,
+      firstName: employee.firstName,
+    });
+
+    return {
+      success: true,
+      message: "If an account exists with this email, a password reset link has been sent.",
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!token || !newPassword) {
+      return {
+        success: false,
+        error: "Token and new password are required",
+      };
+    }
+
+    if (newPassword.length < 8) {
+      return {
+        success: false,
+        error: "Password must be at least 8 characters long",
+      };
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one uppercase letter",
+      };
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one lowercase letter",
+      };
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one number",
+      };
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one special character",
+      };
+    }
+
+    const tokenRecord = await prisma.token.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!tokenRecord || tokenRecord.type !== "PASSWORD_RESET") {
+      return {
+        success: false,
+        error: "Invalid or expired reset token",
+      };
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      await prisma.token.delete({ where: { id: tokenRecord.id } });
+      return {
+        success: false,
+        error: "Reset token has expired",
+      };
+    }
+
+    const hashedPassword = await hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: tokenRecord.userId },
+      data: { password: hashedPassword },
+    });
+
+    await prisma.token.delete({ where: { id: tokenRecord.id } });
+
+    return {
+      success: true,
+      message: "Password has been reset successfully",
+    };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!userId || !currentPassword || !newPassword) {
+      return {
+        success: false,
+        error: "User ID, current password, and new password are required",
+      };
+    }
+
+    if (newPassword.length < 8) {
+      return {
+        success: false,
+        error: "Password must be at least 8 characters long",
+      };
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one uppercase letter",
+      };
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one lowercase letter",
+      };
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one number",
+      };
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return {
+        success: false,
+        error: "Password must contain at least one special character",
+      };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.password) {
+      return {
+        success: false,
+        error: "User not found or password login not available",
+      };
+    }
+
+    const isValidPassword = await compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return {
+        success: false,
+        error: "Current password is incorrect",
+      };
+    }
+
+    const hashedPassword = await hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      message: "Password changed successfully",
+    };
   }
 
   async testLogin(): Promise<any> {

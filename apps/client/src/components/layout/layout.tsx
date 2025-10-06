@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Moon, ChevronsRight, BugIcon, Loader2 } from "lucide-react";
+import { Home, Sun, Moon, ChevronsRight, BugIcon, Loader2, Settings as SettingsIcon, LayoutDashboard, Shield } from "lucide-react";
 import * as htmlToImage from "html-to-image";
 
 import modules from "@/config/modules";
 import { useTheme } from "@/contexts/theme.context";
 import { useAppContext } from "@/contexts/app.context";
+import { useAuth } from "@/contexts/auth.context";
 import { __dev__ } from "@/config/env";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../feature/command-bar";
@@ -83,11 +84,42 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
         </div>
           <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
             {location.pathname.startsWith("/chat") ? (
-              <ChatSidebar 
-                isOpen={isOpen} 
+              <ChatSidebar
+                isOpen={isOpen}
                 onTooltipMouseEnter={onTooltipMouseEnter}
                 onTooltipMouseLeave={onTooltipMouseLeave}
               />
+            ) : location.pathname.startsWith("/settings") ? (
+              <div className="flex flex-col gap-2">
+                <Link
+                  to="/settings?tab=general"
+                  onMouseEnter={(e) => onTooltipMouseEnter(e, "General")}
+                  onMouseLeave={onTooltipMouseLeave}
+                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
+                    location.search.includes("tab=general") || (!location.search.includes("tab=") && location.pathname === "/settings")
+                      ? "bg-surface text-text"
+                      : "text-text-muted hover:bg-surface"
+                  }`}>
+                  <LayoutDashboard size={18} className="flex-shrink-0" />
+                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                    isOpen ? "opacity-100" : "opacity-0"
+                  }`}>General</span>
+                </Link>
+                <Link
+                  to="/settings?tab=security"
+                  onMouseEnter={(e) => onTooltipMouseEnter(e, "Security")}
+                  onMouseLeave={onTooltipMouseLeave}
+                  className={`flex items-center gap-3 p-2 rounded transition-all duration-300 ${
+                    location.search.includes("tab=security")
+                      ? "bg-surface text-text"
+                      : "text-text-muted hover:bg-surface"
+                  }`}>
+                  <Shield size={18} className="flex-shrink-0" />
+                  <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                    isOpen ? "opacity-100" : "opacity-0"
+                  }`}>Security</span>
+                </Link>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 {currentModule?.pages?.map((page) => {
@@ -115,6 +147,17 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
           </nav>
           
           <div className="flex flex-col items-center justify-center p-2 gap-2 border-t border-border">
+            <Link
+              to="/settings"
+              onMouseEnter={(e) => onTooltipMouseEnter(e, "Settings")}
+              onMouseLeave={onTooltipMouseLeave}
+              className="flex items-center gap-3 p-2 rounded transition-all duration-300 text-text-muted hover:bg-surface w-full">
+              <SettingsIcon size={18} className="flex-shrink-0" />
+              <span className={`font-medium text-sm transition-opacity duration-150 text-nowrap ${
+                isOpen ? "opacity-100" : "opacity-0"
+              }`}>Settings</span>
+            </Link>
+
             <button
               onClick={async () => {
                 onTooltipMouseLeave();
@@ -142,7 +185,7 @@ const Sidebar = ({ isOpen, setIsOpen, onTooltipMouseEnter, onTooltipMouseLeave, 
                 isOpen ? "opacity-100" : "opacity-0"
               }`}>Report Bug</span>
             </button>
-          
+
             <button
               onClick={toggleTheme}
               onMouseEnter={(e) => onTooltipMouseEnter(e, theme === "dark" ? "Light Mode" : "Dark Mode")}
@@ -183,7 +226,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", annotatedScreenshot: null as string | null, includeScreenshot: true });
+  const [formData, setFormData] = useState({ description: "", annotatedScreenshot: null as string | null, includeScreenshot: true });
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
@@ -193,6 +236,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { sidebarExpanded, toggleSidebar } = useAppContext();
   const { toasts, removeToast, addToast } = useToast();
   const { post, loading } = useApi();
+  const { employee } = useAuth();
 
   const handleTooltipMouseEnter = (e: React.MouseEvent, text: string) => {
     if (!sidebarExpanded) {
@@ -340,12 +384,13 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={async () => {
-                  const result = await post("/email/bug-report", {
-                    title: formData.title.trim(),
+                  const result = await post("/system/bug-report", {
                     description: formData.description.trim(),
                     screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
                     url: window.location.href,
                     userAgent: navigator.userAgent,
+                    userEmail: employee?.email,
+                    userName: employee ? `${employee.firstName} ${employee.lastName}` : undefined,
                   });
 
                   if (result) {
@@ -375,10 +420,6 @@ const Layout = ({ children }: LayoutProps) => {
           </p>
 
           <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
-            <div>
-              <span className="text-text-muted block mb-1">Title:</span>
-              <span className="font-medium text-text">{formData.title}</span>
-            </div>
             <div>
               <span className="text-text-muted block mb-1">Description:</span>
               <span className="font-medium text-text whitespace-pre-wrap">{formData.description}</span>
@@ -414,7 +455,7 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={() => setShowConfirmation(true)}
-                disabled={!formData.title.trim() || !formData.description.trim()}>
+                disabled={!formData.description.trim()}>
                 Submit Report
               </Button>
             </div>

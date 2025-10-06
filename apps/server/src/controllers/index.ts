@@ -12,9 +12,9 @@ import { PerformanceController } from "./performance.controller";
 import { PostalCodeController } from "./postal-code.controller";
 import { ProductionController } from "./production.controller";
 import { QuoteController } from "./quote.controller";
+import { SettingsController } from "./settings.controller";
 import { SystemController } from "./system.controller";
 import { TagController } from "./tag.controller";
-import { UserSettingsController } from "./user-settings.controller";
 
 export const adminController = new AdminController();
 export const auditLogController = new AuditLogController();
@@ -30,6 +30,6 @@ export const performanceController = new PerformanceController();
 export const postalCodeController = new PostalCodeController();
 export const productionController = new ProductionController();
 export const quoteController = new QuoteController();
+export const settingsController = new SettingsController();
 export const systemController = new SystemController();
 export const tagController = new TagController();
-export const userSettingsController = new UserSettingsController();

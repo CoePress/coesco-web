@@ -16,4 +16,6 @@ router.get("/health", (_req, res) => {
 
 router.post("/agent", systemController.messageAgent);
 
+router.post("/bug-report", systemController.sendBugReport);
+
 export default router;
