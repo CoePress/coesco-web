@@ -66,7 +66,7 @@ export const CreateCompanyModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title="Create New Company"
+      title="Create New Company (Disabled due to AX)"
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,13 +119,11 @@ export const CreateCompanyModal = ({
           >
             Cancel
           </Button>
-          <button
+          <Button disabled
             type="submit"
-            disabled={loading}
-            className="border rounded justify-center text-sm flex items-center gap-2 transition-all duration-300 h-max px-3 py-1.5 border-primary bg-primary text-foreground hover:bg-primary/80 hover:border-primary/80 cursor-pointer disabled:border-border disabled:bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
           >
             {loading ? "Creating..." : "Create Company"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
