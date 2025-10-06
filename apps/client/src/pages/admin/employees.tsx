@@ -116,7 +116,8 @@ const Employees = () => {
         <Button
           variant="secondary-outline"
           size="sm"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setSelectedEmployee(row);
             setIsEditModalOpen(true);
           }}>

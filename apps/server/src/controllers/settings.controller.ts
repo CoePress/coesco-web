@@ -19,6 +19,42 @@ export class SettingsController {
     res.status(200).json(result);
   });
 
+  resetPassword = asyncWrapper(async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "Token and new password are required",
+      });
+    }
+
+    const result = await authService.resetPassword(token, newPassword);
+    res.status(result.success ? 200 : 400).json(result);
+  });
+
+  changePassword = asyncWrapper(async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "Current password and new password are required",
+      });
+    }
+
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
+    res.status(result.success ? 200 : 400).json(result);
+  });
+
   createUserSettings = asyncWrapper(async (req: Request, res: Response) => {
     const result = await userSettingsService.create(req.body);
     res.status(201).json(result);

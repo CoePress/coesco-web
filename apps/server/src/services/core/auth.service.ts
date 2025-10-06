@@ -378,6 +378,103 @@ export class AuthService {
     };
   }
 
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!token || !newPassword) {
+      return {
+        success: false,
+        error: "Token and new password are required",
+      };
+    }
+
+    if (newPassword.length < 8) {
+      return {
+        success: false,
+        error: "Password must be at least 8 characters long",
+      };
+    }
+
+    const tokenRecord = await prisma.token.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!tokenRecord || tokenRecord.type !== "PASSWORD_RESET") {
+      return {
+        success: false,
+        error: "Invalid or expired reset token",
+      };
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      await prisma.token.delete({ where: { id: tokenRecord.id } });
+      return {
+        success: false,
+        error: "Reset token has expired",
+      };
+    }
+
+    const hashedPassword = await hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: tokenRecord.userId },
+      data: { password: hashedPassword },
+    });
+
+    await prisma.token.delete({ where: { id: tokenRecord.id } });
+
+    return {
+      success: true,
+      message: "Password has been reset successfully",
+    };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!userId || !currentPassword || !newPassword) {
+      return {
+        success: false,
+        error: "User ID, current password, and new password are required",
+      };
+    }
+
+    if (newPassword.length < 8) {
+      return {
+        success: false,
+        error: "Password must be at least 8 characters long",
+      };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.password) {
+      return {
+        success: false,
+        error: "User not found or password login not available",
+      };
+    }
+
+    const isValidPassword = await compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return {
+        success: false,
+        error: "Current password is incorrect",
+      };
+    }
+
+    const hashedPassword = await hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      message: "Password changed successfully",
+    };
+  }
+
   async testLogin(): Promise<any> {
     let employee = await prisma.employee.findUnique({
       where: { email: "sample@example.com" },

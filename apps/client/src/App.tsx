@@ -5,6 +5,8 @@ import modules from "./config/modules";
 import MainMenu from "./pages/main-menu";
 import NotFound from "./pages/not-found";
 import Login from "./pages/login";
+import ChangePassword from "./pages/change-password";
+import ForgotPassword from "./pages/forgot-password";
 import ChatPage from "./pages/utility/chat";
 import { RecentChats, Resources, Settings } from "./pages";
 import { __dev__ } from "./config/env";
@@ -55,12 +57,10 @@ const App = () => {
         path="/callback"
         element={<MicrosoftCallback />}
       />
-      <Route element={<PublicRoute />}>
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-      </Route>
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
+      />
       <Route element={<PublicRoute />}>
         <Route
           path="/login"
@@ -71,11 +71,6 @@ const App = () => {
         <Route
           path="/"
           element={<MainMenu />}
-        />
-
-        <Route
-          path="*"
-          element={<NotFound />}
         />
       </Route>
 
@@ -111,6 +106,10 @@ const App = () => {
           path="/settings"
           element={<Settings />}
         />
+        <Route
+          path="/settings/change-password"
+          element={<ChangePassword />}
+        />
         {modules
           .filter((module) => module.slug === "admin")
           .map((module) => (
@@ -133,6 +132,11 @@ const App = () => {
             </Route>
           ))}
       </Route>
+
+      <Route
+        path="*"
+        element={<NotFound />}
+      />
     </Routes>
   );
 

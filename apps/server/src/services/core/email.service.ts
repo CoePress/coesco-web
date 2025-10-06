@@ -144,7 +144,7 @@ export class EmailService {
     firstName: string;
   }): Promise<EmailResult> {
     const { to, resetToken, firstName } = options;
-    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${env.CLIENT_URL}/settings/reset-password?token=${resetToken}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

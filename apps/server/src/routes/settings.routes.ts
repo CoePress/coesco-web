@@ -5,6 +5,8 @@ import { settingsController } from "@/controllers";
 const router = Router();
 
 router.post("/request-password-reset", settingsController.requestPasswordReset);
+router.post("/reset-password", settingsController.resetPassword);
+router.post("/change-password", settingsController.changePassword);
 router.post("/", settingsController.createUserSettings);
 router.get("/", settingsController.getUserSettings);
 router.get("/:id", settingsController.getUserSetting);

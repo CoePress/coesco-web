@@ -150,8 +150,9 @@ const EmployeeDetails = () => {
       <PageHeader
         title="Employee Details"
         description="Sample Description"
-        goBack
         actions={<Actions />}
+        goBack
+        goBackTo="/admin/employees"
       />
       <Tabs
         activeTab={activeTab}

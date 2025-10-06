@@ -3,34 +3,16 @@ import { useAuth } from "@/contexts/auth.context";
 import Button from "@/components/ui/button";
 import { useState } from "react";
 import { useApi } from "@/hooks/use-api";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { IApiResponse } from "@/utils/types";
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, employee } = useAuth();
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "general";
-  const { post: requestPasswordReset, loading: isResetting } = useApi<IApiResponse<any>>();
-  const toast = useToast();
-
-  const handlePasswordReset = async () => {
-    if (!user?.email) {
-      toast.error("No email associated with your account");
-      return;
-    }
-
-    const response = await requestPasswordReset("/settings/request-password-reset", {
-      email: user.email
-    });
-
-    if (response?.success) {
-      toast.success("Password reset email sent successfully. Please check your inbox.");
-    } else {
-      toast.error(response?.error || "Failed to send password reset email");
-    }
-  };
+  const navigate = useNavigate();
 
   return (
     <div className="flex justify-center w-full h-full">
@@ -46,7 +28,7 @@ const Settings = () => {
             <div className="flex items-center justify-between py-3">
               <div>
                 <div className="text-sm text-text mb-1">Email</div>
-                <div className="text-xs text-text-muted">{user?.email || "user@example.com"}</div>
+                <div className="text-xs text-text-muted">{employee?.email || "user@example.com"}</div>
               </div>
               <Button variant="secondary-outline" size="sm">
                 Change email
@@ -58,15 +40,14 @@ const Settings = () => {
             <div className="flex items-center justify-between py-3">
               <div>
                 <div className="text-sm text-text mb-1">Password</div>
-                <div className="text-xs text-text-muted">Reset your account password</div>
+                <div className="text-xs text-text-muted">Change your account password</div>
               </div>
               <Button
-                onClick={handlePasswordReset}
+                onClick={() => navigate("/settings/change-password")}
                 variant="secondary-outline"
                 size="sm"
-                disabled={isResetting}
               >
-                {isResetting ? "Sending..." : "Reset Password"}
+                Change Password
               </Button>
             </div>
           </div>
