@@ -4,24 +4,31 @@ import Button from "@/components/ui/button";
 import { useState } from "react";
 import { useApi } from "@/hooks/use-api";
 import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { IApiResponse } from "@/utils/types";
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
-  const [isResetting, setIsResetting] = useState(false);
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "general";
-  const { post } = useApi();
+  const { post: requestPasswordReset, loading: isResetting } = useApi<IApiResponse<any>>();
+  const toast = useToast();
 
   const handlePasswordReset = async () => {
-    setIsResetting(true);
-    try {
-      await post("/auth/reset-password", { email: user?.email });
-      alert("Password reset email sent successfully");
-    } catch (error) {
-      alert("Failed to send password reset email");
-    } finally {
-      setIsResetting(false);
+    if (!user?.email) {
+      toast.error("No email associated with your account");
+      return;
+    }
+
+    const response = await requestPasswordReset("/settings/request-password-reset", {
+      email: user.email
+    });
+
+    if (response?.success) {
+      toast.success("Password reset email sent successfully. Please check your inbox.");
+    } else {
+      toast.error(response?.error || "Failed to send password reset email");
     }
   };
 

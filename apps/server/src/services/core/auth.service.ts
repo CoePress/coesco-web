@@ -13,6 +13,7 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
+import { emailService } from "..";
 
 export class AuthService {
   private msalClient: ConfidentialClientApplication;
@@ -337,6 +338,43 @@ export class AuthService {
         });
       }
     }
+  }
+
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    const employee = await prisma.employee.findUnique({
+      where: { email },
+      include: { user: true },
+    });
+
+    if (!employee || !employee.user) {
+      return {
+        success: true,
+        message: "If an account exists with this email, a password reset link has been sent.",
+      };
+    }
+
+    const resetToken = randomUUID();
+    const expiresAt = new Date(Date.now() + 3600000);
+
+    await prisma.token.create({
+      data: {
+        userId: employee.user.id,
+        type: "PASSWORD_RESET",
+        token: resetToken,
+        expiresAt,
+      },
+    });
+
+    await emailService.sendPasswordReset({
+      to: email,
+      resetToken,
+      firstName: employee.firstName,
+    });
+
+    return {
+      success: true,
+      message: "If an account exists with this email, a password reset link has been sent.",
+    };
   }
 
   async testLogin(): Promise<any> {

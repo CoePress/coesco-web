@@ -138,6 +138,54 @@ export class EmailService {
     });
   }
 
+  async sendPasswordReset(options: {
+    to: string;
+    resetToken: string;
+    firstName: string;
+  }): Promise<EmailResult> {
+    const { to, resetToken, firstName } = options;
+    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333; border-bottom: 2px solid #e8a80c; padding-bottom: 10px;">Password Reset Request</h2>
+
+        <div style="margin: 20px 0;">
+          <p>Hi ${firstName},</p>
+          <p>We received a request to reset your password. Click the button below to create a new password:</p>
+        </div>
+
+        <div style="margin: 30px 0; text-align: center;">
+          <a href="${resetUrl}" style="background-color: #e8a80c; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
+            Reset Password
+          </a>
+        </div>
+
+        <div style="margin: 20px 0;">
+          <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">${resetUrl}</p>
+        </div>
+
+        <div style="margin: 30px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+          <p style="margin: 0; color: #856404; font-size: 14px;">
+            <strong>Security Notice:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+          </p>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
+          <p>Email sent on ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    `;
+
+    return this.sendEmail({
+      from: "noreply@cpec.com",
+      to,
+      subject: "Password Reset Request - Coe Press Equipment",
+      html,
+    });
+  }
+
   async sendBugReport(options: {
     title: string;
     description: string;
