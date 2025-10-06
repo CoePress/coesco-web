@@ -45,33 +45,69 @@ const Pipeline = () => {
   const api = useApi();
   const [journeys, setJourneys] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [journeyTags, setJourneyTags] = useState<Map<string, any[]>>(new Map());
 
   const [legacyJourneys, setLegacyJourneys] = useState<any[] | null>(null);
+  const fetchJourneyTags = async (journeyIds: string[]) => {
+    const tagsMap = new Map<string, any[]>();
 
-  // Fetch journeys and customers data
+    try {
+      const tagPromises = journeyIds.map(async (journeyId) => {
+        try {
+          const response = await get('/tags', {
+            filter: JSON.stringify({
+              parentTable: 'journeys',
+              parentId: journeyId
+            })
+          });
+
+          if (response?.success && Array.isArray(response.data)) {
+            return { journeyId, tags: response.data };
+          }
+          return { journeyId, tags: [] };
+        } catch (error) {
+          console.error(`Error fetching tags for journey ${journeyId}:`, error);
+          return { journeyId, tags: [] };
+        }
+      });
+
+      const results = await Promise.all(tagPromises);
+      results.forEach(({ journeyId, tags }) => {
+        tagsMap.set(journeyId, tags);
+      });
+    } catch (error) {
+      console.error('Error fetching journey tags:', error);
+    }
+
+    return tagsMap;
+  };
   useEffect(() => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
-        get('/legacy/base/Journey', { 
-          sort: 'CreateDT', 
-          order: 'desc', 
+        get('/legacy/base/Journey', {
+          sort: 'CreateDT',
+          order: 'desc',
           limit: 100,
           fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
         }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
-      
+
       if (journeysData) {
         const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
-        setJourneys(journeysArray.map(adaptLegacyJourney));
+        const mappedJourneys = journeysArray.map(adaptLegacyJourney);
+        setJourneys(mappedJourneys);
+        const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
+        const tagsMap = await fetchJourneyTags(journeyIds);
+        setJourneyTags(tagsMap);
       }
-      
+
       if (customersData) {
         const customersArray = customersData.data ? customersData.data : (Array.isArray(customersData) ? customersData : []);
         setCustomers(customersArray);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -79,17 +115,21 @@ const Pipeline = () => {
 
   const refetchLegacyJourneys = async () => {
     try {
-      const raw = await refetchApi.get('/legacy/base/Journey', { 
-        sort: 'CreateDT', 
-        order: 'desc', 
+      const raw = await refetchApi.get('/legacy/base/Journey', {
+        sort: 'CreateDT',
+        order: 'desc',
         limit: 100,
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
       });
-      
+
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
         const mapped = journeysArray.map(adaptLegacyJourney);
         setLegacyJourneys(mapped);
+        const journeyIds = mapped.map((j: any) => j.id.toString());
+        const tagsMap = await fetchJourneyTags(journeyIds);
+        setJourneyTags(tagsMap);
+
         return true;
       } else {
         console.error("Legacy journeys refetch failed");
@@ -129,7 +169,6 @@ const Pipeline = () => {
   const normalizePriority = (v: any): string => {
     const s = String(v ?? "").toUpperCase().trim();
     if (s === "A" || s === "B" || s === "C" || s === "D") return s;
-    // Legacy conversion
     if (s.startsWith("H")) return "A"; // High -> A
     if (s.startsWith("L")) return "D"; // Low -> D
     if (s.startsWith("M")) return "C"; // Medium -> C
@@ -212,6 +251,11 @@ const Pipeline = () => {
           const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
+          const journeyIds = mapped.map((j: any) => j.id.toString());
+          const tagsMap = await fetchJourneyTags(journeyIds);
+          if (!cancelled) {
+            setJourneyTags(tagsMap);
+          }
         }
       } catch (error) {
         console.error("Error fetching Journeys:", error);
@@ -248,8 +292,6 @@ const Pipeline = () => {
     }
     return map;
   }, [customers, baseJourneys, isLegacyData]);
-
-  // Helper functions for localStorage
   const getFromLocalStorage = (key: string, defaultValue: any) => {
     try {
       const stored = localStorage.getItem(`pipeline_${key}`);
@@ -263,7 +305,6 @@ const Pipeline = () => {
     try {
       localStorage.setItem(`pipeline_${key}`, JSON.stringify(value));
     } catch {
-      // Ignore localStorage errors
     }
   };
 
@@ -291,30 +332,60 @@ const Pipeline = () => {
 
   const filteredJourneys = useMemo(() => {
     let results = baseJourneys ?? [];
-    
-    // Apply fuzzy search term filter
     const q = searchTerm.trim();
     if (q) {
-      results = results.filter(j => {
-        const searchableText = [
-          j.name ?? '',
-          j.companyName ?? '',
-          customersById?.get(String(j.customerId))?.name ?? ''
-        ].join(' ');
-        
-        return fuzzyMatch(searchableText, q);
-      });
+      // Check if it's exactly "tag:" or starts with "tag:"
+      if (q.toLowerCase() === 'tag:') {
+        // Show only journeys that have any tags
+        results = results.filter(j => {
+          const tags = journeyTags.get(j.id.toString()) || [];
+          return tags.length > 0;
+        });
+      } else {
+        const tagMatch = q.match(/tag:(\S+)/i);
+
+        if (tagMatch) {
+          const tagSearch = tagMatch[1].toUpperCase();
+          const remainingSearch = q.replace(tagMatch[0], '').trim();
+          if (tagSearch) {
+            results = results.filter(j => {
+              const tags = journeyTags.get(j.id.toString()) || [];
+              return tags.some(tag =>
+                tag.description &&
+                tag.description.toUpperCase().includes(tagSearch)
+              );
+            });
+          }
+          if (remainingSearch) {
+            results = results.filter(j => {
+              const searchableText = [
+                j.name ?? '',
+                j.companyName ?? '',
+                customersById?.get(String(j.customerId))?.name ?? ''
+              ].join(' ');
+
+              return fuzzyMatch(searchableText, remainingSearch);
+            });
+          }
+        } else {
+          results = results.filter(j => {
+            const searchableText = [
+              j.name ?? '',
+              j.companyName ?? '',
+              customersById?.get(String(j.customerId))?.name ?? ''
+            ].join(' ');
+
+            return fuzzyMatch(searchableText, q);
+          });
+        }
+      }
     }
-    
-    // Apply confidence filter
     if (filters.confidenceLevels.length > 0) {
       results = results.filter(j => {
         const confidence = j.confidence ?? 0;
         return filters.confidenceLevels.includes(confidence);
       });
     }
-    
-    // Apply date range filter
     if (filters.dateRange[0] || filters.dateRange[1]) {
       results = results.filter(j => {
         const getDateValue = (field: string, journey: any): Date | null => {
@@ -335,13 +406,9 @@ const Pipeline = () => {
         return true;
       });
     }
-    
-    // Apply priority filter
     if (filters.priority) {
       results = results.filter(j => j.priority === filters.priority);
     }
-    
-    // Apply value range filter
     if (filters.minValue) {
       const minVal = parseFloat(filters.minValue);
       if (!isNaN(minVal)) {
@@ -355,19 +422,13 @@ const Pipeline = () => {
         results = results.filter(j => (j.value ?? 0) <= maxVal);
       }
     }
-    
-    // Apply stage visibility filter
     results = results.filter(j => filters.visibleStages.includes(j.stage ?? 1));
-    
-    // Apply RSM filter
     if (rsmFilter) {
       const filterValue = rsmFilter.toLowerCase();
       results = results.filter(j => 
         (j.RSM ?? "").toLowerCase().includes(filterValue)
       );
     }
-    
-    // Apply journey status filter
     if (journeyStatusFilter) {
       results = results.filter(j => 
         (j.Journey_Status ?? "").toLowerCase() === journeyStatusFilter.toLowerCase()
@@ -375,23 +436,15 @@ const Pipeline = () => {
     }
     
     return results;
-  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter]);
-
-  // For kanban view, limit to 50 most recent journeys
+  }, [baseJourneys, searchTerm, filters, customersById, rsmFilter, journeyStatusFilter, journeyTags]);
   const kanbanJourneys = useMemo(() => {
     return filteredJourneys
       .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
       .slice(0, 50);
   }, [filteredJourneys]);
-
-  // View mode state
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
-
-  // For list view, implement batch loading
   const [listBatchSize, setListBatchSize] = useState(200);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
-  // Apply sorting to the full filtered dataset for list view
   const sortedFilteredJourneys = useMemo(() => {
     if (!sortField) return filteredJourneys;
     
@@ -451,21 +504,14 @@ const Pipeline = () => {
     if (isLoadingMore || !hasMoreJourneys) return;
     
     setIsLoadingMore(true);
-    // Simulate loading delay for better UX
     setTimeout(() => {
       setListBatchSize(prev => prev + 200);
       setIsLoadingMore(false);
     }, 300);
   }, [isLoadingMore, hasMoreJourneys]);
-
-
-
-  // Reset batch size when filters change
   useEffect(() => {
     setListBatchSize(200);
   }, [searchTerm, filters, rsmFilter, journeyStatusFilter]);
-
-  // Save filters to localStorage whenever they change
   useEffect(() => {
     saveToLocalStorage('searchTerm', searchTerm);
   }, [searchTerm]);
@@ -501,8 +547,6 @@ const Pipeline = () => {
   useEffect(() => {
     saveToLocalStorage('showTags', showTags);
   }, [showTags]);
-  
-  // For kanban view, filter visible stages
   const visibleStageIds = filters.visibleStages;
 
   const emptyStageMap = useMemo(() => {
@@ -513,8 +557,6 @@ const Pipeline = () => {
   }, []);
 
   const [idsByStage, setIdsByStage] = useState<Record<number, string[]>>(emptyStageMap);
-  
-  // Memoize stage calculations to prevent re-computation during drag
   const stageCalculations = useMemo(() => {
     const calculations = new Map();
     const journeysForCalculation = viewMode === "kanban" ? kanbanJourneys : filteredJourneys;
@@ -551,7 +593,6 @@ const Pipeline = () => {
       const success = await del(`/legacy/std/Journey/${journeyId}`);
       
       if (success) {
-        // Remove from local state
         setLegacyJourneys(prev => 
           prev ? prev.filter(j => j.id.toString() !== journeyId) : prev
         );
@@ -567,32 +608,32 @@ const Pipeline = () => {
 
   const stageUpdateApi = useApi();
   
-  const handleTagsUpdated = useCallback(() => {
+  const handleTagsUpdated = useCallback(async () => {
     console.log('Tags updated, triggering refresh');
-  }, []);
+    const allJourneys = legacyJourneys || journeys;
+    if (allJourneys) {
+      const journeyIds = allJourneys.map((j: any) => j.id.toString());
+      const tagsMap = await fetchJourneyTags(journeyIds);
+      setJourneyTags(tagsMap);
+    }
+  }, [legacyJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     try {
       if (isLegacyData) {
-        // Convert stage ID to stage label for backend
         const stageLabel = STAGES.find(s => s.id === newStage)?.label;
         if (!stageLabel) {
           console.error(`Invalid stage ID: ${newStage}`);
           return;
         }
-        
-        // Call the server to update the journey stage in the legacy database
         const result = await stageUpdateApi.patch(`/legacy/base/Journey/${journeyId}`, { 
           Journey_Stage: stageLabel 
         });
         
         if (result !== null) {
-          // Instead of updating local state immediately, refetch the data to ensure consistency
-          // Add a small delay to ensure database has time to commit the change
           await new Promise(resolve => setTimeout(resolve, 100));
           const refetchSuccess = await refetchLegacyJourneys();
           if (!refetchSuccess) {
-            // Fallback: update local state if refetch fails
             setLegacyJourneys((prev) =>
               (prev ?? []).map((j) =>
                 j.id.toString() === journeyId
@@ -609,7 +650,6 @@ const Pipeline = () => {
           console.error("Failed to update journey stage on server");
         }
       } else {
-        // Convert stage ID to stage label for backend
         const stageLabel = STAGES.find(s => s.id === newStage)?.label;
         if (!stageLabel) {
           console.error(`Invalid stage ID: ${newStage}`);
@@ -633,11 +673,6 @@ const Pipeline = () => {
       setSortDirection('asc');
     }
   }, [sortField, sortDirection]);
-
-  // const getSortIcon = useCallback((field: string) => {
-  //   if (sortField !== field) return null;
-  //   return sortDirection === 'asc' ? '↑' : '↓';
-  // }, [sortField, sortDirection]);
 
   const totalPipelineValue = filteredJourneys.reduce((sum, j) => sum + Number(j.value ?? 0), 0);
   
@@ -673,8 +708,6 @@ const Pipeline = () => {
       'Contact Email',
       'Contact Position'
     ];
-
-    // Get unique RSM initials from journeys
     const uniqueRsmInitials = [...new Set(
       filteredJourneys
         .map(journey => journey.RSM)
@@ -682,13 +715,10 @@ const Pipeline = () => {
     )];
 
     console.log('Unique RSM initials found:', uniqueRsmInitials);
-
-    // Use rsmDisplayNames map that was already built from fetchAvailableRsms
     const rsmFullNames = new Map<string, string>();
     uniqueRsmInitials.forEach(initials => {
       const displayName = rsmDisplayNames.get(initials);
       if (displayName) {
-        // Extract just the name part (before the parentheses)
         const nameMatch = displayName.match(/^(.+?)\s*\(/);
         rsmFullNames.set(initials, nameMatch ? nameMatch[1].trim() : initials);
       } else {
@@ -713,10 +743,8 @@ const Pipeline = () => {
 
           if (contactData && Array.isArray(contactData) && contactData.length > 0) {
             if (options.includePrimaryContactOnly) {
-              // Find primary contact
               let selectedContact = contactData.find(contact => contact.IsPrimary === true || contact.IsPrimary === 'true' || contact.IsPrimary === 1);
               if (!selectedContact) {
-                // If no primary contact found, use the first contact
                 selectedContact = contactData[0];
               }
 
@@ -726,7 +754,6 @@ const Pipeline = () => {
                 Contact_Position: selectedContact.Contact_Position || ''
               }]);
             } else {
-              // Include all contacts
               journeyContacts.set(journey.id.toString(), contactData.map(contact => ({
                 Contact_Name: contact.Contact_Name || '',
                 Contact_Email: contact.Contact_Email || '',
@@ -734,7 +761,6 @@ const Pipeline = () => {
               })));
             }
           } else {
-            // Set empty contact data if no contacts found
             journeyContacts.set(journey.id.toString(), [{
               Contact_Name: '',
               Contact_Email: '',
@@ -743,7 +769,6 @@ const Pipeline = () => {
           }
         } catch (error) {
           console.error(`Error fetching contact data for journey ${journey.id}:`, error);
-          // Set empty contact data on error
           journeyContacts.set(journey.id.toString(), [{
             Contact_Name: '',
             Contact_Email: '',
@@ -794,8 +819,6 @@ const Pipeline = () => {
         contactPositions
       ];
     });
-
-    // Add table
     const lastColumn = String.fromCharCode(64 + headers.length);
     const lastRow = dataRows.length + 1;
 
@@ -811,26 +834,18 @@ const Pipeline = () => {
       columns: headers.map(header => ({ name: header, filterButton: true })),
       rows: dataRows
     });
-
-    // Auto-fit columns based on content first
     worksheet.columns.forEach((column: any, index: any) => {
       let maxLength = headers[index].length;
 
       worksheet.getColumn(index + 1).eachCell({ includeEmpty: false }, (cell: any) => {
         const cellValue = cell.value ? String(cell.value) : '';
-        // Handle multiline text (split by newline and get longest line)
         const lines = cellValue.split('\n');
         const longestLine = Math.max(...lines.map(line => line.length));
         maxLength = Math.max(maxLength, longestLine);
       });
-
-      // Set width with reasonable min/max bounds
       column.width = Math.min(Math.max(maxLength + 2, 10), 50);
     });
-
-    // Format all cells and calculate row heights
     worksheet.eachRow((row: any, rowNumber: any) => {
-      // Format header row
       if (rowNumber === 1) {
         row.height = 15;
         row.eachCell((cell: any) => {
@@ -839,25 +854,16 @@ const Pipeline = () => {
         });
         return;
       }
-
-      // Calculate max height needed for this row based on all cells
       let maxLines = 1;
       row.eachCell((cell: any, colNumber: any) => {
-        // Set wrap text for all cells
         cell.alignment = { wrapText: true, vertical: 'top' };
 
         const headerName = headers[colNumber - 1];
-
-        // Format Projected Value as currency
         if (headerName === 'Projected Value') {
           cell.numFmt = '$#,##0.00';
         }
-
-        // Count lines in this cell, accounting for both \n and wrapping
         const cellValue = cell.value ? String(cell.value) : '';
         const columnWidth = worksheet.getColumn(colNumber).width || 10;
-
-        // Approximate character width (Excel uses roughly 7 pixels per character for default font)
         const charsPerLine = Math.floor(columnWidth);
 
         let totalLines = 0;
@@ -867,7 +873,6 @@ const Pipeline = () => {
           if (line.length === 0) {
             totalLines += 1;
           } else {
-            // Calculate how many wrapped lines this text will take
             const wrappedLines = Math.ceil(line.length / charsPerLine);
             totalLines += wrappedLines;
           }
@@ -875,12 +880,8 @@ const Pipeline = () => {
 
         maxLines = Math.max(maxLines, totalLines);
       });
-
-      // Set row height based on max lines found (15 units per line)
       row.height = Math.max(maxLines * 15, 15);
     });
-
-    // Generate Excel file and download
     const fileName = `pipeline-export-${new Date().toISOString().split('T')[0]}.xlsx`;
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -1046,13 +1047,10 @@ const Pipeline = () => {
           isOpen={isJourneyModalOpen}
           onClose={toggleJourneyModal}
           onSuccess={(newJourney) => {
-            // Add the new journey to the top of the list
             if (newJourney) {
               console.log('Raw new journey:', newJourney);
               const adaptedJourney = adaptLegacyJourney(newJourney);
               console.log('Adapted journey:', adaptedJourney);
-              
-              // Update both legacy journeys and regular journeys state
               setLegacyJourneys(prev => {
                 const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
                 console.log('Updated legacyJourneys:', updated);
@@ -1063,8 +1061,6 @@ const Pipeline = () => {
                 console.log('Updated journeys:', updated);
                 return updated;
               });
-              
-              // Show navigation modal
               setNavigationModal({
                 isOpen: true,
                 journeyName: adaptedJourney.name || adaptedJourney.Project_Name || adaptedJourney.Target_Account || 'New Journey',
@@ -1080,7 +1076,6 @@ const Pipeline = () => {
           isOpen={isImportModalOpen}
           onClose={toggleImportModal}
           onSuccess={() => {
-            // Refresh the journeys data after successful import
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
                 get('/legacy/base/Journey', { 
@@ -1096,6 +1091,9 @@ const Pipeline = () => {
                 const mappedJourneys = journeysArray.map(adaptLegacyJourney);
                 setJourneys(mappedJourneys);
                 setLegacyJourneys(mappedJourneys);
+                const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
+                const tagsMap = await fetchJourneyTags(journeyIds);
+                setJourneyTags(tagsMap);
               }
             };
             
