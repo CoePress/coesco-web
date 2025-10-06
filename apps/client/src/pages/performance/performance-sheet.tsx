@@ -59,7 +59,7 @@ const PerformanceSheetContent = () => {
   }, [isEditing, performanceData]);
 
   useAutoFillWatcher(performanceData, {
-    enabled: false, // Disabled autofill to prevent issues
+    enabled: true, // Enable autofill
     debounceMs: 3500,   // 3.5 second debounce to further reduce API calls
     requireMinimumFields: 4
   });

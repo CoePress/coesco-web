@@ -6,6 +6,7 @@ import { BadRequestError } from "@/middleware/error.middleware";
 import { getEmployeeContext } from "@/utils/context";
 import { execSync } from "child_process";
 import path from "path";
+import { transformDataForCalculationEngine } from "@/utils/data-transformer";
 
 type PerformanceSheetAttributes = Omit<PerformanceSheet, "id" | "createdAt" | "updatedAt">;
 
@@ -146,16 +147,19 @@ export class PerformanceSheetService extends BaseService<PerformanceSheet> {
 
 	private async runCalculations(inputData: any): Promise<any> {
 		try {
+			// Transform data for Python calculation engine (convert strings to numbers)
+			const transformedData = transformDataForCalculationEngine(inputData);
+
 			// Fix field name mismatches before sending to Python
-			if (inputData.common?.equipment?.feed) {
+			if (transformedData.common?.equipment?.feed) {
 				// Copy lineType to typeOfLine if typeOfLine is empty
-				if (inputData.common.equipment.feed.lineType && !inputData.common.equipment.feed.typeOfLine) {
-					inputData.common.equipment.feed.typeOfLine = inputData.common.equipment.feed.lineType;
+				if (transformedData.common.equipment.feed.lineType && !transformedData.common.equipment.feed.typeOfLine) {
+					transformedData.common.equipment.feed.typeOfLine = transformedData.common.equipment.feed.lineType;
 				}
 			}
 
 			const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'main.py');
-			const inputJson = JSON.stringify(inputData);
+			const inputJson = JSON.stringify(transformedData);
 
 			// Execute the Python script by writing JSON to stdin
 			const result = execSync(`python "${scriptPath}"`, {

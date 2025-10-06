@@ -50,17 +50,22 @@ def get_all_specs_for(spec_type, feed_model, spec_keys):
     Raises:
         ValueError: If the spec_type is not recognized or if a lookup fails.    
     """
-    getter_func = SPEC_GETTERS[spec_type]
-    results = {}
-    for var_name, (lookup1, lookup2) in spec_keys.items():
-        try:
-            results[var_name] = getter_func(feed_model, lookup1, lookup2)
-        except ValueError:
-            if lookup1 == "fric_torque" or lookup2 == "friction_torque":
-                results[var_name] = 0
-            else:
-                raise ValueError(f"Failed to get spec for {var_name} using {lookup1} or {lookup2} in {spec_type}")
-    return results
+    try:
+        getter_func = SPEC_GETTERS[spec_type]
+        results = {}
+        
+        for var_name, (lookup1, lookup2) in spec_keys.items():
+            try:
+                result = getter_func(feed_model, lookup1, lookup2)
+                results[var_name] = result
+            except ValueError as ve:
+                if lookup1 == "fric_torque" or lookup2 == "friction_torque":
+                    results[var_name] = 0
+                else:
+                    raise ValueError(f"Failed to get spec for {var_name} using {lookup1} or {lookup2} in {spec_type}: {ve}")
+        return results
+    except Exception as e:
+        raise
 
 def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
     """
@@ -161,59 +166,105 @@ def run_sigma_five_calculation(data: base_feed_params, spec_type="sigma_five"):
         str_max_sp_inch = 0.0
 
     # Time calculations
-    time = time_input(
-        acceleration = data.acceleration_rate,
-        application = data.application,
-        feed_angle_1 = data.feed_angle_1,
-        feed_angle_2 = data.feed_angle_2,
-        frictional_torque = frictional_torque,
-        increment = data.length_increment,
-        loop_torque = loop_torque,
-        match = match,
+    try:
+        time = time_input(
+            acceleration = data.acceleration_rate,
+            application = data.application,
+            feed_angle_1 = data.feed_angle_1,
+            feed_angle_2 = data.feed_angle_2,
+            frictional_torque = frictional_torque,
+            increment = data.length_increment,
+            loop_torque = loop_torque,
+            match = match,
 
-        min_length = data.chart_min_length,
-        motor_inertia = motor_inertia,
-        motor_rms_torque = motor_rms_torque,
-        motor_peak_torque = motor_peak_torque,
+            min_length = data.chart_min_length,
+            motor_inertia = motor_inertia,
+            motor_rms_torque = motor_rms_torque,
+            motor_peak_torque = motor_peak_torque,
 
-        ratio = ratio,
-        efficiency = efficiency,
-        refl_inertia = refl_inertia,
-        rpm = rpm,
-        settle_time = settle_time,
-        settle_torque = settle_torque,
+            ratio = ratio,
+            efficiency = efficiency,
+            refl_inertia = refl_inertia,
+            rpm = rpm,
+            settle_time = settle_time,
+            settle_torque = settle_torque,
 
-        str_max_sp = str_max_sp, 
-        str_max_sp_inch = str_max_sp_inch,
-        velocity = velocity,
-        width = data.width,
-        material_width = data.material_width,
-        material_thickness = data.material_thickness,
-        press_bed_length = data.press_bed_length,
-        density = density,
-        material_loop = material_loop
-    )
+            str_max_sp = str_max_sp,
+            str_max_sp_inch = str_max_sp_inch,
+            velocity = velocity,
+            width = data.width,
+            material_width = data.material_width,
+            material_thickness = data.material_thickness,
+            press_bed_length = data.press_bed_length,
+            density = density,
+            material_loop = material_loop
+        )
+    except Exception as time_error:
+        raise
 
     # Calculate time values
-    time_values = calculate_time(time)
-    feed_angle_1_values = time_values["feed_angle_1"]
-    feed_angle_2_values = time_values["feed_angle_2"]
+    try:
+        time_values = calculate_time(time)
+    except Exception as calc_error:
+        raise
+    
+    # Check if time_values contains an error
+    if isinstance(time_values, dict) and "error" in time_values:
+        # Return minimal valid structure to prevent crash
+        return {
+            "max_motor_rpm": max_motor_rpm,
+            "motor_inertia": motor_inertia,
+            "max_vel": max_vel,
+            "settle_time": settle_time,
+            "ratio": ratio,
+            "motor_peak_torque": motor_peak_torque,
+            "motor_rms_torque": motor_rms_torque,
+            "frictiaonal_torque": frictional_torque,
+            "loop_torque": loop_torque,
+            "settle_torque": settle_torque,
+            "regen": 0.0,  # Default value when regen calculation fails
+            "refl_inertia": refl_inertia,
+            "match": match,
+            "match_check": "ERROR",
+            "peak_torque": 0,
+            "peak_torque_check": "ERROR",
+            "rms_torque_fa1": 0,
+            "rms_torque_fa1_check": "ERROR",
+            "rms_torque_fa2": 0,
+            "rms_torque_fa2_check": "ERROR",
+            "acceleration_torque": 0,
+            "acceleration_torque_check": "ERROR",
+            "feed_check": "ERROR",
+            "table_values": []
+        }
+    
+    try:
+        feed_angle_1_values = time_values["feed_angle_1"]
+        feed_angle_2_values = time_values["feed_angle_2"]
+    except (KeyError, TypeError) as access_error:
+        raise
 
     # Table values
     table_values = []
-    if len(feed_angle_1_values) == len(feed_angle_2_values):
-        for i in range(len(feed_angle_1_values)):
-            table_values.append({
-                "length": feed_angle_1_values[i]["length"],
-                "rms_torque_fa1": feed_angle_1_values[i]["rms_torque"],
-                "rms_torque_fa2": feed_angle_2_values[i]["rms_torque"],
-                "spm_at_fa1": feed_angle_1_values[i]["strokes_per_minute"],
-                "fpm_fa1":  ((feed_angle_1_values[i]["length"] * feed_angle_1_values[i]["strokes_per_minute"]) / 12),
-                "index_time_fa1": feed_angle_1_values[i]["index_time"],
-                "spm_at_fa2": feed_angle_2_values[i]["strokes_per_minute"],
-                "fpm_fa2":  ((feed_angle_2_values[i]["length"] * feed_angle_2_values[i]["strokes_per_minute"]) / 12),
-                "index_time_fa2": feed_angle_2_values[i]["index_time"],
-            })
+    try:
+        if len(feed_angle_1_values) == len(feed_angle_2_values):
+            for i in range(len(feed_angle_1_values)):
+                try:
+                    table_values.append({
+                        "length": feed_angle_1_values[i]["length"],
+                        "rms_torque_fa1": feed_angle_1_values[i]["rms_torque"],
+                        "rms_torque_fa2": feed_angle_2_values[i]["rms_torque"],
+                        "spm_at_fa1": feed_angle_1_values[i]["strokes_per_minute"],
+                        "fpm_fa1":  ((feed_angle_1_values[i]["length"] * feed_angle_1_values[i]["strokes_per_minute"]) / 12),
+                        "index_time_fa1": feed_angle_1_values[i]["index_time"],
+                        "spm_at_fa2": feed_angle_2_values[i]["strokes_per_minute"],
+                        "fpm_fa2":  ((feed_angle_2_values[i]["length"] * feed_angle_2_values[i]["strokes_per_minute"]) / 12),
+                        "index_time_fa2": feed_angle_2_values[i]["index_time"],
+                    })
+                except (IndexError, KeyError, TypeError) as table_error:
+                    raise
+    except Exception as table_gen_error:
+        raise
 
     # Acceleration Torque
     acceleration_torque = (((refl_inertia * rpm) / (9.55 * feed_angle_1_values[0]["acceleration_time"])) / efficiency) + ((motor_inertia * rpm) / (9.55 * feed_angle_1_values[0]["acceleration_time"]))

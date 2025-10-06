@@ -1,9 +1,12 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
 import { PerformanceData, usePerformanceSheet } from "@/contexts/performance.context";
 import { useApi } from "@/hooks/use-api";
 import { DEBOUNCE_DELAYS } from "@/constants/performance";
 import React from "react";
+import { AutofillTriggerService } from "@/services/autofill-trigger.service";
+import { getVisibleTabs } from "@/utils/tab-visibility";
+import { useAutoFill } from "@/contexts/performance/autofill.context";
 
 export const DAYS_PER_WEEK_OPTIONS = [
   { value: "1", label: "1 Day" },
@@ -487,6 +490,9 @@ export const usePerformanceDataService = (
   // Use global performance context instead of local state
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
+  // Autofill integration
+  const { triggerAutoFill } = useAutoFill();
+
   // Don't fetch data here - rely on parent component to provide it via global context
   // This prevents the infinite loop where both parent and child fetch data
 
@@ -503,6 +509,8 @@ export const usePerformanceDataService = (
   const pendingChangesRef = useRef<Record<string, any>>({});
   const performanceSheetIdRef = useRef(performanceSheetId);
   const isEditingRef = useRef(isEditing);
+  const focusedFieldRef = useRef<string | null>(null); // Track currently focused field
+  const needsFinalCalculationRef = useRef(false); // Track if we need final calculation when editing stops
 
   // Keep refs in sync with state
   React.useEffect(() => {
@@ -514,7 +522,22 @@ export const usePerformanceDataService = (
   }, [performanceSheetId]);
 
   React.useEffect(() => {
+    const wasEditing = isEditingRef.current;
     isEditingRef.current = isEditing;
+
+    // If user just stopped editing and we need final calculation, trigger it
+    if (wasEditing && !isEditing && needsFinalCalculationRef.current) {
+      console.log('🔄 User stopped editing, triggering final calculation save...');
+
+      // Delay slightly to ensure any pending changes are processed
+      setTimeout(() => {
+        const currentData = localDataRef.current;
+        if (currentData && performanceSheetIdRef.current) {
+          console.log('💾 Executing final calculation save');
+          debouncedSave(currentData);
+        }
+      }, 500); // Small delay to ensure all field changes are processed
+    }
   }, [isEditing]);
 
   // Initialize with initial data if needed
@@ -533,21 +556,34 @@ export const usePerformanceDataService = (
       const currentSheetId = performanceSheetIdRef.current;
       const currentIsEditing = isEditingRef.current;
 
-      if (!currentSheetId || !currentIsEditing) {
-        console.log('❌ Save blocked:', { performanceSheetId: currentSheetId, isEditing: currentIsEditing });
+      if (!currentSheetId) {
+        console.log('❌ Save blocked: no sheet ID');
         return;
       }
+
+      // Don't block saves just because isEditing is false - autofill needs to save too
+      console.log('💾 Proceeding with save:', { performanceSheetId: currentSheetId, isEditing: currentIsEditing });
 
       try {
         const response = await api.patch(`${endpoint}/${currentSheetId}`, { data: dataToSave });
 
-        // Backend returns calculated data directly (not wrapped)
-        // Merge calculated values from backend into the data
-        if (response) {
+        // CRITICAL FIX: Only merge backend calculations if user is NOT actively typing
+        // This prevents overwriting user input with backend calculated values
+        if (response && !isEditingRef.current) {
           const mergedData = deepMerge(dataToSave, response);
           setPerformanceData(mergedData);
           setLocalData(mergedData);
-          console.log('✅ Save successful, data merged');
+          console.log('✅ Save successful, data merged (user not editing)');
+          needsFinalCalculationRef.current = false; // Clear flag since calculations were applied
+        } else if (response) {
+          console.log('✅ Save successful, calculations skipped (user is editing)');
+          // Mark that we need final calculation when user stops editing
+          needsFinalCalculationRef.current = true;
+
+          const focusedField = focusedFieldRef.current;
+          if (focusedField) {
+            console.log(`🎯 User is focused on field: ${focusedField}, skipping merge to preserve input`);
+          }
         }
 
         setLastSaved(new Date());
@@ -571,16 +607,47 @@ export const usePerformanceDataService = (
     }, DEBOUNCE_DELAYS.SAVE) // Use consistent save delay to prevent excessive API calls during typing
   ).current;
 
-  // Change handler for form fields
+  // Debounced function for autofill calculations
+  const debouncedAutofill = useRef(
+    debounce(async (dataForAutofill: PerformanceData) => {
+      console.log('🪄 Debounced autofill triggered');
+
+      const currentSheetId = performanceSheetIdRef.current;
+      if (!currentSheetId) return;
+
+      try {
+        await triggerAutoFill(dataForAutofill, currentSheetId);
+      } catch (error) {
+        console.warn('Autofill failed:', error);
+      }
+    }, DEBOUNCE_DELAYS.AUTOFILL || 1500) // Slightly longer delay for autofill
+  ).current;
+
+  // Change handler for form fields (supports both events and direct calls)
   const handleFieldChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | string,
+    directValue?: any
   ) => {
     if (!isEditing) return;
 
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    const actualValue = type === "checkbox" ? checked : value;
-    const processedValue = type === "checkbox" ? (checked ? "true" : "false") : value;
+    let name: string;
+    let actualValue: any;
+    let processedValue: any;
+
+    // Handle both event-based and direct calls
+    if (typeof e === 'string') {
+      // Direct call with field name and value
+      name = e;
+      actualValue = directValue;
+      processedValue = directValue;
+    } else {
+      // Event-based call
+      const { name: eventName, value, type } = e.target;
+      const checked = (e.target as HTMLInputElement).checked;
+      name = eventName;
+      actualValue = type === "checkbox" ? checked : value;
+      processedValue = type === "checkbox" ? (checked ? "true" : "false") : value;
+    }
 
     // Validate field
     const error = validateField(name, actualValue);
@@ -614,15 +681,138 @@ export const usePerformanceDataService = (
       pendingChangesRef.current["common.material.coilWeight"] = processedValue;
     }
 
+    // Sync lineType -> typeOfLine based on application context
+    if (name === "common.equipment.feed.lineType") {
+      const application = finalUpdated?.feed?.feed?.application;
+      let typeOfLineValue = processedValue;
+
+      if (application === 'Press Feed') {
+        typeOfLineValue = processedValue === 'Conventional' ? 'Conventional' : 'Compact';
+      } else if (application === 'Cut To Length') {
+        typeOfLineValue = processedValue === 'Conventional' ? 'Conventional CTL' : 'Compact CTL';
+      } else if (application === 'Standalone') {
+        // For standalone, typeOfLine should match lineType directly
+        typeOfLineValue = processedValue;
+      }
+
+      finalUpdated = setNestedValue(finalUpdated, "common.equipment.feed.typeOfLine", typeOfLineValue);
+      localDataRef.current = finalUpdated;
+      setLocalData(finalUpdated);
+      setPerformanceData(finalUpdated);
+      // Track both field changes  
+      pendingChangesRef.current["common.equipment.feed.typeOfLine"] = typeOfLineValue;
+    }
+
     // Mark as dirty and track pending changes
     setIsDirty(true);
     pendingChangesRef.current[name] = processedValue;
 
-    // Debounce the backend save
+    // Only trigger save after user stops making changes
+    // This prevents constant overwrites while user is typing
     debouncedSave(finalUpdated);
-  }, [isEditing, fieldErrors, setPerformanceData]);
+  }, [isEditing, fieldErrors, setPerformanceData, performanceSheetId]);
 
-  // Manual save function (for immediate saves)
+  // Separate useEffect for autofill to avoid setState-in-render
+  useEffect(() => {
+    // Don't trigger autofill if we're editing (user is actively typing)
+    if (isEditing) return;
+
+    // Get the latest data
+    const currentData = localDataRef.current;
+    if (!currentData) return;
+
+    // Check if any recent changes should trigger autofill
+    const recentChanges = Object.keys(pendingChangesRef.current);
+    if (recentChanges.length === 0) return;
+
+    console.log('🔍 Autofill check - pending changes:', recentChanges);
+
+    // Find the most recent high-priority change
+    let shouldTriggerAutofill = false;
+    let triggeringField = '';
+
+    for (const fieldName of recentChanges) {
+      const canTrigger = AutofillTriggerService.canTriggerAutofill(fieldName, currentData);
+      const isHighPriority = AutofillTriggerService.getFieldPriority(fieldName) >= 70;
+      const hasSufficientData = AutofillTriggerService.hasSufficientDataForAutofill(currentData);
+
+      console.log(`📋 Field ${fieldName}: canTrigger=${canTrigger}, isHighPriority=${isHighPriority}, hasSufficientData=${hasSufficientData}`);
+
+      if (canTrigger && (isHighPriority || hasSufficientData)) {
+        shouldTriggerAutofill = true;
+        triggeringField = fieldName;
+        console.log(`✅ Autofill triggered by ${fieldName}`);
+        break;
+      }
+    }
+
+    if (shouldTriggerAutofill) {
+      console.log('🪄 Triggering autofill from field:', triggeringField);
+
+      // Get visible tabs to determine what to autofill
+      const visibleTabs = getVisibleTabs(currentData);
+      console.log('👁️ Visible tabs:', visibleTabs.map(tab => tab.value));
+
+      // Get autofill strategy for this field change
+      const strategy = AutofillTriggerService.getAutofillStrategy(triggeringField, currentData);
+      console.log('📋 Autofill strategy:', strategy);
+
+      // Apply immediate suggestions (for simple fields)
+      const suggestions = AutofillTriggerService.getSuggestedAutofillFields(currentData, visibleTabs);
+      console.log('💡 Suggestions generated:', Object.keys(suggestions).length, suggestions);
+
+      if (Object.keys(suggestions).length > 0) {
+        console.log('🎯 Applying autofill suggestions:', suggestions);
+
+        let updatedWithSuggestions = currentData;
+        let hasChanges = false;
+        let appliedSuggestions: string[] = [];
+
+        for (const [fieldPath, suggestedValue] of Object.entries(suggestions)) {
+          // Only apply suggestion if field is empty
+          const currentValue = AutofillTriggerService.getNestedValue(currentData, fieldPath);
+          const isEmpty = !AutofillTriggerService.hasMeaningfulValue(currentValue);
+
+          console.log(`🔍 Field ${fieldPath}: currentValue="${currentValue}", isEmpty=${isEmpty}, suggestedValue="${suggestedValue}"`);
+
+          if (isEmpty) {
+            updatedWithSuggestions = setNestedValue(updatedWithSuggestions, fieldPath, suggestedValue);
+            appliedSuggestions.push(fieldPath);
+            hasChanges = true;
+          }
+        }
+
+        if (hasChanges) {
+          console.log('✅ Applied suggestions to fields:', appliedSuggestions);
+          localDataRef.current = updatedWithSuggestions;
+          setLocalData(updatedWithSuggestions);
+          setPerformanceData(updatedWithSuggestions);
+        } else {
+          console.log('⚠️ No changes applied - all fields already have values');
+        }
+      } else {
+        console.log('⚠️ No suggestions generated');
+      }
+
+      // Trigger backend calculations for calculated tabs
+      if (strategy.calculated.length > 0 && performanceSheetId) {
+        console.log('🔄 Triggering backend calculations for tabs:', strategy.calculated);
+        debouncedAutofill(currentData);
+      }
+
+      // Clear processed changes
+      pendingChangesRef.current = {};
+    } else {
+      console.log('❌ Autofill not triggered - conditions not met');
+    }
+  }, [isEditing, setPerformanceData, performanceSheetId, triggerAutoFill]);
+
+  // Clear pending changes when editing starts
+  useEffect(() => {
+    if (isEditing) {
+      pendingChangesRef.current = {};
+    }
+  }, [isEditing]);  // Manual save function (for immediate saves)
   const saveImmediately = useCallback(async () => {
     if (!performanceSheetId || !isEditing) return;
 
@@ -657,19 +847,51 @@ export const usePerformanceDataService = (
     if (!isEditing) return;
 
     // Update local state immediately for instant UI feedback
-    const updated = setNestedValue(localDataRef.current, fieldPath, value);
+    let updated = setNestedValue(localDataRef.current, fieldPath, value);
     localDataRef.current = updated;
     setLocalData(updated);
 
     // Update global state immediately
     setPerformanceData(updated);
 
+    // Handle field syncs (same as handleFieldChange)
+    let finalUpdated = updated;
+
+    // Sync maxCoilWeight -> coilWeight
+    if (fieldPath === "common.coil.maxCoilWeight") {
+      finalUpdated = setNestedValue(updated, "common.material.coilWeight", value);
+      localDataRef.current = finalUpdated;
+      setLocalData(finalUpdated);
+      setPerformanceData(finalUpdated);
+      pendingChangesRef.current["common.material.coilWeight"] = value;
+    }
+
+    // Sync lineType -> typeOfLine based on application context
+    if (fieldPath === "common.equipment.feed.lineType") {
+      const application = finalUpdated?.feed?.feed?.application;
+      let typeOfLineValue = value;
+
+      if (application === 'Press Feed') {
+        typeOfLineValue = value === 'Conventional' ? 'Conventional' : 'Compact';
+      } else if (application === 'Cut To Length') {
+        typeOfLineValue = value === 'Conventional' ? 'Conventional CTL' : 'Compact CTL';
+      } else if (application === 'Standalone') {
+        typeOfLineValue = value;
+      }
+
+      finalUpdated = setNestedValue(finalUpdated, "common.equipment.feed.typeOfLine", typeOfLineValue);
+      localDataRef.current = finalUpdated;
+      setLocalData(finalUpdated);
+      setPerformanceData(finalUpdated);
+      pendingChangesRef.current["common.equipment.feed.typeOfLine"] = typeOfLineValue;
+    }
+
     // Mark as dirty and track pending changes
     setIsDirty(true);
     pendingChangesRef.current[fieldPath] = value;
 
-    // Debounce the backend save
-    debouncedSave(updated);
+    // Trigger backend calculations (same as handleFieldChange)
+    debouncedSave(finalUpdated);
   }, [isEditing, debouncedSave, setPerformanceData]);
 
   // Get field value by path
@@ -706,6 +928,16 @@ export const usePerformanceDataService = (
     return fieldErrors[fieldName];
   }, [fieldErrors]);
 
+  // Handle field focus (prevent overwriting focused fields)
+  const handleFieldFocus = useCallback((fieldName: string) => {
+    focusedFieldRef.current = fieldName;
+  }, []);
+
+  // Handle field blur (allow updates again)
+  const handleFieldBlur = useCallback(() => {
+    focusedFieldRef.current = null;
+  }, []);
+
   // Cleanup on unmount
   React.useEffect(() => {
     return () => {
@@ -729,6 +961,8 @@ export const usePerformanceDataService = (
   return {
     state,
     handleFieldChange,
+    handleFieldFocus,
+    handleFieldBlur,
     saveImmediately,
     updateField,
     resetData,

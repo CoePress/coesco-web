@@ -10,7 +10,8 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react';
 import { useApi } from '@/hooks/use-api';
-import { PerformanceData } from '../performance.context';
+import { PerformanceData, usePerformanceSheet } from '../performance.context';
+import { transformDataForAutofill } from '@/utils/autofill-data-transformer';
 
 // Types
 interface AutoFillState {
@@ -137,6 +138,7 @@ const AutoFillContext = createContext<AutoFillContextType | undefined>(undefined
 export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(autoFillReducer, initialAutoFillState);
     const api = useApi();
+    const { updatePerformanceData } = usePerformanceSheet();
 
     // Check if data is sufficient for auto-fill
     const checkSufficientData = useCallback((performanceData: PerformanceData): boolean => {
@@ -166,21 +168,33 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Trigger auto-fill
     const triggerAutoFill = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
+        console.log('triggerAutoFill called', {
+            enabled: state.settings.enabled,
+            isAutoFilling: state.isAutoFilling,
+            sheetId
+        });
+
         if (!state.settings.enabled || state.isAutoFilling) {
+            console.log('triggerAutoFill: exiting early - not enabled or already auto-filling');
             return;
         }
 
         // Check if we have sufficient data
         if (!checkSufficientData(performanceData)) {
+            console.log('triggerAutoFill: exiting early - insufficient data');
             return;
         }
 
         try {
+            console.log('triggerAutoFill: starting autofill process');
             dispatch({ type: 'SET_AUTO_FILLING', payload: true });
             dispatch({ type: 'SET_ERROR', payload: null });
 
             // Call the auto-fill API
-            const response = await api.post(`/performance/sheets/${sheetId}/autofill`, performanceData, {
+            const transformedData = transformDataForAutofill(performanceData);
+            console.log('triggerAutoFill: calling API with transformed data', transformedData);
+
+            const response = await api.post(`/performance/sheets/${sheetId}/autofill`, transformedData, {
                 params: {
                     merge: 'true',
                     preserveUserInput: state.settings.preserveUserInput,
@@ -188,7 +202,18 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
                 }
             });
 
+            console.log('triggerAutoFill: API response', response);
+            console.log('triggerAutoFill: response.data structure:', {
+                success: response.data.success,
+                hasData: !!response.data.data,
+                dataKeys: response.data.data ? Object.keys(response.data.data) : 'no data property',
+                fullResponse: response.data
+            });
+
             if (response.data.success) {
+                // Use the autoFillValues which contains the actual calculated values
+                const autoFillData = response.data.autoFillValues || {};
+                console.log('triggerAutoFill: autofill data received', autoFillData);
                 dispatch({ type: 'SET_AUTO_FILL_RESULTS', payload: response.data });
                 dispatch({ type: 'SET_LAST_AUTO_FILL_TIMESTAMP', payload: Date.now() });
 
@@ -196,7 +221,8 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
                     dispatch({ type: 'SET_PENDING_AUTO_FILL', payload: true });
                 } else {
                     // Auto-accept if confirmation not required
-                    await acceptAutoFill(response.data.data);
+                    console.log('triggerAutoFill: auto-accepting autofill data');
+                    await acceptAutoFill(autoFillData);
                 }
             } else {
                 throw new Error(response.data.error || 'Auto-fill failed');
@@ -213,11 +239,37 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Accept auto-fill values
     const acceptAutoFill = useCallback(async (autoFillData: any) => {
-        if (!autoFillData) return;
+        if (!autoFillData) {
+            console.log('acceptAutoFill: no data provided');
+            return;
+        }
 
         try {
+            console.log('acceptAutoFill: applying data to form', autoFillData);
+            console.log('acceptAutoFill: data sample check', {
+                'rfq.dates.date': autoFillData.rfq?.dates?.date,
+                'tddbhd.coil.coilOD': autoFillData.tddbhd?.coil?.coilOD,
+                'feed.feed.accelerationRate': autoFillData.feed?.feed?.accelerationRate,
+                'common.customer': autoFillData.common?.customer,
+                'materialSpecs.straightener.rolls.typeOfRoll': autoFillData.materialSpecs?.straightener?.rolls?.typeOfRoll
+            });
+
+            // Transform dropdown number values back to proper strings
+            const transformedData = { ...autoFillData };
+
+            // Fix typeOfRoll if it's a number
+            if (transformedData.materialSpecs?.straightener?.rolls?.typeOfRoll &&
+                typeof transformedData.materialSpecs.straightener.rolls.typeOfRoll === 'number') {
+                const rollNumber = transformedData.materialSpecs.straightener.rolls.typeOfRoll;
+                transformedData.materialSpecs.straightener.rolls.typeOfRoll = `${rollNumber} Roll Str Backbend`;
+                console.log('🔄 Fixed typeOfRoll:', rollNumber, '→', transformedData.materialSpecs.straightener.rolls.typeOfRoll);
+            }
+
+            // Apply the autofill data to the performance sheet and save it
+            await updatePerformanceData(transformedData, true); // Save to database
+
             // Get all the field paths that were auto-filled
-            const autoFilledPaths = getAllFieldPaths(autoFillData);
+            const autoFilledPaths = getAllFieldPaths(transformedData);
 
             // Mark fields as auto-filled
             dispatch({ type: 'ADD_AUTO_FILLED_FIELDS', payload: autoFilledPaths });
@@ -225,14 +277,13 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
             // Clear pending state
             dispatch({ type: 'SET_PENDING_AUTO_FILL', payload: false });
 
-            // Note: The actual data update should be handled by the parent component
-            // that calls this function, as it has access to the performance data context
+            console.log('acceptAutoFill: successfully applied autofill data and saved to database');
 
         } catch (error) {
             console.error('Error accepting auto-fill:', error);
             dispatch({ type: 'SET_ERROR', payload: 'Failed to accept auto-fill values' });
         }
-    }, []);
+    }, [updatePerformanceData]);
 
     // Reject auto-fill
     const rejectAutoFill = useCallback(() => {
@@ -263,12 +314,20 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Check tab-specific auto-fill availability
     const checkTabAutoFillAvailability = useCallback(async (performanceData: PerformanceData) => {
         try {
-            const response = await api.post('/performance/autofill/check', performanceData);
+            // Transform data for backend calculation engine
+            const transformedData = transformDataForAutofill(performanceData);
+            const response = await api.post('/performance/autofill/check', transformedData);
 
-            if (response && response.success) {
-                dispatch({ type: 'SET_TAB_AUTO_FILL_STATUS', payload: response.data.tabStatus });
-                dispatch({ type: 'SET_FILLABLE_TABS', payload: response.data.fillableTabs });
-                dispatch({ type: 'SET_SUFFICIENT_DATA', payload: response.data.globalSufficient });
+            if (response && response.success && response.data) {
+                dispatch({ type: 'SET_TAB_AUTO_FILL_STATUS', payload: response.data.tabStatus || {} });
+                dispatch({ type: 'SET_FILLABLE_TABS', payload: response.data.fillableTabs || [] });
+                // Ensure globalSufficient is boolean
+                const globalSufficient = typeof response.data.globalSufficient === 'boolean'
+                    ? response.data.globalSufficient
+                    : Boolean(response.data.globalSufficient);
+                dispatch({ type: 'SET_SUFFICIENT_DATA', payload: globalSufficient });
+            } else {
+                console.log('checkTabAutoFillAvailability: response structure', response);
             }
         } catch (error) {
             console.warn('Error checking tab auto-fill availability:', error);

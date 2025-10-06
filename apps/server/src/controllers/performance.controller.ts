@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { performanceSheetLinkService, performanceSheetService, performanceSheetVersionService } from "@/services/repository";
 import { PerformanceAutoFillService } from "@/services/performance-autofill.service";
+import { transformDataForCalculationEngine } from "@/utils/data-transformer";
 import { buildQueryParams } from "@/utils";
 
 export class PerformanceController {
@@ -116,28 +117,33 @@ export class PerformanceController {
       const inputData = req.body;
       const { tab } = req.query;
 
+      // Transform data for calculation engine consistency
+      const transformedData = transformDataForCalculationEngine(inputData);
+
       if (typeof tab === 'string') {
         // Check specific tab
-        const canAutoFill = PerformanceAutoFillService.hasTabSufficientData(inputData, tab);
+        const canAutoFill = PerformanceAutoFillService.hasTabSufficientData(transformedData, tab);
         return res.status(200).json({
           success: true,
           tab: tab,
           canAutoFill: canAutoFill,
-          globalSufficient: PerformanceAutoFillService.hasSufficientData(inputData)
+          globalSufficient: PerformanceAutoFillService.hasSufficientData(transformedData)
         });
       } else {
         // Check all tabs
         const allTabs = ['rfq', 'material-specs', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
         const tabStatus = allTabs.reduce((acc, tabName) => {
-          acc[tabName] = PerformanceAutoFillService.hasTabSufficientData(inputData, tabName);
+          acc[tabName] = PerformanceAutoFillService.hasTabSufficientData(transformedData, tabName);
           return acc;
         }, {} as Record<string, boolean>);
+
+        const globalSufficient = PerformanceAutoFillService.hasSufficientData(transformedData);
 
         return res.status(200).json({
           success: true,
           tabStatus: tabStatus,
-          fillableTabs: PerformanceAutoFillService.getAutoFillableTabs(inputData),
-          globalSufficient: PerformanceAutoFillService.hasSufficientData(inputData)
+          fillableTabs: PerformanceAutoFillService.getAutoFillableTabs(transformedData),
+          globalSufficient: globalSufficient
         });
       }
 

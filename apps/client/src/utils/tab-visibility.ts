@@ -236,18 +236,9 @@ function getRollStrBackbendLabel(selectRoll?: string): string {
 /**
  * Gets the dynamic label for Feed tab
  */
-function getFeedLabel(config: TabVisibilityConfig): string {
-    const { feedControls, pullThrough } = config;
-
-    if (!feedControls) return "Feed";
-
-    // Add pull through designation if applicable (Example 4)
-    if (pullThrough === "Yes" && feedControls.toLowerCase().includes("sigma")) {
-        return `Feed (${feedControls} with pull through)`;
-    }
-
-    // Standard feed control labels (Examples 1, 2, 3)
-    return `Feed (${feedControls})`;
+function getFeedLabel(_config: TabVisibilityConfig): string {
+    // Always return "Feed" as the tab name should not change
+    return "Feed";
 }
 
 /**

@@ -12,6 +12,7 @@ import {
   MATERIAL_TYPE_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
+import { getRequiredFieldBackgroundColor } from "@/utils/performance-helpers";
 import { PerformanceData } from "@/contexts/performance.context";
 import { Card, Input, Select, Text } from "@/components";
 import Checkbox from "@/components/_old/checkbox";
@@ -25,8 +26,21 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
   const { id: performanceSheetId } = useParams();
 
   const dataService = usePerformanceDataService(data, performanceSheetId, isEditing);
-  const { state, handleFieldChange, getFieldValue, hasFieldError, getFieldError } = dataService;
+  const { state, handleFieldChange, getFieldValue, getFieldError } = dataService;
   const { localData, fieldErrors, isDirty, lastSaved, isLoading, error } = state;
+
+  // Required fields list
+  const requiredFields = [
+    'common.material.materialThickness', 'common.material.coilWidth', 'common.material.materialType',
+    'common.material.maxYieldStrength', "common.equipment.feed.direction", "common.equipment.feed.controlsLevel",
+    "common.equipment.feed.typeOfLine", "common.equipment.feed.controls", "common.equipment.feed.passline",
+    "materialSpecs.reel.backplate.type", "materialSpecs.reel.style",
+  ];
+
+  // Helper function to get required field background color
+  const getRequiredBgColor = (fieldName: string) => {
+    return getRequiredFieldBackgroundColor(fieldName, requiredFields, getFieldValue);
+  };
 
   // Get coil width boundaries from the nested structure
   const coilWidthBounds = useMemo(() => {
@@ -39,11 +53,14 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
   const getRollTypeBackgroundColor = useMemo(() => {
     const rollType = localData.materialSpecs?.straightener?.rolls?.typeOfRoll;
 
-    if (rollType?.includes('7 Roll')) {
+    // Handle both string and number values
+    const rollTypeStr = typeof rollType === 'number' ? `${rollType} Roll Str Backbend` : rollType;
+
+    if (rollTypeStr?.includes('7 Roll')) {
       return 'var(--color-success)'; // Green for 7-roll
-    } else if (rollType?.includes('9 Roll')) {
+    } else if (rollTypeStr?.includes('9 Roll')) {
       return 'var(--color-warning)'; // Yellow for 9-roll
-    } else if (rollType?.includes('11 Roll')) {
+    } else if (rollTypeStr?.includes('11 Roll')) {
       return 'var(--color-info)'; // Cyan for 11-roll
     }
 
@@ -94,6 +111,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           max={coilWidthBounds.max}
           error={getFieldError("common.material.coilWidth")}
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.material.coilWidth")}
         />
         <Input
           label="Coil Weight (Max)"
@@ -112,6 +130,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           type="number"
           error={getFieldError("common.material.materialThickness")}
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.material.materialThickness")}
         />
         <Select
           label="Material Type"
@@ -121,6 +140,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={MATERIAL_TYPE_OPTIONS}
           placeholder="Select material type..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.material.materialType")}
         />
         <Input
           label="Yield Strength (psi)"
@@ -130,6 +150,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           type="number"
           error={getFieldError("common.material.maxYieldStrength")}
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.material.maxYieldStrength")}
         />
         <Input
           label="Material Tensile (psi)"
@@ -214,6 +235,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={FEED_DIRECTION_OPTIONS}
           placeholder="Select feed direction..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.equipment.feed.direction")}
         />
         <Select
           label="Select Controls Level"
@@ -223,6 +245,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={CONTROLS_LEVEL_OPTIONS}
           placeholder="Select controls level..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.equipment.feed.controlsLevel")}
         />
         <Select
           label="Type of Line"
@@ -232,6 +255,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={TYPE_OF_LINE_OPTIONS}
           placeholder="Select type of line..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.equipment.feed.typeOfLine")}
         />
         <Input
           label="Feed Controls"
@@ -239,6 +263,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.controls || ""}
           onChange={handleFieldChange}
           disabled={true}
+          customBackgroundColor={getRequiredBgColor("common.equipment.feed.controls")}
         />
         <Select
           label="Passline"
@@ -248,6 +273,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={PASSLINE_OPTIONS}
           placeholder="Select passline..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("common.equipment.feed.passline")}
         />
         <Select
           label="Type of Roll"
@@ -282,6 +308,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={REEL_BACKPLATE_OPTIONS}
           placeholder="Select backplate type..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("materialSpecs.reel.backplate.type")}
         />
         <Select
           label="Reel Style"
@@ -291,6 +318,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           options={REEL_STYLE_OPTIONS}
           placeholder="Select reel style..."
           disabled={!isEditing}
+          customBackgroundColor={getRequiredBgColor("materialSpecs.reel.style")}
         />
         <Checkbox
           label="Light Gauge Non-Marking"

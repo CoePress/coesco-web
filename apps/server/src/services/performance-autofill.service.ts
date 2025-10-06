@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import path from 'path';
+import { transformDataForCalculationEngine, debugTransformation } from '../utils/data-transformer';
 
 /**
  * Performance Sheet Auto-Fill Service
@@ -15,19 +16,21 @@ export class PerformanceAutoFillService {
      */
     static hasSufficientData(data: any): boolean {
         // Check for basic material specifications (highest priority)
-        const hasMaterialSpecs = data.common?.material?.materialType &&
+        const hasMaterialSpecs = !!(data.common?.material?.materialType &&
             data.common?.material?.materialThickness &&
-            data.common?.material?.maxYieldStrength;
+            data.common?.material?.maxYieldStrength);
 
         // Check for basic dimensions
-        const hasDimensions = data.common?.material?.coilWidth;
+        const hasDimensions = !!data.common?.material?.coilWidth;
 
         // Check for basic feed rates (at least one)
-        const hasFeedRates = data.common?.feedRates?.average?.length &&
-            data.common?.feedRates?.average?.spm;
+        const hasFeedRates = !!(data.common?.feedRates?.average?.length &&
+            data.common?.feedRates?.average?.spm);
 
         // Minimum requirements: material specs + dimensions + feed rates
-        return hasMaterialSpecs && hasDimensions && hasFeedRates;
+        const result = hasMaterialSpecs && hasDimensions && hasFeedRates;
+
+        return result;
     }
 
     /**
@@ -58,9 +61,9 @@ export class PerformanceAutoFillService {
      * RFQ tab validation - needs basic project info and material specs
      */
     private static hasRfqSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasBasicInfo = data.rfqDetails?.customerName || data.rfqDetails?.projectName;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasBasicInfo = !!(data.rfqDetails?.customerName || data.rfqDetails?.projectName);
 
         return hasMaterial && hasBasicInfo;
     }
@@ -70,17 +73,18 @@ export class PerformanceAutoFillService {
      */
     private static hasMaterialSpecsSufficientData(data: any): boolean {
         return !!(data.common?.material?.materialType &&
-            data.common?.material?.materialThickness);
+            data.common?.material?.materialThickness &&
+            data.common?.material?.maxYieldStrength);
     }
 
     /**
      * TDDBHD tab validation - needs material specs and coil data
      */
     private static hasTddbhdSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasCoil = data.common?.coil?.coilWidth ||
-            data.common?.material?.coilWidth;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasCoil = !!(data.common?.coil?.coilWidth ||
+            data.common?.material?.coilWidth);
 
         return hasMaterial && hasCoil;
     }
@@ -89,10 +93,10 @@ export class PerformanceAutoFillService {
      * Reel Drive tab validation - needs material and reel configuration
      */
     private static hasReelDriveSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasReelConfig = data.reelDrive?.reel?.model ||
-            data.common?.equipment?.reel?.model;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasReelConfig = !!(data.reelDrive?.reel?.model ||
+            data.common?.equipment?.reel?.model);
 
         return hasMaterial && hasReelConfig;
     }
@@ -101,9 +105,9 @@ export class PerformanceAutoFillService {
      * Straightener Utility tab validation - needs material data
      */
     private static hasStrUtilitySufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasStraightener = data.common?.equipment?.straightener?.model;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasStraightener = !!data.common?.equipment?.straightener?.model;
 
         return hasMaterial && hasStraightener;
     }
@@ -112,9 +116,9 @@ export class PerformanceAutoFillService {
      * Feed tab validation - needs material and feed equipment data
      */
     private static hasFeedSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasFeedEquipment = data.common?.equipment?.feed?.model;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasFeedEquipment = !!data.common?.equipment?.feed?.model;
 
         return hasMaterial && hasFeedEquipment;
     }
@@ -123,10 +127,10 @@ export class PerformanceAutoFillService {
      * Shear tab validation - needs material data for shear calculations
      */
     private static hasShearSufficientData(data: any): boolean {
-        const hasMaterial = data.common?.material?.materialType &&
-            data.common?.material?.materialThickness;
-        const hasYieldStrength = data.common?.material?.maxYieldStrength ||
-            data.common?.material?.yieldStrength;
+        const hasMaterial = !!(data.common?.material?.materialType &&
+            data.common?.material?.materialThickness);
+        const hasYieldStrength = !!(data.common?.material?.maxYieldStrength ||
+            data.common?.material?.yieldStrength);
 
         return hasMaterial && hasYieldStrength;
     }
@@ -154,15 +158,20 @@ export class PerformanceAutoFillService {
      */
     static async generateAutoFillValues(inputData: any): Promise<any> {
         try {
-            const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'autofill-simple.py');
-            const inputJson = JSON.stringify(inputData);
+            // Transform data for Python calculation engine (convert strings to numbers)
+            const transformedData = transformDataForCalculationEngine(inputData);
+            debugTransformation(inputData, transformedData);
+
+            const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'performance-sheet', 'autofill.py');
+            const inputJson = JSON.stringify(transformedData);
 
             // Execute the Python auto-fill script
             const result = execSync(`python "${scriptPath}"`, {
                 input: inputJson,
                 encoding: 'utf-8',
                 cwd: path.join(process.cwd(), 'src', 'scripts', 'performance-sheet'),
-                timeout: 30000 // 30 second timeout
+                timeout: 30000, // 30 second timeout
+                stdio: ['pipe', 'pipe', 'inherit'] // Inherit stderr to see debug logs
             });
 
             // Parse the JSON output from the Python script

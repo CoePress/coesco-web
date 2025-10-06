@@ -805,7 +805,7 @@ const initialPerformanceData: PerformanceData = {
     },
     straightener: {
       rolls: {
-        typeOfRoll: "",
+        typeOfRoll: "7 Roll Str. Backbend",
       },
     },
     reel: {
@@ -1259,7 +1259,7 @@ export const PerformanceSheetContext = createContext<
   | {
     performanceData: PerformanceData;
     setPerformanceData: React.Dispatch<React.SetStateAction<PerformanceData>>;
-    updatePerformanceData: (updates: Partial<PerformanceData>) => Promise<any>;
+    updatePerformanceData: (updates: Partial<PerformanceData>, shouldSave?: boolean) => Promise<any>;
     loading?: boolean;
     error?: string | null;
   }
@@ -1270,7 +1270,7 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
   const [performanceData, setPerformanceData] = useState<PerformanceData>(initialPerformanceData);
   const performanceDataRef = useRef(performanceData);
   const { id: performanceSheetId } = useParams();
-  const endpoint = `/performance/${performanceSheetId}`;
+  const endpoint = `/performance/sheets/${performanceSheetId}`;
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -1284,16 +1284,32 @@ export const PerformanceSheetProvider = ({ children }: { children: ReactNode }) 
     try {
       // Always update local state first for immediate UI feedback
       const updatedData = deepMerge(performanceDataRef.current, updates);
+      console.log('updatePerformanceData: updating local state', {
+        updateKeys: Object.keys(updates),
+        sampleUpdatedData: {
+          'rfq.dates.date': updatedData.rfq?.dates?.date,
+          'tddbhd.coil.coilOD': updatedData.tddbhd?.coil?.coilOD,
+          'feed.feed.accelerationRate': updatedData.feed?.feed?.accelerationRate
+        }
+      });
       setPerformanceData(updatedData);
 
       if (shouldSave && performanceSheetId) {
         // Send updates to backend for calculations
-        const response = await api.patch(`${endpoint}/${performanceSheetId}`, { data: updatedData });
+        console.log('updatePerformanceData: sending to backend', endpoint);
+        const response = await api.patch(endpoint, { data: updatedData });
 
         if (response) {
           // Backend response should already be in PerformanceData format
           // Just deep merge it with our current data
           const finalData = deepMerge(updatedData, response);
+          console.log('updatePerformanceData: backend response merged', {
+            sampleFinalData: {
+              'rfq.dates.date': finalData.rfq?.dates?.date,
+              'tddbhd.coil.coilOD': finalData.tddbhd?.coil?.coilOD,
+              'feed.feed.accelerationRate': finalData.feed?.feed?.accelerationRate
+            }
+          });
           setPerformanceData(finalData);
           return finalData;
         }

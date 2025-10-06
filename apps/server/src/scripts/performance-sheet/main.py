@@ -219,6 +219,17 @@ def main():
 
         # --- TDDBHD ---
         try:
+            # Get reel model first to determine family-specific constraints
+            reel_model = parse_str_with_default(data, ["common", "equipment", "reel", "model"], "reel", "model")
+            
+            # Force correct parameters for CPR-040 (D1 family) - only supports air_clutch="No"
+            if reel_model == "CPR-040":
+                air_clutch_value = "No"
+                hyd_threading_drive_value = "None"
+            else:
+                air_clutch_value = str2bool(get_nested(data, ["tddbhd", "reel", "threadingDrive", "airClutch"])) or DEFAULTS["reel"]["threading_drive_air_clutch"]
+                hyd_threading_drive_value = parse_str_with_default(data, ["tddbhd", "reel", "threadingDrive", "hydThreadingDrive"], "reel", "threading_drive_hyd")
+            
             tddbhd_data = {
                 "type_of_line": parse_str_with_default(data, ["common", "equipment", "feed", "typeOfLine"], "feed", "type_of_line"),
                 "reel_drive_tqempty": None,  # Not present
@@ -237,13 +248,15 @@ def main():
                 "brake_model": parse_str_with_default(data, ["tddbhd", "reel", "dragBrake", "model"], "reel", "drag_brake_model"),
                 "cylinder": parse_str_with_default(data, ["tddbhd", "reel", "holddown", "cylinder"], "reel", "holddown_cylinder"),
                 "hold_down_assy": parse_str_with_default(data, ["tddbhd", "reel", "holddown", "assy"], "reel", "holddown_assy"),
-                "hyd_threading_drive": parse_str_with_default(data, ["tddbhd", "reel", "threadingDrive", "hydThreadingDrive"], "reel", "threading_drive_hyd"),
-                "air_clutch": str2bool(get_nested(data, ["tddbhd", "reel", "threadingDrive", "airClutch"])) or DEFAULTS["reel"]["threading_drive_air_clutch"],
+                "hyd_threading_drive": hyd_threading_drive_value,
+                "air_clutch": air_clutch_value,
                 "material_type": (get_nested(data, ["common", "material", "materialType"]) or DEFAULTS["material"]["material_type"]).upper(),
-                "reel_model": parse_str_with_default(data, ["common", "equipment", "reel", "model"], "reel", "model"),
+                "reel_model": reel_model,
                 "reel_width": parse_float_with_default(data, ["common", "equipment", "reel", "width"], "reel", "width"),
                 "backplate_diameter": parse_float_with_default(data, ["common", "equipment", "reel", "backplate", "diameter"], "reel", "backplate_diameter"),
             }
+            
+            print(f"🔧 TDDBHD main calculation: reel_model={reel_model}, air_clutch={air_clutch_value}, hyd_threading_drive={hyd_threading_drive_value}", file=sys.stderr)
             tddbhd_obj = tddbhd_input(**tddbhd_data)
             tddbhd_result = calculate_tbdbhd(tddbhd_obj)
         except Exception as e:
@@ -321,7 +334,7 @@ def main():
                     "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                     "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                     "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
-                    "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
+                    "friction_in_die": parse_float_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
                     "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
                     "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
                     "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),
@@ -348,7 +361,7 @@ def main():
                     "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                     "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                     "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
-                    "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
+                    "friction_in_die": parse_float_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
                     "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
                     "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
                     "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),
@@ -371,7 +384,7 @@ def main():
                     "material_width": parse_int_with_default(data, ["common", "material", "coilWidth"], "material", "coil_width"),
                     "material_thickness": parse_float_with_default(data, ["common", "material", "materialThickness"], "material", "material_thickness"),
                     "press_bed_length": parse_int_with_default(data, ["common", "press", "bedLength"], "press", "bed_length"),
-                    "friction_in_die": parse_int_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
+                    "friction_in_die": parse_float_with_default(data, ["feed", "feed", "frictionInDie"], "feed", "friction_in_die"),
                     "acceleration_rate": parse_float_with_default(data, ["feed", "feed", "accelerationRate"], "feed", "acceleration_rate"),
                     "chart_min_length": parse_float_with_default(data, ["feed", "feed", "chartMinLength"], "feed", "chart_min_length"),
                     "length_increment": parse_float_with_default(data, ["feed", "feed", "lengthIncrement"], "feed", "length_increment"),

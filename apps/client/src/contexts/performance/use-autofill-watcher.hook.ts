@@ -152,16 +152,24 @@ export function useAutoFillWatcher(
     // Determine if auto-fill should be triggered
     const shouldTriggerAutoFill = useCallback((data: PerformanceData, changedFields: string[]): boolean => {
         if (!enabled || !autoFillState.settings.enabled || !sheetId) {
+            console.log('shouldTriggerAutoFill: false - not enabled or missing sheetId', {
+                enabled,
+                settingsEnabled: autoFillState.settings.enabled,
+                sheetId: !!sheetId
+            });
             return false;
         }
 
         // Don't trigger if already auto-filling
         if (autoFillState.isAutoFilling) {
+            console.log('shouldTriggerAutoFill: false - already auto-filling');
             return false;
         }
 
         // Check if sufficient data exists
-        if (!checkSufficientData(data)) {
+        const hasSufficientData = checkSufficientData(data);
+        if (!hasSufficientData) {
+            console.log('shouldTriggerAutoFill: false - insufficient data');
             return false;
         }
 
@@ -171,13 +179,23 @@ export function useAutoFillWatcher(
         );
 
         if (filledFields.length < requireMinimumFields) {
+            console.log('shouldTriggerAutoFill: false - not enough fields filled', {
+                filledCount: filledFields.length,
+                required: requireMinimumFields,
+                filledFields
+            });
             return false;
         }
 
         // Check if enough time has passed since last trigger
         const now = Date.now();
         const timeSinceLastTrigger = now - lastTriggerTimeRef.current;
-        if (timeSinceLastTrigger < 5000) { // Minimum 5 seconds between triggers
+        if (timeSinceLastTrigger < 1500) { // Reduced to 1.5 seconds for better responsiveness
+            console.log('shouldTriggerAutoFill: false - too soon since last trigger', {
+                timeSinceLastTrigger,
+                minimumWait: 1500,
+                lastTrigger: new Date(lastTriggerTimeRef.current).toISOString()
+            });
             return false;
         }
 
@@ -186,8 +204,17 @@ export function useAutoFillWatcher(
             (FIELD_WEIGHTS[field] || 0) >= 70
         );
 
+        const shouldTrigger = highPriorityChanged || filledFields.length >= requireMinimumFields;
+        console.log('shouldTriggerAutoFill:', shouldTrigger, {
+            highPriorityChanged,
+            filledFieldsCount: filledFields.length,
+            requireMinimumFields,
+            changedFields,
+            filledFields
+        });
+
         // Trigger if high-priority field changed or enough fields filled
-        return highPriorityChanged || filledFields.length >= requireMinimumFields;
+        return shouldTrigger;
     }, [
         enabled,
         autoFillState.settings.enabled,
@@ -201,7 +228,12 @@ export function useAutoFillWatcher(
 
     // Debounced auto-fill trigger
     const debouncedTriggerAutoFill = useCallback((data: PerformanceData) => {
-        if (!sheetId) return;
+        if (!sheetId) {
+            console.log('debouncedTriggerAutoFill: no sheetId');
+            return;
+        }
+
+        console.log('debouncedTriggerAutoFill: setting up timer', { debounceMs });
 
         // Clear existing timer
         if (debounceTimerRef.current) {
@@ -211,22 +243,21 @@ export function useAutoFillWatcher(
         // Set new timer
         debounceTimerRef.current = setTimeout(async () => {
             try {
+                console.log('debouncedTriggerAutoFill: executing autofill');
                 await triggerAutoFill(data, sheetId);
                 lastTriggerTimeRef.current = Date.now();
+                console.log('debouncedTriggerAutoFill: autofill completed successfully');
             } catch (error) {
                 console.warn('Auto-fill trigger failed:', error);
             }
         }, debounceMs);
     }, [sheetId, triggerAutoFill, debounceMs]);
 
-    // Debounced tab check
+    // Debounced tab check - separate effect to avoid setState-in-render
     const tabCheckDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (!performanceData) return;
-
-        // Detect field changes
-        const changedFields = detectFieldChanges(performanceData);
 
         // Debounce tab availability check
         if (tabCheckDebounceRef.current) {
@@ -235,6 +266,15 @@ export function useAutoFillWatcher(
         tabCheckDebounceRef.current = setTimeout(() => {
             checkTabAutoFillAvailability(performanceData);
         }, 3500); // 3.5 seconds debounce for tab check
+
+    }, [performanceData, checkTabAutoFillAvailability]);
+
+    // Main autofill watcher effect
+    useEffect(() => {
+        if (!performanceData) return;
+
+        // Detect field changes
+        const changedFields = detectFieldChanges(performanceData);
 
         // Only proceed with auto-fill trigger if there are changes
         if (changedFields.length === 0) return;
@@ -261,7 +301,6 @@ export function useAutoFillWatcher(
         detectFieldChanges,
         calculateDataScore,
         checkSufficientData,
-        checkTabAutoFillAvailability,
         shouldTriggerAutoFill,
         debouncedTriggerAutoFill
     ]);
@@ -279,7 +318,7 @@ export function useAutoFillWatcher(
     return {
         isWatching: enabled && autoFillState.settings.enabled,
         dataScore: performanceData ? calculateDataScore(performanceData) : 0,
-        hasSufficientData: performanceData ? checkSufficientData(performanceData) : false,
+        hasSufficientData: autoFillState.hasSufficientData,
         isAutoFilling: autoFillState.isAutoFilling,
         lastAutoFill: autoFillState.lastAutoFillTimestamp,
         tabAutoFillStatus: autoFillState.tabAutoFillStatus,

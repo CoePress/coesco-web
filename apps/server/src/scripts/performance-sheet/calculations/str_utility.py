@@ -66,7 +66,15 @@ def calc_roll_inertia(dia, length, qty):
     return lbs, inertia
 
 def calc_ratio(motor_rpm, feed_rate, dia):
-    return motor_rpm / ((feed_rate * 12) / (dia * pi))
+    # Prevent division by zero
+    if feed_rate <= 0:
+        feed_rate = 50.0  # Default to 50 FPM if feed_rate is 0 or negative
+    if dia <= 0:
+        dia = 1.0  # Default diameter if invalid
+    denominator = (feed_rate * 12) / (dia * pi)
+    if denominator == 0:
+        return 1.0  # Default ratio to prevent division by zero
+    return motor_rpm / denominator
 
 def calc_refl_inertia(inertia, ratio):
     return inertia / (ratio ** 2)
@@ -168,7 +176,7 @@ def calculate_str_utility(data: str_utility_input):
     lewis_factor_pinch = LEWIS_FACTORS[str_model["pinch_roll_teeth"]]
     lewis_factor_str = LEWIS_FACTORS[str_model["str_roll_teeth"]]
     safe_working_stress = ult_tensile_strength / 3
-    accel_time = (data.feed_rate / 60) / data.acceleration
+    accel_time = (data.feed_rate / 60) / max(data.acceleration, 0.1)  # Prevent division by zero with minimum acceleration
 
     motor_rpm = MOTOR_RPM
     eff = EFFICIENCY

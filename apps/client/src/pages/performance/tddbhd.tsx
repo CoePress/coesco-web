@@ -200,8 +200,8 @@ const TDDBHD: React.FC<TDDBHDProps> = ({ data, isEditing }) => {
         />
         <Input
           label="Coil O.D. (in)"
-          name="common.coil.maxCoilOD"
-          value={localData.common?.coil?.maxCoilOD?.toString() || ""}
+          name="tddbhd.coil.coilOD"
+          value={localData.tddbhd?.coil?.coilOD?.toString() || ""}
           onChange={handleFieldChange}
           type="number"
           disabled={!isEditing}
