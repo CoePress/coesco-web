@@ -18,10 +18,10 @@ import permissionRoutes from "./permissions.routes";
 import postalCodeRoutes from "./postal-code.routes";
 import productionRoutes from "./production.routes";
 import quoteRoutes from "./quote.routes";
+import settingsRoutes from "./settings.routes";
 import systemRoutes from "./system.routes";
 import tagRoutes from "./tag.routes";
 import testRoutes from "./test.route";
-import settingsRoutes from "./settings.routes";
 
 const router = Router();
 

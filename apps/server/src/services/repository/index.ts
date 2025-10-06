@@ -46,6 +46,7 @@ import { RoleAssignmentService } from "./role-assignment.service";
 import { RolePermissionService } from "./role-permission.service";
 import { RoleService } from "./role.service";
 import { TagService } from "./tag.service";
+import { TokenService } from "./token.service";
 import { UserSettingsService } from "./user-settings.service";
 import { UserService } from "./user.service";
 
@@ -96,6 +97,7 @@ export { RoleService };
 export { RoleAssignmentService };
 export { RolePermissionService };
 export { TagService };
+export { TokenService };
 export { UserService };
 export { UserSettingsService };
 
@@ -146,5 +148,6 @@ export const roleService = new RoleService();
 export const roleAssignmentService = new RoleAssignmentService();
 export const rolePermissionService = new RolePermissionService();
 export const tagService = new TagService();
+export const tokenService = new TokenService();
 export const userService = new UserService();
 export const userSettingsService = new UserSettingsService();

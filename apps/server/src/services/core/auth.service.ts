@@ -13,6 +13,7 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
+
 import { emailService } from "..";
 
 export class AuthService {

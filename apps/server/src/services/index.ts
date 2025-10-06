@@ -9,6 +9,7 @@ import { LocationService } from "./business/location.service";
 import { MachineMonitorService } from "./business/machining.service";
 import { MicrosoftService } from "./business/microsoft.service";
 import { QuotingService } from "./business/quoting.service";
+import { SettingsService } from "./business/settings.service";
 import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { EmailService } from "./core/email.service";
@@ -18,7 +19,6 @@ import { LockingService } from "./core/locking.service";
 import { MCPService } from "./core/mcp.service";
 import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
-import { SettingsService } from "./business/settings.service";
 
 // Business
 export const agentService = new AgentService();

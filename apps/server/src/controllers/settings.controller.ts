@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 
-import { authService } from "@/services/core";
 import { userSettingsService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
+import { authService } from "@/services";
 
 export class SettingsController {
   requestPasswordReset = asyncWrapper(async (req: Request, res: Response) => {
@@ -11,13 +11,14 @@ export class SettingsController {
     if (!email) {
       return res.status(400).json({
         success: false,
-        error: "Email is required"
+        error: "Email is required",
       });
     }
 
     const result = await authService.requestPasswordReset(email);
     res.status(200).json(result);
   });
+
   createUserSettings = asyncWrapper(async (req: Request, res: Response) => {
     const result = await userSettingsService.create(req.body);
     res.status(201).json(result);

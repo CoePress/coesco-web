@@ -12,9 +12,9 @@ import { PerformanceController } from "./performance.controller";
 import { PostalCodeController } from "./postal-code.controller";
 import { ProductionController } from "./production.controller";
 import { QuoteController } from "./quote.controller";
+import { SettingsController } from "./settings.controller";
 import { SystemController } from "./system.controller";
 import { TagController } from "./tag.controller";
-import { SettingsController } from "./settings.controller";
 
 export const adminController = new AdminController();
 export const auditLogController = new AuditLogController();
