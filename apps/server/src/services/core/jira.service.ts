@@ -4,6 +4,7 @@ interface CreateIssueOptions {
   title: string;
   description: string;
   userEmail?: string;
+  userName?: string;
   screenshot?: string;
   url?: string;
   userAgent?: string;
@@ -28,7 +29,7 @@ export class JiraService {
 
   async createBugIssue(options: CreateIssueOptions): Promise<JiraIssueResponse> {
     try {
-      const { title, description, userEmail, screenshot, url, userAgent } = options;
+      const { title, description, userEmail, userName, screenshot, url, userAgent } = options;
 
       const descriptionContent: any[] = [
         {
@@ -42,13 +43,17 @@ export class JiraService {
         },
       ];
 
-      if (userEmail) {
+      if (userName || userEmail) {
+        const reportedBy = userName && userEmail
+          ? `${userName} (${userEmail})`
+          : userName || userEmail;
+
         descriptionContent.push({
           type: "paragraph",
           content: [
             {
               type: "text",
-              text: `Reported by: ${userEmail}`,
+              text: `Reported by: ${reportedBy}`,
             },
           ],
         });

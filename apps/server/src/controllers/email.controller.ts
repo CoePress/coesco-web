@@ -16,12 +16,13 @@ export class EmailController {
 
   async sendBugReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, description, userEmail, screenshot, url, userAgent } = req.body;
+      const { title, description, userEmail, userName, screenshot, url, userAgent } = req.body;
 
       const result = await jiraService.createBugIssue({
         title,
         description,
         userEmail,
+        userName,
         screenshot,
         url,
         userAgent,

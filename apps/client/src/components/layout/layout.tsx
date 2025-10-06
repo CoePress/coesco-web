@@ -6,6 +6,7 @@ import * as htmlToImage from "html-to-image";
 import modules from "@/config/modules";
 import { useTheme } from "@/contexts/theme.context";
 import { useAppContext } from "@/contexts/app.context";
+import { useAuth } from "@/contexts/auth.context";
 import { __dev__ } from "@/config/env";
 import ChatSidebar from "./chat-sidebar";
 import CommandBar from "../feature/command-bar";
@@ -235,6 +236,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { sidebarExpanded, toggleSidebar } = useAppContext();
   const { toasts, removeToast, addToast } = useToast();
   const { post, loading } = useApi();
+  const { employee } = useAuth();
 
   const handleTooltipMouseEnter = (e: React.MouseEvent, text: string) => {
     if (!sidebarExpanded) {
@@ -382,12 +384,14 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={async () => {
-                  const result = await post("/email/bug-report", {
+                  const result = await post("/system/bug-report", {
                     title: formData.title.trim(),
                     description: formData.description.trim(),
                     screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
                     url: window.location.href,
                     userAgent: navigator.userAgent,
+                    userEmail: employee?.email,
+                    userName: employee ? `${employee.firstName} ${employee.lastName}` : undefined,
                   });
 
                   if (result) {
