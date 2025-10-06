@@ -7,7 +7,6 @@ import { Trash2 } from "lucide-react";
 type BugReportFormProps = {
   screenshot?: string | null;
   formData: {
-    title: string;
     description: string;
     annotatedScreenshot: string | null;
     includeScreenshot: boolean;
@@ -20,17 +19,6 @@ const BugReportForm = ({ screenshot, formData, onFormDataChange }: BugReportForm
 
   return (
     <>
-      <Input
-        id="bug-title"
-        label="Title"
-        type="text"
-        value={formData.title}
-        onChange={(e) => onFormDataChange({ ...formData, title: e.target.value })}
-        placeholder="Brief description of the issue"
-        autoComplete="off"
-        required
-      />
-
       <Textarea
         id="bug-description"
         label="Description"

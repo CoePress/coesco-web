@@ -57,7 +57,11 @@ export class SystemController {
 
   async sendBugReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, description, userEmail, userName, screenshot, url, userAgent } = req.body;
+      const { description, userEmail, userName, screenshot, url, userAgent } = req.body;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const title = userName ? `Bug Report - ${userName} - ${dateStr}` : `Bug Report - ${dateStr}`;
 
       const result = await jiraService.createBugIssue({
         title,

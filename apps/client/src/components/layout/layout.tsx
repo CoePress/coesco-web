@@ -226,7 +226,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", annotatedScreenshot: null as string | null, includeScreenshot: true });
+  const [formData, setFormData] = useState({ description: "", annotatedScreenshot: null as string | null, includeScreenshot: true });
   const navigate = useNavigate();
   const location = useLocation();
   const commandBarRef = useRef<HTMLDivElement>(null);
@@ -385,7 +385,6 @@ const Layout = ({ children }: LayoutProps) => {
               <Button
                 onClick={async () => {
                   const result = await post("/system/bug-report", {
-                    title: formData.title.trim(),
                     description: formData.description.trim(),
                     screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
                     url: window.location.href,
@@ -422,10 +421,6 @@ const Layout = ({ children }: LayoutProps) => {
 
           <div className="bg-surface border border-border rounded p-3 space-y-2 text-sm">
             <div>
-              <span className="text-text-muted block mb-1">Title:</span>
-              <span className="font-medium text-text">{formData.title}</span>
-            </div>
-            <div>
               <span className="text-text-muted block mb-1">Description:</span>
               <span className="font-medium text-text whitespace-pre-wrap">{formData.description}</span>
             </div>
@@ -460,7 +455,7 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={() => setShowConfirmation(true)}
-                disabled={!formData.title.trim() || !formData.description.trim()}>
+                disabled={!formData.description.trim()}>
                 Submit Report
               </Button>
             </div>
