@@ -623,6 +623,9 @@ def generate_minimum_str_utility_values(data: Dict[str, Any]) -> Dict[str, Any]:
             "horsepower": 10.0,
             "feed_rate": 200.0,
             "max_feed_rate": 250.0,
+            "auto_brake_compensation": "No",
+            "acceleration": 10.0,
+            "num_str_rolls": int(num_rolls),
         }
         
         # Calculate str utility values

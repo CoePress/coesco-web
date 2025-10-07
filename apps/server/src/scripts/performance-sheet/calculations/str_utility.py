@@ -19,17 +19,17 @@ def get_horsepower_string(horsepower):
 
 def get_str_model_lookups(str_model):
     return {
-        "str_roll_dia": get_str_model_value(str_model, "roll_diameter", "str_roll_dia"),
-        "center_dist": get_str_model_value(str_model, "center_distance", "center_dist"),
-        "pinch_roll_dia": get_str_model_value(str_model, "pinch_roll_dia", "pinch_roll_dia"),
-        "jack_force_available": get_str_model_value(str_model, "jack_force_avail", "jack_force_available"),
-        "max_roll_depth": get_str_model_value(str_model, "min_roll_depth", "max_roll_depth"),
-        "str_gear_torque": get_str_model_value(str_model, "str_gear_torq", "str_gear_torque"),
-        "pinch_roll_teeth": get_str_model_value(str_model, "pr_teeth", "pinch_roll_teeth"),
-        "pinch_roll_dp": get_str_model_value(str_model, "proll_dp", "pinch_roll_dp"),
-        "str_roll_teeth": get_str_model_value(str_model, "sroll_teeth", "str_roll_teeth"),
-        "str_roll_dp": get_str_model_value(str_model, "sroll_dp", "str_roll_dp"),
-        "face_width": get_str_model_value(str_model, "face_width", "face_width")
+        "str_roll_dia": float(get_str_model_value(str_model, "roll_diameter", "str_roll_dia")),
+        "center_dist": float(get_str_model_value(str_model, "center_distance", "center_dist")),
+        "pinch_roll_dia": float(get_str_model_value(str_model, "pinch_roll_dia", "pinch_roll_dia")),
+        "jack_force_available": float(get_str_model_value(str_model, "jack_force_avail", "jack_force_available")),
+        "max_roll_depth": float(get_str_model_value(str_model, "min_roll_depth", "max_roll_depth")),
+        "str_gear_torque": float(get_str_model_value(str_model, "str_gear_torq", "str_gear_torque")),
+        "pinch_roll_teeth": int(get_str_model_value(str_model, "pr_teeth", "pinch_roll_teeth")),
+        "pinch_roll_dp": int(get_str_model_value(str_model, "proll_dp", "pinch_roll_dp")),
+        "str_roll_teeth": int(get_str_model_value(str_model, "sroll_teeth", "str_roll_teeth")),
+        "str_roll_dp": int(get_str_model_value(str_model, "sroll_dp", "str_roll_dp")),
+        "face_width": float(get_str_model_value(str_model, "face_width", "face_width"))
     }
 
 def get_material_lookups(material_type, horsepower_string):

@@ -17,12 +17,12 @@ from utils.lookup_tables import (
 
 def get_str_model_lookups(str_model):
     return {
-        "str_roll_dia": get_str_model_value(str_model, "roll_diameter", "str_roll_dia"),
-        "center_dist": get_str_model_value(str_model, "center_distance", "center_dist"),
-        "jack_force_available": get_str_model_value(str_model, "jack_force_avail", "jack_force_available"),
-        "max_roll_depth_without_material": get_str_model_value(str_model, "min_roll_depth", "max_roll_depth_without_material"),
-        "top": get_str_model_value(str_model, "top", "top"),
-        "bottom": get_str_model_value(str_model, "bottom", "bottom"),
+        "str_roll_dia": float(get_str_model_value(str_model, "roll_diameter", "str_roll_dia")),
+        "center_dist": float(get_str_model_value(str_model, "center_distance", "center_dist")),
+        "jack_force_available": float(get_str_model_value(str_model, "jack_force_avail", "jack_force_available")),
+        "max_roll_depth_without_material": float(get_str_model_value(str_model, "min_roll_depth", "max_roll_depth_without_material")),
+        "top": float(get_str_model_value(str_model, "top", "top")),
+        "bottom": float(get_str_model_value(str_model, "bottom", "bottom")),
     }
 
 def get_material_modulus_lookup(material_type):

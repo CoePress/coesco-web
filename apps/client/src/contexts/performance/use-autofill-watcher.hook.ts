@@ -70,6 +70,26 @@ export function useAutoFillWatcher(
     const { id: sheetId } = useParams();
     const { triggerAutoFill, checkSufficientData, checkTabAutoFillAvailability, state: autoFillState } = useAutoFill();
 
+    // Early return if in manual mode - don't set up any watchers
+    if (autoFillState.settings.manualModeOnly) {
+        return {
+            isWatching: false,
+            dataScore: 0,
+            hasSufficientData: false,
+            isAutoFilling: autoFillState.isAutoFilling,
+            lastAutoFill: autoFillState.lastAutoFillTimestamp,
+            tabAutoFillStatus: autoFillState.tabAutoFillStatus,
+            fillableTabs: autoFillState.fillableTabs,
+            isManualMode: true,
+            hasTriggeredOnSave: autoFillState.hasTriggeredOnSave,
+            manualTrigger: useCallback(() => {
+                if (performanceData && sheetId) {
+                    triggerAutoFill(performanceData, sheetId, true);
+                }
+            }, [performanceData, sheetId, triggerAutoFill])
+        };
+    }
+
     // Track previous values to detect changes
     const previousValuesRef = useRef<Record<string, any>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -257,13 +277,11 @@ export function useAutoFillWatcher(
 
     }, [performanceData, checkTabAutoFillAvailability]);
 
-    // Main autofill watcher effect - DISABLED in manual mode
+    // Main autofill watcher effect - COMPLETELY DISABLED in manual mode
     useEffect(() => {
         // Skip all automatic triggering in manual mode
         if (autoFillState.settings.manualModeOnly) {
-            if (process.env.NODE_ENV === 'development') {
-                console.log('AutoFill Watcher - Manual mode enabled, skipping automatic triggers');
-            }
+            // Don't spam console in manual mode
             return;
         }
 

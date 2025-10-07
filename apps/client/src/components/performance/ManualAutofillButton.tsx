@@ -103,8 +103,6 @@ export const ManualAutofillButton: React.FC<ManualAutofillButtonProps> = ({
     const overallCompleted = rfqCompleted + materialSpecsCompleted;
     const overallTotal = RFQ_FIELDS.length + MATERIAL_SPECS_FIELDS.length;
     const overallPercentage = Math.round((overallCompleted / overallTotal) * 100);
-    const rfqPercentage = Math.round((rfqCompleted / RFQ_FIELDS.length) * 100);
-    const materialSpecsPercentage = Math.round((materialSpecsCompleted / MATERIAL_SPECS_FIELDS.length) * 100);
 
     const canTriggerAutofill = overallPercentage >= 80;
     const isComplete = overallPercentage === 100;
@@ -154,81 +152,34 @@ export const ManualAutofillButton: React.FC<ManualAutofillButtonProps> = ({
     const { icon: Icon, color, bgColor, borderColor, buttonColor } = getProgressIndicator();
 
     return (
-        <div className={`${className}`}>
-            {/* Compact Button with Progress */}
-            <div className="flex items-center gap-3">
-                {/* Progress Summary - Compact */}
-                <div className={`px-3 py-2 rounded-lg border ${bgColor} ${borderColor} flex items-center gap-2`}>
-                    <Icon className={`h-4 w-4 ${color}`} />
-                    <div className="text-sm">
-                        <span className={`font-medium ${color}`}>
-                            {overallPercentage}% Ready
-                        </span>
-                        <div className="text-xs text-gray-500">
-                            {overallCompleted}/{overallTotal} fields
-                        </div>
-                    </div>
-                </div>
-
-                {/* Manual Trigger Button */}
-                <button
-                    onClick={handleManualTrigger}
-                    disabled={!canTriggerAutofill || isTriggering || autoFillState.isAutoFilling}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${canTriggerAutofill && !isTriggering && !autoFillState.isAutoFilling
-                            ? `${buttonColor} text-white`
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                >
-                    <Calculator className="h-4 w-4" />
-                    {isTriggering || autoFillState.isAutoFilling ? (
-                        'Calculating...'
-                    ) : canTriggerAutofill ? (
-                        'Auto-Calculate'
-                    ) : (
-                        `Need ${80 - overallPercentage}% more`
-                    )}
-                </button>
+        <div className={`flex items-center gap-2 ${className}`}>
+            {/* Ultra Compact Progress Indicator */}
+            <div className={`px-2 py-1 rounded border ${bgColor} ${borderColor} flex items-center gap-1`}>
+                <Icon className={`h-3 w-3 ${color}`} />
+                <span className={`text-xs font-medium ${color}`}>
+                    {overallPercentage}%
+                </span>
             </div>
 
-            {/* Detailed Progress (Expandable) - Show when not complete */}
-            {!isComplete && (
-                <div className="mt-2 text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-gray-600">RFQ Fields:</span>
-                        <span className={rfqPercentage === 100 ? 'text-green-600 font-medium' : 'text-gray-600'}>
-                            {rfqCompleted}/{RFQ_FIELDS.length}
-                        </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1">
-                        <div
-                            className={`h-1 rounded-full transition-all duration-300 ${rfqPercentage === 100 ? 'bg-green-600' : 'bg-blue-600'
-                                }`}
-                            style={{ width: `${rfqPercentage}%` }}
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Material Specs:</span>
-                        <span className={materialSpecsPercentage === 100 ? 'text-green-600 font-medium' : 'text-gray-600'}>
-                            {materialSpecsCompleted}/{MATERIAL_SPECS_FIELDS.length}
-                        </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1">
-                        <div
-                            className={`h-1 rounded-full transition-all duration-300 ${materialSpecsPercentage === 100 ? 'bg-green-600' : 'bg-blue-600'
-                                }`}
-                            style={{ width: `${materialSpecsPercentage}%` }}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* Save Integration Info */}
-            {onSave && (
-                <div className="text-xs text-gray-500 text-center mt-2">
-                    💡 Auto-fill also triggers once when saving RFQ
-                </div>
-            )}
+            {/* Compact Manual Trigger Button */}
+            <button
+                onClick={handleManualTrigger}
+                disabled={!canTriggerAutofill || isTriggering || autoFillState.isAutoFilling}
+                className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${canTriggerAutofill && !isTriggering && !autoFillState.isAutoFilling
+                        ? `${buttonColor} text-white`
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                title={`${overallCompleted}/${overallTotal} fields complete. ${onSave ? 'Auto-fill also triggers once when saving.' : ''}`}
+            >
+                <Calculator className="h-3 w-3" />
+                {isTriggering || autoFillState.isAutoFilling ? (
+                    'Calculating...'
+                ) : canTriggerAutofill ? (
+                    'Auto-Calc'
+                ) : (
+                    `${80 - overallPercentage}% more`
+                )}
+            </button>
         </div>
     );
 };
