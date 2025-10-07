@@ -9,7 +9,8 @@ import { AutoFillProvider } from "@/contexts/performance/autofill.context";
 import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
 import { getVisibleTabs } from "@/utils/tab-visibility";
 import { useAutoFillWatcher } from "@/contexts/performance/use-autofill-watcher.hook";
-import { AutoFillControlPanel } from "@/components/performance/auto-fill-ui";
+import { ManualAutofillButton } from "@/components/performance/ManualAutofillButton";
+import { useRfqSaveWithAutofill } from "@/hooks/use-rfq-save-with-autofill.hook";
 
 type PerformanceTabValue =
   | "rfq"
@@ -47,19 +48,13 @@ const PerformanceSheetContent = () => {
   // Use global performance context
   const { performanceData, setPerformanceData } = usePerformanceSheet();
 
-  // Auto-fill watcher integration (debounced, only when editing and data loaded)
-  const [autoFillWatcherEnabled, setAutoFillWatcherEnabled] = useState(false);
+  // Use the save hook that includes autofill integration
+  const { saveRfqWithAutofill } = useRfqSaveWithAutofill();
 
-  useEffect(() => {
-    if (isEditing && performanceData) {
-      setAutoFillWatcherEnabled(true);
-    } else {
-      setAutoFillWatcherEnabled(false);
-    }
-  }, [isEditing, performanceData]);
+  // Auto-fill watcher integration (debounced, only when editing and data loaded)
 
   useAutoFillWatcher(performanceData, {
-    enabled: true, // Enable autofill
+    enabled: false, // Disabled - using manual mode only
     debounceMs: 3500,   // 3.5 second debounce to further reduce API calls
     requireMinimumFields: 4
   });
@@ -131,7 +126,7 @@ const PerformanceSheetContent = () => {
 
     const fetchLockStatus = async () => {
       try {
-        const { data } = await instance.get(
+        await instance.get(
           `/lock/status/performance-sheets/${performanceSheetId}`
         );
         // Lock status fetched but not stored in state for now
@@ -166,22 +161,15 @@ const PerformanceSheetContent = () => {
     // );
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // if (!performanceSheetId || !isConnected) return;
-    // emit(
-    //   "lock:release",
-    //   {
-    //     recordType: "performance-sheets",
-    //     recordId: performanceSheetId,
-    //     userId: user?.id,
-    //   },
-    //   (result: any) => {
-    //     setIsEditing(false);
-    //     setIsLocked(false);
-    //     setLockInfo(null);
-    //   }
-    // );
+  const handleSave = async () => {
+    try {
+      await saveRfqWithAutofill();
+      setIsEditing(false);
+      console.log('✅ Save with autofill completed successfully');
+    } catch (error) {
+      console.error('❌ Save failed:', error);
+      // Keep editing mode if save fails
+    }
   };
 
   const renderTabContent = () => {
@@ -220,9 +208,18 @@ const PerformanceSheetContent = () => {
     return <div className="flex justify-center items-center h-64">Tab not found</div>;
   };
 
+  const handleManualSave = async () => {
+    await saveRfqWithAutofill();
+  };
+
   const Actions = () => {
     return (
       <div className="flex items-center gap-3">
+        {isEditing && performanceData && (
+          <ManualAutofillButton
+            onSave={handleManualSave}
+          />
+        )}
         <div className="flex gap-2">
           <Button onClick={isEditing ? handleSave : handleEdit}>
             {isEditing ? <Save size={16} /> : <Lock size={16} />}

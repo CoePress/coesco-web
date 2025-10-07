@@ -74,6 +74,7 @@ export function useAutoFillWatcher(
     const previousValuesRef = useRef<Record<string, any>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const lastTriggerTimeRef = useRef<number>(0);
+    const initialTriggerTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Get nested value from object using dot notation
     const getNestedValue = useCallback((obj: any, path: string): any => {
@@ -162,14 +163,17 @@ export function useAutoFillWatcher(
 
         // Don't trigger if already auto-filling
         if (autoFillState.isAutoFilling) {
-
             return false;
         }
 
-        // Check if sufficient data exists
+        // Skip auto-trigger if in manual mode
+        if (autoFillState.settings.manualModeOnly) {
+            return false;
+        }
+
+        // Normal mode: Check if sufficient data exists
         const hasSufficientData = checkSufficientData(data);
         if (!hasSufficientData) {
-
             return false;
         }
 
@@ -202,6 +206,7 @@ export function useAutoFillWatcher(
         enabled,
         autoFillState.settings.enabled,
         autoFillState.isAutoFilling,
+        autoFillState.settings.manualModeOnly,
         sheetId,
         checkSufficientData,
         requireMinimumFields,
@@ -252,8 +257,16 @@ export function useAutoFillWatcher(
 
     }, [performanceData, checkTabAutoFillAvailability]);
 
-    // Main autofill watcher effect
+    // Main autofill watcher effect - DISABLED in manual mode
     useEffect(() => {
+        // Skip all automatic triggering in manual mode
+        if (autoFillState.settings.manualModeOnly) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('AutoFill Watcher - Manual mode enabled, skipping automatic triggers');
+            }
+            return;
+        }
+
         if (!performanceData) return;
 
         // Detect field changes
@@ -267,6 +280,11 @@ export function useAutoFillWatcher(
 
         // Log changes for debugging
         if (process.env.NODE_ENV === 'development') {
+            console.log('AutoFill Watcher - Field changes detected:', {
+                changedFields,
+                dataScore,
+                mode: 'normal'
+            });
         }
 
         // Check if auto-fill should be triggered
@@ -276,6 +294,7 @@ export function useAutoFillWatcher(
 
     }, [
         performanceData,
+        autoFillState.settings.manualModeOnly,
         detectFieldChanges,
         calculateDataScore,
         checkSufficientData,
@@ -289,6 +308,9 @@ export function useAutoFillWatcher(
             if (debounceTimerRef.current) {
                 clearTimeout(debounceTimerRef.current);
             }
+            if (initialTriggerTimerRef.current) {
+                clearTimeout(initialTriggerTimerRef.current);
+            }
         };
     }, []);
 
@@ -301,6 +323,10 @@ export function useAutoFillWatcher(
         lastAutoFill: autoFillState.lastAutoFillTimestamp,
         tabAutoFillStatus: autoFillState.tabAutoFillStatus,
         fillableTabs: autoFillState.fillableTabs,
+
+        // Manual mode status
+        isManualMode: autoFillState.settings.manualModeOnly,
+        hasTriggeredOnSave: autoFillState.hasTriggeredOnSave,
 
         // Manual trigger function
         manualTrigger: useCallback(() => {

@@ -12,6 +12,7 @@ import React, { createContext, useContext, useReducer, ReactNode, useCallback } 
 import { useApi } from '@/hooks/use-api';
 import { PerformanceData, usePerformanceSheet } from '../performance.context';
 import { transformDataForAutofill } from '@/utils/autofill-data-transformer';
+import { InitialAutofillTriggerService } from '@/services/initial-autofill-trigger.service';
 
 // Types
 interface AutoFillState {
@@ -30,7 +31,10 @@ interface AutoFillState {
         prioritizeModels: boolean;
         showNotifications: boolean;
         requireConfirmation: boolean;
+        manualModeOnly: boolean; // NEW: Only allow manual triggers
     };
+    // Save trigger state
+    hasTriggeredOnSave: boolean;
 }
 
 type AutoFillAction =
@@ -45,7 +49,8 @@ type AutoFillAction =
     | { type: 'REMOVE_AUTO_FILLED_FIELD'; payload: string }
     | { type: 'CLEAR_AUTO_FILLED_FIELDS' }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AutoFillState['settings']> }
-    | { type: 'SET_LAST_AUTO_FILL_TIMESTAMP'; payload: number };
+    | { type: 'SET_LAST_AUTO_FILL_TIMESTAMP'; payload: number }
+    | { type: 'SET_HAS_TRIGGERED_ON_SAVE'; payload: boolean };
 
 // Initial state
 const initialAutoFillState: AutoFillState = {
@@ -63,8 +68,10 @@ const initialAutoFillState: AutoFillState = {
         preserveUserInput: true,
         prioritizeModels: true,
         showNotifications: true,
-        requireConfirmation: false
-    }
+        requireConfirmation: false,
+        manualModeOnly: true
+    },
+    hasTriggeredOnSave: false
 };
 
 // Reducer
@@ -102,6 +109,8 @@ function autoFillReducer(state: AutoFillState, action: AutoFillAction): AutoFill
             };
         case 'SET_LAST_AUTO_FILL_TIMESTAMP':
             return { ...state, lastAutoFillTimestamp: action.payload };
+        case 'SET_HAS_TRIGGERED_ON_SAVE':
+            return { ...state, hasTriggeredOnSave: action.payload };
         default:
             return state;
     }
@@ -113,7 +122,8 @@ interface AutoFillContextType {
     dispatch: React.Dispatch<AutoFillAction>;
 
     // Core auto-fill functions
-    triggerAutoFill: (performanceData: PerformanceData, sheetId: string) => Promise<void>;
+    triggerAutoFill: (performanceData: PerformanceData, sheetId: string, isManual?: boolean) => Promise<void>;
+    triggerAutoFillOnSave: (performanceData: PerformanceData, sheetId: string) => Promise<void>;
     acceptAutoFill: (autoFillData: any) => Promise<void>;
     rejectAutoFill: () => void;
 
@@ -129,6 +139,9 @@ interface AutoFillContextType {
 
     // Settings management
     updateSettings: (newSettings: Partial<AutoFillState['settings']>) => void;
+
+    // Progress and completion
+    getCompletionProgress: (performanceData: PerformanceData) => any;
 }
 
 // Context
@@ -166,17 +179,21 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         return sufficient;
     }, [state.hasSufficientData]);
 
-    // Trigger auto-fill
-    const triggerAutoFill = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
+    // Trigger auto-fill (manual or save-triggered)
+    const triggerAutoFill = useCallback(async (performanceData: PerformanceData, sheetId: string, isManual: boolean = false) => {
 
         if (!state.settings.enabled || state.isAutoFilling) {
-
             return;
         }
 
-        // Check if we have sufficient data
-        if (!checkSufficientData(performanceData)) {
+        // In manual mode, only allow manual triggers or save triggers
+        if (state.settings.manualModeOnly && !isManual) {
+            return;
+        }
 
+        // Check if we have sufficient data using existing logic
+        if (!checkSufficientData(performanceData)) {
+            console.warn('Insufficient data for autofill');
             return;
         }
 
@@ -226,6 +243,30 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
             dispatch({ type: 'SET_AUTO_FILLING', payload: false });
         }
     }, [state.settings, state.isAutoFilling, api, checkSufficientData]);
+
+    // Trigger autofill on save (one-time only)
+    const triggerAutoFillOnSave = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
+        // Only trigger once on save
+        if (state.hasTriggeredOnSave) {
+            console.log('Autofill already triggered on save, skipping');
+            return;
+        }
+
+        // Check if we have enough data for autofill
+        const progress = InitialAutofillTriggerService.getCompletionProgress(performanceData);
+        if (progress.overallProgress.percentage < 80) {
+            console.log(`Not enough data for save autofill: ${progress.overallProgress.percentage}%`);
+            return;
+        }
+
+        console.log('🚀 Triggering autofill on RFQ save (one-time only)');
+
+        // Mark as triggered on save
+        dispatch({ type: 'SET_HAS_TRIGGERED_ON_SAVE', payload: true });
+
+        // Trigger the autofill
+        await triggerAutoFill(performanceData, sheetId, true);
+    }, [state.hasTriggeredOnSave, triggerAutoFill]);
 
     // Accept auto-fill values
     const acceptAutoFill = useCallback(async (autoFillData: any) => {
@@ -323,10 +364,16 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         return state.tabAutoFillStatus[tabName] || false;
     }, [state.tabAutoFillStatus]);
 
+    // Get completion progress for UI display
+    const getCompletionProgress = useCallback((performanceData: PerformanceData) => {
+        return InitialAutofillTriggerService.getCompletionProgress(performanceData);
+    }, []);
+
     const contextValue: AutoFillContextType = {
         state,
         dispatch,
         triggerAutoFill,
+        triggerAutoFillOnSave,
         acceptAutoFill,
         rejectAutoFill,
         markFieldAsAutoFilled,
@@ -335,7 +382,8 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         checkSufficientData,
         checkTabAutoFillAvailability,
         canAutoFillTab,
-        updateSettings
+        updateSettings,
+        getCompletionProgress
     };
 
     return (

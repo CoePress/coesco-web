@@ -69,19 +69,19 @@ def parse_str_safe(value: Any, default: str = "") -> str:
     return str(value) if value is not None else default
 
 def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate minimum valid RFQ values"""
+    """Generate minimum valid RFQ values - PRESERVE USER INPUTS"""
     try:
-        # Get current values or use simple defaults
-        feed_length = parse_float_safe(get_nested(data, ["common", "feedRates", "average", "length"]), 1.0)
-        spm = parse_float_safe(get_nested(data, ["common", "feedRates", "average", "spm"]), 100.0)
+        # Get current values from user inputs - DO NOT OVERRIDE
+        feed_length = parse_float_safe(get_nested(data, ["common", "feedRates", "average", "length"]), None)
+        spm = parse_float_safe(get_nested(data, ["common", "feedRates", "average", "spm"]), None)
         
-        # Use simple defaults if values are missing or invalid
-        if feed_length <= 0:
+        # Only provide defaults if user hasn't entered values
+        if feed_length is None or feed_length <= 0:
             feed_length = 1.0
-        if spm <= 0:
+        if spm is None or spm <= 0:
             spm = 100.0
         
-        # Use your actual calculation function
+        # Use your actual calculation function for FPM ONLY
         rfq_data = {"feed_length": feed_length, "spm": spm}
         rfq_obj = rfq_input(**rfq_data)
         fpm_result = calculate_fpm(rfq_obj)
@@ -90,7 +90,7 @@ def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
         from datetime import datetime
         current_date = datetime.now().strftime("%Y-%m-%d")
         
-        return {
+        result = {
             "rfq": {
                 "dates": {
                     "date": current_date  # Dynamic current date
@@ -118,26 +118,64 @@ def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
                     "country": get_nested(data, ["common", "customerInfo", "country"], "United States"),
                     "dealerName": get_nested(data, ["common", "customerInfo", "dealerName"], "TCR"),
                     "dealerSalesman": get_nested(data, ["common", "customerInfo", "dealerSalesman"], "Scott Bradt")
-                },
-                "feedRates": {
-                    "average": {
-                        "length": feed_length,
-                        "spm": spm,
-                        "fpm": fpm_result
-                    },
-                    "min": {
-                        "length": max(feed_length * 0.8, 0.5),
-                        "spm": max(spm * 0.8, 10.0),
-                        "fpm": calculate_fpm(rfq_input(feed_length=max(feed_length * 0.8, 0.5), spm=max(spm * 0.8, 10.0)))
-                    },
-                    "max": {
-                        "length": feed_length * 1.2,
-                        "spm": spm * 1.2,
-                        "fpm": calculate_fpm(rfq_input(feed_length=feed_length * 1.2, spm=spm * 1.2))
-                    }
                 }
             }
         }
+        
+        # ONLY add feedRates if user hasn't provided their own values
+        # This preserves user inputs and only fills calculated FPM values
+        existing_feed_rates = get_nested(data, ["common", "feedRates"])
+        if not existing_feed_rates:
+            result["common"]["feedRates"] = {
+                "average": {
+                    "length": feed_length,
+                    "spm": spm,
+                    "fpm": fpm_result
+                },
+                "min": {
+                    "length": max(feed_length * 0.8, 0.5),
+                    "spm": max(spm * 0.8, 10.0),
+                    "fpm": calculate_fpm(rfq_input(feed_length=max(feed_length * 0.8, 0.5), spm=max(spm * 0.8, 10.0)))
+                },
+                "max": {
+                    "length": feed_length * 1.2,
+                    "spm": spm * 1.2,
+                    "fpm": calculate_fpm(rfq_input(feed_length=feed_length * 1.2, spm=spm * 1.2))
+                }
+            }
+        else:
+            # User has existing feed rates - preserve their inputs, only calculate FPM
+            # Get user's actual values
+            user_avg_length = get_nested(data, ["common", "feedRates", "average", "length"])
+            user_avg_spm = get_nested(data, ["common", "feedRates", "average", "spm"])
+            user_min_length = get_nested(data, ["common", "feedRates", "min", "length"])
+            user_min_spm = get_nested(data, ["common", "feedRates", "min", "spm"])
+            user_max_length = get_nested(data, ["common", "feedRates", "max", "length"])
+            user_max_spm = get_nested(data, ["common", "feedRates", "max", "spm"])
+            
+            # Only provide calculated FPM values, preserve user length/spm
+            result["common"]["feedRates"] = {
+                "average": {
+                    "fpm": calculate_fpm(rfq_input(
+                        feed_length=user_avg_length or feed_length,
+                        spm=user_avg_spm or spm
+                    ))
+                },
+                "min": {
+                    "fpm": calculate_fpm(rfq_input(
+                        feed_length=user_min_length or max(feed_length * 0.8, 0.5),
+                        spm=user_min_spm or max(spm * 0.8, 10.0)
+                    ))
+                },
+                "max": {
+                    "fpm": calculate_fpm(rfq_input(
+                        feed_length=user_max_length or feed_length * 1.2,
+                        spm=user_max_spm or spm * 1.2
+                    ))
+                }
+            }
+        
+        return result
     except Exception as e:
         print(f"Error generating RFQ values: {e}", file=sys.stderr)
         return {}
@@ -387,29 +425,288 @@ def generate_minimum_tddbhd_values(data: Dict[str, Any]) -> Dict[str, Any]:
         print(f"Error generating TDDBHD values: {e}", file=sys.stderr)
         return {}
 
-def generate_minimum_str_utility_values(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate minimum valid straightener utility values"""
+def generate_minimum_reel_drive_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate minimum valid Reel Drive values that pass validation"""
     try:
-        # For now, return basic defaults until import issues are resolved
-        return {
-            "common": {
-                "equipment": {
+        # Extract material and equipment data
+        material_thickness = get_nested(data, ["common", "material", "materialThickness"], 0.07)
+        coil_width = get_nested(data, ["common", "material", "coilWidth"], 3.0)
+        max_yield_strength = get_nested(data, ["common", "material", "maxYieldStrength"], 45000)
+        material_type = get_nested(data, ["common", "material", "materialType"], "Steel")
+        
+        # Extract feed rates
+        spm = get_nested(data, ["common", "feedRates", "average", "spm"], 200)
+        length = get_nested(data, ["common", "feedRates", "average", "length"], 3.0)
+        
+        # Build reel drive input with ALL required fields
+        reel_drive_data = {
+            "model": "Standard Reel Drive",  # Required string field
+            "material_type": str(material_type),  # Required string field
+            "coil_id": 24.0,  # Required float field - standard coil ID
+            "coil_od": 72.0,  # Required float field - standard coil OD
+            "reel_width": float(coil_width),  # Required float field
+            "backplate_diameter": 30.0,  # Required float field - standard backplate
+            "motor_hp": 5.0,  # Required float field - standard motor HP
+            "type_of_line": "Standard Line",  # Required string field
+            "required_max_fpm": float(spm * length / 12),  # Optional field - convert SPM to FPM
+        }
+        
+        # Calculate reel drive values
+        reel_drive_obj = reel_drive_input(**reel_drive_data)
+        reel_drive_result = calculate_reeldrive(reel_drive_obj)
+        
+        if reel_drive_result and "error" not in reel_drive_result:
+            return {
+                "reelDrive": reel_drive_result
+            }
+        else:
+            return {}
+            
+    except Exception as e:
+        print(f"Error generating Reel Drive values: {e}", file=sys.stderr)
+        return {}
+
+def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate minimum valid Roll Str Backbend values that pass validation"""
+    try:
+        # Extract material data
+        material_thickness = get_nested(data, ["common", "material", "materialThickness"], 0.07)
+        coil_width = get_nested(data, ["common", "material", "coilWidth"], 3.0)
+        max_yield_strength = get_nested(data, ["common", "material", "maxYieldStrength"], 45000)
+        material_type = get_nested(data, ["common", "material", "materialType"], "Steel")
+        
+        # Get straightener model and number of rolls
+        str_model = get_nested(data, ["common", "equipment", "straightener", "model"], "CPPS-250")
+        num_rolls = get_nested(data, ["common", "equipment", "straightener", "numberOfRolls"], 7)
+        
+        # Build roll str backbend input with ALL required fields
+        roll_str_data = {
+            "yield_strength": float(max_yield_strength),
+            "thickness": float(material_thickness),
+            "width": float(coil_width),
+            "material_type": str(material_type),
+            "material_thickness": float(material_thickness),
+            "str_model": str(str_model),
+            "num_str_rolls": int(num_rolls),
+        }
+        
+        # Calculate roll straightener values
+        roll_str_obj = roll_str_backbend_input(**roll_str_data)
+        roll_str_result = calculate_roll_str_backbend(roll_str_obj)
+        
+        if roll_str_result and "error" not in roll_str_result:
+            # Map calculation results to exact RollStrBackbendData interface structure
+            return {
+                "common": {
+                    "equipment": {
+                        "straightener": {
+                            "model": str_model,
+                            "numberOfRolls": num_rolls,
+                            "rollDiameter": roll_str_result.get("str_roll_dia", 2.5)
+                        }
+                    }
+                },
+                "rollStrBackbend": {
+                    "rollConfiguration": str(num_rolls),
                     "straightener": {
-                        "model": "CPPS-250",
-                        "width": parse_float_safe(get_nested(data, ["common", "equipment", "straightener", "width"]), 12.0)
+                        "rollDiameter": roll_str_result.get("str_roll_dia", 2.5),
+                        "centerDistance": roll_str_result.get("center_dist", 3.75),
+                        "jackForceAvailable": roll_str_result.get("jack_force_available", 1780),
+                        "feedRate": 200.0,
+                        "poweredRolls": "Entry",
+                        "operatingPressure": 100.0,
+                        "hydraulicControl": "Manual",
+                        "rolls": {
+                            "typeOfRoll": str_model,
+                            "depth": {
+                                "withMaterial": roll_str_result.get("max_roll_depth_with_material", 0)
+                            },
+                            "backbend": {
+                                "yieldMet": "Yes" if roll_str_result.get("percent_yield_first_up", 0) > 0.5 else "No",
+                                "requiredRollDiameter": roll_str_result.get("str_roll_dia", 2.5),
+                                "radius": {
+                                    "comingOffCoil": roll_str_result.get("radius_off_coil", 0),
+                                    "offCoilAfterSpringback": roll_str_result.get("radius_off_coil_after_springback", 0),
+                                    "oneOffCoil": roll_str_result.get("one_radius_off_coil", 0),
+                                    "curveAtYield": roll_str_result.get("curve_at_yield", 0),
+                                    "radiusAtYield": roll_str_result.get("radius_at_yield", 0),
+                                    "bendingMomentToYield": roll_str_result.get("bending_moment_to_yield", 0)
+                                },
+                                "rollers": {
+                                    "depthRequired": roll_str_result.get("roller_depth_required", 0),
+                                    "depthRequiredCheck": roll_str_result.get("roller_depth_required_check", "OK"),
+                                    "forceRequired": (
+                                        roll_str_result.get("force_required_first", 0) +
+                                        roll_str_result.get("force_required_last", 0)
+                                    ),
+                                    "forceRequiredCheck": "OK",
+                                    "percentYieldCheck": "OK",
+                                    "first": {
+                                        "height": roll_str_result.get("roll_height_first", 0),
+                                        "heightCheck": "OK",
+                                        "forceRequired": roll_str_result.get("force_required_first", 0),
+                                        "forceRequiredCheck": "OK",
+                                        "numberOfYieldStrainsAtSurface": roll_str_result.get("number_of_yield_strains_first_up", 0),
+                                        "up": {
+                                            "resultingRadius": roll_str_result.get("res_rad_first_up", 0),
+                                            "curvatureDifference": roll_str_result.get("r_ri_first_up", 0),
+                                            "bendingMoment": roll_str_result.get("mb_first_up", 0),
+                                            "bendingMomentRatio": roll_str_result.get("mb_my_first_up", 0),
+                                            "springback": roll_str_result.get("springback_first_up", 0),
+                                            "percentOfThicknessYielded": roll_str_result.get("percent_yield_first_up", 0),
+                                            "radiusAfterSpringback": roll_str_result.get("radius_after_springback_first_up", 0)
+                                        },
+                                        "down": {
+                                            "resultingRadius": roll_str_result.get("res_rad_first_down", 0),
+                                            "curvatureDifference": roll_str_result.get("r_ri_first_down", 0),
+                                            "bendingMoment": roll_str_result.get("mb_first_down", 0),
+                                            "bendingMomentRatio": roll_str_result.get("mb_my_first_down", 0),
+                                            "springback": roll_str_result.get("springback_first_down", 0),
+                                            "percentOfThicknessYielded": roll_str_result.get("percent_yield_first_down", 0),
+                                            "radiusAfterSpringback": roll_str_result.get("radius_after_springback_first_down", 0)
+                                        }
+                                    },
+                                    "last": {
+                                        "height": roll_str_result.get("roll_height_last", 0),
+                                        "forceRequired": roll_str_result.get("force_required_last", 0),
+                                        "forceRequiredCheck": roll_str_result.get("force_required_check_last", "OK"),
+                                        "numberOfYieldStrainsAtSurface": roll_str_result.get("number_of_yield_strains_last", 0),
+                                        "up": {
+                                            "resultingRadius": roll_str_result.get("res_rad_last", 0),
+                                            "curvatureDifference": roll_str_result.get("r_ri_last", 0),
+                                            "bendingMoment": roll_str_result.get("mb_last", 0),
+                                            "bendingMomentRatio": roll_str_result.get("mb_my_last", 0),
+                                            "springback": roll_str_result.get("springback_last", 0),
+                                            "percentOfThicknessYielded": roll_str_result.get("percent_yield_last", 0),
+                                            "radiusAfterSpringback": roll_str_result.get("radius_after_springback_last", 0)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            },
-            "strUtility": {
-                "straightener": {
-                    "horsepower": 5.0,
-                    "feedRate": max(50.0, get_nested(data, ["common", "feedRates", "average", "fpm"], 50.0)),  # Use feed FPM or default
-                    "acceleration": 5.0  # Add default acceleration to prevent division by zero
+            }
+        else:
+            return {}
+            
+    except Exception as e:
+        print(f"Error generating Roll Str Backbend values: {e}", file=sys.stderr)
+        return {}
+
+def generate_minimum_str_utility_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate minimum valid Str Utility values that pass validation"""
+    try:
+        # Extract material data
+        material_type = get_nested(data, ["common", "material", "materialType"], "Cold Rolled Steel")
+        material_thickness = get_nested(data, ["common", "material", "materialThickness"], 0.07)
+        coil_width = get_nested(data, ["common", "material", "coilWidth"], 3.0)
+        max_yield_strength = get_nested(data, ["common", "material", "maxYieldStrength"], 45000)
+        
+        # Extract equipment data
+        str_model = get_nested(data, ["common", "equipment", "straightener", "model"], "CPPS-250")
+        str_width = get_nested(data, ["common", "equipment", "straightener", "width"], coil_width)
+        num_rolls = get_nested(data, ["common", "equipment", "straightener", "numberOfRolls"], 7)
+        
+        # Build str utility input with ALL required fields
+        str_util_data = {
+            "max_coil_weight": 5000.0,
+            "coil_id": 24.0,
+            "coil_od": 60.0,
+            "coil_width": float(coil_width),
+            "material_thickness": float(material_thickness),
+            "yield_strength": float(max_yield_strength),
+            "material_type": str(material_type),
+            "yield_met": "Yes",
+            "str_model": str(str_model),
+            "str_width": float(str_width),
+            "horsepower": 10.0,
+            "feed_rate": 200.0,
+            "max_feed_rate": 250.0,
+        }
+        
+        # Calculate str utility values
+        str_util_obj = str_utility_input(**str_util_data)
+        str_util_result = calculate_str_utility(str_util_obj)
+        
+        if str_util_result and "error" not in str_util_result:
+            # Map calculation results to exact StrUtilityData interface structure
+            return {
+                "common": {
+                    "equipment": {
+                        "straightener": {
+                            "model": str_model,
+                            "width": str_width,
+                            "numberOfRolls": num_rolls
+                        }
+                    }
+                },
+                "strUtility": {
+                    "straightener": {
+                        "payoff": "Standard",
+                        "horsepower": str_util_data["horsepower"],
+                        "acceleration": 10.0,
+                        "feedRate": str_util_data["feed_rate"],
+                        "autoBrakeCompensation": "No",
+                        "centerDistance": str_util_result.get("center_dist", 3.75),
+                        "jackForceAvailable": str_util_result.get("jack_force_available", 1780),
+                        "maxRollDepth": str_util_result.get("max_roll_depth", -0.38),
+                        "modulus": str_util_result.get("modulus", 30000000),
+                        "actualCoilWeight": str_util_result.get("actual_coil_weight", 5000),
+                        "coilOD": str_util_result.get("coil_od", 60),
+                        "rolls": {
+                            "straighteningRolls": num_rolls,
+                            "straightener": {
+                                "diameter": str_util_result.get("str_roll_dia", 2.5),
+                                "requiredGearTorque": str_util_result.get("str_roll_req_torque", 0),
+                                "ratedTorque": str_util_result.get("str_roll_rated_torque", 0)
+                            },
+                            "pinch": {
+                                "diameter": str_util_result.get("pinch_roll_dia", 3.472),
+                                "requiredGearTorque": str_util_result.get("pinch_roll_req_torque", 0),
+                                "ratedTorque": str_util_result.get("pinch_roll_rated_torque", 0)
+                            }
+                        },
+                        "gear": {
+                            "faceWidth": 1.25,
+                            "contAngle": 14.5,
+                            "straightenerRoll": {
+                                "numberOfTeeth": str_util_result.get("str_roll_teeth", 14),
+                                "dp": str_util_result.get("str_roll_dp", 10)
+                            },
+                            "pinchRoll": {
+                                "numberOfTeeth": str_util_result.get("pinch_roll_teeth", 18),
+                                "dp": str_util_result.get("pinch_roll_dp", 10)
+                            }
+                        },
+                        "required": {
+                            "force": str_util_result.get("required_force", 0),
+                            "ratedForce": str_util_result.get("jack_force_available", 1780),
+                            "horsepower": str_util_result.get("horsepower_required", 0),
+                            "horsepowerCheck": str_util_result.get("horsepower_check", "OK"),
+                            "jackForceCheck": str_util_result.get("jack_force_check", "OK"),
+                            "backupRollsCheck": "OK",
+                            "feedRateCheck": str_util_result.get("feed_rate_check", "OK"),
+                            "pinchRollCheck": str_util_result.get("pinch_roll_check", "OK"),
+                            "strRollCheck": str_util_result.get("str_roll_check", "OK"),
+                            "fpmCheck": str_util_result.get("fpm_check", "OK")
+                        },
+                        "torque": {
+                            "straightener": str_util_result.get("str_torque", 0),
+                            "acceleration": str_util_result.get("acceleration_torque", 0),
+                            "brake": str_util_result.get("brake_torque", 0)
+                        }
+                    },
+                    "coil": {
+                        "weight": str_util_result.get("actual_coil_weight", 5000)
+                    }
                 }
             }
-        }
+        else:
+            return {}
+            
     except Exception as e:
-        print(f"Error generating str utility values: {e}", file=sys.stderr)
+        print(f"Error generating Str Utility values: {e}", file=sys.stderr)
         return {}
 
 def generate_minimum_feed_values(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -581,7 +878,9 @@ def main():
         autofill_results.append(generate_minimum_rfq_values(input_data))
         autofill_results.append(generate_minimum_material_specs_values(input_data))
         autofill_results.append(generate_minimum_tddbhd_values(input_data))
+        autofill_results.append(generate_minimum_reel_drive_values(input_data))
         autofill_results.append(generate_minimum_str_utility_values(input_data))
+        autofill_results.append(generate_minimum_roll_str_backbend_values(input_data))
         autofill_results.append(generate_minimum_feed_values(input_data))
         autofill_results.append(generate_minimum_shear_values(input_data))
         
@@ -593,8 +892,8 @@ def main():
             "success": True,
             "autoFillValues": merged_results,
             "generatedSections": [
-                "rfq", "material-specs", "tddbhd", 
-                "str-utility", "feed", "shear"
+                "rfq", "material-specs", "tddbhd", "reel-drive",
+                "str-utility", "roll-str-backbend", "feed", "shear"
             ],
             "metadata": {
                 "timestamp": "2025-09-25T00:00:00Z",

@@ -350,13 +350,19 @@ export class PerformanceAutoFillService {
 
     /**
      * Checks if a field has user input (non-default, non-empty value)
+     * Updated to properly handle 0 as valid user input
      */
     private static hasUserInput(data: any, path: string): boolean {
         const value = this.getNestedValue(data, path);
 
         // Consider these as "no user input"
-        if (value === undefined || value === null || value === '' || value === 0) {
+        if (value === undefined || value === null || value === '') {
             return false;
+        }
+
+        // For numbers, 0 IS a valid user input (for lengths, SPMs, etc.)
+        if (typeof value === 'number') {
+            return true; // Any number (including 0) is considered user input
         }
 
         // For strings, check if it's a default placeholder
