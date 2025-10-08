@@ -1,15 +1,11 @@
 import { useTheme } from "@/contexts/theme.context";
 import { useAuth } from "@/contexts/auth.context";
 import Button from "@/components/ui/button";
-import { useState } from "react";
-import { useApi } from "@/hooks/use-api";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { IApiResponse } from "@/utils/types";
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user, employee } = useAuth();
+  const { employee } = useAuth();
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "general";
   const navigate = useNavigate();

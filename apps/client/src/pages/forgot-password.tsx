@@ -1,4 +1,4 @@
-import { Button, Input, Card } from "@/components";
+import { Input, Card } from "@/components";
 import { useState } from "react";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +27,7 @@ const BackgroundImage = () => {
 const ForgotPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const [step, setStep] = useState<"request" | "reset">(token ? "reset" : "request");
+  const [step] = useState<"request" | "reset">(token ? "reset" : "request");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

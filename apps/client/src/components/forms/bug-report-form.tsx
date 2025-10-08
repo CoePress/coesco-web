@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ToggleSwitch, Button, Input } from "@/components";
+import { ToggleSwitch, Button } from "@/components";
 import Textarea from "@/components/ui/text-area";
 import ScreenshotAnnotator from "@/components/ui/screenshot-annotator";
 import { Trash2 } from "lucide-react";

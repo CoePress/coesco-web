@@ -113,6 +113,22 @@ export class AuthService {
       throw new UnauthorizedError("Password must be at least 8 characters long");
     }
 
+    if (!/[A-Z]/.test(password)) {
+      throw new UnauthorizedError("Password must contain at least one uppercase letter");
+    }
+
+    if (!/[a-z]/.test(password)) {
+      throw new UnauthorizedError("Password must contain at least one lowercase letter");
+    }
+
+    if (!/[0-9]/.test(password)) {
+      throw new UnauthorizedError("Password must contain at least one number");
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      throw new UnauthorizedError("Password must contain at least one special character");
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { username },
     });

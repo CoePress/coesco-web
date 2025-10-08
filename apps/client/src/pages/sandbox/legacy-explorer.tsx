@@ -251,7 +251,7 @@ const LegacyExplorer: React.FC = () => {
           onExport={() => exportCSV("all")}
           actions={
             selectedTable && (
-              <Button onClick={fetchData} disabled={!selectedTable || dataApi.loading} variant="primary">
+              <Button onClick={() => fetchData()} disabled={!selectedTable || dataApi.loading} variant="primary">
                 {dataApi.loading ? "Loading…" : "Load Data"}
               </Button>
             )

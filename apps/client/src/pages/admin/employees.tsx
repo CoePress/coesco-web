@@ -117,7 +117,7 @@ const Employees = () => {
           variant="secondary-outline"
           size="sm"
           onClick={(e) => {
-            e.stopPropagation();
+            e?.stopPropagation();
             setSelectedEmployee(row);
             setIsEditModalOpen(true);
           }}>

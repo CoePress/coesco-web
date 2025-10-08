@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 type ButtonProps = {
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   variant?:
     | "primary"
     | "secondary"
