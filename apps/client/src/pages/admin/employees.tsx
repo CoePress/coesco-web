@@ -21,10 +21,12 @@ import { RefreshCcwIcon } from "lucide-react";
 
 const Employees = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
   const { get, response: employees, loading, error } = useApi<IApiResponse<Employee[]>>();
+  const { post: syncEmployees, loading: syncing } = useApi<IApiResponse<any>>();
 
   const [params, setParams] = useState({
     sort: "lastName" as string,
@@ -135,6 +137,22 @@ const Employees = () => {
     fetchEmployees();
   };
 
+  const handleSync = async () => {
+    try {
+      const response = await syncEmployees("/admin/employees/sync");
+
+      if (response?.success) {
+        toast.success("Employee sync completed successfully!");
+        refresh();
+      } else {
+        toast.error("Employee sync failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error syncing employees:", error);
+      toast.error("An unexpected error occurred during sync.");
+    }
+  };
+
   useEffect(() => {
     fetchEmployees();
   }, [params]);
@@ -185,7 +203,14 @@ const Employees = () => {
   const Actions = () => {
     return (
       <div className="flex gap-2">
-        <Button onClick={refresh} variant="primary" className="px-2">
+        <Button
+          onClick={handleSync}
+          variant="secondary-outline"
+          disabled={syncing || loading}
+        >
+          {syncing ? "Syncing..." : "Sync Employees"}
+        </Button>
+        <Button onClick={refresh} variant="primary" className="px-2" disabled={loading}>
           <RefreshCcwIcon size={16} />
         </Button>
       </div>

@@ -1,7 +1,7 @@
 import type { Employee, NtfyDevice, Permission, PermissionException, Role, RoleAssignment, RolePermission } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import { deviceService, microsoftService } from "@/services";
+import { deviceService, employeeSyncService, microsoftService } from "@/services";
 import { employeeService, ntfyDeviceService, permissionExceptionService, permissionService, roleAssignmentService, rolePermissionService, roleService, userService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
 
@@ -87,7 +87,37 @@ export class AdminController {
 
   async syncEmployees(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await microsoftService.sync();
+      const result = await employeeSyncService.syncAll();
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async syncEmployeesFromLegacy(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await employeeSyncService.syncFromLegacy();
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async syncEmployeesFromMicrosoft(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await employeeSyncService.syncFromMicrosoft();
+      res.status(200).json(result);
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+
+  async getEmployeeSyncStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await employeeSyncService.getSyncStats();
       res.status(200).json(result);
     }
     catch (error) {

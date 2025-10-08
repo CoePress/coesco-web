@@ -3,6 +3,7 @@ import { __prod__ } from "@/config/env";
 
 import { AgentService } from "./business/agent.service";
 import { DeviceService } from "./business/device.service";
+import { EmployeeSyncService } from "./business/employee-sync.service";
 import { FormManagerService } from "./business/form-manager.service";
 import { LegacyService } from "./business/legacy.service";
 import { LocationService } from "./business/location.service";
@@ -23,6 +24,7 @@ import { SocketService } from "./core/socket.service";
 // Business
 export const agentService = new AgentService();
 export const deviceService = new DeviceService();
+export const employeeSyncService = new EmployeeSyncService();
 export const formManagerService = new FormManagerService();
 export const legacyService = new LegacyService();
 export const locationService = new LocationService();
