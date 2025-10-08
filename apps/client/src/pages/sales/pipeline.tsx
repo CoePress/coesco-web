@@ -88,7 +88,7 @@ const Pipeline = () => {
           sort: 'CreateDT',
           order: 'desc',
           limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
         }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
@@ -118,8 +118,8 @@ const Pipeline = () => {
       const raw = await refetchApi.get('/legacy/base/Journey', {
         sort: 'CreateDT',
         order: 'desc',
-        limit: 100,
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID'
+        limit: 150,
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Address_ID'
       });
 
       if (raw !== null) {
@@ -231,6 +231,7 @@ const Pipeline = () => {
       Equipment_Type: raw.Equipment_Type,
       Lead_Source: raw.Lead_Source,
       Next_Steps: raw.Next_Steps,
+      Address_ID: raw.Address_ID,
     };
   };
 
@@ -244,7 +245,7 @@ const Pipeline = () => {
           sort: 'CreateDT',
           order: 'desc',
           limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
         });
 
         if (!cancelled && raw !== null) {
@@ -714,7 +715,8 @@ const Pipeline = () => {
       'Journey Steps',
       'Contact Name',
       'Contact Email',
-      'Contact Position'
+      'Contact Position',
+      'Address'
     ];
     const uniqueRsmInitials = [...new Set(
       filteredJourneys
@@ -735,7 +737,8 @@ const Pipeline = () => {
     });
 
     const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string; Contact_Position: string }>>();
-    console.log('Fetching contact data for journeys...');
+    const journeyAddresses = new Map<string, { AddressName: string; Address1: string; Address2: string; Address3: string; City: string; State: string; Country: string; ZipCode: string }>();
+    console.log('Fetching contact and address data for journeys...');
 
     await Promise.all(
       filteredJourneys.map(async (journey) => {
@@ -783,6 +786,46 @@ const Pipeline = () => {
             Contact_Position: ''
           }]);
         }
+
+        if (journey.Address_ID && journey.Company_ID) {
+          try {
+            console.log(`Fetching address for journey ID: ${journey.id}, Company_ID: ${journey.Company_ID}, Address_ID: ${journey.Address_ID}`);
+            const addressesData = await api.get('/legacy/std/Address/filter/custom', {
+              filterField: 'Company_ID',
+              filterValue: journey.Company_ID
+            });
+
+            console.log(`Addresses data for journey ${journey.id}:`, addressesData);
+
+            let matchingAddress = null;
+
+            if (addressesData && Array.isArray(addressesData)) {
+              matchingAddress = addressesData.find(addr =>
+                addr.Address_ID === journey.Address_ID ||
+                addr.Address_ID === Number(journey.Address_ID)
+              );
+            } else if (addressesData && addressesData.Address_ID === journey.Address_ID) {
+              matchingAddress = addressesData;
+            }
+
+            if (matchingAddress) {
+              journeyAddresses.set(journey.id.toString(), {
+                AddressName: matchingAddress.AddressName || '',
+                Address1: matchingAddress.Address1 || '',
+                Address2: matchingAddress.Address2 || '',
+                Address3: matchingAddress.Address3 || '',
+                City: matchingAddress.City || '',
+                State: matchingAddress.State || '',
+                Country: matchingAddress.Country || '',
+                ZipCode: matchingAddress.ZipCode || ''
+              });
+            } else {
+              console.log(`No matching address found for journey ${journey.id} with Address_ID ${journey.Address_ID}`);
+            }
+          } catch (error) {
+            console.error(`Error fetching address data for journey ${journey.id}:`, error);
+          }
+        }
       })
     );
 
@@ -802,10 +845,20 @@ const Pipeline = () => {
       const customer = customersById.get(String(journey.customerId));
       const rsmFullName = journey.RSM ? rsmFullNames.get(journey.RSM) || journey.RSM : '';
       const contacts = journeyContacts.get(journey.id.toString()) || [{ Contact_Name: '', Contact_Email: '', Contact_Position: '' }];
+      const address = journeyAddresses.get(journey.id.toString());
 
       const contactNames = contacts.map(c => c.Contact_Name).filter(Boolean).join('\n');
       const contactEmails = contacts.map(c => c.Contact_Email || '').join('\n');
       const contactPositions = contacts.map(c => c.Contact_Position || '').join('\n');
+
+      const formattedAddress = address ? [
+        address.AddressName,
+        address.Address1,
+        address.Address2,
+        address.Address3,
+        [address.City, address.State, address.ZipCode].filter(Boolean).join(', '),
+        address.Country
+      ].filter(Boolean).join('\n') : '';
 
       return [
         journey.Quote_Number || '',
@@ -824,7 +877,8 @@ const Pipeline = () => {
         journey.Next_Steps || '',
         contactNames,
         contactEmails,
-        contactPositions
+        contactPositions,
+        formattedAddress
       ];
     });
     const lastColumn = String.fromCharCode(64 + headers.length);
@@ -1088,11 +1142,11 @@ const Pipeline = () => {
           onSuccess={() => {
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
-                get('/legacy/base/Journey', { 
-                  sort: 'CreateDT', 
-                  order: 'desc', 
+                get('/legacy/base/Journey', {
+                  sort: 'CreateDT',
+                  order: 'desc',
                   limit: 100,
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps'
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
                 })
               ]);
               

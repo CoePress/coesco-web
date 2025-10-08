@@ -184,6 +184,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [customerForm, setCustomerForm] = useState({
     companyId: journey?.Company_ID || "",
     industry: getValidIndustry(journey?.Industry || ""),
+    addressId: journey?.Address_ID || "",
   });
   const [companySearchMode, setCompanySearchMode] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState("");
@@ -223,6 +224,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         setCustomerForm({
           companyId: journey?.Company_ID || "",
           industry: getValidIndustry(journey?.Industry || ""),
+          addressId: journey?.Address_ID || "",
         });
         setCompanyName(journey?.Target_Account || journey?.companyName || "");
         lastFetchedCompanyId.current = journey?.Company_ID || "";
@@ -367,7 +369,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
 
   const handleSaveCustomer = async () => {
-    const updates = { Company_ID: customerForm.companyId, Industry: customerForm.industry, Target_Account: companyName };
+    const updates = { Company_ID: customerForm.companyId, Industry: customerForm.industry, Target_Account: companyName, Address_ID: customerForm.addressId };
     const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
     if (success) { setIsEditingCustomer(false); updateJourney(updates); }
   };
@@ -626,7 +628,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Customer Details</h2>
               <div className="flex gap-2">
-                <EditButtons isEditing={isEditingCustomer} onSave={handleSaveCustomer} onCancel={handleCancelCustomer} onEdit={() => { setCustomerForm({ companyId: journey?.Company_ID || "", industry: getValidIndustry(journey?.Industry || "") }); setIsEditingCustomer(true); }} isSaving={isSaving} />
+                <EditButtons isEditing={isEditingCustomer} onSave={handleSaveCustomer} onCancel={handleCancelCustomer} onEdit={() => { setCustomerForm({ companyId: journey?.Company_ID || "", industry: getValidIndustry(journey?.Industry || ""), addressId: journey?.Address_ID || "" }); setIsEditingCustomer(true); }} isSaving={isSaving} />
                 {!isEditingCustomer && <div title={customer?.id ? "Go to customer page" : "No associated customer"}><Button variant="secondary-outline" size="sm" onClick={customer?.id ? () => navigate(`/sales/companies/${customer?.id}`) : undefined} disabled={!customer?.id}><User size={16} /></Button></div>}
               </div>
             </div>
@@ -742,6 +744,27 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                 ) : (
                   <div className="text-sm text-text">
                     {customer?.industry || journey?.Industry || "-"}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="text-sm text-text-muted">Address ID</div>
+                {isEditingCustomer ? (
+                  <input
+                    type="text"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text font-mono"
+                    value={customerForm.addressId}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setCustomerForm(s => ({ ...s, addressId: value }));
+                      }
+                    }}
+                    placeholder="Enter address ID..."
+                  />
+                ) : (
+                  <div className="text-sm text-text font-mono">
+                    {journey?.Address_ID || "-"}
                   </div>
                 )}
               </div>
