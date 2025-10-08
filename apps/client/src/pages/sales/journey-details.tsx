@@ -97,6 +97,14 @@ const formatDateSafe = (date: any) => {
   }
 };
 
+// Will work on removing these later
+const extractDateOnly = (dateStr: any) => {
+  if (!dateStr) return "";
+  const str = String(dateStr);
+  const match = str.match(/^\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : "";
+};
+
 const EditButtons = ({ isEditing, onSave, onCancel, onEdit, isSaving }: any) => (
   <div className="flex gap-2">
     {isEditing ? (
@@ -159,21 +167,21 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     value: journey?.Journey_Value ?? journey?.value ?? "",
     dealer: getValidDealer(journey?.Dealer ?? journey?.Dealer_Name ?? ""),
     dealerContact: getValidDealerContact(journey?.Dealer_Contact ?? ""),
-    journeyStartDate: journey?.Journey_Start_Date ? journey.Journey_Start_Date.split(' ')[0] : "",
+    journeyStartDate: extractDateOnly(journey?.Journey_Start_Date),
     stage: journey?.Journey_Stage ?? journey?.stage ?? "",
     priority: journey?.Priority ?? journey?.priority ?? "",
     status: journey?.Journey_Status ?? journey?.status ?? "",
-    presentationDate: journey?.Quote_Presentation_Date ? journey.Quote_Presentation_Date.split(' ')[0] : "",
-    expectedPoDate: journey?.Expected_Decision_Date ? journey.Expected_Decision_Date.split(' ')[0] : "",
-    lastActionDate: journey?.Action_Date ? journey.Action_Date.split(' ')[0] : (journey?.updatedAt ? journey.updatedAt.split(' ')[0] : ""),
+    presentationDate: extractDateOnly(journey?.Quote_Presentation_Date),
+    expectedPoDate: extractDateOnly(journey?.Expected_Decision_Date),
+    lastActionDate: extractDateOnly(journey?.Action_Date || journey?.updatedAt),
     confidence: journey?.Chance_To_Secure_order ?? "",
     reasonWon: journey?.Reason_Won ?? "",
     reasonLost: journey?.Reason_Lost ?? "",
     reasonWonLost: journey?.Reason_Won_Lost ?? "",
     competition: journey?.Competition ?? "",
     visitOutcome: journey?.Visit_Outcome ?? "",
-    visitDate: journey?.Visit_Date ? journey.Visit_Date.split(' ')[0] : "",
-    anticipatedVisitDate: journey?.Anticipated_Visit_Date ? journey.Anticipated_Visit_Date.split(' ')[0] : "",
+    visitDate: extractDateOnly(journey?.Visit_Date),
+    anticipatedVisitDate: extractDateOnly(journey?.Anticipated_Visit_Date),
   });
 
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -1664,8 +1672,8 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
     quoteNumber: journey?.Quote_Number?.trim() || "",
     quoteType: journey?.Quote_Type || "Standard more than 6 months",
     presentationMethod: journey?.Presentation_Method || "",
-    presentationDate: journey?.Quote_Presentation_Date ? journey.Quote_Presentation_Date.split(' ')[0] : "",
-    expectedDecisionDate: journey?.Expected_Decision_Date ? journey.Expected_Decision_Date.split(' ')[0] : "",
+    presentationDate: extractDateOnly(journey?.Quote_Presentation_Date),
+    expectedDecisionDate: extractDateOnly(journey?.Expected_Decision_Date),
   });
 
   const [quoteForm, setQuoteForm] = useState(createQuoteFormData(journey));

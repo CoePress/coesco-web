@@ -1051,6 +1051,7 @@ const Pipeline = () => {
             setIdsByStage={setIdsByStage}
             showTags={showTags}
             onTagsUpdated={handleTagsUpdated}
+            employee={employee}
           />
         </div>
       )}

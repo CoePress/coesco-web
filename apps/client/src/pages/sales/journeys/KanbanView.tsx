@@ -384,6 +384,7 @@ interface KanbanViewProps {
   setIdsByStage: (updater: (prev: Record<number, string[]>) => Record<number, string[]>) => void;
   showTags?: boolean;
   onTagsUpdated?: () => void;
+  employee?: any;
 }
 
 export const KanbanView = ({
@@ -397,8 +398,11 @@ export const KanbanView = ({
   setIdsByStage,
   showTags = false,
   onTagsUpdated,
+  employee,
 }: KanbanViewProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [originalStage, setOriginalStage] = useState<number | null>(null);
+  const api = useApi();
 
   const columnIdPrefix = "column-";
 
@@ -432,7 +436,15 @@ export const KanbanView = ({
 
   const handleDragStart = useCallback(({ active }: any) => {
     setActiveId(active.id.toString());
-  }, []);
+
+    const activeContainerId: string | undefined =
+      active?.data?.current?.sortable?.containerId;
+    const fromStage =
+      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
+      findStageByItemId(String(active.id));
+
+    setOriginalStage(typeof fromStage === 'number' ? fromStage : null);
+  }, [stageFromDroppableId, findStageByItemId]);
 
   const handleDragOver = useCallback(({ active, over }: any) => {
     if (!over) return;
@@ -476,15 +488,11 @@ export const KanbanView = ({
   }, [stageFromDroppableId, findStageByItemId, columnIdPrefix, setIdsByStage]);
 
   const handleDragEnd = useCallback(async ({ active, over }: any) => {
+    const fromStage = originalStage;
     setActiveId(null);
-    if (!over) return;
+    setOriginalStage(null);
 
-    const activeContainerId: string | undefined =
-      active?.data?.current?.sortable?.containerId;
-
-    const fromStage =
-      (activeContainerId && stageFromDroppableId(activeContainerId)) ??
-      findStageByItemId(String(active.id));
+    if (!over || !fromStage) return;
 
     const toStage =
       stageFromDroppableId(String(over.id)) ??
@@ -493,7 +501,7 @@ export const KanbanView = ({
         : undefined) ??
       findStageByItemId(String(over.id));
 
-    if (!fromStage || !toStage) return;
+    if (!toStage) return;
 
     const isOverAColumn =
       typeof over.id === "string" && String(over.id).startsWith(columnIdPrefix);
@@ -529,13 +537,31 @@ export const KanbanView = ({
       }
     });
 
-    // Call the stage update handler
+    // Call the stage update handler first
     try {
       await onStageUpdate(String(active.id), toStage);
     } catch (error) {
       console.error("Failed to update journey stage:", error);
     }
-  }, [stageFromDroppableId, findStageByItemId, columnIdPrefix, setIdsByStage, onStageUpdate]);
+
+    if (fromStage !== toStage && employee?.initials) {
+      try {
+        const journey = journeys.find((j) => j.id.toString() === String(active.id));
+        const journeyId = journey?.ID || journey?.id || String(active.id);
+        const fromStageLabel = STAGES.find(s => s.id === fromStage)?.label || `Stage ${fromStage}`;
+        const toStageLabel = STAGES.find(s => s.id === toStage)?.label || `Stage ${toStage}`;
+
+        await api.post('/legacy/std/Journey_Log', {
+          Jrn_ID: journeyId,
+          Action: `Journey_Stage: FROM ${fromStageLabel} TO ${toStageLabel}`,
+          CreateDtTm: new Date().toISOString().replace('T', ' ').substring(0, 23),
+          CreateInit: employee.initials
+        });
+      } catch (error) {
+        console.error("Failed to log journey stage change:", error);
+      }
+    }
+  }, [originalStage, stageFromDroppableId, findStageByItemId, columnIdPrefix, setIdsByStage, onStageUpdate, employee, api, journeys]);
 
   return (
     <DndContext
