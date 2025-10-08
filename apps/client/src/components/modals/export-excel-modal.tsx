@@ -31,7 +31,7 @@ export const ExportExcelModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={isExporting ? undefined : onClose}
+      onClose={isExporting ? () => {} : onClose}
       title={isExporting ? "Exporting..." : "Export Pipeline to Excel"}
       size="sm"
     >
