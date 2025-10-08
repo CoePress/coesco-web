@@ -7,6 +7,7 @@ import {
   ActivityIcon,
   BoxIcon,
   Building2,
+  ChartNoAxesCombined,
   CodeIcon,
   DollarSignIcon,
   FactoryIcon,
@@ -24,7 +25,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
+import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -51,58 +52,7 @@ export interface Page {
   children?: Page[];
 }
 
-const adminModule: Module = {
-  sequence: 4,
-  slug: "admin",
-  label: "Admin",
-  icon: ShieldIcon,
-  status: "active",
-  pages: [
-    {
-      slug: "employees",
-      label: "Employees",
-      icon: UsersIcon,
-      component: Employees,
-      children: [
-        {
-          slug: ":id",
-          label: "Employee Details",
-          component: EmployeeDetails,
-        },
-      ],
-    },
-    // {
-    //   slug: "permissions",
-    //   label: "Permissions",
-    //   icon: LockIcon,
-    //   component: Permissions,
-    // },
-    // {
-    //   slug: "sessions",
-    //   label: "Sessions",
-    //   icon: FileClockIcon,
-    //   component: Sessions,
-    // },
-    // {
-    //   slug: "devices",
-    //   label: "Devices",
-    //   icon: ComputerIcon,
-    //   component: Devices,
-    // },
-    // {
-    //   slug: "reports",
-    //   label: "Reports",
-    //   icon: FileTextIcon,
-    //   component: Reports,
-    // },
-    {
-      slug: "logs",
-      label: "Logs",
-      icon: LogsIcon,
-      component: Logs,
-    },
-  ],
-};
+
 
 const productionModule: Module = {
   sequence: 2,
@@ -215,19 +165,19 @@ const salesModule: Module = {
         },
       ],
     },
-    // {
-    //   slug: "performance-sheets",
-    //   label: "Performance Sheets",
-    //   icon: ChartNoAxesCombined,
-    //   component: PerformanceSheets,
-    //   children: [
-    //     {
-    //       slug: ":id",
-    //       label: "Performance Sheet Details",
-    //       component: PerformanceSheet,
-    //     },
-    //   ],
-    // },
+    {
+      slug: "performance-sheets",
+      label: "Performance Sheets",
+      icon: ChartNoAxesCombined,
+      component: PerformanceSheets,
+      children: [
+        {
+          slug: ":id",
+          label: "Performance Sheet Details",
+          component: PerformanceSheet,
+        },
+      ],
+    },
   ],
 };
 
@@ -280,6 +230,59 @@ const serviceModule: Module = {
   ],
 };
 
+const adminModule: Module = {
+  sequence: 9998,
+  slug: "admin",
+  label: "Admin",
+  icon: ShieldIcon,
+  status: "active",
+  pages: [
+    {
+      slug: "employees",
+      label: "Employees",
+      icon: UsersIcon,
+      component: Employees,
+      children: [
+        {
+          slug: ":id",
+          label: "Employee Details",
+          component: EmployeeDetails,
+        },
+      ],
+    },
+    // {
+    //   slug: "permissions",
+    //   label: "Permissions",
+    //   icon: LockIcon,
+    //   component: Permissions,
+    // },
+    // {
+    //   slug: "sessions",
+    //   label: "Sessions",
+    //   icon: FileClockIcon,
+    //   component: Sessions,
+    // },
+    // {
+    //   slug: "devices",
+    //   label: "Devices",
+    //   icon: ComputerIcon,
+    //   component: Devices,
+    // },
+    // {
+    //   slug: "reports",
+    //   label: "Reports",
+    //   icon: FileTextIcon,
+    //   component: Reports,
+    // },
+    {
+      slug: "logs",
+      label: "Logs",
+      icon: LogsIcon,
+      component: Logs,
+    },
+  ],
+};
+
 const sandboxModule: Module = {
   sequence: 9999,
   slug: "sandbox",
@@ -321,11 +324,11 @@ const sandboxModule: Module = {
 };
 
 const modules: Module[] = [
-  adminModule,
-  productionModule,
   salesModule,
-  sandboxModule,
+  productionModule,
   serviceModule,
+  adminModule,
+  sandboxModule,
 ]
   .filter(
     module =>

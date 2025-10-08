@@ -12,6 +12,7 @@ import {
   formSectionService,
   formService,
   machineService,
+  performanceSheetVersionService,
   permissionService as repoPermissionService,
   rolePermissionService,
   roleService,
@@ -273,6 +274,55 @@ function mapDataType(dataType: string): FormFieldDataType {
   return mapping[dataType] || FormFieldDataType.TEXT;
 }
 
+async function seedPerformanceSheetVersions() {
+  try {
+    const existingVersions = await prisma.performanceSheetVersion.count();
+
+    if (existingVersions === 0) {
+      logger.info("Seeding sample performance sheet versions...");
+
+      const sampleSections = [
+        {
+          id: "section-1",
+          title: "Machine Information",
+          fields: [
+            { id: "field-1", label: "Machine Model", type: "text", required: true },
+            { id: "field-2", label: "Serial Number", type: "text", required: true },
+            { id: "field-3", label: "Year Manufactured", type: "number", required: false },
+          ],
+        },
+        {
+          id: "section-2",
+          title: "Performance Metrics",
+          fields: [
+            { id: "field-4", label: "Maximum Speed (RPM)", type: "number", required: true },
+            { id: "field-5", label: "Power Consumption (kW)", type: "number", required: true },
+            { id: "field-6", label: "Efficiency Rating", type: "text", required: false },
+          ],
+        },
+        {
+          id: "section-3",
+          title: "Additional Notes",
+          fields: [
+            { id: "field-7", label: "Comments", type: "textarea", required: false },
+          ],
+        },
+      ];
+
+      await performanceSheetVersionService.create({
+        sections: sampleSections,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      logger.info("Seeded sample performance sheet version");
+    }
+  }
+  catch (error) {
+    logger.error("Error during performance sheet version seeding:", error);
+  }
+}
+
 async function seedServiceTechDailyForm() {
   try {
     const existingForm = await prisma.form.findFirst({
@@ -377,6 +427,7 @@ export async function seedDatabase() {
   await seedRoles();
   await seedMachines();
   await seedServiceTechDailyForm();
+  await seedPerformanceSheetVersions();
 
   logger.info("All seeding completed successfully");
 }

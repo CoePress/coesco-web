@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 // import MaterialSpecs from "./material-specs";
 // import TDDBHD from "./tddbhd";
 // import ReelDrive from "./reel-drive";
@@ -11,7 +11,9 @@ import { Save, Lock, Link } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
+import { useSocket } from "@/contexts/socket.context";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
+import { useToast } from "@/hooks/use-toast";
 // import RFQ from "./rfq";
 
 // const PERFORMANCE_TABS = [
@@ -43,9 +45,10 @@ const PerformanceSheet = () => {
   // const location = useLocation();
   // const navigate = useNavigate();
   const [isLocked, setIsLocked] = useState(false);
-  const [isEditing, _setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [newLink, setNewLink] = useState<{
     entityType: string;
@@ -63,9 +66,11 @@ const PerformanceSheet = () => {
   //   `/performance/sheets`,
   //   performanceSheetId
   // );
-  // const { emit, isConnected } = useSocket();
+  const { emit, isLockConnected, onLockChanged } = useSocket();
   const { user } = useAuth();
   const { get } = useApi();
+  const toast = useToast();
+  const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const visibleTabs = [
     { label: "RFQ", value: "rfq" },
@@ -83,7 +88,7 @@ const PerformanceSheet = () => {
     const fetchLockStatus = async () => {
       try {
         const response = await get(
-          `/lock/status/performance-sheets/${performanceSheetId}`
+          `/locks/status/performance-sheets/${performanceSheetId}`
         );
         if (response) {
           setIsLocked((response as any)?.isLocked ?? false);
@@ -95,31 +100,123 @@ const PerformanceSheet = () => {
     };
 
     fetchLockStatus();
+
+    // Cleanup lock on unmount
+    return () => {
+      if (lockExtendIntervalRef.current) {
+        clearInterval(lockExtendIntervalRef.current);
+      }
+      if (isEditing && performanceSheetId && isLockConnected) {
+        emit(
+          "lock:release",
+          {
+            recordType: "performance-sheets",
+            recordId: performanceSheetId,
+            userId: user?.id,
+          }
+        );
+      }
+    };
   }, [performanceSheetId]);
 
+  // Auto-extend lock while editing
+  useEffect(() => {
+    if (isEditing && performanceSheetId && isLockConnected) {
+      // Extend lock every 4 minutes (locks typically expire after 5 minutes)
+      lockExtendIntervalRef.current = setInterval(() => {
+        emit(
+          "lock:extend",
+          {
+            recordType: "performance-sheets",
+            recordId: performanceSheetId,
+            userId: user?.id,
+          },
+          (result: any) => {
+            if (!result?.success) {
+              toast.error("Failed to extend lock. Your changes may not be saved.");
+              setIsEditing(false);
+              setIsLocked(false);
+            }
+          }
+        );
+      }, 4 * 60 * 1000); // 4 minutes
+
+      return () => {
+        if (lockExtendIntervalRef.current) {
+          clearInterval(lockExtendIntervalRef.current);
+          lockExtendIntervalRef.current = null;
+        }
+      };
+    }
+  }, [isEditing, performanceSheetId, isLockConnected]);
+
+  useEffect(() => {
+    const unsubscribe = onLockChanged((data: any) => {
+      const { recordType, recordId, lockInfo } = data;
+
+      if (recordType === "performance-sheets" && recordId === performanceSheetId) {
+        if (lockInfo) {
+          setIsLocked(true);
+          setLockInfo(lockInfo);
+
+          if (lockInfo.userId !== user?.id && isEditing) {
+            toast.warning("Lock was acquired by another user. Your editing session has ended.");
+            setIsEditing(false);
+            if (lockExtendIntervalRef.current) {
+              clearInterval(lockExtendIntervalRef.current);
+              lockExtendIntervalRef.current = null;
+            }
+          }
+        } else {
+          setIsLocked(false);
+          setLockInfo(null);
+          if (isEditing) {
+            setIsEditing(false);
+            if (lockExtendIntervalRef.current) {
+              clearInterval(lockExtendIntervalRef.current);
+              lockExtendIntervalRef.current = null;
+            }
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
+
   const handleEdit = () => {
-    // if (!performanceSheetId || !isConnected) return;
-    // emit(
-    //   "lock:acquire",
-    //   {
-    //     recordType: "performance-sheets",
-    //     recordId: performanceSheetId,
-    //     userId: user?.id,
-    //   },
-    //   (result: any) => {
-    //     if (result?.success) {
-    //       setIsEditing(true);
-    //       setIsLocked(false);
-    //       setLockInfo(result.lockInfo);
-    //     } else {
-    //       setIsLocked(true);
-    //       setIsEditing(false);
-    //     }
-    //   }
-    // );
+    if (!performanceSheetId || !isLockConnected) {
+      toast.error("Cannot acquire lock. Connection not available.");
+      return;
+    }
+
+    emit(
+      "lock:acquire",
+      {
+        recordType: "performance-sheets",
+        recordId: performanceSheetId,
+        userId: user?.id,
+      },
+      (result: any) => {
+        if (result?.success) {
+          setIsEditing(true);
+          setIsLocked(true);
+          setLockInfo(result.lockInfo);
+          toast.success("Lock acquired. You can now edit.");
+        } else {
+          setIsLocked(true);
+          setIsEditing(false);
+          toast.error(result?.message || "Failed to acquire lock. Sheet may be locked by another user.");
+        }
+      }
+    );
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
+    setShowSaveConfirmation(true);
+  };
+
+  const handleConfirmSave = async () => {
     if (!performanceSheetId) return;
 
     try {
@@ -127,83 +224,80 @@ const PerformanceSheet = () => {
       // await patch(`/performance/sheets/${performanceSheetId}`, updatedData);
 
       // Release lock after save
-      // if (!isConnected) return;
-      // emit(
-      //   "lock:release",
-      //   {
-      //     recordType: "performance-sheets",
-      //     recordId: performanceSheetId,
-      //     userId: user?.id,
-      //   },
-      //   (result: any) => {
-      //     setIsEditing(false);
-      //     setIsLocked(false);
-      //     setLockInfo(null);
-      //   }
-      // );
+      if (!isLockConnected) {
+        toast.error("Cannot release lock. Connection not available.");
+        setShowSaveConfirmation(false);
+        return;
+      }
+
+      emit(
+        "lock:release",
+        {
+          recordType: "performance-sheets",
+          recordId: performanceSheetId,
+          userId: user?.id,
+        },
+        (result: any) => {
+          if (result?.success) {
+            setIsEditing(false);
+            setIsLocked(false);
+            setLockInfo(null);
+            setShowSaveConfirmation(false);
+            toast.success("Changes saved and lock released.");
+
+            // Clear auto-extend interval
+            if (lockExtendIntervalRef.current) {
+              clearInterval(lockExtendIntervalRef.current);
+              lockExtendIntervalRef.current = null;
+            }
+          } else {
+            toast.error("Failed to release lock.");
+            setShowSaveConfirmation(false);
+          }
+        }
+      );
     } catch (error) {
       console.error("Failed to save performance sheet:", error);
+      toast.error("Failed to save performance sheet.");
+      setShowSaveConfirmation(false);
     }
   };
 
   const getHeaderActions = () => {
+    // Currently editing - show Save button
     if (isEditing) {
-      return [
-        {
-          type: "button",
-          label: "Save",
-          icon: <Save size={16} />,
-          variant: "primary",
-          disabled: false,
-          onClick: handleSave,
-        },
-      ];
+      return (
+        <Button variant="primary" onClick={handleSave}>
+          <Save size={16} /> Save
+        </Button>
+      );
     }
+
+    // Locked by another user - show disabled Locked button
     if (isLocked && lockInfo?.userId && lockInfo.userId !== user?.id) {
-      return [
-        {
-          type: "button",
-          label: "Locked",
-          icon: <Lock size={16} />,
-          variant: "secondary",
-          disabled: true,
-          onClick: () => {},
-        },
-      ];
+      return (
+        <div className="flex gap-2">
+          <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
+            <Link size={16} />
+          </Button>
+          <Button variant="secondary" disabled>
+            <Lock size={16} /> Locked by {lockInfo?.userName || "another user"}
+          </Button>
+        </div>
+      );
     }
-    if (isLocked && lockInfo?.userId === user?.id) {
-      return [
-        {
-          type: "button",
-          label: "Save",
-          icon: <Save size={16} />,
-          variant: "primary",
-          disabled: false,
-          onClick: handleSave,
-        },
-      ];
-    }
-    if (!isLocked) {
-      return [
-        {
-          type: "button",
-          label: null,
-          icon: <Link size={16} />,
-          variant: "secondary-outline",
-          disabled: false,
-          onClick: () => setShowLinksModal(true),
-        },
-        {
-          type: "button",
-          label: "Edit",
-          icon: <Lock size={16} />,
-          variant: "secondary",
-          disabled: false,
-          onClick: handleEdit,
-        },
-      ];
-    }
-    return [];
+
+    // Not locked or locked by current user (shouldn't happen) - show Edit button
+    return (
+      <div className="flex gap-2">
+        <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
+          <Link size={16} />
+        </Button>
+        <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
+          <Lock size={16} /> Edit
+        </Button>
+      </div>
+    );
   };
 
   // const renderTabContent = () => {
@@ -265,7 +359,9 @@ const PerformanceSheet = () => {
       <PageHeader
         title="Performance Details"
         description="Performance Details"
-        actions={getHeaderActions() as any}
+        actions={getHeaderActions()}
+        goBack
+        goBackTo='/sales/performance-sheets'
       />
 
       <Tabs
@@ -369,6 +465,31 @@ const PerformanceSheet = () => {
             </div>
           </form>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={showSaveConfirmation}
+        onClose={() => setShowSaveConfirmation(false)}
+        title="Confirm Save"
+        size="xs">
+        <div className="space-y-4">
+          <p className="text-sm text-text">
+            Are you sure you want to save your changes and release the lock?
+          </p>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setShowSaveConfirmation(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmSave}>
+              Save
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

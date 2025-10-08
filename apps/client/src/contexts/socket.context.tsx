@@ -19,6 +19,11 @@ type SocketContextType = {
   machineStates: any[];
   subscribeToMachineStates: () => void;
   unsubscribeFromMachineStates: () => void;
+
+  lockSocket: Socket | null;
+  isLockConnected: boolean;
+  emit: (event: string, data: any, callback?: (result: any) => void) => void;
+  onLockChanged: (callback: (data: any) => void) => () => void;
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -36,6 +41,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const iotSocketRef = useRef<Socket | null>(null);
   const [machineStates, setMachineStates] = useState<any[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const lockSocketRef = useRef<Socket | null>(null);
+  const [isLockConnected, setIsLockConnected] = useState(false);
 
   const subscribeToSystemStatus = () => {
     if (!systemSocketRef.current) {
@@ -111,11 +118,49 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   };
 
   useEffect(() => {
+    // Initialize lock socket on mount
+    if (!lockSocketRef.current) {
+      lockSocketRef.current = io(`${env.VITE_BASE_URL}/locks`, {
+        reconnectionDelayMax: 10000,
+        transports: ["websocket", "polling"],
+      });
+
+      const socket = lockSocketRef.current;
+      socket.on("connect", () => {
+        setIsLockConnected(true);
+      });
+
+      socket.on("disconnect", () => {
+        setIsLockConnected(false);
+      });
+
+      socket.on("connect_error", () => {
+        setIsLockConnected(false);
+      });
+    }
+
     return () => {
       systemSocketRef.current?.disconnect();
       iotSocketRef.current?.disconnect();
+      lockSocketRef.current?.disconnect();
     };
   }, []);
+
+  const emit = (event: string, data: any, callback?: (result: any) => void) => {
+    if (lockSocketRef.current?.connected) {
+      lockSocketRef.current.emit(event, data, callback);
+    }
+  };
+
+  const onLockChanged = (callback: (data: any) => void) => {
+    if (lockSocketRef.current) {
+      lockSocketRef.current.on("lock:changed", callback);
+      return () => {
+        lockSocketRef.current?.off("lock:changed", callback);
+      };
+    }
+    return () => {};
+  };
 
   const contextValue: SocketContextType = {
     systemSocket: systemSocketRef.current,
@@ -128,6 +173,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     machineStates,
     subscribeToMachineStates,
     unsubscribeFromMachineStates,
+
+    lockSocket: lockSocketRef.current,
+    isLockConnected,
+    emit,
+    onLockChanged,
   };
 
   return (
