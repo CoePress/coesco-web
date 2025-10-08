@@ -2,6 +2,7 @@ import { io } from "@/app";
 import { __prod__ } from "@/config/env";
 
 import { AgentService } from "./business/agent.service";
+import { AuditLogBusinessService } from "./business/audit-log.service";
 import { DeviceService } from "./business/device.service";
 import { EmployeeSyncService } from "./business/employee-sync.service";
 import { FormManagerService } from "./business/form-manager.service";
@@ -23,6 +24,7 @@ import { SocketService } from "./core/socket.service";
 
 // Business
 export const agentService = new AgentService();
+export const auditLogBusinessService = new AuditLogBusinessService();
 export const deviceService = new DeviceService();
 export const employeeSyncService = new EmployeeSyncService();
 export const formManagerService = new FormManagerService();

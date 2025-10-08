@@ -1,6 +1,7 @@
 import type { AuditLog } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
+import { auditLogBusinessService } from "@/services";
 import { auditLogService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
 
@@ -18,7 +19,7 @@ export class AuditLogController {
   async getAuditLogs(req: Request, res: Response, next: NextFunction) {
     try {
       const params = buildQueryParams<AuditLog>(req.query);
-      const result = await auditLogService.getAll(params);
+      const result = await auditLogBusinessService.getAuditLogs(params);
       res.status(200).json(result);
     }
     catch (error) {
@@ -28,7 +29,7 @@ export class AuditLogController {
 
   async getAuditLog(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await auditLogService.getById(req.params.auditLogId);
+      const result = await auditLogBusinessService.getAuditLog(req.params.auditLogId);
       res.status(200).json(result);
     }
     catch (error) {
