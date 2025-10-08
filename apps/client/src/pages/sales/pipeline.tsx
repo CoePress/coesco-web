@@ -618,7 +618,6 @@ const Pipeline = () => {
   const stageUpdateApi = useApi();
   
   const handleTagsUpdated = useCallback(async () => {
-    console.log('Tags updated, triggering refresh');
     const allJourneys = legacyJourneys || journeys;
     if (allJourneys) {
       const journeyIds = allJourneys.map((j: any) => j.id.toString());
@@ -724,7 +723,6 @@ const Pipeline = () => {
         .filter(rsm => rsm && rsm.trim())
     )];
 
-    console.log('Unique RSM initials found:', uniqueRsmInitials);
     const rsmFullNames = new Map<string, string>();
     uniqueRsmInitials.forEach(initials => {
       const displayName = rsmDisplayNames.get(initials);
@@ -738,19 +736,15 @@ const Pipeline = () => {
 
     const journeyContacts = new Map<string, Array<{ Contact_Name: string; Contact_Email: string; Contact_Position: string }>>();
     const journeyAddresses = new Map<string, { AddressName: string; Address1: string; Address2: string; Address3: string; City: string; State: string; Country: string; ZipCode: string }>();
-    console.log('Fetching contact and address data for journeys...');
 
     await Promise.all(
       filteredJourneys.map(async (journey) => {
         try {
-          console.log(`Fetching contacts for journey ID: ${journey.id}`);
           const contactData = await api.get('/legacy/base/Journey_Contact/filter/custom', {
             filterField: 'Jrn_ID',
             filterValue: journey.id,
             fields: 'Contact_Name,Contact_Email,Contact_Position,IsPrimary'
           });
-
-          console.log(`Contact data for journey ${journey.id}:`, contactData);
 
           if (contactData && Array.isArray(contactData) && contactData.length > 0) {
             if (options.includePrimaryContactOnly) {
@@ -789,13 +783,10 @@ const Pipeline = () => {
 
         if (journey.Address_ID && journey.Company_ID) {
           try {
-            console.log(`Fetching address for journey ID: ${journey.id}, Company_ID: ${journey.Company_ID}, Address_ID: ${journey.Address_ID}`);
             const addressesData = await api.get('/legacy/std/Address/filter/custom', {
               filterField: 'Company_ID',
               filterValue: journey.Company_ID
             });
-
-            console.log(`Addresses data for journey ${journey.id}:`, addressesData);
 
             let matchingAddress = null;
 
@@ -819,8 +810,6 @@ const Pipeline = () => {
                 Country: matchingAddress.Country || '',
                 ZipCode: matchingAddress.ZipCode || ''
               });
-            } else {
-              console.log(`No matching address found for journey ${journey.id} with Address_ID ${journey.Address_ID}`);
             }
           } catch (error) {
             console.error(`Error fetching address data for journey ${journey.id}:`, error);
@@ -1112,17 +1101,13 @@ const Pipeline = () => {
           onClose={toggleJourneyModal}
           onSuccess={(newJourney) => {
             if (newJourney) {
-              console.log('Raw new journey:', newJourney);
               const adaptedJourney = adaptLegacyJourney(newJourney);
-              console.log('Adapted journey:', adaptedJourney);
               setLegacyJourneys(prev => {
                 const updated = prev ? [adaptedJourney, ...prev] : [adaptedJourney];
-                console.log('Updated legacyJourneys:', updated);
                 return updated;
               });
               setJourneys(prev => {
                 const updated = [adaptedJourney, ...prev];
-                console.log('Updated journeys:', updated);
                 return updated;
               });
               setNavigationModal({
