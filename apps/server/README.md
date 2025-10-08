@@ -69,14 +69,28 @@ journalctl -f --output=cat -u fanuc.service
 
 ## Server Deployment
 
-# 1. Prune the monorepo
+# 1. Prune the monorepo for your server app (source only)
 turbo prune @coesco/server --out-dir deploy
 
-# 2. Delete old files on production (but keep .env)
-ssh administrator@cp-portal-1 "cd /home/administrator/coesco && rm -rf apps node_modules packages package.json package-lock.json turbo.json .npmrc"
+# 2. Send ONLY the source files to production
+cd deploy
+scp -r . administrator@cp-portal-1:/home/administrator/coesco/
 
-# 3. Send source files to production
-cd deploy && scp -r . administrator@cp-portal-1:/home/administrator/coesco/
+# 3. Install dependencies on production
+cd /home/administrator/coesco
+npm install
 
-# 4. Build and restart (single SSH session)
-ssh administrator@cp-portal-1 "cd /home/administrator/coesco && npm install && cd apps/server && npx prisma generate && cd ../.. && turbo run build --filter=@coesco/server && sudo systemctl restart server.service && sudo systemctl status server.service"
+# 4. Generate Prisma client
+cd apps/server
+npx prisma generate
+
+# 5. Build the server app
+cd ../..
+turbo run build --filter=@coesco/server
+
+# 6. Restart the service
+sudo systemctl restart server.service
+
+# 7. Check service status
+sudo systemctl status server.service
+journalctl -f --output=cat -u server.service

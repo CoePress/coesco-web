@@ -14,6 +14,9 @@ router.delete("/devices/:deviceId", adminController.deleteDevice);
 // Employees
 router.post("/employees", adminController.createEmployee);
 router.post("/employees/sync", adminController.syncEmployees);
+router.post("/employees/sync/legacy", adminController.syncEmployeesFromLegacy);
+router.post("/employees/sync/microsoft", adminController.syncEmployeesFromMicrosoft);
+router.get("/employees/sync/stats", adminController.getEmployeeSyncStats);
 router.get("/employees", adminController.getEmployees);
 router.get("/employees/:employeeId", adminController.getEmployee);
 router.patch("/employees/:employeeId", adminController.updateEmployee);
