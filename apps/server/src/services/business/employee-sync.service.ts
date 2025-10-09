@@ -1,4 +1,4 @@
-import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateDepartments, _migrateEmployeeManagers, _migrateEmployees, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService, microsoftService } from "@/services";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";

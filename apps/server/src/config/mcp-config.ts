@@ -684,6 +684,51 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "email-log",
+    description: "Schema for EmailLog entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      to: {
+        type: "string",
+        required: true,
+      },
+      subject: {
+        type: "string",
+        required: true,
+      },
+      template: {
+        type: "string",
+        required: false,
+      },
+      status: {
+        type: "emailstatus",
+        required: true,
+        hasDefault: true,
+      },
+      sentAt: {
+        type: "datetime",
+        required: false,
+      },
+      error: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
     name: "employee",
     description: "Schema for Employee entity",
     schema: {
@@ -1068,6 +1113,46 @@ export const SCHEMAS: ISchema[] = [
         type: "json",
         required: true,
         hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+      createdById: {
+        type: "string",
+        required: true,
+      },
+      updatedById: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "invitation",
+    description: "Schema for Invitation entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      token: {
+        type: "string",
+        required: true,
+      },
+      type: {
+        type: "invitationtype",
+        required: true,
       },
       createdAt: {
         type: "datetime",

@@ -1,7 +1,7 @@
 import type { Employee, NtfyDevice, Permission, PermissionException, Role, RoleAssignment, RolePermission } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import { deviceService, employeeSyncService, microsoftService } from "@/services";
+import { deviceService, employeeSyncService } from "@/services";
 import { employeeService, ntfyDeviceService, permissionExceptionService, permissionService, roleAssignmentService, rolePermissionService, roleService, userService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
 

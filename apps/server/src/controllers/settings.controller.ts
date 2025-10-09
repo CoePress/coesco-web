@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 
+import { authService } from "@/services";
 import { userSettingsService } from "@/services/repository";
 import { asyncWrapper } from "@/utils";
-import { authService } from "@/services";
 
 export class SettingsController {
   requestPasswordReset = asyncWrapper(async (req: Request, res: Response) => {

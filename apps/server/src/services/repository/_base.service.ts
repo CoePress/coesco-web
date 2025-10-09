@@ -24,7 +24,6 @@ export class BaseService<T> {
     const client = tx ?? this.model;
 
     if (hasComputedSearch && params?.search) {
-      // When searching computed fields, fetch all matching records and filter in-memory
       const allItems = await client.findMany(query);
       const total = allItems.length;
       const totalPages = take ? Math.ceil(total / take) : 1;
@@ -70,7 +69,6 @@ export class BaseService<T> {
       },
     };
 
-    // Handle include/select from params
     if (params?.include) {
       const { include } = buildQuery(params, []);
       if (include)
@@ -293,7 +291,6 @@ export class BaseService<T> {
     const transformedOrderBy = this.transformSort(params?.sort, params?.order);
     const transforms = this.getTransforms();
 
-    // Filter out computed fields from search
     const regularSearchFields = searchFields?.filter((sf) => {
       const fieldName = typeof sf === "string" ? sf : sf.field;
       return !transforms[fieldName];
@@ -336,19 +333,22 @@ export class BaseService<T> {
     after?: Record<string, any>,
     tx?: Prisma.TransactionClient,
   ) {
-    if (this.modelName === "auditLog")
+    if (this.modelName === "auditLog" || this.modelName === "emailLog") {
       return;
+    }
 
     const ctx = getEmployeeContext();
     const auditModel = tx?.auditLog ?? prisma.auditLog;
 
     const recordId = after?.id ?? before?.id;
-    if (!recordId)
+    if (!recordId) {
       return;
+    }
 
     const diff = getObjectDiff(before, after);
-    if (Object.keys(diff).length === 0)
+    if (Object.keys(diff).length === 0) {
       return;
+    }
 
     await auditModel.create({
       data: {
@@ -363,9 +363,7 @@ export class BaseService<T> {
   }
 
   // Protected Methods
-  protected async validate(_data: any): Promise<void> {
-    // Override in child classes for validation
-  }
+  protected async validate(_data: any): Promise<void> {}
 
   protected getSearchFields(): (string | { field: string; weight: number })[] {
     return [];

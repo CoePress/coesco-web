@@ -1181,3 +1181,42 @@ model NtfyDevice {
 
   @@map("ntfy_devices")
 }
+
+model Invitation {
+  id                 String    @id @default(uuid())
+  token              String
+  type               InvitationType
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  createdById        String
+  updatedById        String
+
+  @@map("invitations")
+}
+
+enum InvitationType {
+  PEFORMANCE_SHEET
+}
+
+model EmailLog {
+  id          String    @id @default(uuid())
+  to          String
+  subject     String
+  template    String?
+  status      EmailStatus @default(PENDING)
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("email_logs")
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+

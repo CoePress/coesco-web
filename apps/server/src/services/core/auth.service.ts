@@ -121,7 +121,7 @@ export class AuthService {
       throw new UnauthorizedError("Password must contain at least one lowercase letter");
     }
 
-    if (!/[0-9]/.test(password)) {
+    if (!/\d/.test(password)) {
       throw new UnauthorizedError("Password must contain at least one number");
     }
 
@@ -423,7 +423,7 @@ export class AuthService {
       };
     }
 
-    if (!/[0-9]/.test(newPassword)) {
+    if (!/\d/.test(newPassword)) {
       return {
         success: false,
         error: "Password must contain at least one number",
@@ -501,7 +501,7 @@ export class AuthService {
       };
     }
 
-    if (!/[0-9]/.test(newPassword)) {
+    if (!/\d/.test(newPassword)) {
       return {
         success: false,
         error: "Password must contain at least one number",
