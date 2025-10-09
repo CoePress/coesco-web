@@ -811,6 +811,75 @@
       }
     },
     {
+      "name": "external-access-link",
+      "description": "Schema for ExternalAccessLink entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "token": {
+          "type": "string",
+          "required": true
+        },
+        "purpose": {
+          "type": "accesspurpose",
+          "required": true
+        },
+        "resourceId": {
+          "type": "string",
+          "required": false
+        },
+        "resourceType": {
+          "type": "string",
+          "required": false
+        },
+        "expiresAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "usedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "revokedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "maxUses": {
+          "type": "int",
+          "required": false
+        },
+        "useCount": {
+          "type": "int",
+          "required": true,
+          "hasDefault": true
+        },
+        "metadata": {
+          "type": "json",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        },
+        "createdById": {
+          "type": "string",
+          "required": false
+        },
+        "updatedById": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    {
       "name": "form",
       "description": "Schema for Form entity",
       "schema": {
@@ -1101,46 +1170,6 @@
           "type": "json",
           "required": true,
           "hasDefault": true
-        },
-        "createdAt": {
-          "type": "datetime",
-          "required": true,
-          "hasDefault": true
-        },
-        "updatedAt": {
-          "type": "datetime",
-          "required": true
-        },
-        "deletedAt": {
-          "type": "datetime",
-          "required": false
-        },
-        "createdById": {
-          "type": "string",
-          "required": true
-        },
-        "updatedById": {
-          "type": "string",
-          "required": true
-        }
-      }
-    },
-    {
-      "name": "invitation",
-      "description": "Schema for Invitation entity",
-      "schema": {
-        "id": {
-          "type": "string",
-          "required": true,
-          "hasDefault": true
-        },
-        "token": {
-          "type": "string",
-          "required": true
-        },
-        "type": {
-          "type": "invitationtype",
-          "required": true
         },
         "createdAt": {
           "type": "datetime",
