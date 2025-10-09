@@ -95,7 +95,7 @@ const Logs = () => {
   ];
 
   const fetchAuditLogs = async () => {
-    await get("/audit/audit-logs", queryParams);
+    await get("/audit", queryParams);
   };
 
   const refresh = () => {
