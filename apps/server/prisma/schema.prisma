@@ -1182,23 +1182,6 @@ model NtfyDevice {
   @@map("ntfy_devices")
 }
 
-model Invitation {
-  id                 String    @id @default(uuid())
-  token              String
-  type               InvitationType
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
-  createdById        String
-  updatedById        String
-
-  @@map("invitations")
-}
-
-enum InvitationType {
-  PEFORMANCE_SHEET
-}
-
 model EmailLog {
   id          String    @id @default(uuid())
   to          String
@@ -1217,6 +1200,32 @@ enum EmailStatus {
   PENDING
   SENT
   FAILED
+}
+
+model ExternalAccessLink {
+  id             String      @id @default(uuid())
+  token          String      @unique
+  purpose        AccessPurpose
+  resourceId     String?
+  resourceType   String?
+  expiresAt      DateTime?
+  usedAt         DateTime?
+  revokedAt      DateTime?
+  maxUses        Int?
+  useCount       Int         @default(0)
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@map("external_access_links")
+}
+
+enum AccessPurpose {
+  FORM_SUBMISSION
+  FILE_DOWNLOAD
+  CUSTOMER_FEEDBACK
 }
 
 
