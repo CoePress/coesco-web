@@ -44,9 +44,8 @@ export const CreateJourneyModal = ({
 
     try {
       // Map form fields to database field names
-      const payload = {
+      const payload: any = {
         Project_Name: name,
-        Journey_Start_Date: startDate,
         Journey_Type: journeyType,
         RSM: rsm,
         City: city,
@@ -54,27 +53,30 @@ export const CreateJourneyModal = ({
         Country: country,
         Industry: industry,
         Lead_Source: leadSource,
-        Journey_Stage: "Lead", // Default to Lead
-        Notes: notes,
-        Action_Date: actionDate,
-        Equipment_Type: equipmentType,
-        Company_ID: companyId ? parseInt(companyId) : undefined,
+        Journey_Stage: "Lead",
         Target_Account: companyName || '',
       };
+
+      if (startDate) payload.Journey_Start_Date = startDate;
+      if (notes) payload.Notes = notes;
+      if (actionDate) payload.Action_Date = actionDate;
+      if (equipmentType) payload.Equipment_Type = equipmentType;
+      if (companyId) payload.Company_ID = parseInt(companyId);
 
       console.log("Journey payload:", payload);
 
       const result = await post("/legacy/std/Journey", payload);
 
       if (result && result.ID) {
+        const today = new Date().toISOString().split('T')[0];
         const newJourney = {
           ...result,
           ...payload,
           ID: result.ID,
           id: result.ID,
           CreateDT: result.CreateDT || new Date().toISOString(),
-          Action_Date: result.Action_Date || actionDate || new Date().toISOString(),
-          Journey_Start_Date: result.Journey_Start_Date || startDate || new Date().toISOString(),
+          Action_Date: result.Action_Date || actionDate || today,
+          Journey_Start_Date: result.Journey_Start_Date || startDate || today,
           Journey_Value: result.Journey_Value || 0,
           Priority: result.Priority || 'C',
           Journey_Status: result.Journey_Status || 'Active',
