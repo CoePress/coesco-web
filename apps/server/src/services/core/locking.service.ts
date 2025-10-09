@@ -4,6 +4,7 @@ import { prisma } from "@/utils/prisma";
 
 export interface LockInfo {
   userId: string;
+  userName?: string;
   timestamp: number;
   recordType: string;
   recordId: string;
@@ -19,6 +20,28 @@ export interface LockResult {
 export class LockingService {
   private readonly DEFAULT_TTL = 300; // 5 minutes
   private readonly LOCK_KEY_PREFIX = "lock:";
+
+  private async getEmployeeName(userId: string): Promise<string | undefined> {
+    try {
+      if (userId === "system") {
+        return "System";
+      }
+
+      const employee = await prisma.employee.findUnique({
+        where: { userId: userId },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (employee) {
+        return `${employee.firstName} ${employee.lastName}`;
+      }
+
+      return undefined;
+    } catch (error) {
+      logger.error(`Error fetching employee name for userId ${userId}:`, error);
+      return undefined;
+    }
+  }
 
   async acquireLock(
     recordType: string,
@@ -58,10 +81,13 @@ export class LockingService {
       }
       const lockKey = this.getLockKey(recordType, recordId);
       const existingLock = await cacheService.get<LockInfo>(lockKey);
+      const userName = await this.getEmployeeName(userId);
+
       if (existingLock) {
         if (existingLock.userId === userId) {
           const lockInfo: LockInfo = {
             userId,
+            userName,
             timestamp: Date.now(),
             recordType,
             recordId,
@@ -82,6 +108,7 @@ export class LockingService {
       }
       const lockInfo: LockInfo = {
         userId,
+        userName,
         timestamp: Date.now(),
         recordType,
         recordId,
@@ -204,8 +231,10 @@ export class LockingService {
         };
       }
 
+      const userName = await this.getEmployeeName(userId);
       const updatedLockInfo: LockInfo = {
         ...existingLock,
+        userName,
         timestamp: Date.now(),
       };
 

@@ -10,21 +10,21 @@ router.get("/metrics", quoteController.getMetrics);
 // Quotes
 router.post("/", quoteController.createQuote);
 router.get("/", quoteController.getQuotes);
-router.get("/:id", quoteController.getQuote);
-router.patch("/:id", quoteController.updateQuote);
-router.delete("/:id", quoteController.deleteQuote);
+router.get("/:quoteId", quoteController.getQuote);
+router.patch("/:quoteId", quoteController.updateQuote);
+router.delete("/:quoteId", quoteController.deleteQuote);
 
 // Revisions
-router.post("/:id/revisions", quoteController.createRevision);
-router.get("/:id/revisions", quoteController.getRevisions);
-router.get("/:id/revisions/:revisionId", quoteController.getRevision);
+router.post("/:quoteId/revisions", quoteController.createRevision);
+router.get("/:quoteId/revisions", quoteController.getRevisions);
+router.get("/:quoteId/revisions/:revisionId", quoteController.getRevision);
 
 // Actions
-router.post("/:id/approve", quoteController.approveQuote);
-router.post("/:id/revise", quoteController.reviseQuote);
-router.post("/:id/accept", quoteController.acceptQuote);
-router.post("/:id/reject", quoteController.rejectQuote);
-router.post("/:id/send", quoteController.sendQuote);
-router.get("/:id/export/pdf", quoteController.exportPDF);
+router.post("/:quoteId/approve", quoteController.approveQuote);
+router.post("/:quoteId/revise", quoteController.reviseQuote);
+router.post("/:quoteId/accept", quoteController.acceptQuote);
+router.post("/:quoteId/reject", quoteController.rejectQuote);
+router.post("/:quoteId/send", quoteController.sendQuote);
+router.get("/:quoteId/export/pdf", quoteController.exportPDF);
 
 export default router;

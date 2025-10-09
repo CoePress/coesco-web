@@ -8,6 +8,12 @@ import { AppProvider } from "./contexts/app.context.tsx";
 import { ThemeProvider } from "./contexts/theme.context.tsx";
 import { SocketProvider } from "./contexts/socket.context.tsx";
 import { ToastProvider } from "./contexts/toast.context.tsx";
+import { PostHogProvider } from 'posthog-js/react'
+import { env } from "./config/env.ts";
+
+const options = {
+  api_host: env.VITE_PUBLIC_POSTHOG_HOST
+}
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
@@ -16,7 +22,9 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <AppProvider>
             <ToastProvider>
+              <PostHogProvider apiKey={env.VITE_PUBLIC_POSTHOG_KEY} options={options}>
               <App />
+              </PostHogProvider>
             </ToastProvider>
           </AppProvider>
         </ThemeProvider>

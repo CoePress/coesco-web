@@ -1,6 +1,6 @@
 import type { Server, Socket } from "socket.io";
 
-import { agentService } from "@/services";
+import { agentService, lockingService } from "@/services";
 import { logger } from "@/utils/logger";
 
 import { chatService, messageService } from "../repository";
@@ -18,6 +18,7 @@ export class SocketService {
     this.registerMetricsNamespace();
     this.registerChatNamespace();
     this.registerSystemNamespace();
+    this.registerLocksNamespace();
   }
 
   public broadcastMachineStates(data: any): void {
@@ -173,6 +174,66 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] System client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private registerLocksNamespace() {
+    const locks = this.getNamespace("locks");
+
+    locks.on("connection", (socket: Socket) => {
+      logger.info(`Locks client connected: ${socket.id}`);
+
+      socket.on("lock:acquire", async (data, callback) => {
+        const { recordType, recordId, userId } = data;
+        logger.info(`[${socket.id}] Acquiring lock for ${recordType}:${recordId} by user ${userId}`);
+
+        const result = await lockingService.acquireLock(recordType, recordId, userId);
+        callback?.(result);
+
+        if (result?.success) {
+          locks.emit("lock:changed", { recordType, recordId, lockInfo: result.lockInfo });
+        }
+      });
+
+      socket.on("lock:release", async (data, callback) => {
+        const { recordType, recordId, userId } = data;
+        logger.info(`[${socket.id}] Releasing lock for ${recordType}:${recordId} by user ${userId}`);
+
+        const result = await lockingService.releaseLock(recordType, recordId, userId);
+        callback?.(result);
+
+        if (result?.success) {
+          locks.emit("lock:changed", { recordType, recordId, lockInfo: null });
+        }
+      });
+
+      socket.on("lock:extend", async (data, callback) => {
+        const { recordType, recordId, userId } = data;
+        logger.info(`[${socket.id}] Extending lock for ${recordType}:${recordId} by user ${userId}`);
+
+        const result = await lockingService.extendLock(recordType, recordId, userId);
+        callback?.(result);
+
+        if (result?.success) {
+          locks.emit("lock:changed", { recordType, recordId, lockInfo: result.lockInfo });
+        }
+      });
+
+      socket.on("lock:force-release", async (data, callback) => {
+        const { recordType, recordId, userId } = data;
+        logger.info(`[${socket.id}] Force-releasing lock for ${recordType}:${recordId} by admin ${userId}`);
+
+        const result = await lockingService.forceReleaseLock(recordType, recordId, userId);
+        callback?.(result);
+
+        if (result?.success) {
+          locks.emit("lock:changed", { recordType, recordId, lockInfo: null });
+        }
+      });
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] Locks client disconnected: ${reason}`);
       });
     });
   }

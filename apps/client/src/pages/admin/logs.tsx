@@ -71,6 +71,9 @@ const Logs = () => {
     {
       key: "changedBy",
       header: "Changed By",
+      render: (_, row) => (
+        <span>{(row as any).changedByName || row.changedBy}</span>
+      ),
     },
     {
       key: "actions",
@@ -92,7 +95,7 @@ const Logs = () => {
   ];
 
   const fetchAuditLogs = async () => {
-    await get("/audit/audit-logs", queryParams);
+    await get("/audit", queryParams);
   };
 
   const refresh = () => {
@@ -182,7 +185,7 @@ const Logs = () => {
               </div>
               <div>
                 <label className="text-sm text-text-muted mb-2 block">Changed By</label>
-                <div className="text-sm">{selectedLog.changedBy}</div>
+                <div className="text-sm">{(selectedLog as any).changedByName || selectedLog.changedBy}</div>
               </div>
             </div>
 
