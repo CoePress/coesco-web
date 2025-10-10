@@ -1,25 +1,17 @@
 import { Router } from "express";
 
-const router = Router();
+const router = Router()
 
 router.get("/hours", async (req, res) => {
   const { date, timezone, timezoneOffset } = req.query;
-
-  // Parse the date
+  
   const [year, month, day] = (date as string).split("-").map(Number);
-
-  // Create 24 hours starting at midnight CLIENT time
   const hours = [];
 
   for (let i = 0; i < 24; i++) {
-    // Create date at midnight CLIENT timezone
-    // timezoneOffset is in minutes (240 for EDT)
     const offsetMs = Number(timezoneOffset) * 60 * 1000;
-
-    // Create UTC date at midnight, then add offset to get client midnight
     const hourDate = new Date(Date.UTC(year, month - 1, day, i, 0, 0, 0) + offsetMs);
 
-    // Format labels
     const clientHour = i % 12 || 12;
     const clientAmPm = i < 12 ? "AM" : "PM";
     const clientLabel = `${clientHour}:00 ${clientAmPm}`;
@@ -56,7 +48,6 @@ router.get("/timezone", async (req, res) => {
   const now = new Date();
   const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  // Test creating dates different ways
   const dateFromString = new Date(`${date}T00:00:00`);
   const dateFromStringUTC = new Date(`${date}T00:00:00Z`);
 
@@ -64,7 +55,6 @@ router.get("/timezone", async (req, res) => {
   const dateFromUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
   const dateFromLocal = new Date(year, month - 1, day, 0, 0, 0, 0);
 
-  // Test division calculation for hours
   const divisions = [];
   for (let i = 0; i < 24; i++) {
     const divisionStart = new Date(dateFromUTC);
@@ -123,9 +113,9 @@ router.get("/timezone", async (req, res) => {
           hours: dateFromLocal.getHours(),
         },
       },
-      divisions: divisions.slice(0, 6), // Just first 6 hours for readability
+      divisions: divisions.slice(0, 6),
     },
   });
 });
 
-export default router;
+export default router
