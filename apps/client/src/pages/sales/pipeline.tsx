@@ -45,29 +45,32 @@ const Pipeline = () => {
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
 
-    try {
-      const tagPromises = journeyIds.map(async (journeyId) => {
-        try {
-          const response = await get('/tags', {
-            filter: JSON.stringify({
-              parentTable: 'journeys',
-              parentId: journeyId
-            })
-          });
+    if (journeyIds.length === 0) {
+      return tagsMap;
+    }
 
-          if (response?.success && Array.isArray(response.data)) {
-            return { journeyId, tags: response.data };
-          }
-          return { journeyId, tags: [] };
-        } catch (error) {
-          console.error(`Error fetching tags for journey ${journeyId}:`, error);
-          return { journeyId, tags: [] };
-        }
+    try {
+      const response = await get('/tags', {
+        filter: JSON.stringify({
+          parentTable: 'journeys',
+          parentIds: journeyIds
+        })
       });
 
-      const results = await Promise.all(tagPromises);
-      results.forEach(({ journeyId, tags }) => {
-        tagsMap.set(journeyId, tags);
+      if (response?.success && Array.isArray(response.data)) {
+        response.data.forEach((tag: any) => {
+          const journeyId = tag.parentId;
+          if (!tagsMap.has(journeyId)) {
+            tagsMap.set(journeyId, []);
+          }
+          tagsMap.get(journeyId)?.push(tag);
+        });
+      }
+
+      journeyIds.forEach(id => {
+        if (!tagsMap.has(id)) {
+          tagsMap.set(id, []);
+        }
       });
     } catch (error) {
       console.error('Error fetching journey tags:', error);
@@ -1094,6 +1097,7 @@ const Pipeline = () => {
             showTags={showTags}
             onTagsUpdated={handleTagsUpdated}
             employee={employee}
+            journeyTags={journeyTags}
           />
         </div>
       )}
