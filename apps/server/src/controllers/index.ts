@@ -31,10 +31,12 @@ import { ResourceController } from "./production/resource.controller";
 import { SettingsController } from "./core/settings.controller";
 import { PerformanceSheetController } from "./artifact/performance-sheet.controller";
 import { ServiceReportController } from "./artifact/service-report.controller";
+import { ConfigurationController } from "./catalog/configuration.controller";
+import { ProductController } from "./catalog/product.controller";
+import { OptionController } from "./catalog/option.controller";
 
 // export const adminController = new AdminController();
 // export const chatController = new ChatController();
-// export const configurationController = new ConfigurationController();
 // export const crmController = new CRMController();
 // export const externalInvitationController = new ExternalInvitationController();
 // export const formController = new FormController();
@@ -56,6 +58,11 @@ export const permissionController = new PermissionController()
 // Artifact
 export const performanceSheetController = new PerformanceSheetController()
 export const serviceReportController = new ServiceReportController()
+
+// Catalog
+export const configurationController = new ConfigurationController()
+export const optionController = new OptionController()
+export const productController = new ProductController()
 
 // Core
 export const authController = new AuthController()
