@@ -1,26 +1,7 @@
-// import { AdminController } from "./admin.controller";
-// import { AuditLogController } from "./audit-log.controller";
-// import { AuthController } from "./auth.controller";
-// import { ChatController } from "./chat.controller";
-// import { ConfigurationController } from "./configuration.controller";
-// import { CRMController } from "./crm.controller";
-// import { ExternalInvitationController } from "./external-invitation.controller";
-// import { FormController } from "./form.controller";
-// import { LegacyController } from "./legacy.controller";
-// import { LockController } from "./lock.controller";
-// import { PerformanceController } from "./performance.controller";
-// import { PostalCodeController } from "./postal-code.controller";
-// import { ProductionController } from "./production.controller";
-// import { QuoteController } from "./quote.controller";
-// import { SettingsController } from "./settings.controller";
-// import { SystemController } from "./system.controller";
-// import { TagController } from "./tag.controller";
-
 import { AuditController } from "./admin/audit.controller";
 import { BugReportingController } from "./admin/bug-reporting.cotroller";
 import { EmployeeController } from "./admin/employee.controller";
 import { PermissionController } from "./admin/permission.controller";
-import { AuthController } from "./auth.controller";
 import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
 import { CustomerController } from "./sales/customer.controller";
@@ -34,20 +15,8 @@ import { ServiceReportController } from "./artifact/service-report.controller";
 import { ConfigurationController } from "./catalog/configuration.controller";
 import { ProductController } from "./catalog/product.controller";
 import { OptionController } from "./catalog/option.controller";
-
-// export const adminController = new AdminController();
-// export const chatController = new ChatController();
-// export const crmController = new CRMController();
-// export const externalInvitationController = new ExternalInvitationController();
-// export const formController = new FormController();
-// export const legacyController = new LegacyController();
-// export const performanceController = new PerformanceController();
-// export const postalCodeController = new PostalCodeController();
-// export const productionController = new ProductionController();
-// export const quoteController = new QuoteController();
-// export const settingsController = new SettingsController();
-// export const systemController = new SystemController();
-// export const tagController = new TagController();
+import { TagController } from "./core/tag.controller";
+import { AuthController } from "./core/auth.controller";
 
 // Admin
 export const auditController = new AuditController()
@@ -69,6 +38,7 @@ export const authController = new AuthController()
 export const legacyController = new LegacyController()
 export const lockController = new LockController()
 export const settingsController = new SettingsController()
+export const tagController = new TagController()
 
 // Production
 export const resourceMonitoringController = new ResourceMonitoringController()

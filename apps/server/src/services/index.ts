@@ -18,6 +18,7 @@ import { QuoteService } from "./sales/quote.service";
 import { ResourceMonitoringSerivce } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AuthService } from "./core/auth.service";
+import { LegacyService } from "./core/legacy.service";
 
 
 
@@ -37,6 +38,7 @@ export const productService = new ProductService()
 export const authService = new AuthService()
 export const cacheService = new CacheService()
 export const emailServicce = new EmailService()
+export const legacyService = new LegacyService()
 export const lockingService = new LockingService()
 export const socketService = new SocketService()
 

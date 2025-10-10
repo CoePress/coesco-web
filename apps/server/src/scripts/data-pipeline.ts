@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { env } from "@/config/env";
-import { LegacyService } from "@/services/business/legacy.service";
+import { LegacyService } from "@/services/core/legacy.service";
 import { logger } from "@/utils/logger";
 
 let legacyService = new LegacyService();
