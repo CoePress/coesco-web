@@ -6,7 +6,7 @@ import { NextFunction, Request, Response } from "express";
 export class EmployeeController {
     async createEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.create(req.body);
+      const result = await employeeService.createEmployee(req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -17,7 +17,7 @@ export class EmployeeController {
   async getEmployees(req: Request, res: Response, next: NextFunction) {
     try {
       const params = buildQueryParams<Employee>(req.query);
-      const result = await employeeService.getAll(params);
+      const result = await employeeService.getAllEmployees(params);
       res.status(200).json(result);
     }
     catch (error) {
@@ -27,7 +27,7 @@ export class EmployeeController {
 
   async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.getById(req.params.employeeId);
+      const result = await employeeService.getEmployeeById(req.params.employeeId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -51,7 +51,7 @@ export class EmployeeController {
         }
       });
 
-      const employee = await employeeService.getById(req.params.employeeId);
+      const employee = await employeeService.getEmployeeById(req.params.employeeId);
       if (!employee.data) {
         return res.status(404).json({ success: false, error: "Employee not found" });
       }
@@ -61,10 +61,10 @@ export class EmployeeController {
       }
 
       if (Object.keys(employeeData).length > 0) {
-        await employeeService.update(req.params.employeeId, employeeData);
+        await employeeService.updateEmployee(req.params.employeeId, employeeData);
       }
 
-      const result = await employeeService.getById(req.params.employeeId, { include: ["user"] });
+      const result = await employeeService.getEmployeeById(req.params.employeeId, { include: ["user"] });
       res.status(200).json(result);
     }
     catch (error) {
@@ -74,7 +74,7 @@ export class EmployeeController {
 
   async deleteEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await employeeService.delete(req.params.employeeId);
+      const result = await employeeService.deleteEmployee(req.params.employeeId);
       res.status(200).json(result);
     }
     catch (error) {

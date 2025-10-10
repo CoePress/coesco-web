@@ -1,9 +1,12 @@
+import { configurationService } from "@/services";
+import { buildQueryParams } from "@/utils";
+import { Configuration } from "@azure/msal-node";
 import type { NextFunction, Request, Response } from "express";
 
 export class ConfigurationController {
     async createConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configurationService.create(req.body);
+      const result = await configurationService.createConfiguration(req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -14,7 +17,7 @@ export class ConfigurationController {
   async getConfigurations(req: Request, res: Response, next: NextFunction) {
     try {
       const params = buildQueryParams<Configuration>(req.query);
-      const result = await configurationService.getAll(params);
+      const result = await configurationService.getAllConfigurations(params);
       res.status(200).json(result);
     }
     catch (error) {
@@ -24,7 +27,7 @@ export class ConfigurationController {
 
   async getConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configurationService.getById(req.params.companyId);
+      const result = await configurationService.getConfigurationById(req.params.companyId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -34,7 +37,7 @@ export class ConfigurationController {
 
   async updateConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configurationService.update(req.params.companyId, req.body);
+      const result = await configurationService.updateConfiguration(req.params.companyId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -44,7 +47,7 @@ export class ConfigurationController {
 
   async deleteConfiguration(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await configurationService.delete(req.params.companyId);
+      const result = await configurationService.deleteConfiguration(req.params.companyId);
       res.status(200).json(result);
     }
     catch (error) {
