@@ -17,12 +17,14 @@ import { ProductController } from "./catalog/product.controller";
 import { OptionController } from "./catalog/option.controller";
 import { TagController } from "./core/tag.controller";
 import { AuthController } from "./core/auth.controller";
+import { RoleController } from "./admin/role.controller";
 
 // Admin
 export const auditController = new AuditController()
 export const bugReportingController = new BugReportingController()
 export const employeeController = new EmployeeController()
 export const permissionController = new PermissionController()
+export const roleController = new RoleController()
 
 // Artifact
 export const performanceSheetController = new PerformanceSheetController()
