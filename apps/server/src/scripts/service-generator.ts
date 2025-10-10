@@ -311,12 +311,12 @@ function toKebabCase(str: string) {
 }
 
 async function generateServiceFiles(models: any, relationships: any) {
-  const directory = path.resolve(__dirname, "../services/repository");
+  const directory = path.resolve(__dirname, "../repositories");
   fs.mkdirSync(directory, { recursive: true });
 
   for (const model of models) {
     const kebabName = toKebabCase(model.name);
-    const serviceFile = path.resolve(directory, `${kebabName}.service.ts`);
+    const serviceFile = path.resolve(directory, `${kebabName}.repository.ts`);
     const validations = await generateValidations(model);
     const transforms = await generateTransforms(model);
     const searchFields = await generateSearchFields(model);
@@ -331,13 +331,13 @@ async function generateServiceFiles(models: any, relationships: any) {
     const methods = [transforms, transformSort, searchFields].filter(m => m).join("\n");
 
     const newBody = `import { ${model.name} } from "@prisma/client";
-import { BaseService } from "./_base.service";
+import { BaseRepository } from "./_base.repository";
 import { prisma } from "@/utils/prisma";
 import { BadRequestError } from "@/middleware/error.middleware";
 
 type ${model.name}Attributes = Omit<${model.name}, "id" | "createdAt" | "updatedAt">;
 
-export class ${model.name}Service extends BaseService<${model.name}> {
+export class ${model.name}Repository extends BaseRepository<${model.name}> {
 \tprotected model = prisma.${model.name.charAt(0).toLowerCase() + model.name.slice(1)};
 \tprotected entityName = "${model.name}";
 \tprotected modelName = "${model.name.charAt(0).toLowerCase() + model.name.slice(1)}";
@@ -371,7 +371,7 @@ ${methods}}`.trim();
 }
 
 async function generateIndexFile(models: any) {
-  const directory = path.resolve(__dirname, "../services/repository");
+  const directory = path.resolve(__dirname, "../repositories");
   const indexFile = path.resolve(directory, "index.ts");
 
   const imports: string[] = [];
@@ -386,11 +386,11 @@ async function generateIndexFile(models: any) {
         = model.name.charAt(0).toLowerCase() + model.name.slice(1);
 
       imports.push(
-        `import { ${model.name}Service } from "./${kebabName}.service";`,
+        `import { ${model.name}Repository } from "./${kebabName}.repository";`,
       );
-      exports.push(`export { ${model.name}Service };`);
+      exports.push(`export { ${model.name}Repository };`);
       instances.push(
-        `export const ${modelNameLower}Service = new ${model.name}Service();`,
+        `export const ${modelNameLower}Repository = new ${model.name}Repository();`,
       );
     });
 
@@ -434,8 +434,8 @@ async function updateMCPConfig(models: any) {
       const kebabName = toKebabCase(model.name);
       const modelNameLower = model.name.charAt(0).toLowerCase() + model.name.slice(1);
 
-      serviceImports.push(`  ${modelNameLower}Service,`);
-      serviceMapEntries.push(`  "${kebabName}": ${modelNameLower}Service,`);
+      serviceImports.push(`  ${modelNameLower}Repository,`);
+      serviceMapEntries.push(`  "${kebabName}": ${modelNameLower}Repository,`);
 
       const fields = model.fields.reduce((acc: any, field: any) => {
         if (field.kind === "scalar" || field.kind === "enum") {
@@ -465,10 +465,10 @@ async function updateMCPConfig(models: any) {
 
   const newImport = `import {
 ${serviceImports.join("\n")}
-} from "../services/repository";`;
+} from "../repositories";`;
 
   content = content.replace(
-    /import\s*\{[\s\S]*?\}\s*from\s*"\.\.\/services\/repository";/,
+    /import\s*\{[\s\S]*?\}\s*from\s*"\.\.\/repositories";/,
     newImport,
   );
 
