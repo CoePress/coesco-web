@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 export class ProductController {
     async createItem(req: Request, res: Response, next: NextFunction) {
     try {

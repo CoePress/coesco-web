@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 export class OptionController {
     // Option Categories
   async createOptionCategory(req: Request, res: Response, next: NextFunction) {

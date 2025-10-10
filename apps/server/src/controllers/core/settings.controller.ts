@@ -1,4 +1,5 @@
 import { asyncWrapper } from "@/utils";
+import type { NextFunction, Request, Response } from "express";
 
 export class SettingsController {
     requestPasswordReset = asyncWrapper(async (req: Request, res: Response) => {

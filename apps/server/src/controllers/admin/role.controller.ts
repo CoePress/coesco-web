@@ -1,5 +1,9 @@
-export class AdminController {
-  // Roles
+import { buildQueryParams } from "@/utils";
+import { Role, RoleAssignment, RolePermission } from "@prisma/client";
+import type { NextFunction, Request, Response } from "express";
+
+export class RoleController {
+    // Roles
   async createRole(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await roleService.create(req.body);
@@ -148,113 +152,6 @@ export class AdminController {
   async deleteRoleAssignment(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await roleAssignmentService.delete(req.params.roleAssignmentId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  // Permission Exceptions
-  async createPermissionException(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await permissionExceptionService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getPermissionExceptions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<PermissionException>(req.query);
-      const result = await permissionExceptionService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getPermissionException(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await permissionExceptionService.getById(req.params.permissionExceptionId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async updatePermissionException(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await permissionExceptionService.update(req.params.permissionExceptionId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async deletePermissionException(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await permissionExceptionService.delete(req.params.permissionExceptionId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  // Devices
-  async createDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await ntfyDeviceService.create(req.body);
-      await deviceService.reload();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getDevices(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<NtfyDevice>(req.query);
-      const result = await ntfyDeviceService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async getDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await ntfyDeviceService.getById(req.params.deviceId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async updateDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await ntfyDeviceService.update(req.params.deviceId, req.body);
-      await deviceService.reload();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await ntfyDeviceService.delete(req.params.deviceId);
-      await deviceService.reload();
       res.status(200).json(result);
     }
     catch (error) {
