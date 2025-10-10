@@ -1,12 +1,7 @@
-import {
-  Download,
-  Plus,
-  Layout,
-  List as ListIcon,
-  BarChart3,
-  Upload,
-} from "lucide-react";
+import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import ExcelJS from 'exceljs';
 
 import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
@@ -20,9 +15,7 @@ import { STAGES } from "./journeys/constants";
 import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { formatCurrency } from "@/utils";
 import { useApi } from "@/hooks/use-api";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth.context";
-import ExcelJS from 'exceljs';
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -39,6 +32,7 @@ const Pipeline = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const toggleExportModal = () => setIsExportModalOpen(prev => !prev);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
   const { put, get, delete: del } = useApi();
@@ -85,9 +79,10 @@ const Pipeline = () => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
         get('/legacy/base/Journey', {
+          page: 1,
+          limit: 200,
           sort: 'CreateDT',
           order: 'desc',
-          limit: 100,
           fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
         }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
@@ -116,9 +111,10 @@ const Pipeline = () => {
   const refetchLegacyJourneys = async () => {
     try {
       const raw = await refetchApi.get('/legacy/base/Journey', {
+        page: 1,
+        limit: 200,
         sort: 'CreateDT',
         order: 'desc',
-        limit: 150,
         fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Address_ID'
       });
 
@@ -126,6 +122,7 @@ const Pipeline = () => {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
         const mapped = journeysArray.map(adaptLegacyJourney);
         setLegacyJourneys(mapped);
+
         const journeyIds = mapped.map((j: any) => j.id.toString());
         const tagsMap = await fetchJourneyTags(journeyIds);
         setJourneyTags(tagsMap);
@@ -242,9 +239,10 @@ const Pipeline = () => {
     (async () => {
       try {
         const raw = await initialFetchApi.get('/legacy/base/Journey', {
+          page: 1,
+          limit: 200,
           sort: 'CreateDT',
           order: 'desc',
-          limit: 100,
           fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
         });
 
@@ -252,6 +250,7 @@ const Pipeline = () => {
           const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
+
           const journeyIds = mapped.map((j: any) => j.id.toString());
           const tagsMap = await fetchJourneyTags(journeyIds);
           if (!cancelled) {
@@ -337,6 +336,17 @@ const Pipeline = () => {
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
   const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
+  const [kanbanBatchSize, setKanbanBatchSize] = useState<number>(() => getFromLocalStorage('kanbanBatchSize', 50));
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize] = useState(25);
+  const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
+  const [listViewPagination, setListViewPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
+  const [isLoadingListView, setIsLoadingListView] = useState(false);
 
 
   const filteredJourneys = useMemo(() => {
@@ -449,78 +459,81 @@ const Pipeline = () => {
   const kanbanJourneys = useMemo(() => {
     return filteredJourneys
       .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-      .slice(0, 50);
-  }, [filteredJourneys]);
+      .slice(0, kanbanBatchSize);
+  }, [filteredJourneys, kanbanBatchSize]);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
-  const [listBatchSize, setListBatchSize] = useState(200);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const sortedFilteredJourneys = useMemo(() => {
-    if (!sortField) return filteredJourneys;
-    
-    return [...filteredJourneys].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-      
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name ?? '').toLowerCase();
-          bValue = (b.name ?? '').toLowerCase();
-          break;
-        case 'customerId':
-          const aCustomer = customersById?.get(String(a.customerId));
-          const bCustomer = customersById?.get(String(b.customerId));
-          aValue = (aCustomer?.name ?? a.companyName ?? '').toLowerCase();
-          bValue = (bCustomer?.name ?? b.companyName ?? '').toLowerCase();
-          break;
-        case 'stage':
-          aValue = a.stage ?? 1;
-          bValue = b.stage ?? 1;
-          break;
-        case 'value':
-          aValue = Number(a.value ?? 0);
-          bValue = Number(b.value ?? 0);
-          break;
-        case 'confidence':
-          aValue = Number(a.confidence ?? 0);
-          bValue = Number(b.confidence ?? 0);
-          break;
-        case 'priority':
-          const priorityOrder = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
-          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0;
-          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0;
-          break;
-        case 'updatedAt':
-          aValue = new Date(a.updatedAt ?? 0).getTime();
-          bValue = new Date(b.updatedAt ?? 0).getTime();
-          break;
-        default:
-          return 0;
+
+  const fetchListViewJourneys = useCallback(async () => {
+    if (isLoadingListView) return;
+
+    setIsLoadingListView(true);
+    try {
+      const sortFieldMap: Record<string, string> = {
+        'name': 'Project_Name',
+        'customerId': 'Company_ID',
+        'stage': 'Journey_Stage',
+        'value': 'Journey_Value',
+        'confidence': 'Chance_To_Secure_order',
+        'priority': 'Priority',
+        'updatedAt': 'Action_Date'
+      };
+
+      const dbSortField = sortField ? (sortFieldMap[sortField] || sortField) : 'CreateDT';
+
+      const params: any = {
+        page: listPage,
+        limit: listPageSize,
+        sort: dbSortField,
+        order: sortDirection,
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
+      };
+
+      if (searchTerm) {
+        params.filter = `Project_Name LIKE %${searchTerm}% OR Target_Account LIKE %${searchTerm}%`;
       }
-      
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filteredJourneys, sortField, sortDirection, customersById]);
-  
-  const listJourneys = useMemo(() => {
-    return sortedFilteredJourneys.slice(0, listBatchSize);
-  }, [sortedFilteredJourneys, listBatchSize]);
 
-  const hasMoreJourneys = sortedFilteredJourneys.length > listBatchSize;
+      const raw = await api.get('/legacy/base/Journey', params);
 
-  const loadMoreJourneys = useCallback(() => {
-    if (isLoadingMore || !hasMoreJourneys) return;
-    
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setListBatchSize(prev => prev + 200);
-      setIsLoadingMore(false);
-    }, 300);
-  }, [isLoadingMore, hasMoreJourneys]);
+      if (raw !== null) {
+        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        const mapped = journeysArray.map(adaptLegacyJourney);
+
+        setListViewJourneys(mapped);
+
+        if (raw.meta) {
+          setListViewPagination({
+            page: raw.meta.page,
+            totalPages: raw.meta.totalPages,
+            total: raw.meta.total,
+            limit: raw.meta.limit
+          });
+        }
+
+        const journeyIds = mapped.map((j: any) => j.id.toString());
+        const tagsMap = await fetchJourneyTags(journeyIds);
+        setJourneyTags(tagsMap);
+      }
+    } catch (error) {
+      console.error("Error fetching list view journeys:", error);
+    } finally {
+      setIsLoadingListView(false);
+    }
+  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, api, searchTerm]);
+
   useEffect(() => {
-    setListBatchSize(200);
-  }, [searchTerm, filters, rsmFilter, journeyStatusFilter]);
+    if (viewMode === 'list') {
+      fetchListViewJourneys();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, listPage, sortField, sortDirection, searchTerm]);
+
+  const handleListPageChange = (newPage: number) => {
+    setListPage(newPage);
+  };
+
+  useEffect(() => {
+    setListPage(1);
+  }, [searchTerm]);
   useEffect(() => {
     saveToLocalStorage('searchTerm', searchTerm);
   }, [searchTerm]);
@@ -556,6 +569,33 @@ const Pipeline = () => {
   useEffect(() => {
     saveToLocalStorage('showTags', showTags);
   }, [showTags]);
+
+  useEffect(() => {
+    saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
+  }, [kanbanBatchSize]);
+
+  useEffect(() => {
+    const view = searchParams.get('view');
+    const sort = searchParams.get('sort');
+    const order = searchParams.get('order');
+
+    if (view === 'list' || view === 'kanban' || view === 'projections') {
+      setViewMode(view);
+    }
+
+    if (sort) {
+      setSortField(sort);
+    }
+
+    if (order === 'asc' || order === 'desc') {
+      setSortDirection(order);
+    }
+
+    if (view || sort || order) {
+      setSearchParams({});
+    }
+  }, []);
+
   const visibleStageIds = filters.visibleStages;
 
   const emptyStageMap = useMemo(() => {
@@ -1037,6 +1077,8 @@ const Pipeline = () => {
             setIsFilterModalOpen={setIsFilterModalOpen}
             showTags={showTags}
             setShowTags={setShowTags}
+            kanbanBatchSize={kanbanBatchSize}
+            setKanbanBatchSize={setKanbanBatchSize}
             viewMode={viewMode}
             validJourneyStatuses={validJourneyStatuses}
           />
@@ -1074,18 +1116,16 @@ const Pipeline = () => {
             validJourneyStatuses={validJourneyStatuses}
           />
           <ListView
-            journeys={listJourneys}
-            sortedFilteredJourneys={sortedFilteredJourneys}
+            journeys={listViewJourneys}
             customersById={customersById}
-            listBatchSize={listBatchSize}
-            hasMoreJourneys={hasMoreJourneys}
-            isLoadingMore={isLoadingMore}
-            onLoadMore={loadMoreJourneys}
+            pagination={listViewPagination}
+            onPageChange={handleListPageChange}
             onDeleteJourney={handleDeleteJourney}
             onSort={handleSort}
             stageLabel={stageLabel}
             sortField={sortField}
             sortDirection={sortDirection}
+            isLoading={isLoadingListView}
           />
         </div>
       )}
@@ -1129,24 +1169,26 @@ const Pipeline = () => {
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
                 get('/legacy/base/Journey', {
+                  page: 1,
+                  limit: 200,
                   sort: 'CreateDT',
                   order: 'desc',
-                  limit: 100,
                   fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
                 })
               ]);
-              
+
               if (journeysData) {
                 const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
                 const mappedJourneys = journeysArray.map(adaptLegacyJourney);
                 setJourneys(mappedJourneys);
                 setLegacyJourneys(mappedJourneys);
+
                 const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
                 const tagsMap = await fetchJourneyTags(journeyIds);
                 setJourneyTags(tagsMap);
               }
             };
-            
+
             fetchData();
           }}
           availableRsms={availableRsms}

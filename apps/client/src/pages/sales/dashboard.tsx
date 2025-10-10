@@ -18,7 +18,7 @@ import {
   Legend,
 } from "recharts";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components";
 import { formatCurrency } from "@/utils";
@@ -48,6 +48,7 @@ const SalesDashboard = () => {
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [showMetricInfo, setShowMetricInfo] = useState(false);
   const api = useApi();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,18 +67,13 @@ const SalesDashboard = () => {
           })
         ]);
 
-        console.log("Journeys response:", journeysResponse);
-        console.log("Companies response:", companiesResponse);
-        
         if (journeysResponse) {
           const journeyData = Array.isArray(journeysResponse) ? journeysResponse : (journeysResponse.data || []);
-          console.log("Setting journeys:", journeyData);
           setJourneys(journeyData);
         }
-        
+
         if (companiesResponse) {
           const companyData = Array.isArray(companiesResponse) ? companiesResponse : (companiesResponse.data || []);
-          console.log("Setting companies:", companyData);
           setCompanies(companyData);
         }
       } catch (error) {
@@ -92,17 +88,9 @@ const SalesDashboard = () => {
 
   const companiesById = new Map(companies.map(c => [c.Company_ID, c]));
 
-  // Debug logging
-  console.log("Total journeys:", journeys.length);
-  console.log("Total companies:", companies.length);
-  console.log("Sample journey:", journeys[0]);
-  
-  // Calculate real metrics from journey data
-  const activeJourneys = journeys.filter(j => 
+  const activeJourneys = journeys.filter(j =>
     j.Journey_Status === 'open' || !j.Journey_Status
   );
-  
-  console.log("Active journeys:", activeJourneys.length);
   
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -266,22 +254,17 @@ const SalesDashboard = () => {
     });
     const total = stageJourneys.length;
     const percentage = journeys.length > 0 ? Math.round((total / journeys.length) * 100) : 0;
-    
-    console.log(`Stage ${stage.label} (${stage.id}): ${total} journeys, ${percentage}%`);
-    
+
     return {
       state: stage.label,
       total,
       percentage
     };
   });
-  
-  // Only show stages that have journeys or are the main pipeline stages
-  const stageDistribution = allStageDistribution.filter(stage => 
+
+  const stageDistribution = allStageDistribution.filter(stage =>
     stage.total > 0 || ["Lead", "Qualified", "Presentations", "Negotiation"].includes(stage.state)
   );
-  
-  console.log("Stage distribution:", stageDistribution);
   
   const kpis = [
     {
@@ -610,7 +593,8 @@ const SalesDashboard = () => {
               <h3 className="text-sm text-text-muted">Top Journeys</h3>
               <Button
                 variant="secondary-outline"
-                size="sm">
+                size="sm"
+                onClick={() => navigate('/sales/pipeline?view=list&sort=value&order=desc')}>
                 <List size={16} />
                 View All
               </Button>

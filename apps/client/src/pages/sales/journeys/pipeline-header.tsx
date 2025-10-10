@@ -17,6 +17,8 @@ interface PipelineHeaderProps {
   setIsFilterModalOpen: (open: boolean) => void;
   showTags?: boolean;
   setShowTags?: (show: boolean) => void;
+  kanbanBatchSize?: number;
+  setKanbanBatchSize?: (size: number) => void;
   viewMode?: string;
   validJourneyStatuses: string[];
 }
@@ -35,6 +37,8 @@ export const PipelineHeader = ({
   setIsFilterModalOpen,
   showTags,
   setShowTags,
+  kanbanBatchSize,
+  setKanbanBatchSize,
   viewMode,
   validJourneyStatuses
 }: PipelineHeaderProps) => {
@@ -134,6 +138,22 @@ export const PipelineHeader = ({
       </div>
     </div>
     <div className="flex items-center gap-2">
+      {viewMode === "kanban" && kanbanBatchSize !== undefined && setKanbanBatchSize && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-text-muted">Show</label>
+          <Select
+            value={kanbanBatchSize.toString()}
+            onChange={(e) => setKanbanBatchSize(Number(e.target.value))}
+            options={[
+              { value: "25", label: "25" },
+              { value: "50", label: "50" },
+              { value: "100", label: "100" },
+              { value: "200", label: "200" }
+            ]}
+            className="w-24"
+          />
+        </div>
+      )}
       {viewMode === "kanban" && showTags !== undefined && setShowTags && (
         <Button
           variant={showTags ? "secondary" : "secondary-outline"}
