@@ -1,1 +1,3 @@
-export class ResourceMonitoringSerivce {}
+export class ResourceMonitoringSerivce {
+  async getAllResourceStates(params?: any) { }
+}
