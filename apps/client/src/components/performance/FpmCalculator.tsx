@@ -64,9 +64,8 @@ export const FpmCalculator: React.FC<FpmCalculatorProps> = ({
                 // Update the performance data
                 updatePerformanceData(updatedData, true);
 
-                if (process.env.NODE_ENV === 'development') {
-                    console.log(`FPM Auto-calculated: ${spm} SPM × ${length}" ÷ 12 = ${calculatedFpm} FPM`);
-                }
+                // FPM Auto-calculated in development mode
+                // (Console logging removed for cleaner output)
             }
         }
     }, [performanceData, spmPath, lengthPath, fpmPath, updatePerformanceData]);

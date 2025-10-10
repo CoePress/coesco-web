@@ -595,7 +595,7 @@ export const usePerformanceDataService = (
         });
 
       } catch (error) {
-        console.error('Error running calculations and saving performance data:', error);
+        // Error running calculations and saving performance data
         setFieldErrors(prev => ({
           ...prev,
           _general: 'Failed to save changes. Please try again.'
@@ -615,7 +615,7 @@ export const usePerformanceDataService = (
       try {
         await triggerAutoFill(dataForAutofill, currentSheetId);
       } catch (error) {
-        console.warn('Autofill failed:', error);
+        // Autofill failed
       }
     }, DEBOUNCE_DELAYS.AUTOFILL || 1500) // Slightly longer delay for autofill
   ).current;
@@ -829,7 +829,7 @@ export const usePerformanceDataService = (
 
       return response;
     } catch (error) {
-      console.error('Error saving performance data immediately:', error);
+      // Error saving performance data immediately
       setFieldErrors(prev => ({
         ...prev,
         _general: 'Failed to save changes. Please try again.'

@@ -173,11 +173,7 @@ export function useAutoFillWatcher(
     // Determine if auto-fill should be triggered
     const shouldTriggerAutoFill = useCallback((data: PerformanceData, changedFields: string[]): boolean => {
         if (!enabled || !autoFillState.settings.enabled || !sheetId) {
-            console.log('shouldTriggerAutoFill: false - not enabled or missing sheetId', {
-                enabled,
-                settingsEnabled: autoFillState.settings.enabled,
-                sheetId: !!sheetId
-            });
+            // Auto-fill not enabled or missing sheet ID
             return false;
         }
 
@@ -256,7 +252,7 @@ export function useAutoFillWatcher(
                 lastTriggerTimeRef.current = Date.now();
 
             } catch (error) {
-                console.warn('Auto-fill trigger failed:', error);
+                // Auto-fill trigger failed
             }
         }, debounceMs);
     }, [sheetId, triggerAutoFill, debounceMs]);
@@ -293,17 +289,8 @@ export function useAutoFillWatcher(
         // Only proceed with auto-fill trigger if there are changes
         if (changedFields.length === 0) return;
 
-        // Calculate data completeness
-        const dataScore = calculateDataScore(performanceData);
-
-        // Log changes for debugging
-        if (process.env.NODE_ENV === 'development') {
-            console.log('AutoFill Watcher - Field changes detected:', {
-                changedFields,
-                dataScore,
-                mode: 'normal'
-            });
-        }
+        // Field changes detected
+        // (Console logging removed for cleaner output)
 
         // Check if auto-fill should be triggered
         if (shouldTriggerAutoFill(performanceData, changedFields)) {

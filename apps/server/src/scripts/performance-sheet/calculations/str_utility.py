@@ -144,7 +144,7 @@ def calc_actual_coil_weight(coil_od, coil_id, coil_width, density):
     return (((coil_od**2) - coil_id**2) / 4) * pi * coil_width * density
 
 def check_value(val, ref):
-    return "OK" if val > ref else "NOT OK"
+    return "OK" if val >= ref else "NOT OK"
 
 def check_backup_rolls(required_force, jack_force_available):
     return "Back Up Rolls Recommended" if required_force >= (jack_force_available * 0.6) else "Not Recommended"

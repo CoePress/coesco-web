@@ -193,7 +193,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         // Check if we have sufficient data using existing logic
         if (!checkSufficientData(performanceData)) {
-            console.warn('Insufficient data for autofill');
+            // Insufficient data for autofill
             return;
         }
 
@@ -238,7 +238,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to generate auto-fill values';
             dispatch({ type: 'SET_ERROR', payload: errorMessage });
-            console.warn('Auto-fill error:', error);
+            // Auto-fill error occurred
         } finally {
             dispatch({ type: 'SET_AUTO_FILLING', payload: false });
         }
@@ -248,18 +248,18 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
     const triggerAutoFillOnSave = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
         // Only trigger once on save
         if (state.hasTriggeredOnSave) {
-            console.log('Autofill already triggered on save, skipping');
+            // Autofill already triggered on save, skipping
             return;
         }
 
         // Check if we have enough data for autofill
         const progress = InitialAutofillTriggerService.getCompletionProgress(performanceData);
         if (progress.overallProgress.percentage < 80) {
-            console.log(`Not enough data for save autofill: ${progress.overallProgress.percentage}%`);
+            // Not enough data for save autofill
             return;
         }
 
-        console.log('🚀 Triggering autofill on RFQ save (one-time only)');
+        // Triggering autofill on RFQ save (one-time only)
 
         // Mark as triggered on save
         dispatch({ type: 'SET_HAS_TRIGGERED_ON_SAVE', payload: true });
@@ -305,7 +305,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
 
 
         } catch (error) {
-            console.error('Error accepting auto-fill:', error);
+            // Error accepting auto-fill
             dispatch({ type: 'SET_ERROR', payload: 'Failed to accept auto-fill values' });
         }
     }, [updatePerformanceData]);
@@ -355,7 +355,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
 
             }
         } catch (error) {
-            console.warn('Error checking tab auto-fill availability:', error);
+            // Error checking tab auto-fill availability
         }
     }, [api]);
 

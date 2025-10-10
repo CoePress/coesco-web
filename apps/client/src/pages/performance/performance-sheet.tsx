@@ -131,7 +131,7 @@ const PerformanceSheetContent = () => {
         );
         // Lock status fetched but not stored in state for now
       } catch (err) {
-        console.error("Failed to fetch lock status:", err);
+        // Failed to fetch lock status
       }
     };
 
@@ -165,10 +165,9 @@ const PerformanceSheetContent = () => {
     try {
       await saveRfqWithAutofill();
       setIsEditing(false);
-      console.log('✅ Save with autofill completed successfully');
+      // Save completed successfully
     } catch (error) {
-      console.error('❌ Save failed:', error);
-      // Keep editing mode if save fails
+      // Save failed - keep editing mode
     }
   };
 

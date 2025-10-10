@@ -183,6 +183,11 @@ def calculate_roll_str_backbend(data: roll_str_backbend_input):
     roller_force_required_check = check_roller_force_required(roller_force_required, str_model["jack_force_available"])
     roll_height_first_up = calc_roll_height_first_up(main_value)
     roll_height_last = calc_roll_height_last(data.thickness)
+    
+    # Check if we got error responses that prevent further calculation
+    if isinstance(roll_height_first_up, str) or isinstance(roll_height_last, str):
+        return f"ERROR: Invalid roll height calculation - {roll_height_first_up} / {roll_height_last}"
+    
     mid_heights = calc_mid_heights(num_mid_rolls, roll_height_first_up, roll_height_last)
 
     # First roller (up and down)
