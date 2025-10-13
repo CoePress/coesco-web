@@ -5,11 +5,11 @@ import type { IQueryParams } from "@/types";
 import { addressRepository } from "@/repositories";
 
 export class AddressService {
-  async createAddress(data: Omit<Address, "id" | "createdAt" | "updatedAt">) {
+  async createAddress(data: Partial<Address>) {
     return addressRepository.create(data);
   }
 
-  async updateAddress(id: string, data: Partial<Omit<Address, "id" | "createdAt" | "updatedAt">>) {
+  async updateAddress(id: string, data: Partial<Address>) {
     return addressRepository.update(id, data);
   }
 
