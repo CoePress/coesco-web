@@ -1,367 +1,267 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { OptionCategory, ProductClassOptionCategory, OptionHeader, OptionDetails, OptionRule, OptionRuleTarget, OptionRuleTrigger } from "@prisma/client";
+import { z } from "zod";
+
+import { optionService } from "@/services";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateOptionCategorySchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  multiple: z.boolean().default(false),
+  mandatory: z.boolean().default(false),
+  legacy: z.record(z.any()).optional(),
+});
+
+const UpdateOptionCategorySchema = CreateOptionCategorySchema.partial();
+
+const CreatePCOCSchema = z.object({
+  productClassId: z.string().uuid("Invalid product class ID"),
+  optionCategoryId: z.string().uuid("Invalid option category ID"),
+  displayOrder: z.number().int().default(0),
+  isRequired: z.boolean().default(false),
+});
+
+const UpdatePCOCSchema = CreatePCOCSchema.partial();
+
+const CreateOptionHeaderSchema = z.object({
+  optionCategoryId: z.string().uuid("Invalid option category ID"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  legacyId: z.string().optional(),
+});
+
+const UpdateOptionHeaderSchema = CreateOptionHeaderSchema.partial();
+
+const CreateOptionDetailSchema = z.object({
+  optionHeaderId: z.string().uuid("Invalid option header ID"),
+  productClassId: z.string().uuid("Invalid product class ID").optional(),
+  itemId: z.string().uuid("Invalid item ID").optional(),
+  price: z.number(),
+  quantity: z.number().int().default(1),
+  legacyId: z.string().optional(),
+});
+
+const UpdateOptionDetailSchema = CreateOptionDetailSchema.partial();
+
+const CreateOptionRuleSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  action: z.enum(["HIDE", "SHOW", "REQUIRE", "EXCLUDE"]),
+  priority: z.number().int().default(0),
+});
+
+const UpdateOptionRuleSchema = CreateOptionRuleSchema.partial();
+
+const CreateOptionRuleTargetSchema = z.object({
+  ruleId: z.string().uuid("Invalid rule ID"),
+  optionId: z.string().uuid("Invalid option ID"),
+});
+
+const UpdateOptionRuleTargetSchema = CreateOptionRuleTargetSchema.partial();
+
+const CreateOptionRuleTriggerSchema = z.object({
+  ruleId: z.string().uuid("Invalid rule ID"),
+  optionId: z.string().uuid("Invalid option ID"),
+});
+
+const UpdateOptionRuleTriggerSchema = CreateOptionRuleTriggerSchema.partial();
 
 export class OptionController {
-    // Option Categories
-  async createOptionCategory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionCategoryService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionCategory = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionCategorySchema.parse(req.body);
+    const result = await optionService.createOptionCategory(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionCategories(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionCategory>(req.query);
-      const result = await optionCategoryService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionCategories = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionCategory>(req.query);
+    const result = await optionService.getAllOptionCategories(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionCategory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionCategoryService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionCategory = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionCategoryById(req.params.optionCategoryId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionCategory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionCategoryService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionCategory = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionCategorySchema.parse(req.body);
+    const result = await optionService.updateOptionCategory(req.params.optionCategoryId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionCategory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionCategoryService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionCategory = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionCategory(req.params.optionCategoryId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Product Class Option Categories
-  async createPCOC(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassOptionCategoryService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createPCOC = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreatePCOCSchema.parse(req.body);
+    const result = await optionService.createPCOC(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getPCOCs(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<ProductClassOptionCategory>(req.query);
-      const result = await productClassOptionCategoryService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getPCOCs = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<ProductClassOptionCategory>(req.query);
+    const result = await optionService.getAllPCOCs(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getPCOC(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassOptionCategoryService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getPCOC = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getPCOCById(req.params.pcocId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updatePCOC(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassOptionCategoryService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updatePCOC = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdatePCOCSchema.parse(req.body);
+    const result = await optionService.updatePCOC(req.params.pcocId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deletePCOC(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassOptionCategoryService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deletePCOC = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deletePCOC(req.params.pcocId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Option Headers
-  async createOptionHeader(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionHeaderService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionHeader = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionHeaderSchema.parse(req.body);
+    const result = await optionService.createOptionHeader(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionHeaders(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionHeader>(req.query);
-      const result = await optionHeaderService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionHeaders = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionHeader>(req.query);
+    const result = await optionService.getAllOptionHeaders(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionHeader(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionHeaderService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionHeader = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionHeaderById(req.params.optionHeaderId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionHeader(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionHeaderService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionHeader = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionHeaderSchema.parse(req.body);
+    const result = await optionService.updateOptionHeader(req.params.optionHeaderId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionHeader(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionHeaderService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionHeader = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionHeader(req.params.optionHeaderId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Option Details
-  async createOptionDetail(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionDetailsService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionDetailSchema.parse(req.body);
+    const result = await optionService.createOptionDetail(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionDetails(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionDetails>(req.query);
-      const result = await optionDetailsService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionDetails = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionDetails>(req.query);
+    const result = await optionService.getAllOptionDetails(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionDetail(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionDetailsService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionDetailById(req.params.optionDetailId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionDetail(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionDetailsService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionDetailSchema.parse(req.body);
+    const result = await optionService.updateOptionDetail(req.params.optionDetailId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionDetail(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionDetailsService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionDetail(req.params.optionDetailId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Option Rules
-  async createOptionRule(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionRule = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionRuleSchema.parse(req.body);
+    const result = await optionService.createOptionRule(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionRules(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionRule>(req.query);
-      const result = await optionRuleService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRules = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionRule>(req.query);
+    const result = await optionService.getAllOptionRules(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionRule(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRule = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionRuleById(req.params.optionRuleId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionRule(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionRule = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionRuleSchema.parse(req.body);
+    const result = await optionService.updateOptionRule(req.params.optionRuleId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionRule(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionRule = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionRule(req.params.optionRuleId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Option Rule Targets
-  async createOptionRuleTarget(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTargetService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionRuleTarget = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionRuleTargetSchema.parse(req.body);
+    const result = await optionService.createOptionRuleTarget(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionRuleTargets(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionRuleTarget>(req.query);
-      const result = await optionRuleTargetService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRuleTargets = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionRuleTarget>(req.query);
+    const result = await optionService.getAllOptionRuleTargets(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionRuleTarget(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTargetService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRuleTarget = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionRuleTargetById(req.params.optionRuleTargetId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionRuleTarget(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTargetService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionRuleTarget = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionRuleTargetSchema.parse(req.body);
+    const result = await optionService.updateOptionRuleTarget(req.params.optionRuleTargetId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionRuleTarget(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTargetService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionRuleTarget = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionRuleTarget(req.params.optionRuleTargetId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  // Option Rule Triggers
-  async createOptionRuleTrigger(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTriggerService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createOptionRuleTrigger = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateOptionRuleTriggerSchema.parse(req.body);
+    const result = await optionService.createOptionRuleTrigger(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getOptionRuleTriggers(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<OptionRuleTrigger>(req.query);
-      const result = await optionRuleTriggerService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRuleTriggers = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<OptionRuleTrigger>(req.query);
+    const result = await optionService.getAllOptionRuleTriggers(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOptionRuleTrigger(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTriggerService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOptionRuleTrigger = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await optionService.getOptionRuleTriggerById(req.params.optionRuleTriggerId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateOptionRuleTrigger(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTriggerService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateOptionRuleTrigger = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateOptionRuleTriggerSchema.parse(req.body);
+    const result = await optionService.updateOptionRuleTrigger(req.params.optionRuleTriggerId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteOptionRuleTrigger(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await optionRuleTriggerService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteOptionRuleTrigger = asyncWrapper(async (req: Request, res: Response) => {
+    await optionService.deleteOptionRuleTrigger(req.params.optionRuleTriggerId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }

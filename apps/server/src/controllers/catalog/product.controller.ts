@@ -1,105 +1,85 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { Item, ProductClass } from "@prisma/client";
+import { z } from "zod";
+
+import { productService } from "@/services";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateItemSchema = z.object({
+  productClassId: z.string().uuid("Invalid product class ID").optional(),
+  modelNumber: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  legacy: z.record(z.any()).optional(),
+});
+
+const UpdateItemSchema = CreateItemSchema.partial();
+
+const CreateProductClassSchema = z.object({
+  code: z.string().min(1, "Code is required"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  parentId: z.string().uuid("Invalid parent ID").optional(),
+  legacy: z.record(z.any()).optional(),
+});
+
+const UpdateProductClassSchema = CreateProductClassSchema.partial();
 
 export class ProductController {
-    async createItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await itemService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createItem = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateItemSchema.parse(req.body);
+    const result = await productService.createItem(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getItems(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<Item>(req.query);
-      const result = await itemService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getItems = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Item>(req.query);
+    const result = await productService.getAllItems(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await itemService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getItem = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await productService.getItemById(req.params.itemId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await itemService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateItem = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateItemSchema.parse(req.body);
+    const result = await productService.updateItem(req.params.itemId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteItem(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await itemService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteItem = asyncWrapper(async (req: Request, res: Response) => {
+    await productService.deleteItem(req.params.itemId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-    async createProductClass(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createProductClass = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateProductClassSchema.parse(req.body);
+    const result = await productService.createProductClass(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getProductClasses(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<ProductClass>(req.query);
-      const result = await productClassService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getProductClasses = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<ProductClass>(req.query);
+    const result = await productService.getAllProductClasses(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getProductClass(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassService.getById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getProductClass = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await productService.getProductClassById(req.params.productClassId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateProductClass(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassService.update(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateProductClass = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateProductClassSchema.parse(req.body);
+    const result = await productService.updateProductClass(req.params.productClassId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteProductClass(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await productClassService.delete(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteProductClass = asyncWrapper(async (req: Request, res: Response) => {
+    await productService.deleteProductClass(req.params.productClassId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }

@@ -1,57 +1,47 @@
+import type { Request, Response } from "express";
+import type { Configuration } from "@prisma/client";
+import { z } from "zod";
+
 import { configurationService } from "@/services";
-import { buildQueryParams } from "@/utils";
-import { Configuration } from "@azure/msal-node";
-import type { NextFunction, Request, Response } from "express";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateConfigurationSchema = z.object({
+  productClassId: z.string().uuid("Invalid product class ID"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  isTemplate: z.boolean(),
+  legacy: z.record(z.any()).optional(),
+});
+
+const UpdateConfigurationSchema = CreateConfigurationSchema.partial();
 
 export class ConfigurationController {
-    async createConfiguration(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await configurationService.createConfiguration(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createConfiguration = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateConfigurationSchema.parse(req.body);
+    const result = await configurationService.createConfiguration(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getConfigurations(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<Configuration>(req.query);
-      const result = await configurationService.getAllConfigurations(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getConfigurations = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Configuration>(req.query);
+    const result = await configurationService.getAllConfigurations(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getConfiguration(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await configurationService.getConfigurationById(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getConfiguration = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await configurationService.getConfigurationById(req.params.configurationId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateConfiguration(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await configurationService.updateConfiguration(req.params.companyId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateConfiguration = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateConfigurationSchema.parse(req.body);
+    const result = await configurationService.updateConfiguration(req.params.configurationId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteConfiguration(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await configurationService.deleteConfiguration(req.params.companyId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteConfiguration = asyncWrapper(async (req: Request, res: Response) => {
+    await configurationService.deleteConfiguration(req.params.configurationId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }
