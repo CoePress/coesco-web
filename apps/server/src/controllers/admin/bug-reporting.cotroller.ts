@@ -1,28 +1,23 @@
-import { jiraService } from "@/services";
-import { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+import { z } from "zod";
+
+import { bugReportingService } from "@/services";
+import { asyncWrapper } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateBugReportSchema = z.object({
+  description: z.string().min(1, "Description is required"),
+  userEmail: z.string().email("Invalid email").optional(),
+  userName: z.string().optional(),
+  screenshot: z.string().optional(),
+  url: z.string().url("Invalid URL").optional(),
+  userAgent: z.string().optional(),
+});
 
 export class BugReportingController {
-    async sendBugReport(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { description, userEmail, userName, screenshot, url, userAgent } = req.body;
-
-      const now = new Date();
-      const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-      const title = userName ? `Bug Report - ${userName} - ${dateStr}` : `Bug Report - ${dateStr}`;
-
-      const result = await jiraService.createBugIssue({
-        title,
-        description,
-        userEmail,
-        userName,
-        screenshot,
-        url,
-        userAgent,
-      });
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  sendBugReport = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateBugReportSchema.parse(req.body);
+    const result = await bugReportingService.createBugReport(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 }

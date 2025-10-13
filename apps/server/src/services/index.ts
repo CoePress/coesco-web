@@ -21,7 +21,6 @@ import { ResourceMonitoringSerivce } from "./production/resource-monitoring.serv
 import { ResourceService } from "./production/resource.service";
 import { AuthService } from "./core/auth.service";
 import { LegacyService } from "./core/legacy.service";
-import { JiraService } from "./core/jira.service";
 import { EmployeeSyncService } from "./admin/employee-sync.service";
 import { MicrosoftService } from "./admin/microsoft.service";
 import { PermissionService } from "./admin/permission.service";
@@ -31,7 +30,7 @@ import { PermissionService } from "./admin/permission.service";
 
 // Admin
 export const auditService = new AuditService()
-export const bugReportingServie = new BugReportingService()
+export const bugReportingService = new BugReportingService()
 export const employeeService = new EmployeeService()
 export const employeeSyncService = new EmployeeSyncService()
 export const microsoftService = new MicrosoftService()
@@ -47,7 +46,6 @@ export const authService = new AuthService()
 export const cacheService = new CacheService()
 export const chatService = new ChatService()
 export const emailServicce = new EmailService()
-export const jiraService = new JiraService()
 export const legacyService = new LegacyService()
 export const lockingService = new LockingService()
 export const socketService = new SocketService()
