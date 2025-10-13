@@ -360,7 +360,7 @@ def generate_minimum_material_specs_values(data: Dict[str, Any]) -> Dict[str, An
                         "direction": get_nested(data, ["common", "equipment", "feed", "direction"], "Left to Right"),
                         "controlsLevel": get_nested(data, ["common", "equipment", "feed", "controlsLevel"], "Standard"),
                         "typeOfLine": get_nested(data, ["common", "equipment", "feed", "typeOfLine"], "Conventional"),
-                        "controls": get_nested(data, ["common", "equipment", "feed", "controls"], "Allen Bradley"),
+                        "controls": get_nested(data, ["common", "equipment", "feed", "controls"], "Sigma 5 Feed"),
                         "passline": get_nested(data, ["common", "equipment", "feed", "passline"], "36"),
                         "nonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes",
                         "lightGuageNonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes" and thickness < 0.030

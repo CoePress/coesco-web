@@ -20,7 +20,8 @@
     "dev": "nodemon src/server.ts",
     "build": "npm run db:generate && tsc && tsc-alias",
     "start": "npm run build && node dist/src/server.js",
-    "pipeline": "tsx src/scripts/data-pipeline.ts"
+    "pipeline": "tsx src/scripts/data-pipeline.ts",
+    "create-dev-user": "tsx scripts/create-dev-user.ts"
   },
   "dependencies": {
     "@azure/msal-node": "^3.7.1",

@@ -12,6 +12,9 @@ import {
   MATERIAL_TYPE_OPTIONS,
   usePerformanceDataService,
 } from "@/utils/performance-sheet";
+import {
+  mapControlsLevelToFeedControls,
+} from "@/utils/feed-controls-mapping";
 import { getRequiredFieldBackgroundColor } from "@/utils/performance-helpers";
 import { PerformanceData } from "@/contexts/performance.context";
 import { Card, Input, Select, Text } from "@/components";
@@ -48,6 +51,12 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
     const max = Number(localData.common?.coil?.maxCoilWidth) || undefined;
     return { min, max };
   }, [localData.common?.coil?.minCoilWidth, localData.common?.coil?.maxCoilWidth]);
+
+  // Get feed controls mapping based on controls level
+  const feedControlsMapping = useMemo(() => {
+    const controlsLevel = localData.common?.equipment?.feed?.controlsLevel || "";
+    return mapControlsLevelToFeedControls(controlsLevel);
+  }, [localData.common?.equipment?.feed?.controlsLevel]);
 
   // Get background color for Type of Roll based on selected value
   const getRollTypeBackgroundColor = useMemo(() => {
@@ -260,7 +269,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
         <Input
           label="Feed Controls"
           name="common.equipment.feed.controls"
-          value={localData.common?.equipment?.feed?.controls || ""}
+          value={localData.common?.equipment?.feed?.controls || feedControlsMapping.controls || "Sigma 5 Feed"}
           onChange={handleFieldChange}
           disabled={true}
           customBackgroundColor={getRequiredBgColor("common.equipment.feed.controls")}

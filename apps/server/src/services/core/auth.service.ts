@@ -200,45 +200,56 @@ export class AuthService {
   }
 
   async testLogin(): Promise<any> {
+    const { hash } = await import("bcrypt");
+
     let employee = await prisma.employee.findUnique({
-      where: { email: "sample@example.com" },
+      where: { email: "dev@coesco.local" },
+      include: { user: true },
     });
 
     if (!employee) {
+      const hashedPassword = await hash("DevPassword123!", 12);
+
       employee = await prisma.employee.create({
         data: {
-          firstName: "Sample",
-          lastName: "Employee",
-          initials: "sys",
-          email: "sample@example.com",
-          title: "Sales Manager",
-          number: randomUUID().slice(0, 6),
+          firstName: "Development",
+          lastName: "User",
+          initials: "DEV",
+          email: "dev@coesco.local",
+          title: "Developer",
+          number: `DEV-${randomUUID().slice(0, 6)}`,
+          hireDate: new Date(),
+          startDate: new Date(),
+          isActive: true,
           user: {
             create: {
-              username: "sample@example.com",
-              role: UserRole.USER,
+              username: "dev",
+              password: hashedPassword,
+              role: UserRole.ADMIN,
+              isActive: true,
             },
           },
           createdById: "system",
           updatedById: "system",
         },
+        include: { user: true },
       });
     }
 
-    let user = await prisma.user.findUnique({
-      where: { username: "sample@example.com" },
-    });
-
+    let user = employee.user;
     if (!user) {
+      const hashedPassword = await hash("DevPassword123!", 12);
       user = await prisma.user.create({
         data: {
-          username: "sample@example.com",
+          username: "dev",
+          password: hashedPassword,
           employee: {
             connect: {
               id: employee.id,
             },
           },
-          role: UserRole.USER,
+          role: UserRole.ADMIN,
+          isActive: true,
         },
       });
     }

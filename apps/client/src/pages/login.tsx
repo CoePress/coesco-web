@@ -35,16 +35,16 @@ const BackgroundImage = () => {
         loading="lazy"
         fetchPriority="low"
         onLoad={() => setIsLoaded(true)}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${
-          isLoaded ? "opacity-20" : "opacity-0"
-        }`}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-20" : "opacity-0"
+          }`}
       />
     </div>
   );
 };
 
 const Login = () => {
-  const { get, loading: loginLoading, error: loginError } = useApi<{ url: string }>();
+  const { get, post, loading: loginLoading, error: loginError } = useApi();
+  const { setUser } = useContext(AuthContext)!;
   const { user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,8 +52,8 @@ const Login = () => {
   const errorMessage = getErrorMessage(errorParam) || loginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
-  const login = async () => {
+
+  const handleMicrosoftLogin = async () => {
     const response = await get("/auth/microsoft/login");
     if (response?.url) {
       window.location.href = response.url;
@@ -64,13 +64,13 @@ const Login = () => {
 
   useEffect(() => {
     subscribeToSystemStatus();
-    
+
     const retryInterval = setInterval(() => {
       if (!isSystemConnected) {
         subscribeToSystemStatus();
       }
     }, 3000);
-    
+
     return () => {
       clearInterval(retryInterval);
       unsubscribeFromSystemStatus();
@@ -158,19 +158,12 @@ const Login = () => {
               </div>
             )}
 
-            <form
-              className="space-y-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (username && password) {
-                  // Submit form logic
-                }
-              }}>
+            <div className="space-y-2">
               <Input
                 type="text"
                 label="Username"
                 value={username}
-                disabled={true}
+                disabled={loginLoading}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="bg-background/50"
@@ -180,18 +173,42 @@ const Login = () => {
                 type="password"
                 label="Password"
                 value={password}
-                disabled={true}
+                disabled={loginLoading}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="bg-background/50 mb-2"
               />
 
               <Button
+                onClick={async () => {
+                  console.log("Login button clicked", { username, password });
+                  if (username && password) {
+                    try {
+                      console.log("Attempting login...");
+                      const response = await post("/auth/login", {
+                        email: username,
+                        password: password,
+                      });
+
+                      console.log("Login response:", response);
+
+                      if (response?.user && response?.employee) {
+                        console.log("Login successful, setting user");
+                        setUser(response.user, response.employee);
+                        navigate("/");
+                      } else {
+                        console.error("Unexpected response format:", response);
+                      }
+                    } catch (error) {
+                      console.error("Login error:", error);
+                    }
+                  }
+                }}
                 disabled={loginLoading || !username || !password}
                 className="w-full">
                 {loginLoading ? "Signing in..." : "Sign in"}
               </Button>
-            </form>
+            </div>
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
@@ -205,7 +222,7 @@ const Login = () => {
             </div>
 
             <Button
-              onClick={login}
+              onClick={handleMicrosoftLogin}
               disabled={loginLoading}
               variant="secondary-outline"
               className="w-full flex items-center justify-center">

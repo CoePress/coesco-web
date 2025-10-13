@@ -257,7 +257,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
             <Input
               label="Feed Controls"
               name="common.equipment.feed.controls"
-              value={localData.common?.equipment?.feed?.controls || feedControlsMapping.controls}
+              value={localData.common?.equipment?.feed?.controls || feedControlsMapping.controls || "Sigma 5 Feed"}
               onChange={handleFieldChange}
               disabled={true}
               className="bg-gray-100"

@@ -6,7 +6,8 @@ import { authService } from "@/services";
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await authService.testLogin();
+      const { email, password } = req.body;
+      const result = await authService.login(email, password);
       res.cookie("accessToken", result.token, cookieOptions);
       res.cookie("refreshToken", result.refreshToken, cookieOptions);
       res.status(200).json(result);
