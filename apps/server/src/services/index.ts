@@ -20,7 +20,7 @@ import { EmailService } from "./core/email.service";
 import { LegacyService } from "./core/legacy.service";
 import { LockingService } from "./core/locking.service";
 import { SocketService } from "./core/socket.service";
-import { ResourceMonitoringSerivce } from "./production/resource-monitoring.service";
+import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
@@ -57,7 +57,7 @@ export const lockingService = new LockingService()
 export const socketService = new SocketService()
 
 // Production
-export const resourceMonitoringService = new ResourceMonitoringSerivce()
+export const resourceMonitoringService = new ResourceMonitoringService()
 export const resourceService = new ResourceService()
 
 // Sales

@@ -1,63 +1,48 @@
+import type { Request, Response } from "express";
+import type { MachineStatus } from "@prisma/client";
+import { z } from "zod";
+
 import { resourceMonitoringService } from "@/services";
-import { buildQueryParams } from "@/utils";
-import { MachineStatus } from "@prisma/client";
-import { NextFunction, Request, Response } from "express";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const GetOverviewSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  view: z.string().default("all"),
+  timezoneOffset: z.coerce.number().optional(),
+});
 
 export class ResourceMonitoringController {
-    async getMachineStatuses(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<MachineStatus>(req.query);
-      const result = await machineStatusService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getMachineStatuses = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<MachineStatus>(req.query);
+    const result = await resourceMonitoringService.getAllMachineStatuses(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getMachineStatus(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await machineStatusService.getById(req.params.machineStatusId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getMachineStatus = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await resourceMonitoringService.getMachineStatusById(req.params.machineStatusId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getOverview(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { startDate, endDate, view = "all", timezoneOffset } = req.query;
-      const result = await machiningService.getMachineOverview(
-        startDate as string,
-        endDate as string,
-        view as string,
-        timezoneOffset ? Number(timezoneOffset) : undefined,
-      );
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getOverview = asyncWrapper(async (req: Request, res: Response) => {
+    const { startDate, endDate, view, timezoneOffset } = GetOverviewSchema.parse(req.query);
+    const result = await resourceMonitoringService.getMachineOverview(
+      startDate,
+      endDate,
+      view,
+      timezoneOffset,
+    );
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getTimeline(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = {};
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getTimeline = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await resourceMonitoringService.getMachineTimeline();
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async resetFanucAdapter(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await machiningService.resetFanucAdapter();
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  resetFanucAdapter = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await resourceMonitoringService.resetFanucAdapter();
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 }
