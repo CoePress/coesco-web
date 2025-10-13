@@ -5,11 +5,11 @@ import type { IQueryParams } from "@/types";
 import { employeeRepository, userRepository } from "@/repositories";
 
 export class EmployeeService {
-  async createEmployee(data: Omit<Employee, "id" | "createdAt" | "updatedAt">) {
+  async createEmployee(data: Partial<Employee>) {
     return employeeRepository.create(data);
   }
 
-  async updateEmployee(id: string, data: Partial<Omit<Employee, "id" | "createdAt" | "updatedAt">>) {
+  async updateEmployee(id: string, data: Partial<Employee>) {
     return employeeRepository.update(id, data);
   }
 
@@ -25,11 +25,11 @@ export class EmployeeService {
     return employeeRepository.getById(id, params);
   }
 
-  async createUser(data: Omit<User, "id" | "createdAt" | "updatedAt">) {
+  async createUser(data: Partial<User>) {
     return userRepository.create(data);
   }
 
-  async updateUser(id: string, data: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>) {
+  async updateUser(id: string, data: Partial<User>) {
     return userRepository.update(id, data);
   }
 

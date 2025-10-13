@@ -1,161 +1,121 @@
-import { buildQueryParams } from "@/utils";
+import type { Request, Response } from "express";
 import { Role, RoleAssignment, RolePermission } from "@prisma/client";
-import type { NextFunction, Request, Response } from "express";
+import { z } from "zod";
+
+import { roleService, rolePermissionService, roleAssignmentService } from "@/services";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateRoleSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  isSystem: z.boolean(),
+  legacy: z.record(z.any()).optional(),
+});
+
+const UpdateRoleSchema = CreateRoleSchema.partial();
+
+const CreateRolePermissionSchema = z.object({
+  roleId: z.string().uuid("Invalid role ID"),
+  permissionId: z.string().uuid("Invalid permission ID"),
+});
+
+const UpdateRolePermissionSchema = CreateRolePermissionSchema.partial();
+
+const CreateRoleAssignmentSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  roleId: z.string().uuid("Invalid role ID"),
+  scope: z.string().min(1, "Scope is required"),
+  scopeKey: z.string().min(1, "Scope key is required"),
+});
+
+const UpdateRoleAssignmentSchema = CreateRoleAssignmentSchema.partial();
 
 export class RoleController {
-    // Roles
-  async createRole(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  // Roles
+  createRole = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateRoleSchema.parse(req.body);
+    const result = await roleService.create(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getRoles(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<Role>(req.query);
-      const result = await roleService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRoles = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Role>(req.query);
+    const result = await roleService.getAll(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getRole(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleService.getById(req.params.roleId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRole = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await roleService.getById(req.params.roleId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateRole(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleService.update(req.params.roleId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateRole = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateRoleSchema.parse(req.body);
+    const result = await roleService.update(req.params.roleId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteRole(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleService.delete(req.params.roleId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteRole = asyncWrapper(async (req: Request, res: Response) => {
+    await roleService.delete(req.params.roleId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
   // Role Permissions
-  async createRolePermission(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await rolePermissionService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createRolePermission = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateRolePermissionSchema.parse(req.body);
+    const result = await rolePermissionService.create(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getRolePermissions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<RolePermission>(req.query);
-      const result = await rolePermissionService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRolePermissions = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<RolePermission>(req.query);
+    const result = await rolePermissionService.getAll(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getRolePermission(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await rolePermissionService.getById(req.params.rolePermissionId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRolePermission = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await rolePermissionService.getById(req.params.rolePermissionId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateRolePermission(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await rolePermissionService.update(req.params.rolePermissionId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateRolePermission = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateRolePermissionSchema.parse(req.body);
+    const result = await rolePermissionService.update(req.params.rolePermissionId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteRolePermission(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await rolePermissionService.delete(req.params.rolePermissionId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteRolePermission = asyncWrapper(async (req: Request, res: Response) => {
+    await rolePermissionService.delete(req.params.rolePermissionId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
   // Role Assignments
-  async createRoleAssignment(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleAssignmentService.create(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createRoleAssignment = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateRoleAssignmentSchema.parse(req.body);
+    const result = await roleAssignmentService.create(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getRoleAssignments(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<RoleAssignment>(req.query);
-      const result = await roleAssignmentService.getAll(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRoleAssignments = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<RoleAssignment>(req.query);
+    const result = await roleAssignmentService.getAll(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getRoleAssignment(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleAssignmentService.getById(req.params.roleAssignmentId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getRoleAssignment = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await roleAssignmentService.getById(req.params.roleAssignmentId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateRoleAssignment(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleAssignmentService.update(req.params.roleAssignmentId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateRoleAssignment = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateRoleAssignmentSchema.parse(req.body);
+    const result = await roleAssignmentService.update(req.params.roleAssignmentId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteRoleAssignment(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await roleAssignmentService.delete(req.params.roleAssignmentId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteRoleAssignment = asyncWrapper(async (req: Request, res: Response) => {
+    await roleAssignmentService.delete(req.params.roleAssignmentId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }

@@ -4,26 +4,29 @@ import { __prod__ } from "@/config/env";
 import { AuditService } from "./admin/audit.service";
 import { BugReportingService } from "./admin/bug-reporting.service";
 import { EmployeeService } from "./admin/employee.service";
+import { EmployeeSyncService } from "./admin/employee-sync.service";
+import { MicrosoftService } from "./admin/microsoft.service";
+import { PermissionService } from "./admin/permission.service";
+import { RoleService } from "./admin/role.service";
+import { RoleAssignmentService } from "./admin/role-assignment.service";
+import { RolePermissionService } from "./admin/role-permission.service";
 import { ConfigurationService } from "./catalog/configuration.service";
 import { OptionService } from "./catalog/option.service";
 import { ProductService } from "./catalog/product.service";
+import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { ChatService } from "./core/chat.service";
 import { EmailService } from "./core/email.service";
+import { LegacyService } from "./core/legacy.service";
 import { LockingService } from "./core/locking.service";
 import { SocketService } from "./core/socket.service";
+import { ResourceMonitoringSerivce } from "./production/resource-monitoring.service";
+import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
 import { QuoteService } from "./sales/quote.service";
-import { ResourceMonitoringSerivce } from "./production/resource-monitoring.service";
-import { ResourceService } from "./production/resource.service";
-import { AuthService } from "./core/auth.service";
-import { LegacyService } from "./core/legacy.service";
-import { EmployeeSyncService } from "./admin/employee-sync.service";
-import { MicrosoftService } from "./admin/microsoft.service";
-import { PermissionService } from "./admin/permission.service";
 
 
 
@@ -35,6 +38,9 @@ export const employeeService = new EmployeeService()
 export const employeeSyncService = new EmployeeSyncService()
 export const microsoftService = new MicrosoftService()
 export const permissionService = new PermissionService()
+export const roleService = new RoleService()
+export const roleAssignmentService = new RoleAssignmentService()
+export const rolePermissionService = new RolePermissionService()
 
 // Catalog
 export const configurationService = new ConfigurationService()
