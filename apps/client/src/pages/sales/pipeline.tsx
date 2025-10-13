@@ -537,7 +537,7 @@ const Pipeline = () => {
       }
 
       if (filters.confidenceLevels.length > 0) {
-        const confidenceValues = filters.confidenceLevels.map(level => {
+        const confidenceValues = filters.confidenceLevels.map((level: number) => {
           if (level === 0) return "Closed Lost";
           if (level === 100) return "Closed Won";
           return `${level}%`;

@@ -46,6 +46,7 @@ export class LegacyService {
   private jobConnection?: odbc.Connection;
   private quoteConnection?: odbc.Connection;
   private idMap?: IdMapEntry[];
+  private connectionCheckInterval?: NodeJS.Timeout;
 
   private validateFieldName(field: string): string {
     if (!/^[a-zA-Z0-9_]+$/.test(field)) {
@@ -202,6 +203,70 @@ export class LegacyService {
     }
   }
 
+  private async reconnect(database: string): Promise<odbc.Connection | undefined> {
+    let connStr: string;
+    let dbName: string;
+
+    switch (database) {
+      case "std":
+        connStr = stdConnStr;
+        dbName = "STD";
+        break;
+      case "job":
+        connStr = jobConnStr;
+        dbName = "JOB";
+        break;
+      case "quote":
+        connStr = quoteConnStr;
+        dbName = "QUOTE";
+        break;
+      default:
+        return undefined;
+    }
+
+    try {
+      logger.info(`Attempting to reconnect to ${dbName} database...`);
+      const connectionPromise = odbc.connect(connStr);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Connection timeout after 10000ms`)), 10000),
+      );
+
+      const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
+      logger.info(`Successfully reconnected to ${dbName} database`);
+
+      if (database === "std") this.stdConnection = connection;
+      else if (database === "job") this.jobConnection = connection;
+      else if (database === "quote") this.quoteConnection = connection;
+
+      return connection;
+    }
+    catch (err) {
+      logger.error(`Failed to reconnect to ${dbName} database:`, err);
+      return undefined;
+    }
+  }
+
+  private startConnectionCheck() {
+    this.connectionCheckInterval = setInterval(async () => {
+      for (const db of ["std", "job", "quote"]) {
+        const conn = this.getDatabaseConnection(db);
+        if (!conn) {
+          logger.warn(`No connection for ${db} database, attempting to reconnect...`);
+          await this.reconnect(db);
+        }
+        else {
+          try {
+            await conn.query("SELECT 1 FROM PUB.\"_File\" FETCH FIRST 1 ROW ONLY");
+          }
+          catch (err) {
+            logger.warn(`No connection to ${db} database, attempting to reconnect...`);
+            await this.reconnect(db);
+          }
+        }
+      }
+    }, 60000);
+  }
+
   async initialize() {
     // Helper function to attempt connection with 500ms timeout
     const connectFast = async (connStr: string, dbName: string) => {
@@ -248,6 +313,9 @@ export class LegacyService {
     else {
       logger.info(`Successfully connected to: ${connectedDatabases.join(", ")}`);
     }
+
+    logger.info("Starting health check service (checking every 60 seconds)...");
+    this.startConnectionCheck();
   }
 
   async create(database: string, table: string, data: any) {
@@ -797,6 +865,10 @@ export class LegacyService {
 
   async close() {
     try {
+      if (this.connectionCheckInterval) {
+        clearInterval(this.connectionCheckInterval);
+        logger.info("Health check service stopped");
+      }
       await this.stdConnection?.close();
       await this.jobConnection?.close();
       await this.quoteConnection?.close();
