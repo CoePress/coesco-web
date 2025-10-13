@@ -15,13 +15,12 @@ import swaggerUi from "swagger-ui-express";
 
 import { __dev__, __prod__ } from "./config/env";
 import { errorHandler, NotFoundError } from "./middleware/error.middleware";
+import { preventDirectoryTraversal, preventStaticFileServing } from "./middleware/security.middleware";
 import routes from "./routes";
 import { logger } from "./utils/logger";
 
 const app = express();
 const server = createServer(app);
-
-app.set("trust proxy", 1);
 
 const origin = __dev__ ? ["http://localhost:5173", "http://192.231.64.54:5173"] : ["https://portal.cpec.com", "https://cpec-portal.netlify.app"];
 
@@ -59,18 +58,39 @@ const limiter = rateLimit({
 const swaggerPath = path.join(process.cwd(), "./src/config/swagger.json");
 const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
+app.set("trust proxy", __prod__ ? 1 : false);
+
 app.use("/api", limiter);
 app.use(morgan("dev", { stream }));
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  noSniff: true,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  xssFilter: true,
+}));
+
+app.use(preventDirectoryTraversal);
+app.use(preventStaticFileServing);
 app.use(compression());
 app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-// Raw body parsing for file uploads
 app.use("/api/files/upload", express.raw({ type: "*/*", limit: "100mb" }));
-app.set("trust proxy", false);
 
 app.get("/openapi.json", (_req, res) => {
   res.type("application/json").send(swaggerDoc);

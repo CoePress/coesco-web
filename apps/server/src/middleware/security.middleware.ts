@@ -17,29 +17,51 @@ export const cspMiddleware = helmet.contentSecurityPolicy({
 });
 
 export function securityHeaders(req: Request, res: Response, next: NextFunction) {
-  // HTTP Strict Transport Security
   res.setHeader(
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains; preload",
   );
 
-  // X-Content-Type-Options
   res.setHeader("X-Content-Type-Options", "nosniff");
-
-  // X-Frame-Options
   res.setHeader("X-Frame-Options", "DENY");
-
-  // X-XSS-Protection
   res.setHeader("X-XSS-Protection", "1; mode=block");
-
-  // Referrer-Policy
   res.setHeader("Referrer-Policy", "no-referrer");
-
-  // Feature-Policy
   res.setHeader(
     "Feature-Policy",
     "camera 'none'; microphone 'none'; geolocation 'none'",
   );
+
+  next();
+}
+
+export function preventDirectoryTraversal(req: Request, res: Response, next: NextFunction) {
+  const dangerousPatterns = ["..", "~", "\\"];
+  const path = decodeURIComponent(req.path);
+
+  for (const pattern of dangerousPatterns) {
+    if (path.includes(pattern)) {
+      return res.status(400).json({
+        error: "Invalid path",
+        message: "Directory traversal attempts are not allowed",
+      });
+    }
+  }
+
+  next();
+}
+
+export function preventStaticFileServing(req: Request, res: Response, next: NextFunction) {
+  const staticExtensions = [".html", ".htm", ".js", ".css", ".map", ".txt", ".xml"];
+  const isStaticFileRequest = staticExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
+  const allowedPaths = ["/docs", "/openapi.json"];
+  const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+
+  if (isStaticFileRequest && !isAllowedPath) {
+    return res.status(403).json({
+      error: "Forbidden",
+      message: "Static file serving is disabled",
+    });
+  }
 
   next();
 }
