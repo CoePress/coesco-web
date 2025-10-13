@@ -1,109 +1,76 @@
 import type { Chat, Message } from "@prisma/client";
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+import { z } from "zod";
 
 import { chatService } from "@/services";
-import { buildQueryParams } from "@/utils";
+import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
+const CreateChatSchema = z.object({
+  title: z.string().optional(),
+  userId: z.string().uuid("Invalid user ID").optional(),
+});
+
+const UpdateChatSchema = CreateChatSchema.partial();
+
+const CreateMessageSchema = z.object({
+  chatId: z.string().uuid("Invalid chat ID"),
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1, "Content is required"),
+});
+
+const UpdateMessageSchema = CreateMessageSchema.partial();
+
 export class ChatController {
-  async createChat(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = req.body;
-      const result = await chatService.createChat(data);
-      res.status(HTTP_STATUS.CREATED).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  };
+  createChat = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateChatSchema.parse(req.body);
+    const result = await chatService.createChat(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getChats(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<Chat>(req.query);
-      const result = await chatService.getAllChats(params);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  };
+  getChats = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Chat>(req.query);
+    const result = await chatService.getAllChats(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getChat(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { chatId } = req.params;
-      const result = await chatService.getChatById(chatId);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  };
+  getChat = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await chatService.getChatById(req.params.chatId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateChat(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { chatId } = req.params;
-      const result = await chatService.updateChat(chatId, req.body);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  };
+  updateChat = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateChatSchema.parse(req.body);
+    const result = await chatService.updateChat(req.params.chatId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteChat(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { chatId } = req.params;
-      const result = await chatService.deleteChat(chatId);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  };
+  deleteChat = asyncWrapper(async (req: Request, res: Response) => {
+    await chatService.deleteChat(req.params.chatId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 
-  async getMessages(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { chatId } = req.params;
-      const params = buildQueryParams<Message>(req.query);
-      params.filter = { chatId } as Partial<Message>;
-      const result = await chatService.getAllMessages(params);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getMessages = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Message>(req.query);
+    params.filter = { chatId: req.params.chatId } as Partial<Message>;
+    const result = await chatService.getAllMessages(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async createMessage(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = req.body;
-      const result = await chatService.createMessage(data);
-      res.status(201).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createMessage = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateMessageSchema.parse(req.body);
+    const result = await chatService.createMessage(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async updateMessage(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { messageId } = req.params;
-      const result = await chatService.updateMessage(messageId, req.body);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateMessage = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateMessageSchema.parse(req.body);
+    const result = await chatService.updateMessage(req.params.messageId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteMessage(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { messageId } = req.params;
-      const result = await chatService.deleteMessage(messageId);
-      res.status(HTTP_STATUS.OK).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteMessage = asyncWrapper(async (req: Request, res: Response) => {
+    await chatService.deleteMessage(req.params.messageId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }

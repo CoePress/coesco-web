@@ -489,7 +489,20 @@ export class QuoteService {
       throw new Error("Quote or latest revision not found");
     }
 
-    return Buffer.from("PDF placeholder");
+    const quote = quoteResult.data;
+    const revision = quote.latestRevision;
+
+    const pdfContent = {
+      quoteNumber: `${quote.year}-${quote.number}`,
+      revision: revision.revision,
+      status: revision.status,
+      quoteDate: revision.quoteDate,
+      totalAmount: revision.totalAmount,
+      items: revision.items || [],
+      terms: revision.terms || [],
+    };
+
+    return Buffer.from(JSON.stringify(pdfContent, null, 2));
   }
 
   async getNextQuoteNumber(isDraft: boolean = false): Promise<string> {
