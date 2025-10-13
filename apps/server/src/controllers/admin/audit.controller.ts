@@ -1,6 +1,7 @@
 import { env } from "@/config/env";
 import { auditService } from "@/services";
 import { buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
 import { AuditLog } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 
@@ -37,7 +38,7 @@ export class AuditController {
         const logPath = path.join(env.LOGS_DIR, file);
   
         if (!fs.existsSync(logPath)) {
-          return res.status(404).json({ error: "Log not found" });
+          return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Log not found" });
         }
   
         const isGzipped = logPath.endsWith(".gz");

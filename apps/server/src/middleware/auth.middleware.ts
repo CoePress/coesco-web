@@ -9,6 +9,7 @@ import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
 
 import { UnauthorizedError } from "./error.middleware";
+import { SYSTEM_USER_ID } from "@/utils/constants";
 
 const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
 
@@ -41,7 +42,7 @@ export const protect = asyncHandler(
       req.user = { id: "system", role: "SYSTEM" };
       contextStorage.run(
         {
-          id: "00000000-0000-0000-0000-000000000000",
+          id: SYSTEM_USER_ID,
           number: "0",
           firstName: "System",
           lastName: "Account",
@@ -102,7 +103,6 @@ export const protect = asyncHandler(
 
       contextStorage.run(context, () => next());
     }
-    // eslint-disable-next-line unused-imports/no-unused-vars
     catch (error) {
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);
