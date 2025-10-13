@@ -37,21 +37,23 @@ router.get("/quotes/metrics", quoteController.getMetrics);
 // Quotes
 router.post("/quotes/", quoteController.createQuote);
 router.get("/quotes/", quoteController.getQuotes);
-router.get("/quotes/:id", quoteController.getQuote);
-router.patch("/quotes/:id", quoteController.updateQuote);
-router.delete("/quotes/:id", quoteController.deleteQuote);
+router.get("/quotes/:quoteId", quoteController.getQuote);
+router.patch("/quotes/:quoteId", quoteController.updateQuote);
+router.delete("/quotes/:quoteId", quoteController.deleteQuote);
 
 // Revisions
-router.post("/quotes/:id/revisions", quoteController.createRevision);
-router.get("/quotes/:id/revisions", quoteController.getRevisions);
-router.get("/quotes/:id/revisions/:revisionId", quoteController.getRevision);
+router.post("/quotes/:quoteId/revisions", quoteController.createRevision);
+router.get("/quotes/:quoteId/revisions", quoteController.getRevisions);
+router.get("/quotes/:quoteId/revisions/:revisionId", quoteController.getRevision);
+router.patch("/quotes/:quoteId/revisions/:revisionId", quoteController.updateRevision);
+router.delete("/quotes/:quoteId/revisions/:revisionId", quoteController.deleteRevision);
 
 // Actions
-router.post("/quotes/:id/approve", quoteController.approveQuote);
-router.post("/quotes/:id/revise", quoteController.reviseQuote);
-router.post("/quotes/:id/accept", quoteController.acceptQuote);
-router.post("/quotes/:id/reject", quoteController.rejectQuote);
-router.post("/quotes/:id/send", quoteController.sendQuote);
-router.get("/quotes/:id/export/pdf", quoteController.exportPDF);
+router.post("/quotes/:quoteId/approve", quoteController.approveQuote);
+router.post("/quotes/:quoteId/revise", quoteController.reviseQuote);
+router.post("/quotes/:quoteId/accept", quoteController.acceptQuote);
+router.post("/quotes/:quoteId/reject", quoteController.rejectQuote);
+router.post("/quotes/:quoteId/send", quoteController.sendQuote);
+router.get("/quotes/:quoteId/export/pdf", quoteController.exportPDF);
 
 export default router
