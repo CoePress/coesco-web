@@ -1,3 +1,6 @@
+import { jiraService } from "@/services";
+import { NextFunction, Request, Response } from "express";
+
 export class BugReportingController {
     async sendBugReport(req: Request, res: Response, next: NextFunction) {
     try {

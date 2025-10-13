@@ -70,7 +70,7 @@ export class AuditServicce {
         }
 
         try {
-          const result = await employeeService.getById(employeeId);
+          const result = await employeeService.getEmployeeById(employeeId);
           if (result.success && result.data) {
             const fullName = `${result.data.firstName} ${result.data.lastName}`;
             employeeMap.set(employeeId, fullName);

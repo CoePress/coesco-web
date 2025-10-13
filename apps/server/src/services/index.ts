@@ -8,9 +8,9 @@ import { ConfigurationService } from "./catalog/configuration.service";
 import { OptionService } from "./catalog/option.service";
 import { ProductService } from "./catalog/product.service";
 import { CacheService } from "./core/cache.service";
+import { ChatService } from "./core/chat.service";
 import { EmailService } from "./core/email.service";
 import { LockingService } from "./core/locking.service";
-import { PermissionService } from "./core/permission.service";
 import { SocketService } from "./core/socket.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
@@ -19,6 +19,10 @@ import { ResourceMonitoringSerivce } from "./production/resource-monitoring.serv
 import { ResourceService } from "./production/resource.service";
 import { AuthService } from "./core/auth.service";
 import { LegacyService } from "./core/legacy.service";
+import { JiraService } from "./core/jira.service";
+import { EmployeeSyncService } from "./admin/employee-sync.service";
+import { MicrosoftService } from "./admin/microsoft.service";
+import { PermissionService } from "./admin/permission.service";
 
 
 
@@ -27,6 +31,8 @@ import { LegacyService } from "./core/legacy.service";
 export const auditService = new AuditServicce()
 export const bugReportingServie = new BugReportingService()
 export const employeeService = new EmployeeService()
+export const employeeSyncService = new EmployeeSyncService()
+export const microsoftService = new MicrosoftService()
 export const permissionService = new PermissionService()
 
 // Catalog
@@ -37,7 +43,9 @@ export const productService = new ProductService()
 // Core
 export const authService = new AuthService()
 export const cacheService = new CacheService()
+export const chatService = new ChatService()
 export const emailServicce = new EmailService()
+export const jiraService = new JiraService()
 export const legacyService = new LegacyService()
 export const lockingService = new LockingService()
 export const socketService = new SocketService()

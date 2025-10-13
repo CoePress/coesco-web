@@ -3,7 +3,7 @@ import { FormFieldControlType, FormFieldDataType, FormStatus, MachineControllerT
 
 import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
-import { MicrosoftService } from "@/services/business/microsoft.service";
+import { MicrosoftService } from "@/services/admin/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import {
   formConditionalRuleRepository,

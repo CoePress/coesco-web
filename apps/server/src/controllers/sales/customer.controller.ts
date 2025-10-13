@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 export class CustomerController {
     // Companies
   async createCompany(req: Request, res: Response, next: NextFunction) {

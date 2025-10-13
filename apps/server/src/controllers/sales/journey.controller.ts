@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 export class JourneyController {
     async createJourney(req: Request, res: Response, next: NextFunction) {
     try {

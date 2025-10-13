@@ -1,6 +1,8 @@
-import type { Employee } from "@prisma/client";
+import type { Employee, User } from "@prisma/client";
 
-import { employeeRepository } from "@/repositories";
+import type { IQueryParams } from "@/types";
+
+import { employeeRepository, userRepository } from "@/repositories";
 
 export class EmployeeService {
   async createEmployee(data: Omit<Employee, "id" | "createdAt" | "updatedAt">) {
@@ -15,11 +17,31 @@ export class EmployeeService {
     return employeeRepository.delete(id);
   }
 
-  async getAllEmployees() {
-    return employeeRepository.getAll();
+  async getAllEmployees(params?: IQueryParams<Employee>) {
+    return employeeRepository.getAll(params);
   }
 
-  async getEmployeeById(id: string) {
-    return employeeRepository.getById(id);
+  async getEmployeeById(id: string, params?: IQueryParams<Employee>) {
+    return employeeRepository.getById(id, params);
+  }
+
+  async createUser(data: Omit<User, "id" | "createdAt" | "updatedAt">) {
+    return userRepository.create(data);
+  }
+
+  async updateUser(id: string, data: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>) {
+    return userRepository.update(id, data);
+  }
+
+  async deleteUser(id: string) {
+    return userRepository.delete(id);
+  }
+
+  async getAllUsers(params?: IQueryParams<User>) {
+    return userRepository.getAll(params);
+  }
+
+  async getUserById(id: string, params?: IQueryParams<User>) {
+    return userRepository.getById(id, params);
   }
 }

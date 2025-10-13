@@ -1,4 +1,4 @@
-import { employeeService } from "@/services";
+import { employeeService, employeeSyncService } from "@/services";
 import { buildQueryParams } from "@/utils";
 import { Employee } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
@@ -57,7 +57,7 @@ export class EmployeeController {
       }
 
       if (Object.keys(userData).length > 0) {
-        await userService.update(employee.data.userId, userData);
+        await employeeService.updateUser(employee.data.userId, userData);
       }
 
       if (Object.keys(employeeData).length > 0) {
