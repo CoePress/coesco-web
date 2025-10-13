@@ -12,6 +12,8 @@ import { ChatService } from "./core/chat.service";
 import { EmailService } from "./core/email.service";
 import { LockingService } from "./core/locking.service";
 import { SocketService } from "./core/socket.service";
+import { AddressService } from "./sales/address.service";
+import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
 import { QuoteService } from "./sales/quote.service";
@@ -55,6 +57,8 @@ export const resourceMonitoringService = new ResourceMonitoringSerivce()
 export const resourceService = new ResourceService()
 
 // Sales
+export const addressService = new AddressService()
+export const contactService = new ContactService()
 export const customerService = new CustomerService()
 export const journeyService = new JourneyService()
 export const quoteService = new QuoteService()

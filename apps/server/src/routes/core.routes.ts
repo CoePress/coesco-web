@@ -1,7 +1,20 @@
-import { lockController, settingsController, tagController } from "@/controllers";
+import { chatController, lockController, settingsController, tagController } from "@/controllers";
 import { Router } from "express";
 
 const router = Router()
+
+// Chats
+router.post("/chats", chatController.createChat);
+router.get("/chats", chatController.getChats);
+router.get("/chats/:chatId", chatController.getChat);
+router.patch("/chats/:chatId", chatController.updateChat);
+router.delete("/chats/:chatId", chatController.deleteChat);
+router.get("/chats/:chatId/messages", chatController.getMessages);
+
+// Messages
+router.post("/messages", chatController.createMessage);
+router.patch("/messages/:messageId", chatController.updateMessage);
+router.delete("/messages/:messageId", chatController.deleteMessage);
 
 // Locks
 router.post("/locks/acquire", lockController.acquireLock);
