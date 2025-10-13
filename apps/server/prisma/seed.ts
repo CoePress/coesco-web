@@ -6,17 +6,17 @@ import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/business/microsoft.service";
 import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import {
-  formConditionalRuleService,
-  formFieldService,
-  formPageService,
-  formSectionService,
-  formService,
-  machineService,
-  performanceSheetVersionService,
-  permissionService as repoPermissionService,
-  rolePermissionService,
-  roleService,
-} from "@/services/repository";
+  formConditionalRuleRepository,
+  formFieldRepository,
+  formPageRepository,
+  formSectionRepository,
+  formRepository,
+  machineRepository,
+  performanceSheetVersionRepository,
+  permissionRepository,
+  rolePermissionRepository,
+  roleRepository,
+} from "@/repositories";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import defaultUsers from "@/config/default-users.json";
 import { logger } from "@/utils/logger";
@@ -129,7 +129,7 @@ async function seedMachines() {
       });
 
       if (!existing) {
-        await machineService.create({
+        await machineRepository.create({
           slug: machine.slug,
           name: machine.name,
           type: machine.type,
@@ -160,7 +160,7 @@ async function seedPermissions() {
         const [resource, ...actionParts] = permission.split(".");
         const action = actionParts.join(".");
 
-        await repoPermissionService.create({
+        await permissionRepository.create({
           resource,
           action,
           description: `Permission for ${permission}`,
@@ -185,13 +185,13 @@ async function seedRoles() {
     if (!adminRole) {
       logger.info("Seeding roles...");
 
-      const adminRoleData = await roleService.create({
+      const adminRoleData = await roleRepository.create({
         name: "ADMIN",
         description: "Full system administrator with all permissions",
         isSystem: true,
       });
 
-      const userRole = await roleService.create({
+      const userRole = await roleRepository.create({
         name: "USER",
         description: "Standard user with basic permissions",
         isSystem: true,
@@ -202,7 +202,7 @@ async function seedRoles() {
 
       // Admin gets all permissions
       for (const permission of allPermissions) {
-        await rolePermissionService.create({
+        await rolePermissionRepository.create({
           roleId: adminRoleData.data.id,
           permissionId: permission.id,
           condition: null,
@@ -228,7 +228,7 @@ async function seedRoles() {
         });
 
         if (permission) {
-          await rolePermissionService.create({
+          await rolePermissionRepository.create({
             roleId: userRole.data.id,
             permissionId: permission.id,
             condition: null,
@@ -309,7 +309,7 @@ async function seedPerformanceSheetVersions() {
         },
       ];
 
-      await performanceSheetVersionService.create({
+      await performanceSheetVersionRepository.create({
         sections: sampleSections,
         createdById: "system",
         updatedById: "system",
@@ -332,7 +332,7 @@ async function seedServiceTechDailyForm() {
     if (!existingForm) {
       logger.info("Seeding Service Tech Daily form...");
 
-      const form = await formService.create({
+      const form = await formRepository.create({
         name: serviceTechDailyTemplate.title,
         description: "Service Technician Daily Report Form",
         status: FormStatus.PUBLISHED,
@@ -343,7 +343,7 @@ async function seedServiceTechDailyForm() {
       const pageLabelMap = new Map<string, string>();
 
       for (const page of serviceTechDailyTemplate.pages) {
-        const formPage = await formPageService.create({
+        const formPage = await formPageRepository.create({
           formId: form.data.id,
           title: page.label,
           sequence: page.sequence,
@@ -354,7 +354,7 @@ async function seedServiceTechDailyForm() {
         pageLabelMap.set(page.label, formPage.data.id);
 
         for (const section of page.sections) {
-          const formSection = await formSectionService.create({
+          const formSection = await formSectionRepository.create({
             pageId: formPage.data.id,
             title: section.label,
             description: null,
@@ -364,7 +364,7 @@ async function seedServiceTechDailyForm() {
           });
 
           for (const field of section.fields) {
-            await formFieldService.create({
+            await formFieldRepository.create({
               sectionId: formSection.data.id,
               label: field.label,
               variable: field.variable,
@@ -394,7 +394,7 @@ async function seedServiceTechDailyForm() {
           }
 
           try {
-            await formConditionalRuleService.create({
+            await formConditionalRuleRepository.create({
               formId: form.data.id,
               name: ruleTemplate.name,
               targetType: ruleTemplate.targetType,
