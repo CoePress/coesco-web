@@ -5,11 +5,11 @@ import type { IQueryParams } from "@/types";
 import { permissionRepository } from "@/repositories";
 
 export class PermissionService {
-  async createPermission(data: Omit<Permission, "id" | "createdAt" | "updatedAt">) {
+  async createPermission(data: Partial<Permission>) {
     return permissionRepository.create(data);
   }
 
-  async updatePermission(id: string, data: Partial<Omit<Permission, "id" | "createdAt" | "updatedAt">>) {
+  async updatePermission(id: string, data: Partial<Permission>) {
     return permissionRepository.update(id, data);
   }
 

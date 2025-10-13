@@ -1,13 +1,18 @@
 import { auditLogRepository } from "@/repositories";
 import { IQueryParams } from "@/types";
 import { AuditLog } from "@prisma/client";
+import { env } from "@/config/env";
 import { employeeService } from "..";
+
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
 
 export type EnrichedAuditLog = AuditLog & {
   changedByName?: string;
 };
 
-export class AuditServicce {
+export class AuditService {
     async getAuditLogs(params?: IQueryParams<AuditLog>) {
     const result = await auditLogRepository.getAll(params);
 
@@ -54,6 +59,46 @@ export class AuditServicce {
     return {
       ...result,
       data: enrichedData,
+    };
+  }
+
+  async getLogFiles() {
+    if (!fs.existsSync(env.LOGS_DIR)) {
+      return {
+        success: true,
+        data: [],
+      };
+    }
+
+    const files = fs.readdirSync(env.LOGS_DIR).filter(f => f.endsWith(".log") || f.endsWith(".gz"));
+    const sortedFiles = files.sort().reverse();
+
+    return {
+      success: true,
+      data: sortedFiles,
+    };
+  }
+
+  async getLogFile(filename: string) {
+    const logPath = path.join(env.LOGS_DIR, filename);
+
+    if (!fs.existsSync(logPath)) {
+      throw new Error("Log file not found");
+    }
+
+    // Security: ensure the path is within LOGS_DIR to prevent path traversal
+    const normalizedPath = path.normalize(logPath);
+    const normalizedLogsDir = path.normalize(env.LOGS_DIR);
+    if (!normalizedPath.startsWith(normalizedLogsDir)) {
+      throw new Error("Invalid log file path");
+    }
+
+    return {
+      success: true,
+      data: {
+        path: logPath,
+        isGzipped: logPath.endsWith(".gz"),
+      },
     };
   }
 

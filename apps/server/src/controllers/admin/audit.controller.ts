@@ -1,59 +1,43 @@
-import { env } from "@/config/env";
+import type { Request, Response } from "express";
+import type { AuditLog } from "@prisma/client";
+
 import { auditService } from "@/services";
-import { buildQueryParams } from "@/utils";
+import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
-import { AuditLog } from "@prisma/client";
-import { NextFunction, Request, Response } from "express";
 
 import fs from "node:fs";
-import path from "node:path";
 import zlib from "node:zlib";
 
 export class AuditController {
-    async getAuditLogs(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<AuditLog>(req.query);
-      const result = await auditService.getAuditLogs(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getAuditLogs = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<AuditLog>(req.query);
+    const result = await auditService.getAuditLogs(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-    async getLogFiles(req: Request, res: Response, next: NextFunction) {
-      try {
-        const files = fs.readdirSync(env.LOGS_DIR).filter(f => f.endsWith(".log") || f.endsWith(".gz"));
-        const result = files.sort().reverse();
-        res.status(200).json(result);
-      }
-      catch (error) {
-        next(error);
-      }
+  getLogFiles = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await auditService.getLogFiles();
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getLogFile = asyncWrapper(async (req: Request, res: Response) => {
+    const { file } = req.params;
+    const result = await auditService.getLogFile(file);
+
+    if (!result.success || !result.data) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Log file not found" });
     }
-  
-    async getLogFile(req: Request, res: Response, next: NextFunction) {
-      try {
-        const { file } = req.params;
-        const logPath = path.join(env.LOGS_DIR, file);
-  
-        if (!fs.existsSync(logPath)) {
-          return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Log not found" });
-        }
-  
-        const isGzipped = logPath.endsWith(".gz");
-  
-        if (isGzipped) {
-          const stream = fs.createReadStream(logPath).pipe(zlib.createGunzip());
-          res.setHeader("Content-Type", "text/plain");
-          return stream.pipe(res);
-        }
-        else {
-          return fs.createReadStream(logPath).pipe(res);
-        }
-      }
-      catch (error) {
-        next(error);
-      }
+
+    const { path: logPath, isGzipped } = result.data;
+
+    res.setHeader("Content-Type", "text/plain");
+
+    if (isGzipped) {
+      const stream = fs.createReadStream(logPath).pipe(zlib.createGunzip());
+      return stream.pipe(res);
     }
+    else {
+      return fs.createReadStream(logPath).pipe(res);
+    }
+  });
 }

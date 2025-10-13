@@ -1,4 +1,5 @@
 import type { Address, Company, Contact } from "@prisma/client";
+import { Industry, CompanyStatus } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
@@ -12,7 +13,7 @@ const CreateCompanySchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
   fax: z.string().optional(),
-  industry: z.enum(["AUTOMOTIVE", "CONSTRUCTION", "MANUFACTURING", "OTHER"]).optional(),
+  industry: z.nativeEnum(Industry).optional(),
   yearFounded: z.number().int().min(1800).max(new Date().getFullYear()).optional(),
   revenue: z.number().int().optional(),
   employeeCount: z.string().optional(),
@@ -23,7 +24,7 @@ const CreateCompanySchema = z.object({
   logoUrl: z.string().url().optional().or(z.literal("")),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SANDBOX", "ARCHIVE"]).optional(),
+  status: z.nativeEnum(CompanyStatus).optional(),
   legacy: z.record(z.any()).optional(),
 });
 

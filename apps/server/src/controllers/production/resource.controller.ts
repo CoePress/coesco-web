@@ -1,57 +1,49 @@
+import type { Request, Response } from "express";
+import type { Machine } from "@prisma/client";
+import { MachineType, MachineControllerType } from "@prisma/client";
+import { z } from "zod";
+
 import { resourceService } from "@/services";
-import { buildQueryParams } from "@/utils";
-import { Machine } from "@prisma/client";
-import { NextFunction, Request, Response } from "express";
+import { asyncWrapper, buildQueryParams } from "@/utils";
+import { HTTP_STATUS } from "@/utils/constants";
+
+const CreateMachineSchema = z.object({
+  slug: z.string().min(1, "Slug is required").max(255),
+  name: z.string().min(1, "Name is required").max(255),
+  type: z.nativeEnum(MachineType),
+  controllerType: z.nativeEnum(MachineControllerType),
+  connectionUrl: z.string().url("Invalid connection URL").optional().or(z.literal("")),
+  enabled: z.boolean().optional(),
+});
+
+const UpdateMachineSchema = CreateMachineSchema.partial();
 
 export class ResourceController {
-  async createResource(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await resourceService.createResource(req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  createResource = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = CreateMachineSchema.parse(req.body);
+    const result = await resourceService.createResource(validData);
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-  async getAllResources(req: Request, res: Response, next: NextFunction) {
-    try {
-      const params = buildQueryParams<Machine>(req.query);
-      const result = await resourceService.getAllResources(params);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getAllResources = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<Machine>(req.query);
+    const result = await resourceService.getAllResources(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async getResourceById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await resourceService.getResourceById(req.params.resourceId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  getResourceById = asyncWrapper(async (req: Request, res: Response) => {
+    const result = await resourceService.getResourceById(req.params.resourceId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async updateResource(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await resourceService.updateResource(req.params.resourceId, req.body);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  updateResource = asyncWrapper(async (req: Request, res: Response) => {
+    const validData = UpdateMachineSchema.parse(req.body);
+    const result = await resourceService.updateResource(req.params.resourceId, validData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async deleteResource(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await resourceService.deleteResource(req.params.resourceId);
-      res.status(200).json(result);
-    }
-    catch (error) {
-      next(error);
-    }
-  }
+  deleteResource = asyncWrapper(async (req: Request, res: Response) => {
+    await resourceService.deleteResource(req.params.resourceId);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  });
 }

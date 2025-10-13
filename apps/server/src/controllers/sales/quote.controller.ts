@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { QuoteStatus, QuoteRevisionStatus } from "@prisma/client";
 import { z } from "zod";
 
 import { asyncWrapper } from "@/utils";
@@ -18,7 +19,7 @@ const CreateQuoteSchema = z.object({
   dealerAddressId: z.string().uuid("Invalid dealer address ID").optional(),
   priority: z.string().optional(),
   confidence: z.number().int().min(0).max(100).optional(),
-  status: z.enum(["OPEN", "CLOSED"]).optional(),
+  status: z.nativeEnum(QuoteStatus).optional(),
   legacy: z.record(z.any()).optional(),
 });
 
@@ -27,7 +28,7 @@ const UpdateQuoteSchema = CreateQuoteSchema.partial();
 const CreateQuoteRevisionSchema = z.object({
   revision: z.string().optional(),
   quoteDate: z.coerce.date().optional(),
-  status: z.enum(["DRAFT", "APPROVED", "SENT", "REVISED", "ACCEPTED", "REJECTED", "CANCELLED", "EXPIRED"]).optional(),
+  status: z.nativeEnum(QuoteRevisionStatus).optional(),
   approvedById: z.string().uuid("Invalid approver ID").optional(),
   sentById: z.string().uuid("Invalid sender ID").optional(),
 });

@@ -1,7 +1,7 @@
 import { io } from "@/app";
 import { __prod__ } from "@/config/env";
 
-import { AuditServicce } from "./admin/audit.service";
+import { AuditService } from "./admin/audit.service";
 import { BugReportingService } from "./admin/bug-reporting.service";
 import { EmployeeService } from "./admin/employee.service";
 import { ConfigurationService } from "./catalog/configuration.service";
@@ -30,7 +30,7 @@ import { PermissionService } from "./admin/permission.service";
 
 
 // Admin
-export const auditService = new AuditServicce()
+export const auditService = new AuditService()
 export const bugReportingServie = new BugReportingService()
 export const employeeService = new EmployeeService()
 export const employeeSyncService = new EmployeeSyncService()
