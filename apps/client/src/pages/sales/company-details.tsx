@@ -9,6 +9,7 @@ import Modal from "@/components/ui/modal";
 import { Button, Input, Select } from "@/components";
 import DatePicker from "@/components/ui/date-picker";
 import { AddAddressModal } from "@/components/modals/add-address-modal";
+import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatCurrency, formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
@@ -84,7 +85,9 @@ const CompanyDetails = () => {
   
   const [showInactiveContacts, setShowInactiveContacts] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState("");
-  
+  const [markInactiveContact, setMarkInactiveContact] = useState<any | null>(null);
+  const [isMarkingInactive, setIsMarkingInactive] = useState(false);
+
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
   const [editingAddressData, setEditingAddressData] = useState<any>({});
   
@@ -315,7 +318,6 @@ const CompanyDetails = () => {
     })();
     return () => { cancelled = true; };
   }, []);
-
 
   const handleStartEditing = () => {
     setIsEditingAll(true);
@@ -685,6 +687,32 @@ const CompanyDetails = () => {
     setEditingContactData({});
   };
 
+  const handleMarkContactAs = async (newType: ContactType) => {
+    if (!markInactiveContact) return;
+
+    try {
+      setIsMarkingInactive(true);
+      const updateData = {
+        Type: newType
+      };
+
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${markInactiveContact.Cont_Id}&Company_ID=${markInactiveContact.Company_ID}`, updateData);
+
+      if (result !== null) {
+        const updatedContacts = companyContacts.map(c =>
+          c.Cont_Id === markInactiveContact.Cont_Id ? { ...c, Type: newType } : c
+        );
+        setCompanyContacts(updatedContacts);
+        setMarkInactiveContact(null);
+      }
+    } catch (error) {
+      console.error('Error updating contact status:', error);
+      alert('Error updating contact status. Please try again.');
+    } finally {
+      setIsMarkingInactive(false);
+    }
+  };
+
   const handleAddContact = () => {
     console.log('Add Contact button clicked');
     
@@ -908,38 +936,6 @@ const CompanyDetails = () => {
     }
   };
 
-  const handleDeleteAddress = async (address: any) => {
-    if (!address.Address_ID) {
-      console.error('Cannot delete address: missing Address_ID');
-      return;
-    }
-    
-    const confirmDelete = window.confirm(`Are you sure you want to delete address "${address.AddressName || 'Unnamed Address'}"?`);
-    if (!confirmDelete) return;
-    
-    try {
-      console.log('Deleting address with Address_ID:', address.Address_ID, 'and Company_ID:', address.Company_ID);
-      
-      const result = await api.delete(`/legacy/std/Address/filter/custom`, {
-        params: {
-          Address_ID: address.Address_ID,
-          Company_ID: address.Company_ID
-        }
-      });
-      
-      if (result !== null) {
-        const updatedAddresses = companyAddresses.filter(a => a.Address_ID !== address.Address_ID);
-        setCompanyAddresses(updatedAddresses);
-        console.log('Address deleted successfully');
-      } else {
-        console.error('Failed to delete address record');
-        alert('Failed to delete address record. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error deleting address:', error);
-      alert('Error deleting address record. Please try again.');
-    }
-  };
 
   if (isInitialLoading) {
     return (
@@ -1581,6 +1577,15 @@ const CompanyDetails = () => {
                                   >
                                     <Edit size={12} />
                                   </Button>
+                                  <Button
+                                    variant="secondary-outline"
+                                    size="sm"
+                                    onClick={() => setMarkInactiveContact(contact)}
+                                    className="border-red-300 hover:bg-red-50 hover:border-red-400"
+                                    title="Mark Inactive/Left Company"
+                                  >
+                                    <Trash2 size={12} className="text-red-600" />
+                                  </Button>
                                 </div>
                               )}
                             </td>
@@ -1863,22 +1868,13 @@ const CompanyDetails = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="secondary-outline"
-                                    size="sm"
-                                    onClick={() => handleEditAddress(address)}
-                                  >
-                                    <Edit size={12} />
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteAddress(address)}
-                                  >
-                                    <Trash2 size={12} />
-                                  </Button>
-                                </div>
+                                <Button
+                                  variant="secondary-outline"
+                                  size="sm"
+                                  onClick={() => handleEditAddress(address)}
+                                >
+                                  <Edit size={12} />
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -1986,7 +1982,7 @@ const CompanyDetails = () => {
                                 </div>
                               )}
                               
-                              {((displayData.CanShip == 1 || displayData.CanShip === true) || (displayData.CanBill == 1 || displayData.CanBill === true) || displayData.BillToNum) && (
+                              {((displayData.CanShip == 1 || displayData.CanShip === true) || (displayData.CanBill == 1 || displayData.CanBill === true) || (displayData.BillToNum != null && displayData.BillToNum !== 0)) && (
                                 <div className="space-y-2 mb-3">
                                   <div className="flex flex-wrap gap-2">
                                     {(displayData.CanShip == 1 || displayData.CanShip === true) && (
@@ -2000,7 +1996,7 @@ const CompanyDetails = () => {
                                       </span>
                                     )}
                                   </div>
-                                  {displayData.BillToNum && displayData.BillToNum !== 0 && (
+                                  {displayData.BillToNum != null && displayData.BillToNum !== 0 && (
                                     <div className="text-xs text-text-muted">
                                       <span className="font-medium">Bill To #:</span> {displayData.BillToNum}
                                     </div>
@@ -2011,10 +2007,30 @@ const CompanyDetails = () => {
                               {displayData.EmailInvoiceTo && (
                                 <div className="mb-3">
                                   <div className="text-xs font-medium text-text-muted mb-1">Invoice Email:</div>
-                                  <div className="text-sm">
-                                    <a href={`mailto:${displayData.EmailInvoiceTo}`} className="text-info hover:underline">
-                                      {displayData.EmailInvoiceTo}
-                                    </a>
+                                  <div className="text-sm space-y-1">
+                                    {displayData.EmailInvoiceTo.split(']').filter((part: string) => part.trim()).map((part: string, idx: number) => {
+                                      const cleanedPart = part.replace(/[^a-zA-Z0-9@._\-+\[\] ]/g, '').trim();
+                                      const match = cleanedPart.match(/^(.*?)\[([^\]]+)$/);
+                                      if (match) {
+                                        const description = match[1].trim();
+                                        const email = match[2].trim();
+                                        return (
+                                          <div key={idx} className="break-all">
+                                            {description && <span className="text-text">{description}: </span>}
+                                            <a href={`mailto:${email}`} className="text-info hover:underline">
+                                              {email}
+                                            </a>
+                                          </div>
+                                        );
+                                      } else {
+                                        const displayText = cleanedPart.replace(/[\[\]]/g, '').trim();
+                                        return displayText ? (
+                                          <div key={idx} className="text-text break-all">
+                                            {displayText}
+                                          </div>
+                                        ) : null;
+                                      }
+                                    })}
                                   </div>
                                 </div>
                               )}
@@ -2836,6 +2852,15 @@ const CompanyDetails = () => {
         onClose={handleCancelNewAddress}
         onAddressAdded={handleAddressAdded}
         companyId={id}
+      />
+
+      {/* Delete Contact Modal */}
+      <DeleteContactModal
+        isOpen={markInactiveContact !== null}
+        onClose={() => setMarkInactiveContact(null)}
+        onConfirm={handleMarkContactAs}
+        contact={markInactiveContact}
+        isUpdating={isMarkingInactive}
       />
     </div>
   );
