@@ -2,6 +2,7 @@ export { BasicInfoSection } from "./basic-info-section";
 export { LineConfigSection } from "./line-config-section";
 export { CoilSpecsSection } from "./coil-specs-section";
 export { MaterialSpecsSection } from "./material-specs-section";
+export { EquipmentConfigSection } from "./equipment-config-section";
 export { PressInfoSection } from "./press-info-section";
 export { DiesInfoSection } from "./dies-info-section";
 export { FeedRequirementsSection } from "./feed-requirements-section";

@@ -60,6 +60,32 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const successColor = 'var(--color-success)';
   const errorColor = 'var(--color-error)';
 
+  // Get feed controls background color based on validation
+  const getFeedControlsBackgroundColor = useMemo(() => {
+    const currentValue = localData.common?.equipment?.feed?.controls;
+    const validOptions = [
+      "Sigma 5 Feed",
+      "Sigma 5 Feed Plus",
+      "Sigma 5 Feed Pull Thru",
+      "Allen Bradley",
+      "Allen Bradley MPL Feed",
+      "Allen Bradley MPL Feed Plus",
+      "IP Indexer Feed",
+      "IP Indexer Feed Plus"
+    ];
+
+    if (!currentValue) {
+      return undefined; // No value, no special color
+    }
+
+    // Check if current value matches any of the valid options (case insensitive)
+    const isValid = validOptions.some(option =>
+      option.toLowerCase() === currentValue.toLowerCase().trim()
+    );
+
+    return isValid ? 'var(--color-success)' : undefined;
+  }, [localData.common?.equipment?.feed?.controls]);
+
   // Use utility function to calculate all status colors at once
   const statusColors = getStatusColors({
     matchCheck: data.feed?.feed?.matchCheck,
@@ -261,7 +287,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
               onChange={handleFieldChange}
               disabled={true}
               className="bg-gray-100"
-              customBackgroundColor={feedControlsMapping.feedType === "allen-bradley" ? "rgba(59, 130, 246, 0.1)" : "rgba(34, 197, 94, 0.1)"}
+              customBackgroundColor={getFeedControlsBackgroundColor}
             />
           </div>
         </div>

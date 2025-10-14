@@ -58,6 +58,32 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
     return mapControlsLevelToFeedControls(controlsLevel);
   }, [localData.common?.equipment?.feed?.controlsLevel]);
 
+  // Get feed controls background color based on validation
+  const getFeedControlsBackgroundColor = useMemo(() => {
+    const currentValue = localData.common?.equipment?.feed?.controls || feedControlsMapping.controls;
+    const validOptions = [
+      "Sigma 5 Feed",
+      "Sigma 5 Feed Plus",
+      "Sigma 5 Feed Pull Thru",
+      "Allen Bradley",
+      "Allen Bradley MPL Feed",
+      "Allen Bradley MPL Feed Plus",
+      "IP Indexer Feed",
+      "IP Indexer Feed Plus"
+    ];
+
+    if (!currentValue) {
+      return undefined; // No value, no special color
+    }
+
+    // Check if current value matches any of the valid options (case insensitive)
+    const isValid = validOptions.some(option =>
+      option.toLowerCase() === currentValue.toLowerCase().trim()
+    );
+
+    return isValid ? 'var(--color-success)' : undefined;
+  }, [localData.common?.equipment?.feed?.controls, feedControlsMapping.controls]);
+
   // Get background color for Type of Roll based on selected value
   const getRollTypeBackgroundColor = useMemo(() => {
     const rollType = localData.materialSpecs?.straightener?.rolls?.typeOfRoll;
@@ -272,7 +298,7 @@ const MaterialSpecs: React.FC<MaterialSpecsProps> = ({ data, isEditing }) => {
           value={localData.common?.equipment?.feed?.controls || feedControlsMapping.controls || "Sigma 5 Feed"}
           onChange={handleFieldChange}
           disabled={true}
-          customBackgroundColor={getRequiredBgColor("common.equipment.feed.controls")}
+          customBackgroundColor={getFeedControlsBackgroundColor}
         />
         <Select
           label="Passline"

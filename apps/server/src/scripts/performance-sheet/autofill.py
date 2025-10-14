@@ -774,7 +774,7 @@ def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str,
     """Generate minimum valid Roll Str Backbend values that pass validation"""
     try:
         # Extract material data with better defaults and constraints to avoid "TOO DEEP!" errors
-        material_thickness = min(get_nested(data, ["common", "material", "materialThickness"], 0.125), 0.250)  # Thicker to avoid TOO DEEP
+        material_thickness = max(get_nested(data, ["common", "material", "materialThickness"], 0.125), 0.125)  # Minimum thickness to avoid TOO DEEP
         coil_width = min(get_nested(data, ["common", "material", "coilWidth"], 24.0), 48.0)
         max_yield_strength = max(get_nested(data, ["common", "material", "maxYieldStrength"], 80000), 50000)  # Higher yield strength
         material_type = get_nested(data, ["common", "material", "materialType"], "Cold Rolled Steel")
@@ -833,6 +833,22 @@ def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str,
                 print(f"DEBUG: Calculation result type: {type(result)}", file=sys.stderr)
                 if isinstance(result, str) and result.startswith("ERROR"):
                     print(f"DEBUG: Got error result: {result}", file=sys.stderr)
+                    
+                    # If we get "TOO DEEP!" error, try increasing material thickness for this iteration
+                    if "TOO DEEP!" in result and material_thickness < 0.25:
+                        print(f"DEBUG: Trying thicker material to avoid TOO DEEP error", file=sys.stderr)
+                        material_thickness = min(material_thickness * 1.5, 0.25)  # Increase thickness by 50%, max 0.25"
+                        
+                        # Retry with thicker material
+                        roll_str_data["thickness"] = float(material_thickness)
+                        roll_str_data["material_thickness"] = float(material_thickness)
+                        roll_str_obj = roll_str_backbend_input(**roll_str_data)
+                        result = calculate_roll_str_backbend(roll_str_obj)
+                        print(f"DEBUG: Retry with thickness {material_thickness}: {type(result)}", file=sys.stderr)
+                    
+                    # If still getting error, continue to next parameter combination
+                    if isinstance(result, str) and result.startswith("ERROR"):
+                        continue
                 elif isinstance(result, dict):
                     # Check the first_up structure to find roll heights
                     first_up = result.get("first_up", {})
@@ -920,7 +936,7 @@ def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str,
         final_num_rolls = num_rolls_options[current_params["num_rolls_index"]]
 
         # Map calculation results to exact RollStrBackbendData interface structure
-        return {
+        result = {
                 "common": {
                     "equipment": {
                         "straightener": {
@@ -960,49 +976,49 @@ def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str,
                                     "depthRequired": parse_float_safe(roll_str_result.get("roller_depth_required", 0), 0),
                                     "depthRequiredCheck": parse_str_safe(roll_str_result.get("roller_depth_required_check", "OK"), "OK"),
                                     "forceRequired": float(
-                                        parse_float_safe(roll_str_result.get("force_required_first", 0), 0) +
-                                        parse_float_safe(roll_str_result.get("force_required_last", 0), 0)
+                                        parse_float_safe(roll_str_result.get("first_up", {}).get("force_required_first_up", 0), 0) +
+                                        parse_float_safe(roll_str_result.get("last", {}).get("force_required_last", 0), 0)
                                     ),
-                                    "forceRequiredCheck": "OK",
-                                    "percentYieldCheck": "OK",
+                                    "forceRequiredCheck": parse_str_safe(roll_str_result.get("roller_force_required_check", "OK"), "OK"),
+                                    "percentYieldCheck": parse_str_safe(roll_str_result.get("percent_yield_check", "OK"), "OK"),
                                     "first": {
-                                        "height": parse_float_safe(roll_str_result.get("roll_height_first", 0), 0),
+                                        "height": str(parse_float_safe(roll_str_result.get("first_up", {}).get("roll_height_first_up", 0), 0)),
                                         "heightCheck": "OK",
-                                        "forceRequired": parse_float_safe(roll_str_result.get("force_required_first", 0), 0),
-                                        "forceRequiredCheck": "OK",
-                                        "numberOfYieldStrainsAtSurface": parse_float_safe(roll_str_result.get("number_of_yield_strains_first_up", 0), 0),
+                                        "forceRequired": parse_float_safe(roll_str_result.get("first_up", {}).get("force_required_first_up", 0), 0),
+                                        "forceRequiredCheck": parse_str_safe(roll_str_result.get("first_up", {}).get("force_required_check_first_up", "OK"), "OK"),
+                                        "numberOfYieldStrainsAtSurface": parse_float_safe(roll_str_result.get("first_up", {}).get("number_of_yield_strains_first_up", 0), 0),
                                         "up": {
-                                            "resultingRadius": parse_float_safe(roll_str_result.get("res_rad_first_up", 0), 0),
-                                            "curvatureDifference": parse_float_safe(roll_str_result.get("r_ri_first_up", 0), 0),
-                                            "bendingMoment": parse_float_safe(roll_str_result.get("mb_first_up", 0), 0),
-                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("mb_my_first_up", 0), 0),
-                                            "springback": parse_float_safe(roll_str_result.get("springback_first_up", 0), 0),
-                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("percent_yield_first_up", 0), 0),
-                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("radius_after_springback_first_up", 0), 0)
+                                            "resultingRadius": parse_float_safe(roll_str_result.get("first_up", {}).get("res_rad_first_up", 0), 0),
+                                            "curvatureDifference": parse_float_safe(roll_str_result.get("first_up", {}).get("r_ri_first_up", 0), 0),
+                                            "bendingMoment": parse_float_safe(roll_str_result.get("first_up", {}).get("mb_first_up", 0), 0),
+                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("first_up", {}).get("mb_my_first_up", 0), 0),
+                                            "springback": parse_float_safe(roll_str_result.get("first_up", {}).get("springback_first_up", 0), 0),
+                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("first_up", {}).get("percent_yield_first_up", 0), 0),
+                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("first_up", {}).get("radius_after_springback_first_up", 0), 0)
                                         },
                                         "down": {
-                                            "resultingRadius": parse_float_safe(roll_str_result.get("res_rad_first_down", 0), 0),
-                                            "curvatureDifference": parse_float_safe(roll_str_result.get("r_ri_first_down", 0), 0),
-                                            "bendingMoment": parse_float_safe(roll_str_result.get("mb_first_down", 0), 0),
-                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("mb_my_first_down", 0), 0),
-                                            "springback": parse_float_safe(roll_str_result.get("springback_first_down", 0), 0),
-                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("percent_yield_first_down", 0), 0),
-                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("radius_after_springback_first_down", 0), 0)
+                                            "resultingRadius": parse_float_safe(roll_str_result.get("first_down", {}).get("res_rad_first_down", 0), 0),
+                                            "curvatureDifference": parse_float_safe(roll_str_result.get("first_down", {}).get("r_ri_first_down", 0), 0),
+                                            "bendingMoment": parse_float_safe(roll_str_result.get("first_down", {}).get("mb_first_down", 0), 0),
+                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("first_down", {}).get("mb_my_first_down", 0), 0),
+                                            "springback": parse_float_safe(roll_str_result.get("first_down", {}).get("springback_first_down", 0), 0),
+                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("first_down", {}).get("percent_yield_first_down", 0), 0),
+                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("first_down", {}).get("radius_after_springback_first_down", 0), 0)
                                         }
                                     },
                                     "last": {
-                                        "height": parse_float_safe(roll_str_result.get("roll_height_last", 0), 0),
-                                        "forceRequired": parse_float_safe(roll_str_result.get("force_required_last", 0), 0),
-                                        "forceRequiredCheck": parse_str_safe(roll_str_result.get("force_required_check_last", "OK"), "OK"),
-                                        "numberOfYieldStrainsAtSurface": parse_float_safe(roll_str_result.get("number_of_yield_strains_last", 0), 0),
+                                        "height": parse_float_safe(roll_str_result.get("last", {}).get("roll_height_last", 0), 0),
+                                        "forceRequired": parse_float_safe(roll_str_result.get("last", {}).get("force_required_last", 0), 0),
+                                        "forceRequiredCheck": parse_str_safe(roll_str_result.get("last", {}).get("force_required_check_last", "OK"), "OK"),
+                                        "numberOfYieldStrainsAtSurface": parse_float_safe(roll_str_result.get("last", {}).get("number_of_yield_strains_last", 0), 0),
                                         "up": {
-                                            "resultingRadius": parse_float_safe(roll_str_result.get("res_rad_last", 0), 0),
-                                            "curvatureDifference": parse_float_safe(roll_str_result.get("r_ri_last", 0), 0),
-                                            "bendingMoment": parse_float_safe(roll_str_result.get("mb_last", 0), 0),
-                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("mb_my_last", 0), 0),
-                                            "springback": parse_float_safe(roll_str_result.get("springback_last", 0), 0),
-                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("percent_yield_last", 0), 0),
-                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("radius_after_springback_last", 0), 0)
+                                            "resultingRadius": parse_float_safe(roll_str_result.get("last", {}).get("res_rad_last", 0), 0),
+                                            "curvatureDifference": parse_float_safe(roll_str_result.get("last", {}).get("r_ri_last", 0), 0),
+                                            "bendingMoment": parse_float_safe(roll_str_result.get("last", {}).get("mb_last", 0), 0),
+                                            "bendingMomentRatio": parse_float_safe(roll_str_result.get("last", {}).get("mb_my_last", 0), 0),
+                                            "springback": parse_float_safe(roll_str_result.get("last", {}).get("springback_last", 0), 0),
+                                            "percentOfThicknessYielded": parse_float_safe(roll_str_result.get("last", {}).get("percent_yield_last", 0), 0),
+                                            "radiusAfterSpringback": parse_float_safe(roll_str_result.get("last", {}).get("radius_after_springback_last", 0), 0)
                                         }
                                     }
                                 }
@@ -1011,6 +1027,76 @@ def generate_minimum_roll_str_backbend_values(data: Dict[str, Any]) -> Dict[str,
                     }
                 }
             }
+
+        # Add middle rollers mapping based on number of rolls
+        num_mid_rolls = 1 if final_num_rolls == 7 else 2 if final_num_rolls == 9 else 3 if final_num_rolls == 11 else 0
+        
+        if num_mid_rolls > 0:
+            if num_mid_rolls == 1:
+                # For 7 rolls (1 middle), map to direct middle path
+                mid_up_data = roll_str_result.get("mid_up_1", {})
+                mid_down_data = roll_str_result.get("mid_down_1", {})
+                
+                result["rollStrBackbend"]["straightener"]["rolls"]["backbend"]["rollers"]["middle"] = {
+                    "height": str(parse_float_safe(mid_up_data.get("roll_height_mid_up", 0), 0)),
+                    "heightCheck": "OK",
+                    "forceRequired": parse_float_safe(mid_up_data.get("force_required_mid_up", 0), 0),
+                    "forceRequiredCheck": parse_str_safe(mid_up_data.get("force_required_check_mid_up", "OK"), "OK"),
+                    "numberOfYieldStrainsAtSurface": parse_float_safe(mid_up_data.get("number_of_yield_strains_mid_up", 0), 0),
+                    "up": {
+                        "resultingRadius": parse_float_safe(mid_up_data.get("res_rad_mid_up", 0), 0),
+                        "curvatureDifference": parse_float_safe(mid_up_data.get("r_ri_mid_up", 0), 0),
+                        "bendingMoment": parse_float_safe(mid_up_data.get("mb_mid_up", 0), 0),
+                        "bendingMomentRatio": parse_float_safe(mid_up_data.get("mb_my_mid_up", 0), 0),
+                        "springback": parse_float_safe(mid_up_data.get("springback_mid_up", 0), 0),
+                        "percentOfThicknessYielded": parse_float_safe(mid_up_data.get("percent_yield_mid_up", 0), 0),
+                        "radiusAfterSpringback": parse_float_safe(mid_up_data.get("radius_after_springback_mid_up", 0), 0)
+                    },
+                    "down": {
+                        "resultingRadius": parse_float_safe(mid_down_data.get("res_rad_mid_down", 0), 0),
+                        "curvatureDifference": parse_float_safe(mid_down_data.get("r_ri_mid_down", 0), 0),
+                        "bendingMoment": parse_float_safe(mid_down_data.get("mb_mid_down", 0), 0),
+                        "bendingMomentRatio": parse_float_safe(mid_down_data.get("mb_my_mid_down", 0), 0),
+                        "springback": parse_float_safe(mid_down_data.get("springback_mid_down", 0), 0),
+                        "percentOfThicknessYielded": parse_float_safe(mid_down_data.get("percent_yield_mid_down", 0), 0),
+                        "radiusAfterSpringback": parse_float_safe(mid_down_data.get("radius_after_springback_mid_down", 0), 0)
+                    }
+                }
+            else:
+                # For 9/11 rolls (2/3 middles), map to indexed middle path
+                result["rollStrBackbend"]["straightener"]["rolls"]["backbend"]["rollers"]["middle"] = {}
+                
+                for i in range(1, num_mid_rolls + 1):
+                    mid_up_data = roll_str_result.get(f"mid_up_{i}", {})
+                    mid_down_data = roll_str_result.get(f"mid_down_{i}", {})
+                    
+                    result["rollStrBackbend"]["straightener"]["rolls"]["backbend"]["rollers"]["middle"][i] = {
+                        "height": str(parse_float_safe(mid_up_data.get("roll_height_mid_up", 0), 0)),
+                        "heightCheck": "OK",
+                        "forceRequired": parse_float_safe(mid_up_data.get("force_required_mid_up", 0), 0),
+                        "forceRequiredCheck": parse_str_safe(mid_up_data.get("force_required_check_mid_up", "OK"), "OK"),
+                        "numberOfYieldStrainsAtSurface": parse_float_safe(mid_up_data.get("number_of_yield_strains_mid_up", 0), 0),
+                        "up": {
+                            "resultingRadius": parse_float_safe(mid_up_data.get("res_rad_mid_up", 0), 0),
+                            "curvatureDifference": parse_float_safe(mid_up_data.get("r_ri_mid_up", 0), 0),
+                            "bendingMoment": parse_float_safe(mid_up_data.get("mb_mid_up", 0), 0),
+                            "bendingMomentRatio": parse_float_safe(mid_up_data.get("mb_my_mid_up", 0), 0),
+                            "springback": parse_float_safe(mid_up_data.get("springback_mid_up", 0), 0),
+                            "percentOfThicknessYielded": parse_float_safe(mid_up_data.get("percent_yield_mid_up", 0), 0),
+                            "radiusAfterSpringback": parse_float_safe(mid_up_data.get("radius_after_springback_mid_up", 0), 0)
+                        },
+                        "down": {
+                            "resultingRadius": parse_float_safe(mid_down_data.get("res_rad_mid_down", 0), 0),
+                            "curvatureDifference": parse_float_safe(mid_down_data.get("r_ri_mid_down", 0), 0),
+                            "bendingMoment": parse_float_safe(mid_down_data.get("mb_mid_down", 0), 0),
+                            "bendingMomentRatio": parse_float_safe(mid_down_data.get("mb_my_mid_down", 0), 0),
+                            "springback": parse_float_safe(mid_down_data.get("springback_mid_down", 0), 0),
+                            "percentOfThicknessYielded": parse_float_safe(mid_down_data.get("percent_yield_mid_down", 0), 0),
+                            "radiusAfterSpringback": parse_float_safe(mid_down_data.get("radius_after_springback_mid_down", 0), 0)
+                        }
+                    }
+
+        return result
 
     except Exception as e:
         print(f"Error generating Roll Str Backbend values: {e}", file=sys.stderr)

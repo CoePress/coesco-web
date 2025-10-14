@@ -27,6 +27,10 @@ export const LazyPressInfoSection = React.lazy(() =>
     import('@/components/rfq').then(module => ({ default: module.PressInfoSection }))
 );
 
+export const LazyEquipmentConfigSection = React.lazy(() =>
+    import('@/components/rfq').then(module => ({ default: module.EquipmentConfigSection }))
+);
+
 export const LazyDiesInfoSection = React.lazy(() =>
     import('@/components/rfq').then(module => ({ default: module.DiesInfoSection }))
 );

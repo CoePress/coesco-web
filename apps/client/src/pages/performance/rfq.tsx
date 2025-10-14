@@ -14,6 +14,7 @@ import {
   LineConfigSection,
   CoilSpecsSection,
   MaterialSpecsSection,
+  LazyEquipmentConfigSection,
   PressInfoSection,
   DiesInfoSection,
   FeedRequirementsSection,
@@ -53,7 +54,11 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     'common.feedRates.max.spm', 'common.feedRates.max.fpm', 'common.feedRates.min.length',
     'common.feedRates.min.spm', 'common.feedRates.min.fpm', 'rfq.voltageRequired',
     'rfq.equipmentSpaceLength', 'rfq.equipmentSpaceWidth', 'rfq.obstructions',
-    'common.equipment.feed.direction', 'rfq.requireGuarding'
+    'common.equipment.feed.direction', 'rfq.requireGuarding',
+    // Equipment Configuration fields
+    'common.equipment.feed.controls', 'common.equipment.feed.feedLineType',
+    'common.equipment.feed.passline', 'common.equipment.straightener.rollType',
+    'common.equipment.reel.backplateType', 'common.equipment.reel.style'
   ];
 
   // Function to save form data before section reset
@@ -162,6 +167,17 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
 
       <RFQErrorBoundary sectionName="Material Specifications" onSaveBeforeReset={saveFormData}>
         <MaterialSpecsSection
+          localData={localData}
+          fieldErrors={fieldErrors}
+          handleFieldChange={handleFieldChange}
+          getFieldBackgroundColor={getFieldBackgroundColor}
+          getFieldError={getFieldError}
+          isEditing={isEditing}
+        />
+      </RFQErrorBoundary>
+
+      <RFQErrorBoundary sectionName="Equipment Configuration" onSaveBeforeReset={saveFormData}>
+        <LazyEquipmentConfigSection
           localData={localData}
           fieldErrors={fieldErrors}
           handleFieldChange={handleFieldChange}
