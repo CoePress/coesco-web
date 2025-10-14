@@ -13,7 +13,7 @@ import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 import { cacheService, socketService } from "../";
-import { machineService, machineStatusService } from "../repository";
+import { machineRepository, machineStatusRepository } from "@/repositories";
 
 interface CachedMachineState {
   state: MachineState;
@@ -66,7 +66,7 @@ export class MachineMonitorService {
     }
 
     try {
-      const machines = await machineService.getAll();
+      const machines = await machineRepository.getAll();
 
       if (!machines?.data) {
         throw new Error("No machines found or invalid response");
@@ -177,12 +177,12 @@ export class MachineMonitorService {
     }>;
 
     const [machines, statesResponse, previousStatesResponse] = await Promise.all([
-      machineService.getAll(),
-      machineStatusService.getAll({
+      machineRepository.getAll(),
+      machineStatusRepository.getAll({
         filter: JSON.stringify(currentDateFilter),
         include: { machine: true },
       }),
-      machineStatusService.getAll({
+      machineStatusRepository.getAll({
         filter: JSON.stringify(previousDateFilter),
         include: { machine: true },
       }),
@@ -307,7 +307,7 @@ export class MachineMonitorService {
   }
 
   async getMachineTimeline(_startDate: string, _endDate: string) {
-    const machines = await machineService.getAll();
+    const machines = await machineRepository.getAll();
 
     if (!machines.data) {
       throw new BadRequestError("No machines found");
@@ -378,7 +378,7 @@ export class MachineMonitorService {
 
   async pollMachines() {
     const current = [];
-    const machines = await machineService.getAll({
+    const machines = await machineRepository.getAll({
       filter: {
         enabled: true,
       },
@@ -440,7 +440,7 @@ export class MachineMonitorService {
           throw new BadRequestError("Invalid machine data or state");
         }
 
-        const openStatuses = await machineStatusService.getAll({
+        const openStatuses = await machineStatusRepository.getAll({
           filter: {
             machineId: machine.id,
             endTime: null,
@@ -453,14 +453,14 @@ export class MachineMonitorService {
         if (needsNewState) {
           try {
             for (const status of openStatuses.data) {
-              await machineStatusService.update(status.id, {
+              await machineStatusRepository.update(status.id, {
                 endTime: new Date(),
                 duration:
                   new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 
-            await machineStatusService.create({
+            await machineStatusRepository.create({
               state,
               execution: data.execution,
               controller: data.controller,
@@ -519,7 +519,7 @@ export class MachineMonitorService {
         });
       }
       catch {
-        const openStatuses = await machineStatusService.getAll({
+        const openStatuses = await machineStatusRepository.getAll({
           filter: {
             machineId: machine.id,
             endTime: null,
@@ -532,14 +532,14 @@ export class MachineMonitorService {
         if (needsOfflineState) {
           try {
             for (const status of openStatuses.data) {
-              await machineStatusService.update(status.id, {
+              await machineStatusRepository.update(status.id, {
                 endTime: new Date(),
                 duration:
                   new Date().getTime() - new Date(status.startTime).getTime(),
               });
             }
 
-            await machineStatusService.create({
+            await machineStatusRepository.create({
               state: MachineState.OFFLINE,
               execution: "OFFLINE",
               controller: "OFFLINE",
@@ -1063,7 +1063,7 @@ export class MachineMonitorService {
   }
 
   async closeMachineStatus(machineId: string) {
-    const openStatuses = await machineStatusService.getAll({
+    const openStatuses = await machineStatusRepository.getAll({
       filter: {
         machineId,
         endTime: null,
@@ -1074,7 +1074,7 @@ export class MachineMonitorService {
       throw new BadRequestError("Machine status not found");
     }
 
-    return await machineStatusService.update(openStatuses.data[0].id, {
+    return await machineStatusRepository.update(openStatuses.data[0].id, {
       endTime: new Date(),
       duration:
         new Date().getTime()
