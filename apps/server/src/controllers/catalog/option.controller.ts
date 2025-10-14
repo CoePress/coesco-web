@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { OptionCategory, ProductClassOptionCategory, OptionHeader, OptionDetails, OptionRule, OptionRuleTarget, OptionRuleTrigger } from "@prisma/client";
-import { z } from "zod";
+import { OptionRuleAction } from "@prisma/client";
+import { any, z } from "zod";
 
 import { optionService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
@@ -38,9 +39,7 @@ const CreateOptionDetailSchema = z.object({
   optionHeaderId: z.string().uuid("Invalid option header ID"),
   productClassId: z.string().uuid("Invalid product class ID").optional(),
   itemId: z.string().uuid("Invalid item ID").optional(),
-  price: z.number(),
-  quantity: z.number().int().default(1),
-  legacyId: z.string().optional(),
+  price: z.union([z.number(), z.string()]).transform((val) => val),
 });
 
 const UpdateOptionDetailSchema = CreateOptionDetailSchema.partial();
@@ -48,8 +47,9 @@ const UpdateOptionDetailSchema = CreateOptionDetailSchema.partial();
 const CreateOptionRuleSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  action: z.enum(["HIDE", "SHOW", "REQUIRE", "EXCLUDE"]),
+  action: z.nativeEnum(OptionRuleAction),
   priority: z.number().int().default(0),
+  condition: z.record(z.any()),
 });
 
 const UpdateOptionRuleSchema = CreateOptionRuleSchema.partial();
@@ -155,7 +155,7 @@ export class OptionController {
 
   createOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
     const validData = CreateOptionDetailSchema.parse(req.body);
-    const result = await optionService.createOptionDetail(validData);
+    const result = await optionService.createOptionDetail(validData as any);
     res.status(HTTP_STATUS.CREATED).json(result);
   });
 
@@ -172,7 +172,7 @@ export class OptionController {
 
   updateOptionDetail = asyncWrapper(async (req: Request, res: Response) => {
     const validData = UpdateOptionDetailSchema.parse(req.body);
-    const result = await optionService.updateOptionDetail(req.params.optionDetailId, validData);
+    const result = await optionService.updateOptionDetail(req.params.optionDetailId, validData as any);
     res.status(HTTP_STATUS.OK).json(result);
   });
 

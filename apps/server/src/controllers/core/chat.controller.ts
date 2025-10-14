@@ -7,24 +7,36 @@ import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
 const CreateChatSchema = z.object({
-  title: z.string().optional(),
-  userId: z.string().uuid("Invalid user ID").optional(),
+  employeeId: z.string().uuid("Invalid employee ID"),
+  name: z.string().default("New Chat"),
+  createdById: z.string().uuid("Invalid creator ID"),
+  updatedById: z.string().uuid("Invalid updater ID"),
+  deletedAt: z.date().nullable().optional(),
 });
 
-const UpdateChatSchema = CreateChatSchema.partial();
+const UpdateChatSchema = z.object({
+  name: z.string().optional(),
+  updatedById: z.string().uuid("Invalid updater ID").optional(),
+  deletedAt: z.date().nullable().optional(),
+});
 
 const CreateMessageSchema = z.object({
   chatId: z.string().uuid("Invalid chat ID"),
   role: z.enum(["user", "assistant", "system"]),
   content: z.string().min(1, "Content is required"),
+  fileUrl: z.string().nullable().optional(),
 });
 
-const UpdateMessageSchema = CreateMessageSchema.partial();
+const UpdateMessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]).optional(),
+  content: z.string().min(1, "Content is required").optional(),
+  fileUrl: z.string().nullable().optional(),
+});
 
 export class ChatController {
   createChat = asyncWrapper(async (req: Request, res: Response) => {
     const validData = CreateChatSchema.parse(req.body);
-    const result = await chatService.createChat(validData);
+    const result = await chatService.createChat(validData as any);
     res.status(HTTP_STATUS.CREATED).json(result);
   });
 
@@ -59,7 +71,7 @@ export class ChatController {
 
   createMessage = asyncWrapper(async (req: Request, res: Response) => {
     const validData = CreateMessageSchema.parse(req.body);
-    const result = await chatService.createMessage(validData);
+    const result = await chatService.createMessage(validData as any);
     res.status(HTTP_STATUS.CREATED).json(result);
   });
 

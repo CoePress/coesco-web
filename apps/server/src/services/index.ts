@@ -16,10 +16,13 @@ import { ProductService } from "./catalog/product.service";
 import { AuthService } from "./core/auth.service";
 import { CacheService } from "./core/cache.service";
 import { ChatService } from "./core/chat.service";
+import { EmailLogService } from "./core/email-log.service";
 import { EmailService } from "./core/email.service";
 import { LegacyService } from "./core/legacy.service";
 import { LockingService } from "./core/locking.service";
+import { MessageService } from "./core/message.service";
 import { SocketService } from "./core/socket.service";
+import { TagService } from "./core/tag.service";
 import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
@@ -51,10 +54,13 @@ export const productService = new ProductService()
 export const authService = new AuthService()
 export const cacheService = new CacheService()
 export const chatService = new ChatService()
+export const emailLogService = new EmailLogService()
 export const emailService = new EmailService()
 export const legacyService = new LegacyService()
 export const lockingService = new LockingService()
+export const messageService = new MessageService()
 export const socketService = new SocketService()
+export const tagService = new TagService()
 
 // Production
 export const resourceMonitoringService = new ResourceMonitoringService()

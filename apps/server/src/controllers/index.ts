@@ -9,7 +9,7 @@ import { ConfigurationController } from "./catalog/configuration.controller";
 import { OptionController } from "./catalog/option.controller";
 import { ProductController } from "./catalog/product.controller";
 import { AuthController } from "./core/auth.controller";
-import { ChatController } from "./chat.controller";
+import { ChatController } from "./core/chat.controller";
 import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
 import { SettingsController } from "./core/settings.controller";

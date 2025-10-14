@@ -6,7 +6,7 @@ import path from "node:path";
 import nodemailer from "nodemailer";
 
 import { env } from "@/config/env";
-import { emailLogService } from "@/services/repository";
+import { emailLogService } from "@/services";
 
 interface EmailOptions {
   to: string;
@@ -41,7 +41,7 @@ export class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
-    const { data: log } = await emailLogService.create({
+    const { data: log } = await emailLogService.createEmailLog({
       to: options.to,
       subject: options.subject,
       status: EmailStatus.PENDING,
@@ -58,7 +58,7 @@ export class EmailService {
 
       const result = await this.transporter.sendMail(mailOptions);
 
-      await emailLogService.update(log.id, {
+      await emailLogService.updateEmailLog(log.id, {
         status: EmailStatus.SENT,
         sentAt: new Date(),
       });
@@ -66,7 +66,7 @@ export class EmailService {
       return { success: true, messageId: result.messageId };
     }
     catch (error) {
-      await emailLogService.update(log.id, {
+      await emailLogService.updateEmailLog(log.id, {
         status: EmailStatus.FAILED,
         error: (error as Error).message,
       });

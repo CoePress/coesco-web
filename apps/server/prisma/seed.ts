@@ -4,7 +4,6 @@ import { FormFieldControlType, FormFieldDataType, FormStatus, MachineControllerT
 import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/admin/microsoft.service";
-import { ALL_PERMISSIONS } from "@/services/core/permission.service";
 import {
   formConditionalRuleRepository,
   formFieldRepository,
@@ -149,32 +148,32 @@ async function seedMachines() {
   }
 }
 
-async function seedPermissions() {
-  try {
-    const existingPermissions = await prisma.permission.count();
+// async function seedPermissions() {
+//   try {
+//     const existingPermissions = await prisma.permission.count();
 
-    if (existingPermissions === 0) {
-      logger.info("Seeding permissions...");
+//     if (existingPermissions === 0) {
+//       logger.info("Seeding permissions...");
 
-      for (const permission of ALL_PERMISSIONS) {
-        const [resource, ...actionParts] = permission.split(".");
-        const action = actionParts.join(".");
+//       for (const permission of ALL_PERMISSIONS) {
+//         const [resource, ...actionParts] = permission.split(".");
+//         const action = actionParts.join(".");
 
-        await permissionRepository.create({
-          resource,
-          action,
-          description: `Permission for ${permission}`,
-          condition: null,
-        });
-      }
+//         await permissionRepository.create({
+//           resource,
+//           action,
+//           description: `Permission for ${permission}`,
+//           condition: null,
+//         });
+//       }
 
-      logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
-    }
-  }
-  catch (error) {
-    logger.error("Error during permission seeding:", error);
-  }
-}
+//       logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
+//     }
+//   }
+//   catch (error) {
+//     logger.error("Error during permission seeding:", error);
+//   }
+// }
 
 async function seedRoles() {
   try {
@@ -423,7 +422,7 @@ async function seedServiceTechDailyForm() {
 
 export async function seedDatabase() {
   await seedEmployees();
-  await seedPermissions();
+  // await seedPermissions();
   await seedRoles();
   await seedMachines();
   await seedServiceTechDailyForm();

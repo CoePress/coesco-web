@@ -5,11 +5,11 @@ import type { IQueryParams } from "@/types";
 import { chatRepository, messageRepository } from "@/repositories";
 
 export class ChatService {
-  async createChat(data: Omit<Chat, "id" | "createdAt" | "updatedAt">) {
+  async createChat(data: Partial<Chat>) {
     return chatRepository.create(data);
   }
 
-  async updateChat(id: string, data: Partial<Omit<Chat, "id" | "createdAt" | "updatedAt">>) {
+  async updateChat(id: string, data: Partial<Chat>) {
     return chatRepository.update(id, data);
   }
 

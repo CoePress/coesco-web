@@ -1,13 +1,15 @@
 import type { Configuration } from "@prisma/client";
 
+import type { IQueryParams } from "@/types";
+
 import { configurationRepository } from "@/repositories";
 
 export class ConfigurationService {
-  async createConfiguration(data: Omit<Configuration, "id" | "createdAt" | "updatedAt">) {
+  async createConfiguration(data: Partial<Configuration>) {
     return configurationRepository.create(data);
   }
 
-  async updateConfiguration(id: string, data: Partial<Omit<Configuration, "id" | "createdAt" | "updatedAt">>) {
+  async updateConfiguration(id: string, data: Partial<Configuration>) {
     return configurationRepository.update(id, data);
   }
 
@@ -15,11 +17,11 @@ export class ConfigurationService {
     return configurationRepository.delete(id);
   }
 
-  async getAllConfigurations() {
-    return configurationRepository.getAll();
+  async getAllConfigurations(params?: IQueryParams<Configuration>) {
+    return configurationRepository.getAll(params);
   }
 
-  async getConfigurationById(id: string) {
-    return configurationRepository.getById(id);
+  async getConfigurationById(id: string, params?: IQueryParams<Configuration>) {
+    return configurationRepository.getById(id, params);
   }
 }

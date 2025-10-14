@@ -1,8 +1,13 @@
 import { asyncWrapper } from "@/utils";
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+
+import { UserSettingsService } from "@/services/core/user-settings.service";
+import { authService } from "@/services";
+
+const userSettingsService = new UserSettingsService();
 
 export class SettingsController {
-    requestPasswordReset = asyncWrapper(async (req: Request, res: Response) => {
+  requestPasswordReset = asyncWrapper(async (req: Request, res: Response) => {
     const { email } = req.body;
 
     if (!email) {
@@ -53,27 +58,27 @@ export class SettingsController {
   });
 
   createUserSettings = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await userSettingsService.create(req.body);
+    const result = await userSettingsService.createUserSettings(req.body);
     res.status(201).json(result);
   });
 
   getUserSettings = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await userSettingsService.getAll(req.query);
+    const result = await userSettingsService.getAllUserSettings(req.query);
     res.status(200).json(result);
   });
 
   getUserSetting = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await userSettingsService.getById(req.params.id);
+    const result = await userSettingsService.getUserSettingsById(req.params.id);
     res.status(200).json(result);
   });
 
   updateUserSettings = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await userSettingsService.update(req.params.id, req.body);
+    const result = await userSettingsService.updateUserSettings(req.params.id, req.body);
     res.status(200).json(result);
   });
 
   deleteUserSettings = asyncWrapper(async (req: Request, res: Response) => {
-    await userSettingsService.delete(req.params.id);
+    await userSettingsService.deleteUserSettings(req.params.id);
     res.status(204).send();
   });
 }
