@@ -1228,4 +1228,14 @@ enum AccessPurpose {
   CUSTOMER_FEEDBACK
 }
 
+model BugReport {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  createdAt   DateTime  @default(now())
+  createdById String
+
+  @@map("bug_reports")
+}
+
 

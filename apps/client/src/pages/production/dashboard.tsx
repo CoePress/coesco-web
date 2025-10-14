@@ -146,7 +146,7 @@ const MachineTimeline = ({ startDate, endDate }: MachineTimelineProps) => {
   const fetchTimeline = async () => {
     setLoading(true);
     setError(null);
-    const response = await get("/machines/timeline", {
+    const response = await get("/production/timeline", {
       startDate: startDate.toISOString().slice(0, 10),
       endDate: endDate.toISOString().slice(0, 10),
     });

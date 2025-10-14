@@ -56,7 +56,7 @@ const Quotes = () => {
   }, [params]);
 
   const fetchQuotes = async () => {
-    await getQuotes("/quotes", queryParams);
+    await getQuotes("/sales/quotes", queryParams);
   };
 
   // const fetchMetrics = async () => {
@@ -289,7 +289,7 @@ const Quotes = () => {
           isOpen={isModalOpen}
           onClose={toggleModal}
           onSuccess={refresh}
-          createQuote={(data) => createQuote("/quotes", data)}
+          createQuote={(data) => createQuote("/sales/quotes", data)}
           loading={createQuoteLoading}
           error={createQuoteError}
         />
@@ -334,14 +334,14 @@ const CreateQuoteModal = ({
   const { get: getJourneys } = useApi<IApiResponse<any[]>>();
   
   const fetchCompanies = async () => {
-    const response = await getCompanies("/crm/companies");
+    const response = await getCompanies("/sales/companies");
     if (response?.success) {
       setCompanies(response.data || []);
     }
   };
-  
+
   const fetchJourneys = async () => {
-    const response = await getJourneys("/crm/journeys");
+    const response = await getJourneys("/sales/journeys");
     if (response?.success) {
       setJourneys(response.data || []);
     }

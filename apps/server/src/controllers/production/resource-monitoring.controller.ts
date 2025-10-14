@@ -37,7 +37,11 @@ export class ResourceMonitoringController {
   });
 
   getTimeline = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await resourceMonitoringService.getMachineTimeline();
+    const { startDate, endDate } = req.query;
+    const result = await resourceMonitoringService.getMachineTimeline(
+      startDate as string,
+      endDate as string
+    );
     res.status(HTTP_STATUS.OK).json(result);
   });
 

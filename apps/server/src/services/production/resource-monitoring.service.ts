@@ -28,11 +28,8 @@ export class ResourceMonitoringService {
     return this.machineMonitorService.getMachineOverview(startDate, endDate, view, timezoneOffset);
   }
 
-  async getMachineTimeline() {
-    return {
-      success: true,
-      data: {},
-    };
+  async getMachineTimeline(startDate?: string, endDate?: string) {
+    return this.machineMonitorService.getMachineTimeline(startDate || '', endDate || '');
   }
 
   async resetFanucAdapter() {
