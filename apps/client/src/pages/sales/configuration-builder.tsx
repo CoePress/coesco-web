@@ -483,6 +483,7 @@ const ConfigurationBuilder = () => {
   };
 
   const isRuleTriggered = (rule: any): boolean => {
+    if (!rule.triggerOptions || rule.triggerOptions.length === 0) return false;
     const triggered = rule.triggerOptions.some((triggerOption: any) =>
       isOptionSelected(triggerOption.id)
     );
@@ -490,7 +491,7 @@ const ConfigurationBuilder = () => {
       `Rule "${rule.name}" triggered:`,
       triggered,
       "trigger options:",
-      rule.triggerOptions.map((opt: any) => opt.name)
+      rule.triggerOptions?.map((opt: any) => opt.name) || []
     );
     return triggered;
   };
@@ -502,7 +503,7 @@ const ConfigurationBuilder = () => {
       .filter(
         (rule) =>
           rule.action === "REQUIRE" &&
-          rule.targetOptions.some((target: any) => target.id === optionId)
+          rule.targetOptions?.some((target: any) => target.id === optionId)
       )
       .sort((a, b) => b.priority - a.priority);
 
@@ -519,7 +520,7 @@ const ConfigurationBuilder = () => {
     for (const rule of optionRules) {
       if (rule.action === "REQUIRE" && isRuleTriggered(rule)) {
         requiredOptions.push(
-          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
         );
       }
     }
@@ -535,7 +536,7 @@ const ConfigurationBuilder = () => {
     for (const rule of optionRules) {
       if (rule.action === "DISABLE" && isRuleTriggered(rule)) {
         disabledOptions.push(
-          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
         );
       }
     }
@@ -650,9 +651,9 @@ const ConfigurationBuilder = () => {
           name: rule.name,
           action: rule.action,
           condition: rule.condition,
-          targetOptions: rule.targetOptions.map(
+          targetOptions: rule.targetOptions?.map(
             (opt: { name: string }) => opt.name
-          ),
+          ) || [],
         }))
       );
     }
