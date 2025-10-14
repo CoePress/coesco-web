@@ -909,7 +909,7 @@ const Pipeline = () => {
     }, 0);
   }, [filteredJourneys]);
 
-  const pageTitle = "Sales Pipeline";
+  const pageTitle = "Journeys";
   const pageDescription = `${filteredJourneys.length} Journeys`;
 
 
