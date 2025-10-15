@@ -24,9 +24,9 @@ export class NtfyDeviceRepository extends BaseRepository<NtfyDevice> {
       throw new BadRequestError("maxMissedPings is required");
     if (!entity.currentMissedPings)
       throw new BadRequestError("currentMissedPings is required");
-    if (!entity.enabled)
+    if (entity.enabled === undefined || entity.enabled === null)
       throw new BadRequestError("enabled is required");
-    if (!entity.isDown)
+    if (entity.isDown === undefined || entity.isDown === null)
       throw new BadRequestError("isDown is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

@@ -18,7 +18,7 @@ export class MachineRepository extends BaseRepository<Machine> {
       throw new BadRequestError("slug is required");
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.enabled)
+    if (entity.enabled === undefined || entity.enabled === null)
       throw new BadRequestError("enabled is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

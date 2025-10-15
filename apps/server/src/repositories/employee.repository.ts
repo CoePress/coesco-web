@@ -26,9 +26,9 @@ export class EmployeeRepository extends BaseRepository<Employee> {
       throw new BadRequestError("initials is required");
     if (!entity.title)
       throw new BadRequestError("title is required");
-    if (!entity.isSalaried)
+    if (entity.isSalaried === undefined || entity.isSalaried === null)
       throw new BadRequestError("isSalaried is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

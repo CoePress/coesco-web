@@ -14,7 +14,7 @@ export class LoginHistoryRepository extends BaseRepository<LoginHistory> {
   protected modelName = "loginHistory";
 
   protected async validate(entity: LoginHistoryAttributes): Promise<void> {
-    if (!entity.success)
+    if (entity.success === undefined || entity.success === null)
       throw new BadRequestError("success is required");
     if (!entity.timestamp)
       throw new BadRequestError("timestamp is required");

@@ -20,7 +20,7 @@ export class OptionHeaderRepository extends BaseRepository<OptionHeader> {
       throw new BadRequestError("name is required");
     if (!entity.displayOrder)
       throw new BadRequestError("displayOrder is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

@@ -24,9 +24,9 @@ export class SessionRepository extends BaseRepository<Session> {
       throw new BadRequestError("lastActivityAt is required");
     if (!entity.expiresAt)
       throw new BadRequestError("expiresAt is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
-    if (!entity.isSuspicious)
+    if (entity.isSuspicious === undefined || entity.isSuspicious === null)
       throw new BadRequestError("isSuspicious is required");
   }
 }

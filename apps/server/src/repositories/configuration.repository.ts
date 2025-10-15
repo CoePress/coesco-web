@@ -18,9 +18,9 @@ export class ConfigurationRepository extends BaseRepository<Configuration> {
       throw new BadRequestError("productClassId is required");
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.isTemplate)
+    if (entity.isTemplate === undefined || entity.isTemplate === null)
       throw new BadRequestError("isTemplate is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

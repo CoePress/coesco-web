@@ -12,6 +12,7 @@ import {
   DollarSignIcon,
   FactoryIcon,
   FileCheck2Icon,
+  FileClockIcon,
   FileCogIcon,
   FileIcon,
   FileTextIcon,
@@ -26,7 +27,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, Invitations, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
+import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, Invitations, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -257,30 +258,12 @@ const adminModule: Module = {
       icon: LinkIcon,
       component: Invitations,
     },
-    // {
-    //   slug: "permissions",
-    //   label: "Permissions",
-    //   icon: LockIcon,
-    //   component: Permissions,
-    // },
-    // {
-    //   slug: "sessions",
-    //   label: "Sessions",
-    //   icon: FileClockIcon,
-    //   component: Sessions,
-    // },
-    // {
-    //   slug: "devices",
-    //   label: "Devices",
-    //   icon: ComputerIcon,
-    //   component: Devices,
-    // },
-    // {
-    //   slug: "reports",
-    //   label: "Reports",
-    //   icon: FileTextIcon,
-    //   component: Reports,
-    // },
+    {
+      slug: "sessions",
+      label: "Sessions",
+      icon: FileClockIcon,
+      component: Sessions,
+    },
     {
       slug: "logs",
       label: "Logs",

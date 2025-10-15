@@ -18,7 +18,7 @@ export class ItemRepository extends BaseRepository<Item> {
       throw new BadRequestError("specifications is required");
     if (!entity.unitPrice)
       throw new BadRequestError("unitPrice is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

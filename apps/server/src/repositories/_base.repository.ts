@@ -7,7 +7,7 @@ import { getEmployeeContext } from "@/utils/context";
 import { buildQuery, prisma } from "@/utils/prisma";
 
 const columnCache = new Map<string, string[]>();
-const excludedModels = ["auditLog", "emailLog", "bugReport"];
+const excludedModels = ["auditLog", "emailLog", "bugReport", "session", "loginHistory", "machineStatus"];
 
 export class BaseRepository<T> {
   protected model: any;

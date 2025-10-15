@@ -2,12 +2,12 @@ import type { Employee, User, UserRole } from "@prisma/client";
 
 export type FilterOperator = "gte" | "gt" | "lte" | "lt" | "not" | "in" | "notIn" | "contains" | "startsWith" | "endsWith";
 
-export type FilterValue<T = any> =
-  | T
-  | { [K in FilterOperator]?: T | T[] }
-  | { AND?: FilterValue<T>[] }
-  | { OR?: FilterValue<T>[] }
-  | { NOT?: FilterValue<T> };
+export type FilterValue<T = any>
+  = | T
+    | { [K in FilterOperator]?: T | T[] }
+    | { AND?: FilterValue<T>[] }
+    | { OR?: FilterValue<T>[] }
+    | { NOT?: FilterValue<T> };
 
 export interface IQueryParams<T> {
   page?: number;

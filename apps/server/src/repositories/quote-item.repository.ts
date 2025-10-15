@@ -22,7 +22,7 @@ export class QuoteItemRepository extends BaseRepository<QuoteItem> {
       throw new BadRequestError("unitPrice is required");
     if (!entity.lineNumber)
       throw new BadRequestError("lineNumber is required");
-    if (!entity.isCustom)
+    if (entity.isCustom === undefined || entity.isCustom === null)
       throw new BadRequestError("isCustom is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

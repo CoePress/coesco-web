@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { auditController, employeeController, permissionController, roleController } from "@/controllers";
+import { auditController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
 
 const router = Router();
 
@@ -9,6 +9,12 @@ router.get("/logs/emails", auditController.getEmailLogs);
 router.get("/logs/bugs", auditController.getBugReports);
 router.get("/logs/files", auditController.getLogFiles);
 router.get("/logs/files/:file", auditController.getLogFile);
+
+// Sessions
+router.get("/sessions", sessionsController.getSessions);
+router.get("/sessions/login-history", sessionsController.getLoginHistory);
+router.post("/sessions/:id/revoke", sessionsController.revokeSession);
+router.post("/sessions/users/:userId/revoke-all", sessionsController.revokeUserSessions);
 
 // Employees
 router.post("/employees", employeeController.createEmployee);

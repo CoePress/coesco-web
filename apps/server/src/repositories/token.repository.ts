@@ -20,7 +20,7 @@ export class TokenRepository extends BaseRepository<Token> {
       throw new BadRequestError("token is required");
     if (!entity.expiresAt)
       throw new BadRequestError("expiresAt is required");
-    if (!entity.used)
+    if (entity.used === undefined || entity.used === null)
       throw new BadRequestError("used is required");
   }
 }

@@ -18,7 +18,7 @@ export class OptionDetailsRepository extends BaseRepository<OptionDetails> {
       throw new BadRequestError("optionHeaderId is required");
     if (!entity.price)
       throw new BadRequestError("price is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

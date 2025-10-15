@@ -211,9 +211,17 @@ async function generateValidations(model: any) {
       && field.name !== "createdAt"
       && field.name !== "updatedAt"
     ) {
-      lines.push(
-        `if (!entity.${field.name}) throw new BadRequestError("${field.name} is required");`,
-      );
+      // For boolean fields, check for undefined/null instead of falsy values
+      if (field.type === "Boolean") {
+        lines.push(
+          `if (entity.${field.name} === undefined || entity.${field.name} === null) throw new BadRequestError("${field.name} is required");`,
+        );
+      }
+      else {
+        lines.push(
+          `if (!entity.${field.name}) throw new BadRequestError("${field.name} is required");`,
+        );
+      }
     }
   });
 

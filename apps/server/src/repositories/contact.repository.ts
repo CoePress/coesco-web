@@ -18,7 +18,7 @@ export class ContactRepository extends BaseRepository<Contact> {
       throw new BadRequestError("companyId is required");
     if (!entity.firstName)
       throw new BadRequestError("firstName is required");
-    if (!entity.isPrimary)
+    if (entity.isPrimary === undefined || entity.isPrimary === null)
       throw new BadRequestError("isPrimary is required");
     if (!entity.createdById)
       throw new BadRequestError("createdById is required");

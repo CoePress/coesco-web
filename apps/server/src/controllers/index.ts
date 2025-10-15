@@ -3,6 +3,7 @@ import { BugReportingController } from "./admin/bug-reporting.cotroller";
 import { EmployeeController } from "./admin/employee.controller";
 import { PermissionController } from "./admin/permission.controller";
 import { RoleController } from "./admin/role.controller";
+import { SessionsController } from "./admin/sessions.controller";
 import { PerformanceSheetController } from "./artifact/performance-sheet.controller";
 import { ServiceReportController } from "./artifact/service-report.controller";
 import { ConfigurationController } from "./catalog/configuration.controller";
@@ -26,6 +27,7 @@ export const bugReportingController = new BugReportingController();
 export const employeeController = new EmployeeController();
 export const permissionController = new PermissionController();
 export const roleController = new RoleController();
+export const sessionsController = new SessionsController();
 
 // Artifact
 export const performanceSheetController = new PerformanceSheetController();

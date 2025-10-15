@@ -32,7 +32,8 @@ export class SessionService {
   }
 
   private parseUserAgent(userAgent?: string): { deviceType?: string; deviceName?: string } {
-    if (!userAgent) return {};
+    if (!userAgent)
+      return {};
 
     const ua = userAgent.toLowerCase();
     let deviceType: string | undefined;
@@ -40,31 +41,40 @@ export class SessionService {
 
     if (ua.includes("mobile")) {
       deviceType = "mobile";
-    } else if (ua.includes("tablet") || ua.includes("ipad")) {
+    }
+    else if (ua.includes("tablet") || ua.includes("ipad")) {
       deviceType = "tablet";
-    } else {
+    }
+    else {
       deviceType = "desktop";
     }
 
     if (ua.includes("chrome")) {
       deviceName = "Chrome";
-    } else if (ua.includes("firefox")) {
+    }
+    else if (ua.includes("firefox")) {
       deviceName = "Firefox";
-    } else if (ua.includes("safari")) {
+    }
+    else if (ua.includes("safari")) {
       deviceName = "Safari";
-    } else if (ua.includes("edge")) {
+    }
+    else if (ua.includes("edge")) {
       deviceName = "Edge";
     }
 
     if (ua.includes("windows")) {
       deviceName = deviceName ? `${deviceName} on Windows` : "Windows";
-    } else if (ua.includes("mac")) {
+    }
+    else if (ua.includes("mac")) {
       deviceName = deviceName ? `${deviceName} on Mac` : "Mac";
-    } else if (ua.includes("linux")) {
+    }
+    else if (ua.includes("linux")) {
       deviceName = deviceName ? `${deviceName} on Linux` : "Linux";
-    } else if (ua.includes("android")) {
+    }
+    else if (ua.includes("android")) {
       deviceName = deviceName ? `${deviceName} on Android` : "Android";
-    } else if (ua.includes("iphone") || ua.includes("ipad")) {
+    }
+    else if (ua.includes("iphone") || ua.includes("ipad")) {
       deviceName = deviceName ? `${deviceName} on iOS` : "iOS";
     }
 
@@ -323,5 +333,9 @@ export class SessionService {
           ? suspiciousSessions.data.length
           : 0,
     };
+  }
+
+  async getAllSessions(params: any) {
+    return sessionRepository.getAll(params);
   }
 }

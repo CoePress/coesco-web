@@ -18,7 +18,7 @@ export class CoilTypeRepository extends BaseRepository<CoilType> {
       throw new BadRequestError("multiplier is required");
     if (!entity.sortOrder)
       throw new BadRequestError("sortOrder is required");
-    if (!entity.isArchived)
+    if (entity.isArchived === undefined || entity.isArchived === null)
       throw new BadRequestError("isArchived is required");
   }
 }

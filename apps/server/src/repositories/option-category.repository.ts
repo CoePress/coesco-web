@@ -16,11 +16,11 @@ export class OptionCategoryRepository extends BaseRepository<OptionCategory> {
   protected async validate(entity: OptionCategoryAttributes): Promise<void> {
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.multiple)
+    if (entity.multiple === undefined || entity.multiple === null)
       throw new BadRequestError("multiple is required");
-    if (!entity.mandatory)
+    if (entity.mandatory === undefined || entity.mandatory === null)
       throw new BadRequestError("mandatory is required");
-    if (!entity.standard)
+    if (entity.standard === undefined || entity.standard === null)
       throw new BadRequestError("standard is required");
     if (!entity.displayOrder)
       throw new BadRequestError("displayOrder is required");

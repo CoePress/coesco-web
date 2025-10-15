@@ -20,7 +20,7 @@ export class ProductClassRepository extends BaseRepository<ProductClass> {
       throw new BadRequestError("name is required");
     if (!entity.depth)
       throw new BadRequestError("depth is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
   }
 }

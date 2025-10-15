@@ -18,7 +18,7 @@ export class OptionRuleRepository extends BaseRepository<OptionRule> {
       throw new BadRequestError("name is required");
     if (!entity.priority)
       throw new BadRequestError("priority is required");
-    if (!entity.isActive)
+    if (entity.isActive === undefined || entity.isActive === null)
       throw new BadRequestError("isActive is required");
     if (!entity.condition)
       throw new BadRequestError("condition is required");

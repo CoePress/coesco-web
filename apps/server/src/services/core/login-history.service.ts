@@ -114,4 +114,8 @@ export class LoginHistoryService {
     const attempts = await this.getRecentFailedAttempts(username, since);
     return attempts.length;
   }
+
+  async getAllLoginHistory(params: any) {
+    return loginHistoryRepository.getAll(params);
+  }
 }

@@ -16,7 +16,7 @@ export class RoleRepository extends BaseRepository<Role> {
   protected async validate(entity: RoleAttributes): Promise<void> {
     if (!entity.name)
       throw new BadRequestError("name is required");
-    if (!entity.isSystem)
+    if (entity.isSystem === undefined || entity.isSystem === null)
       throw new BadRequestError("isSystem is required");
   }
 }

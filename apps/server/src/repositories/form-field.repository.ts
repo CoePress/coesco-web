@@ -22,13 +22,13 @@ export class FormFieldRepository extends BaseRepository<FormField> {
       throw new BadRequestError("variable is required");
     if (!entity.options)
       throw new BadRequestError("options is required");
-    if (!entity.isRequired)
+    if (entity.isRequired === undefined || entity.isRequired === null)
       throw new BadRequestError("isRequired is required");
-    if (!entity.isReadOnly)
+    if (entity.isReadOnly === undefined || entity.isReadOnly === null)
       throw new BadRequestError("isReadOnly is required");
-    if (!entity.isHiddenOnDevice)
+    if (entity.isHiddenOnDevice === undefined || entity.isHiddenOnDevice === null)
       throw new BadRequestError("isHiddenOnDevice is required");
-    if (!entity.isHiddenOnReport)
+    if (entity.isHiddenOnReport === undefined || entity.isHiddenOnReport === null)
       throw new BadRequestError("isHiddenOnReport is required");
     if (!entity.sequence)
       throw new BadRequestError("sequence is required");
