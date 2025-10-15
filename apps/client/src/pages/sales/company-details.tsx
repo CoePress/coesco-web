@@ -1582,7 +1582,6 @@ const CompanyDetails = () => {
                                     size="sm"
                                     onClick={() => setMarkInactiveContact(contact)}
                                     className="border-red-300 hover:bg-red-50 hover:border-red-400"
-                                    title="Mark Inactive/Left Company"
                                   >
                                     <Trash2 size={12} className="text-red-600" />
                                   </Button>
