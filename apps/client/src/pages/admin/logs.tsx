@@ -42,21 +42,34 @@ type BugReport = {
   createdById: string | null;
 };
 
+type LoginAttempt = {
+  id: string;
+  userId: string | null;
+  username: string | null;
+  loginMethod: "PASSWORD" | "MICROSOFT" | "TOKEN";
+  success: boolean;
+  failureReason: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  location: any;
+  timestamp: string;
+};
+
 type LogFile = {
   name: string;
   size?: number;
   modified?: string;
 };
 
-type LogView = "audit" | "email" | "bugs" | "system";
+type LogView = "audit" | "email" | "bugs" | "login" | "system";
 
 const Logs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getInitialView = (): LogView => {
     const view = searchParams.get('view');
-    if (view && ['email', 'bugs', 'system'].includes(view)) {
-      return view as 'email' | 'bugs' | 'system';
+    if (view && ['email', 'bugs', 'login', 'system'].includes(view)) {
+      return view as 'email' | 'bugs' | 'login' | 'system';
     }
     return 'audit';
   };
@@ -65,17 +78,20 @@ const Logs = () => {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [selectedEmailLog, setSelectedEmailLog] = useState<EmailLog | null>(null);
   const [selectedBugReport, setSelectedBugReport] = useState<BugReport | null>(null);
+  const [selectedLoginAttempt, setSelectedLoginAttempt] = useState<LoginAttempt | null>(null);
   const [selectedLogFile, setSelectedLogFile] = useState<string | null>(null);
   const [logFileContent, setLogFileContent] = useState<string>("");
   const [isPrettyPrint, setIsPrettyPrint] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEmailDetailsModalOpen, setIsEmailDetailsModalOpen] = useState(false);
   const [isBugDetailsModalOpen, setIsBugDetailsModalOpen] = useState(false);
+  const [isLoginDetailsModalOpen, setIsLoginDetailsModalOpen] = useState(false);
   const [isLogFileModalOpen, setIsLogFileModalOpen] = useState(false);
 
   const { get, response: auditLogs, loading, error } = useApi<IApiResponse<AuditLog[]>>();
   const { get: getEmails, response: emailLogs, loading: emailLoading, error: emailError } = useApi<IApiResponse<EmailLog[]>>();
   const { get: getBugs, response: bugReports, loading: bugsLoading, error: bugsError } = useApi<IApiResponse<BugReport[]>>();
+  const { get: getLogins, response: loginAttempts, loading: loginsLoading, error: loginsError } = useApi<IApiResponse<LoginAttempt[]>>();
   const { get: getLogFiles, response: logFiles, loading: logFilesLoading, error: logFilesError } = useApi<IApiResponse<string[]>>();
 
   const [params, setParams] = useState({
@@ -94,6 +110,13 @@ const Logs = () => {
 
   const [bugParams, setBugParams] = useState({
     sort: "createdAt" as string,
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+  });
+
+  const [loginParams, setLoginParams] = useState({
+    sort: "timestamp" as string,
     order: "desc" as "asc" | "desc",
     page: 1,
     limit: 25,
@@ -131,6 +154,17 @@ const Logs = () => {
 
     return q;
   }, [bugParams]);
+
+  const loginQueryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: loginParams.sort,
+      order: loginParams.order,
+      page: loginParams.page.toString(),
+      limit: loginParams.limit.toString(),
+    };
+
+    return q;
+  }, [loginParams]);
 
   const columns: TableColumn<AuditLog>[] = [
     {
@@ -367,6 +401,72 @@ const Logs = () => {
     },
   ];
 
+  const loginColumns: TableColumn<LoginAttempt>[] = [
+    {
+      key: "timestamp",
+      header: "Timestamp",
+      render: (_, row) => (
+        <div className="flex flex-col">
+          <span>{row.timestamp ? format(new Date(row.timestamp), "MM/dd/yyyy") : 'N/A'}</span>
+          <span className="text-xs text-text-muted">
+            {row.timestamp ? format(new Date(row.timestamp), "hh:mm:ss a") : 'N/A'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "username",
+      header: "Username",
+      render: (_, row) => (
+        <span className="text-sm">{row.username || '-'}</span>
+      ),
+    },
+    {
+      key: "loginMethod",
+      header: "Method",
+      render: (_, row) => (
+        <StatusBadge
+          label={row.loginMethod}
+          variant="default"
+        />
+      ),
+    },
+    {
+      key: "success",
+      header: "Result",
+      render: (_, row) => (
+        <StatusBadge
+          label={row.success ? "SUCCESS" : "FAILED"}
+          variant={row.success ? "success" : "error"}
+        />
+      ),
+    },
+    {
+      key: "ipAddress",
+      header: "IP Address",
+      render: (_, row) => (
+        <span className="font-mono text-sm">{row.ipAddress || '-'}</span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      className: "w-1",
+      sortable: false,
+      render: (_, row) => (
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={() => {
+            setSelectedLoginAttempt(row);
+            setIsLoginDetailsModalOpen(true);
+          }}>
+          View
+        </Button>
+      ),
+    },
+  ];
+
   const fetchAuditLogs = async () => {
     await get("/admin/logs", queryParams);
   };
@@ -377,6 +477,10 @@ const Logs = () => {
 
   const fetchBugReports = async () => {
     await getBugs("/admin/logs/bugs", bugQueryParams);
+  };
+
+  const fetchLoginAttempts = async () => {
+    await getLogins("/admin/logs/login-attempts", loginQueryParams);
   };
 
   const fetchLogFiles = async () => {
@@ -458,6 +562,8 @@ const Logs = () => {
       fetchEmailLogs();
     } else if (view === "bugs") {
       fetchBugReports();
+    } else if (view === "login") {
+      fetchLoginAttempts();
     } else if (view === "system") {
       fetchLogFiles();
     }
@@ -482,9 +588,15 @@ const Logs = () => {
   }, [bugParams]);
 
   useEffect(() => {
+    if (view === "login") {
+      fetchLoginAttempts();
+    }
+  }, [loginParams]);
+
+  useEffect(() => {
     const view = searchParams.get('view');
     const newView: LogView =
-      (view && ['email', 'bugs', 'system'].includes(view)) ? view as 'email' | 'bugs' | 'system' : 'audit';
+      (view && ['email', 'bugs', 'login', 'system'].includes(view)) ? view as 'email' | 'bugs' | 'login' | 'system' : 'audit';
 
     setView(newView);
   }, [searchParams]);
@@ -496,6 +608,8 @@ const Logs = () => {
       fetchEmailLogs();
     } else if (view === "bugs") {
       fetchBugReports();
+    } else if (view === "login") {
+      fetchLoginAttempts();
     } else if (view === "system") {
       fetchLogFiles();
     }
@@ -517,6 +631,13 @@ const Logs = () => {
 
   const handleBugParamsChange = (updates: Partial<typeof bugParams>) => {
     setBugParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const handleLoginParamsChange = (updates: Partial<typeof loginParams>) => {
+    setLoginParams(prev => ({
       ...prev,
       ...updates
     }));
@@ -568,6 +689,16 @@ const Logs = () => {
             }`}
           >
             Bugs
+          </button>
+          <button
+            onClick={() => handleViewChange('login')}
+            className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+              view === 'login'
+                ? 'bg-primary text-background'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Login
           </button>
           <button
             onClick={() => handleViewChange('system')}
@@ -665,6 +796,29 @@ const Logs = () => {
               }}
               className="rounded border overflow-clip"
               emptyMessage="No bug reports found"
+            />
+          ) : view === "login" ? (
+            <Table<LoginAttempt>
+              columns={loginColumns}
+              data={loginAttempts?.data || []}
+              total={loginAttempts?.meta?.total || 0}
+              idField="id"
+              pagination
+              loading={loginsLoading}
+              error={loginsError}
+              currentPage={loginAttempts?.meta?.page}
+              totalPages={loginAttempts?.meta?.totalPages}
+              onPageChange={(page) => handleLoginParamsChange({ page })}
+              sort={loginParams.sort}
+              order={loginParams.order}
+              onSortChange={(newSort, newOrder) => {
+                handleLoginParamsChange({
+                  sort: newSort as any,
+                  order: newOrder as any
+                });
+              }}
+              className="rounded border overflow-clip"
+              emptyMessage="No login attempts found"
             />
           ) : (
             <Table<LogFile>
@@ -906,6 +1060,75 @@ const Logs = () => {
                     <a href={selectedBugReport.issueUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                       {selectedBugReport.issueKey}
                     </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={isLoginDetailsModalOpen}
+        onClose={() => {
+          setIsLoginDetailsModalOpen(false);
+          setSelectedLoginAttempt(null);
+        }}
+        title="Login Attempt Details"
+        size="lg">
+        {selectedLoginAttempt && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
+                <div className="text-sm">
+                  {selectedLoginAttempt.timestamp ? format(new Date(selectedLoginAttempt.timestamp), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-text-muted mb-2 block">Result</label>
+                <StatusBadge
+                  label={selectedLoginAttempt.success ? "SUCCESS" : "FAILED"}
+                  variant={selectedLoginAttempt.success ? "success" : "error"}
+                />
+              </div>
+              {selectedLoginAttempt.username && (
+                <div>
+                  <label className="text-sm text-text-muted mb-2 block">Username</label>
+                  <div className="text-sm">{selectedLoginAttempt.username}</div>
+                </div>
+              )}
+              <div>
+                <label className="text-sm text-text-muted mb-2 block">Login Method</label>
+                <StatusBadge label={selectedLoginAttempt.loginMethod} variant="default" />
+              </div>
+              {selectedLoginAttempt.ipAddress && (
+                <div>
+                  <label className="text-sm text-text-muted mb-2 block">IP Address</label>
+                  <div className="text-sm font-mono">{selectedLoginAttempt.ipAddress}</div>
+                </div>
+              )}
+              {selectedLoginAttempt.failureReason && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">Failure Reason</label>
+                  <div className="bg-error/10 border border-error/50 rounded p-3 text-sm text-error">
+                    {selectedLoginAttempt.failureReason}
+                  </div>
+                </div>
+              )}
+              {selectedLoginAttempt.userAgent && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">User Agent</label>
+                  <div className="text-sm font-mono bg-surface border border-border rounded p-2 text-xs">
+                    {selectedLoginAttempt.userAgent}
+                  </div>
+                </div>
+              )}
+              {selectedLoginAttempt.location && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">Location</label>
+                  <div className="text-sm bg-surface border border-border rounded p-3 font-mono text-xs">
+                    <pre>{JSON.stringify(selectedLoginAttempt.location, null, 2)}</pre>
                   </div>
                 </div>
               )}

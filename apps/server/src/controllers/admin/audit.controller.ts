@@ -1,10 +1,10 @@
-import type { AuditLog, BugReport, EmailLog } from "@prisma/client";
+import type { AuditLog, BugReport, EmailLog, LoginHistory } from "@prisma/client";
 import type { Request, Response } from "express";
 
 import fs from "node:fs";
 import zlib from "node:zlib";
 
-import { auditService } from "@/services";
+import { auditService, loginHistoryService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
@@ -24,6 +24,12 @@ export class AuditController {
   getBugReports = asyncWrapper(async (req: Request, res: Response) => {
     const params = buildQueryParams<BugReport>(req.query);
     const result = await auditService.getBugReports(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getLoginAttempts = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<LoginHistory>(req.query);
+    const result = await loginHistoryService.getAllLoginHistory(params);
     res.status(HTTP_STATUS.OK).json(result);
   });
 
