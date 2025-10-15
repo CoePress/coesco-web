@@ -12,7 +12,8 @@ import { useApi } from "@/hooks/use-api";
 interface IAuthContextType {
   user: any;
   employee: any;
-  setUser: (user: any, employee: any) => void;
+  sessionId: string | null;
+  setUser: (user: any, employee: any, sessionId?: string | null) => void;
   isLoading: boolean;
 }
 
@@ -29,15 +30,18 @@ const PUBLIC_ROUTES = new Set(["/login", "/callback", "/forgot-password"]);
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUserState] = useState<any>(null);
   const [employee, setEmployeeState] = useState<any>(null);
+  const [sessionId, setSessionIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const hasCheckedSession = useRef(false);
-  const { get } = useApi<{ user: any; employee: any }>();
+  const { get } = useApi<{ user: any; employee: any; sessionId?: string }>();
 
-  const setUser = (user: any, employee: any) => {
+  const setUser = (user: any, employee: any, sessionId?: string | null) => {
+    console.log('[Auth Context] setUser called with sessionId:', sessionId);
     setUserState(user);
     setEmployeeState(employee);
+    setSessionIdState(sessionId ?? null);
     hasCheckedSession.current = true;
     setIsLoading(false);
   };
@@ -58,8 +62,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const response = await get("/auth/session");
 
         if (response) {
+          console.log('[Auth Context] Session check response sessionId:', response.sessionId);
           setUserState(response.user);
           setEmployeeState(response.employee);
+          setSessionIdState(response.sessionId ?? null);
         } else {
           throw new Error("Session check failed");
         }
@@ -67,6 +73,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (error: any) {
         setUserState(null);
         setEmployeeState(null);
+        setSessionIdState(null);
         hasCheckedSession.current = true;
 
         if (!PUBLIC_ROUTES.has(location.pathname)) {
@@ -81,7 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [location.pathname, navigate]);
 
   return (
-    <AuthContext.Provider value={{ user, employee, setUser, isLoading }}>
+    <AuthContext.Provider value={{ user, employee, sessionId, setUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

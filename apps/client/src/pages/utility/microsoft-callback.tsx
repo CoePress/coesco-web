@@ -9,7 +9,7 @@ const MicrosoftCallback = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const hasRun = useRef(false);
-  const { post } = useApi<{ user: any; employee: any }>();
+  const { post } = useApi<{ user: any; employee: any; sessionId?: string }>();
 
   useEffect(() => {
     if (hasRun.current) return;
@@ -30,9 +30,9 @@ const MicrosoftCallback = () => {
           code,
           state,
         });
-        
+
         if (response) {
-          setUser(response.user, response.employee);
+          setUser(response.user, response.employee, response.sessionId);
         } else {
           throw new Error("Authentication failed");
         }

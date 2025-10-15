@@ -54,7 +54,7 @@ const Login = () => {
     post,
     loading: loginLoading,
     error: loginError
-  } = useApi<{ user: any, employee: any }>();
+  } = useApi<{ user: any, employee: any, sessionId?: string }>();
 
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
@@ -77,8 +77,14 @@ const Login = () => {
       password,
     });
 
+    console.log('[Login] Received login response:', {
+      hasUser: !!response?.user,
+      hasEmployee: !!response?.employee,
+      sessionId: response?.sessionId
+    });
+
     if (response && response.user) {
-      setUser(response.user, response.employee);
+      setUser(response.user, response.employee, response.sessionId);
       navigate("/", { replace: true });
     }
   };
@@ -274,8 +280,13 @@ const Login = () => {
                         username: "admin",
                         password: "admin123",
                       });
+                      console.log('[Login] Dev admin login response:', {
+                        hasUser: !!response?.user,
+                        hasEmployee: !!response?.employee,
+                        sessionId: response?.sessionId
+                      });
                       if (response && response.user) {
-                        setUser(response.user, response.employee);
+                        setUser(response.user, response.employee, response.sessionId);
                         navigate("/", { replace: true });
                       }
                     }}
@@ -290,8 +301,13 @@ const Login = () => {
                         username: "user",
                         password: "user123",
                       });
+                      console.log('[Login] Dev user login response:', {
+                        hasUser: !!response?.user,
+                        hasEmployee: !!response?.employee,
+                        sessionId: response?.sessionId
+                      });
                       if (response && response.user) {
-                        setUser(response.user, response.employee);
+                        setUser(response.user, response.employee, response.sessionId);
                         navigate("/", { replace: true });
                       }
                     }}

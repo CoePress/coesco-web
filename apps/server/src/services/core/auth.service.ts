@@ -138,8 +138,10 @@ export class AuthService {
 
     const { token, refreshToken } = this.generateTokens(user.id);
 
+    let sessionId: string | undefined;
+
     if (req) {
-      await sessionService.createSession({
+      const session = await sessionService.createSession({
         userId: user.id,
         token,
         refreshToken,
@@ -149,6 +151,9 @@ export class AuthService {
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
 
+      sessionId = session.id;
+      console.log('[Auth Service] Created session with ID:', sessionId);
+
       await loginHistoryService.logAttempt({
         userId: user.id,
         username,
@@ -157,11 +162,16 @@ export class AuthService {
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
       });
+    } else {
+      console.log('[Auth Service] No req object, sessionId will be undefined');
     }
+
+    console.log('[Auth Service] Returning login response with sessionId:', sessionId);
 
     return {
       token,
       refreshToken,
+      sessionId,
       user: {
         id: user.id,
         role: user.role,
@@ -289,8 +299,8 @@ export class AuthService {
     );
   }
 
-  async microsoftCallback(code: string, sessionId: string, req?: Request): Promise<any> {
-    if (!code || !sessionId) {
+  async microsoftCallback(code: string, state: string, req?: Request): Promise<any> {
+    if (!code || !state) {
       throw new UnauthorizedError("Code and session ID are required");
     }
 
@@ -347,8 +357,10 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
+    let sessionId: string | undefined;
+
     if (req) {
-      await sessionService.createSession({
+      const session = await sessionService.createSession({
         userId: user.id,
         token,
         refreshToken,
@@ -357,6 +369,8 @@ export class AuthService {
         userAgent: req.headers["user-agent"],
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
+
+      sessionId = session.id;
 
       await loginHistoryService.logAttempt({
         userId: user.id,
@@ -371,6 +385,7 @@ export class AuthService {
     return {
       token,
       refreshToken,
+      sessionId,
       user: {
         id: user.id,
         role: user.role,
@@ -412,9 +427,12 @@ export class AuthService {
       throw new UnauthorizedError("User not found");
     }
 
+    const session = await sessionService.validateSession(accessToken);
+
     return {
       token: accessToken,
       refreshToken: "",
+      sessionId: session?.id,
       user,
       employee,
     };

@@ -74,6 +74,7 @@ export interface IAuthAttributes
 export interface IAuthResponse {
   token: string;
   refreshToken: string;
+  sessionId?: string;
   user: User;
   employee: Employee | null;
 }

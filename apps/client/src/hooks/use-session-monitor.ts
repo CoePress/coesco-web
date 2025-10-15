@@ -6,13 +6,25 @@ import { useToast } from "./use-toast";
 
 export const useSessionMonitor = () => {
   const { onSessionRevoked } = useSocket();
-  const { setUser } = useContext(AuthContext)!;
+  const { setUser, sessionId } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const handleSessionRevoked = useCallback((data: any) => {
-    const { reason } = data;
+    const { sessionId: revokedSessionId, reason } = data;
 
+    console.log('[Session Monitor] Received session revocation:', {
+      revokedSessionId,
+      currentSessionId: sessionId,
+      match: revokedSessionId === sessionId
+    });
+
+    if (revokedSessionId !== sessionId) {
+      console.log('[Session Monitor] Not current session, ignoring');
+      return;
+    }
+
+    console.log('[Session Monitor] Current session revoked, logging out');
     setUser(null, null);
 
     showToast({
@@ -22,10 +34,14 @@ export const useSessionMonitor = () => {
     });
 
     navigate("/login");
-  }, [setUser, showToast, navigate]);
+  }, [setUser, sessionId, showToast, navigate]);
 
   useEffect(() => {
+    console.log('[Session Monitor] Setting up listener with sessionId:', sessionId);
     const cleanup = onSessionRevoked(handleSessionRevoked);
-    return cleanup;
+    return () => {
+      console.log('[Session Monitor] Cleaning up listener');
+      cleanup();
+    };
   }, [onSessionRevoked, handleSessionRevoked]);
 };

@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { Filter } from "@/components/feature/toolbar";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCcwIcon } from "lucide-react";
+import { useAuth } from "@/contexts/auth.context";
 
 interface Session {
   id: string;
@@ -46,6 +47,7 @@ interface Session {
 
 const Sessions = () => {
   const toast = useToast();
+  const { sessionId: currentSessionId } = useAuth();
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
@@ -160,20 +162,24 @@ const Sessions = () => {
       header: "",
       className: "w-1",
       sortable: false,
-      render: (_, row) => (
-        <Button
-          variant="secondary-outline"
-          size="sm"
-          onClick={(e) => {
-            e?.stopPropagation();
-            setSelectedSession(row);
-            setIsRevokeModalOpen(true);
-          }}
-          disabled={!row.isActive || !!row.revokedAt}
-        >
-          Revoke
-        </Button>
-      ),
+      render: (_, row) => {
+        const isCurrentSession = row.id === currentSessionId;
+        return (
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={(e) => {
+              e?.stopPropagation();
+              setSelectedSession(row);
+              setIsRevokeModalOpen(true);
+            }}
+            disabled={!row.isActive || !!row.revokedAt || isCurrentSession}
+            title={isCurrentSession ? "Cannot revoke your current session" : undefined}
+          >
+            Revoke
+          </Button>
+        );
+      },
     },
   ];
 
