@@ -158,7 +158,7 @@ export const fetchAvailableRsms = async (api: any, includeHistoric: boolean = fa
         empNum: employee.EmpNum || 0,
         initials: employee.EmpInitials
       }))
-      .filter((rsm): rsm is Employee => rsm !== null && rsm.empNum > 0);
+      .filter((rsm: any): rsm is Employee => rsm !== null && rsm.empNum > 0);
 
     return rsmOptions;
   } catch (error) {
