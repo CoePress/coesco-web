@@ -4,7 +4,7 @@ import type { IQueryParams } from "@/types";
 
 import { machineStatusRepository } from "@/repositories";
 
-import { MachineMonitorService } from "../business/machining.service";
+import { MachineMonitorService } from "./machining.service";
 
 export class ResourceMonitoringService {
   private machineMonitorService: MachineMonitorService;

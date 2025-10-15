@@ -13,7 +13,7 @@ import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
-import { cacheService, socketService } from "../";
+import { cacheService, socketService } from "..";
 
 interface CachedMachineState {
   state: MachineState;
@@ -220,14 +220,14 @@ export class MachineMonitorService {
     );
 
     const activeTime = totalsByState.ACTIVE;
-    const unrecordedTime
-      = totalFleetDuration - futureFleetDuration - totalStateDuration;
+    const totalRecordedTime = Object.values(totalsByState).reduce(
+      (acc, total) => acc + total,
+      0,
+    );
+    const totalAvailableFleetTime = totalFleetDuration - futureFleetDuration;
+    const unrecordedTime = totalAvailableFleetTime - totalRecordedTime;
 
-    // If there's no machine status data at all, assume machines were offline
-    if (totalStateDuration === 0 && machines.data && machines.data.length > 0) {
-      totalsByState[MachineState.OFFLINE] = totalFleetDuration - futureFleetDuration;
-    }
-    else {
+    if (unrecordedTime > 0) {
       totalsByState[MachineState.UNKNOWN] = unrecordedTime;
     }
 
@@ -290,8 +290,7 @@ export class MachineMonitorService {
 
     const stateDistribution = this.calculateStateDistribution(
       totalsByState,
-      totalAvailableTime,
-      unrecordedTime,
+      totalAvailableFleetTime,
     );
 
     return {
@@ -1110,39 +1109,42 @@ export class MachineMonitorService {
   private calculateStateDistribution(
     totalsByState: Record<MachineState, number>,
     totalAvailableTime: number,
-    unrecordedTime: number,
   ) {
+    const safePercentage = (value: number) => {
+      if (totalAvailableTime === 0) return 0;
+      return (value / totalAvailableTime) * 100;
+    };
+
     return [
       {
-        state: "ACTIVE",
-        total: totalsByState.ACTIVE || 0,
-        percentage: ((totalsByState.ACTIVE || 0) / totalAvailableTime) * 100,
+        state: MachineState.ACTIVE,
+        total: totalsByState[MachineState.ACTIVE] || 0,
+        percentage: safePercentage(totalsByState[MachineState.ACTIVE] || 0),
       },
       {
-        state: "SETUP",
-        total: totalsByState.SETUP || 0,
-        percentage: ((totalsByState.SETUP || 0) / totalAvailableTime) * 100,
+        state: MachineState.SETUP,
+        total: totalsByState[MachineState.SETUP] || 0,
+        percentage: safePercentage(totalsByState[MachineState.SETUP] || 0),
       },
       {
-        state: "IDLE",
-        total: totalsByState.IDLE || 0,
-        percentage: ((totalsByState.IDLE || 0) / totalAvailableTime) * 100,
+        state: MachineState.IDLE,
+        total: totalsByState[MachineState.IDLE] || 0,
+        percentage: safePercentage(totalsByState[MachineState.IDLE] || 0),
       },
       {
-        state: "ALARM",
-        total: totalsByState.ALARM || 0,
-        percentage: ((totalsByState.ALARM || 0) / totalAvailableTime) * 100,
+        state: MachineState.ALARM,
+        total: totalsByState[MachineState.ALARM] || 0,
+        percentage: safePercentage(totalsByState[MachineState.ALARM] || 0),
       },
       {
-        state: "OFFLINE",
-        total: totalsByState.OFFLINE || 0,
-        percentage:
-          ((totalsByState.OFFLINE || 0) / totalAvailableTime) * 100,
+        state: MachineState.OFFLINE,
+        total: totalsByState[MachineState.OFFLINE] || 0,
+        percentage: safePercentage(totalsByState[MachineState.OFFLINE] || 0),
       },
       {
-        state: "UNRECORDED",
-        total: unrecordedTime,
-        percentage: (unrecordedTime / totalAvailableTime) * 100,
+        state: MachineState.UNKNOWN,
+        total: totalsByState[MachineState.UNKNOWN] || 0,
+        percentage: safePercentage(totalsByState[MachineState.UNKNOWN] || 0),
       },
     ];
   }

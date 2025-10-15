@@ -32,24 +32,29 @@ export class AuditController {
     res.status(HTTP_STATUS.OK).json(result);
   });
 
-  getLogFile = asyncWrapper(async (req: Request, res: Response) => {
-    const { file } = req.params;
-    const result = await auditService.getLogFile(file);
+  getLogFile = async (req: Request, res: Response, next: (error?: any) => void) => {
+    try {
+      const { file } = req.params;
+      const result = await auditService.getLogFile(file);
 
-    if (!result.success || !result.data) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Log file not found" });
+      if (!result.success || !result.data) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Log file not found" });
+      }
+
+      const { path: logPath, isGzipped } = result.data;
+
+      res.setHeader("Content-Type", "text/plain");
+
+      if (isGzipped) {
+        const stream = fs.createReadStream(logPath).pipe(zlib.createGunzip());
+        stream.pipe(res);
+      }
+      else {
+        fs.createReadStream(logPath).pipe(res);
+      }
     }
-
-    const { path: logPath, isGzipped } = result.data;
-
-    res.setHeader("Content-Type", "text/plain");
-
-    if (isGzipped) {
-      const stream = fs.createReadStream(logPath).pipe(zlib.createGunzip());
-      return stream.pipe(res);
+    catch (error) {
+      next(error);
     }
-    else {
-      return fs.createReadStream(logPath).pipe(res);
-    }
-  });
+  };
 }

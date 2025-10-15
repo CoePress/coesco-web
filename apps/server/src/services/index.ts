@@ -30,6 +30,7 @@ import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
 import { QuoteService } from "./sales/quote.service";
+import { MachineMonitorService } from "./production/machining.service";
 
 // Admin
 export const auditService = new AuditService();
@@ -60,6 +61,7 @@ export const socketService = new SocketService();
 export const tagService = new TagService();
 
 // Production
+export const machiningService = new MachineMonitorService();
 export const resourceMonitoringService = new ResourceMonitoringService();
 export const resourceService = new ResourceService();
 
@@ -77,9 +79,9 @@ export async function initializeServices() {
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
 
-  const collectMachineData = false;
+  const collectMachineData = true;
 
   if (__prod__ || collectMachineData) {
-    // await machiningService.initialize();
+    await machiningService.initialize();
   }
 }

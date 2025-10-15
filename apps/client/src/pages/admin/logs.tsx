@@ -10,7 +10,7 @@ import {
   Modal,
 } from "@/components";
 import { TableColumn } from "@/components/ui/table";
-import { useApi } from "@/hooks/use-api";
+import { useApi, instance } from "@/hooks/use-api";
 import { IApiResponse} from "@/utils/types";
 import { format } from "date-fns";
 import { AuditLog } from "@coesco/types";
@@ -42,6 +42,12 @@ type BugReport = {
   createdById: string | null;
 };
 
+type LogFile = {
+  name: string;
+  size?: number;
+  modified?: string;
+};
+
 type LogView = "audit" | "email" | "bugs" | "system";
 
 const Logs = () => {
@@ -59,13 +65,18 @@ const Logs = () => {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [selectedEmailLog, setSelectedEmailLog] = useState<EmailLog | null>(null);
   const [selectedBugReport, setSelectedBugReport] = useState<BugReport | null>(null);
+  const [selectedLogFile, setSelectedLogFile] = useState<string | null>(null);
+  const [logFileContent, setLogFileContent] = useState<string>("");
+  const [isPrettyPrint, setIsPrettyPrint] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEmailDetailsModalOpen, setIsEmailDetailsModalOpen] = useState(false);
   const [isBugDetailsModalOpen, setIsBugDetailsModalOpen] = useState(false);
+  const [isLogFileModalOpen, setIsLogFileModalOpen] = useState(false);
 
   const { get, response: auditLogs, loading, error } = useApi<IApiResponse<AuditLog[]>>();
   const { get: getEmails, response: emailLogs, loading: emailLoading, error: emailError } = useApi<IApiResponse<EmailLog[]>>();
   const { get: getBugs, response: bugReports, loading: bugsLoading, error: bugsError } = useApi<IApiResponse<BugReport[]>>();
+  const { get: getLogFiles, response: logFiles, loading: logFilesLoading, error: logFilesError } = useApi<IApiResponse<string[]>>();
 
   const [params, setParams] = useState({
     sort: "createdAt" as string,
@@ -257,6 +268,30 @@ const Logs = () => {
     },
   ];
 
+  const logFileColumns: TableColumn<LogFile>[] = [
+    {
+      key: "name",
+      header: "File Name",
+      render: (_, row) => (
+        <span className="font-mono text-sm">{row.name}</span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      className: "w-1",
+      sortable: false,
+      render: (_, row) => (
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={() => handleViewLogFile(row.name)}>
+          View
+        </Button>
+      ),
+    },
+  ];
+
   const bugColumns: TableColumn<BugReport>[] = [
     {
       key: "createdAt",
@@ -344,6 +379,78 @@ const Logs = () => {
     await getBugs("/admin/logs/bugs", bugQueryParams);
   };
 
+  const fetchLogFiles = async () => {
+    await getLogFiles("/admin/logs/files");
+  };
+
+  const handleViewLogFile = async (filename: string) => {
+    try {
+      const response = await instance.get(`/admin/logs/files/${encodeURIComponent(filename)}`, {
+        responseType: 'text',
+      });
+      const content = response.data || "";
+      setLogFileContent(content.trim() === "" ? "Log file is empty" : content);
+      setSelectedLogFile(filename);
+      setIsLogFileModalOpen(true);
+    } catch (error) {
+      console.error("Failed to load log file:", error);
+      setLogFileContent("Error loading log file. Please try again.");
+    }
+  };
+
+  const renderLogLine = (line: string, index: number) => {
+    if (!line.trim()) {
+      return <div key={index} className="h-4" />;
+    }
+
+    try {
+      const logEntry = JSON.parse(line);
+      const level = logEntry.level?.toLowerCase();
+
+      let levelColor = "text-text";
+      switch (level) {
+        case "error":
+          levelColor = "text-error";
+          break;
+        case "warn":
+          levelColor = "text-warning";
+          break;
+        case "info":
+          levelColor = "text-info";
+          break;
+        case "http":
+          levelColor = "text-text-muted";
+          break;
+        case "debug":
+          levelColor = "text-text-muted";
+          break;
+        default:
+          levelColor = "text-text";
+      }
+
+      if (isPrettyPrint) {
+        const prettyJson = JSON.stringify(logEntry, null, 2);
+        return (
+          <div key={index} className="font-mono text-xs mb-4">
+            <pre className={levelColor}>{prettyJson}</pre>
+          </div>
+        );
+      }
+
+      return (
+        <div key={index} className="font-mono text-xs whitespace-nowrap">
+          <span className={levelColor}>{line}</span>
+        </div>
+      );
+    } catch {
+      return (
+        <div key={index} className="font-mono text-xs text-text whitespace-nowrap">
+          {line}
+        </div>
+      );
+    }
+  };
+
   const refresh = () => {
     if (view === "audit") {
       fetchAuditLogs();
@@ -351,6 +458,8 @@ const Logs = () => {
       fetchEmailLogs();
     } else if (view === "bugs") {
       fetchBugReports();
+    } else if (view === "system") {
+      fetchLogFiles();
     }
   };
 
@@ -387,6 +496,8 @@ const Logs = () => {
       fetchEmailLogs();
     } else if (view === "bugs") {
       fetchBugReports();
+    } else if (view === "system") {
+      fetchLogFiles();
     }
   }, [view]);
 
@@ -556,11 +667,17 @@ const Logs = () => {
               emptyMessage="No bug reports found"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-surface border border-border rounded">
-              <div className="text-center p-8">
-                <p className="text-text-muted">System logs coming soon</p>
-              </div>
-            </div>
+            <Table<LogFile>
+              columns={logFileColumns}
+              data={(logFiles?.data || []).map(name => ({ name }))}
+              total={logFiles?.data?.length || 0}
+              idField="name"
+              pagination={false}
+              loading={logFilesLoading}
+              error={logFilesError}
+              className="rounded border overflow-clip"
+              emptyMessage="No log files found"
+            />
           )}
         </div>
       </div>
@@ -795,6 +912,40 @@ const Logs = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={isLogFileModalOpen}
+        onClose={() => {
+          setIsLogFileModalOpen(false);
+          setSelectedLogFile(null);
+          setLogFileContent("");
+          setIsPrettyPrint(false);
+        }}
+        title={`Log File: ${selectedLogFile || ""}`}
+        size="xl"
+        overflow="auto"
+        headerActions={
+          <Button
+            variant={isPrettyPrint ? "primary" : "secondary-outline"}
+            size="sm"
+            onClick={() => setIsPrettyPrint(!isPrettyPrint)}>
+            Pretty
+          </Button>
+        }>
+        <div className="bg-surface border border-border rounded-lg p-4 overflow-auto">
+          {logFileContent ? (
+            logFileContent === "Log file is empty" || logFileContent === "Error loading log file. Please try again." ? (
+              <div className="text-text-muted text-sm">{logFileContent}</div>
+            ) : (
+              <div className="space-y-0.5">
+                {logFileContent.split('\n').map((line, index) => renderLogLine(line, index))}
+              </div>
+            )
+          ) : (
+            <div className="text-text-muted text-sm">Loading...</div>
+          )}
+        </div>
       </Modal>
     </div>
   );

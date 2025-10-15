@@ -7,6 +7,8 @@ const router = Router();
 router.get("/logs", auditController.getAuditLogs);
 router.get("/logs/emails", auditController.getEmailLogs);
 router.get("/logs/bugs", auditController.getBugReports);
+router.get("/logs/files", auditController.getLogFiles);
+router.get("/logs/files/:file", auditController.getLogFile);
 
 // Employees
 router.post("/employees", employeeController.createEmployee);
