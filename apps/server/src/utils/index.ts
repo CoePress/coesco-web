@@ -192,3 +192,20 @@ export async function pingHost(host: string, timeoutSeconds: number = 5): Promis
     return { alive: false };
   }
 }
+
+export function getClientIp(req: Request): string | undefined {
+  const forwardedFor = req.headers["x-forwarded-for"];
+  if (forwardedFor) {
+    const ips = Array.isArray(forwardedFor)
+      ? forwardedFor[0].split(",")
+      : forwardedFor.split(",");
+    return ips[0].trim();
+  }
+
+  const realIp = req.headers["x-real-ip"];
+  if (realIp) {
+    return Array.isArray(realIp) ? realIp[0] : realIp;
+  }
+
+  return req.ip;
+}

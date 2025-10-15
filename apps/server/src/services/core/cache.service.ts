@@ -12,8 +12,6 @@ export class CacheService {
       port: env.REDIS_PORT,
     });
 
-    // this.client = new Redis(env.REDIS_URL);
-
     this.client.on("error", (err) => {
       logger.error(`Redis Client Error: ${err}`);
     });

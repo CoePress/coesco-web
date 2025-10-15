@@ -14,6 +14,7 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
+import { getClientIp } from "@/utils";
 
 import { emailService, loginHistoryService, sessionService } from "..";
 
@@ -78,7 +79,7 @@ export class AuthService {
           loginMethod: LoginMethod.PASSWORD,
           success: false,
           failureReason: "Invalid credentials",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -93,7 +94,7 @@ export class AuthService {
           loginMethod: LoginMethod.PASSWORD,
           success: false,
           failureReason: "Account is inactive",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -108,7 +109,7 @@ export class AuthService {
           loginMethod: LoginMethod.PASSWORD,
           success: false,
           failureReason: "Password login not available",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -124,7 +125,7 @@ export class AuthService {
           loginMethod: LoginMethod.PASSWORD,
           success: false,
           failureReason: "Invalid password",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -141,12 +142,19 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
+      console.log('[IP Debug] Headers:', {
+        'x-forwarded-for': req.headers['x-forwarded-for'],
+        'x-real-ip': req.headers['x-real-ip'],
+        'req.ip': req.ip,
+        'getClientIp': getClientIp(req)
+      });
+
       const session = await sessionService.createSession({
         userId: user.id,
         token,
         refreshToken,
         loginMethod: LoginMethod.PASSWORD,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
@@ -159,7 +167,7 @@ export class AuthService {
         username,
         loginMethod: LoginMethod.PASSWORD,
         success: true,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
       });
     } else {
@@ -328,7 +336,7 @@ export class AuthService {
           loginMethod: LoginMethod.MICROSOFT,
           success: false,
           failureReason: "No account found",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -343,7 +351,7 @@ export class AuthService {
           loginMethod: LoginMethod.MICROSOFT,
           success: false,
           failureReason: "Account is inactive",
-          ipAddress: req.ip,
+          ipAddress: getClientIp(req),
           userAgent: req.headers["user-agent"],
         });
       }
@@ -365,7 +373,7 @@ export class AuthService {
         token,
         refreshToken,
         loginMethod: LoginMethod.MICROSOFT,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
@@ -377,7 +385,7 @@ export class AuthService {
         username: user.username || userInfo.userPrincipalName,
         loginMethod: LoginMethod.MICROSOFT,
         success: true,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
       });
     }
@@ -741,7 +749,7 @@ export class AuthService {
         token,
         refreshToken,
         loginMethod: LoginMethod.PASSWORD,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
@@ -751,7 +759,7 @@ export class AuthService {
         username: user.username!,
         loginMethod: LoginMethod.PASSWORD,
         success: true,
-        ipAddress: req.ip,
+        ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
       });
     }

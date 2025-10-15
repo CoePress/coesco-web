@@ -58,7 +58,7 @@ const limiter = rateLimit({
 const swaggerPath = path.join(process.cwd(), "./src/config/swagger.json");
 const swaggerDoc = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 
-app.set("trust proxy", __prod__ ? 1 : false);
+app.set("trust proxy", true);
 
 app.use("/api", limiter);
 app.use(morgan("dev", { stream }));
