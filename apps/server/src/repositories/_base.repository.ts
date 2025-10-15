@@ -7,6 +7,7 @@ import { getEmployeeContext } from "@/utils/context";
 import { buildQuery, prisma } from "@/utils/prisma";
 
 const columnCache = new Map<string, string[]>();
+const excludedModels = ["auditLog", "emailLog", "bugReport"];
 
 export class BaseRepository<T> {
   protected model: any;
@@ -333,7 +334,7 @@ export class BaseRepository<T> {
     after?: Record<string, any>,
     tx?: Prisma.TransactionClient,
   ) {
-    if (this.modelName === "auditLog" || this.modelName === "emailLog") {
+    if (!this.modelName || excludedModels.includes(this.modelName)) {
       return;
     }
 

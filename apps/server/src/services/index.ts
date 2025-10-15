@@ -72,7 +72,7 @@ export const quoteService = new QuoteService();
 
 export async function initializeServices() {
   // await deviceService.initialize();
-  // await legacyService.initialize();
+  await legacyService.initialize();
   // await mcpService.initialize();
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
