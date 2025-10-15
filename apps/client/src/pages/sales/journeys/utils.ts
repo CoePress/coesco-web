@@ -138,28 +138,26 @@ export const fetchAvailableRsms = async (api: any, includeHistoric: boolean = fa
       return [];
     }
 
-    const employeePromises = rsmInitials.map(initials =>
-      api.get('/legacy/std/Employee/filter/custom', {
-        filterField: 'EmpInitials',
-        filterValue: initials,
-        fields: 'EmpFirstName,EmpLastName,EmpNum'
-      })
-    );
+    const employeeData = await api.get('/legacy/std/Employee', {
+      filter: JSON.stringify({
+        filters: [{
+          field: 'EmpInitials',
+          operator: 'in',
+          values: rsmInitials
+        }]
+      }),
+      fields: 'EmpFirstName,EmpLastName,EmpNum,EmpInitials'
+    });
 
-    const employeeResults = await Promise.all(employeePromises);
+    const employees = Array.isArray(employeeData?.data) ? employeeData.data :
+                      Array.isArray(employeeData) ? employeeData : [];
 
-    const rsmOptions = employeeResults
-      .map((result, index) => {
-        if (Array.isArray(result) && result.length > 0) {
-          const employee = result[0];
-          return {
-            name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials || rsmInitials[index],
-            empNum: employee.EmpNum || 0,
-            initials: rsmInitials[index]
-          };
-        }
-        return null;
-      })
+    const rsmOptions = employees
+      .map((employee: any) => ({
+        name: `${employee.EmpFirstName || ''} ${employee.EmpLastName || ''}`.trim() || employee.EmpInitials,
+        empNum: employee.EmpNum || 0,
+        initials: employee.EmpInitials
+      }))
       .filter((rsm): rsm is Employee => rsm !== null && rsm.empNum > 0);
 
     return rsmOptions;
