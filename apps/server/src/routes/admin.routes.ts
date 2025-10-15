@@ -4,6 +4,7 @@ import { Router } from "express";
 const router = Router()
 
 router.get("/logs", auditController.getAuditLogs);
+router.get("/logs/emails", auditController.getEmailLogs);
 
 // Employees
 router.post("/employees", employeeController.createEmployee);

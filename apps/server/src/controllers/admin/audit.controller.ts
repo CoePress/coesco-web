@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { AuditLog } from "@prisma/client";
+import type { AuditLog, EmailLog } from "@prisma/client";
 
 import { auditService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
@@ -12,6 +12,12 @@ export class AuditController {
   getAuditLogs = asyncWrapper(async (req: Request, res: Response) => {
     const params = buildQueryParams<AuditLog>(req.query);
     const result = await auditService.getAuditLogs(params);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
+
+  getEmailLogs = asyncWrapper(async (req: Request, res: Response) => {
+    const params = buildQueryParams<EmailLog>(req.query);
+    const result = await auditService.getEmailLogs(params);
     res.status(HTTP_STATUS.OK).json(result);
   });
 

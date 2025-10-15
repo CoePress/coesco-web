@@ -1,19 +1,18 @@
-import { auditLogRepository } from "@/repositories";
+import { auditLogRepository, emailLogRepository } from "@/repositories";
 import { IQueryParams } from "@/types";
-import { AuditLog } from "@prisma/client";
+import { AuditLog, EmailLog } from "@prisma/client";
 import { env } from "@/config/env";
 import { employeeService } from "..";
 
 import fs from "node:fs";
 import path from "node:path";
-import zlib from "node:zlib";
 
 export type EnrichedAuditLog = AuditLog & {
   changedByName?: string;
 };
 
 export class AuditService {
-    async getAuditLogs(params?: IQueryParams<AuditLog>) {
+  async getAuditLogs(params?: IQueryParams<AuditLog>) {
     const result = await auditLogRepository.getAll(params);
 
     if (!result.success || !result.data) {
@@ -60,6 +59,14 @@ export class AuditService {
       ...result,
       data: enrichedData,
     };
+  }
+
+  async getEmailLogs(params?: IQueryParams<EmailLog>) {
+    return await emailLogRepository.getAll(params);
+  }
+
+  async getEmailLog(id: string) { 
+    return await emailLogRepository.getById(id);
   }
 
   async getLogFiles() {
