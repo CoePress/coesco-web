@@ -3,6 +3,7 @@ import type { LoginMethod, Session } from "@prisma/client";
 import { createHash } from "node:crypto";
 
 import { sessionRepository } from "@/repositories";
+import { prisma } from "@/utils/prisma";
 import { logger } from "@/utils/logger";
 
 export interface CreateSessionParams {
@@ -24,6 +25,38 @@ export interface SessionStats {
   expiredSessions: number;
   revokedSessions: number;
   suspiciousSessions: number;
+}
+
+export interface AdminDashboardMetrics {
+  activeSessionsCount: number;
+  totalSessionsCount: number;
+  recentLoginActivity: {
+    last24h: number;
+    last7d: number;
+    last30d: number;
+  };
+  failedLoginAttempts: {
+    last24h: number;
+    last7d: number;
+    last30d: number;
+  };
+  sessionsByUser: Array<{
+    userId: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    activeSessionCount: number;
+  }>;
+  recentlyRevokedSessions: Array<{
+    id: string;
+    userId: string;
+    username: string;
+    revokedAt: Date;
+    revokedReason: string | null;
+    deviceName: string | null;
+    ipAddress: string | null;
+  }>;
+  suspiciousActivityCount: number;
 }
 
 export class SessionService {
@@ -337,5 +370,138 @@ export class SessionService {
 
   async getAllSessions(params: any) {
     return sessionRepository.getAll(params);
+  }
+
+  async getAdminDashboardMetrics(): Promise<AdminDashboardMetrics> {
+    const now = new Date();
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [
+      activeSessionsCount,
+      totalSessionsCount,
+      recentLogins24h,
+      recentLogins7d,
+      recentLogins30d,
+      failedLogins24h,
+      failedLogins7d,
+      failedLogins30d,
+      sessionsByUserRaw,
+      recentlyRevokedRaw,
+      suspiciousSessions,
+    ] = await Promise.all([
+      prisma.session.count({
+        where: { isActive: true },
+      }),
+      prisma.session.count(),
+      prisma.session.count({
+        where: { loginAt: { gte: last24h } },
+      }),
+      prisma.session.count({
+        where: { loginAt: { gte: last7d } },
+      }),
+      prisma.session.count({
+        where: { loginAt: { gte: last30d } },
+      }),
+      prisma.loginHistory.count({
+        where: {
+          success: false,
+          timestamp: { gte: last24h },
+        },
+      }),
+      prisma.loginHistory.count({
+        where: {
+          success: false,
+          timestamp: { gte: last7d },
+        },
+      }),
+      prisma.loginHistory.count({
+        where: {
+          success: false,
+          timestamp: { gte: last30d },
+        },
+      }),
+      prisma.session.groupBy({
+        by: ["userId"],
+        where: { isActive: true },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+        take: 10,
+      }),
+      prisma.session.findMany({
+        where: {
+          revokedAt: { not: null },
+        },
+        orderBy: { revokedAt: "desc" },
+        take: 10,
+        include: {
+          user: {
+            select: {
+              username: true,
+            },
+          },
+        },
+      }),
+      prisma.session.count({
+        where: { isSuspicious: true },
+      }),
+    ]);
+
+    const userIds = sessionsByUserRaw.map(s => s.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        username: true,
+        employee: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    const sessionsByUser = sessionsByUserRaw.map(s => {
+      const user = userMap.get(s.userId);
+      return {
+        userId: s.userId,
+        username: user?.username || "Unknown",
+        firstName: user?.employee?.firstName,
+        lastName: user?.employee?.lastName,
+        activeSessionCount: s._count.id,
+      };
+    });
+
+    const recentlyRevokedSessions = recentlyRevokedRaw.map(s => ({
+      id: s.id,
+      userId: s.userId,
+      username: s.user.username,
+      revokedAt: s.revokedAt!,
+      revokedReason: s.revokedReason,
+      deviceName: s.deviceName,
+      ipAddress: s.ipAddress,
+    }));
+
+    return {
+      activeSessionsCount,
+      totalSessionsCount,
+      recentLoginActivity: {
+        last24h: recentLogins24h,
+        last7d: recentLogins7d,
+        last30d: recentLogins30d,
+      },
+      failedLoginAttempts: {
+        last24h: failedLogins24h,
+        last7d: failedLogins7d,
+        last30d: failedLogins30d,
+      },
+      sessionsByUser,
+      recentlyRevokedSessions,
+      suspiciousActivityCount: suspiciousSessions,
+    };
   }
 }

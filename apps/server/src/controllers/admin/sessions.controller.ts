@@ -6,6 +6,11 @@ import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 
 export class SessionsController {
+  getDashboardMetrics = asyncWrapper(async (req: Request, res: Response) => {
+    const metrics = await sessionService.getAdminDashboardMetrics();
+    res.status(HTTP_STATUS.OK).json({ success: true, data: metrics });
+  });
+
   getSessions = asyncWrapper(async (req: Request, res: Response) => {
     const params = buildQueryParams<Session>(req.query);
     const result = await sessionService.getAllSessions(params);

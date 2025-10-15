@@ -26,7 +26,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -236,6 +236,12 @@ const adminModule: Module = {
   icon: ShieldIcon,
   status: "active",
   pages: [
+      {
+      slug: null,
+      label: "Dashboard",
+      icon: FileClockIcon,
+      component: AdminDashboard,
+    },
     {
       slug: "employees",
       label: "Employees",

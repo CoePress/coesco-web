@@ -11,6 +11,7 @@ router.get("/logs/files", auditController.getLogFiles);
 router.get("/logs/files/:file", auditController.getLogFile);
 
 // Sessions
+router.get("/sessions/dashboard-metrics", sessionsController.getDashboardMetrics);
 router.get("/sessions", sessionsController.getSessions);
 router.get("/sessions/login-history", sessionsController.getLoginHistory);
 router.post("/sessions/:id/revoke", sessionsController.revokeSession);
