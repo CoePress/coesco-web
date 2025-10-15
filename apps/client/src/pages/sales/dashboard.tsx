@@ -26,6 +26,7 @@ import PageHeader from "@/components/layout/page-header";
 import Metrics, { MetricsCard } from "@/components/ui/metrics";
 import { useApi } from "@/hooks/use-api";
 import { STAGES } from "./journeys/constants";
+import DatePicker from "@/components/ui/date-picker";
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -50,16 +51,56 @@ const SalesDashboard = () => {
   const api = useApi();
   const navigate = useNavigate();
 
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 3);
+    return date.toISOString().split('T')[0];
+  };
+
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const [startDate, setStartDate] = useState<string>(getDefaultStartDate());
+  const [endDate, setEndDate] = useState<string>(getDefaultEndDate());
+  const [showRevenue, setShowRevenue] = useState(true);
+  const [showActiveJourneys, setShowActiveJourneys] = useState(true);
+  const [showConversion, setShowConversion] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const filterConditions: any[] = [];
+
+        if (startDate) {
+          filterConditions.push({
+            field: "Journey_Start_Date",
+            operator: "gte",
+            value: startDate
+          });
+        }
+
+        if (endDate) {
+          filterConditions.push({
+            field: "Journey_Start_Date",
+            operator: "lte",
+            value: endDate
+          });
+        }
+
+        const params: any = {
+          limit: 10000,
+          sort: "Journey_Start_Date",
+          order: "desc"
+        };
+
+        if (filterConditions.length > 0) {
+          params.filter = JSON.stringify({ filters: filterConditions });
+        }
+
         const [journeysResponse, companiesResponse] = await Promise.all([
-          api.get("/legacy/std/Journey", {
-            limit: 1000,
-            sort: "Journey_Start_Date",
-            order: "desc"
-          }),
+          api.get("/legacy/base/Journey", params),
           api.get("/legacy/base/Company", {
             limit: 500,
             sort: "Company_ID",
@@ -84,28 +125,21 @@ const SalesDashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   const companiesById = new Map(companies.map(c => [c.Company_ID, c]));
 
   const activeJourneys = journeys.filter(j =>
     j.Journey_Status === 'open' || !j.Journey_Status
   );
-  
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  const thisMonthJourneys = activeJourneys.filter(j => {
-    if (!j.Journey_Start_Date) return false;
-    const date = new Date(j.Journey_Start_Date);
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-  });
 
   const wonJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
   const lostJourneys = journeys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
   const closedJourneys = [...wonJourneys, ...lostJourneys];
-  
-  const monthlyRevenue = thisMonthJourneys.reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
+
+  const totalRevenue = journeys
+    .filter(j => j.Journey_Status === 'won')
+    .reduce((sum, j) => sum + (j.Journey_Value || 0), 0);
   const totalQuotes = activeJourneys.length;
   const totalJourneysWithValue = activeJourneys.filter(j => (j.Journey_Value || 0) > 0).length;
   const conversionRate = closedJourneys.length > 0 ? (wonJourneys.length / (wonJourneys.length + lostJourneys.length)) * 100 : 0;
@@ -114,16 +148,28 @@ const SalesDashboard = () => {
   const monthlyData = [];
 
   if (timeframe === 'daily') {
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const dayMap = new Map<string, any[]>();
 
-      const dayJourneys = journeys.filter(j => {
-        if (!j.Journey_Start_Date) return false;
-        const jDate = new Date(j.Journey_Start_Date);
-        return jDate.toDateString() === date.toDateString();
-      });
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toDateString();
+      dayMap.set(dateKey, []);
+    }
+
+    journeys.forEach(j => {
+      if (!j.Journey_Start_Date) return;
+      const jDate = new Date(j.Journey_Start_Date);
+      const dateKey = jDate.toDateString();
+      if (dayMap.has(dateKey)) {
+        dayMap.get(dateKey)?.push(j);
+      }
+    });
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toDateString();
+      const dayLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+      const dayJourneys = dayMap.get(dateKey) || [];
 
       const daySales = dayJourneys
         .filter(j => j.Journey_Status === 'won')
@@ -137,8 +183,12 @@ const SalesDashboard = () => {
                !stage.includes('closed lost') &&
                !stage.includes('post installation');
       }).length;
-      const dayConversion = dayJourneys.length > 0
-        ? (dayJourneys.filter(j => j.Journey_Status === 'won').length / dayJourneys.length) * 100
+
+      const dayWonJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+      const dayLostJourneys = dayJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+      const dayClosedJourneys = dayWonJourneys.length + dayLostJourneys.length;
+      const dayConversion = dayClosedJourneys > 0
+        ? (dayWonJourneys.length / dayClosedJourneys) * 100
         : 0;
 
       monthlyData.push({
@@ -150,18 +200,22 @@ const SalesDashboard = () => {
       });
     }
   } else if (timeframe === 'weekly') {
-    for (let i = 11; i >= 0; i--) {
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() - (i * 7));
-      const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 6);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-      const weekLabel = `${startDate.getMonth() + 1}/${startDate.getDate()}`;
+    let weekStart = new Date(start);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+    while (weekStart <= end) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const weekLabel = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
 
       const weekJourneys = journeys.filter(j => {
         if (!j.Journey_Start_Date) return false;
         const jDate = new Date(j.Journey_Start_Date);
-        return jDate >= startDate && jDate <= endDate;
+        return jDate >= weekStart && jDate <= weekEnd;
       });
 
       const weekSales = weekJourneys
@@ -176,8 +230,12 @@ const SalesDashboard = () => {
                !stage.includes('closed lost') &&
                !stage.includes('post installation');
       }).length;
-      const weekConversion = weekJourneys.length > 0
-        ? (weekJourneys.filter(j => j.Journey_Status === 'won').length / weekJourneys.length) * 100
+
+      const weekWonJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+      const weekLostJourneys = weekJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+      const weekClosedJourneys = weekWonJourneys.length + weekLostJourneys.length;
+      const weekConversion = weekClosedJourneys > 0
+        ? (weekWonJourneys.length / weekClosedJourneys) * 100
         : 0;
 
       monthlyData.push({
@@ -187,17 +245,23 @@ const SalesDashboard = () => {
         conversion: Math.round(weekConversion),
         journeys: weekJourneysWithValue
       });
+
+      weekStart.setDate(weekStart.getDate() + 7);
     }
   } else {
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    let currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+
+    while (currentMonth <= endMonth) {
+      const monthName = currentMonth.toLocaleDateString('en-US', { month: 'short' });
 
       const monthJourneys = journeys.filter(j => {
         if (!j.Journey_Start_Date) return false;
         const jDate = new Date(j.Journey_Start_Date);
-        return jDate.getMonth() === date.getMonth() && jDate.getFullYear() === date.getFullYear();
+        return jDate.getMonth() === currentMonth.getMonth() && jDate.getFullYear() === currentMonth.getFullYear();
       });
 
       const monthSales = monthJourneys
@@ -212,8 +276,12 @@ const SalesDashboard = () => {
                !stage.includes('closed lost') &&
                !stage.includes('post installation');
       }).length;
-      const monthConversion = monthJourneys.length > 0
-        ? (monthJourneys.filter(j => j.Journey_Status === 'won').length / monthJourneys.length) * 100
+
+      const monthWonJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 5);
+      const monthLostJourneys = monthJourneys.filter(j => mapLegacyStageToId(j.Journey_Stage) === 6);
+      const monthClosedJourneys = monthWonJourneys.length + monthLostJourneys.length;
+      const monthConversion = monthClosedJourneys > 0
+        ? (monthWonJourneys.length / monthClosedJourneys) * 100
         : 0;
 
       monthlyData.push({
@@ -223,6 +291,8 @@ const SalesDashboard = () => {
         conversion: Math.round(monthConversion),
         journeys: monthJourneysWithValue
       });
+
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
   }
 
@@ -268,9 +338,9 @@ const SalesDashboard = () => {
   
   const kpis = [
     {
-      title: "Monthly Revenue",
-      value: formatCurrency(monthlyRevenue, false),
-      description: "Total revenue this month",
+      title: "Total Revenue",
+      value: formatCurrency(totalRevenue, false),
+      description: "Revenue from won journeys in range",
       icon: <DollarSign size={16} />,
     },
     {
@@ -282,7 +352,7 @@ const SalesDashboard = () => {
     {
       title: "Conversion Rate",
       value: `${Math.round(conversionRate)}%`,
-      description: "Journey win rate",
+      description: "Of the closed journeys, this percentage were won",
       icon: <TrendingUp size={16} />,
     },
     {
@@ -296,15 +366,39 @@ const SalesDashboard = () => {
   const refreshData = async () => {
     setIsLoading(true);
     try {
+      const filterConditions: any[] = [];
+
+      if (startDate) {
+        filterConditions.push({
+          field: "Journey_Start_Date",
+          operator: "gte",
+          value: startDate
+        });
+      }
+
+      if (endDate) {
+        filterConditions.push({
+          field: "Journey_Start_Date",
+          operator: "lte",
+          value: endDate
+        });
+      }
+
+      const params: any = {
+        limit: 10000,
+        sort: "Journey_Start_Date",
+        order: "desc"
+      };
+
+      if (filterConditions.length > 0) {
+        params.filter = JSON.stringify({ filters: filterConditions });
+      }
+
       const [journeysResponse, companiesResponse] = await Promise.all([
-        api.get("/legacy/std/Journey", {
-          limit: 1000,
-          sort: "Journey_Start_Date",
-          order: "desc"
-        }),
+        api.get("/legacy/base/Journey", params),
         api.get("/legacy/base/Company", {
           limit: 500,
-          sort: "Company_ID", 
+          sort: "Company_ID",
           order: "desc"
         })
       ]);
@@ -313,7 +407,7 @@ const SalesDashboard = () => {
         const journeyData = Array.isArray(journeysResponse) ? journeysResponse : (journeysResponse.data || []);
         setJourneys(journeyData);
       }
-      
+
       if (companiesResponse) {
         const companyData = Array.isArray(companiesResponse) ? companiesResponse : (companiesResponse.data || []);
         setCompanies(companyData);
@@ -327,9 +421,27 @@ const SalesDashboard = () => {
 
   const Actions = () => {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-text-muted">Start:</span>
+          <DatePicker
+            value={startDate}
+            onChange={setStartDate}
+            placeholder="Start Date"
+            className="w-[150px]"
+          />
+        </div>
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-text-muted">End:</span>
+          <DatePicker
+            value={endDate}
+            onChange={setEndDate}
+            placeholder="End Date"
+            className="w-[150px]"
+          />
+        </div>
         <Button onClick={refreshData} disabled={isLoading}>
-          <RefreshCcw size={20} className={isLoading ? "animate-spin" : ""} /> 
+          <RefreshCcw size={20} className={isLoading ? "animate-spin" : ""} />
           {isLoading ? "Refreshing..." : "Refresh"}
         </Button>
       </div>
@@ -379,25 +491,56 @@ const SalesDashboard = () => {
                 <Info size={16} />
               </button>
             </div>
-            <div className="flex gap-1">
-              <Button
-                variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
-                size="sm"
-                onClick={() => setTimeframe('daily')}>
-                Daily
-              </Button>
-              <Button
-                variant={timeframe === 'weekly' ? 'primary' : 'secondary-outline'}
-                size="sm"
-                onClick={() => setTimeframe('weekly')}>
-                Weekly
-              </Button>
-              <Button
-                variant={timeframe === 'monthly' ? 'primary' : 'secondary-outline'}
-                size="sm"
-                onClick={() => setTimeframe('monthly')}>
-                Monthly
-              </Button>
+            <div className="flex gap-4 items-center">
+              <div className="flex gap-3 items-center">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showRevenue}
+                    onChange={(e) => setShowRevenue(e.target.checked)}
+                    className="rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-success">Revenue</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showActiveJourneys}
+                    onChange={(e) => setShowActiveJourneys(e.target.checked)}
+                    className="rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-warning">Active Journeys</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showConversion}
+                    onChange={(e) => setShowConversion(e.target.checked)}
+                    className="rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-error">Conversion Rate</span>
+                </label>
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  variant={timeframe === 'daily' ? 'primary' : 'secondary-outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('daily')}>
+                  Daily
+                </Button>
+                <Button
+                  variant={timeframe === 'weekly' ? 'primary' : 'secondary-outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('weekly')}>
+                  Weekly
+                </Button>
+                <Button
+                  variant={timeframe === 'monthly' ? 'primary' : 'secondary-outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('monthly')}>
+                  Monthly
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -489,33 +632,39 @@ const SalesDashboard = () => {
                     return value;
                   }}
                 />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="var(--success)"
-                  strokeWidth={2}
-                  dot={{ fill: "var(--success)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="journeys"
-                  stroke="var(--warning)"
-                  strokeWidth={2}
-                  dot={{ fill: "var(--warning)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="conversion"
-                  stroke="var(--error)"
-                  strokeWidth={2}
-                  dot={{ fill: "var(--error)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
+                {showRevenue && (
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="var(--success)"
+                    strokeWidth={2}
+                    dot={{ fill: "var(--success)", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                )}
+                {showActiveJourneys && (
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="journeys"
+                    stroke="var(--warning)"
+                    strokeWidth={2}
+                    dot={{ fill: "var(--warning)", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                )}
+                {showConversion && (
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="conversion"
+                    stroke="var(--error)"
+                    strokeWidth={2}
+                    dot={{ fill: "var(--error)", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>

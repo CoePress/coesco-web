@@ -95,9 +95,6 @@ const Pipeline = () => {
         const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
         const mappedJourneys = journeysArray.map(adaptLegacyJourney);
         setJourneys(mappedJourneys);
-        const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
-        const tagsMap = await fetchJourneyTags(journeyIds);
-        setJourneyTags(tagsMap);
       }
 
       if (customersData) {
@@ -125,10 +122,6 @@ const Pipeline = () => {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
         const mapped = journeysArray.map(adaptLegacyJourney);
         setLegacyJourneys(mapped);
-
-        const journeyIds = mapped.map((j: any) => j.id.toString());
-        const tagsMap = await fetchJourneyTags(journeyIds);
-        setJourneyTags(tagsMap);
 
         return true;
       } else {
@@ -256,12 +249,6 @@ const Pipeline = () => {
           const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
-
-          const journeyIds = mapped.map((j: any) => j.id.toString());
-          const tagsMap = await fetchJourneyTags(journeyIds);
-          if (!cancelled) {
-            setJourneyTags(tagsMap);
-          }
         }
       } catch (error) {
         console.error("Error fetching Journeys:", error);
@@ -685,10 +672,6 @@ const Pipeline = () => {
             limit: raw.meta.limit
           });
         }
-
-        const journeyIds = mapped.map((j: any) => j.id.toString());
-        const tagsMap = await fetchJourneyTags(journeyIds);
-        setJourneyTags(tagsMap);
       }
     } catch (error) {
       console.error("Error fetching list view journeys:", error);
@@ -746,6 +729,21 @@ const Pipeline = () => {
   useEffect(() => {
     saveToLocalStorage('showTags', showTags);
   }, [showTags]);
+
+  useEffect(() => {
+    if (showTags && viewMode === 'kanban') {
+      const journeysToFetch = filteredJourneys
+        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+        .slice(0, kanbanBatchSize);
+
+      if (journeysToFetch.length > 0) {
+        const journeyIds = journeysToFetch.map((j: any) => j.id.toString());
+        fetchJourneyTags(journeyIds).then(tagsMap => {
+          setJourneyTags(tagsMap);
+        });
+      }
+    }
+  }, [showTags, viewMode]);
 
   useEffect(() => {
     saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
@@ -835,13 +833,15 @@ const Pipeline = () => {
   const stageUpdateApi = useApi();
   
   const handleTagsUpdated = useCallback(async () => {
-    const allJourneys = legacyJourneys || journeys;
-    if (allJourneys) {
-      const journeyIds = allJourneys.map((j: any) => j.id.toString());
+    if (!showTags) return;
+
+    const journeysToUpdate = viewMode === 'kanban' ? kanbanJourneys : (legacyJourneys || journeys);
+    if (journeysToUpdate && journeysToUpdate.length > 0) {
+      const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
       setJourneyTags(tagsMap);
     }
-  }, [legacyJourneys, journeys]);
+  }, [showTags, viewMode, kanbanJourneys, legacyJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     try {
@@ -909,7 +909,7 @@ const Pipeline = () => {
     }, 0);
   }, [filteredJourneys]);
 
-  const pageTitle = "Sales Pipeline";
+  const pageTitle = "Journeys";
   const pageDescription = `${filteredJourneys.length} Journeys`;
 
 
@@ -1361,9 +1361,11 @@ const Pipeline = () => {
                 setJourneys(mappedJourneys);
                 setLegacyJourneys(mappedJourneys);
 
-                const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
-                const tagsMap = await fetchJourneyTags(journeyIds);
-                setJourneyTags(tagsMap);
+                if (showTags) {
+                  const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
+                  const tagsMap = await fetchJourneyTags(journeyIds);
+                  setJourneyTags(tagsMap);
+                }
               }
             };
 

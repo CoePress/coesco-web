@@ -97,7 +97,7 @@ const salesModule: Module = {
     },
     {
       slug: "pipeline",
-      label: "Pipeline",
+      label: "Journeys",
       icon: DollarSignIcon,
       component: Pipeline,
       children: [
