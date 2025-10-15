@@ -67,19 +67,19 @@ export function isProductClassDescendant(childId: string, parentId: string, prod
 export function getStatusColor(status: string, theme: string) {
   switch (status.toUpperCase()) {
     case "ACTIVE":
-      return "#34d399";
+      return theme === "dark" ? "#34d399" : "#05843e";
     case "SETUP":
-      return "#0284c7";
+      return theme === "dark" ? "#38bdf8" : "#0284c7";
     case "IDLE":
-      return "#ffab00";
+      return theme === "dark" ? "#ffab00" : "#ffa500";
     case "ALARM":
-      return "#f44336";
+      return theme === "dark" ? "#f44336" : "#d93026";
     case "OFFLINE":
       return theme === "dark" ? "#404040" : "#d4d4d4";
     case "UNRECORDED":
       return theme === "dark" ? "#404040" : "#d4d4d4";
     default:
-      return theme === "dark" ? "#404040" : "#d4d4d4";
+      return theme === "dark" ? "#a0a0a0" : "#707070";
   }
 }
 

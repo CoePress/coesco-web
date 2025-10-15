@@ -194,6 +194,8 @@ export class SessionService {
   }
 
   async revokeSession(sessionId: string, reason?: string): Promise<void> {
+    const session = await sessionRepository.getById(sessionId);
+
     await sessionRepository.update(sessionId, {
       isActive: false,
       revokedAt: new Date(),
@@ -201,6 +203,11 @@ export class SessionService {
     });
 
     logger.info(`Session revoked: ${sessionId}`, { reason });
+
+    if (session.success && session.data) {
+      const { socketService } = await import("@/services");
+      socketService.broadcastSessionRevoked(session.data.userId, sessionId, reason);
+    }
   }
 
   async revokeUserSessions(userId: string, exceptSessionId?: string): Promise<number> {

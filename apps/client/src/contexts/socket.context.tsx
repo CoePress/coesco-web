@@ -5,8 +5,10 @@ import {
   useRef,
   useEffect,
   useState,
+  useMemo,
 } from "react";
-import { io, Socket } from "socket.io-client";
+import { io, Socket, Manager } from "socket.io-client";
+import { useAuth } from "./auth.context";
 
 type SocketContextType = {
   systemSocket: Socket | null;
@@ -24,6 +26,10 @@ type SocketContextType = {
   isLockConnected: boolean;
   emit: (event: string, data: any, callback?: (result: any) => void) => void;
   onLockChanged: (callback: (data: any) => void) => () => void;
+
+  sessionSocket: Socket | null;
+  isSessionConnected: boolean;
+  onSessionRevoked: (callback: (data: any) => void) => () => void;
 };
 
 export const SocketContext = createContext<SocketContextType | undefined>(
@@ -35,6 +41,8 @@ type SocketProviderProps = {
 };
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
+  const { user } = useAuth();
+  const managerRef = useRef<Manager | null>(null);
   const systemSocketRef = useRef<Socket | null>(null);
   const [systemStatus, setSystemStatus] = useState("");
   const [isSystemConnected, setIsSystemConnected] = useState(false);
@@ -43,13 +51,23 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const lockSocketRef = useRef<Socket | null>(null);
   const [isLockConnected, setIsLockConnected] = useState(false);
+  const sessionSocketRef = useRef<Socket | null>(null);
+  const [isSessionConnected, setIsSessionConnected] = useState(false);
+
+  useEffect(() => {
+    managerRef.current = new Manager(env.VITE_BASE_URL, {
+      reconnectionDelayMax: 10000,
+      transports: ["websocket", "polling"],
+    });
+
+    return () => {
+      managerRef.current?.close();
+    };
+  }, []);
 
   const subscribeToSystemStatus = () => {
-    if (!systemSocketRef.current) {
-      systemSocketRef.current = io(`${env.VITE_BASE_URL}/system`, {
-        reconnectionDelayMax: 10000,
-        transports: ["websocket", "polling"],
-      });
+    if (!systemSocketRef.current && managerRef.current) {
+      systemSocketRef.current = managerRef.current.socket("/system");
 
       const socket = systemSocketRef.current;
       socket.on("connect", () => {
@@ -70,7 +88,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.on("system_status", (status: string) => {
         setSystemStatus(status);
       });
-    } else if (systemSocketRef.current.connected) {
+    } else if (systemSocketRef.current?.connected) {
       systemSocketRef.current.emit("system_status:subscribe");
     }
   };
@@ -83,11 +101,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   };
 
   const subscribeToMachineStates = () => {
-    if (!iotSocketRef.current) {
-      iotSocketRef.current = io(`${env.VITE_BASE_URL}/iot`, {
-        reconnectionDelayMax: 10000,
-        transports: ["websocket", "polling"],
-      });
+    if (!iotSocketRef.current && managerRef.current) {
+      iotSocketRef.current = managerRef.current.socket("/iot");
 
       const socket = iotSocketRef.current;
       socket.on("connect", () => {
@@ -105,7 +120,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.on("machine_states", (data: any[]) => {
         setMachineStates(data);
       });
-    } else if (iotSocketRef.current.connected && !isSubscribed) {
+    } else if (iotSocketRef.current?.connected && !isSubscribed) {
       iotSocketRef.current.emit("machine_states:subscribe");
     }
   };
@@ -118,31 +133,56 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   };
 
   useEffect(() => {
-    // Initialize lock socket on mount
-    if (!lockSocketRef.current) {
-      lockSocketRef.current = io(`${env.VITE_BASE_URL}/locks`, {
-        reconnectionDelayMax: 10000,
-        transports: ["websocket", "polling"],
-      });
+    if (user?.id && managerRef.current) {
+      if (!lockSocketRef.current) {
+        lockSocketRef.current = managerRef.current.socket("/locks");
 
-      const socket = lockSocketRef.current;
-      socket.on("connect", () => {
-        setIsLockConnected(true);
-      });
+        const socket = lockSocketRef.current;
+        socket.on("connect", () => {
+          setIsLockConnected(true);
+        });
 
-      socket.on("disconnect", () => {
+        socket.on("disconnect", () => {
+          setIsLockConnected(false);
+        });
+
+        socket.on("connect_error", () => {
+          setIsLockConnected(false);
+        });
+      }
+    } else {
+      if (lockSocketRef.current) {
+        lockSocketRef.current.disconnect();
+        lockSocketRef.current = null;
         setIsLockConnected(false);
-      });
-
-      socket.on("connect_error", () => {
-        setIsLockConnected(false);
-      });
+      }
+      if (iotSocketRef.current) {
+        iotSocketRef.current.disconnect();
+        iotSocketRef.current = null;
+        setIsSubscribed(false);
+      }
     }
+  }, [user?.id]);
 
+  useEffect(() => {
+    if (user?.id) {
+      initializeSessionSocket(user.id);
+    } else {
+      if (sessionSocketRef.current) {
+        sessionSocketRef.current.disconnect();
+        sessionSocketRef.current = null;
+        setIsSessionConnected(false);
+      }
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     return () => {
       systemSocketRef.current?.disconnect();
       iotSocketRef.current?.disconnect();
       lockSocketRef.current?.disconnect();
+      sessionSocketRef.current?.disconnect();
+      managerRef.current?.close();
     };
   }, []);
 
@@ -162,7 +202,44 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {};
   };
 
-  const contextValue: SocketContextType = {
+  const initializeSessionSocket = (userId: string) => {
+    if (userId && managerRef.current) {
+      if (sessionSocketRef.current) {
+        sessionSocketRef.current.disconnect();
+        sessionSocketRef.current = null;
+      }
+
+      const socket = managerRef.current.socket("/session", {
+        auth: { userId },
+      });
+
+      sessionSocketRef.current = socket;
+
+      socket.on("connect", () => {
+        setIsSessionConnected(true);
+      });
+
+      socket.on("disconnect", () => {
+        setIsSessionConnected(false);
+      });
+
+      socket.on("connect_error", () => {
+        setIsSessionConnected(false);
+      });
+    }
+  };
+
+  const onSessionRevoked = (callback: (data: any) => void) => {
+    if (sessionSocketRef.current) {
+      sessionSocketRef.current.on("session:revoked", callback);
+      return () => {
+        sessionSocketRef.current?.off("session:revoked", callback);
+      };
+    }
+    return () => {};
+  };
+
+  const contextValue: SocketContextType = useMemo(() => ({
     systemSocket: systemSocketRef.current,
     systemStatus,
     isSystemConnected,
@@ -178,7 +255,17 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     isLockConnected,
     emit,
     onLockChanged,
-  };
+
+    sessionSocket: sessionSocketRef.current,
+    isSessionConnected,
+    onSessionRevoked,
+  }), [
+    systemStatus,
+    isSystemConnected,
+    machineStates,
+    isLockConnected,
+    isSessionConnected,
+  ]);
 
   return (
     <SocketContext.Provider value={contextValue}>

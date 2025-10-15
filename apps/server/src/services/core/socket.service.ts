@@ -17,6 +17,7 @@ export class SocketService {
     this.registerChatNamespace();
     this.registerSystemNamespace();
     this.registerLocksNamespace();
+    this.registerSessionNamespace();
   }
 
   public broadcastMachineStates(data: any): void {
@@ -35,6 +36,17 @@ export class SocketService {
     if (!this.io)
       return;
     this.io.of("/system").to("updates").emit("update", data);
+  }
+
+  public broadcastSessionRevoked(userId: string, sessionId: string, reason?: string): void {
+    if (!this.io)
+      return;
+    this.io.of("/session").to(`user:${userId}`).emit("session:revoked", {
+      sessionId,
+      reason,
+      timestamp: new Date(),
+    });
+    logger.info(`Broadcasted session revocation to user ${userId}`);
   }
 
   private registerIotNamespace() {
@@ -230,6 +242,24 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] Locks client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private registerSessionNamespace() {
+    const session = this.getNamespace("session");
+
+    session.on("connection", (socket: Socket) => {
+      logger.info(`Session client connected: ${socket.id}`);
+
+      const userId = socket.handshake.auth.userId as string;
+      if (userId) {
+        socket.join(`user:${userId}`);
+        logger.info(`[${socket.id}] Joined room for user ${userId}`);
+      }
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] Session client disconnected: ${reason}`);
       });
     });
   }
