@@ -239,7 +239,7 @@ const adminModule: Module = {
       {
       slug: null,
       label: "Dashboard",
-      icon: FileClockIcon,
+      icon: LayoutDashboardIcon,
       component: AdminDashboard,
     },
     {
