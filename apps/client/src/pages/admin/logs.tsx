@@ -27,15 +27,30 @@ type EmailLog = {
   updatedAt: string;
 };
 
-type LogView = "audit" | "email" | "system";
+type BugReport = {
+  id: string;
+  title: string;
+  description: string;
+  userEmail: string | null;
+  userName: string | null;
+  url: string | null;
+  userAgent: string | null;
+  issueKey: string | null;
+  issueUrl: string | null;
+  status: "SUBMITTED" | "IN_JIRA" | "FAILED";
+  createdAt: string;
+  createdById: string | null;
+};
+
+type LogView = "audit" | "email" | "bugs" | "system";
 
 const Logs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getInitialView = (): LogView => {
     const view = searchParams.get('view');
-    if (view && ['email', 'system'].includes(view)) {
-      return view as 'email' | 'system';
+    if (view && ['email', 'bugs', 'system'].includes(view)) {
+      return view as 'email' | 'bugs' | 'system';
     }
     return 'audit';
   };
@@ -43,11 +58,14 @@ const Logs = () => {
   const [view, setView] = useState<LogView>(getInitialView);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [selectedEmailLog, setSelectedEmailLog] = useState<EmailLog | null>(null);
+  const [selectedBugReport, setSelectedBugReport] = useState<BugReport | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEmailDetailsModalOpen, setIsEmailDetailsModalOpen] = useState(false);
+  const [isBugDetailsModalOpen, setIsBugDetailsModalOpen] = useState(false);
 
   const { get, response: auditLogs, loading, error } = useApi<IApiResponse<AuditLog[]>>();
   const { get: getEmails, response: emailLogs, loading: emailLoading, error: emailError } = useApi<IApiResponse<EmailLog[]>>();
+  const { get: getBugs, response: bugReports, loading: bugsLoading, error: bugsError } = useApi<IApiResponse<BugReport[]>>();
 
   const [params, setParams] = useState({
     sort: "createdAt" as string,
@@ -57,6 +75,13 @@ const Logs = () => {
   });
 
   const [emailParams, setEmailParams] = useState({
+    sort: "createdAt" as string,
+    order: "desc" as "asc" | "desc",
+    page: 1,
+    limit: 25,
+  });
+
+  const [bugParams, setBugParams] = useState({
     sort: "createdAt" as string,
     order: "desc" as "asc" | "desc",
     page: 1,
@@ -84,6 +109,17 @@ const Logs = () => {
 
     return q;
   }, [emailParams]);
+
+  const bugQueryParams = useMemo(() => {
+    const q: Record<string, string> = {
+      sort: bugParams.sort,
+      order: bugParams.order,
+      page: bugParams.page.toString(),
+      limit: bugParams.limit.toString(),
+    };
+
+    return q;
+  }, [bugParams]);
 
   const columns: TableColumn<AuditLog>[] = [
     {
@@ -221,6 +257,81 @@ const Logs = () => {
     },
   ];
 
+  const bugColumns: TableColumn<BugReport>[] = [
+    {
+      key: "createdAt",
+      header: "Timestamp",
+      render: (_, row) => (
+        <div className="flex flex-col">
+          <span>{row.createdAt ? format(new Date(row.createdAt), "MM/dd/yyyy") : 'N/A'}</span>
+          <span className="text-xs text-text-muted">
+            {row.createdAt ? format(new Date(row.createdAt), "hh:mm:ss a") : 'N/A'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "title",
+      header: "Title",
+      render: (_, row) => (
+        <span className="text-sm">{row.title}</span>
+      ),
+    },
+    {
+      key: "userName",
+      header: "Reported By",
+      render: (_, row) => (
+        <span className="text-sm">{row.userName || row.userEmail || '-'}</span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (_, row) => (
+        <StatusBadge
+          label={row.status}
+          variant={
+            row.status === "IN_JIRA"
+              ? "success"
+              : row.status === "FAILED"
+              ? "error"
+              : "default"
+          }
+        />
+      ),
+    },
+    {
+      key: "issueKey",
+      header: "Jira Issue",
+      render: (_, row) => (
+        row.issueKey && row.issueUrl ? (
+          <a href={row.issueUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
+            {row.issueKey}
+          </a>
+        ) : (
+          <span className="text-text-muted text-sm">-</span>
+        )
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      className: "w-1",
+      sortable: false,
+      render: (_, row) => (
+        <Button
+          variant="secondary-outline"
+          size="sm"
+          onClick={() => {
+            setSelectedBugReport(row);
+            setIsBugDetailsModalOpen(true);
+          }}>
+          View
+        </Button>
+      ),
+    },
+  ];
+
   const fetchAuditLogs = async () => {
     await get("/admin/logs", queryParams);
   };
@@ -229,11 +340,17 @@ const Logs = () => {
     await getEmails("/admin/logs/emails", emailQueryParams);
   };
 
+  const fetchBugReports = async () => {
+    await getBugs("/admin/logs/bugs", bugQueryParams);
+  };
+
   const refresh = () => {
     if (view === "audit") {
       fetchAuditLogs();
-    } else {
+    } else if (view === "email") {
       fetchEmailLogs();
+    } else if (view === "bugs") {
+      fetchBugReports();
     }
   };
 
@@ -250,9 +367,15 @@ const Logs = () => {
   }, [emailParams]);
 
   useEffect(() => {
+    if (view === "bugs") {
+      fetchBugReports();
+    }
+  }, [bugParams]);
+
+  useEffect(() => {
     const view = searchParams.get('view');
     const newView: LogView =
-      (view && ['email', 'system'].includes(view)) ? view as 'email' | 'system' : 'audit';
+      (view && ['email', 'bugs', 'system'].includes(view)) ? view as 'email' | 'bugs' | 'system' : 'audit';
 
     setView(newView);
   }, [searchParams]);
@@ -262,6 +385,8 @@ const Logs = () => {
       fetchAuditLogs();
     } else if (view === "email") {
       fetchEmailLogs();
+    } else if (view === "bugs") {
+      fetchBugReports();
     }
   }, [view]);
 
@@ -274,6 +399,13 @@ const Logs = () => {
 
   const handleEmailParamsChange = (updates: Partial<typeof emailParams>) => {
     setEmailParams(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+
+  const handleBugParamsChange = (updates: Partial<typeof bugParams>) => {
+    setBugParams(prev => ({
       ...prev,
       ...updates
     }));
@@ -315,6 +447,16 @@ const Logs = () => {
             }`}
           >
             Emails
+          </button>
+          <button
+            onClick={() => handleViewChange('bugs')}
+            className={`px-3 py-1 text-sm font-medium rounded transition-colors cursor-pointer ${
+              view === 'bugs'
+                ? 'bg-primary text-background'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Bugs
           </button>
           <button
             onClick={() => handleViewChange('system')}
@@ -389,6 +531,29 @@ const Logs = () => {
               }}
               className="rounded border overflow-clip"
               emptyMessage="No email logs found"
+            />
+          ) : view === "bugs" ? (
+            <Table<BugReport>
+              columns={bugColumns}
+              data={bugReports?.data || []}
+              total={bugReports?.meta?.total || 0}
+              idField="id"
+              pagination
+              loading={bugsLoading}
+              error={bugsError}
+              currentPage={bugReports?.meta?.page}
+              totalPages={bugReports?.meta?.totalPages}
+              onPageChange={(page) => handleBugParamsChange({ page })}
+              sort={bugParams.sort}
+              order={bugParams.order}
+              onSortChange={(newSort, newOrder) => {
+                handleBugParamsChange({
+                  sort: newSort as any,
+                  order: newOrder as any
+                });
+              }}
+              className="rounded border overflow-clip"
+              emptyMessage="No bug reports found"
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-surface border border-border rounded">
@@ -541,6 +706,89 @@ const Logs = () => {
                   <label className="text-sm text-text-muted mb-2 block">Error</label>
                   <div className="bg-error/10 border border-error/50 rounded p-3 text-sm text-error">
                     {selectedEmailLog.error}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={isBugDetailsModalOpen}
+        onClose={() => {
+          setIsBugDetailsModalOpen(false);
+          setSelectedBugReport(null);
+        }}
+        title="Bug Report Details"
+        size="lg">
+        {selectedBugReport && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-text-muted mb-2 block">Timestamp</label>
+                <div className="text-sm">
+                  {selectedBugReport.createdAt ? format(new Date(selectedBugReport.createdAt), "MM/dd/yyyy hh:mm:ss a") : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-text-muted mb-2 block">Status</label>
+                <StatusBadge
+                  label={selectedBugReport.status}
+                  variant={
+                    selectedBugReport.status === "IN_JIRA"
+                      ? "success"
+                      : selectedBugReport.status === "FAILED"
+                      ? "error"
+                      : "default"
+                  }
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-sm text-text-muted mb-2 block">Title</label>
+                <div className="text-sm font-medium">{selectedBugReport.title}</div>
+              </div>
+              <div className="col-span-2">
+                <label className="text-sm text-text-muted mb-2 block">Description</label>
+                <div className="text-sm bg-surface border border-border rounded p-3 whitespace-pre-wrap">
+                  {selectedBugReport.description}
+                </div>
+              </div>
+              {selectedBugReport.userName && (
+                <div>
+                  <label className="text-sm text-text-muted mb-2 block">Reported By</label>
+                  <div className="text-sm">{selectedBugReport.userName}</div>
+                </div>
+              )}
+              {selectedBugReport.userEmail && (
+                <div>
+                  <label className="text-sm text-text-muted mb-2 block">Email</label>
+                  <div className="text-sm">{selectedBugReport.userEmail}</div>
+                </div>
+              )}
+              {selectedBugReport.url && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">Page URL</label>
+                  <div className="text-sm font-mono bg-surface border border-border rounded p-2 break-all">
+                    {selectedBugReport.url}
+                  </div>
+                </div>
+              )}
+              {selectedBugReport.userAgent && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">User Agent</label>
+                  <div className="text-sm font-mono bg-surface border border-border rounded p-2 text-xs">
+                    {selectedBugReport.userAgent}
+                  </div>
+                </div>
+              )}
+              {selectedBugReport.issueKey && selectedBugReport.issueUrl && (
+                <div className="col-span-2">
+                  <label className="text-sm text-text-muted mb-2 block">Jira Issue</label>
+                  <div className="text-sm">
+                    <a href={selectedBugReport.issueUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {selectedBugReport.issueKey}
+                    </a>
                   </div>
                 </div>
               )}

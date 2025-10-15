@@ -1,4 +1,4 @@
-import type { AuditLog, EmailLog } from "@prisma/client";
+import type { AuditLog, BugReport, EmailLog } from "@prisma/client";
 
 import fs from "node:fs";
 import path from "node:path";
@@ -6,7 +6,7 @@ import path from "node:path";
 import type { IQueryParams } from "@/types";
 
 import { env } from "@/config/env";
-import { auditLogRepository, emailLogRepository } from "@/repositories";
+import { auditLogRepository, bugReportRepository, emailLogRepository } from "@/repositories";
 
 import { employeeService } from "..";
 
@@ -70,6 +70,14 @@ export class AuditService {
 
   async getEmailLog(id: string) {
     return await emailLogRepository.getById(id);
+  }
+
+  async getBugReports(params?: IQueryParams<BugReport>) {
+    return await bugReportRepository.getAll(params);
+  }
+
+  async getBugReport(id: string) {
+    return await bugReportRepository.getById(id);
   }
 
   async getLogFiles() {

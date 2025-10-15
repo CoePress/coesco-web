@@ -6,6 +6,7 @@ const router = Router();
 
 router.get("/logs", auditController.getAuditLogs);
 router.get("/logs/emails", auditController.getEmailLogs);
+router.get("/logs/bugs", auditController.getBugReports);
 
 // Employees
 router.post("/employees", employeeController.createEmployee);

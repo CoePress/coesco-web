@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { bugReportRepository } from "@/repositories";
 
 interface CreateBugReportInput {
   description: string;
@@ -7,6 +8,7 @@ interface CreateBugReportInput {
   screenshot?: string;
   url?: string;
   userAgent?: string;
+  createdById?: string;
 }
 
 interface BugReportResponse {
@@ -43,10 +45,43 @@ export class BugReportingService {
       ? `Bug Report - ${input.userName} - ${dateStr}`
       : `Bug Report - ${dateStr}`;
 
-    return this.createJiraIssue({
+    const bugReportRecord = await bugReportRepository.create({
+      title,
+      description: input.description,
+      userEmail: input.userEmail,
+      userName: input.userName,
+      url: input.url,
+      userAgent: input.userAgent,
+      status: "SUBMITTED",
+      createdById: input.createdById,
+    });
+
+    if (!bugReportRecord.success || !bugReportRecord.data) {
+      return {
+        success: false,
+        error: "Failed to create bug report record",
+      };
+    }
+
+    const jiraResult = await this.createJiraIssue({
       title,
       ...input,
     });
+
+    if (jiraResult.success && jiraResult.issueKey && jiraResult.issueUrl) {
+      await bugReportRepository.update(bugReportRecord.data.id, {
+        issueKey: jiraResult.issueKey,
+        issueUrl: jiraResult.issueUrl,
+        status: "IN_JIRA",
+      });
+    }
+    else {
+      await bugReportRepository.update(bugReportRecord.data.id, {
+        status: "FAILED",
+      });
+    }
+
+    return jiraResult;
   }
 
   private async createJiraIssue(options: CreateJiraIssueOptions): Promise<BugReportResponse> {
