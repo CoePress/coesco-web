@@ -1,20 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
-import { Save, Lock } from "lucide-react";
+import { Save, Lock, CheckCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { instance } from "@/utils";
 import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
 import { useApi } from "@/hooks/use-api";
 import { PerformanceSheetProvider, usePerformanceSheet } from "@/contexts/performance.context";
-import { AutoFillProvider } from "@/contexts/performance/autofill.context";
+import { AutoFillProvider, useAutoFill } from "@/contexts/performance/autofill.context";
 import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
 import { getVisibleTabs } from "@/utils/tab-visibility";
 import { useAutoFillWatcher } from "@/contexts/performance/use-autofill-watcher.hook";
-import { ManualAutofillButton } from "@/components/performance/ManualAutofillButton";
 import { useRfqSaveWithAutofill } from "@/hooks/use-rfq-save-with-autofill.hook";
 
 type PerformanceTabValue =
   | "rfq"
-  | "material-specs"
   | "tddbhd"
   | "reel-drive"
   | "str-utility"
@@ -46,10 +44,13 @@ const PerformanceSheetContent = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Use global performance context
-  const { performanceData, setPerformanceData } = usePerformanceSheet();
+  const { performanceData, setPerformanceData, updatePerformanceData } = usePerformanceSheet();
 
   // Use the save hook that includes autofill integration
   const { saveRfqWithAutofill } = useRfqSaveWithAutofill();
+
+  // Get autofill state to show indicator
+  const { state: autoFillState } = useAutoFill();
 
   // Auto-fill watcher integration (debounced, only when editing and data loaded)
 
@@ -63,13 +64,9 @@ const PerformanceSheetContent = () => {
   useEffect(() => {
     // Preload commonly accessed tabs after a short delay
     const preloadTimer = setTimeout(() => {
-      // Preload Material Specs and TDDBHD as they're commonly accessed after RFQ
-      const materialSpecsTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === "material-specs");
+      // Preload TDDBHD as it's commonly accessed after RFQ
       const tddbhdTab = LAZY_PERFORMANCE_TABS.find(tab => tab.value === "tddbhd");
 
-      if (materialSpecsTab?.preload) {
-        materialSpecsTab.preload().catch(console.warn);
-      }
       if (tddbhdTab?.preload) {
         tddbhdTab.preload().catch(console.warn);
       }
@@ -106,7 +103,6 @@ const PerformanceSheetContent = () => {
     if (!performanceData) {
       return [
         { label: "RFQ", value: "rfq" },
-        { label: "Material Specs", value: "material-specs" },
         { label: "Equipment Summary", value: "summary-report" }
       ];
     }
@@ -163,7 +159,15 @@ const PerformanceSheetContent = () => {
 
   const handleSave = async () => {
     try {
-      await saveRfqWithAutofill();
+      // Only trigger autofill when saving on RFQ tab (one-time only)
+      if (activeTab === "rfq") {
+        await saveRfqWithAutofill();
+      } else {
+        // Regular save for other tabs (no autofill)
+        if (performanceData) {
+          await updatePerformanceData(performanceData, true);
+        }
+      }
       setIsEditing(false);
       // Save completed successfully
     } catch (error) {
@@ -207,17 +211,15 @@ const PerformanceSheetContent = () => {
     return <div className="flex justify-center items-center h-64">Tab not found</div>;
   };
 
-  const handleManualSave = async () => {
-    await saveRfqWithAutofill();
-  };
-
   const Actions = () => {
     return (
       <div className="flex items-center gap-3">
-        {isEditing && performanceData && (
-          <ManualAutofillButton
-            onSave={handleManualSave}
-          />
+        {/* Show autofill indicator when autofill has been triggered */}
+        {autoFillState.hasTriggeredOnSave && (
+          <div className="flex items-center gap-1 text-green-600 text-sm">
+            <CheckCircle size={16} />
+            <span>Autofilled</span>
+          </div>
         )}
         <div className="flex gap-2">
           <Button onClick={isEditing ? handleSave : handleEdit}>

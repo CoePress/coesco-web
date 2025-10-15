@@ -126,10 +126,10 @@ const example4 = {
 
 // Expected results
 const expectedResults = {
-    example1: ["rfq", "material-specs", "summary-report", "tddbhd", "str-utility", "roll-str-backbend", "feed"],
-    example2: ["rfq", "material-specs", "summary-report", "feed"],
-    example3: ["rfq", "material-specs", "summary-report", "tddbhd", "str-utility", "roll-str-backbend", "feed"],
-    example4: ["rfq", "material-specs", "summary-report", "tddbhd", "reel-drive", "feed"]
+    example1: ["rfq", "summary-report", "tddbhd", "str-utility", "roll-str-backbend", "feed"],
+    example2: ["rfq", "summary-report", "feed"],
+    example3: ["rfq", "summary-report", "tddbhd", "str-utility", "roll-str-backbend", "feed"],
+    example4: ["rfq", "summary-report", "tddbhd", "reel-drive", "feed"]
 };
 
 console.log("Tab Visibility Test Cases");

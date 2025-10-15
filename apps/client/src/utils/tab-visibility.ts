@@ -47,7 +47,6 @@ export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
     // Always visible tabs
     const visibleTabs: VisibleTab[] = [
         { label: "RFQ", value: "rfq" },
-        { label: "Material Specs", value: "material-specs" },
         { label: "Equipment Summary", value: "summary-report" }
     ];
 
@@ -150,14 +149,14 @@ function shouldShowReelDrive(config: TabVisibilityConfig): boolean {
  * Determines if Str Utility tab should be visible
  */
 function shouldShowStrUtility(config: TabVisibilityConfig): boolean {
-    const { lineApplication, lineType, controlsLevel, typeOfLine } = config;
+    const { lineApplication, lineType, typeOfLine } = config;
 
     // For Press Feed and Cut to Length
     if (lineApplication === "pressFeed" || lineApplication === "cutToLength") {
         const isConventional = lineType === "Conventional" ||
             Boolean(typeOfLine && typeOfLine.toLowerCase().includes("conventional"));
-        const hasSyncMaster = controlsLevel === "SyncMaster" || controlsLevel === "SyncMaster Plus";
-        return isConventional && hasSyncMaster;
+        // Show STR Utility for all Conventional lines (removed SyncMaster requirement)
+        return isConventional;
     }
 
     // For Standalone - show for straightener configurations
@@ -247,7 +246,6 @@ function getFeedLabel(_config: TabVisibilityConfig): string {
 export function getAllAvailableTabs(): VisibleTab[] {
     return [
         { label: "RFQ", value: "rfq" },
-        { label: "Material Specs", value: "material-specs" },
         { label: "Equipment Summary", value: "summary-report" },
         { label: "TDDBHD", value: "tddbhd" },
         { label: "Reel Drive", value: "reel-drive" },

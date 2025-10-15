@@ -53,11 +53,6 @@ export const LazyRFQ = createLazyRoute(
     'RFQ Form'
 );
 
-export const LazyMaterialSpecs = createLazyRoute(
-    () => import('@/pages/performance/material-specs'),
-    'Material Specifications'
-);
-
 export const LazyTDDBHD = createLazyRoute(
     () => import('@/pages/performance/tddbhd'),
     'TDDBHD Calculations'
@@ -155,12 +150,6 @@ export const LAZY_PERFORMANCE_TABS = [
         value: "rfq",
         component: LazyRFQ,
         preload: () => import('@/pages/performance/rfq')
-    },
-    {
-        label: "Material Specs",
-        value: "material-specs",
-        component: LazyMaterialSpecs,
-        preload: () => import('@/pages/performance/material-specs')
     },
     {
         label: "TDDBHD",

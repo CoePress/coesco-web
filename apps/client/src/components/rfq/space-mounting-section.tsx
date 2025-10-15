@@ -99,18 +99,6 @@ export const SpaceMountingSection: React.FC<RFQSectionProps> = ({
                     />
                 </div>
                 <div>
-                    <Select
-                        label="Feed Direction"
-                        name="common.equipment.feed.direction"
-                        value={localData.common?.equipment?.feed?.direction || ""}
-                        onChange={handleFieldChange}
-                        disabled={!isEditing}
-                        options={FEED_DIRECTION_OPTIONS}
-                        placeholder="Select direction..."
-                        customBackgroundColor={getFieldBackgroundColor("common.equipment.feed.direction")}
-                    />
-                </div>
-                <div>
                     <Input
                         label="Walls/columns obstructing equipment's location?"
                         name="rfq.obstructions"

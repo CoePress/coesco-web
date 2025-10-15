@@ -56,9 +56,9 @@ const RFQ: React.FC<RFQProps> = ({ data, isEditing }) => {
     'rfq.equipmentSpaceLength', 'rfq.equipmentSpaceWidth', 'rfq.obstructions',
     'common.equipment.feed.direction', 'rfq.requireGuarding',
     // Equipment Configuration fields
-    'common.equipment.feed.controls', 'common.equipment.feed.feedLineType',
+    'common.equipment.feed.controlsLevel', 'common.equipment.feed.typeOfLine',
     'common.equipment.feed.passline', 'common.equipment.straightener.rollType',
-    'common.equipment.reel.backplateType', 'common.equipment.reel.style'
+    'materialSpecs.reel.backplate.type', 'materialSpecs.reel.style'
   ];
 
   // Function to save form data before section reset

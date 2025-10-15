@@ -147,46 +147,49 @@ def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
         rfq_obj = rfq_input(**rfq_data)
         fpm_result = calculate_fpm(rfq_obj)
         
-        # Get current date dynamically
-        from datetime import datetime
-        current_date = datetime.now().strftime("%Y-%m-%d")
+        # PRESERVE ALL USER RFQ INPUTS - NEVER OVERRIDE
+        # Only provide values if user hasn't filled them in
+        result = {}
         
-        result = {
-            "rfq": {
+        # Only set date if user hasn't provided one
+        if not get_nested(data, ["rfq", "dates", "date"]):
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            result["rfq"] = {
                 "dates": {
-                    "date": current_date  # Dynamic current date
-                },
-                "coil": {
-                    "slitEdge": get_nested(data, ["rfq", "coil", "slitEdge"], True),
-                    "millEdge": get_nested(data, ["rfq", "coil", "millEdge"], False),
-                    "requireCoilCar": get_nested(data, ["rfq", "coil", "requireCoilCar"], "No"),
-                    "runningOffBackplate": get_nested(data, ["rfq", "coil", "runningOffBackplate"], "No"),
-                    "loading": get_nested(data, ["rfq", "coil", "loading"], "operatorSide")
-                },
-                "runningCosmeticMaterial": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes")
-            },
-            "common": {
-                "customer": get_nested(data, ["common", "customer"], "Saint-Gobain"),
-                "customerInfo": {
-                    "contactName": get_nested(data, ["common", "customerInfo", "contactName"], "Joseph Lane"),
-                    "position": get_nested(data, ["common", "customerInfo", "position"], ""),
-                    "phoneNumber": get_nested(data, ["common", "customerInfo", "phoneNumber"], "3302123385"),
-                    "email": get_nested(data, ["common", "customerInfo", "email"], "joseph.e.lane@saint-gobain.com"),
-                    "streetAddress": get_nested(data, ["common", "customerInfo", "streetAddress"], "295 Indian River Rd."),
-                    "city": get_nested(data, ["common", "customerInfo", "city"], "Orange"),
-                    "state": get_nested(data, ["common", "customerInfo", "state"], "CT"),
-                    "zip": get_nested(data, ["common", "customerInfo", "zip"], "06477"),
-                    "country": get_nested(data, ["common", "customerInfo", "country"], "United States"),
-                    "dealerName": get_nested(data, ["common", "customerInfo", "dealerName"], "TCR"),
-                    "dealerSalesman": get_nested(data, ["common", "customerInfo", "dealerSalesman"], "Scott Bradt")
+                    "date": current_date  # Only set if user hasn't provided
                 }
             }
-        }
+        
+        # Only provide customer info if user hasn't filled it in
+        # Check if any customer info exists before providing defaults
+        has_customer_info = (
+            get_nested(data, ["common", "customer"]) or
+            get_nested(data, ["common", "customerInfo", "contactName"]) or
+            get_nested(data, ["common", "customerInfo", "state"]) or
+            get_nested(data, ["common", "customerInfo", "city"])
+        )
+        
+        if not has_customer_info:
+            # Only provide sample data if user has NO customer info at all
+            if "common" not in result:
+                result["common"] = {}
+            result["common"]["customer"] = "Sample Company"
+            result["common"]["customerInfo"] = {
+                "contactName": "Sample Contact",
+                "state": "OH",
+                "city": "Sample City",
+                "zip": "12345",
+                "country": "United States"
+            }
         
         # ONLY add feedRates if user hasn't provided their own values
         # This preserves user inputs and only fills calculated FPM values
         existing_feed_rates = get_nested(data, ["common", "feedRates"])
         if not existing_feed_rates:
+            # User has no feed rates - provide calculated ones
+            if "common" not in result:
+                result["common"] = {}
             result["common"]["feedRates"] = {
                 "average": {
                     "length": feed_length,
@@ -205,7 +208,7 @@ def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
                 }
             }
         else:
-            # User has existing feed rates - preserve their inputs, only calculate FPM
+            # User has existing feed rates - PRESERVE their inputs, only calculate missing FPM
             # Get user's actual values
             user_avg_length = get_nested(data, ["common", "feedRates", "average", "length"])
             user_avg_spm = get_nested(data, ["common", "feedRates", "average", "spm"])
@@ -214,27 +217,30 @@ def generate_minimum_rfq_values(data: Dict[str, Any]) -> Dict[str, Any]:
             user_max_length = get_nested(data, ["common", "feedRates", "max", "length"])
             user_max_spm = get_nested(data, ["common", "feedRates", "max", "spm"])
             
-            # Only provide calculated FPM values, preserve user length/spm
-            result["common"]["feedRates"] = {
-                "average": {
-                    "fpm": calculate_fpm(rfq_input(
-                        feed_length=user_avg_length or feed_length,
-                        spm=user_avg_spm or spm
-                    ))
-                },
-                "min": {
-                    "fpm": calculate_fpm(rfq_input(
-                        feed_length=user_min_length or max(feed_length * 0.8, 0.5),
-                        spm=user_min_spm or max(spm * 0.8, 10.0)
-                    ))
-                },
-                "max": {
-                    "fpm": calculate_fpm(rfq_input(
-                        feed_length=user_max_length or feed_length * 1.2,
-                        spm=user_max_spm or spm * 1.2
-                    ))
+            # Only provide calculated FPM values where missing, preserve user length/spm
+            fpm_updates = {}
+            
+            # Only add FPM if user provided length and spm but missing FPM
+            if user_avg_length and user_avg_spm and not get_nested(data, ["common", "feedRates", "average", "fpm"]):
+                fpm_updates["average"] = {
+                    "fpm": calculate_fpm(rfq_input(feed_length=user_avg_length, spm=user_avg_spm))
                 }
-            }
+            
+            if user_min_length and user_min_spm and not get_nested(data, ["common", "feedRates", "min", "fpm"]):
+                if "min" not in fpm_updates:
+                    fpm_updates["min"] = {}
+                fpm_updates["min"]["fpm"] = calculate_fpm(rfq_input(feed_length=user_min_length, spm=user_min_spm))
+                
+            if user_max_length and user_max_spm and not get_nested(data, ["common", "feedRates", "max", "fpm"]):
+                if "max" not in fpm_updates:
+                    fpm_updates["max"] = {}
+                fpm_updates["max"]["fpm"] = calculate_fpm(rfq_input(feed_length=user_max_length, spm=user_max_spm))
+            
+            # Only add the updates if there are any
+            if fpm_updates:
+                if "common" not in result:
+                    result["common"] = {}
+                result["common"]["feedRates"] = fpm_updates
         
         return result
     except Exception as e:
@@ -338,8 +344,20 @@ def generate_minimum_material_specs_values(data: Dict[str, Any]) -> Dict[str, An
         mat_obj = material_specs_input(**mat_data)
         variant_result = calculate_variant(mat_obj)
         
-        return {
-            "common": {
+        result = {}
+        
+        # Only provide material data if user hasn't filled it in on RFQ
+        # Check if user has material data from RFQ first
+        has_material_from_rfq = (
+            get_nested(data, ["common", "material", "materialType"]) or
+            get_nested(data, ["common", "material", "materialThickness"]) or
+            get_nested(data, ["common", "material", "maxYieldStrength"]) or
+            get_nested(data, ["common", "material", "coilWidth"])
+        )
+        
+        if not has_material_from_rfq:
+            # User hasn't provided material data, so we can autofill it
+            result["common"] = {
                 "material": {
                     "materialType": material_type,
                     "materialThickness": thickness,
@@ -354,39 +372,53 @@ def generate_minimum_material_specs_values(data: Dict[str, Any]) -> Dict[str, An
                     "maxCoilWidth": parse_float_safe(get_nested(data, ["common", "coil", "maxCoilWidth"]), 12.0),
                     "minCoilWidth": parse_float_safe(get_nested(data, ["common", "coil", "minCoilWidth"]), 1.0),
                     "maxCoilWeight": mat_data["coil_weight"]
-                },
-                "equipment": {
-                    "feed": {
-                        "direction": get_nested(data, ["common", "equipment", "feed", "direction"], "Left to Right"),
-                        "controlsLevel": get_nested(data, ["common", "equipment", "feed", "controlsLevel"], "Standard"),
-                        "typeOfLine": get_nested(data, ["common", "equipment", "feed", "typeOfLine"], "Conventional"),
-                        "controls": get_nested(data, ["common", "equipment", "feed", "controls"], "Sigma 5 Feed"),
-                        "passline": get_nested(data, ["common", "equipment", "feed", "passline"], "36"),
-                        "nonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes",
-                        "lightGuageNonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes" and thickness < 0.030
-                    },
-                    "straightener": {
-                        "model": "CPPS-250",
-                        "width": 0.0,
-                        "numberOfRolls": 7  # Default to 7 rolls
-                    }
                 }
-            },
-            "materialSpecs": {
-                "variant": variant_result,
-                "reel": {
-                    "backplate": {
-                        "type": "Full OD Backplate" if get_nested(data, ["rfq", "coil", "runningOffBackplate"], "No") == "Yes" else "Standard Backplate"
-                    },
-                    "style": "Double Ended" if get_nested(data, ["rfq", "coil", "requireCoilCar"], "No") == "Yes" else "Single Ended"
+            }
+        
+        # Equipment configuration should only be filled if not already set in RFQ
+        has_equipment_from_rfq = (
+            get_nested(data, ["common", "equipment", "feed", "direction"]) or
+            get_nested(data, ["common", "equipment", "feed", "controls"]) or
+            get_nested(data, ["common", "equipment", "straightener", "model"])
+        )
+        
+        if not has_equipment_from_rfq:
+            if "common" not in result:
+                result["common"] = {}
+            result["common"]["equipment"] = {
+                "feed": {
+                    "direction": "Left to Right",
+                    "controlsLevel": "Standard", 
+                    "typeOfLine": "Conventional",
+                    "controls": "Sigma 5 Feed",
+                    "passline": "36",
+                    "nonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes",
+                    "lightGuageNonMarking": get_nested(data, ["rfq", "runningCosmeticMaterial"], "Yes") == "Yes" and thickness < 0.030
                 },
                 "straightener": {
-                    "rolls": {
-                        "typeOfRoll": "7 Roll Str Backbend"
-                    }
+                    "model": "CPPS-250",
+                    "width": 0.0,
+                    "numberOfRolls": 7  # Default to 7 rolls
+                }
+            }
+        
+        # Material specs tab specific data - this is not from RFQ, so it's ok to autofill
+        result["materialSpecs"] = {
+            "variant": variant_result,
+            "reel": {
+                "backplate": {
+                    "type": "Full OD Backplate" if get_nested(data, ["rfq", "coil", "runningOffBackplate"], "No") == "Yes" else "Standard Backplate"
+                },
+                "style": "Double Ended" if get_nested(data, ["rfq", "coil", "requireCoilCar"], "No") == "Yes" else "Single Ended"
+            },
+            "straightener": {
+                "rolls": {
+                    "typeOfRoll": "7 Roll Str Backbend"
                 }
             }
         }
+        
+        return result
     except Exception as e:
         print(f"Error generating material specs values: {e}", file=sys.stderr)
         return {}

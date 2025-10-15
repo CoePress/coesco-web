@@ -432,7 +432,7 @@ export const TabAutoFillStatusBar: React.FC<{ className?: string }> = ({
         return null;
     }
 
-    const allTabs = ['rfq', 'material-specs', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
+    const allTabs = ['rfq', 'tddbhd', 'reel-drive', 'str-utility', 'feed', 'shear'];
     const readyTabs = allTabs.filter(tab => state.tabAutoFillStatus[tab]);
     const partialTabs = state.fillableTabs.filter(tab => !state.tabAutoFillStatus[tab]);
 

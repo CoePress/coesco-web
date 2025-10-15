@@ -71,6 +71,36 @@ export const MaterialSpecsSection: React.FC<RFQSectionProps> = ({
                         disabled={!isEditing}
                     />
                 </div>
+                <div>
+                    <Input
+                        label="Min Bend Radius (in)"
+                        name="materialSpecs.material.minBendRadius"
+                        value={localData.materialSpecs?.material?.minBendRadius?.toString() || ""}
+                        onChange={handleFieldChange}
+                        type="number"
+                        disabled={true}
+                    />
+                </div>
+                <div>
+                    <Input
+                        label="Min Loop Length (ft)"
+                        name="materialSpecs.material.minLoopLength"
+                        value={localData.materialSpecs?.material?.minLoopLength?.toString() || ""}
+                        onChange={handleFieldChange}
+                        type="number"
+                        disabled={true}
+                    />
+                </div>
+                <div>
+                    <Input
+                        label="Coil O.D. Calculated"
+                        name="materialSpecs.material.calculatedCoilOD"
+                        value={localData.materialSpecs?.material?.calculatedCoilOD?.toString() || ""}
+                        onChange={handleFieldChange}
+                        type="number"
+                        disabled={true}
+                    />
+                </div>
             </div>
         </Card>
     );
