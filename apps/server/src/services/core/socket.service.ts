@@ -41,12 +41,22 @@ export class SocketService {
   public broadcastSessionRevoked(userId: string, sessionId: string, reason?: string): void {
     if (!this.io)
       return;
-    this.io.of("/session").to(`user:${userId}`).emit("session:revoked", {
+
+    const sessionNamespace = this.io.of("/session");
+    const room = sessionNamespace.adapter.rooms.get(`user:${userId}`);
+    const socketsInRoom = room ? Array.from(room) : [];
+
+    logger.info(`Broadcasting session revocation to user ${userId}`, {
+      sessionId,
+      socketCount: socketsInRoom.length,
+      socketIds: socketsInRoom,
+    });
+
+    sessionNamespace.to(`user:${userId}`).emit("session:revoked", {
       sessionId,
       reason,
       timestamp: new Date(),
     });
-    logger.info(`Broadcasted session revocation to user ${userId}`);
   }
 
   private registerIotNamespace() {

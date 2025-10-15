@@ -4,6 +4,8 @@ import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import ToastContainer from "@/components/ui/toast-container";
+import { useToast } from "@/hooks/use-toast";
 
 const getErrorMessage = (error: string | null) => {
   switch (error) {
@@ -63,6 +65,7 @@ const Login = () => {
   const errorMessage = getErrorMessage(errorParam) || loginError || microsoftLoginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const { toasts, removeToast } = useToast();
   
   const microsoftLogin = async () => {
     const response = await getMicrosoft("/auth/microsoft/login");
@@ -322,6 +325,11 @@ const Login = () => {
           </div>
         </Card>
       </div>
+      <ToastContainer
+        toasts={toasts}
+        onRemoveToast={removeToast}
+        position="bottom-right"
+      />
     </div>
   );
 };

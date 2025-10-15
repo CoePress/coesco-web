@@ -7,6 +7,8 @@ import { useAuth, AuthContext } from "@/contexts/auth.context";
 import { useApi } from "@/hooks/use-api";
 import { useState, useContext } from "react";
 import { __dev__ } from "@/config/env";
+import ToastContainer from "@/components/ui/toast-container";
+import { useToast } from "@/hooks/use-toast";
 
 const MainMenu = () => {
   const { theme, toggleTheme } = useTheme();
@@ -14,6 +16,7 @@ const MainMenu = () => {
   const { setUser } = useContext(AuthContext)!;
   const { post } = useApi();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const { toasts, removeToast } = useToast();
 
   const navigate = useNavigate()
 
@@ -218,6 +221,11 @@ const MainMenu = () => {
           </div>
         </div>
       </Modal>
+      <ToastContainer
+        toasts={toasts}
+        onRemoveToast={removeToast}
+        position="bottom-right"
+      />
     </div>
   );
 };
