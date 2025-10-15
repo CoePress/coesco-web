@@ -18,7 +18,6 @@ import {
   FileTextIcon,
   FolderSyncIcon,
   LayoutDashboardIcon,
-  LinkIcon,
   LogsIcon,
   PaintBucketIcon,
   SearchIcon,
@@ -27,7 +26,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, Invitations, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -53,8 +52,6 @@ export interface Page {
   component: ComponentType;
   children?: Page[];
 }
-
-
 
 const productionModule: Module = {
   sequence: 2,
@@ -251,12 +248,6 @@ const adminModule: Module = {
           component: EmployeeDetails,
         },
       ],
-    },
-    {
-      slug: "invitations",
-      label: "Invitations",
-      icon: LinkIcon,
-      component: Invitations,
     },
     {
       slug: "sessions",
