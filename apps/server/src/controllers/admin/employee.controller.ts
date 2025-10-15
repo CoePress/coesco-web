@@ -1,10 +1,11 @@
+import type { Employee } from "@prisma/client";
 import type { Request, Response } from "express";
+
 import { z } from "zod";
 
 import { employeeService, employeeSyncService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
-import { Employee } from "@prisma/client";
 
 const CreateEmployeeSchema = z.object({
   userId: z.string().uuid("Invalid user ID").optional(),

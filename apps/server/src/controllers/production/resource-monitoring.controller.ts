@@ -1,5 +1,6 @@
-import type { Request, Response } from "express";
 import type { MachineStatus } from "@prisma/client";
+import type { Request, Response } from "express";
+
 import { z } from "zod";
 
 import { resourceMonitoringService } from "@/services";
@@ -40,7 +41,7 @@ export class ResourceMonitoringController {
     const { startDate, endDate } = req.query;
     const result = await resourceMonitoringService.getMachineTimeline(
       startDate as string,
-      endDate as string
+      endDate as string,
     );
     res.status(HTTP_STATUS.OK).json(result);
   });

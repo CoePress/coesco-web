@@ -5,11 +5,11 @@ import { verify } from "jsonwebtoken";
 import type { EmployeeContext } from "@/utils/context";
 
 import { cookieOptions, env } from "@/config/env";
+import { SYSTEM_USER_ID } from "@/utils/constants";
 import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
 
 import { UnauthorizedError } from "./error.middleware";
-import { SYSTEM_USER_ID } from "@/utils/constants";
 
 const API_KEYS = new Set(["fe2ac930-94d5-41a4-9ad3-1c1f5910391c"]);
 

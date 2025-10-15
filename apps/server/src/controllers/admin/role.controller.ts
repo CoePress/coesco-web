@@ -1,8 +1,9 @@
+import type { Role, RoleAssignment, RolePermission } from "@prisma/client";
 import type { Request, Response } from "express";
-import { Role, RoleAssignment, RolePermission } from "@prisma/client";
+
 import { z } from "zod";
 
-import { roleService, rolePermissionService, roleAssignmentService } from "@/services";
+import { roleAssignmentService, rolePermissionService, roleService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
 

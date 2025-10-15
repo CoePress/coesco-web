@@ -1,7 +1,8 @@
-import { customerController, journeyController, quoteController } from "@/controllers";
 import { Router } from "express";
 
-const router = Router()
+import { customerController, journeyController, quoteController } from "@/controllers";
+
+const router = Router();
 
 // Companies
 router.post("/companies", customerController.createCompany);
@@ -56,4 +57,4 @@ router.post("/quotes/:quoteId/reject", quoteController.rejectQuote);
 router.post("/quotes/:quoteId/send", quoteController.sendQuote);
 router.get("/quotes/:quoteId/export/pdf", quoteController.exportPDF);
 
-export default router
+export default router;

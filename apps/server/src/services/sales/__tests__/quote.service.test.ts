@@ -1,7 +1,10 @@
 import type { Quote, QuoteItem, QuoteRevision, QuoteTerms } from "@prisma/client";
+
 import { Prisma } from "@prisma/client";
-import { QuoteService } from "../quote.service";
+
 import { quoteItemRepository, quoteRepository, quoteRevisionRepository, quoteTermsRepository } from "@/repositories";
+
+import { QuoteService } from "../quote.service";
 
 jest.mock("@/repositories", () => ({
   quoteRepository: {
@@ -34,7 +37,7 @@ jest.mock("@/repositories", () => ({
   },
 }));
 
-describe("QuoteService", () => {
+describe("quoteService", () => {
   let service: QuoteService;
 
   beforeEach(() => {

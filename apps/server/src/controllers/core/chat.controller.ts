@@ -1,5 +1,6 @@
 import type { Chat, Message } from "@prisma/client";
 import type { Request, Response } from "express";
+
 import { z } from "zod";
 
 import { chatService } from "@/services";

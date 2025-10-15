@@ -1,7 +1,8 @@
-import { chatController, lockController, settingsController, tagController } from "@/controllers";
 import { Router } from "express";
 
-const router = Router()
+import { chatController, lockController, settingsController, tagController } from "@/controllers";
+
+const router = Router();
 
 // Chats
 router.post("/chats", chatController.createChat);
@@ -43,4 +44,4 @@ router.get("/tags/:tagId", tagController.getTag);
 router.patch("/tags/:tagId", tagController.updateTag);
 router.delete("/tags/:tagId", tagController.deleteTag);
 
-export default router
+export default router;

@@ -1,8 +1,8 @@
-import { asyncWrapper } from "@/utils";
 import type { Request, Response } from "express";
 
-import { UserSettingsService } from "@/services/core/user-settings.service";
 import { authService } from "@/services";
+import { UserSettingsService } from "@/services/core/user-settings.service";
+import { asyncWrapper } from "@/utils";
 
 const userSettingsService = new UserSettingsService();
 

@@ -1,7 +1,9 @@
 import type { MachineStatus } from "@prisma/client";
+
 import type { IQueryParams } from "@/types";
 
 import { machineStatusRepository } from "@/repositories";
+
 import { MachineMonitorService } from "../business/machining.service";
 
 export class ResourceMonitoringService {
@@ -29,7 +31,7 @@ export class ResourceMonitoringService {
   }
 
   async getMachineTimeline(startDate?: string, endDate?: string) {
-    return this.machineMonitorService.getMachineTimeline(startDate || '', endDate || '');
+    return this.machineMonitorService.getMachineTimeline(startDate || "", endDate || "");
   }
 
   async resetFanucAdapter() {

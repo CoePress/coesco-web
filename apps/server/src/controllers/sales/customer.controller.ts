@@ -1,6 +1,7 @@
 import type { Address, Company, Contact } from "@prisma/client";
-import { Industry, CompanyStatus } from "@prisma/client";
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+
+import { CompanyStatus, Industry } from "@prisma/client";
 import { z } from "zod";
 
 import { addressService, contactService, customerService } from "@/services";

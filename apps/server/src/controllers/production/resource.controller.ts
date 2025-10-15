@@ -1,6 +1,7 @@
-import type { Request, Response } from "express";
 import type { Machine } from "@prisma/client";
-import { MachineType, MachineControllerType } from "@prisma/client";
+import type { Request, Response } from "express";
+
+import { MachineControllerType, MachineType } from "@prisma/client";
 import { z } from "zod";
 
 import { resourceService } from "@/services";

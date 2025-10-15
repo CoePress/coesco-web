@@ -1,12 +1,10 @@
-import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } from "@prisma/client";
+import type { PerformanceSheetLink } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import { performanceSheetLinkService, performanceSheetService, performanceSheetVersionService } from "@/services/repository";
+import { performanceSheetLinkService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
 
 export class PerformanceController {
-
-
   // Performance Sheet Link
   async createPerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {

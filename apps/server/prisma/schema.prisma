@@ -1232,10 +1232,23 @@ model BugReport {
   id          String    @id @default(uuid())
   title       String
   description String
+  userEmail   String?
+  userName    String?
+  url         String?
+  userAgent   String?
+  issueKey    String?
+  issueUrl    String?
+  status      BugReportStatus @default(SUBMITTED)
   createdAt   DateTime  @default(now())
-  createdById String
+  createdById String?
 
   @@map("bug_reports")
+}
+
+enum BugReportStatus {
+  SUBMITTED
+  IN_JIRA
+  FAILED
 }
 
 

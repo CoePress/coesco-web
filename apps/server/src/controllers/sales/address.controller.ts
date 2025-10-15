@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 export class AdressController {
-    async getCoordinatesByPostalCode(req: Request, res: Response, next: NextFunction) {
+  async getCoordinatesByPostalCode(req: Request, res: Response, next: NextFunction) {
     try {
       const { countryCode, postalCode } = req.params;
       const result = await locationService.getCoordinatesByPostalCode(countryCode, postalCode);

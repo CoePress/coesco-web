@@ -274,6 +274,63 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "bug-report",
+    description: "Schema for BugReport entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      title: {
+        type: "string",
+        required: true,
+      },
+      description: {
+        type: "string",
+        required: true,
+      },
+      userEmail: {
+        type: "string",
+        required: false,
+      },
+      userName: {
+        type: "string",
+        required: false,
+      },
+      url: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      issueKey: {
+        type: "string",
+        required: false,
+      },
+      issueUrl: {
+        type: "string",
+        required: false,
+      },
+      status: {
+        type: "bugreportstatus",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      createdById: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+  {
     name: "chat",
     description: "Schema for Chat entity",
     schema: {

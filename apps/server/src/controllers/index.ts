@@ -14,41 +14,41 @@ import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
 import { SettingsController } from "./core/settings.controller";
 import { TagController } from "./core/tag.controller";
-import { ResourceController } from "./production/resource.controller";
 import { ResourceMonitoringController } from "./production/resource-monitoring.controller";
+import { ResourceController } from "./production/resource.controller";
 import { CustomerController } from "./sales/customer.controller";
 import { JourneyController } from "./sales/journey.controller";
 import { QuoteController } from "./sales/quote.controller";
 
 // Admin
-export const auditController = new AuditController()
-export const bugReportingController = new BugReportingController()
-export const employeeController = new EmployeeController()
-export const permissionController = new PermissionController()
-export const roleController = new RoleController()
+export const auditController = new AuditController();
+export const bugReportingController = new BugReportingController();
+export const employeeController = new EmployeeController();
+export const permissionController = new PermissionController();
+export const roleController = new RoleController();
 
 // Artifact
-export const performanceSheetController = new PerformanceSheetController()
-export const serviceReportController = new ServiceReportController()
+export const performanceSheetController = new PerformanceSheetController();
+export const serviceReportController = new ServiceReportController();
 
 // Catalog
-export const configurationController = new ConfigurationController()
-export const optionController = new OptionController()
-export const productController = new ProductController()
+export const configurationController = new ConfigurationController();
+export const optionController = new OptionController();
+export const productController = new ProductController();
 
 // Core
-export const authController = new AuthController()
-export const chatController = new ChatController()
-export const legacyController = new LegacyController()
-export const lockController = new LockController()
-export const settingsController = new SettingsController()
-export const tagController = new TagController()
+export const authController = new AuthController();
+export const chatController = new ChatController();
+export const legacyController = new LegacyController();
+export const lockController = new LockController();
+export const settingsController = new SettingsController();
+export const tagController = new TagController();
 
 // Production
-export const resourceMonitoringController = new ResourceMonitoringController()
-export const resourceController = new ResourceController()
+export const resourceMonitoringController = new ResourceMonitoringController();
+export const resourceController = new ResourceController();
 
 // Sales
-export const customerController = new CustomerController()
-export const journeyController = new JourneyController()
-export const quoteController = new QuoteController()
+export const customerController = new CustomerController();
+export const journeyController = new JourneyController();
+export const quoteController = new QuoteController();

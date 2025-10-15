@@ -1,4 +1,5 @@
 import type { Machine } from "@prisma/client";
+
 import type { IQueryParams } from "@/types";
 
 import { machineRepository } from "@/repositories";

@@ -1,15 +1,15 @@
-import type { OptionCategory, ProductClassOptionCategory, OptionHeader, OptionDetails, OptionRule, OptionRuleTarget, OptionRuleTrigger } from "@prisma/client";
+import type { OptionCategory, OptionDetails, OptionHeader, OptionRule, OptionRuleTarget, OptionRuleTrigger, ProductClassOptionCategory } from "@prisma/client";
 
 import type { IQueryParams } from "@/types";
 
 import {
   optionCategoryRepository,
-  productClassOptionCategoryRepository,
-  optionHeaderRepository,
   optionDetailsRepository,
+  optionHeaderRepository,
   optionRuleRepository,
   optionRuleTargetRepository,
   optionRuleTriggerRepository,
+  productClassOptionCategoryRepository,
 } from "@/repositories";
 
 export class OptionService {

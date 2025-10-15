@@ -1,7 +1,8 @@
+import type { OptionCategory, OptionDetails, OptionHeader, OptionRule, OptionRuleTarget, OptionRuleTrigger, ProductClassOptionCategory } from "@prisma/client";
 import type { Request, Response } from "express";
-import type { OptionCategory, ProductClassOptionCategory, OptionHeader, OptionDetails, OptionRule, OptionRuleTarget, OptionRuleTrigger } from "@prisma/client";
+
 import { OptionRuleAction } from "@prisma/client";
-import { any, z } from "zod";
+import { z } from "zod";
 
 import { optionService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
@@ -39,7 +40,7 @@ const CreateOptionDetailSchema = z.object({
   optionHeaderId: z.string().uuid("Invalid option header ID"),
   productClassId: z.string().uuid("Invalid product class ID").optional(),
   itemId: z.string().uuid("Invalid item ID").optional(),
-  price: z.union([z.number(), z.string()]).transform((val) => val),
+  price: z.union([z.number(), z.string()]).transform(val => val),
 });
 
 const UpdateOptionDetailSchema = CreateOptionDetailSchema.partial();

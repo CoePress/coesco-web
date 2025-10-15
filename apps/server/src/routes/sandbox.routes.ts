@@ -1,10 +1,10 @@
 import { Router } from "express";
 
-const router = Router()
+const router = Router();
 
 router.get("/hours", async (req, res) => {
   const { date, timezone, timezoneOffset } = req.query;
-  
+
   const [year, month, day] = (date as string).split("-").map(Number);
   const hours = [];
 
@@ -118,4 +118,4 @@ router.get("/timezone", async (req, res) => {
   });
 });
 
-export default router
+export default router;

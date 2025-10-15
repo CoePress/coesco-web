@@ -1,7 +1,8 @@
-import { auditController, employeeController, permissionController, roleController } from "@/controllers";
 import { Router } from "express";
 
-const router = Router()
+import { auditController, employeeController, permissionController, roleController } from "@/controllers";
+
+const router = Router();
 
 router.get("/logs", auditController.getAuditLogs);
 router.get("/logs/emails", auditController.getEmailLogs);
@@ -30,4 +31,4 @@ router.get("/roles/:roleId", roleController.getRole);
 router.patch("/roles/:roleId", roleController.updateRole);
 router.delete("/roles/:roleId", roleController.deleteRole);
 
-export default router
+export default router;

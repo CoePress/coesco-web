@@ -1,7 +1,8 @@
-import { resourceController, resourceMonitoringController } from "@/controllers";
 import { Router } from "express";
 
-const router = Router()
+import { resourceController, resourceMonitoringController } from "@/controllers";
+
+const router = Router();
 
 // Machines
 router.post("/machines", resourceController.createResource);
@@ -19,4 +20,4 @@ router.get("/overview", resourceMonitoringController.getOverview);
 router.get("/timeline", resourceMonitoringController.getTimeline);
 router.post("/fanuc/reset", resourceMonitoringController.resetFanucAdapter);
 
-export default router
+export default router;

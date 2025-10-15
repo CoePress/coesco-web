@@ -1,12 +1,12 @@
-import type { Request, Response } from "express";
 import type { AuditLog, EmailLog } from "@prisma/client";
+import type { Request, Response } from "express";
+
+import fs from "node:fs";
+import zlib from "node:zlib";
 
 import { auditService } from "@/services";
 import { asyncWrapper, buildQueryParams } from "@/utils";
 import { HTTP_STATUS } from "@/utils/constants";
-
-import fs from "node:fs";
-import zlib from "node:zlib";
 
 export class AuditController {
   getAuditLogs = asyncWrapper(async (req: Request, res: Response) => {

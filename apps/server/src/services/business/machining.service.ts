@@ -7,13 +7,13 @@ import { Agent as HttpsAgent } from "node:https";
 
 import { env } from "@/config/env";
 import { BadRequestError } from "@/middleware/error.middleware";
+import { machineRepository, machineStatusRepository } from "@/repositories";
 import { TimeScale } from "@/types/enums";
 import { buildDateRangeFilter, createDateRange } from "@/utils";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 import { cacheService, socketService } from "../";
-import { machineRepository, machineStatusRepository } from "@/repositories";
 
 interface CachedMachineState {
   state: MachineState;

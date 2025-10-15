@@ -5,7 +5,7 @@ import { journeyService } from "@/services";
 import { buildQueryParams } from "@/utils";
 
 export class JourneyController {
-    async createJourney(req: Request, res: Response, next: NextFunction) {
+  async createJourney(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await journeyService.createJourney(req.body);
       res.status(200).json(result);

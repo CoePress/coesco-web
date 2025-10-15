@@ -1,6 +1,8 @@
 import type { Address } from "@prisma/client";
-import { AddressService } from "../address.service";
+
 import { addressRepository } from "@/repositories";
+
+import { AddressService } from "../address.service";
 
 jest.mock("@/repositories", () => ({
   addressRepository: {
@@ -12,7 +14,7 @@ jest.mock("@/repositories", () => ({
   },
 }));
 
-describe("AddressService", () => {
+describe("addressService", () => {
   let service: AddressService;
 
   beforeEach(() => {

@@ -1,6 +1,8 @@
 import type { Employee, User } from "@prisma/client";
-import { EmployeeService } from "../employee.service";
+
 import { employeeRepository, userRepository } from "@/repositories";
+
+import { EmployeeService } from "../employee.service";
 
 jest.mock("@/repositories", () => ({
   employeeRepository: {
@@ -19,7 +21,7 @@ jest.mock("@/repositories", () => ({
   },
 }));
 
-describe("EmployeeService", () => {
+describe("employeeService", () => {
   let service: EmployeeService;
 
   beforeEach(() => {

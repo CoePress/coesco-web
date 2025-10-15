@@ -1,5 +1,6 @@
-import type { Request, Response } from "express";
 import type { Configuration } from "@prisma/client";
+import type { Request, Response } from "express";
+
 import { z } from "zod";
 
 import { configurationService } from "@/services";
