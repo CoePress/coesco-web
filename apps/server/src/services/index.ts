@@ -20,9 +20,12 @@ import { EmailLogService } from "./core/email-log.service";
 import { EmailService } from "./core/email.service";
 import { LegacyService } from "./core/legacy.service";
 import { LockingService } from "./core/locking.service";
+import { LoginHistoryService } from "./core/login-history.service";
 import { MessageService } from "./core/message.service";
+import { SessionService } from "./core/session.service";
 import { SocketService } from "./core/socket.service";
 import { TagService } from "./core/tag.service";
+import { MachineMonitorService } from "./production/machining.service";
 import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
@@ -30,7 +33,6 @@ import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
 import { QuoteService } from "./sales/quote.service";
-import { MachineMonitorService } from "./production/machining.service";
 
 // Admin
 export const auditService = new AuditService();
@@ -56,7 +58,9 @@ export const emailLogService = new EmailLogService();
 export const emailService = new EmailService();
 export const legacyService = new LegacyService();
 export const lockingService = new LockingService();
+export const loginHistoryService = new LoginHistoryService();
 export const messageService = new MessageService();
+export const sessionService = new SessionService();
 export const socketService = new SocketService();
 export const tagService = new TagService();
 

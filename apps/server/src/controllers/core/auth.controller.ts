@@ -1,13 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { cookieOptions } from "@/config/env";
-import { authService } from "@/services";
+import { authService, sessionService } from "@/services";
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { username, password } = req.body;
-      const result = await authService.login(username, password);
+      const result = await authService.login(username, password, req);
       res.cookie("accessToken", result.token, cookieOptions);
       res.cookie("refreshToken", result.refreshToken, cookieOptions);
       res.status(200).json(result);
@@ -33,6 +33,7 @@ export class AuthController {
       const result = await authService.microsoftCallback(
         code as string,
         state as string,
+        req,
       );
 
       res.cookie("accessToken", result.token, cookieOptions);
@@ -46,6 +47,15 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
+      const { accessToken } = req.cookies;
+
+      if (accessToken) {
+        const session = await sessionService.validateSession(accessToken);
+        if (session) {
+          await sessionService.logout(session.id);
+        }
+      }
+
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);
 

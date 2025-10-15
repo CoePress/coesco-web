@@ -1467,6 +1467,54 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "login-history",
+    description: "Schema for LoginHistory entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: false,
+      },
+      username: {
+        type: "string",
+        required: false,
+      },
+      loginMethod: {
+        type: "loginmethod",
+        required: true,
+      },
+      success: {
+        type: "boolean",
+        required: true,
+      },
+      failureReason: {
+        type: "string",
+        required: false,
+      },
+      ipAddress: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      location: {
+        type: "json",
+        required: false,
+      },
+      timestamp: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+    },
+  },
+  {
     name: "machine",
     description: "Schema for Machine entity",
     schema: {
@@ -2710,6 +2758,106 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
         hasDefault: true,
+      },
+    },
+  },
+  {
+    name: "session",
+    description: "Schema for Session entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: true,
+      },
+      token: {
+        type: "string",
+        required: true,
+      },
+      refreshToken: {
+        type: "string",
+        required: false,
+      },
+      ipAddress: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      deviceType: {
+        type: "string",
+        required: false,
+      },
+      deviceName: {
+        type: "string",
+        required: false,
+      },
+      location: {
+        type: "json",
+        required: false,
+      },
+      loginMethod: {
+        type: "loginmethod",
+        required: true,
+      },
+      loginAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      lastActivityAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      expiresAt: {
+        type: "datetime",
+        required: true,
+      },
+      revokedAt: {
+        type: "datetime",
+        required: false,
+      },
+      revokedReason: {
+        type: "string",
+        required: false,
+      },
+      logoutAt: {
+        type: "datetime",
+        required: false,
+      },
+      isActive: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      isSuspicious: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      suspiciousReason: {
+        type: "string",
+        required: false,
+      },
+      metadata: {
+        type: "json",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
       },
     },
   },

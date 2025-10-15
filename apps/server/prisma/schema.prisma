@@ -24,6 +24,8 @@ model User {
   roles             RoleAssignment[]
   customPermissions PermissionException[]
   tokens            Token[]
+  sessions          Session[]
+  loginHistory      LoginHistory[]
 
   @@map("users")
 }
@@ -1249,6 +1251,68 @@ enum BugReportStatus {
   SUBMITTED
   IN_JIRA
   FAILED
+}
+
+model Session {
+  id               String      @id @default(uuid())
+  userId           String
+  token            String      @unique
+  refreshToken     String?     @unique
+  ipAddress        String?
+  userAgent        String?
+  deviceType       String?
+  deviceName       String?
+  location         Json?
+  loginMethod      LoginMethod
+  loginAt          DateTime    @default(now())
+  lastActivityAt   DateTime    @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?
+  logoutAt         DateTime?
+  isActive         Boolean     @default(true)
+  isSuspicious     Boolean     @default(false)
+  suspiciousReason String?
+  metadata         Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([lastActivityAt])
+  @@map("sessions")
+}
+
+enum LoginMethod {
+  PASSWORD
+  MICROSOFT
+  SSO
+  API_KEY
+  TEST_LOGIN
+}
+
+model LoginHistory {
+  id            String      @id @default(uuid())
+  userId        String?
+  username      String?
+  loginMethod   LoginMethod
+  success       Boolean
+  failureReason String?
+  ipAddress     String?
+  userAgent     String?
+  location      Json?
+  timestamp     DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([success])
+  @@map("login_history")
 }
 
 

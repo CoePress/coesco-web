@@ -5,6 +5,7 @@ import { verify } from "jsonwebtoken";
 import type { EmployeeContext } from "@/utils/context";
 
 import { cookieOptions, env } from "@/config/env";
+import { sessionService } from "@/services";
 import { SYSTEM_USER_ID } from "@/utils/constants";
 import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
@@ -69,6 +70,13 @@ export const protect = asyncHandler(
       if (!decoded?.userId)
         throw new UnauthorizedError("Unauthorized");
 
+      const session = await sessionService.validateSession(accessToken);
+      if (!session) {
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
+        throw new UnauthorizedError("Invalid or expired session");
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         include: { employee: true },
@@ -77,6 +85,8 @@ export const protect = asyncHandler(
       if (!user || !user.employee) {
         throw new UnauthorizedError("Unauthorized");
       }
+
+      await sessionService.updateActivity(session.id);
 
       const emp = user.employee;
 

@@ -1111,7 +1111,8 @@ export class MachineMonitorService {
     totalAvailableTime: number,
   ) {
     const safePercentage = (value: number) => {
-      if (totalAvailableTime === 0) return 0;
+      if (totalAvailableTime === 0)
+        return 0;
       return (value / totalAvailableTime) * 100;
     };
 
