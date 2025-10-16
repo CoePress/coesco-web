@@ -46,7 +46,6 @@ interface Session {
 }
 
 const Sessions = () => {
-  const toast = useToast();
   const { sessionId: currentSessionId } = useAuth();
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -174,7 +173,6 @@ const Sessions = () => {
               setIsRevokeModalOpen(true);
             }}
             disabled={!row.isActive || !!row.revokedAt || isCurrentSession}
-            title={isCurrentSession ? "Cannot revoke your current session" : undefined}
           >
             Revoke
           </Button>
@@ -393,7 +391,7 @@ const RevokeSessionModal = ({
           <Button variant="secondary-outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleRevokeSession} disabled={loading} variant="error">
+          <Button onClick={handleRevokeSession} disabled={loading} variant="destructive">
             {loading ? "Revoking..." : "Revoke Session"}
           </Button>
         </div>

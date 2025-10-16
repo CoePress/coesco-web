@@ -7,7 +7,7 @@ import {
   useState,
   useMemo,
 } from "react";
-import { io, Socket, Manager } from "socket.io-client";
+import { Socket, Manager } from "socket.io-client";
 import { useAuth } from "./auth.context";
 
 type SocketContextType = {
@@ -61,7 +61,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     });
 
     return () => {
-      managerRef.current?.close();
+      managerRef.current?.engine?.close();
     };
   }, []);
 
@@ -182,7 +182,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       iotSocketRef.current?.disconnect();
       lockSocketRef.current?.disconnect();
       sessionSocketRef.current?.disconnect();
-      managerRef.current?.close();
+      managerRef.current?.engine?.close();
     };
   }, []);
 

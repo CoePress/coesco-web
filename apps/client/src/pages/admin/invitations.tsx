@@ -31,7 +31,6 @@ interface ExternalInvitation {
 }
 
 const Invitations = () => {
-  const toast = useToast();
   const [selectedInvitation, setSelectedInvitation] = useState<ExternalInvitation | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -411,7 +410,7 @@ const InvitationDetailsModal = ({
           </Button>
           {!isRevoked && (
             <Button
-              variant="error"
+              variant="destructive"
               onClick={handleRevoke}
               disabled={loading}>
               {loading ? "Revoking..." : "Revoke Invitation"}
