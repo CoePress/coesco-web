@@ -50,7 +50,7 @@ const Pipeline = () => {
     }
 
     try {
-      const response = await get('/tags', {
+      const response = await get('/core/tags', {
         filter: JSON.stringify({
           parentTable: 'journeys',
           parentIds: journeyIds

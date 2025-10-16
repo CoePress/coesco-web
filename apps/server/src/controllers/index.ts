@@ -12,6 +12,7 @@ import { ProductController } from "./catalog/product.controller";
 import { AuthController } from "./core/auth.controller";
 import { ChatController } from "./core/chat.controller";
 import { FormController } from "./core/form.controller";
+import { JourneyNoteController } from "./core/journey-note.controller";
 import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
 import { SettingsController } from "./core/settings.controller";
@@ -42,7 +43,8 @@ export const productController = new ProductController();
 // Core
 export const authController = new AuthController();
 export const chatController = new ChatController();
-export const formController = new FormController()
+export const formController = new FormController();
+export const journeyNoteController = new JourneyNoteController();
 export const legacyController = new LegacyController();
 export const lockController = new LockController();
 export const settingsController = new SettingsController();

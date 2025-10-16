@@ -34,7 +34,7 @@ export const AddTagsModal = ({
   const fetchTags = async () => {
     setIsLoading(true);
     try {
-      const tagData = await api.get('/tags', {
+      const tagData = await api.get('/core/tags', {
         filter: JSON.stringify({
           parentTable: 'journeys',
           parentId: journeyId
@@ -76,7 +76,7 @@ export const AddTagsModal = ({
     setErrorMessage("");
     
     try {
-      const newTag = await api.post('/tags', {
+      const newTag = await api.post('/core/tags', {
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
@@ -102,7 +102,7 @@ export const AddTagsModal = ({
 
   const handleDeleteTag = async (tagId: string) => {
     try {
-      const success = await api.delete(`/tags/${tagId}`);
+      const success = await api.delete(`/core/tags/${tagId}`);
       
       if (success !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
