@@ -1,10 +1,11 @@
 import {
   PlusCircleIcon,
+  Filter,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 
-import { Table, Button, PageHeader, Input, CreateCompanyModal } from "@/components";
+import { Table, Button, PageHeader, Input, CreateCompanyModal, Modal, Select } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,11 @@ const Companies = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    activeStatus: "" as string,
+    dateRange: ["", ""] as [string, string],
+  });
   const legacyApi = useApi();
   const toast = useToast();
 
@@ -47,16 +53,56 @@ const Companies = () => {
     
     setIsLoading(true);
     try {
+      const sortFieldMap: Record<string, string> = {
+        name: "CustDlrName",
+        active: "Active",
+        createDate: "CreateDate"
+      };
+
       const params: any = {
         page,
         limit,
-        sort: sort === "name" ? "CustDlrName" : "Company_ID",
+        sort: sortFieldMap[sort] || "CustDlrName",
         order,
         fields: "Company_ID,CustDlrName,Active,CreateDate"
       };
 
+      const filterConditions: any[] = [];
+
       if (debouncedSearchTerm) {
-        params.filter = `CustDlrName LIKE %${debouncedSearchTerm}%`;
+        filterConditions.push({
+          operator: "contains",
+          field: "CustDlrName",
+          value: debouncedSearchTerm
+        });
+      }
+
+      if (filters.activeStatus) {
+        filterConditions.push({
+          operator: "equals",
+          field: "Active",
+          value: filters.activeStatus === "active" ? 1 : 0
+        });
+      }
+
+      if (filters.dateRange[0]) {
+        filterConditions.push({
+          field: "CreateDate",
+          operator: "gte",
+          value: filters.dateRange[0]
+        });
+      }
+
+      if (filters.dateRange[1]) {
+        filterConditions.push({
+          field: "CreateDate",
+          operator: "lte",
+          value: filters.dateRange[1]
+        });
+      }
+
+      if (filterConditions.length > 0) {
+        params.filter = JSON.stringify({ filters: filterConditions });
       }
 
       const legacyCompaniesResponse = await legacyApi.get("/legacy/base/Company", params);
@@ -95,7 +141,7 @@ const Companies = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, legacyApi, page, limit, sort, order, debouncedSearchTerm]);
+  }, [isLoading, legacyApi, page, limit, sort, order, debouncedSearchTerm, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -107,11 +153,11 @@ const Companies = () => {
 
   useEffect(() => {
     fetchAllCompanies();
-  }, [page, limit, sort, order, debouncedSearchTerm]);
+  }, [page, limit, sort, order, debouncedSearchTerm, filters]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, filters]);
 
 
   const allCompanies = legacyCompanies;
@@ -257,8 +303,16 @@ const Companies = () => {
   };
 
   const Actions = () => {
+    const hasActiveFilters = filters.activeStatus || filters.dateRange[0] || filters.dateRange[1];
+
     return (
       <div className="flex gap-2">
+        <Button
+          variant={hasActiveFilters ? "secondary" : "secondary-outline"}
+          onClick={() => setIsFilterModalOpen(true)}
+        >
+          <Filter size={20} /> Filter
+        </Button>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <PlusCircleIcon size={20} /> Create New
         </Button>
@@ -350,7 +404,117 @@ const Companies = () => {
           </div>
         </div>
       )}
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && (
+        <FilterModal
+          isOpen={isFilterModalOpen}
+          filters={filters}
+          onApply={(newFilters) => {
+            setFilters(newFilters);
+            setIsFilterModalOpen(false);
+          }}
+          onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
     </div>
+  );
+};
+
+const FilterModal = ({
+  isOpen,
+  filters,
+  onApply,
+  onClose,
+}: {
+  isOpen: boolean;
+  filters: {
+    activeStatus: string;
+    dateRange: [string, string];
+  };
+  onApply: (filters: any) => void;
+  onClose: () => void;
+}) => {
+  const [localFilters, setLocalFilters] = useState(filters);
+
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters, isOpen]);
+
+  const handleReset = () => {
+    setLocalFilters({
+      activeStatus: "",
+      dateRange: ["", ""],
+    });
+  };
+
+  const hasActiveFilters =
+    localFilters.activeStatus ||
+    localFilters.dateRange[0] ||
+    localFilters.dateRange[1];
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Filter Companies" size="md">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Select
+            label="Active Status"
+            value={localFilters.activeStatus}
+            onChange={(e) => setLocalFilters(prev => ({ ...prev, activeStatus: e.target.value }))}
+            options={[
+              { value: "", label: "All companies" },
+              { value: "active", label: "Active only" },
+              { value: "inactive", label: "Inactive only" },
+            ]}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text">Created From</label>
+            <input
+              type="date"
+              value={localFilters.dateRange[0]}
+              onChange={(e) => setLocalFilters(prev => ({
+                ...prev,
+                dateRange: [e.target.value, prev.dateRange[1]]
+              }))}
+              className="w-full rounded border border-border px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text">Created To</label>
+            <input
+              type="date"
+              value={localFilters.dateRange[1]}
+              onChange={(e) => setLocalFilters(prev => ({
+                ...prev,
+                dateRange: [prev.dateRange[0], e.target.value]
+              }))}
+              className="w-full rounded border border-border px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between pt-4 border-t">
+          <Button
+            variant="secondary-outline"
+            onClick={handleReset}
+            disabled={!hasActiveFilters}
+          >
+            Clear All
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary-outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => onApply(localFilters)}>
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 };
 

@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button, StatusBadge } from "@/components";
+import { StatusBadge } from "@/components";
 import Table from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/utils";
 import { getPriorityConfig } from "./utils";
@@ -117,68 +117,35 @@ const TableActionsCell = ({ journey, onDelete }: { journey: any; onDelete: (id: 
 
 interface ListViewProps {
   journeys: any[];
-  sortedFilteredJourneys: any[];
   customersById: Map<string, any>;
-  listBatchSize: number;
-  hasMoreJourneys: boolean;
-  isLoadingMore: boolean;
-  onLoadMore: () => void;
+  pagination: {
+    page: number;
+    totalPages: number;
+    total: number;
+    limit: number;
+  };
+  onPageChange: (page: number) => void;
   onDeleteJourney: (journeyId: string) => void;
   onSort: (field: string, order?: 'asc' | 'desc') => void;
   stageLabel: (id?: number) => string;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
+  isLoading?: boolean;
 }
 
 export const ListView = ({
   journeys,
-  sortedFilteredJourneys,
   customersById,
-  listBatchSize,
-  hasMoreJourneys,
-  isLoadingMore,
-  onLoadMore,
+  pagination,
+  onPageChange,
   onDeleteJourney,
   onSort,
   stageLabel,
   sortField,
   sortDirection,
+  isLoading,
 }: ListViewProps) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
-
-  const listJourneys = journeys.slice(0, listBatchSize);
-
-  const handleScroll = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
-    
-    if (isNearBottom && hasMoreJourneys && !isLoadingMore) {
-      onLoadMore();
-    }
-  }, [hasMoreJourneys, isLoadingMore, onLoadMore]);
-
-  useEffect(() => {
-    if (!listContainerRef.current) return;
-
-    const scrollContainer = listContainerRef.current;
-
-    // Throttle scroll events
-    let timeoutId: NodeJS.Timeout;
-    const throttledScroll = (e: Event) => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => handleScroll(e), 100);
-    };
-
-    scrollContainer.addEventListener('scroll', throttledScroll, { passive: true });
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', throttledScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [handleScroll]);
 
   const tableColumns = [
     {
@@ -284,31 +251,27 @@ export const ListView = ({
 
   return (
     <div ref={listContainerRef} className="flex-1 overflow-auto">
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+            <div className="bg-foreground p-4 rounded border shadow-lg">
+              <span className="text-sm text-text-muted">Loading journeys...</span>
+            </div>
+          </div>
+        )}
         <Table
           columns={tableColumns}
-          data={listJourneys}
-          total={sortedFilteredJourneys.length}
+          data={journeys}
+          total={pagination.total}
           className="bg-foreground rounded shadow-sm border flex-shrink-0"
           onSortChange={(sort, order) => onSort(sort, order)}
           sort={sortField}
           order={sortDirection}
+          pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={onPageChange}
         />
-        {hasMoreJourneys && (
-          <div className="p-4 bg-foreground flex justify-center flex-shrink-0">
-            <Button
-              variant="secondary-outline"
-              onClick={onLoadMore}
-              disabled={isLoadingMore}
-              className="min-w-32"
-            >
-              {isLoadingMore 
-                ? "Loading..." 
-                : `Load ${Math.min(200, sortedFilteredJourneys.length - listBatchSize)} More (${sortedFilteredJourneys.length - listBatchSize} remaining)`
-              }
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

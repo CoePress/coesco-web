@@ -19,6 +19,15 @@ export class LegacyController {
     try {
       const { database, table } = req.params;
       const params = buildQueryParams<any>(req.query);
+
+      if (req.query.filter && typeof req.query.filter === 'string') {
+        try {
+          params.filter = JSON.parse(req.query.filter);
+        } catch {
+          // keep it as a string for backwards compatibility
+        }
+      }
+
       const result = await legacyService.getAll(database, table, params);
       res.status(200).json(result);
     }

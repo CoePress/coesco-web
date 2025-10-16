@@ -1,12 +1,7 @@
-import {
-  Download,
-  Plus,
-  Layout,
-  List as ListIcon,
-  BarChart3,
-  Upload,
-} from "lucide-react";
+import { Download, Plus, Layout, List as ListIcon, BarChart3, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import ExcelJS from 'exceljs';
 
 import { PageHeader, Modal, Button, Select, Input } from "@/components";
 import { CreateJourneyModal } from "@/components/modals/create-journey-modal";
@@ -20,9 +15,7 @@ import { STAGES } from "./journeys/constants";
 import { fuzzyMatch, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { formatCurrency } from "@/utils";
 import { useApi } from "@/hooks/use-api";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth.context";
-import ExcelJS from 'exceljs';
 
 type StageId = (typeof STAGES)[number]["id"];
 
@@ -39,6 +32,7 @@ const Pipeline = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const toggleExportModal = () => setIsExportModalOpen(prev => !prev);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { employee } = useAuth();
   const { put, get, delete: del } = useApi();
@@ -51,29 +45,32 @@ const Pipeline = () => {
   const fetchJourneyTags = async (journeyIds: string[]) => {
     const tagsMap = new Map<string, any[]>();
 
-    try {
-      const tagPromises = journeyIds.map(async (journeyId) => {
-        try {
-          const response = await get('/tags', {
-            filter: JSON.stringify({
-              parentTable: 'journeys',
-              parentId: journeyId
-            })
-          });
+    if (journeyIds.length === 0) {
+      return tagsMap;
+    }
 
-          if (response?.success && Array.isArray(response.data)) {
-            return { journeyId, tags: response.data };
-          }
-          return { journeyId, tags: [] };
-        } catch (error) {
-          console.error(`Error fetching tags for journey ${journeyId}:`, error);
-          return { journeyId, tags: [] };
-        }
+    try {
+      const response = await get('/tags', {
+        filter: JSON.stringify({
+          parentTable: 'journeys',
+          parentIds: journeyIds
+        })
       });
 
-      const results = await Promise.all(tagPromises);
-      results.forEach(({ journeyId, tags }) => {
-        tagsMap.set(journeyId, tags);
+      if (response?.success && Array.isArray(response.data)) {
+        response.data.forEach((tag: any) => {
+          const journeyId = tag.parentId;
+          if (!tagsMap.has(journeyId)) {
+            tagsMap.set(journeyId, []);
+          }
+          tagsMap.get(journeyId)?.push(tag);
+        });
+      }
+
+      journeyIds.forEach(id => {
+        if (!tagsMap.has(id)) {
+          tagsMap.set(id, []);
+        }
       });
     } catch (error) {
       console.error('Error fetching journey tags:', error);
@@ -85,10 +82,11 @@ const Pipeline = () => {
     const fetchData = async () => {
       const [journeysData, customersData] = await Promise.all([
         get('/legacy/base/Journey', {
+          page: 1,
+          limit: 200,
           sort: 'CreateDT',
           order: 'desc',
-          limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
         }),
         get('/legacy/base/Company', { sort: 'Company_ID', order: 'desc' })
       ]);
@@ -97,9 +95,6 @@ const Pipeline = () => {
         const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
         const mappedJourneys = journeysArray.map(adaptLegacyJourney);
         setJourneys(mappedJourneys);
-        const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
-        const tagsMap = await fetchJourneyTags(journeyIds);
-        setJourneyTags(tagsMap);
       }
 
       if (customersData) {
@@ -116,19 +111,17 @@ const Pipeline = () => {
   const refetchLegacyJourneys = async () => {
     try {
       const raw = await refetchApi.get('/legacy/base/Journey', {
+        page: 1,
+        limit: 200,
         sort: 'CreateDT',
         order: 'desc',
-        limit: 150,
-        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Address_ID'
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Address_ID,RSM,Journey_Status'
       });
 
       if (raw !== null) {
         const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
         const mapped = journeysArray.map(adaptLegacyJourney);
         setLegacyJourneys(mapped);
-        const journeyIds = mapped.map((j: any) => j.id.toString());
-        const tagsMap = await fetchJourneyTags(journeyIds);
-        setJourneyTags(tagsMap);
 
         return true;
       } else {
@@ -162,7 +155,10 @@ const Pipeline = () => {
 
   const parseConfidence = (v: any) => {
     if (v == null || v === "") return undefined;
-    const m = String(v).match(/\d+/);
+    const str = String(v);
+    if (str === "Closed Won") return 100;
+    if (str === "Closed Lost") return 0;
+    const m = str.match(/\d+/);
     return m ? Math.min(100, Math.max(0, Number(m[0]))) : undefined;
   };
 
@@ -242,21 +238,17 @@ const Pipeline = () => {
     (async () => {
       try {
         const raw = await initialFetchApi.get('/legacy/base/Journey', {
+          page: 1,
+          limit: 200,
           sort: 'CreateDT',
           order: 'desc',
-          limit: 100,
-          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
+          fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
         });
 
         if (!cancelled && raw !== null) {
           const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
           const mapped = journeysArray.map(adaptLegacyJourney);
           setLegacyJourneys(mapped);
-          const journeyIds = mapped.map((j: any) => j.id.toString());
-          const tagsMap = await fetchJourneyTags(journeyIds);
-          if (!cancelled) {
-            setJourneyTags(tagsMap);
-          }
         }
       } catch (error) {
         console.error("Error fetching Journeys:", error);
@@ -337,6 +329,17 @@ const Pipeline = () => {
   const [sortField, setSortField] = useState<string>(() => getFromLocalStorage('sortField', ''));
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => getFromLocalStorage('sortDirection', 'asc'));
   const [showTags, setShowTags] = useState<boolean>(() => getFromLocalStorage('showTags', false));
+  const [kanbanBatchSize, setKanbanBatchSize] = useState<number>(() => getFromLocalStorage('kanbanBatchSize', 50));
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize] = useState(25);
+  const [listViewJourneys, setListViewJourneys] = useState<any[]>([]);
+  const [listViewPagination, setListViewPagination] = useState({
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 25
+  });
+  const [isLoadingListView, setIsLoadingListView] = useState(false);
 
 
   const filteredJourneys = useMemo(() => {
@@ -449,78 +452,248 @@ const Pipeline = () => {
   const kanbanJourneys = useMemo(() => {
     return filteredJourneys
       .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-      .slice(0, 50);
-  }, [filteredJourneys]);
+      .slice(0, kanbanBatchSize);
+  }, [filteredJourneys, kanbanBatchSize]);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "projections">(() => getFromLocalStorage('viewMode', 'kanban'));
-  const [listBatchSize, setListBatchSize] = useState(200);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const sortedFilteredJourneys = useMemo(() => {
-    if (!sortField) return filteredJourneys;
-    
-    return [...filteredJourneys].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-      
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name ?? '').toLowerCase();
-          bValue = (b.name ?? '').toLowerCase();
-          break;
-        case 'customerId':
-          const aCustomer = customersById?.get(String(a.customerId));
-          const bCustomer = customersById?.get(String(b.customerId));
-          aValue = (aCustomer?.name ?? a.companyName ?? '').toLowerCase();
-          bValue = (bCustomer?.name ?? b.companyName ?? '').toLowerCase();
-          break;
-        case 'stage':
-          aValue = a.stage ?? 1;
-          bValue = b.stage ?? 1;
-          break;
-        case 'value':
-          aValue = Number(a.value ?? 0);
-          bValue = Number(b.value ?? 0);
-          break;
-        case 'confidence':
-          aValue = Number(a.confidence ?? 0);
-          bValue = Number(b.confidence ?? 0);
-          break;
-        case 'priority':
-          const priorityOrder = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
-          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0;
-          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0;
-          break;
-        case 'updatedAt':
-          aValue = new Date(a.updatedAt ?? 0).getTime();
-          bValue = new Date(b.updatedAt ?? 0).getTime();
-          break;
-        default:
-          return 0;
+
+  const fetchListViewJourneys = useCallback(async () => {
+    if (isLoadingListView) return;
+
+    setIsLoadingListView(true);
+    try {
+      const sortFieldMap: Record<string, string> = {
+        'name': 'Project_Name',
+        'customerId': 'Company_ID',
+        'stage': 'Journey_Stage',
+        'value': 'Journey_Value',
+        'confidence': `CASE
+          WHEN Chance_To_Secure_order = 'Closed Won' THEN 100
+          WHEN Chance_To_Secure_order = 'Closed Lost' THEN 0
+          WHEN Chance_To_Secure_order LIKE '%[0-9]%' THEN CAST(REPLACE(Chance_To_Secure_order, '%', '') AS INT)
+          ELSE 0
+        END`,
+        'priority': 'Priority',
+        'updatedAt': 'Action_Date'
+      };
+
+      const dbSortField = sortField ? (sortFieldMap[sortField] || sortField) : 'CreateDT';
+
+      const params: any = {
+        page: listPage,
+        limit: listPageSize,
+        sort: dbSortField,
+        order: sortDirection,
+        fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
+      };
+
+      const filterConditions: any[] = [];
+
+      if (searchTerm) {
+        const trimmedSearch = searchTerm.trim();
+        filterConditions.push({
+          operator: "or",
+          conditions: [
+            { field: "Project_Name", operator: "contains", value: trimmedSearch },
+            { field: "Target_Account", operator: "contains", value: trimmedSearch }
+          ]
+        });
       }
-      
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filteredJourneys, sortField, sortDirection, customersById]);
-  
-  const listJourneys = useMemo(() => {
-    return sortedFilteredJourneys.slice(0, listBatchSize);
-  }, [sortedFilteredJourneys, listBatchSize]);
 
-  const hasMoreJourneys = sortedFilteredJourneys.length > listBatchSize;
+      if (rsmFilter) {
+        filterConditions.push({
+          field: "RSM",
+          operator: "contains",
+          value: rsmFilter
+        });
+      }
 
-  const loadMoreJourneys = useCallback(() => {
-    if (isLoadingMore || !hasMoreJourneys) return;
-    
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setListBatchSize(prev => prev + 200);
-      setIsLoadingMore(false);
-    }, 300);
-  }, [isLoadingMore, hasMoreJourneys]);
+      if (journeyStatusFilter) {
+        filterConditions.push({
+          field: "Journey_Status",
+          operator: "equals",
+          value: journeyStatusFilter
+        });
+      }
+
+      if (filters.priority) {
+        filterConditions.push({
+          field: "Priority",
+          operator: "equals",
+          value: filters.priority
+        });
+      }
+
+      if (filters.confidenceLevels.length > 0) {
+        const confidenceValues = filters.confidenceLevels.map((level: number) => {
+          if (level === 0) return "Closed Lost";
+          if (level === 100) return "Closed Won";
+          return `${level}%`;
+        });
+        filterConditions.push({
+          field: "Chance_To_Secure_order",
+          operator: "in",
+          values: confidenceValues
+        });
+      }
+
+      if (filters.dateRange[0] || filters.dateRange[1]) {
+        const fieldMap: Record<string, string> = {
+          'closeDate': 'Expected_Decision_Date',
+          'Action_Date': 'Action_Date',
+          'Journey_Start_Date': 'Journey_Start_Date',
+          'Quote_Presentation_Date': 'Quote_Presentation_Date',
+          'Expected_Decision_Date': 'Expected_Decision_Date',
+          'Date_PO_Received': 'Date_PO_Received',
+          'Date_Lost': 'Date_Lost'
+        };
+        const dbField = fieldMap[filters.dateField] || 'Expected_Decision_Date';
+
+        if (filters.dateRange[0]) {
+          filterConditions.push({
+            field: dbField,
+            operator: "gte",
+            value: filters.dateRange[0]
+          });
+        }
+        if (filters.dateRange[1]) {
+          filterConditions.push({
+            field: dbField,
+            operator: "lte",
+            value: filters.dateRange[1]
+          });
+        }
+      }
+
+      if (filters.minValue) {
+        filterConditions.push({
+          field: "Journey_Value",
+          operator: "gte",
+          value: parseFloat(filters.minValue)
+        });
+      }
+
+      if (filters.maxValue) {
+        filterConditions.push({
+          field: "Journey_Value",
+          operator: "lte",
+          value: parseFloat(filters.maxValue)
+        });
+      }
+
+      if (filters.visibleStages.length !== STAGES.length) {
+        const stageConditions = filters.visibleStages.map((stageId: number) => {
+          switch (stageId) {
+            case 1: // Lead
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "LEAD" },
+                  { field: "Journey_Stage", operator: "contains", value: "OPEN" },
+                  { field: "Journey_Stage", operator: "contains", value: "NEW" }
+                ]
+              };
+            case 2: // Qualified
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "QUALIFY" },
+                  { field: "Journey_Stage", operator: "contains", value: "QUALIFI" },
+                  { field: "Journey_Stage", operator: "contains", value: "PAIN" },
+                  { field: "Journey_Stage", operator: "contains", value: "DISCOVER" }
+                ]
+              };
+            case 3: // Presentations
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "PRESENT" },
+                  { field: "Journey_Stage", operator: "contains", value: "DEMO" },
+                  { field: "Journey_Stage", operator: "contains", value: "PROPOSAL" },
+                  { field: "Journey_Stage", operator: "contains", value: "QUOTE" }
+                ]
+              };
+            case 4: // Negotiation
+              return {
+                field: "Journey_Stage",
+                operator: "contains",
+                value: "NEGOT"
+              };
+            case 5: // Closed Won
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "PO" },
+                  { field: "Journey_Stage", operator: "contains", value: "WON" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDWON" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSED WON" },
+                  { field: "Journey_Stage", operator: "contains", value: "ORDER" }
+                ]
+              };
+            case 6: // Closed Lost
+              return {
+                operator: "or",
+                conditions: [
+                  { field: "Journey_Stage", operator: "contains", value: "LOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSEDLOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "CLOSED LOST" },
+                  { field: "Journey_Stage", operator: "contains", value: "DECLIN" }
+                ]
+              };
+            default:
+              return null;
+          }
+        }).filter(Boolean);
+
+        if (stageConditions.length > 0) {
+          filterConditions.push({
+            operator: "or",
+            conditions: stageConditions
+          });
+        }
+      }
+
+      if (filterConditions.length > 0) {
+        params.filter = JSON.stringify({ filters: filterConditions });
+      }
+
+      const raw = await api.get('/legacy/base/Journey', params);
+
+      if (raw !== null) {
+        const journeysArray = raw.data ? raw.data : (Array.isArray(raw) ? raw : []);
+        const mapped = journeysArray.map(adaptLegacyJourney);
+
+        setListViewJourneys(mapped);
+
+        if (raw.meta) {
+          setListViewPagination({
+            page: raw.meta.page,
+            totalPages: raw.meta.totalPages,
+            total: raw.meta.total,
+            limit: raw.meta.limit
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching list view journeys:", error);
+    } finally {
+      setIsLoadingListView(false);
+    }
+  }, [isLoadingListView, listPage, listPageSize, sortField, sortDirection, api, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+
   useEffect(() => {
-    setListBatchSize(200);
-  }, [searchTerm, filters, rsmFilter, journeyStatusFilter]);
+    if (viewMode === 'list') {
+      fetchListViewJourneys();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, listPage, sortField, sortDirection, searchTerm, rsmFilter, journeyStatusFilter, filters]);
+
+  const handleListPageChange = (newPage: number) => {
+    setListPage(newPage);
+  };
+
+  useEffect(() => {
+    setListPage(1);
+  }, [searchTerm]);
   useEffect(() => {
     saveToLocalStorage('searchTerm', searchTerm);
   }, [searchTerm]);
@@ -556,6 +729,48 @@ const Pipeline = () => {
   useEffect(() => {
     saveToLocalStorage('showTags', showTags);
   }, [showTags]);
+
+  useEffect(() => {
+    if (showTags && viewMode === 'kanban') {
+      const journeysToFetch = filteredJourneys
+        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+        .slice(0, kanbanBatchSize);
+
+      if (journeysToFetch.length > 0) {
+        const journeyIds = journeysToFetch.map((j: any) => j.id.toString());
+        fetchJourneyTags(journeyIds).then(tagsMap => {
+          setJourneyTags(tagsMap);
+        });
+      }
+    }
+  }, [showTags, viewMode]);
+
+  useEffect(() => {
+    saveToLocalStorage('kanbanBatchSize', kanbanBatchSize);
+  }, [kanbanBatchSize]);
+
+  useEffect(() => {
+    const view = searchParams.get('view');
+    const sort = searchParams.get('sort');
+    const order = searchParams.get('order');
+
+    if (view === 'list' || view === 'kanban' || view === 'projections') {
+      setViewMode(view);
+    }
+
+    if (sort) {
+      setSortField(sort);
+    }
+
+    if (order === 'asc' || order === 'desc') {
+      setSortDirection(order);
+    }
+
+    if (view || sort || order) {
+      setSearchParams({});
+    }
+  }, []);
+
   const visibleStageIds = filters.visibleStages;
 
   const emptyStageMap = useMemo(() => {
@@ -618,13 +833,15 @@ const Pipeline = () => {
   const stageUpdateApi = useApi();
   
   const handleTagsUpdated = useCallback(async () => {
-    const allJourneys = legacyJourneys || journeys;
-    if (allJourneys) {
-      const journeyIds = allJourneys.map((j: any) => j.id.toString());
+    if (!showTags) return;
+
+    const journeysToUpdate = viewMode === 'kanban' ? kanbanJourneys : (legacyJourneys || journeys);
+    if (journeysToUpdate && journeysToUpdate.length > 0) {
+      const journeyIds = journeysToUpdate.map((j: any) => j.id.toString());
       const tagsMap = await fetchJourneyTags(journeyIds);
       setJourneyTags(tagsMap);
     }
-  }, [legacyJourneys, journeys]);
+  }, [showTags, viewMode, kanbanJourneys, legacyJourneys, journeys]);
 
   const handleStageUpdate = useCallback(async (journeyId: string, newStage: number) => {
     try {
@@ -692,7 +909,7 @@ const Pipeline = () => {
     }, 0);
   }, [filteredJourneys]);
 
-  const pageTitle = "Sales Pipeline";
+  const pageTitle = "Journeys";
   const pageDescription = `${filteredJourneys.length} Journeys`;
 
 
@@ -1037,6 +1254,8 @@ const Pipeline = () => {
             setIsFilterModalOpen={setIsFilterModalOpen}
             showTags={showTags}
             setShowTags={setShowTags}
+            kanbanBatchSize={kanbanBatchSize}
+            setKanbanBatchSize={setKanbanBatchSize}
             viewMode={viewMode}
             validJourneyStatuses={validJourneyStatuses}
           />
@@ -1052,6 +1271,7 @@ const Pipeline = () => {
             showTags={showTags}
             onTagsUpdated={handleTagsUpdated}
             employee={employee}
+            journeyTags={journeyTags}
           />
         </div>
       )}
@@ -1074,18 +1294,16 @@ const Pipeline = () => {
             validJourneyStatuses={validJourneyStatuses}
           />
           <ListView
-            journeys={listJourneys}
-            sortedFilteredJourneys={sortedFilteredJourneys}
+            journeys={listViewJourneys}
             customersById={customersById}
-            listBatchSize={listBatchSize}
-            hasMoreJourneys={hasMoreJourneys}
-            isLoadingMore={isLoadingMore}
-            onLoadMore={loadMoreJourneys}
+            pagination={listViewPagination}
+            onPageChange={handleListPageChange}
             onDeleteJourney={handleDeleteJourney}
             onSort={handleSort}
             stageLabel={stageLabel}
             sortField={sortField}
             sortDirection={sortDirection}
+            isLoading={isLoadingListView}
           />
         </div>
       )}
@@ -1129,24 +1347,28 @@ const Pipeline = () => {
             const fetchData = async () => {
               const [journeysData] = await Promise.all([
                 get('/legacy/base/Journey', {
+                  page: 1,
+                  limit: 200,
                   sort: 'CreateDT',
                   order: 'desc',
-                  limit: 100,
-                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID'
+                  fields: 'ID,Project_Name,Target_Account,Journey_Stage,Journey_Value,Priority,Quote_Number,Expected_Decision_Date,Quote_Presentation_Date,Date_PO_Received,Journey_Start_Date,CreateDT,Action_Date,Chance_To_Secure_order,Company_ID,Next_Steps,Address_ID,RSM,Journey_Status'
                 })
               ]);
-              
+
               if (journeysData) {
                 const journeysArray = journeysData.data ? journeysData.data : (Array.isArray(journeysData) ? journeysData : []);
                 const mappedJourneys = journeysArray.map(adaptLegacyJourney);
                 setJourneys(mappedJourneys);
                 setLegacyJourneys(mappedJourneys);
-                const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
-                const tagsMap = await fetchJourneyTags(journeyIds);
-                setJourneyTags(tagsMap);
+
+                if (showTags) {
+                  const journeyIds = mappedJourneys.map((j: any) => j.id.toString());
+                  const tagsMap = await fetchJourneyTags(journeyIds);
+                  setJourneyTags(tagsMap);
+                }
               }
             };
-            
+
             fetchData();
           }}
           availableRsms={availableRsms}
