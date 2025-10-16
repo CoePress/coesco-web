@@ -13,8 +13,8 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
-import { prisma } from "@/utils/prisma";
 import { getClientIp } from "@/utils";
+import { prisma } from "@/utils/prisma";
 
 import { emailService, loginHistoryService, sessionService } from "..";
 
@@ -142,11 +142,11 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      console.log('[IP Debug] Headers:', {
-        'x-forwarded-for': req.headers['x-forwarded-for'],
-        'x-real-ip': req.headers['x-real-ip'],
-        'req.ip': req.ip,
-        'getClientIp': getClientIp(req)
+      console.log("[IP Debug] Headers:", {
+        "x-forwarded-for": req.headers["x-forwarded-for"],
+        "x-real-ip": req.headers["x-real-ip"],
+        "req.ip": req.ip,
+        "getClientIp": getClientIp(req),
       });
 
       const session = await sessionService.createSession({
@@ -160,7 +160,7 @@ export class AuthService {
       });
 
       sessionId = session.id;
-      console.log('[Auth Service] Created session with ID:', sessionId);
+      console.log("[Auth Service] Created session with ID:", sessionId);
 
       await loginHistoryService.logAttempt({
         userId: user.id,
@@ -170,11 +170,12 @@ export class AuthService {
         ipAddress: getClientIp(req),
         userAgent: req.headers["user-agent"],
       });
-    } else {
-      console.log('[Auth Service] No req object, sessionId will be undefined');
+    }
+    else {
+      console.log("[Auth Service] No req object, sessionId will be undefined");
     }
 
-    console.log('[Auth Service] Returning login response with sessionId:', sessionId);
+    console.log("[Auth Service] Returning login response with sessionId:", sessionId);
 
     return {
       token,

@@ -26,51 +26,51 @@ export class AddressService {
   }
 
   //   async getCoordinatesByPostalCode(countryCode: string, postalCode: string) {
-//     const result = await this.model.findFirst({
-//       where: {
-//         countryCode: countryCode.toUpperCase(),
-//         postalCode: postalCode.toUpperCase(),
-//       },
-//       select: {
-//         latitude: true,
-//         longitude: true,
-//         countryCode: true,
-//         postalCode: true,
-//       },
-//     });
+  //     const result = await this.model.findFirst({
+  //       where: {
+  //         countryCode: countryCode.toUpperCase(),
+  //         postalCode: postalCode.toUpperCase(),
+  //       },
+  //       select: {
+  //         latitude: true,
+  //         longitude: true,
+  //         countryCode: true,
+  //         postalCode: true,
+  //       },
+  //     });
 
-//     return {
-//       success: true,
-//       data: result,
-//     };
-//   }
+  //     return {
+  //       success: true,
+  //       data: result,
+  //     };
+  //   }
 
-//   async searchPostalCodes(query: { countryCode?: string; postalCode?: string; limit?: number }) {
-//     const where: any = {};
+  //   async searchPostalCodes(query: { countryCode?: string; postalCode?: string; limit?: number }) {
+  //     const where: any = {};
 
-//     if (query.countryCode) {
-//       where.countryCode = query.countryCode.toUpperCase();
-//     }
+  //     if (query.countryCode) {
+  //       where.countryCode = query.countryCode.toUpperCase();
+  //     }
 
-//     if (query.postalCode) {
-//       where.postalCode = {
-//         contains: query.postalCode.toUpperCase(),
-//       };
-//     }
+  //     if (query.postalCode) {
+  //       where.postalCode = {
+  //         contains: query.postalCode.toUpperCase(),
+  //       };
+  //     }
 
-//     const results = await this.model.findMany({
-//       where,
-//       take: query.limit || 10,
-//       select: {
-//         countryCode: true,
-//         postalCode: true,
-//         latitude: true,
-//         longitude: true,
-//       },
-//       orderBy: {
-//         postalCode: "asc",
-//       },
-//     });
+  //     const results = await this.model.findMany({
+  //       where,
+  //       take: query.limit || 10,
+  //       select: {
+  //         countryCode: true,
+  //         postalCode: true,
+  //         latitude: true,
+  //         longitude: true,
+  //       },
+  //       orderBy: {
+  //         postalCode: "asc",
+  //       },
+  //     });
 
 //     return {
 //       success: true,
