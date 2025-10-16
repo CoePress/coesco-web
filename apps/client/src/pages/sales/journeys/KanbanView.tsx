@@ -63,6 +63,7 @@ const JourneyCard = memo(({
   style,
   showTags = false,
   onTagsUpdated,
+  journeyTags,
   ...dragProps
 }: {
   journey: any;
@@ -73,16 +74,17 @@ const JourneyCard = memo(({
   style?: React.CSSProperties;
   showTags?: boolean;
   onTagsUpdated?: () => void;
+  journeyTags?: Map<string, any[]>;
 } & any) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [showUntrackModal, setShowUntrackModal] = useState(false);
   const [showTagsModal, setShowTagsModal] = useState(false);
-  const [tags, setTags] = useState<any[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isTracked, trackingInfo, refreshTracking, setIsTracked } = useJourneyTracking(journey?.id);
-  const api = useApi();
+
+  const tags = journeyTags?.get(journey?.id?.toString()) || [];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -100,34 +102,7 @@ const JourneyCard = memo(({
     };
   }, [isMenuOpen]);
 
-  const fetchTags = async () => {
-    try {
-      const response = await api.get('/tags', {
-        filter: JSON.stringify({
-          parentTable: 'journeys',
-          parentId: journey.id.toString()
-        })
-      });
-      
-      if (response && response.data && Array.isArray(response.data)) {
-        setTags(response.data);
-      } else {
-        setTags([]);
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      setTags([]);
-    }
-  };
-
-  useEffect(() => {
-    if (showTags && journey?.id) {
-      fetchTags();
-    }
-  }, [showTags, journey?.id]);
-
   const handleTagsUpdated = () => {
-    fetchTags();
     onTagsUpdated?.();
   };
   
@@ -176,7 +151,7 @@ const JourneyCard = memo(({
         <div className="mt-2">
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {tags.map((tag) => (
+              {tags.map((tag: any) => (
                 <div
                   key={tag.id}
                   className="bg-primary text-white px-2 py-0.5 rounded-full text-xs"
@@ -306,12 +281,14 @@ const SortableItem = memo(({
   onDelete,
   showTags = false,
   onTagsUpdated,
+  journeyTags,
 }: {
   journey: any;
   customersById: Map<string, any>;
   onDelete?: (journeyId: string) => void;
   showTags?: boolean;
   onTagsUpdated?: () => void;
+  journeyTags: Map<string, any[]>;
 }) => {
   const navigate = useNavigate();
   const customer = customersById?.get(String(journey.customerId));
@@ -342,6 +319,7 @@ const SortableItem = memo(({
       onDelete={onDelete}
       showTags={showTags}
       onTagsUpdated={onTagsUpdated}
+      journeyTags={journeyTags}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -356,10 +334,12 @@ const DragPreview = memo(({
   journey,
   customersById,
   showTags = false,
+  journeyTags,
 }: {
   journey: any;
   customersById: Map<string, any>;
   showTags?: boolean;
+  journeyTags: Map<string, any[]>;
 }) => {
   const customer = customersById?.get(String(journey.customerId));
   return (
@@ -368,6 +348,7 @@ const DragPreview = memo(({
       customer={customer}
       isDragging
       showTags={showTags}
+      journeyTags={journeyTags}
       className="select-none"
     />
   );
@@ -385,6 +366,7 @@ interface KanbanViewProps {
   showTags?: boolean;
   onTagsUpdated?: () => void;
   employee?: any;
+  journeyTags: Map<string, any[]>;
 }
 
 export const KanbanView = ({
@@ -399,6 +381,7 @@ export const KanbanView = ({
   showTags = false,
   onTagsUpdated,
   employee,
+  journeyTags,
 }: KanbanViewProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [originalStage, setOriginalStage] = useState<number | null>(null);
@@ -603,6 +586,7 @@ export const KanbanView = ({
                           onDelete={onDeleteJourney}
                           showTags={showTags}
                           onTagsUpdated={onTagsUpdated}
+                          journeyTags={journeyTags}
                         />
                       ) : null;
                     })}
@@ -628,7 +612,7 @@ export const KanbanView = ({
       <DragOverlay>
         {activeId && (() => {
           const journey = journeys.find((d) => d.id.toString() === activeId);
-          return journey ? <DragPreview journey={journey} customersById={customersById} showTags={showTags} /> : null;
+          return journey ? <DragPreview journey={journey} customersById={customersById} showTags={showTags} journeyTags={journeyTags} /> : null;
         })()}
       </DragOverlay>
     </DndContext>

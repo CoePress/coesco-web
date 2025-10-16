@@ -17,6 +17,8 @@ interface PipelineHeaderProps {
   setIsFilterModalOpen: (open: boolean) => void;
   showTags?: boolean;
   setShowTags?: (show: boolean) => void;
+  kanbanBatchSize?: number;
+  setKanbanBatchSize?: (size: number) => void;
   viewMode?: string;
   validJourneyStatuses: string[];
 }
@@ -35,6 +37,8 @@ export const PipelineHeader = ({
   setIsFilterModalOpen,
   showTags,
   setShowTags,
+  kanbanBatchSize,
+  setKanbanBatchSize,
   viewMode,
   validJourneyStatuses
 }: PipelineHeaderProps) => {
@@ -44,21 +48,27 @@ export const PipelineHeader = ({
     <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search journeys..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
-          />
+          <div className="flex flex-col gap-1">
+            <div className="text-xs h-4"></div>
+            <Input
+              placeholder="Search journeys..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64"
+            />
+          </div>
           <div className="relative">
-            <button
-              onMouseEnter={() => setShowSearchHelp(true)}
-              onMouseLeave={() => setShowSearchHelp(false)}
-              className="p-1 rounded hover:bg-background-secondary transition-colors"
-              type="button"
-            >
-              <Info size={16} className="text-text-muted" />
-            </button>
+            <div className="flex flex-col gap-1">
+              <div className="text-xs h-4"></div>
+              <button
+                onMouseEnter={() => setShowSearchHelp(true)}
+                onMouseLeave={() => setShowSearchHelp(false)}
+                className="p-1 rounded hover:bg-background-secondary transition-colors"
+                type="button"
+              >
+                <Info size={16} className="text-text-muted" />
+              </button>
+            </div>
             {showSearchHelp && (
               <div className="absolute left-0 top-8 z-50 w-80 p-3 bg-background border border-border rounded shadow-lg">
                 <div className="text-sm space-y-2">
@@ -134,26 +144,48 @@ export const PipelineHeader = ({
       </div>
     </div>
     <div className="flex items-center gap-2">
+      {viewMode === "kanban" && kanbanBatchSize !== undefined && setKanbanBatchSize && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-text-muted">Show</label>
+          <Select
+            value={kanbanBatchSize.toString()}
+            onChange={(e) => setKanbanBatchSize(Number(e.target.value))}
+            options={[
+              { value: "25", label: "25" },
+              { value: "50", label: "50" },
+              { value: "100", label: "100" },
+              { value: "200", label: "200" }
+            ]}
+            className="w-24"
+          />
+        </div>
+      )}
       {viewMode === "kanban" && showTags !== undefined && setShowTags && (
+        <div className="flex flex-col gap-1">
+          <div className="text-xs h-4"></div>
+          <Button
+            variant={showTags ? "secondary" : "secondary-outline"}
+            size="sm"
+            onClick={() => setShowTags(!showTags)}
+            className="flex items-center gap-2"
+          >
+            <Tags size={14} />
+            {showTags ? "Hide Tags" : "Show Tags"}
+          </Button>
+        </div>
+      )}
+      <div className="flex flex-col gap-1">
+        <div className="text-xs h-4"></div>
         <Button
-          variant={showTags ? "secondary" : "secondary-outline"}
+          variant="secondary-outline"
           size="sm"
-          onClick={() => setShowTags(!showTags)}
+          onClick={() => setIsFilterModalOpen(true)}
           className="flex items-center gap-2"
         >
-          <Tags size={14} />
-          {showTags ? "Hide Tags" : "Show Tags"}
+          <Filter size={14} />
+          Advanced Filters
         </Button>
-      )}
-      <Button
-        variant="secondary-outline"
-        size="sm"
-        onClick={() => setIsFilterModalOpen(true)}
-        className="flex items-center gap-2"
-      >
-        <Filter size={14} />
-        Advanced Filters
-      </Button>
+      </div>
     </div>
   </div>
   );

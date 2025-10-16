@@ -46,6 +46,87 @@ export class LegacyService {
   private jobConnection?: odbc.Connection;
   private quoteConnection?: odbc.Connection;
   private idMap?: IdMapEntry[];
+  private connectionCheckInterval?: NodeJS.Timeout;
+
+  private validateFieldName(field: string): string {
+    if (!/^[a-zA-Z0-9_]+$/.test(field)) {
+      throw new Error(`Invalid field name: ${field}`);
+    }
+    return field;
+  }
+
+  private formatValue(value: any): string {
+    if (value === null || value === undefined) return "NULL";
+    if (typeof value === "number") return String(value);
+    return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  private buildConditionSQL(condition: any): string {
+    const operator = condition.operator;
+
+    if (operator === "and" || operator === "or") {
+      if (!condition.conditions || !Array.isArray(condition.conditions)) {
+        throw new Error(`${operator} operator requires conditions array`);
+      }
+      const clauses = condition.conditions
+        .map((c: any) => this.buildConditionSQL(c))
+        .filter(Boolean);
+
+      if (clauses.length === 0) return "";
+      if (clauses.length === 1) return clauses[0];
+      return `(${clauses.join(` ${operator.toUpperCase()} `)})`;
+    }
+
+    if (!condition.field) {
+      throw new Error("Field is required for non-logical operators");
+    }
+
+    const field = this.validateFieldName(condition.field);
+
+    switch (operator) {
+      case "equals":
+        return `${field} = ${this.formatValue(condition.value)}`;
+      case "notEquals":
+        return `${field} <> ${this.formatValue(condition.value)}`;
+      case "gt":
+        return `${field} > ${this.formatValue(condition.value)}`;
+      case "gte":
+        return `${field} >= ${this.formatValue(condition.value)}`;
+      case "lt":
+        return `${field} < ${this.formatValue(condition.value)}`;
+      case "lte":
+        return `${field} <= ${this.formatValue(condition.value)}`;
+      case "contains":
+        return `UPPER(${field}) LIKE UPPER('%${String(condition.value || "").replace(/'/g, "''")}%')`;
+      case "startsWith":
+        return `UPPER(${field}) LIKE UPPER('${String(condition.value || "").replace(/'/g, "''")}%')`;
+      case "endsWith":
+        return `UPPER(${field}) LIKE UPPER('%${String(condition.value || "").replace(/'/g, "''")}')`;
+      case "in":
+        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0) return "";
+        return `${field} IN (${condition.values.map((v: any) => this.formatValue(v)).join(", ")})`;
+      case "notIn":
+        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0) return "";
+        return `${field} NOT IN (${condition.values.map((v: any) => this.formatValue(v)).join(", ")})`;
+      case "isNull":
+        return `${field} IS NULL`;
+      case "isNotNull":
+        return `${field} IS NOT NULL`;
+      default:
+        throw new Error(`Unknown operator: ${operator}`);
+    }
+  }
+
+  private buildFilterSQL(filter: any): string {
+    if (filter.filters && Array.isArray(filter.filters)) {
+      return filter.filters
+        .map((condition: any) => this.buildConditionSQL(condition))
+        .filter(Boolean)
+        .join(" AND ");
+    }
+    if (filter.operator) return this.buildConditionSQL(filter);
+    return "";
+  }
 
   private getDatabaseConnection(db: string) {
     switch (db) {
@@ -122,6 +203,70 @@ export class LegacyService {
     }
   }
 
+  private async reconnect(database: string): Promise<odbc.Connection | undefined> {
+    let connStr: string;
+    let dbName: string;
+
+    switch (database) {
+      case "std":
+        connStr = stdConnStr;
+        dbName = "STD";
+        break;
+      case "job":
+        connStr = jobConnStr;
+        dbName = "JOB";
+        break;
+      case "quote":
+        connStr = quoteConnStr;
+        dbName = "QUOTE";
+        break;
+      default:
+        return undefined;
+    }
+
+    try {
+      logger.info(`Attempting to reconnect to ${dbName} database...`);
+      const connectionPromise = odbc.connect(connStr);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Connection timeout after 10000ms`)), 10000),
+      );
+
+      const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
+      logger.info(`Successfully reconnected to ${dbName} database`);
+
+      if (database === "std") this.stdConnection = connection;
+      else if (database === "job") this.jobConnection = connection;
+      else if (database === "quote") this.quoteConnection = connection;
+
+      return connection;
+    }
+    catch (err) {
+      logger.error(`Failed to reconnect to ${dbName} database:`, err);
+      return undefined;
+    }
+  }
+
+  private startConnectionCheck() {
+    this.connectionCheckInterval = setInterval(async () => {
+      for (const db of ["std", "job", "quote"]) {
+        const conn = this.getDatabaseConnection(db);
+        if (!conn) {
+          logger.warn(`No connection for ${db} database, attempting to reconnect...`);
+          await this.reconnect(db);
+        }
+        else {
+          try {
+            await conn.query("SELECT 1 FROM PUB.\"_File\" FETCH FIRST 1 ROW ONLY");
+          }
+          catch (err) {
+            logger.warn(`No connection to ${db} database, attempting to reconnect...`);
+            await this.reconnect(db);
+          }
+        }
+      }
+    }, 60000);
+  }
+
   async initialize() {
     // Helper function to attempt connection with 500ms timeout
     const connectFast = async (connStr: string, dbName: string) => {
@@ -168,6 +313,9 @@ export class LegacyService {
     else {
       logger.info(`Successfully connected to: ${connectedDatabases.join(", ")}`);
     }
+
+    logger.info("Starting health check service (checking every 60 seconds)...");
+    this.startConnectionCheck();
   }
 
   async create(database: string, table: string, data: any) {
@@ -261,18 +409,16 @@ export class LegacyService {
     }
 
     let whereClause = "";
-    if (params.filter && typeof params.filter === "string") {
-      if (params.filter.includes(" OR ")) {
+
+    if (params.filter) {
+      if (typeof params.filter === "object") {
+        const sql = this.buildFilterSQL(params.filter);
+        if (sql) {
+          whereClause = `WHERE ${sql}`;
+        }
+      }
+      else if (typeof params.filter === "string") {
         whereClause = `WHERE ${params.filter}`;
-      }
-      else if (params.filter.includes(" LIKE ")) {
-        const [field, value] = params.filter.split(" LIKE ");
-        const quotedValue = value.startsWith("'") ? value : `'${value}'`;
-        whereClause = `WHERE ${field} LIKE ${quotedValue}`;
-      }
-      else {
-        const [field, value] = params.filter.split("=");
-        whereClause = `WHERE ${field} = ${value}`;
       }
     }
 
@@ -719,6 +865,10 @@ export class LegacyService {
 
   async close() {
     try {
+      if (this.connectionCheckInterval) {
+        clearInterval(this.connectionCheckInterval);
+        logger.info("Health check service stopped");
+      }
       await this.stdConnection?.close();
       await this.jobConnection?.close();
       await this.quoteConnection?.close();

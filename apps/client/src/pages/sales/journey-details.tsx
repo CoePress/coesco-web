@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { PageHeader, Tabs, Table, Button, Modal } from "@/components";
+import { useNavigate, useParams } from "react-router-dom";
+import { Edit, Plus, User, Trash2, Search } from "lucide-react";
+import { PageHeader, Tabs, Table, Button, Modal, AddJourneyContactModal } from "@/components";
+import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
 import { formatCurrency, formatDate } from "@/utils";
+import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth.context";
 import { STAGES, VALID_CONFIDENCE_LEVELS, VALID_REASON_WON, VALID_REASON_LOST, VALID_PRESENTATION_METHODS, VALID_JOURNEY_TYPES, VALID_LEAD_SOURCES, VALID_EQUIPMENT_TYPES, VALID_DEALERS, VALID_DEALER_CONTACTS, VALID_INDUSTRIES, VALID_QUOTE_TYPES } from "./journeys/constants";
 import { formatDateForDatabase, getValidEquipmentType, getValidLeadSource, getValidJourneyType, getValidDealer, getValidDealerContact, getValidIndustry, fetchAvailableRsms, fetchDemographicCategory, Employee } from "./journeys/utils";
 import { COMPETITION_OPTIONS } from "./journeys/types";
@@ -130,12 +135,6 @@ const FormField = ({ label, children, className = "" }: any) => (
     {children}
   </div>
 );
-import { Edit, Plus, User, Trash2, Search } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useApi } from "@/hooks/use-api";
-import { useAuth } from "@/contexts/auth.context";
-import { DeleteJourneyModal } from "@/components/modals/delete-journey-modal";
-import { AddJourneyContactModal } from "@/components";
 
 function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourneyContacts, employee, validJourneyStatuses }: { journey: any | null; journeyContacts: any[]; updateJourney: (updates: Record<string, any>) => void; setJourneyContacts: React.Dispatch<React.SetStateAction<any[]>>; employee: any; validJourneyStatuses: string[] }) {
   const [availableRsms, setAvailableRsms] = useState<Employee[]>([]);
