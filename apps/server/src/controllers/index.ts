@@ -16,6 +16,7 @@ import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
 import { SettingsController } from "./core/settings.controller";
 import { TagController } from "./core/tag.controller";
+import { WebhookController } from "./core/webhook.controller";
 import { ResourceMonitoringController } from "./production/resource-monitoring.controller";
 import { ResourceController } from "./production/resource.controller";
 import { CustomerController } from "./sales/customer.controller";
@@ -47,6 +48,7 @@ export const legacyController = new LegacyController();
 export const lockController = new LockController();
 export const settingsController = new SettingsController();
 export const tagController = new TagController();
+export const webhookController = new WebhookController();
 
 // Production
 export const resourceMonitoringController = new ResourceMonitoringController();
