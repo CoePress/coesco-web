@@ -384,7 +384,7 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               <Button
                 onClick={async () => {
-                  const result = await post("/system/bug-report", {
+                  const result = await post("/system/bugs", {
                     description: formData.description.trim(),
                     screenshot: formData.includeScreenshot ? (formData.annotatedScreenshot || screenshot) : null,
                     url: window.location.href,
