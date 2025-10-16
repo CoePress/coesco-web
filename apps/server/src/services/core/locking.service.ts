@@ -28,7 +28,7 @@ export class LockingService {
       }
 
       const employee = await prisma.employee.findUnique({
-        where: { userId: userId },
+        where: { userId },
         select: { firstName: true, lastName: true },
       });
 
@@ -37,7 +37,8 @@ export class LockingService {
       }
 
       return undefined;
-    } catch (error) {
+    }
+    catch (error) {
       logger.error(`Error fetching employee name for userId ${userId}:`, error);
       return undefined;
     }

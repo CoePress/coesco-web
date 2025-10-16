@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import { SocketProvider } from "@/contexts/socket.context";
 import { MicrosoftCallback, ProtectedRoute, PublicRoute } from "./components";
 import modules from "./config/modules";
 import MainMenu from "./pages/main-menu";
@@ -10,6 +9,7 @@ import ForgotPassword from "./pages/forgot-password";
 import ChatPage from "./pages/utility/chat";
 import { RecentChats, Resources, Settings } from "./pages";
 import { __dev__ } from "./config/env";
+import { useSessionMonitor } from "./hooks/use-session-monitor";
 
 const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   const routes: any[] = [];
@@ -50,9 +50,16 @@ const generateAllRoutes = (pages: any[], moduleSlug: string) => {
   return routes;
 };
 
+const SessionMonitor = () => {
+  useSessionMonitor();
+  return null;
+};
+
 const App = () => {
-  const content = (
-    <Routes>
+  return (
+    <>
+      <SessionMonitor />
+      <Routes>
       <Route
         path="/callback"
         element={<MicrosoftCallback />}
@@ -138,10 +145,7 @@ const App = () => {
         element={<NotFound />}
       />
     </Routes>
-  );
-
-  return (
-    <SocketProvider>{content}</SocketProvider>
+    </>
   );
 };
 

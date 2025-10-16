@@ -672,6 +672,51 @@
       }
     },
     {
+      "name": "email-log",
+      "description": "Schema for EmailLog entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "to": {
+          "type": "string",
+          "required": true
+        },
+        "subject": {
+          "type": "string",
+          "required": true
+        },
+        "template": {
+          "type": "string",
+          "required": false
+        },
+        "status": {
+          "type": "emailstatus",
+          "required": true,
+          "hasDefault": true
+        },
+        "sentAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "error": {
+          "type": "string",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        }
+      }
+    },
+    {
       "name": "employee",
       "description": "Schema for Employee entity",
       "schema": {
@@ -762,6 +807,75 @@
         "updatedById": {
           "type": "string",
           "required": true
+        }
+      }
+    },
+    {
+      "name": "external-access-link",
+      "description": "Schema for ExternalAccessLink entity",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "hasDefault": true
+        },
+        "token": {
+          "type": "string",
+          "required": true
+        },
+        "purpose": {
+          "type": "accesspurpose",
+          "required": true
+        },
+        "resourceId": {
+          "type": "string",
+          "required": false
+        },
+        "resourceType": {
+          "type": "string",
+          "required": false
+        },
+        "expiresAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "usedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "revokedAt": {
+          "type": "datetime",
+          "required": false
+        },
+        "maxUses": {
+          "type": "int",
+          "required": false
+        },
+        "useCount": {
+          "type": "int",
+          "required": true,
+          "hasDefault": true
+        },
+        "metadata": {
+          "type": "json",
+          "required": false
+        },
+        "createdAt": {
+          "type": "datetime",
+          "required": true,
+          "hasDefault": true
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "required": true
+        },
+        "createdById": {
+          "type": "string",
+          "required": false
+        },
+        "updatedById": {
+          "type": "string",
+          "required": false
         }
       }
     },

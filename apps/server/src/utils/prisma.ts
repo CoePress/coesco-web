@@ -61,6 +61,37 @@ function buildNestedInclude(paths: string[]) {
   return result;
 }
 
+function processFilterValue(value: any): any {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const operators = ["gte", "gt", "lte", "lt", "not", "in", "notIn", "contains", "startsWith", "endsWith", "AND", "OR", "NOT"];
+  const hasOperator = Object.keys(value).some(key => operators.includes(key));
+
+  if (hasOperator) {
+    const processed: any = {};
+    for (const [key, val] of Object.entries(value)) {
+      if (["AND", "OR"].includes(key) && Array.isArray(val)) {
+        processed[key] = val.map(item => processFilterValue(item));
+      }
+      else if (key === "NOT") {
+        processed[key] = processFilterValue(val);
+      }
+      else {
+        processed[key] = val;
+      }
+    }
+    return processed;
+  }
+
+  return value;
+}
+
 function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderResult) {
   if (params.select) {
     const parsedSelect = parseComplexParam(params.select);
@@ -177,10 +208,10 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
           }
           current = current[parts[i]];
         }
-        current[parts[parts.length - 1]] = value;
+        current[parts[parts.length - 1]] = processFilterValue(value);
       }
       else {
-        processedFilter[key] = value;
+        processedFilter[key] = processFilterValue(value);
       }
     });
 

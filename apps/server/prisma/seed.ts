@@ -1,22 +1,30 @@
 /* eslint-disable node/prefer-global/process */
-import { FormFieldControlType, FormFieldDataType, FormStatus, MachineControllerType, MachineType } from "@prisma/client";
+import { FormFieldControlType, FormFieldDataType, FormStatus, ItemType, MachineControllerType, MachineType } from "@prisma/client";
 
 import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
-import { MicrosoftService } from "@/services/business/microsoft.service";
-import { ALL_PERMISSIONS } from "@/services/core/permission.service";
+import { MicrosoftService } from "@/services/admin/microsoft.service";
 import {
-  formConditionalRuleService,
-  formFieldService,
-  formPageService,
-  formSectionService,
-  formService,
-  machineService,
-  performanceSheetVersionService,
-  permissionService as repoPermissionService,
-  rolePermissionService,
-  roleService,
-} from "@/services/repository";
+  formConditionalRuleRepository,
+  formFieldRepository,
+  formPageRepository,
+  formSectionRepository,
+  formRepository,
+  machineRepository,
+  performanceSheetVersionRepository,
+  permissionRepository,
+  rolePermissionRepository,
+  roleRepository,
+  productClassRepository,
+  optionCategoryRepository,
+  optionHeaderRepository,
+  optionDetailsRepository,
+  optionRuleRepository,
+  optionRuleTriggerRepository,
+  optionRuleTargetRepository,
+  productClassOptionCategoryRepository,
+  itemRepository,
+} from "@/repositories";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import defaultUsers from "@/config/default-users.json";
 import { logger } from "@/utils/logger";
@@ -129,7 +137,7 @@ async function seedMachines() {
       });
 
       if (!existing) {
-        await machineService.create({
+        await machineRepository.create({
           slug: machine.slug,
           name: machine.name,
           type: machine.type,
@@ -149,32 +157,32 @@ async function seedMachines() {
   }
 }
 
-async function seedPermissions() {
-  try {
-    const existingPermissions = await prisma.permission.count();
+// async function seedPermissions() {
+//   try {
+//     const existingPermissions = await prisma.permission.count();
 
-    if (existingPermissions === 0) {
-      logger.info("Seeding permissions...");
+//     if (existingPermissions === 0) {
+//       logger.info("Seeding permissions...");
 
-      for (const permission of ALL_PERMISSIONS) {
-        const [resource, ...actionParts] = permission.split(".");
-        const action = actionParts.join(".");
+//       for (const permission of ALL_PERMISSIONS) {
+//         const [resource, ...actionParts] = permission.split(".");
+//         const action = actionParts.join(".");
 
-        await repoPermissionService.create({
-          resource,
-          action,
-          description: `Permission for ${permission}`,
-          condition: null,
-        });
-      }
+//         await permissionRepository.create({
+//           resource,
+//           action,
+//           description: `Permission for ${permission}`,
+//           condition: null,
+//         });
+//       }
 
-      logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
-    }
-  }
-  catch (error) {
-    logger.error("Error during permission seeding:", error);
-  }
-}
+//       logger.info(`Seeded ${ALL_PERMISSIONS.length} permissions`);
+//     }
+//   }
+//   catch (error) {
+//     logger.error("Error during permission seeding:", error);
+//   }
+// }
 
 async function seedRoles() {
   try {
@@ -185,13 +193,13 @@ async function seedRoles() {
     if (!adminRole) {
       logger.info("Seeding roles...");
 
-      const adminRoleData = await roleService.create({
+      const adminRoleData = await roleRepository.create({
         name: "ADMIN",
         description: "Full system administrator with all permissions",
         isSystem: true,
       });
 
-      const userRole = await roleService.create({
+      const userRole = await roleRepository.create({
         name: "USER",
         description: "Standard user with basic permissions",
         isSystem: true,
@@ -202,7 +210,7 @@ async function seedRoles() {
 
       // Admin gets all permissions
       for (const permission of allPermissions) {
-        await rolePermissionService.create({
+        await rolePermissionRepository.create({
           roleId: adminRoleData.data.id,
           permissionId: permission.id,
           condition: null,
@@ -228,7 +236,7 @@ async function seedRoles() {
         });
 
         if (permission) {
-          await rolePermissionService.create({
+          await rolePermissionRepository.create({
             roleId: userRole.data.id,
             permissionId: permission.id,
             condition: null,
@@ -309,7 +317,7 @@ async function seedPerformanceSheetVersions() {
         },
       ];
 
-      await performanceSheetVersionService.create({
+      await performanceSheetVersionRepository.create({
         sections: sampleSections,
         createdById: "system",
         updatedById: "system",
@@ -332,7 +340,7 @@ async function seedServiceTechDailyForm() {
     if (!existingForm) {
       logger.info("Seeding Service Tech Daily form...");
 
-      const form = await formService.create({
+      const form = await formRepository.create({
         name: serviceTechDailyTemplate.title,
         description: "Service Technician Daily Report Form",
         status: FormStatus.PUBLISHED,
@@ -343,7 +351,7 @@ async function seedServiceTechDailyForm() {
       const pageLabelMap = new Map<string, string>();
 
       for (const page of serviceTechDailyTemplate.pages) {
-        const formPage = await formPageService.create({
+        const formPage = await formPageRepository.create({
           formId: form.data.id,
           title: page.label,
           sequence: page.sequence,
@@ -354,7 +362,7 @@ async function seedServiceTechDailyForm() {
         pageLabelMap.set(page.label, formPage.data.id);
 
         for (const section of page.sections) {
-          const formSection = await formSectionService.create({
+          const formSection = await formSectionRepository.create({
             pageId: formPage.data.id,
             title: section.label,
             description: null,
@@ -364,7 +372,7 @@ async function seedServiceTechDailyForm() {
           });
 
           for (const field of section.fields) {
-            await formFieldService.create({
+            await formFieldRepository.create({
               sectionId: formSection.data.id,
               label: field.label,
               variable: field.variable,
@@ -394,7 +402,7 @@ async function seedServiceTechDailyForm() {
           }
 
           try {
-            await formConditionalRuleService.create({
+            await formConditionalRuleRepository.create({
               formId: form.data.id,
               name: ruleTemplate.name,
               targetType: ruleTemplate.targetType,
@@ -421,13 +429,422 @@ async function seedServiceTechDailyForm() {
   }
 }
 
+async function seedCatalog() {
+  try {
+    const existingProductClasses = await prisma.productClass.count();
+
+    if (existingProductClasses === 0) {
+      logger.info("Seeding catalog data...");
+
+      // Create Product Classes (hierarchy)
+      const stampingPress = await productClassRepository.create({
+        code: "SP",
+        name: "Stamping Press",
+        description: "High-speed stamping press machines",
+        parentId: null,
+        depth: 0,
+        isActive: true,
+      }, undefined, true);
+
+      const sp100 = await productClassRepository.create({
+        code: "SP-100",
+        name: "SP-100 Series",
+        description: "Entry-level stamping press",
+        parentId: stampingPress.data.id,
+        depth: 1,
+        isActive: true,
+      }, undefined, true);
+
+      const sp200 = await productClassRepository.create({
+        code: "SP-200",
+        name: "SP-200 Series",
+        description: "Mid-range stamping press",
+        parentId: stampingPress.data.id,
+        depth: 1,
+        isActive: true,
+      }, undefined, true);
+
+      // Create Option Categories
+      const speedCategory = await optionCategoryRepository.create({
+        name: "Speed Control",
+        description: "Speed and feed rate options",
+        multiple: false,
+        mandatory: true,
+        standard: false,
+        displayOrder: 1,
+        legacyId: null,
+      }, undefined, true);
+
+      const powerCategory = await optionCategoryRepository.create({
+        name: "Power System",
+        description: "Motor and power options",
+        multiple: false,
+        mandatory: true,
+        standard: false,
+        displayOrder: 2,
+        legacyId: null,
+      }, undefined, true);
+
+      const safetyCategory = await optionCategoryRepository.create({
+        name: "Safety Features",
+        description: "Safety and guarding options",
+        multiple: true,
+        mandatory: false,
+        standard: true,
+        displayOrder: 3,
+        legacyId: null,
+      }, undefined, true);
+
+      // Link categories to product classes
+      await productClassOptionCategoryRepository.create({
+        productClassId: sp100.data.id,
+        optionCategoryId: speedCategory.data.id,
+        displayOrder: 1,
+        isRequired: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await productClassOptionCategoryRepository.create({
+        productClassId: sp100.data.id,
+        optionCategoryId: powerCategory.data.id,
+        displayOrder: 2,
+        isRequired: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await productClassOptionCategoryRepository.create({
+        productClassId: sp100.data.id,
+        optionCategoryId: safetyCategory.data.id,
+        displayOrder: 3,
+        isRequired: false,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      // Create Option Headers
+      const standardSpeed = await optionHeaderRepository.create({
+        optionCategoryId: speedCategory.data.id,
+        name: "Standard Speed (60 SPM)",
+        description: "Standard speed control up to 60 strokes per minute",
+        legacyId: null,
+        displayOrder: 1,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const highSpeed = await optionHeaderRepository.create({
+        optionCategoryId: speedCategory.data.id,
+        name: "High Speed (120 SPM)",
+        description: "High-speed control up to 120 strokes per minute",
+        legacyId: null,
+        displayOrder: 2,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const motor10hp = await optionHeaderRepository.create({
+        optionCategoryId: powerCategory.data.id,
+        name: "10 HP Motor",
+        description: "10 horsepower motor",
+        legacyId: null,
+        displayOrder: 1,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const motor15hp = await optionHeaderRepository.create({
+        optionCategoryId: powerCategory.data.id,
+        name: "15 HP Motor",
+        description: "15 horsepower motor - required for high speed",
+        legacyId: null,
+        displayOrder: 2,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const lightCurtain = await optionHeaderRepository.create({
+        optionCategoryId: safetyCategory.data.id,
+        name: "Light Curtain Safety System",
+        description: "Optical safety system",
+        legacyId: null,
+        displayOrder: 1,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const twoHandControl = await optionHeaderRepository.create({
+        optionCategoryId: safetyCategory.data.id,
+        name: "Two-Hand Control",
+        description: "Standard two-hand control system",
+        legacyId: null,
+        displayOrder: 2,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      // Create Option Details (pricing per product class)
+      await optionDetailsRepository.create({
+        optionHeaderId: standardSpeed.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 0,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionDetailsRepository.create({
+        optionHeaderId: highSpeed.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 5000,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionDetailsRepository.create({
+        optionHeaderId: motor10hp.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 2000,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionDetailsRepository.create({
+        optionHeaderId: motor15hp.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 3500,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionDetailsRepository.create({
+        optionHeaderId: lightCurtain.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 1200,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionDetailsRepository.create({
+        optionHeaderId: twoHandControl.data.id,
+        productClassId: sp100.data.id,
+        itemId: null,
+        price: 0,
+        isActive: true,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      // Create Option Rule: High Speed requires 15HP Motor
+      const highSpeedRule = await optionRuleRepository.create({
+        name: "High Speed requires 15HP Motor",
+        description: "When high speed is selected, 15HP motor is required",
+        action: "REQUIRE",
+        priority: 10,
+        isActive: true,
+        condition: {},
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionRuleTriggerRepository.create({
+        ruleId: highSpeedRule.data.id,
+        optionId: highSpeed.data.id,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionRuleTargetRepository.create({
+        ruleId: highSpeedRule.data.id,
+        optionId: motor15hp.data.id,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      // Create Option Rule: High Speed disables 10HP Motor
+      const highSpeedDisableRule = await optionRuleRepository.create({
+        name: "High Speed disables 10HP Motor",
+        description: "When high speed is selected, 10HP motor cannot be selected",
+        action: "DISABLE",
+        priority: 9,
+        isActive: true,
+        condition: {},
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionRuleTriggerRepository.create({
+        ruleId: highSpeedDisableRule.data.id,
+        optionId: highSpeed.data.id,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      await optionRuleTargetRepository.create({
+        ruleId: highSpeedDisableRule.data.id,
+        optionId: motor10hp.data.id,
+        createdById: "system",
+        updatedById: "system",
+      }, undefined, true);
+
+      const items = [
+        {
+          productClassId: sp100.data.id,
+          modelNumber: "SP-100-BASE",
+          name: "SP-100 Base Press",
+          description: "Entry-level stamping press with standard configuration",
+          specifications: {
+            maxTonnage: 100,
+            bedSize: "24x36",
+            stroke: "6 inches",
+            SPM: 60,
+            motor: "10HP",
+            price: 45000,
+          },
+          unitPrice: 45000,
+          leadTime: 90,
+          type: ItemType.Equipment,
+          isActive: true,
+        },
+        {
+          productClassId: sp200.data.id,
+          modelNumber: "SP-200-BASE",
+          name: "SP-200 Base Press",
+          description: "Mid-range stamping press with enhanced capabilities",
+          specifications: {
+            maxTonnage: 200,
+            bedSize: "30x48",
+            stroke: "8 inches",
+            SPM: 80,
+            motor: "15HP",
+            price: 75000,
+          },
+          unitPrice: 75000,
+          leadTime: 120,
+          type: ItemType.Equipment,
+          isActive: true,
+        },
+        {
+          productClassId: null,
+          modelNumber: "DIE-KIT-001",
+          name: "Standard Die Set",
+          description: "Standard die set for stamping operations",
+          specifications: {
+            material: "Tool Steel",
+            compatibility: ["SP-100", "SP-200"],
+            price: 2500,
+          },
+          unitPrice: 2500,
+          leadTime: 30,
+          type: ItemType.Parts,
+          isActive: true,
+        },
+        {
+          productClassId: null,
+          modelNumber: "SVC-INSTALL",
+          name: "Installation Service",
+          description: "Professional installation and setup service",
+          specifications: {
+            duration: "2-3 days",
+            includes: ["Assembly", "Calibration", "Training"],
+            price: 5000,
+          },
+          unitPrice: 5000,
+          leadTime: null,
+          type: ItemType.Service,
+          isActive: true,
+        },
+        {
+          productClassId: null,
+          modelNumber: "SVC-MAINTENANCE",
+          name: "Annual Maintenance Contract",
+          description: "Yearly maintenance and inspection service",
+          specifications: {
+            visits: 4,
+            coverage: ["Preventive maintenance", "Priority support", "Parts discount"],
+            price: 3500,
+          },
+          unitPrice: 3500,
+          leadTime: null,
+          type: ItemType.Service,
+          isActive: true,
+        },
+      ];
+
+      const createdItems: { [key: string]: string } = {};
+
+      for (const item of items) {
+        const existing = await prisma.item.findFirst({
+          where: { modelNumber: item.modelNumber },
+        });
+
+        if (!existing) {
+          const created = await itemRepository.create({
+            ...item,
+            createdById: "system",
+            updatedById: "system",
+          }, undefined, true);
+
+          if (item.modelNumber) {
+            createdItems[item.modelNumber] = created.data.id;
+          }
+        }
+      }
+
+      if (createdItems["SP-100-BASE"]) {
+        await optionDetailsRepository.create({
+          optionHeaderId: standardSpeed.data.id,
+          productClassId: null,
+          itemId: createdItems["SP-100-BASE"],
+          price: 0,
+          isActive: true,
+          createdById: "system",
+          updatedById: "system",
+        }, undefined, true);
+
+        await optionDetailsRepository.create({
+          optionHeaderId: motor10hp.data.id,
+          productClassId: null,
+          itemId: createdItems["SP-100-BASE"],
+          price: 0,
+          isActive: true,
+          createdById: "system",
+          updatedById: "system",
+        }, undefined, true);
+      }
+
+      logger.info("Seeded catalog data with product classes, options, items, and rules");
+    }
+  }
+  catch (error) {
+    logger.error("Error during catalog seeding:", error);
+  }
+}
+
 export async function seedDatabase() {
   await seedEmployees();
-  await seedPermissions();
+  // await seedPermissions();
   await seedRoles();
   await seedMachines();
   await seedServiceTechDailyForm();
   await seedPerformanceSheetVersions();
+  await seedCatalog();
 
   logger.info("All seeding completed successfully");
 }

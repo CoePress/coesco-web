@@ -12,6 +12,7 @@ import {
   DollarSignIcon,
   FactoryIcon,
   FileCheck2Icon,
+  FileClockIcon,
   FileCogIcon,
   FileIcon,
   FileTextIcon,
@@ -25,7 +26,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Timezone } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -51,8 +52,6 @@ export interface Page {
   component: ComponentType;
   children?: Page[];
 }
-
-
 
 const productionModule: Module = {
   sequence: 2,
@@ -237,6 +236,12 @@ const adminModule: Module = {
   icon: ShieldIcon,
   status: "active",
   pages: [
+      {
+      slug: null,
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      component: AdminDashboard,
+    },
     {
       slug: "employees",
       label: "Employees",
@@ -250,30 +255,12 @@ const adminModule: Module = {
         },
       ],
     },
-    // {
-    //   slug: "permissions",
-    //   label: "Permissions",
-    //   icon: LockIcon,
-    //   component: Permissions,
-    // },
-    // {
-    //   slug: "sessions",
-    //   label: "Sessions",
-    //   icon: FileClockIcon,
-    //   component: Sessions,
-    // },
-    // {
-    //   slug: "devices",
-    //   label: "Devices",
-    //   icon: ComputerIcon,
-    //   component: Devices,
-    // },
-    // {
-    //   slug: "reports",
-    //   label: "Reports",
-    //   icon: FileTextIcon,
-    //   component: Reports,
-    // },
+    {
+      slug: "sessions",
+      label: "Sessions",
+      icon: FileClockIcon,
+      component: Sessions,
+    },
     {
       slug: "logs",
       label: "Logs",

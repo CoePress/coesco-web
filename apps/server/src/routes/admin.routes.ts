@@ -1,60 +1,45 @@
 import { Router } from "express";
 
-import { adminController } from "@/controllers";
+import { auditController, employeeController, permissionController, roleController, sessionsController } from "@/controllers";
 
 const router = Router();
 
-// Devices
-router.post("/devices", adminController.createDevice);
-router.get("/devices", adminController.getDevices);
-router.get("/devices/:deviceId", adminController.getDevice);
-router.patch("/devices/:deviceId", adminController.updateDevice);
-router.delete("/devices/:deviceId", adminController.deleteDevice);
+router.get("/logs", auditController.getAuditLogs);
+router.get("/logs/emails", auditController.getEmailLogs);
+router.get("/logs/bugs", auditController.getBugReports);
+router.get("/logs/login-attempts", auditController.getLoginAttempts);
+router.get("/logs/files", auditController.getLogFiles);
+router.get("/logs/files/:file", auditController.getLogFile);
+
+// Sessions
+router.get("/sessions/dashboard-metrics", sessionsController.getDashboardMetrics);
+router.get("/sessions", sessionsController.getSessions);
+router.get("/sessions/login-history", sessionsController.getLoginHistory);
+router.post("/sessions/:id/revoke", sessionsController.revokeSession);
+router.post("/sessions/users/:userId/revoke-all", sessionsController.revokeUserSessions);
 
 // Employees
-router.post("/employees", adminController.createEmployee);
-router.post("/employees/sync", adminController.syncEmployees);
-router.post("/employees/sync/legacy", adminController.syncEmployeesFromLegacy);
-router.post("/employees/sync/microsoft", adminController.syncEmployeesFromMicrosoft);
-router.get("/employees/sync/stats", adminController.getEmployeeSyncStats);
-router.get("/employees", adminController.getEmployees);
-router.get("/employees/:employeeId", adminController.getEmployee);
-router.patch("/employees/:employeeId", adminController.updateEmployee);
-router.delete("/employees/:employeeId", adminController.deleteEmployee);
+router.post("/employees", employeeController.createEmployee);
+router.post("/employees/sync", employeeController.syncEmployees);
+router.post("/employees/sync/legacy", employeeController.syncEmployeesFromLegacy);
+router.post("/employees/sync/microsoft", employeeController.syncEmployeesFromMicrosoft);
+router.get("/employees", employeeController.getEmployees);
+router.get("/employees/:employeeId", employeeController.getEmployee);
+router.patch("/employees/:employeeId", employeeController.updateEmployee);
+router.delete("/employees/:employeeId", employeeController.deleteEmployee);
 
 // Permissions
-router.post("/permissions", adminController.createPermission);
-router.get("/permissions", adminController.getPermissions);
-router.get("/permissions/:permissionId", adminController.getPermission);
-router.patch("/permissions/:permissionId", adminController.updatePermission);
-router.delete("/permissions/:permissionId", adminController.deletePermission);
+router.post("/permissions", permissionController.createPermission);
+router.get("/permissions", permissionController.getPermissions);
+router.get("/permissions/:permissionId", permissionController.getPermission);
+router.patch("/permissions/:permissionId", permissionController.updatePermission);
+router.delete("/permissions/:permissionId", permissionController.deletePermission);
 
 // Roles
-router.post("/roles", adminController.createRole);
-router.get("/roles", adminController.getRoles);
-router.get("/roles/:roleId", adminController.getRole);
-router.patch("/roles/:roleId", adminController.updateRole);
-router.delete("/roles/:roleId", adminController.deleteRole);
-
-// Role Permissions
-router.post("/role-permissions", adminController.createRolePermission);
-router.get("/role-permissions", adminController.getRolePermissions);
-router.get("/role-permissions/:rolePermissionId", adminController.getRolePermission);
-router.patch("/role-permissions/:rolePermissionId", adminController.updateRolePermission);
-router.delete("/role-permissions/:rolePermissionId", adminController.deleteRolePermission);
-
-// Role Assignments
-router.post("/role-assignments", adminController.createRoleAssignment);
-router.get("/role-assignments", adminController.getRoleAssignments);
-router.get("/role-assignments/:roleAssignmentId", adminController.getRoleAssignment);
-router.patch("/role-assignments/:roleAssignmentId", adminController.updateRoleAssignment);
-router.delete("/role-assignments/:roleAssignmentId", adminController.deleteRoleAssignment);
-
-// Permission Exceptions
-router.post("/permission-exceptions", adminController.createPermissionException);
-router.get("/permission-exceptions", adminController.getPermissionExceptions);
-router.get("/permission-exceptions/:permissionExceptionId", adminController.getPermissionException);
-router.patch("/permission-exceptions/:permissionExceptionId", adminController.updatePermissionException);
-router.delete("/permission-exceptions/:permissionExceptionId", adminController.deletePermissionException);
+router.post("/roles", roleController.createRole);
+router.get("/roles", roleController.getRoles);
+router.get("/roles/:roleId", roleController.getRole);
+router.patch("/roles/:roleId", roleController.updateRole);
+router.delete("/roles/:roleId", roleController.deleteRole);
 
 export default router;

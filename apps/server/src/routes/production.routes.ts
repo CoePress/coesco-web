@@ -1,23 +1,23 @@
 import { Router } from "express";
 
-import { productionController } from "@/controllers";
+import { resourceController, resourceMonitoringController } from "@/controllers";
 
 const router = Router();
 
 // Machines
-router.post("/machines", productionController.createMachine);
-router.get("/machines", productionController.getMachines);
-router.get("/machines/:machineId", productionController.getMachine);
-router.patch("/machines/:machineId", productionController.updateMachine);
-router.delete("/machines/:machineId", productionController.deleteMachine);
+router.post("/machines", resourceController.createResource);
+router.get("/machines", resourceController.getAllResources);
+router.get("/machines/:machineId", resourceController.getResourceById);
+router.patch("/machines/:machineId", resourceController.updateResource);
+router.delete("/machines/:machineId", resourceController.deleteResource);
 
 // Machine Statuses
-router.get("/machine-statuses", productionController.getMachineStatuses);
-router.get("/machine-statuses/:machineStatusId", productionController.getMachineStatus);
+router.get("/machine-statuses", resourceMonitoringController.getMachineStatuses);
+router.get("/machine-statuses/:machineStatusId", resourceMonitoringController.getMachineStatus);
 
 // Misc
-router.get("/overview", productionController.getOverview);
-router.get("/timeline", productionController.getTimeline);
-router.post("/fanuc/reset", productionController.resetFanucAdapter);
+router.get("/overview", resourceMonitoringController.getOverview);
+router.get("/timeline", resourceMonitoringController.getTimeline);
+router.post("/fanuc/reset", resourceMonitoringController.resetFanucAdapter);
 
 export default router;

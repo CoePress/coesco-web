@@ -24,6 +24,8 @@ model User {
   roles             RoleAssignment[]
   customPermissions PermissionException[]
   tokens            Token[]
+  sessions          Session[]
+  loginHistory      LoginHistory[]
 
   @@map("users")
 }
@@ -1181,3 +1183,136 @@ model NtfyDevice {
 
   @@map("ntfy_devices")
 }
+
+model EmailLog {
+  id          String    @id @default(uuid())
+  to          String
+  subject     String
+  template    String?
+  status      EmailStatus @default(PENDING)
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("email_logs")
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model ExternalAccessLink {
+  id             String      @id @default(uuid())
+  token          String      @unique
+  purpose        AccessPurpose
+  resourceId     String?
+  resourceType   String?
+  expiresAt      DateTime?
+  usedAt         DateTime?
+  revokedAt      DateTime?
+  maxUses        Int?
+  useCount       Int         @default(0)
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@map("external_access_links")
+}
+
+enum AccessPurpose {
+  FORM_SUBMISSION
+  FILE_DOWNLOAD
+  CUSTOMER_FEEDBACK
+}
+
+model BugReport {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  userEmail   String?
+  userName    String?
+  url         String?
+  userAgent   String?
+  issueKey    String?
+  issueUrl    String?
+  status      BugReportStatus @default(SUBMITTED)
+  createdAt   DateTime  @default(now())
+  createdById String?
+
+  @@map("bug_reports")
+}
+
+enum BugReportStatus {
+  SUBMITTED
+  IN_JIRA
+  FAILED
+}
+
+model Session {
+  id               String      @id @default(uuid())
+  userId           String
+  token            String      @unique
+  refreshToken     String?     @unique
+  ipAddress        String?
+  userAgent        String?
+  deviceType       String?
+  deviceName       String?
+  location         Json?
+  loginMethod      LoginMethod
+  loginAt          DateTime    @default(now())
+  lastActivityAt   DateTime    @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?
+  logoutAt         DateTime?
+  isActive         Boolean     @default(true)
+  isSuspicious     Boolean     @default(false)
+  suspiciousReason String?
+  metadata         Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([lastActivityAt])
+  @@map("sessions")
+}
+
+enum LoginMethod {
+  PASSWORD
+  MICROSOFT
+  SSO
+  API_KEY
+  TEST_LOGIN
+}
+
+model LoginHistory {
+  id            String      @id @default(uuid())
+  userId        String?
+  username      String?
+  loginMethod   LoginMethod
+  success       Boolean
+  failureReason String?
+  ipAddress     String?
+  userAgent     String?
+  location      Json?
+  timestamp     DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([success])
+  @@map("login_history")
+}
+
+

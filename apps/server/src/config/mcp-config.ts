@@ -50,7 +50,7 @@ async function getServiceForEntity(entity: string) {
     throw new Error(`No service found for entity: ${entity}`);
   }
 
-  const repositoryModule = await import("../services/repository");
+  const repositoryModule = await import("../repositories");
   return (repositoryModule as any)[serviceName];
 }
 
@@ -270,6 +270,63 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
         hasDefault: true,
+      },
+    },
+  },
+  {
+    name: "bug-report",
+    description: "Schema for BugReport entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      title: {
+        type: "string",
+        required: true,
+      },
+      description: {
+        type: "string",
+        required: true,
+      },
+      userEmail: {
+        type: "string",
+        required: false,
+      },
+      userName: {
+        type: "string",
+        required: false,
+      },
+      url: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      issueKey: {
+        type: "string",
+        required: false,
+      },
+      issueUrl: {
+        type: "string",
+        required: false,
+      },
+      status: {
+        type: "bugreportstatus",
+        required: true,
+        hasDefault: true,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      createdById: {
+        type: "string",
+        required: false,
       },
     },
   },
@@ -684,6 +741,51 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "email-log",
+    description: "Schema for EmailLog entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      to: {
+        type: "string",
+        required: true,
+      },
+      subject: {
+        type: "string",
+        required: true,
+      },
+      template: {
+        type: "string",
+        required: false,
+      },
+      status: {
+        type: "emailstatus",
+        required: true,
+        hasDefault: true,
+      },
+      sentAt: {
+        type: "datetime",
+        required: false,
+      },
+      error: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+    },
+  },
+  {
     name: "employee",
     description: "Schema for Employee entity",
     schema: {
@@ -774,6 +876,75 @@ export const SCHEMAS: ISchema[] = [
       updatedById: {
         type: "string",
         required: true,
+      },
+    },
+  },
+  {
+    name: "external-access-link",
+    description: "Schema for ExternalAccessLink entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      token: {
+        type: "string",
+        required: true,
+      },
+      purpose: {
+        type: "accesspurpose",
+        required: true,
+      },
+      resourceId: {
+        type: "string",
+        required: false,
+      },
+      resourceType: {
+        type: "string",
+        required: false,
+      },
+      expiresAt: {
+        type: "datetime",
+        required: false,
+      },
+      usedAt: {
+        type: "datetime",
+        required: false,
+      },
+      revokedAt: {
+        type: "datetime",
+        required: false,
+      },
+      maxUses: {
+        type: "int",
+        required: false,
+      },
+      useCount: {
+        type: "int",
+        required: true,
+        hasDefault: true,
+      },
+      metadata: {
+        type: "json",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      createdById: {
+        type: "string",
+        required: false,
+      },
+      updatedById: {
+        type: "string",
+        required: false,
       },
     },
   },
@@ -1292,6 +1463,54 @@ export const SCHEMAS: ISchema[] = [
       updatedById: {
         type: "string",
         required: true,
+      },
+    },
+  },
+  {
+    name: "login-history",
+    description: "Schema for LoginHistory entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: false,
+      },
+      username: {
+        type: "string",
+        required: false,
+      },
+      loginMethod: {
+        type: "loginmethod",
+        required: true,
+      },
+      success: {
+        type: "boolean",
+        required: true,
+      },
+      failureReason: {
+        type: "string",
+        required: false,
+      },
+      ipAddress: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      location: {
+        type: "json",
+        required: false,
+      },
+      timestamp: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
       },
     },
   },
@@ -2539,6 +2758,106 @@ export const SCHEMAS: ISchema[] = [
         type: "datetime",
         required: true,
         hasDefault: true,
+      },
+    },
+  },
+  {
+    name: "session",
+    description: "Schema for Session entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      userId: {
+        type: "string",
+        required: true,
+      },
+      token: {
+        type: "string",
+        required: true,
+      },
+      refreshToken: {
+        type: "string",
+        required: false,
+      },
+      ipAddress: {
+        type: "string",
+        required: false,
+      },
+      userAgent: {
+        type: "string",
+        required: false,
+      },
+      deviceType: {
+        type: "string",
+        required: false,
+      },
+      deviceName: {
+        type: "string",
+        required: false,
+      },
+      location: {
+        type: "json",
+        required: false,
+      },
+      loginMethod: {
+        type: "loginmethod",
+        required: true,
+      },
+      loginAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      lastActivityAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      expiresAt: {
+        type: "datetime",
+        required: true,
+      },
+      revokedAt: {
+        type: "datetime",
+        required: false,
+      },
+      revokedReason: {
+        type: "string",
+        required: false,
+      },
+      logoutAt: {
+        type: "datetime",
+        required: false,
+      },
+      isActive: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      isSuspicious: {
+        type: "boolean",
+        required: true,
+        hasDefault: true,
+      },
+      suspiciousReason: {
+        type: "string",
+        required: false,
+      },
+      metadata: {
+        type: "json",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
       },
     },
   },

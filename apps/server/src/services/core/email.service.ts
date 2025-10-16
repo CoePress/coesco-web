@@ -1,10 +1,12 @@
 import type { Transporter } from "nodemailer";
 
+import { EmailStatus } from "@prisma/client";
 import ejs from "ejs";
 import path from "node:path";
 import nodemailer from "nodemailer";
 
 import { env } from "@/config/env";
+import { emailLogService } from "@/services";
 
 interface EmailOptions {
   to: string;
@@ -39,6 +41,12 @@ export class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
+    const { data: log } = await emailLogService.createEmailLog({
+      to: options.to,
+      subject: options.subject,
+      status: EmailStatus.PENDING,
+    });
+
     try {
       const mailOptions = {
         from: options.from,
@@ -49,9 +57,20 @@ export class EmailService {
       };
 
       const result = await this.transporter.sendMail(mailOptions);
+
+      await emailLogService.updateEmailLog(log.id, {
+        status: EmailStatus.SENT,
+        sentAt: new Date(),
+      });
+
       return { success: true, messageId: result.messageId };
     }
     catch (error) {
+      await emailLogService.updateEmailLog(log.id, {
+        status: EmailStatus.FAILED,
+        error: (error as Error).message,
+      });
+
       throw new Error(`Failed to send email: ${(error as Error).message}`);
     }
   }
@@ -182,80 +201,6 @@ export class EmailService {
       from: "noreply@cpec.com",
       to,
       subject: "Password Reset Request - Coe Press Equipment",
-      html,
-    });
-  }
-
-  async sendBugReport(options: {
-    title: string;
-    description: string;
-    userEmail?: string;
-    screenshot?: string;
-    url?: string;
-    userAgent?: string;
-  }): Promise<EmailResult> {
-    const { title, description, userEmail, screenshot, url, userAgent } = options;
-
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">Bug Report</h2>
-
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Title</h3>
-          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">${title}</p>
-        </div>
-
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Description</h3>
-          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; white-space: pre-wrap;">${description}</p>
-        </div>
-
-        ${userEmail
-          ? `
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Reported By</h3>
-          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">${userEmail}</p>
-        </div>
-        `
-          : ""}
-
-        ${url
-          ? `
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Page URL</h3>
-          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; word-break: break-all;">${url}</p>
-        </div>
-        `
-          : ""}
-
-        ${userAgent
-          ? `
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Browser</h3>
-          <p style="margin: 0; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">${userAgent}</p>
-        </div>
-        `
-          : ""}
-
-        ${screenshot
-          ? `
-        <div style="margin: 20px 0;">
-          <h3 style="color: #333; margin-bottom: 5px;">Screenshot</h3>
-          <img src="${screenshot}" alt="Bug Screenshot" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
-        </div>
-        `
-          : ""}
-
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-          <p>Report submitted on ${new Date().toLocaleString()}</p>
-        </div>
-      </div>
-    `;
-
-    return this.sendEmail({
-      from: "noreply@cpec.com",
-      to: "jar@cpec.com",
-      subject: `Bug Report: ${title}`,
       html,
     });
   }

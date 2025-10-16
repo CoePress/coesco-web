@@ -7,7 +7,8 @@ type ModalProps = {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "xs" | "sm" | "md" | "lg";
+  headerActions?: React.ReactNode;
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   overflow?: "visible" | "auto";
   backdropClosable?: boolean;
 };
@@ -18,6 +19,7 @@ const Modal = ({
   title,
   children,
   footer,
+  headerActions,
   size = "md",
   overflow = "auto",
   backdropClosable = false,
@@ -29,6 +31,7 @@ const Modal = ({
     sm: "w-[600px]",
     md: "w-[800px]",
     lg: "w-[1000px]",
+    xl: "w-[1200px]",
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -46,12 +49,15 @@ const Modal = ({
         className={`max-h-[90vh] md:max-h-[70vh] flex flex-col ${sizeClass[size]}`}>
         <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <h2 className="font-medium">{title}</h2>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={onClose}>
-            <X size={16} />
-          </Button>
+          <div className="flex items-center gap-2">
+            {headerActions}
+            <Button
+              variant="secondary-outline"
+              size="sm"
+              onClick={onClose}>
+              <X size={16} />
+            </Button>
+          </div>
         </div>
         <div className={`flex flex-col gap-2 flex-1 ${overflow === "visible" ? "overflow-visible" : "overflow-auto"}`}>{children}</div>
         {footer && (

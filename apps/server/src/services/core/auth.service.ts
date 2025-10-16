@@ -1,7 +1,8 @@
+import type { Request } from "express";
 import type { SignOptions } from "jsonwebtoken";
 
 import { ConfidentialClientApplication } from "@azure/msal-node";
-import { UserRole } from "@prisma/client";
+import { LoginMethod, UserRole } from "@prisma/client";
 import { compare, hash } from "bcrypt";
 import { sign, verify } from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
@@ -13,8 +14,9 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { prisma } from "@/utils/prisma";
+import { getClientIp } from "@/utils";
 
-import { emailService } from "..";
+import { emailService, loginHistoryService, sessionService } from "..";
 
 export class AuthService {
   private msalClient: ConfidentialClientApplication;
@@ -43,7 +45,24 @@ export class AuthService {
     return { token, refreshToken };
   }
 
-  async login(username: string, password: string): Promise<any> {
+  private parseExpiresIn(expiresIn: string): number {
+    const units: Record<string, number> = {
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
+    };
+
+    const match = expiresIn.match(/^(\d+)([smhd])$/);
+    if (!match) {
+      return 24 * 60 * 60 * 1000;
+    }
+
+    const [, value, unit] = match;
+    return Number.parseInt(value, 10) * units[unit];
+  }
+
+  async login(username: string, password: string, req?: Request): Promise<any> {
     if (!username || !password) {
       throw new UnauthorizedError("Username and password are required");
     }
@@ -54,19 +73,62 @@ export class AuthService {
     });
 
     if (!user || !user.employee) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          username,
+          loginMethod: LoginMethod.PASSWORD,
+          success: false,
+          failureReason: "Invalid credentials",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("Invalid credentials");
     }
 
     if (!user.isActive) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          userId: user.id,
+          username,
+          loginMethod: LoginMethod.PASSWORD,
+          success: false,
+          failureReason: "Account is inactive",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("Account is inactive");
     }
 
     if (!user.password) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          userId: user.id,
+          username,
+          loginMethod: LoginMethod.PASSWORD,
+          success: false,
+          failureReason: "Password login not available",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("Password login not available for this account");
     }
 
     const isValidPassword = await compare(password, user.password);
     if (!isValidPassword) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          userId: user.id,
+          username,
+          loginMethod: LoginMethod.PASSWORD,
+          success: false,
+          failureReason: "Invalid password",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("Invalid credentials");
     }
 
@@ -77,9 +139,47 @@ export class AuthService {
 
     const { token, refreshToken } = this.generateTokens(user.id);
 
+    let sessionId: string | undefined;
+
+    if (req) {
+      console.log('[IP Debug] Headers:', {
+        'x-forwarded-for': req.headers['x-forwarded-for'],
+        'x-real-ip': req.headers['x-real-ip'],
+        'req.ip': req.ip,
+        'getClientIp': getClientIp(req)
+      });
+
+      const session = await sessionService.createSession({
+        userId: user.id,
+        token,
+        refreshToken,
+        loginMethod: LoginMethod.PASSWORD,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+        expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
+      });
+
+      sessionId = session.id;
+      console.log('[Auth Service] Created session with ID:', sessionId);
+
+      await loginHistoryService.logAttempt({
+        userId: user.id,
+        username,
+        loginMethod: LoginMethod.PASSWORD,
+        success: true,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+      });
+    } else {
+      console.log('[Auth Service] No req object, sessionId will be undefined');
+    }
+
+    console.log('[Auth Service] Returning login response with sessionId:', sessionId);
+
     return {
       token,
       refreshToken,
+      sessionId,
       user: {
         id: user.id,
         role: user.role,
@@ -121,7 +221,7 @@ export class AuthService {
       throw new UnauthorizedError("Password must contain at least one lowercase letter");
     }
 
-    if (!/[0-9]/.test(password)) {
+    if (!/\d/.test(password)) {
       throw new UnauthorizedError("Password must contain at least one number");
     }
 
@@ -207,8 +307,8 @@ export class AuthService {
     );
   }
 
-  async microsoftCallback(code: string, sessionId: string): Promise<any> {
-    if (!code || !sessionId) {
+  async microsoftCallback(code: string, state: string, req?: Request): Promise<any> {
+    if (!code || !state) {
       throw new UnauthorizedError("Code and session ID are required");
     }
 
@@ -230,10 +330,31 @@ export class AuthService {
     });
 
     if (!user || !user.employee) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          username: userInfo.userPrincipalName || userInfo.mail,
+          loginMethod: LoginMethod.MICROSOFT,
+          success: false,
+          failureReason: "No account found",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("No account found for this Microsoft user");
     }
 
     if (!user.isActive) {
+      if (req) {
+        await loginHistoryService.logAttempt({
+          userId: user.id,
+          username: user.username || userInfo.userPrincipalName,
+          loginMethod: LoginMethod.MICROSOFT,
+          success: false,
+          failureReason: "Account is inactive",
+          ipAddress: getClientIp(req),
+          userAgent: req.headers["user-agent"],
+        });
+      }
       throw new UnauthorizedError("Account is inactive");
     }
 
@@ -244,9 +365,35 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
+    let sessionId: string | undefined;
+
+    if (req) {
+      const session = await sessionService.createSession({
+        userId: user.id,
+        token,
+        refreshToken,
+        loginMethod: LoginMethod.MICROSOFT,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+        expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
+      });
+
+      sessionId = session.id;
+
+      await loginHistoryService.logAttempt({
+        userId: user.id,
+        username: user.username || userInfo.userPrincipalName,
+        loginMethod: LoginMethod.MICROSOFT,
+        success: true,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+      });
+    }
+
     return {
       token,
       refreshToken,
+      sessionId,
       user: {
         id: user.id,
         role: user.role,
@@ -288,9 +435,12 @@ export class AuthService {
       throw new UnauthorizedError("User not found");
     }
 
+    const session = await sessionService.validateSession(accessToken);
+
     return {
       token: accessToken,
       refreshToken: "",
+      sessionId: session?.id,
       user,
       employee,
     };
@@ -423,7 +573,7 @@ export class AuthService {
       };
     }
 
-    if (!/[0-9]/.test(newPassword)) {
+    if (!/\d/.test(newPassword)) {
       return {
         success: false,
         error: "Password must contain at least one number",
@@ -501,7 +651,7 @@ export class AuthService {
       };
     }
 
-    if (!/[0-9]/.test(newPassword)) {
+    if (!/\d/.test(newPassword)) {
       return {
         success: false,
         error: "Password must contain at least one number",
@@ -547,7 +697,7 @@ export class AuthService {
     };
   }
 
-  async testLogin(): Promise<any> {
+  async testLogin(req?: Request): Promise<any> {
     let employee = await prisma.employee.findUnique({
       where: { email: "sample@example.com" },
     });
@@ -592,6 +742,27 @@ export class AuthService {
     }
 
     const { token, refreshToken } = this.generateTokens(user.id);
+
+    if (req) {
+      await sessionService.createSession({
+        userId: user.id,
+        token,
+        refreshToken,
+        loginMethod: LoginMethod.PASSWORD,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+        expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
+      });
+
+      await loginHistoryService.logAttempt({
+        userId: user.id,
+        username: user.username!,
+        loginMethod: LoginMethod.PASSWORD,
+        success: true,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+      });
+    }
 
     return {
       token,

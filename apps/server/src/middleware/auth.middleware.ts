@@ -5,6 +5,8 @@ import { verify } from "jsonwebtoken";
 import type { EmployeeContext } from "@/utils/context";
 
 import { cookieOptions, env } from "@/config/env";
+import { sessionService } from "@/services";
+import { SYSTEM_USER_ID } from "@/utils/constants";
 import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
 
@@ -41,7 +43,7 @@ export const protect = asyncHandler(
       req.user = { id: "system", role: "SYSTEM" };
       contextStorage.run(
         {
-          id: "00000000-0000-0000-0000-000000000000",
+          id: SYSTEM_USER_ID,
           number: "0",
           firstName: "System",
           lastName: "Account",
@@ -68,6 +70,13 @@ export const protect = asyncHandler(
       if (!decoded?.userId)
         throw new UnauthorizedError("Unauthorized");
 
+      const session = await sessionService.validateSession(accessToken);
+      if (!session) {
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
+        throw new UnauthorizedError("Invalid or expired session");
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         include: { employee: true },
@@ -76,6 +85,8 @@ export const protect = asyncHandler(
       if (!user || !user.employee) {
         throw new UnauthorizedError("Unauthorized");
       }
+
+      await sessionService.updateActivity(session.id);
 
       const emp = user.employee;
 
@@ -102,7 +113,6 @@ export const protect = asyncHandler(
 
       contextStorage.run(context, () => next());
     }
-    // eslint-disable-next-line unused-imports/no-unused-vars
     catch (error) {
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);

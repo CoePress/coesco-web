@@ -4,6 +4,8 @@ import { useSocket } from "@/contexts/socket.context";
 import { useApi } from "@/hooks/use-api";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import ToastContainer from "@/components/ui/toast-container";
+import { useToast } from "@/hooks/use-toast";
 
 const getErrorMessage = (error: string | null) => {
   switch (error) {
@@ -54,7 +56,7 @@ const Login = () => {
     post,
     loading: loginLoading,
     error: loginError
-  } = useApi<{ user: any, employee: any }>();
+  } = useApi<{ user: any, employee: any, sessionId?: string }>();
 
   const { user, setUser } = useContext(AuthContext)!;
   const navigate = useNavigate();
@@ -63,6 +65,7 @@ const Login = () => {
   const errorMessage = getErrorMessage(errorParam) || loginError || microsoftLoginError;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const { toasts, removeToast } = useToast();
   
   const microsoftLogin = async () => {
     const response = await getMicrosoft("/auth/microsoft/login");
@@ -77,8 +80,14 @@ const Login = () => {
       password,
     });
 
+    console.log('[Login] Received login response:', {
+      hasUser: !!response?.user,
+      hasEmployee: !!response?.employee,
+      sessionId: response?.sessionId
+    });
+
     if (response && response.user) {
-      setUser(response.user, response.employee);
+      setUser(response.user, response.employee, response.sessionId);
       navigate("/", { replace: true });
     }
   };
@@ -274,8 +283,13 @@ const Login = () => {
                         username: "admin",
                         password: "admin123",
                       });
+                      console.log('[Login] Dev admin login response:', {
+                        hasUser: !!response?.user,
+                        hasEmployee: !!response?.employee,
+                        sessionId: response?.sessionId
+                      });
                       if (response && response.user) {
-                        setUser(response.user, response.employee);
+                        setUser(response.user, response.employee, response.sessionId);
                         navigate("/", { replace: true });
                       }
                     }}
@@ -290,8 +304,13 @@ const Login = () => {
                         username: "user",
                         password: "user123",
                       });
+                      console.log('[Login] Dev user login response:', {
+                        hasUser: !!response?.user,
+                        hasEmployee: !!response?.employee,
+                        sessionId: response?.sessionId
+                      });
                       if (response && response.user) {
-                        setUser(response.user, response.employee);
+                        setUser(response.user, response.employee, response.sessionId);
                         navigate("/", { replace: true });
                       }
                     }}
@@ -306,6 +325,11 @@ const Login = () => {
           </div>
         </Card>
       </div>
+      <ToastContainer
+        toasts={toasts}
+        onRemoveToast={removeToast}
+        position="bottom-right"
+      />
     </div>
   );
 };

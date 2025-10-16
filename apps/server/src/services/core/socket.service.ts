@@ -1,9 +1,7 @@
 import type { Server, Socket } from "socket.io";
 
-import { agentService, lockingService } from "@/services";
+import { chatService, lockingService, messageService } from "@/services";
 import { logger } from "@/utils/logger";
-
-import { chatService, messageService } from "../repository";
 
 export class SocketService {
   private io: Server | null = null;
@@ -19,6 +17,7 @@ export class SocketService {
     this.registerChatNamespace();
     this.registerSystemNamespace();
     this.registerLocksNamespace();
+    this.registerSessionNamespace();
   }
 
   public broadcastMachineStates(data: any): void {
@@ -37,6 +36,27 @@ export class SocketService {
     if (!this.io)
       return;
     this.io.of("/system").to("updates").emit("update", data);
+  }
+
+  public broadcastSessionRevoked(userId: string, sessionId: string, reason?: string): void {
+    if (!this.io)
+      return;
+
+    const sessionNamespace = this.io.of("/session");
+    const room = sessionNamespace.adapter.rooms.get(`user:${userId}`);
+    const socketsInRoom = room ? Array.from(room) : [];
+
+    logger.info(`Broadcasting session revocation to user ${userId}`, {
+      sessionId,
+      socketCount: socketsInRoom.length,
+      socketIds: socketsInRoom,
+    });
+
+    sessionNamespace.to(`user:${userId}`).emit("session:revoked", {
+      sessionId,
+      reason,
+      timestamp: new Date(),
+    });
   }
 
   private registerIotNamespace() {
@@ -101,7 +121,7 @@ export class SocketService {
           let actualChatId = chatId;
 
           if (!chatId) {
-            const newChat = await chatService.create({
+            const newChat = await chatService.createChat({
               employeeId,
               name: `New Chat`,
               createdById: employeeId,
@@ -112,15 +132,13 @@ export class SocketService {
             socket.emit("chat:url-update", { chatId: actualChatId });
           }
 
-          await messageService.create({
+          await messageService.createMessage({
             chatId: actualChatId,
             role: "user",
             content: message,
           });
 
-          const systemMessage = await agentService.processMessage(employeeId, actualChatId, message);
-
-          await messageService.create({
+          await messageService.createMessage({
             chatId: actualChatId,
             role: "assistant",
             content: "Hello World",
@@ -128,7 +146,7 @@ export class SocketService {
 
           chat.to(actualChatId).emit("message:system", "Hello World");
 
-          ack?.({ ok: true, chatId: actualChatId, message: systemMessage });
+          ack?.({ ok: true, chatId: actualChatId, message: "Hello World" });
         }
         catch (err) {
           logger.error(`Error processing message for socket ${socket.id}`, err);
@@ -234,6 +252,24 @@ export class SocketService {
 
       socket.on("disconnect", (reason) => {
         logger.info(`[${socket.id}] Locks client disconnected: ${reason}`);
+      });
+    });
+  }
+
+  private registerSessionNamespace() {
+    const session = this.getNamespace("session");
+
+    session.on("connection", (socket: Socket) => {
+      logger.info(`Session client connected: ${socket.id}`);
+
+      const userId = socket.handshake.auth.userId as string;
+      if (userId) {
+        socket.join(`user:${userId}`);
+        logger.info(`[${socket.id}] Joined room for user ${userId}`);
+      }
+
+      socket.on("disconnect", (reason) => {
+        logger.info(`[${socket.id}] Session client disconnected: ${reason}`);
       });
     });
   }

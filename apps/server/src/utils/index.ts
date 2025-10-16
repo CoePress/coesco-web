@@ -147,7 +147,7 @@ export function buildQueryParams<T>(query: any): IQueryParams<T> {
     sort: query.sort as string,
     order: query.order as "asc" | "desc",
     search: query.search as string,
-    filter: query.filter as Partial<T>,
+    filter: query.filter ? JSON.parse(query.filter as string) : undefined,
     include: query.include ? JSON.parse(query.include as string) : undefined,
   };
 }
@@ -191,4 +191,21 @@ export async function pingHost(host: string, timeoutSeconds: number = 5): Promis
   catch {
     return { alive: false };
   }
+}
+
+export function getClientIp(req: Request): string | undefined {
+  const forwardedFor = req.headers["x-forwarded-for"];
+  if (forwardedFor) {
+    const ips = Array.isArray(forwardedFor)
+      ? forwardedFor[0].split(",")
+      : forwardedFor.split(",");
+    return ips[0].trim();
+  }
+
+  const realIp = req.headers["x-real-ip"];
+  if (realIp) {
+    return Array.isArray(realIp) ? realIp[0] : realIp;
+  }
+
+  return req.ip;
 }

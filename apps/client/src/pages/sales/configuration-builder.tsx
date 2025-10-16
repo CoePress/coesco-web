@@ -400,6 +400,8 @@ const ConfigurationBuilder = () => {
     selectedProductClass || productClasses?.[0]?.id;
   const [optionCategories, setOptionCategories] = useState<any[]>([]);
   const [optionCategoriesLoading, setOptionCategoriesLoading] = useState(false);
+  const [optionHeaders, setOptionHeaders] = useState<any[]>([]);
+  const [optionHeadersLoading, setOptionHeadersLoading] = useState(false);
 
   const sortedCategories = optionCategories
     ? [...optionCategories].sort((a, b) => a.displayOrder - b.displayOrder)
@@ -432,12 +434,25 @@ const ConfigurationBuilder = () => {
 
   const visibleProductClassLevels = productClassSelections.length + 1;
 
-  const getOptionsForCategory = (_categoryId: string) => {
-    return [];
+  const getOptionsForCategory = (categoryId: string) => {
+    if (!optionHeaders) return [];
+    return optionHeaders.filter((header: any) => header.optionCategoryId === categoryId);
   };
 
-  const getOptionById = (_optionId: string) => {
-    return null;
+  const getOptionById = (optionId: string) => {
+    if (!optionHeaders) return null;
+    const header = optionHeaders.find((h: any) => h.id === optionId);
+    if (!header) return null;
+
+    const detail = header.optionDetails?.find((d: any) =>
+      d.productClassId === effectiveProductClassId
+    );
+
+    return {
+      ...header,
+      categoryId: header.optionCategoryId,
+      price: detail?.price || 0,
+    };
   };
 
   const getCategoryById = (categoryId: string) => {
@@ -483,6 +498,7 @@ const ConfigurationBuilder = () => {
   };
 
   const isRuleTriggered = (rule: any): boolean => {
+    if (!rule.triggerOptions || rule.triggerOptions.length === 0) return false;
     const triggered = rule.triggerOptions.some((triggerOption: any) =>
       isOptionSelected(triggerOption.id)
     );
@@ -490,7 +506,7 @@ const ConfigurationBuilder = () => {
       `Rule "${rule.name}" triggered:`,
       triggered,
       "trigger options:",
-      rule.triggerOptions.map((opt: any) => opt.name)
+      rule.triggerOptions?.map((opt: any) => opt.name) || []
     );
     return triggered;
   };
@@ -502,7 +518,7 @@ const ConfigurationBuilder = () => {
       .filter(
         (rule) =>
           rule.action === "REQUIRE" &&
-          rule.targetOptions.some((target: any) => target.id === optionId)
+          rule.targetOptions?.some((target: any) => target.id === optionId)
       )
       .sort((a, b) => b.priority - a.priority);
 
@@ -519,7 +535,7 @@ const ConfigurationBuilder = () => {
     for (const rule of optionRules) {
       if (rule.action === "REQUIRE" && isRuleTriggered(rule)) {
         requiredOptions.push(
-          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
         );
       }
     }
@@ -535,7 +551,7 @@ const ConfigurationBuilder = () => {
     for (const rule of optionRules) {
       if (rule.action === "DISABLE" && isRuleTriggered(rule)) {
         disabledOptions.push(
-          ...rule.targetOptions.map((opt: { id: string }) => opt.id)
+          ...(rule.targetOptions?.map((opt: { id: string }) => opt.id) || [])
         );
       }
     }
@@ -650,9 +666,9 @@ const ConfigurationBuilder = () => {
           name: rule.name,
           action: rule.action,
           condition: rule.condition,
-          targetOptions: rule.targetOptions.map(
+          targetOptions: rule.targetOptions?.map(
             (opt: { name: string }) => opt.name
-          ),
+          ) || [],
         }))
       );
     }
@@ -779,14 +795,40 @@ const ConfigurationBuilder = () => {
         return;
       }
       setOptionCategoriesLoading(true);
-      const response = await api.get('/catalog/option-categories');
+      const response = await api.get('/catalog/product-class-option-categories', {
+        filter: JSON.stringify({ productClassId: effectiveProductClassId }),
+        include: JSON.stringify(['optionCategory']),
+      });
       if (response && response.data) {
-        setOptionCategories(response.data);
+        const categories = response.data.map((pcoc: any) => ({
+          ...pcoc.optionCategory,
+          isRequired: pcoc.isRequired,
+          displayOrder: pcoc.displayOrder,
+        }));
+        setOptionCategories(categories);
       }
       setOptionCategoriesLoading(false);
     };
     loadOptionCategories();
   }, [effectiveProductClassId]);
+
+  useEffect(() => {
+    const loadOptionHeaders = async () => {
+      if (optionCategories.length === 0) {
+        setOptionHeaders([]);
+        return;
+      }
+      setOptionHeadersLoading(true);
+      const response = await api.get('/catalog/options', {
+        include: JSON.stringify(['optionDetails']),
+      });
+      if (response && response.data) {
+        setOptionHeaders(response.data);
+      }
+      setOptionHeadersLoading(false);
+    };
+    loadOptionHeaders();
+  }, [optionCategories]);
 
   useEffect(() => {
     const results = validateConfiguration();
@@ -844,7 +886,7 @@ const ConfigurationBuilder = () => {
     console.log("Applied requirements:", requirements);
   };
 
-  if (productClassesLoading || optionCategoriesLoading || optionRulesLoading) {
+  if (productClassesLoading || optionCategoriesLoading || optionRulesLoading || optionHeadersLoading) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
         <Loader />
@@ -977,9 +1019,68 @@ const ConfigurationBuilder = () => {
 
                     {expandedCategories.includes(category.id) && (
                       <div className="pl-4 pr-2 py-2 space-y-2">
-                        <div className="text-sm text-text-muted">
-                          No options available yet - showing categories only
-                        </div>
+                        {getOptionsForCategory(category.id).map((option: any) => {
+                          const isSelected = isOptionSelected(option.id);
+                          const isDisabled = getDisabledOptions().includes(option.id);
+                          const isRequired = isOptionRequired(option.id);
+                          const optionData = getOptionById(option.id);
+
+                          return (
+                            <div
+                              key={option.id}
+                              className={`flex items-center justify-between p-2 rounded hover:bg-surface cursor-pointer select-none ${
+                                isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                              onClick={() => {
+                                if (isDisabled) return;
+                                if (isSelected) {
+                                  setSelectedOptions(prev => prev.filter(opt => opt.optionId !== option.id));
+                                } else {
+                                  if (!category.multiple) {
+                                    setSelectedOptions(prev => [
+                                      ...prev.filter(opt => {
+                                        const o = getOptionById(opt.optionId);
+                                        return o?.categoryId !== category.id;
+                                      }),
+                                      { optionId: option.id, quantity: 1 }
+                                    ]);
+                                  } else {
+                                    setSelectedOptions(prev => [...prev, { optionId: option.id, quantity: 1 }]);
+                                  }
+                                }
+                              }}
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex-shrink-0">
+                                  {isSelected ? (
+                                    <CheckSquare size={16} className="text-primary" />
+                                  ) : (
+                                    <Square size={16} className="text-text-muted" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-text truncate">
+                                    {option.name}
+                                    {isRequired && <span className="text-error ml-1">*</span>}
+                                  </div>
+                                  {option.description && (
+                                    <div className="text-xs text-text-muted truncate">
+                                      {option.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-sm font-medium text-text-muted flex-shrink-0">
+                                {formatCurrency(optionData?.price || 0)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {getOptionsForCategory(category.id).length === 0 && (
+                          <div className="text-sm text-text-muted">
+                            No options available for this category
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

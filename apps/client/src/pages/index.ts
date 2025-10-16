@@ -3,6 +3,7 @@ export { default as AdminDashboard } from "./admin/dashboard";
 export { default as Devices } from "./admin/devices";
 export { default as Employees } from "./admin/employees";
 export { default as EmployeeDetails } from "./admin/employee-details";
+export { default as Invitations } from "./admin/invitations";
 export { default as Logs } from "./admin/logs";
 export { default as Permissions } from "./admin/permissions";
 export { default as Reports } from "./admin/reports";
