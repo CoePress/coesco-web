@@ -3,8 +3,6 @@ import { join } from "node:path";
 
 import { env } from "@/config/env";
 
-import { mcpService } from "..";
-
 interface OpenAIResponse {
   choices: Array<{
     message: {
@@ -41,13 +39,13 @@ export class AgentService {
   }
 
   async plan(userPrompt: string) {
-    const tools = await mcpService.getTools();
-    const schemas = await mcpService.getSchemas();
+    // const tools = await mcpService.getTools();
+    // const schemas = await mcpService.getSchemas();
 
     const prompt = await this.getPrompt("plan", {
       user_prompt: userPrompt,
-      available_tools: JSON.stringify(tools, null, 2),
-      available_schemas: JSON.stringify(schemas, null, 2),
+      // available_tools: JSON.stringify(tools, null, 2),
+      // available_schemas: JSON.stringify(schemas, null, 2),
     });
 
     return prompt;

@@ -5,8 +5,7 @@ import { randomBytes } from "node:crypto";
 import type { IQueryParams } from "@/types";
 
 import { BadRequestError, NotFoundError } from "@/middleware/error.middleware";
-
-import { externalAccessLinkService } from "../repository";
+import { externalAccessLinkRepository } from "@/repositories";
 
 interface CreateInvitationOptions {
   purpose: AccessPurpose;
@@ -25,11 +24,11 @@ interface ValidateInvitationResult {
 
 export class ExternalInvitationService {
   async getAllInvitations(params?: IQueryParams<ExternalAccessLink>) {
-    return externalAccessLinkService.getAll(params);
+    return externalAccessLinkRepository.getAll(params);
   }
 
   async getInvitationById(id: string) {
-    const result = await externalAccessLinkService.getById(id);
+    const result = await externalAccessLinkRepository.getById(id);
     if (!result.data) {
       throw new NotFoundError("Invitation not found");
     }
@@ -45,7 +44,7 @@ export class ExternalInvitationService {
 
     const token = this.generateToken();
 
-    const result = await externalAccessLinkService.create({
+    const result = await externalAccessLinkRepository.create({
       token,
       purpose,
       resourceId,
@@ -65,13 +64,13 @@ export class ExternalInvitationService {
       throw new BadRequestError("Invitation is already revoked");
     }
 
-    return externalAccessLinkService.update(id, {
+    return externalAccessLinkRepository.update(id, {
       revokedAt: new Date(),
     });
   }
 
   async validateInvitation(token: string): Promise<ValidateInvitationResult> {
-    const links = await externalAccessLinkService.getAll({
+    const links = await externalAccessLinkRepository.getAll({
       filter: { token },
     });
 
@@ -105,7 +104,7 @@ export class ExternalInvitationService {
 
     const link = validation.link;
 
-    await externalAccessLinkService.update(link.id, {
+    await externalAccessLinkRepository.update(link.id, {
       useCount: link.useCount + 1,
       usedAt: new Date(),
     });
@@ -123,7 +122,7 @@ export class ExternalInvitationService {
       filter.purpose = purpose;
     }
 
-    const result = await externalAccessLinkService.getAll({
+    const result = await externalAccessLinkRepository.getAll({
       filter,
     });
 
@@ -150,7 +149,7 @@ export class ExternalInvitationService {
   }
 
   async getInvitationStats() {
-    const allLinks = await externalAccessLinkService.getAll();
+    const allLinks = await externalAccessLinkRepository.getAll();
     const now = new Date();
 
     const stats = {

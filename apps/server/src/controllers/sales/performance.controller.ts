@@ -1,14 +1,14 @@
 import type { PerformanceSheetLink } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
-import { performanceSheetLinkService } from "@/services/repository";
 import { buildQueryParams } from "@/utils";
+import { performanceSheetLinkRepository } from "@/repositories";
 
 export class PerformanceController {
   // Performance Sheet Link
   async createPerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.create(req.body);
+      const result = await performanceSheetLinkRepository.create(req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -19,7 +19,7 @@ export class PerformanceController {
   async getPerformanceSheetLinks(req: Request, res: Response, next: NextFunction) {
     try {
       const params = buildQueryParams<PerformanceSheetLink>(req.query);
-      const result = await performanceSheetLinkService.getAll(params);
+      const result = await performanceSheetLinkRepository.getAll(params);
       res.status(200).json(result);
     }
     catch (error) {
@@ -29,7 +29,7 @@ export class PerformanceController {
 
   async getPerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.getById(req.params.companyId);
+      const result = await performanceSheetLinkRepository.getById(req.params.companyId);
       res.status(200).json(result);
     }
     catch (error) {
@@ -39,7 +39,7 @@ export class PerformanceController {
 
   async updatePerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.update(req.params.companyId, req.body);
+      const result = await performanceSheetLinkRepository.update(req.params.companyId, req.body);
       res.status(200).json(result);
     }
     catch (error) {
@@ -49,7 +49,7 @@ export class PerformanceController {
 
   async deletePerformanceSheetLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await performanceSheetLinkService.delete(req.params.companyId);
+      const result = await performanceSheetLinkRepository.delete(req.params.companyId);
       res.status(200).json(result);
     }
     catch (error) {

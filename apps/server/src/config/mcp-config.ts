@@ -50,7 +50,7 @@ async function getServiceForEntity(entity: string) {
     throw new Error(`No service found for entity: ${entity}`);
   }
 
-  const repositoryModule = await import("../services/repository");
+  const repositoryModule = await import("../repositories");
   return (repositoryModule as any)[serviceName];
 }
 

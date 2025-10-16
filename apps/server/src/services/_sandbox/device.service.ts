@@ -4,8 +4,7 @@ import axios from "axios";
 
 import { pingHost } from "@/utils";
 import { logger } from "@/utils/logger";
-
-import { ntfyDeviceService } from "../repository";
+import { ntfyDeviceRepository } from "@/repositories";
 
 export class DeviceService {
   private monitoringInterval?: NodeJS.Timeout;
@@ -13,7 +12,7 @@ export class DeviceService {
   private defaultTopic = "deez_nuts";
 
   async pingDevice(deviceId: string): Promise<boolean> {
-    const device = await ntfyDeviceService.getById(deviceId);
+    const device = await ntfyDeviceRepository.getById(deviceId);
     if (!device.success || !device.data) {
       throw new Error(`Device ${deviceId} not found`);
     }
@@ -22,7 +21,7 @@ export class DeviceService {
       const res = await pingHost(device.data.host, 5);
       const isAlive = res.alive;
 
-      await ntfyDeviceService.update(deviceId, {
+      await ntfyDeviceRepository.update(deviceId, {
         lastPingTime: new Date(),
         lastPingSuccess: isAlive,
       });
@@ -30,7 +29,7 @@ export class DeviceService {
       return isAlive;
     }
     catch {
-      await ntfyDeviceService.update(deviceId, {
+      await ntfyDeviceRepository.update(deviceId, {
         lastPingTime: new Date(),
         lastPingSuccess: false,
       });
@@ -39,7 +38,7 @@ export class DeviceService {
   }
 
   async pingAllEnabledDevices(): Promise<void> {
-    const devices = await ntfyDeviceService.getAll({
+    const devices = await ntfyDeviceRepository.getAll({
       filter: { enabled: true },
     });
 
@@ -60,13 +59,13 @@ export class DeviceService {
   }
 
   async handlePingSuccess(deviceId: string): Promise<void> {
-    const device = await ntfyDeviceService.getById(deviceId);
+    const device = await ntfyDeviceRepository.getById(deviceId);
     if (!device.success || !device.data)
       return;
 
     const wasDown = device.data.isDown;
 
-    await ntfyDeviceService.update(deviceId, {
+    await ntfyDeviceRepository.update(deviceId, {
       currentMissedPings: 0,
       isDown: false,
     });
@@ -77,14 +76,14 @@ export class DeviceService {
   }
 
   async handlePingFailure(deviceId: string): Promise<void> {
-    const device = await ntfyDeviceService.getById(deviceId);
+    const device = await ntfyDeviceRepository.getById(deviceId);
     if (!device.success || !device.data)
       return;
 
     const newMissedCount = device.data.currentMissedPings + 1;
     const shouldAlert = newMissedCount >= device.data.maxMissedPings && !device.data.isDown;
 
-    await ntfyDeviceService.update(deviceId, {
+    await ntfyDeviceRepository.update(deviceId, {
       currentMissedPings: newMissedCount,
       isDown: newMissedCount >= device.data.maxMissedPings,
     });
@@ -95,7 +94,7 @@ export class DeviceService {
   }
 
   async sendDownAlert(deviceId: string): Promise<void> {
-    const device = await ntfyDeviceService.getById(deviceId);
+    const device = await ntfyDeviceRepository.getById(deviceId);
     if (!device.success || !device.data)
       return;
 
@@ -104,7 +103,7 @@ export class DeviceService {
   }
 
   async sendUpAlert(deviceId: string): Promise<void> {
-    const device = await ntfyDeviceService.getById(deviceId);
+    const device = await ntfyDeviceRepository.getById(deviceId);
     if (!device.success || !device.data)
       return;
 
