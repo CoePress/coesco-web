@@ -43,7 +43,7 @@ export const productController = new ProductController();
 // Core
 export const authController = new AuthController();
 export const chatController = new ChatController();
-export const formController = new FormController()
+export const formController = new FormController();
 export const legacyController = new LegacyController();
 export const lockController = new LockController();
 export const settingsController = new SettingsController();
