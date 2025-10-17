@@ -1479,6 +1479,11 @@ export const SCHEMAS: ISchema[] = [
         type: "string",
         required: true,
       },
+      type: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
       body: {
         type: "string",
         required: true,

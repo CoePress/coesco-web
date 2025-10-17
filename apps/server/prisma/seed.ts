@@ -1,7 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import { FormFieldControlType, FormFieldDataType, FormStatus, ItemType, MachineControllerType, MachineType } from "@prisma/client";
 
-import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, _migrateJourneyNotes, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/admin/microsoft.service";
 import {
@@ -845,6 +845,7 @@ export async function seedDatabase() {
   await seedServiceTechDailyForm();
   await seedPerformanceSheetVersions();
   await seedCatalog();
+  await _migrateJourneyNotes(legacyService);
 
   logger.info("All seeding completed successfully");
 }

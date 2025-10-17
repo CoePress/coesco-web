@@ -355,6 +355,7 @@ model Journey {
 model JourneyNote {
   id        String    @id @default(uuid())
   journeyId String
+  type      String    @default("note")
   body      String
   createdBy String?
   updatedBy String?

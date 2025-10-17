@@ -1489,6 +1489,231 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+interface ParsedEntry {
+  body: string;
+  date: Date | null;
+}
+
+function parseDatePrefixedEntries(text: string): ParsedEntry[] {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  const datePattern = /^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/;
+
+  const entries: ParsedEntry[] = [];
+  const lines = text.split("\n");
+  let currentEntry = "";
+  let currentDate: Date | null = null;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    const match = trimmedLine.match(datePattern);
+
+    if (match) {
+      if (currentEntry.trim().length > 0) {
+        entries.push({ body: currentEntry.trim(), date: currentDate });
+      }
+      currentEntry = trimmedLine.replace(datePattern, "").trim();
+
+      try {
+        const parts = match[1].split("/");
+
+        if (parts.length === 2) {
+          const month = Number.parseInt(parts[0], 10);
+          let year = Number.parseInt(parts[1], 10);
+
+          if (year < 100) {
+            year += year < 50 ? 2000 : 1900;
+          }
+
+          currentDate = new Date(year, month - 1, 1);
+        }
+        else if (parts.length === 3) {
+          const month = Number.parseInt(parts[0], 10);
+          const day = Number.parseInt(parts[1], 10);
+          let year = Number.parseInt(parts[2], 10);
+
+          if (year < 100) {
+            year += year < 50 ? 2000 : 1900;
+          }
+
+          currentDate = new Date(year, month - 1, day);
+        }
+        else {
+          currentDate = null;
+        }
+      }
+      catch (error) {
+        currentDate = null;
+      }
+    }
+    else if (trimmedLine.length > 0) {
+      if (currentEntry.length > 0) {
+        currentEntry += `\n${trimmedLine}`;
+      }
+      else {
+        currentEntry = trimmedLine;
+      }
+    }
+  }
+
+  if (currentEntry.trim().length > 0) {
+    entries.push({ body: currentEntry.trim(), date: currentDate });
+  }
+
+  if (entries.length === 0 && text.trim().length > 0) {
+    return [{ body: text.trim(), date: null }];
+  }
+
+  return entries;
+}
+
+export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const existingNotesCount = await mainDatabase.journeyNote.count();
+  if (existingNotesCount > 0) {
+    logger.info(`Found ${existingNotesCount} existing journey notes. Skipping migration.`);
+    legacyService = originalService;
+    return {
+      total: 0,
+      created: 0,
+      skipped: existingNotesCount,
+      errors: 0,
+      errorDetails: [],
+    };
+  }
+
+  const result: MigrationResult = {
+    total: 0,
+    created: 0,
+    skipped: 0,
+    errors: 0,
+    errorDetails: [],
+  };
+
+  try {
+    logger.info("Starting journey notes migration...");
+
+    const params = {
+      filter: null,
+      sort: null,
+      order: null,
+      offset: 0,
+    };
+
+    const totalCount = await legacyService.getCount("std", "Journey", params);
+    const legacyFetchSize = 5000;
+    const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
+
+    logger.info(`Found ${totalCount} journeys, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
+
+    let totalProcessed = 0;
+    let currentBatch = 0;
+
+    while (totalProcessed < totalCount) {
+      const paginatedResult = await legacyService.getAllPaginated(
+        "std",
+        "Journey",
+        { ...params, totalCount },
+        legacyFetchSize,
+      );
+
+      if (!paginatedResult.records || paginatedResult.records.length === 0) {
+        logger.warn("No more records found in Journey");
+        break;
+      }
+
+      const sourceRecords = paginatedResult.records;
+      totalProcessed += sourceRecords.length;
+      currentBatch++;
+
+      logger.info(`Processing batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
+
+      const allNotes: any[] = [];
+
+      for (const record of sourceRecords) {
+        result.total++;
+
+        const journeyId = record.ID?.toString();
+        if (!journeyId) {
+          result.skipped++;
+          continue;
+        }
+
+        if (record.Notes && record.Notes.toString().trim().length > 0) {
+          const noteEntries = parseDatePrefixedEntries(record.Notes.toString());
+          for (const entry of noteEntries) {
+            allNotes.push({
+              journeyId,
+              type: "note",
+              body: entry.body,
+              createdBy: "System",
+              createdAt: entry.date || new Date(),
+            });
+          }
+        }
+
+        if (record.Next_Steps && record.Next_Steps.toString().trim().length > 0) {
+          const nextStepEntries = parseDatePrefixedEntries(record.Next_Steps.toString());
+          for (const entry of nextStepEntries) {
+            allNotes.push({
+              journeyId,
+              type: "next_step",
+              body: entry.body,
+              createdBy: "System",
+              createdAt: entry.date || new Date(),
+            });
+          }
+        }
+      }
+
+      if (allNotes.length > 0) {
+        try {
+          const createResult = await mainDatabase.journeyNote.createMany({
+            data: allNotes,
+            skipDuplicates: true,
+          });
+          result.created += createResult.count;
+        }
+        catch (error: any) {
+          logger.error(`Error creating notes in batch ${currentBatch}:`, error.message);
+          result.errors += allNotes.length;
+        }
+      }
+
+      params.offset = paginatedResult.nextOffset;
+
+      if (!paginatedResult.hasMore || paginatedResult.records.length < legacyFetchSize) {
+        logger.info("No more records to process. Breaking pagination loop.");
+        break;
+      }
+
+      logger.info(`Batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}/${totalCount}, Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+    }
+
+    logger.info(
+      `Migration complete: ${result.created} created, ${result.skipped} skipped, ${result.errors} errors from ${result.total} total records`,
+    );
+  }
+  catch (error: any) {
+    logger.error("Fatal error during journey notes migration:", error.message);
+    throw error;
+  }
+
+  legacyService = originalService;
+
+  return result;
+}
+
 export async function _migrateDepartments(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
   const originalService = legacyService;
 

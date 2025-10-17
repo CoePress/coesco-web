@@ -2,6 +2,7 @@
 export interface JourneyNote {
   id?: string;
   journeyId: string;
+  type?: string;
   body: string;
   createdBy?: string;
   updatedBy?: string;
