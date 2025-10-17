@@ -253,23 +253,20 @@ const Contacts = () => {
           let companyMap = new Map<number, string>();
           if (uniqueCompanyIds.length > 0) {
             try {
-              const companyPromises = uniqueCompanyIds.map(async (companyId) => {
-                try {
-                  const companyResponse = await api.get('/legacy/base/Company/filter/custom', {
-                    Company_ID: companyId,
-                    fields: 'Company_ID,CustDlrName',
-                    limit: 1
-                  });
-
-                  const companies = Array.isArray(companyResponse) ? companyResponse : [];
-                  return companies.length > 0 ? companies[0] : null;
-                } catch (error) {
-                  console.error(`Error fetching company ${companyId}:`, error);
-                  return null;
-                }
+              const companyResponse = await api.get('/legacy/base/Company', {
+                filter: JSON.stringify({
+                  operator: "in",
+                  field: "Company_ID",
+                  values: uniqueCompanyIds
+                }),
+                fields: 'Company_ID,CustDlrName',
+                limit: uniqueCompanyIds.length
               });
 
-              const companies = await Promise.all(companyPromises);
+              const companies = companyResponse?.data
+                ? (Array.isArray(companyResponse.data) ? companyResponse.data : [])
+                : (Array.isArray(companyResponse) ? companyResponse : []);
+
               companies.forEach((company: any) => {
                 if (company?.Company_ID && company?.CustDlrName) {
                   companyMap.set(company.Company_ID, company.CustDlrName);
