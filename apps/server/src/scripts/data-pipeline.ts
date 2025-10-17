@@ -1494,82 +1494,48 @@ interface ParsedEntry {
   date: Date | null;
 }
 
-function parseDatePrefixedEntries(text: string): ParsedEntry[] {
-  if (!text || text.trim().length === 0) {
-    return [];
-  }
+export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  function parseDate(text: string): ParsedEntry[] {
+    if (!text?.trim())
+      return [];
 
-  const datePattern = /^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/;
+    const entries: ParsedEntry[] = [];
+    let currentEntry = "";
+    let currentDate: Date | null = null;
 
-  const entries: ParsedEntry[] = [];
-  const lines = text.split("\n");
-  let currentEntry = "";
-  let currentDate: Date | null = null;
+    for (const line of text.split("\n")) {
+      const trimmedLine = line.trim();
+      const match = trimmedLine.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/);
 
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    const match = trimmedLine.match(datePattern);
+      if (match) {
+        if (currentEntry.trim())
+          entries.push({ body: currentEntry.trim(), date: currentDate });
+        currentEntry = trimmedLine.replace(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/, "").trim();
 
-    if (match) {
-      if (currentEntry.trim().length > 0) {
-        entries.push({ body: currentEntry.trim(), date: currentDate });
-      }
-      currentEntry = trimmedLine.replace(datePattern, "").trim();
-
-      try {
-        const parts = match[1].split("/");
-
-        if (parts.length === 2) {
+        try {
+          const parts = match[1].split("/");
           const month = Number.parseInt(parts[0], 10);
-          let year = Number.parseInt(parts[1], 10);
-
-          if (year < 100) {
+          const day = parts.length === 3 ? Number.parseInt(parts[1], 10) : 1;
+          let year = Number.parseInt(parts[parts.length - 1], 10);
+          if (year < 100)
             year += year < 50 ? 2000 : 1900;
-          }
-
-          currentDate = new Date(year, month - 1, 1);
-        }
-        else if (parts.length === 3) {
-          const month = Number.parseInt(parts[0], 10);
-          const day = Number.parseInt(parts[1], 10);
-          let year = Number.parseInt(parts[2], 10);
-
-          if (year < 100) {
-            year += year < 50 ? 2000 : 1900;
-          }
-
           currentDate = new Date(year, month - 1, day);
         }
-        else {
+        catch {
           currentDate = null;
         }
       }
-      catch (error) {
-        currentDate = null;
+      else if (trimmedLine) {
+        currentEntry = currentEntry ? `${currentEntry}\n${trimmedLine}` : trimmedLine;
       }
     }
-    else if (trimmedLine.length > 0) {
-      if (currentEntry.length > 0) {
-        currentEntry += `\n${trimmedLine}`;
-      }
-      else {
-        currentEntry = trimmedLine;
-      }
-    }
+
+    if (currentEntry.trim())
+      entries.push({ body: currentEntry.trim(), date: currentDate });
+
+    return entries.length ? entries : text.trim() ? [{ body: text.trim(), date: null }] : [];
   }
 
-  if (currentEntry.trim().length > 0) {
-    entries.push({ body: currentEntry.trim(), date: currentDate });
-  }
-
-  if (entries.length === 0 && text.trim().length > 0) {
-    return [{ body: text.trim(), date: null }];
-  }
-
-  return entries;
-}
-
-export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
   const originalService = legacyService;
 
   if (legacyServiceInstance) {
@@ -1650,7 +1616,7 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
         }
 
         if (record.Notes && record.Notes.toString().trim().length > 0) {
-          const noteEntries = parseDatePrefixedEntries(record.Notes.toString());
+          const noteEntries = parseDate(record.Notes.toString());
           for (const entry of noteEntries) {
             allNotes.push({
               journeyId,
@@ -1663,7 +1629,7 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
         }
 
         if (record.Next_Steps && record.Next_Steps.toString().trim().length > 0) {
-          const nextStepEntries = parseDatePrefixedEntries(record.Next_Steps.toString());
+          const nextStepEntries = parseDate(record.Next_Steps.toString());
           for (const entry of nextStepEntries) {
             allNotes.push({
               journeyId,
