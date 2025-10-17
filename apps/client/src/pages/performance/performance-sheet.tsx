@@ -1,55 +1,24 @@
-import { useEffect, useState, useRef } from "react";
-// import MaterialSpecs from "./material-specs";
-// import TDDBHD from "./tddbhd";
-// import ReelDrive from "./reel-drive";
-// import StrUtility from "./str-utility";
-// import RollStrBackbend from "./roll-str-backbend";
-// import Feed from "./feed";
-// import Shear from "./shear";
-// import SummaryReport from "./summary-report";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Save, Lock, Link } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
-import { Button, Modal, PageHeader, Select, Tabs } from "@/components";
+import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
 import { useToast } from "@/hooks/use-toast";
-// import RFQ from "./rfq";
 
-// const PERFORMANCE_TABS = [
-//   { label: "RFQ", value: "rfq" },
-//   { label: "Material Specs", value: "material-specs" },
-//   { label: "TDDBHD", value: "tddbhd" },
-//   { label: "Reel Drive", value: "reel-drive" },
-//   { label: "Str Utility", value: "str-utility" },
-//   { label: "Roll Str Backbend", value: "roll-str-backbend" },
-//   { label: "Feed", value: "feed" },
-//   { label: "Shear", value: "shear" },
-//   { label: "Summary Report", value: "summary-report" },
-// ];
-
-type PerformanceTabValue =
-  | "rfq"
-  | "material-specs"
-  | "tddbhd"
-  | "reel-drive"
-  | "str-utility"
-  | "roll-str-backbend"
-  | "feed"
-  | "shear"
-  | "summary-report";
+type PerformanceTabValue = string;
 
 
 const PerformanceSheet = () => {
-  const [activeTab, setActiveTab] = useState<PerformanceTabValue>("rfq");
-  // const location = useLocation();
-  // const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<PerformanceTabValue>("");
   const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [addMode, setAddMode] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
   const [newLink, setNewLink] = useState<{
     entityType: string;
     entityId: string;
@@ -62,43 +31,59 @@ const PerformanceSheet = () => {
     { entityType: "company", entityId: "789" },
   ]);
   const { id: performanceSheetId } = useParams();
-  // const { entity: performanceSheet, loading, error } = useGetEntity(
-  //   `/performance/sheets`,
-  //   performanceSheetId
-  // );
   const { emit, isLockConnected, onLockChanged } = useSocket();
   const { user } = useAuth();
-  const { get } = useApi();
+  const { get: getLockStatus } = useApi();
+  const { get: getSheet, response: performanceSheet, loading: sheetLoading, error: sheetError } = useApi<any>();
+  const { patch: updateSheet } = useApi();
   const toast = useToast();
   const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const visibleTabs = [
-    { label: "RFQ", value: "rfq" },
-    { label: "Material Specs", value: "material-specs" },
-    { label: "Summary Report", value: "summary-report" },
-    { label: "TDDBHD", value: "tddbhd" },
-    { label: "Str Utility", value: "str-utility" },
-    { label: "Roll Str Backbend", value: "roll-str-backbend" },
-    { label: "Feed", value: "feed" },
-  ];
+  const queryParams = useMemo(() => {
+    return {
+      include: JSON.stringify(["version"]),
+    };
+  }, []);
+
+  const visibleTabs = useMemo(() => {
+    if (!performanceSheet?.data?.version?.sections) return [];
+    return performanceSheet.data.version.sections
+      .sort((a: any, b: any) => a.sequence - b.sequence)
+      .map((tab: any) => ({
+        label: tab.label,
+        value: tab.value,
+      }));
+  }, [performanceSheet]);
+
+  const activeTabData = useMemo(() => {
+    if (!performanceSheet?.data?.version?.sections || !activeTab) return null;
+    return performanceSheet.data.version.sections.find((tab: any) => tab.value === activeTab);
+  }, [performanceSheet, activeTab]);
+
+  const fetchSheet = async () => {
+    if (!performanceSheetId) return;
+    await getSheet(`/sales/performance-sheets/${performanceSheetId}`, queryParams);
+  };
+
+  const fetchLockStatus = async () => {
+    if (!performanceSheetId) return;
+    try {
+      const response = await getLockStatus(
+        `/core/locks/status/performance-sheets/${performanceSheetId}`
+      );
+      if (response) {
+        setIsLocked((response as any)?.isLocked ?? false);
+        setLockInfo((response as any)?.lockInfo || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch lock status:", err);
+    }
+  };
 
   useEffect(() => {
     if (!performanceSheetId) return;
 
-    const fetchLockStatus = async () => {
-      try {
-        const response = await get(
-          `/locks/status/performance-sheets/${performanceSheetId}`
-        );
-        if (response) {
-          setIsLocked((response as any)?.isLocked ?? false);
-          setLockInfo((response as any)?.lockInfo || null);
-        }
-      } catch (err) {
-        console.error("Failed to fetch lock status:", err);
-      }
-    };
-
+    fetchSheet();
     fetchLockStatus();
 
     // Cleanup lock on unmount
@@ -118,6 +103,16 @@ const PerformanceSheet = () => {
       }
     };
   }, [performanceSheetId]);
+
+  useEffect(() => {
+    if (performanceSheet?.data) {
+      setFormData(performanceSheet.data.data || {});
+
+      if (!activeTab && visibleTabs.length > 0) {
+        setActiveTab(visibleTabs[0].value);
+      }
+    }
+  }, [performanceSheet]);
 
   // Auto-extend lock while editing
   useEffect(() => {
@@ -184,6 +179,13 @@ const PerformanceSheet = () => {
     return unsubscribe;
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
+  const handleFieldChange = (fieldId: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldId]: value,
+    }));
+  };
+
   const handleEdit = () => {
     if (!performanceSheetId || !isLockConnected) {
       toast.error("Cannot acquire lock. Connection not available.");
@@ -220,8 +222,10 @@ const PerformanceSheet = () => {
     if (!performanceSheetId) return;
 
     try {
-      // Update performance sheet data here using patch
-      // await patch(`/performance/sheets/${performanceSheetId}`, updatedData);
+      // Update performance sheet data
+      await updateSheet(`/sales/performance-sheets/${performanceSheetId}`, {
+        data: formData,
+      });
 
       // Release lock after save
       if (!isLockConnected) {
@@ -263,6 +267,104 @@ const PerformanceSheet = () => {
     }
   };
 
+  const renderField = (field: any) => {
+    const value = formData[field.id] || "";
+    const commonProps = {
+      id: field.id,
+      name: field.id,
+      label: field.label,
+      required: field.required || false,
+      disabled: !isEditing,
+    };
+
+    const getSizeClass = () => {
+      switch (field.size) {
+        case "sm":
+          return "col-span-1";
+        case "md":
+          return "col-span-1";
+        case "lg":
+          return "col-span-2";
+        case "full":
+          return "col-span-full";
+        default:
+          return "col-span-1";
+      }
+    };
+
+    const renderInput = () => {
+      switch (field.type) {
+        case "text":
+          return (
+            <Input
+              {...commonProps}
+              type="text"
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            />
+          );
+        case "number":
+          return (
+            <Input
+              {...commonProps}
+              type="number"
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            />
+          );
+        case "date":
+          return (
+            <DatePicker
+              {...commonProps}
+              value={value}
+              onChange={(date) => handleFieldChange(field.id, date)}
+            />
+          );
+        case "textarea":
+          return (
+            <Textarea
+              {...commonProps}
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              rows={4}
+            />
+          );
+        case "select":
+          return (
+            <Select
+              {...commonProps}
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              options={field.options || []}
+            />
+          );
+        case "checkbox":
+          return (
+            <Checkbox
+              {...commonProps}
+              checked={!!value}
+              onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+            />
+          );
+        default:
+          return (
+            <Input
+              {...commonProps}
+              type="text"
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            />
+          );
+      }
+    };
+
+    return (
+      <div key={field.id} className={getSizeClass()}>
+        {renderInput()}
+      </div>
+    );
+  };
+
   const getHeaderActions = () => {
     // Currently editing - show Save button
     if (isEditing) {
@@ -300,65 +402,36 @@ const PerformanceSheet = () => {
     );
   };
 
-  // const renderTabContent = () => {
-  //   // const commonProps = {
-  //   //   data: performanceSheet?.data || null,
-  //   //   isEditing
-  //   // };
 
-  //   // // const getActiveTabFromUrl = (): PerformanceTabValue => {
-  //   // //   const pathSegments = location.pathname.split('/');
-  //   // //   const tabFromUrl = pathSegments[pathSegments.length - 1] as PerformanceTabValue;
-      
-  //   // //   const validTabs = PERFORMANCE_TABS.map(tab => tab.value);
-  //   // //   return validTabs.includes(tabFromUrl) ? tabFromUrl : 'rfq';
-  //   // // };
+  if (sheetLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-text-muted">Loading performance sheet...</div>
+      </div>
+    );
+  }
 
-  //   // if (loading) {
-  //   //   return <div className="flex justify-center items-center h-64">Loading...</div>;
-  //   // }
+  if (sheetError) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-error">Error loading performance sheet: {sheetError}</div>
+      </div>
+    );
+  }
 
-  //   // if (error) {
-  //   //   return <div className="flex justify-center items-center h-64 text-red-500">Error loading performance sheet</div>;
-  //   // }
-
-  //   // if (!performanceSheet?.data) {
-  //   //   return <div className="flex justify-center items-center h-64">No data available</div>;
-  //   // }
-
-  //   // switch (activeTab) {
-  //   //   case "rfq":
-  //   //     return <RFQ {...commonProps} />;
-  //   //   case "material-specs":
-  //   //     return <MaterialSpecs {...commonProps} />;
-  //   //   case "tddbhd":
-  //   //     return <TDDBHD {...commonProps} />;
-  //   //   case "reel-drive":
-  //   //     return <ReelDrive {...commonProps} />;
-  //   //   case "str-utility":
-  //   //     return <StrUtility {...commonProps} />;
-  //   //   case "roll-str-backbend":
-  //   //     return <RollStrBackbend {...commonProps} />;
-  //   //   case "feed":
-  //   //     return <Feed {...commonProps} />;
-  //   //   case "shear":
-  //   //     return <Shear {...commonProps} />;
-  //   //   case "summary-report":
-  //   //     return <SummaryReport {...commonProps} />;
-  //   //   default:
-  //   //     return <RFQ {...commonProps} />;
-  //   // }
-  // };
-
-  // const handleTabChange = (tab: PerformanceTabValue) => {
-  //   navigate(`/performance/${performanceSheetId}/${tab}`);
-  // };
+  if (!performanceSheet?.data) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-text-muted">Performance sheet not found</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        title="Performance Details"
-        description="Performance Details"
+        title={performanceSheet.data.name || "Performance Sheet"}
+        description={`Version: ${performanceSheet.data.version?.id?.slice(-8) || "Unknown"}`}
         actions={getHeaderActions()}
         goBack
         goBackTo='/sales/performance-sheets'
@@ -370,7 +443,23 @@ const PerformanceSheet = () => {
         tabs={visibleTabs}
       />
 
-      {/* <div className="tab-content">{renderTabContent()}</div> */}
+      <div className="p-6">
+        {activeTabData?.sections?.map((section: any) => (
+          <div key={section.id} className="mb-8">
+            <h2 className="text-lg font-semibold text-text mb-4">{section.title}</h2>
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${section.columns || 2}, minmax(0, 1fr))`,
+              }}
+            >
+              {section.fields
+                ?.sort((a: any, b: any) => a.sequence - b.sequence)
+                .map((field: any) => renderField(field))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Modal
         isOpen={showLinksModal}

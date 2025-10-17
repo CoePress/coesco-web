@@ -9,8 +9,6 @@ import { HTTP_STATUS } from "@/utils/constants";
 
 const CreatePerformanceSheetVersionSchema = z.object({
   sections: z.any().optional(),
-  createdById: z.string().uuid("Invalid user ID"),
-  updatedById: z.string().uuid("Invalid user ID"),
 });
 
 const UpdatePerformanceSheetVersionSchema = CreatePerformanceSheetVersionSchema.partial();
@@ -19,8 +17,6 @@ const CreatePerformanceSheetSchema = z.object({
   versionId: z.string().uuid("Invalid version ID"),
   name: z.string().optional(),
   data: z.any().optional(),
-  createdById: z.string().uuid("Invalid user ID"),
-  updatedById: z.string().uuid("Invalid user ID"),
 });
 
 const UpdatePerformanceSheetSchema = CreatePerformanceSheetSchema.partial();
@@ -29,8 +25,6 @@ const CreatePerformanceSheetLinkSchema = z.object({
   performanceSheetId: z.string().uuid("Invalid performance sheet ID"),
   entityType: z.string().min(1, "Entity type is required"),
   entityId: z.string().min(1, "Entity ID is required"),
-  createdById: z.string().uuid("Invalid user ID"),
-  updatedById: z.string().uuid("Invalid user ID"),
 });
 
 const UpdatePerformanceSheetLinkSchema = CreatePerformanceSheetLinkSchema.partial();
@@ -79,7 +73,8 @@ export class PerformanceController {
   });
 
   getPerformanceSheet = asyncWrapper(async (req: Request, res: Response) => {
-    const result = await performanceService.getPerformanceSheetById(req.params.sheetId);
+    const params = buildQueryParams<PerformanceSheet>(req.query);
+    const result = await performanceService.getPerformanceSheetById(req.params.sheetId, params);
     res.status(HTTP_STATUS.OK).json(result);
   });
 

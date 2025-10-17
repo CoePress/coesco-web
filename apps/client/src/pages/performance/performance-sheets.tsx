@@ -17,7 +17,7 @@ const PerformanceSheets = () => {
   const { get: getSheets, response: sheets, loading: sheetsLoading, error: sheetsError } = useApi<IApiResponse<any[]>>();
   const { get: getVersions, response: versions } = useApi<IApiResponse<any[]>>();
   const { get: getLocks } = useApi<IApiResponse<any>>();
-  const { post: createSheet, loading: createSheetLoading } = useApi<IApiResponse<any[]>>();
+  const { post: createSheet, loading: createSheetLoading, error: createSheetError } = useApi<IApiResponse<any[]>>();
   const { onLockChanged } = useSocket();
 
   const [params, setParams] = useState({
@@ -26,7 +26,8 @@ const PerformanceSheets = () => {
     page: 1,
     limit: 25,
     filter: { versionId: "" },
-    include: [] as string[]
+    include: [] as string[],
+    search: ""
   });
 
   const queryParams = useMemo(() => {
@@ -49,6 +50,10 @@ const PerformanceSheets = () => {
       q.include = JSON.stringify(params.include);
     }
 
+    if (params.search) {
+      q.search = params.search;
+    }
+
     return q;
   }, [params]);
 
@@ -62,7 +67,7 @@ const PerformanceSheets = () => {
 
   const fetchLocks = async () => {
     try {
-      const response = await getLocks("/locks/performance-sheets");
+      const response = await getLocks("/core/locks/performance-sheets");
       if (response) {
         const lockMap: Record<string, any> = {};
         ((response as any).locks || []).forEach((lock: any) => {
@@ -141,7 +146,10 @@ const PerformanceSheets = () => {
   };
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query)
+    handleParamsChange({
+      search: query,
+      page: 1
+    })
   }
 
   const handleParamsChange = (updates: Partial<typeof params>) => {
@@ -236,8 +244,10 @@ const PerformanceSheets = () => {
         <CreateSheetModal
           isOpen={isModalOpen}
           onClose={toggleModal}
-          createSheet={(data) => createSheet("/performance/sheets", data)}
+          onSuccess={fetchSheets}
+          createSheet={(data) => createSheet("/sales/performance-sheets", data)}
           loading={createSheetLoading}
+          error={createSheetError}
           versions={versions?.data || []}
         />
       )}
@@ -248,14 +258,18 @@ const PerformanceSheets = () => {
 const CreateSheetModal = ({
   isOpen,
   onClose,
+  onSuccess,
   createSheet,
   loading,
+  error,
   versions,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
   createSheet: (params: any) => Promise<any>;
   loading: boolean;
+  error: string | null;
   versions: any[];
   }) => {
 
@@ -290,6 +304,7 @@ const CreateSheetModal = ({
       if (response?.success) {
         toast.success(`Performance Sheet "${formData.name}" created successfully!`);
         onClose();
+        onSuccess();
         navigate(`/sales/performance-sheets/${response.data.id}`);
       } else {
         toast.error('Failed to create performance sheet. Please try again.');
@@ -351,6 +366,12 @@ const CreateSheetModal = ({
         {!formData.name.trim() && formData.versionId && "Please enter a name for this performance sheet."}
         {formData.name.trim() && formData.versionId && "Performance sheet will be created with the selected version template."}
       </div>
+
+      {error && (
+        <div className="text-xs text-error bg-error/10 p-3 rounded">
+          {error}
+        </div>
+      )}
 
       <Button
         onClick={handleCreateSheet}

@@ -289,41 +289,113 @@ async function seedPerformanceSheetVersions() {
     if (existingVersions === 0) {
       logger.info("Seeding sample performance sheet versions...");
 
-      const sampleSections = [
+      const sampleTabs = [
         {
-          id: "section-1",
-          title: "Machine Information",
-          fields: [
-            { id: "field-1", label: "Machine Model", type: "text", required: true },
-            { id: "field-2", label: "Serial Number", type: "text", required: true },
-            { id: "field-3", label: "Year Manufactured", type: "number", required: false },
+          id: "tab-rfq",
+          label: "RFQ",
+          value: "rfq",
+          sequence: 1,
+          sections: [
+            {
+              id: "section-rfq-info",
+              title: "RFQ Information",
+              sequence: 1,
+              columns: 2,
+              fields: [
+                { id: "rfq-customer", label: "Customer", type: "text", size: "md", sequence: 1, required: true },
+                { id: "rfq-date", label: "RFQ Date", type: "date", size: "md", sequence: 2, required: true },
+                { id: "rfq-number", label: "RFQ Number", type: "text", size: "md", sequence: 3, required: false },
+                { id: "rfq-contact", label: "Contact Person", type: "text", size: "md", sequence: 4, required: false },
+              ],
+            },
           ],
         },
         {
-          id: "section-2",
-          title: "Performance Metrics",
-          fields: [
-            { id: "field-4", label: "Maximum Speed (RPM)", type: "number", required: true },
-            { id: "field-5", label: "Power Consumption (kW)", type: "number", required: true },
-            { id: "field-6", label: "Efficiency Rating", type: "text", required: false },
+          id: "tab-material-specs",
+          label: "Material Specs",
+          value: "material-specs",
+          sequence: 2,
+          sections: [
+            {
+              id: "section-material",
+              title: "Material Specifications",
+              sequence: 1,
+              columns: 2,
+              fields: [
+                { id: "mat-type", label: "Material Type", type: "text", size: "md", sequence: 1, required: true },
+                { id: "mat-grade", label: "Material Grade", type: "text", size: "md", sequence: 2, required: false },
+                { id: "mat-thickness", label: "Thickness (mm)", type: "number", size: "sm", sequence: 3, required: true },
+                { id: "mat-width", label: "Width (mm)", type: "number", size: "sm", sequence: 4, required: true },
+                { id: "mat-yield", label: "Yield Strength (MPa)", type: "number", size: "md", sequence: 5, required: false },
+                { id: "mat-tensile", label: "Tensile Strength (MPa)", type: "number", size: "md", sequence: 6, required: false },
+              ],
+            },
+            {
+              id: "section-coating",
+              title: "Coating & Finish",
+              sequence: 2,
+              columns: 2,
+              fields: [
+                { id: "coat-type", label: "Coating Type", type: "select", size: "md", sequence: 1, required: false, options: [
+                  { label: "None", value: "none" },
+                  { label: "Galvanized", value: "galvanized" },
+                  { label: "Painted", value: "painted" },
+                  { label: "Powder Coated", value: "powder" },
+                ]},
+                { id: "coat-thickness", label: "Coating Thickness (μm)", type: "number", size: "sm", sequence: 2, required: false },
+              ],
+            },
           ],
         },
         {
-          id: "section-3",
-          title: "Additional Notes",
-          fields: [
-            { id: "field-7", label: "Comments", type: "textarea", required: false },
+          id: "tab-tddbhd",
+          label: "TDDBHD",
+          value: "tddbhd",
+          sequence: 3,
+          sections: [
+            {
+              id: "section-tddbhd",
+              title: "TDDBHD Parameters",
+              sequence: 1,
+              columns: 3,
+              fields: [
+                { id: "td-tension", label: "Tension (N)", type: "number", size: "sm", sequence: 1, required: false },
+                { id: "td-diameter", label: "Diameter (mm)", type: "number", size: "sm", sequence: 2, required: false },
+                { id: "td-brake", label: "Brake Force (N)", type: "number", size: "sm", sequence: 3, required: false },
+                { id: "td-height", label: "Height (mm)", type: "number", size: "sm", sequence: 4, required: false },
+                { id: "td-depth", label: "Depth (mm)", type: "number", size: "sm", sequence: 5, required: false },
+              ],
+            },
+          ],
+        },
+        {
+          id: "tab-summary",
+          label: "Summary Report",
+          value: "summary-report",
+          sequence: 4,
+          sections: [
+            {
+              id: "section-summary",
+              title: "Project Summary",
+              sequence: 1,
+              columns: 1,
+              fields: [
+                { id: "sum-notes", label: "Summary Notes", type: "textarea", size: "full", sequence: 1, required: false },
+                { id: "sum-approved", label: "Approved", type: "checkbox", size: "sm", sequence: 2, required: false },
+                { id: "sum-approved-date", label: "Approval Date", type: "date", size: "md", sequence: 3, required: false },
+              ],
+            },
           ],
         },
       ];
 
       await performanceSheetVersionRepository.create({
-        sections: sampleSections,
+        sections: sampleTabs,
         createdById: "system",
         updatedById: "system",
       }, undefined, true);
 
-      logger.info("Seeded sample performance sheet version");
+      logger.info("Seeded sample performance sheet version with tabs");
     }
   }
   catch (error) {
