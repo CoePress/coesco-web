@@ -33,7 +33,7 @@ export class InitialAutofillTriggerService {
     ];
 
     /**
-     * Required fields for RFQ completion - Only fields necessary for calculations
+     * Required fields for RFQ completion - Based on actual Python autofill requirements
      */
     private static readonly RFQ_REQUIRED_FIELDS = [
         // Core feed configuration
@@ -49,12 +49,13 @@ export class InitialAutofillTriggerService {
         'common.coil.maxCoilWeight',
 
         // Feed rates (essential for performance calculations)
+        // Require length and SPM for all ranges - FPM will be calculated by Python script
         'common.feedRates.average.length',
         'common.feedRates.average.spm',
-        'common.feedRates.average.fpm',
+        'common.feedRates.min.length',
+        'common.feedRates.min.spm',
         'common.feedRates.max.length',
         'common.feedRates.max.spm',
-        'common.feedRates.max.fpm',
 
         // Press specifications
         'rfq.press.maxSPM',
@@ -64,19 +65,12 @@ export class InitialAutofillTriggerService {
         'rfq.dies.progressiveDies',
         'rfq.dies.blankingDies',
 
-        // Physical constraints
-        'rfq.voltageRequired',
-        'rfq.equipmentSpaceLength',
-        'rfq.equipmentSpaceWidth',
-
-        // Reel/Passline configuration (needed for other tab calculations)
-        'common.equipment.passline',
-        'reel.reelBackplateType',
-        'reel.reelStyle'
+        // Basic requirements
+        'rfq.voltageRequired'
     ];
 
     /**
-     * Required fields for Material Specs completion - Core material properties for calculations
+     * Required fields for Material Specs completion - Based on actual Python autofill requirements
      */
     private static readonly MATERIAL_SPECS_REQUIRED_FIELDS = [
         'common.material.materialThickness',
@@ -143,14 +137,30 @@ export class InitialAutofillTriggerService {
             return true;
         }
 
-        // For numbers, accept any non-zero value and zero (zero can be valid for calculations)
+        // For numbers, special handling for feed rate fields (length/SPM must be > 0)
         if (typeof value === 'number') {
-            return !isNaN(value) && isFinite(value);
+            const isValid = !isNaN(value) && isFinite(value);
+
+            // Feed rate fields (length/SPM) must be greater than 0 for meaningful FPM calculations
+            if (fieldPath.includes('feedRates') && (fieldPath.includes('length') || fieldPath.includes('spm'))) {
+                return isValid && value > 0;
+            }
+
+            // Other numeric fields can be 0 or positive
+            return isValid;
         }
 
         // For strings, check if it's not empty and not a default/placeholder value
         if (typeof value === 'string') {
             const trimmed = value.trim().toLowerCase();
+
+            // Special handling for feed rate string values - must be > 0 when parsed
+            if (fieldPath.includes('feedRates') && (fieldPath.includes('length') || fieldPath.includes('spm'))) {
+                const numValue = parseFloat(trimmed);
+                return !isNaN(numValue) && isFinite(numValue) && numValue > 0;
+            }
+
+            // Regular string validation
             return trimmed !== '' &&
                 !trimmed.includes('select') &&
                 !trimmed.includes('choose') &&
@@ -341,7 +351,7 @@ export class InitialAutofillTriggerService {
         const overallTotal = rfqTotal + materialSpecsTotal;
         const overallCompleted = rfqCompleted + materialSpecsCompleted;
 
-        return {
+        const result = {
             rfqProgress: {
                 completed: rfqCompleted,
                 total: rfqTotal,
@@ -358,5 +368,23 @@ export class InitialAutofillTriggerService {
                 percentage: Math.round((overallCompleted / overallTotal) * 100)
             }
         };
+
+        // Debug log for troubleshooting
+        if (process.env.NODE_ENV === 'development') {
+            // Log missing fields for debugging
+            const rfqMissing = this.RFQ_REQUIRED_FIELDS.filter(field => !this.hasValue(data, field));
+            const materialMissing = this.MATERIAL_SPECS_REQUIRED_FIELDS.filter(field => !this.hasValue(data, field));
+
+            console.log('🔍 Autofill Completion Progress:', {
+                rfq: `${rfqCompleted}/${rfqTotal} (${result.rfqProgress.percentage}%)`,
+                materialSpecs: `${materialSpecsCompleted}/${materialSpecsTotal} (${result.materialSpecsProgress.percentage}%)`,
+                overall: `${overallCompleted}/${overallTotal} (${result.overallProgress.percentage}%)`,
+                rfqMissing: rfqMissing,
+                materialMissing: materialMissing,
+                totalRequiredFields: rfqTotal + materialSpecsTotal
+            });
+        }
+
+        return result;
     }
 }

@@ -10,101 +10,30 @@ import { useParams } from 'react-router-dom';
 import { Calculator, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAutoFill } from '@/contexts/performance/autofill.context';
 import { usePerformanceSheet } from '@/contexts/performance.context';
-import { getRequiredFieldBackgroundColor } from '@/utils/performance-helpers';
+import { InitialAutofillTriggerService } from '@/services/initial-autofill-trigger.service';
 
 interface ManualAutofillButtonProps {
-    onSave?: () => Promise<void>;
     className?: string;
 }
 
-// Function to check if a field is complete based on validation colors
-const isFieldCompleteByValidation = (
-    fieldPath: string,
-    getFieldValue: (path: string) => any
-): boolean => {
-    // Get the validation color for this field
-    const bgColor = getRequiredFieldBackgroundColor(fieldPath, [fieldPath], getFieldValue);
-
-    // Green/success means complete, red/error means incomplete
-    return bgColor === 'success';
-};
-
-// Get field value from nested path
-const getNestedValue = (obj: any, path: string): any => {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
-};
-
 export const ManualAutofillButton: React.FC<ManualAutofillButtonProps> = ({
-    onSave,
     className = ''
 }) => {
     const [isTriggering, setIsTriggering] = useState(false);
     const { performanceData } = usePerformanceSheet();
-    const { triggerAutoFill, state: autoFillState } = useAutoFill();
+    const { triggerManualAutoFill, state: autoFillState } = useAutoFill();
     const { id: sheetId } = useParams();
 
     if (!performanceData) return null;
 
-    // Required fields for calculation - using actual field paths from RFQ and Material Specs pages
-    const RFQ_FIELDS = [
-        'referenceNumber',
-        'rfq.dates.date',
-        'common.customer',
-        'common.customerInfo.state',
-        'common.customerInfo.streetAddress',
-        'common.customerInfo.zip',
-        'common.customerInfo.city',
-        'common.customerInfo.country',
-        'common.customerInfo.contactName',
-        'common.customerInfo.phoneNumber',
-        'common.customerInfo.email',
-        'rfq.dates.idealDeliveryDate',
-        'rfq.dates.decisionDate',
-        'feed.feed.application',
-        'common.equipment.feed.lineType',
-        'common.coil.maxCoilWidth',
-        'common.coil.minCoilWidth',
-        'common.coil.maxCoilOD',
-        'common.coil.coilID',
-        'common.coil.maxCoilWeight',
-        'common.material.materialThickness',
-        'common.material.coilWidth',
-        'common.material.materialType',
-        'common.material.maxYieldStrength',
-        'rfq.press.maxSPM'
-    ];
+    // Use the same completion calculation as the trigger service
+    const completionProgress = InitialAutofillTriggerService.getCompletionProgress(performanceData);
 
-    const MATERIAL_SPECS_FIELDS = [
-        'common.material.materialThickness',
-        'common.material.coilWidth',
-        'common.material.materialType',
-        'common.material.maxYieldStrength',
-        'common.equipment.feed.direction',
-        'common.equipment.feed.controlsLevel',
-        'common.equipment.feed.typeOfLine',
-        'common.equipment.feed.controls',
-        'common.equipment.feed.passline',
-        'materialSpecs.reel.backplate.type',
-        'materialSpecs.reel.style'
-    ];
+    const overallCompleted = completionProgress.overallProgress.completed;
+    const overallTotal = completionProgress.overallProgress.total;
+    const overallPercentage = completionProgress.overallProgress.percentage;
 
-    // Create getFieldValue function for validation
-    const getFieldValue = (fieldPath: string) => getNestedValue(performanceData, fieldPath);
-
-    // Calculate completion based on validation colors
-    const rfqCompleted = RFQ_FIELDS.filter(field =>
-        isFieldCompleteByValidation(field, getFieldValue)
-    ).length;
-
-    const materialSpecsCompleted = MATERIAL_SPECS_FIELDS.filter(field =>
-        isFieldCompleteByValidation(field, getFieldValue)
-    ).length;
-
-    const overallCompleted = rfqCompleted + materialSpecsCompleted;
-    const overallTotal = RFQ_FIELDS.length + MATERIAL_SPECS_FIELDS.length;
-    const overallPercentage = Math.round((overallCompleted / overallTotal) * 100);
-
-    const canTriggerAutofill = overallPercentage >= 80;
+    const canTriggerAutofill = overallPercentage >= 100;  // Changed to 100% requirement
     const isComplete = overallPercentage === 100;
 
     const handleManualTrigger = async () => {
@@ -112,7 +41,8 @@ export const ManualAutofillButton: React.FC<ManualAutofillButtonProps> = ({
 
         setIsTriggering(true);
         try {
-            await triggerAutoFill(performanceData, sheetId, true);
+            // Use the new manual autofill trigger that requires 100% completion
+            await triggerManualAutoFill(performanceData, sheetId);
         } catch (error) {
             console.error('Manual autofill trigger failed:', error);
         } finally {
@@ -166,18 +96,18 @@ export const ManualAutofillButton: React.FC<ManualAutofillButtonProps> = ({
                 onClick={handleManualTrigger}
                 disabled={!canTriggerAutofill || isTriggering || autoFillState.isAutoFilling}
                 className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${canTriggerAutofill && !isTriggering && !autoFillState.isAutoFilling
-                        ? `${buttonColor} text-white`
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? `${buttonColor} text-white`
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                title={`${overallCompleted}/${overallTotal} fields complete. ${onSave ? 'Auto-fill also triggers once when saving.' : ''}`}
+                title={`${overallCompleted}/${overallTotal} fields complete. Manual autofill requires 100% completion.`}
             >
                 <Calculator className="h-3 w-3" />
                 {isTriggering || autoFillState.isAutoFilling ? (
                     'Calculating...'
                 ) : canTriggerAutofill ? (
-                    'Auto-Calc'
+                    'Auto-Fill'
                 ) : (
-                    `${80 - overallPercentage}% more`
+                    `Complete ${100 - overallPercentage}%`
                 )}
             </button>
         </div>

@@ -45,15 +45,20 @@ export function getVisibleTabs(data: PerformanceData): VisibleTab[] {
     };
 
     // Always visible tabs
-    const visibleTabs: VisibleTab[] = [
+    const baseVisibleTabs: VisibleTab[] = [
         { label: "RFQ", value: "rfq" },
-        { label: "Equipment Summary", value: "summary-report" }
+        { label: "Material Specs", value: "material-specs" }
     ];
 
     // Determine additional tabs based on configuration
     const additionalTabs = determineAdditionalTabs(config);
 
-    return [...visibleTabs, ...additionalTabs];
+    // Equipment Summary is always last
+    const summaryTab: VisibleTab[] = [
+        { label: "Equipment Summary", value: "summary-report" }
+    ];
+
+    return [...baseVisibleTabs, ...additionalTabs, ...summaryTab];
 }
 
 /**

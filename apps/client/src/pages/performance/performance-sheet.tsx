@@ -10,9 +10,11 @@ import { LAZY_PERFORMANCE_TABS } from "@/components/lazy";
 import { getVisibleTabs } from "@/utils/tab-visibility";
 import { useAutoFillWatcher } from "@/contexts/performance/use-autofill-watcher.hook";
 import { useRfqSaveWithAutofill } from "@/hooks/use-rfq-save-with-autofill.hook";
+import { ManualAutofillButton } from "@/components/performance/ManualAutofillButton";
 
 type PerformanceTabValue =
   | "rfq"
+  | "material-specs"
   | "tddbhd"
   | "reel-drive"
   | "str-utility"
@@ -215,13 +217,14 @@ const PerformanceSheetContent = () => {
     return (
       <div className="flex items-center gap-3">
         {/* Show autofill indicator when autofill has been triggered */}
-        {autoFillState.hasTriggeredOnSave && (
+        {autoFillState.lastAutoFillTimestamp && (
           <div className="flex items-center gap-1 text-green-600 text-sm">
             <CheckCircle size={16} />
             <span>Autofilled</span>
           </div>
         )}
         <div className="flex gap-2">
+          <ManualAutofillButton />
           <Button onClick={isEditing ? handleSave : handleEdit}>
             {isEditing ? <Save size={16} /> : <Lock size={16} />}
             {isEditing ? 'Save' : 'Edit'}

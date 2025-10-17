@@ -31,10 +31,8 @@ interface AutoFillState {
         prioritizeModels: boolean;
         showNotifications: boolean;
         requireConfirmation: boolean;
-        manualModeOnly: boolean; // NEW: Only allow manual triggers
+        manualModeOnly: boolean; // Only allow manual triggers
     };
-    // Save trigger state
-    hasTriggeredOnSave: boolean;
 }
 
 type AutoFillAction =
@@ -49,8 +47,7 @@ type AutoFillAction =
     | { type: 'REMOVE_AUTO_FILLED_FIELD'; payload: string }
     | { type: 'CLEAR_AUTO_FILLED_FIELDS' }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AutoFillState['settings']> }
-    | { type: 'SET_LAST_AUTO_FILL_TIMESTAMP'; payload: number }
-    | { type: 'SET_HAS_TRIGGERED_ON_SAVE'; payload: boolean };
+    | { type: 'SET_LAST_AUTO_FILL_TIMESTAMP'; payload: number };
 
 // Initial state
 const initialAutoFillState: AutoFillState = {
@@ -70,8 +67,7 @@ const initialAutoFillState: AutoFillState = {
         showNotifications: true,
         requireConfirmation: false,
         manualModeOnly: true
-    },
-    hasTriggeredOnSave: false
+    }
 };
 
 // Reducer
@@ -109,8 +105,6 @@ function autoFillReducer(state: AutoFillState, action: AutoFillAction): AutoFill
             };
         case 'SET_LAST_AUTO_FILL_TIMESTAMP':
             return { ...state, lastAutoFillTimestamp: action.payload };
-        case 'SET_HAS_TRIGGERED_ON_SAVE':
-            return { ...state, hasTriggeredOnSave: action.payload };
         default:
             return state;
     }
@@ -123,7 +117,7 @@ interface AutoFillContextType {
 
     // Core auto-fill functions
     triggerAutoFill: (performanceData: PerformanceData, sheetId: string, isManual?: boolean) => Promise<void>;
-    triggerAutoFillOnSave: (performanceData: PerformanceData, sheetId: string) => Promise<void>;
+    triggerManualAutoFill: (performanceData: PerformanceData, sheetId: string) => Promise<void>;
     acceptAutoFill: (autoFillData: any) => Promise<void>;
     rejectAutoFill: () => void;
 
@@ -136,6 +130,9 @@ interface AutoFillContextType {
     checkSufficientData: (performanceData: PerformanceData) => boolean;
     checkTabAutoFillAvailability: (performanceData: PerformanceData) => Promise<void>;
     canAutoFillTab: (tabName: string) => boolean;
+
+    // Manual autofill availability
+    canTriggerManualAutoFill: (performanceData: PerformanceData) => { canTrigger: boolean, progress: any };
 
     // Settings management
     updateSettings: (newSettings: Partial<AutoFillState['settings']>) => void;
@@ -244,29 +241,32 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
     }, [state.settings, state.isAutoFilling, api, checkSufficientData]);
 
-    // Trigger autofill on save (one-time only)
-    const triggerAutoFillOnSave = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
-        // Only trigger once on save
-        if (state.hasTriggeredOnSave) {
-            // Autofill already triggered on save, skipping
-            return;
-        }
-
-        // Check if we have enough data for autofill
+    // Manual autofill trigger that requires 100% completion
+    const triggerManualAutoFill = useCallback(async (performanceData: PerformanceData, sheetId: string) => {
+        // Check if we have 100% completion for manual autofill
         const progress = InitialAutofillTriggerService.getCompletionProgress(performanceData);
-        if (progress.overallProgress.percentage < 80) {
-            // Not enough data for save autofill
+        if (progress.overallProgress.percentage < 100) {
+            // Not enough data for manual autofill - require 100% completion
+            const errorMessage = `Manual autofill requires 100% completion. Current progress: ${progress.overallProgress.percentage}%`;
+            dispatch({ type: 'SET_ERROR', payload: errorMessage });
             return;
         }
 
-        // Triggering autofill on RFQ save (one-time only)
+        // Clear any previous errors
+        dispatch({ type: 'SET_ERROR', payload: null });
 
-        // Mark as triggered on save
-        dispatch({ type: 'SET_HAS_TRIGGERED_ON_SAVE', payload: true });
-
-        // Trigger the autofill
+        // Trigger the autofill manually
         await triggerAutoFill(performanceData, sheetId, true);
-    }, [state.hasTriggeredOnSave, triggerAutoFill]);
+    }, [triggerAutoFill]);
+
+    // Check if manual autofill is available (100% completion)
+    const canTriggerManualAutoFill = useCallback((performanceData: PerformanceData): { canTrigger: boolean, progress: any } => {
+        const progress = InitialAutofillTriggerService.getCompletionProgress(performanceData);
+        return {
+            canTrigger: progress.overallProgress.percentage >= 100,
+            progress
+        };
+    }, []);
 
     // Accept auto-fill values
     const acceptAutoFill = useCallback(async (autoFillData: any) => {
@@ -373,7 +373,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         state,
         dispatch,
         triggerAutoFill,
-        triggerAutoFillOnSave,
+        triggerManualAutoFill,
         acceptAutoFill,
         rejectAutoFill,
         markFieldAsAutoFilled,
@@ -382,6 +382,7 @@ export const AutoFillProvider: React.FC<{ children: ReactNode }> = ({ children }
         checkSufficientData,
         checkTabAutoFillAvailability,
         canAutoFillTab,
+        canTriggerManualAutoFill,
         updateSettings,
         getCompletionProgress
     };
