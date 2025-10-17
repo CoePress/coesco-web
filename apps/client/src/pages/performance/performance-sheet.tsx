@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
 import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
 import { useToast } from "@/hooks/use-toast";
+import { ms } from "@/utils";
 
 type PerformanceTabValue = string;
 
@@ -139,7 +140,7 @@ const PerformanceSheet = () => {
             }
           }
         );
-      }, 4 * 60 * 1000); // 4 minutes
+      }, ms.minutes(4));
 
       return () => {
         if (lockExtendIntervalRef.current) {
