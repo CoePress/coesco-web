@@ -33,6 +33,7 @@ import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
 import { JourneyService } from "./sales/journey.service";
+import { PerformanceService } from "./sales/performance.service";
 import { QuoteService } from "./sales/quote.service";
 
 // Admin
@@ -76,6 +77,7 @@ export const addressService = new AddressService();
 export const contactService = new ContactService();
 export const customerService = new CustomerService();
 export const journeyService = new JourneyService();
+export const performanceService = new PerformanceService();
 export const quoteService = new QuoteService();
 
 export async function initializeServices() {

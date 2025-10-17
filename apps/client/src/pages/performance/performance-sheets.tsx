@@ -53,11 +53,11 @@ const PerformanceSheets = () => {
   }, [params]);
 
   const fetchSheets = async () => {
-    await getSheets("/performance/sheets", queryParams);
+    await getSheets("/sales/performance-sheets", queryParams);
   };
 
   const fetchVersions = async () => {
-    await getVersions("/performance/versions");
+    await getVersions("/sales/performance-versions");
   };
 
   const fetchLocks = async () => {

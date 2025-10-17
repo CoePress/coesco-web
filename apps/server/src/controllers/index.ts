@@ -21,6 +21,7 @@ import { ResourceMonitoringController } from "./production/resource-monitoring.c
 import { ResourceController } from "./production/resource.controller";
 import { CustomerController } from "./sales/customer.controller";
 import { JourneyController } from "./sales/journey.controller";
+import { PerformanceController } from "./sales/performance.controller";
 import { QuoteController } from "./sales/quote.controller";
 
 // Admin
@@ -57,4 +58,5 @@ export const resourceController = new ResourceController();
 // Sales
 export const customerController = new CustomerController();
 export const journeyController = new JourneyController();
+export const performanceController = new PerformanceController();
 export const quoteController = new QuoteController();
