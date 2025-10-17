@@ -19,9 +19,11 @@ const PerformanceSheet = () => {
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [originalData, setOriginalData] = useState<Record<string, any>>({});
+  const [savedProgress, setSavedProgress] = useState<any>(null);
   const [newLink, setNewLink] = useState<{
     entityType: string;
     entityId: string;
@@ -47,6 +49,37 @@ const PerformanceSheet = () => {
       include: JSON.stringify(["version"]),
     };
   }, []);
+
+  const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
+
+  const saveToLocalStorage = (values: Record<string, any>) => {
+    if (!performanceSheetId) return;
+    const dataToSave = {
+      sheetId: performanceSheetId,
+      formData: values,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+  };
+
+  const loadFromLocalStorage = () => {
+    if (!performanceSheetId) return null;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved performance sheet data:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const clearLocalStorage = () => {
+    if (!performanceSheetId) return;
+    localStorage.removeItem(storageKey);
+  };
 
   const visibleTabs = useMemo(() => {
     if (!performanceSheet?.data?.version?.sections) return [];
@@ -115,12 +148,27 @@ const PerformanceSheet = () => {
       if (!activeTab && visibleTabs.length > 0) {
         setActiveTab(visibleTabs[0].value);
       }
+
+      const saved = loadFromLocalStorage();
+      if (saved && saved.formData && Object.keys(saved.formData).length > 0) {
+        const hasChanges = JSON.stringify(saved.formData) !== JSON.stringify(data);
+        if (hasChanges) {
+          setSavedProgress(saved);
+          setShowContinueModal(true);
+        }
+      }
     }
   }, [performanceSheet]);
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
   }, [formData, originalData]);
+
+  useEffect(() => {
+    if (isEditing && hasChanges) {
+      saveToLocalStorage(formData);
+    }
+  }, [formData, isEditing]);
 
   useEffect(() => {
     if (isEditing && performanceSheetId && isLockConnected) {
@@ -192,6 +240,20 @@ const PerformanceSheet = () => {
     }));
   };
 
+  const handleContinueProgress = () => {
+    if (savedProgress) {
+      setFormData(savedProgress.formData || {});
+      toast.success('Continuing from where you left off');
+    }
+    setShowContinueModal(false);
+  };
+
+  const handleStartFresh = () => {
+    clearLocalStorage();
+    toast.info('Starting fresh with original data');
+    setShowContinueModal(false);
+  };
+
   const handleEdit = () => {
     if (!performanceSheetId || !isLockConnected) {
       toast.error("Cannot acquire lock. Connection not available.");
@@ -251,6 +313,7 @@ const PerformanceSheet = () => {
           setIsLocked(false);
           setLockInfo(null);
           setShowCancelConfirmation(false);
+          clearLocalStorage();
           toast.info("Edit cancelled and lock released.");
 
           if (lockExtendIntervalRef.current) {
@@ -297,6 +360,7 @@ const PerformanceSheet = () => {
             setLockInfo(null);
             setShowSaveConfirmation(false);
             setOriginalData(formData);
+            clearLocalStorage();
             toast.success("Changes saved and lock released.");
 
             if (lockExtendIntervalRef.current) {
@@ -652,6 +716,36 @@ const PerformanceSheet = () => {
               variant="primary"
               onClick={performCancel}>
               Discard Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showContinueModal}
+        onClose={() => {}}
+        title="Continue Previous Session?"
+        size="xs">
+        <div className="space-y-4">
+          <p className="text-sm text-text">
+            You have unsaved changes from a previous session. Would you like to continue where you left off?
+          </p>
+          {savedProgress && (
+            <div className="text-text-muted text-sm">
+              <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={handleStartFresh}>
+              Start Fresh
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleContinueProgress}>
+              Continue
             </Button>
           </div>
         </div>
