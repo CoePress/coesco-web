@@ -221,6 +221,59 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
 
+  const [journeyNotes, setJourneyNotes] = useState<any[]>([]);
+  const [newNoteBody, setNewNoteBody] = useState("");
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!journey?.ID && !journey?.id) return;
+      setIsLoadingNotes(true);
+      try {
+        const journeyId = journey.ID || journey.id;
+        const noteData = await api.get('/core/journey-notes', {
+          filter: JSON.stringify({
+            journeyId: journeyId
+          }),
+          sort: 'createdAt',
+          order: 'desc'
+        });
+        if (noteData?.success && Array.isArray(noteData.data)) {
+          setJourneyNotes(noteData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+        setJourneyNotes([]);
+      } finally {
+        setIsLoadingNotes(false);
+      }
+    };
+    fetchNotes();
+  }, [journey?.ID, journey?.id]);
+
+  const handleCreateNote = async () => {
+    if (!newNoteBody.trim() || !journey?.ID && !journey?.id) return;
+    setIsCreatingNote(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const newNote = await api.post('/core/journey-notes', {
+        body: newNoteBody.trim(),
+        journeyId: journeyId,
+        createdBy: employee?.initials
+      });
+      if (newNote?.success && newNote.data) {
+        setJourneyNotes(prev => [newNote.data, ...prev]);
+        setNewNoteBody("");
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+      alert('Failed to create note. Please try again.');
+    } finally {
+      setIsCreatingNote(false);
+    }
+  };
+
   useEffect(() => {
     if (journey) {
       if (!isEditingDetails) {
@@ -1560,6 +1613,52 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             </div>
           </div>
         </div>
+
+        <div className="bg-foreground rounded shadow-sm border p-2 mt-2">
+          <h2 className="font-semibold text-text-muted text-sm mb-2">Modern Notes</h2>
+
+          <div className="flex gap-2 mb-3">
+            <textarea
+              className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              value={newNoteBody}
+              onChange={(e) => setNewNoteBody(e.target.value)}
+              placeholder="Enter a new note..."
+              rows={2}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCreateNote}
+              disabled={isCreatingNote || !newNoteBody.trim()}
+            >
+              {isCreatingNote ? "Adding..." : "Add Note"}
+            </Button>
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-auto">
+            {isLoadingNotes ? (
+              <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
+            ) : journeyNotes.length === 0 ? (
+              <div className="text-sm text-text-muted text-center py-4">No notes yet</div>
+            ) : (
+              journeyNotes.map((note) => (
+                <div key={note.id} className="p-2 bg-surface rounded border border-border">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-xs font-medium text-text">
+                      {note.createdBy || "Unknown"}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      {note.createdAt ? new Date(note.createdAt).toLocaleString() : ""}
+                    </span>
+                  </div>
+                  <div className="text-sm text-text whitespace-pre-wrap">
+                    {note.body || ""}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
 
@@ -2028,7 +2127,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
       setIsLoading(true);
       try {
         const journeyId = journey.ID || journey.id;
-        const tagData = await api.get('/tags', {
+        const tagData = await api.get('/core/tags', {
           filter: JSON.stringify({
             parentTable: 'journeys',
             parentId: journeyId
@@ -2057,7 +2156,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
       const journeyId = journey.ID || journey.id;
       const tagDescription = newTagInput.trim().toUpperCase();
       
-      const newTag = await api.post('/tags', {
+      const newTag = await api.post('/core/tags', {
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
@@ -2078,7 +2177,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   const handleDeleteTag = async (tagId: string) => {
     setIsSaving(true);
     try {
-      const result = await api.delete(`/tags/${tagId}`);
+      const result = await api.delete(`/core/tags/${tagId}`);
       
       if (result !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
