@@ -7,6 +7,7 @@ import { useSocket } from "@/contexts/socket.context";
 import { Button, Modal, PageHeader, Select, Tabs, Input, DatePicker, Textarea, Checkbox } from "@/components";
 import { useToast } from "@/hooks/use-toast";
 import { ms } from "@/utils";
+import Loader from "@/components/ui/loader";
 
 type PerformanceTabValue = string;
 
@@ -28,25 +29,20 @@ const PerformanceSheet = () => {
     entityType: string;
     entityId: string;
   }>({ entityType: "quote", entityId: "" });
-  const [links, setLinks] = useState<
-    Array<{ entityType: string; entityId: string }>
-  >([
-    { entityType: "quote", entityId: "123" },
-    { entityType: "journey", entityId: "456" },
-    { entityType: "company", entityId: "789" },
-  ]);
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged } = useSocket();
   const { user } = useAuth();
   const { get: getLockStatus } = useApi();
   const { get: getSheet, response: performanceSheet, loading: sheetLoading, error: sheetError } = useApi<any>();
   const { patch: updateSheet } = useApi();
+  const { post: createLink } = useApi();
+  const { delete: deleteLink } = useApi();
   const toast = useToast();
   const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const queryParams = useMemo(() => {
     return {
-      include: JSON.stringify(["version"]),
+      include: JSON.stringify(["version", "links"]),
     };
   }, []);
 
@@ -95,6 +91,10 @@ const PerformanceSheet = () => {
     if (!performanceSheet?.data?.version?.sections || !activeTab) return null;
     return performanceSheet.data.version.sections.find((tab: any) => tab.value === activeTab);
   }, [performanceSheet, activeTab]);
+
+  const links = useMemo(() => {
+    return performanceSheet?.data?.links || [];
+  }, [performanceSheet]);
 
   const fetchSheet = async () => {
     if (!performanceSheetId) return;
@@ -388,6 +388,7 @@ const PerformanceSheet = () => {
       label: field.label,
       required: field.required || false,
       disabled: !isEditing,
+      autoComplete: "off",
     };
 
     const getSizeClass = () => {
@@ -496,7 +497,7 @@ const PerformanceSheet = () => {
       return (
         <div className="flex gap-2">
           <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
-            <Link size={16} />
+            <Link size={16} /> Links ({links.length})
           </Button>
           <Button variant="secondary" disabled>
             <Lock size={16} /> Locked by {lockInfo?.userName || "another user"}
@@ -508,7 +509,7 @@ const PerformanceSheet = () => {
     return (
       <div className="flex gap-2">
         <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
-          <Link size={16} />
+          <Link size={16} /> Links ({links.length})
         </Button>
         <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
           <Lock size={16} /> Edit
@@ -521,7 +522,7 @@ const PerformanceSheet = () => {
   if (sheetLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-text-muted">Loading performance sheet...</div>
+        <Loader />
       </div>
     );
   }
@@ -588,18 +589,39 @@ const PerformanceSheet = () => {
         {!addMode ? (
           <div>
             <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {links.map((link, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm cursor-pointer border border-transparent">
-                  <span className="font-medium capitalize text-text-muted">
-                    {link.entityType}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    #{link.entityId}
-                  </span>
+              {links.length === 0 ? (
+                <div className="text-center text-text-muted text-sm py-4">
+                  No links added yet
                 </div>
-              ))}
+              ) : (
+                links.map((link: any) => (
+                  <div
+                    key={link.id}
+                    className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm border border-transparent group">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium capitalize text-text-muted">
+                        {link.entityType}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        #{link.entityId}
+                      </span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await deleteLink(`/sales/performance-sheet-links/${link.id}`);
+                          toast.success("Link deleted");
+                          fetchSheet();
+                        } catch (error) {
+                          toast.error("Failed to delete link");
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 text-xs">
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
             <Button
               variant="primary"
@@ -611,11 +633,21 @@ const PerformanceSheet = () => {
           </div>
         ) : (
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              setLinks([...links, newLink]);
-              setAddMode(false);
-              setNewLink({ entityType: "quote", entityId: "" });
+              try {
+                await createLink("/sales/performance-sheet-links", {
+                  performanceSheetId,
+                  entityType: newLink.entityType,
+                  entityId: newLink.entityId,
+                });
+                toast.success("Link created");
+                setAddMode(false);
+                setNewLink({ entityType: "quote", entityId: "" });
+                fetchSheet();
+              } catch (error) {
+                toast.error("Failed to create link");
+              }
             }}>
             <Select
               label="Entity Type"
@@ -631,20 +663,16 @@ const PerformanceSheet = () => {
                 { value: "company", label: "Company" },
               ]}
             />
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-1">
-                Entity ID
-              </label>
-              <input
-                className="w-full border rounded px-2 py-1"
-                type="text"
-                value={newLink.entityId}
-                onChange={(e) =>
-                  setNewLink({ ...newLink, entityId: e.target.value })
-                }
-                required
-              />
-            </div>
+            <Input
+              label="Entity ID"
+              type="text"
+              value={newLink.entityId}
+              onChange={(e) =>
+                setNewLink({ ...newLink, entityId: e.target.value })
+              }
+              required
+              autoComplete="off"
+            />
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="secondary-outline"
@@ -658,11 +686,7 @@ const PerformanceSheet = () => {
               <Button
                 variant="primary"
                 size="md"
-                onClick={() => {
-                  setLinks([...links, newLink]);
-                  setAddMode(false);
-                  setNewLink({ entityType: "quote", entityId: "" });
-                }}
+                type="submit"
                 disabled={!newLink.entityId}>
                 Save
               </Button>

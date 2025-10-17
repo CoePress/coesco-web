@@ -179,13 +179,13 @@ const AdvancedDropdown = forwardRef<HTMLDivElement, Props>(
             onKeyDown={handleKeyDown}
             placeholder={mode === "create" ? createPlaceholder : placeholder}
             disabled={disabled || (!!selectedOption && mode !== "create")}
-            className={`w-full px-3 py-2 bg-foreground border rounded-md ${
+            className={`w-full px-3 py-1.5 bg-foreground border rounded text-sm ${
               disabled || (!!selectedOption && mode !== "create")
                 ? "opacity-50"
                 : "hover:border-primary"
             } ${
               isOpen ? "border-primary" : "border-border"
-            } focus:outline-none focus:ring-1 leading-0 focus:ring-primary focus:border-primary text-text ${
+            } focus:outline-none focus:border-primary text-text ${
               mode === "create" ? "pl-20" : ""
             }`}
           />
