@@ -29,7 +29,7 @@ export class TagRepository extends BaseRepository<Tag> {
 
   async getAll(params?: IQueryParams<Tag>, tx?: Prisma.TransactionClient) {
     if (params?.filter) {
-      let filterObj: any = typeof params.filter === "string"
+      const filterObj: any = typeof params.filter === "string"
         ? JSON.parse(params.filter)
         : params.filter;
 
@@ -58,9 +58,9 @@ export class TagRepository extends BaseRepository<Tag> {
             scope ?? {},
             {
               parentTable,
-              parentId: { in: parentIds }
-            }
-          ]
+              parentId: { in: parentIds },
+            },
+          ],
         };
 
         const model = tx ? (tx as any)[this.modelName!] : this.model;

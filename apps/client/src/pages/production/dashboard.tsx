@@ -596,7 +596,7 @@ const ProductionDashboard = () => {
       <div className="p-2 gap-2 flex flex-col flex-1 overflow-hidden">
         <Metrics>
           {kpis.map((metric) => (
-            <MetricsCard {...metric} />
+            <MetricsCard key={metric.title} {...metric} />
           ))}
         </Metrics>
 

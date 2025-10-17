@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { formConditionalRuleRepository, formFieldRepository, formPageRepository, formSectionRepository, formRepository, formSubmissionRepository } from "@/repositories";
+import { formConditionalRuleRepository, formFieldRepository, formPageRepository, formRepository, formSectionRepository, formSubmissionRepository } from "@/repositories";
 import { asyncWrapper } from "@/utils";
 
 export class FormController {
@@ -107,7 +107,7 @@ export class FormController {
     if (submission.answers && typeof submission.answers === "object") {
       const answers = submission.answers as Record<string, any>;
       const updatedAnswers = { ...answers };
-      let hasFileChanges = false;
+      const hasFileChanges = false;
 
       for (const [key, value] of Object.entries(answers)) {
         // Handle camera uploads (array of file references)

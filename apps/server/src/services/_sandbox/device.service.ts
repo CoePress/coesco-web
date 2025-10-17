@@ -2,9 +2,9 @@ import type { NtfyDevice } from "@prisma/client";
 
 import axios from "axios";
 
+import { ntfyDeviceRepository } from "@/repositories";
 import { pingHost } from "@/utils";
 import { logger } from "@/utils/logger";
-import { ntfyDeviceRepository } from "@/repositories";
 
 export class DeviceService {
   private monitoringInterval?: NodeJS.Timeout;
