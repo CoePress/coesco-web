@@ -4,13 +4,14 @@ import {
   Building2,
   List as ListIcon,
   MapPin,
-  Trash2,
   Settings,
+  UserX,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 import { Table, Button, PageHeader, AddContactModal } from "@/components";
+import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
@@ -34,9 +35,9 @@ const Contacts = () => {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [contactToDelete, setContactToDelete] = useState<any>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [contactToDisable, setContactToDisable] = useState<any>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     fullName: true,
@@ -66,96 +67,37 @@ const Contacts = () => {
     };
   }, [activeDropdown, showColumnMenu]);
 
-  const handleDeleteContact = (contact: any) => {
-    setContactToDelete(contact);
-    setShowDeleteModal(true);
+  const handleDisableContact = (contact: any) => {
+    setContactToDisable(contact);
+    setShowDisableModal(true);
     setActiveDropdown(null);
   };
 
-  const handleMakeInactive = async () => {
-    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
+  const handleConfirmDisable = async (type: ContactType) => {
+    if (!contactToDisable?.originalId || !contactToDisable?.companyId) return;
 
-    setIsDeleting(true);
+    setIsUpdating(true);
     try {
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactToDelete.originalId}&Company_ID=${contactToDelete.companyId}`, {
-        Type: ContactType.Inactive
+      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactToDisable.originalId}&Company_ID=${contactToDisable.companyId}`, {
+        Type: type
       });
-      
+
       if (result !== null) {
-        setLegacyContacts(prev => 
-          prev?.map(contact => 
-            contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
-              ? { ...contact, type: ContactType.Inactive, typeName: 'Inactive' }
+        const typeName = type === ContactType.Inactive ? 'Inactive' : 'Left Company';
+        setLegacyContacts(prev =>
+          prev?.map(contact =>
+            contact.originalId === contactToDisable.originalId && contact.companyId === contactToDisable.companyId
+              ? { ...contact, type, typeName }
               : contact
           ) || null
         );
-        setShowDeleteModal(false);
-        setContactToDelete(null);
-      }
-    } catch (error) {
-      console.error("Error making contact inactive:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleMarkLeftCompany = async () => {
-    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
-
-    setIsDeleting(true);
-    try {
-      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactToDelete.originalId}&Company_ID=${contactToDelete.companyId}`, {
-        Type: ContactType.Left_Company
-      });
-      
-      if (result !== null) {
-        setLegacyContacts(prev => 
-          prev?.map(contact => 
-            contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId
-              ? { ...contact, type: ContactType.Left_Company, typeName: 'Left Company' }
-              : contact
-          ) || null
-        );
-        setShowDeleteModal(false);
-        setContactToDelete(null);
+        setShowDisableModal(false);
+        setContactToDisable(null);
       }
     } catch (error) {
       console.error("Error updating contact:", error);
     } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeletePermanently = async () => {
-    if (!contactToDelete?.originalId || !contactToDelete?.companyId) return;
-
-    setIsDeleting(true);
-    try {
-      const result = await api.delete(`/legacy/std/Contacts/filter/custom`, {
-        params: {
-          Cont_Id: contactToDelete.originalId,
-          Company_ID: contactToDelete.companyId
-        }
-      });
-      
-      if (result !== null) {
-        setLegacyContacts(prev => 
-          prev?.filter(contact => 
-            !(contact.originalId === contactToDelete.originalId && contact.companyId === contactToDelete.companyId)
-          ) || null
-        );
-        setShowDeleteModal(false);
-        setContactToDelete(null);
-      } else {
-        alert('Failed to delete contact. Please try again.');
-      }
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-      alert('Error deleting contact. Please try again.');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteModal(false);
-      setContactToDelete(null);
+      setIsUpdating(false);
     }
   };
 
@@ -236,7 +178,30 @@ const Contacts = () => {
       };
 
       if (debouncedSearchTerm) {
-        params.filter = `FirstName LIKE '%${debouncedSearchTerm}%' OR LastName LIKE '%${debouncedSearchTerm}%'`;
+        const searchWords = debouncedSearchTerm.trim().split(/\s+/);
+
+        if (searchWords.length === 1) {
+          params.filter = JSON.stringify({
+            operator: "or",
+            conditions: [
+              { field: "FirstName", operator: "contains", value: searchWords[0] },
+              { field: "LastName", operator: "contains", value: searchWords[0] }
+            ]
+          });
+        } else {
+          const wordConditions = searchWords.map(word => ({
+            operator: "or",
+            conditions: [
+              { field: "FirstName", operator: "contains", value: word },
+              { field: "LastName", operator: "contains", value: word }
+            ]
+          }));
+
+          params.filter = JSON.stringify({
+            operator: "and",
+            conditions: wordConditions
+          });
+        }
       }
 
       const rawContacts = await api.get("/legacy/std/Contacts", params);
@@ -382,7 +347,7 @@ const Contacts = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchInput);
-    }, 300);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [searchInput]);
@@ -494,12 +459,12 @@ const Contacts = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeleteContact(row);
+                  handleDisableContact(row);
                 }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-surface flex items-center gap-2 text-error hover:text-error"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-surface flex items-center gap-2"
               >
-                <Trash2 size={14} />
-                Delete
+                <UserX size={14} />
+                Disable
               </button>
             </div>
           )}
@@ -599,7 +564,7 @@ const Contacts = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by name, email, phone, title or company"
+              placeholder="Search..."
               className="w-full px-3 py-2 text-sm text-text border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-text-muted max-w-md"
               autoComplete="no"
             />
@@ -641,68 +606,16 @@ const Contacts = () => {
         onContactAdded={handleContactAdded}
       />
 
-      {showDeleteModal && contactToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-foreground rounded-lg border border-border p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
-                <Trash2 size={20} className="text-error" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-text">Delete Contact</h3>
-                <p className="text-text-muted text-sm">Are you sure you want to delete {contactToDelete.fullName}?</p>
-              </div>
-            </div>
-            
-            <div className="bg-surface rounded-lg p-4 mb-4 border border-warning/20">
-              <p className="text-sm text-text mb-2">
-                <strong>Recommendation:</strong> Instead of deleting, consider making this contact "Inactive" or "Left Company" to preserve historical records.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary-outline" 
-                  size="sm"
-                  onClick={handleMakeInactive}
-                  disabled={isDeleting}
-                  className="text-warning border-warning hover:bg-warning/10"
-                >
-                  Make Inactive
-                </Button>
-                <Button
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={handleMarkLeftCompany}
-                  disabled={isDeleting}
-                  className="text-info border-info hover:bg-info/10"
-                >
-                  Mark Left Company
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="secondary-outline"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setContactToDelete(null);
-                }}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleDeletePermanently}
-                disabled={isDeleting}
-                className="bg-error border-error hover:bg-error/90"
-              >
-                {isDeleting ? "Deleting..." : "Delete Permanently"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteContactModal
+        isOpen={showDisableModal}
+        onClose={() => {
+          setShowDisableModal(false);
+          setContactToDisable(null);
+        }}
+        onConfirm={handleConfirmDisable}
+        contact={contactToDisable}
+        isUpdating={isUpdating}
+      />
     </div>
   );
 };

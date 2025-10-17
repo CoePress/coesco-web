@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Building2, Mail, Phone, Globe, Calendar, User, MapPin, Edit, Trash2 } from "lucide-react";
+import { Building2, Mail, Phone, Globe, Calendar, User, MapPin, Edit, UserX } from "lucide-react";
 import { PageHeader, Button } from "@/components";
+import { DeleteContactModal } from "@/components/modals/delete-contact-modal";
 import { formatDate } from "@/utils";
 import { useApi } from "@/hooks/use-api";
 import { ContactType } from "@/types/enums";
@@ -154,50 +155,23 @@ const ContactDetails = () => {
     setIsEditing(true);
   };
 
-  const handleMakeInactive = async () => {
+  const handleDisableContact = async (type: ContactType) => {
     if (!contactData?.Cont_Id || !contactData?.Company_ID) return;
 
     setIsSaving(true);
     try {
       const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, {
-        Type: ContactType.Inactive
+        Type: type
       });
-      
+
       if (result !== null) {
-        setContactData({ ...contactData, Type: ContactType.Inactive });
+        setContactData({ ...contactData, Type: type });
         setShowDeleteModal(false);
       }
     } catch (error) {
-      console.error("Error making contact inactive:", error);
+      console.error("Error updating contact:", error);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!contactData?.Cont_Id || !contactData?.Company_ID) return;
-
-    setIsSaving(true);
-    try {
-      const result = await api.delete(`/legacy/std/Contacts/filter/custom`, {
-        params: {
-          Cont_Id: contactData.Cont_Id,
-          Company_ID: contactData.Company_ID
-        }
-      });
-      
-      if (result !== null) {
-        // Navigate back to the company page after successful deletion
-        window.history.back();
-      } else {
-        alert('Failed to delete contact. Please try again.');
-      }
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-      alert('Error deleting contact. Please try again.');
-    } finally {
-      setIsSaving(false);
-      setShowDeleteModal(false);
     }
   };
 
@@ -361,9 +335,9 @@ const ContactDetails = () => {
                   variant="secondary-outline"
                   size="sm"
                   onClick={() => setShowDeleteModal(true)}
-                  className="text-error border-error hover:bg-error/10"
+                  className="text-warning border-warning hover:bg-warning/10"
                 >
-                  <Trash2 size={16} />
+                  <UserX size={16} />
                 </Button>
               </>
             )}
@@ -777,82 +751,13 @@ const ContactDetails = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-foreground rounded-lg border border-border p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
-                <Trash2 size={20} className="text-error" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-text">Delete Contact</h3>
-                <p className="text-text-muted text-sm">Are you sure you want to delete this contact?</p>
-              </div>
-            </div>
-            
-            <div className="bg-surface rounded-lg p-4 mb-4 border border-warning/20">
-              <p className="text-sm text-text mb-2">
-                <strong>Recommendation:</strong> Instead of deleting, consider making this contact "Inactive" or "Left Company" to preserve historical records.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary-outline" 
-                  size="sm"
-                  onClick={handleMakeInactive}
-                  disabled={isSaving}
-                  className="text-warning border-warning hover:bg-warning/10"
-                >
-                  Make Inactive
-                </Button>
-                <Button
-                  variant="secondary-outline"
-                  size="sm"
-                  onClick={async () => {
-                    setIsSaving(true);
-                    try {
-                      const result = await api.patch(`/legacy/std/Contacts/filter/custom?Cont_Id=${contactData.Cont_Id}&Company_ID=${contactData.Company_ID}`, {
-                        Type: ContactType.Left_Company
-                      });
-                      
-                      if (result !== null) {
-                        setContactData({ ...contactData, Type: ContactType.Left_Company });
-                        setShowDeleteModal(false);
-                      }
-                    } catch (error) {
-                      console.error("Error updating contact:", error);
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  disabled={isSaving}
-                  className="text-info border-info hover:bg-info/10"
-                >
-                  Mark Left Company
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="secondary-outline"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleDelete}
-                disabled={isSaving}
-                className="bg-error border-error hover:bg-error/90"
-              >
-                {isSaving ? "Deleting..." : "Delete Permanently"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteContactModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDisableContact}
+        contact={contactData}
+        isUpdating={isSaving}
+      />
     </div>
   );
 };
