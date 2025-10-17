@@ -17,8 +17,10 @@ const PerformanceSheet = () => {
   const [lockInfo, setLockInfo] = useState<any>(null);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [originalData, setOriginalData] = useState<Record<string, any>>({});
   const [newLink, setNewLink] = useState<{
     entityType: string;
     entityId: string;
@@ -86,7 +88,6 @@ const PerformanceSheet = () => {
     fetchSheet();
     fetchLockStatus();
 
-    // Cleanup lock on unmount
     return () => {
       if (lockExtendIntervalRef.current) {
         clearInterval(lockExtendIntervalRef.current);
@@ -106,7 +107,9 @@ const PerformanceSheet = () => {
 
   useEffect(() => {
     if (performanceSheet?.data) {
-      setFormData(performanceSheet.data.data || {});
+      const data = performanceSheet.data.data || {};
+      setFormData(data);
+      setOriginalData(data);
 
       if (!activeTab && visibleTabs.length > 0) {
         setActiveTab(visibleTabs[0].value);
@@ -114,10 +117,12 @@ const PerformanceSheet = () => {
     }
   }, [performanceSheet]);
 
-  // Auto-extend lock while editing
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(originalData);
+  }, [formData, originalData]);
+
   useEffect(() => {
     if (isEditing && performanceSheetId && isLockConnected) {
-      // Extend lock every 4 minutes (locks typically expire after 5 minutes)
       lockExtendIntervalRef.current = setInterval(() => {
         emit(
           "lock:extend",
@@ -214,6 +219,51 @@ const PerformanceSheet = () => {
     );
   };
 
+  const handleCancel = () => {
+    if (hasChanges) {
+      setShowCancelConfirmation(true);
+      return;
+    }
+
+    performCancel();
+  };
+
+  const performCancel = () => {
+    setFormData(originalData);
+
+    if (!performanceSheetId || !isLockConnected) {
+      toast.error("Cannot release lock. Connection not available.");
+      setShowCancelConfirmation(false);
+      return;
+    }
+
+    emit(
+      "lock:release",
+      {
+        recordType: "performance-sheets",
+        recordId: performanceSheetId,
+        userId: user?.id,
+      },
+      (result: any) => {
+        if (result?.success) {
+          setIsEditing(false);
+          setIsLocked(false);
+          setLockInfo(null);
+          setShowCancelConfirmation(false);
+          toast.info("Edit cancelled and lock released.");
+
+          if (lockExtendIntervalRef.current) {
+            clearInterval(lockExtendIntervalRef.current);
+            lockExtendIntervalRef.current = null;
+          }
+        } else {
+          toast.error("Failed to release lock.");
+          setShowCancelConfirmation(false);
+        }
+      }
+    );
+  };
+
   const handleSave = () => {
     setShowSaveConfirmation(true);
   };
@@ -222,12 +272,10 @@ const PerformanceSheet = () => {
     if (!performanceSheetId) return;
 
     try {
-      // Update performance sheet data
       await updateSheet(`/sales/performance-sheets/${performanceSheetId}`, {
         data: formData,
       });
 
-      // Release lock after save
       if (!isLockConnected) {
         toast.error("Cannot release lock. Connection not available.");
         setShowSaveConfirmation(false);
@@ -247,9 +295,9 @@ const PerformanceSheet = () => {
             setIsLocked(false);
             setLockInfo(null);
             setShowSaveConfirmation(false);
+            setOriginalData(formData);
             toast.success("Changes saved and lock released.");
 
-            // Clear auto-extend interval
             if (lockExtendIntervalRef.current) {
               clearInterval(lockExtendIntervalRef.current);
               lockExtendIntervalRef.current = null;
@@ -366,16 +414,19 @@ const PerformanceSheet = () => {
   };
 
   const getHeaderActions = () => {
-    // Currently editing - show Save button
     if (isEditing) {
       return (
-        <Button variant="primary" onClick={handleSave}>
-          <Save size={16} /> Save
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary-outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={!hasChanges}>
+            <Save size={16} /> Save
+          </Button>
+        </div>
       );
     }
 
-    // Locked by another user - show disabled Locked button
     if (isLocked && lockInfo?.userId && lockInfo.userId !== user?.id) {
       return (
         <div className="flex gap-2">
@@ -389,7 +440,6 @@ const PerformanceSheet = () => {
       );
     }
 
-    // Not locked or locked by current user (shouldn't happen) - show Edit button
     return (
       <div className="flex gap-2">
         <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
@@ -576,6 +626,31 @@ const PerformanceSheet = () => {
               variant="primary"
               onClick={handleConfirmSave}>
               Save
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showCancelConfirmation}
+        onClose={() => setShowCancelConfirmation(false)}
+        title="Unsaved Changes"
+        size="xs">
+        <div className="space-y-4">
+          <p className="text-sm text-text">
+            You have unsaved changes. Are you sure you want to discard them and release the lock?
+          </p>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              onClick={() => setShowCancelConfirmation(false)}>
+              Keep Editing
+            </Button>
+            <Button
+              variant="primary"
+              onClick={performCancel}>
+              Discard Changes
             </Button>
           </div>
         </div>
