@@ -25,6 +25,7 @@ import { MessageService } from "./core/message.service";
 import { SessionService } from "./core/session.service";
 import { SocketService } from "./core/socket.service";
 import { TagService } from "./core/tag.service";
+import { WebhookService } from "./core/webhook.service";
 import { MachineMonitorService } from "./production/machining.service";
 import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
@@ -64,6 +65,7 @@ export const messageService = new MessageService();
 export const sessionService = new SessionService();
 export const socketService = new SocketService();
 export const tagService = new TagService();
+export const webhookService = new WebhookService();
 
 // Production
 export const machiningService = new MachineMonitorService();
@@ -84,6 +86,7 @@ export async function initializeServices() {
   // await mcpService.initialize();
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
+  await webhookService.initialize();
 
   const collectMachineData = true;
 

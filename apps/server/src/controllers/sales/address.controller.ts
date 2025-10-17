@@ -1,5 +1,3 @@
-import type { NextFunction, Request, Response } from "express";
-
 export class AdressController {
   // async getCoordinatesByPostalCode(req: Request, res: Response, next: NextFunction) {
   //   try {

@@ -49,15 +49,17 @@ export class LegacyService {
   private connectionCheckInterval?: NodeJS.Timeout;
 
   private validateFieldName(field: string): string {
-    if (!/^[a-zA-Z0-9_]+$/.test(field)) {
+    if (!/^\w+$/.test(field)) {
       throw new Error(`Invalid field name: ${field}`);
     }
     return field;
   }
 
   private formatValue(value: any): string {
-    if (value === null || value === undefined) return "NULL";
-    if (typeof value === "number") return String(value);
+    if (value === null || value === undefined)
+      return "NULL";
+    if (typeof value === "number")
+      return String(value);
     return `'${String(value).replace(/'/g, "''")}'`;
   }
 
@@ -72,8 +74,10 @@ export class LegacyService {
         .map((c: any) => this.buildConditionSQL(c))
         .filter(Boolean);
 
-      if (clauses.length === 0) return "";
-      if (clauses.length === 1) return clauses[0];
+      if (clauses.length === 0)
+        return "";
+      if (clauses.length === 1)
+        return clauses[0];
       return `(${clauses.join(` ${operator.toUpperCase()} `)})`;
     }
 
@@ -103,10 +107,12 @@ export class LegacyService {
       case "endsWith":
         return `UPPER(${field}) LIKE UPPER('%${String(condition.value || "").replace(/'/g, "''")}')`;
       case "in":
-        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0) return "";
+        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0)
+          return "";
         return `${field} IN (${condition.values.map((v: any) => this.formatValue(v)).join(", ")})`;
       case "notIn":
-        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0) return "";
+        if (!condition.values || !Array.isArray(condition.values) || condition.values.length === 0)
+          return "";
         return `${field} NOT IN (${condition.values.map((v: any) => this.formatValue(v)).join(", ")})`;
       case "isNull":
         return `${field} IS NULL`;
@@ -124,7 +130,8 @@ export class LegacyService {
         .filter(Boolean)
         .join(" AND ");
     }
-    if (filter.operator) return this.buildConditionSQL(filter);
+    if (filter.operator)
+      return this.buildConditionSQL(filter);
     return "";
   }
 
@@ -234,9 +241,12 @@ export class LegacyService {
       const connection = await Promise.race([connectionPromise, timeoutPromise]) as odbc.Connection;
       logger.info(`Successfully reconnected to ${dbName} database`);
 
-      if (database === "std") this.stdConnection = connection;
-      else if (database === "job") this.jobConnection = connection;
-      else if (database === "quote") this.quoteConnection = connection;
+      if (database === "std")
+        this.stdConnection = connection;
+      else if (database === "job")
+        this.jobConnection = connection;
+      else if (database === "quote")
+        this.quoteConnection = connection;
 
       return connection;
     }

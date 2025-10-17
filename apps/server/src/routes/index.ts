@@ -11,11 +11,13 @@ import productionRoutes from "./production.routes";
 import salesRoutes from "./sales.routes";
 import sandboxRoutes from "./sandbox.routes";
 import systemRoutes from "./system.routes";
+import webhookRoutes from "./webhook.routes";
 
 const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/system", systemRoutes);
+router.use("/webhooks", webhookRoutes);
 
 router.use(protect);
 router.use("/admin", adminRoutes);
