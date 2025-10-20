@@ -165,6 +165,7 @@ export const RFQ_PERFORMANCE_SHEET_SEED = {
           size: "md",
           sequence: 2,
           required: true,
+          default: new Date().toISOString().split("T")[0],
         },
         {
           id: "common.customer",

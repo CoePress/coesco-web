@@ -51,6 +51,37 @@ const PerformanceSheet = () => {
     };
   }, []);
 
+  const getNestedValue = (obj: Record<string, any>, path: string): any => {
+    const keys = path.split(".");
+    let current = obj;
+
+    for (const key of keys) {
+      if (current === null || current === undefined || typeof current !== "object") {
+        return undefined;
+      }
+      current = current[key];
+    }
+
+    return current;
+  };
+
+  const setNestedValue = (obj: Record<string, any>, path: string, value: any): Record<string, any> => {
+    const keys = path.split(".");
+    const result = JSON.parse(JSON.stringify(obj));
+    let current = result;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!current[key] || typeof current[key] !== "object") {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+
+    current[keys[keys.length - 1]] = value;
+    return result;
+  };
+
   const storageKey = useMemo(() => `performance-sheet-${performanceSheetId}`, [performanceSheetId]);
 
   const saveToLocalStorage = (values: Record<string, any>) => {
@@ -254,10 +285,7 @@ const PerformanceSheet = () => {
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
   const handleFieldChange = (fieldId: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+    setFormData((prev) => setNestedValue(prev, fieldId, value));
   };
 
   const handleContinueProgress = () => {
@@ -441,7 +469,7 @@ const PerformanceSheet = () => {
   };
 
   const renderField = (field: any) => {
-    const value = formData[field.id] || "";
+    const value = getNestedValue(formData, field.id) ?? "";
     const commonProps = {
       id: field.id,
       name: field.id,

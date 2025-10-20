@@ -27,9 +27,69 @@ export class PerformanceService {
     return performanceSheetVersionRepository.getById(id, params);
   }
 
+  private setNestedValue(obj: Record<string, any>, path: string, value: any): void {
+    const keys = path.split(".");
+    let current = obj;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!current[key] || typeof current[key] !== "object") {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+
+    current[keys[keys.length - 1]] = value;
+  }
+
   // Sheets
   async createPerformanceSheet(data: Partial<PerformanceSheet>) {
-    return performanceSheetRepository.create(data);
+    const { versionId, data: sheetData, ...rest } = data;
+
+    if (!versionId) {
+      return {
+        success: false,
+        message: "versionId is required",
+      };
+    }
+
+    const versionResult = await performanceSheetVersionRepository.getById(versionId);
+
+    if (!versionResult.success || !versionResult.data) {
+      return {
+        success: false,
+        message: "Version not found",
+      };
+    }
+
+    const version = versionResult.data;
+    const initializedData: Record<string, any> = {};
+
+    if (version.sections && Array.isArray(version.sections)) {
+      (version.sections as any[]).forEach((section: any) => {
+        if (section.sections && Array.isArray(section.sections)) {
+          section.sections.forEach((subsection: any) => {
+            if (subsection.fields && Array.isArray(subsection.fields)) {
+              subsection.fields.forEach((field: any) => {
+                const value = field.default !== undefined ? field.default : null;
+                this.setNestedValue(initializedData, field.id, value);
+              });
+            }
+          });
+        }
+      });
+    }
+
+    const mergedData = {
+      ...initializedData,
+      ...(sheetData && typeof sheetData === "object" && !Array.isArray(sheetData) ? sheetData : {}),
+    };
+
+    return performanceSheetRepository.create({
+      ...rest,
+      versionId,
+      data: mergedData,
+    });
   }
 
   async updatePerformanceSheet(id: string, data: Partial<PerformanceSheet>) {

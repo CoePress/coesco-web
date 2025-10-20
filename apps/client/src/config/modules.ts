@@ -26,7 +26,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
+import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, ContactDetails, Contacts, EmployeeDetails, Employees, FormBuilder, FormDetails, Forms, FormSubmission, JourneyDetails, Logs, Machines, MachineStatuses, PerformanceSheet, PerformanceSheets, PerformanceSheetVersionBuilder, Pipeline, ProductDetails, ProductionDashboard, Products, QuoteDetails, Quotes, SalesDashboard, Sessions, Timezone } from "@/pages";
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
@@ -174,6 +174,19 @@ const salesModule: Module = {
           slug: ":id",
           label: "Performance Sheet Details",
           component: PerformanceSheet,
+        },
+      ],
+    },
+    {
+      slug: "performance-sheet-versions",
+      label: "Performance Sheet Versions",
+      icon: FileCogIcon,
+      component: PerformanceSheets,
+      children: [
+        {
+          slug: ":id/build",
+          label: "Version Builder",
+          component: PerformanceSheetVersionBuilder,
         },
       ],
     },
