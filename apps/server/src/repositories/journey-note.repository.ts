@@ -16,6 +16,8 @@ export class JourneyNoteRepository extends BaseRepository<JourneyNote> {
   protected async validate(entity: JourneyNoteAttributes): Promise<void> {
     if (!entity.journeyId)
       throw new BadRequestError("journeyId is required");
+    if (!entity.type)
+      throw new BadRequestError("type is required");
     if (!entity.body)
       throw new BadRequestError("body is required");
   }
