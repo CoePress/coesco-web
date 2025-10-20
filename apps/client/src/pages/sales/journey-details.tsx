@@ -1411,7 +1411,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               </div>
 
               <div>
-                <div className="text-sm text-text-muted">Last Action Date</div>
+                <div className="text-sm text-text-muted">Action Date</div>
                 {isEditingDetails ? (
                   <input
                     type="date"
@@ -1601,7 +1601,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ minHeight: '300px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
             <h2 className="font-semibold text-text-muted text-sm mb-2">Notes</h2>
 
             <div className="flex gap-2 mb-3">
@@ -1622,7 +1622,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               </Button>
             </div>
 
-            <div className="space-y-2 flex-1 overflow-auto">
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
               {isLoadingNotes ? (
                 <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
               ) : journeyNotes.length === 0 ? (
@@ -1705,7 +1705,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
             </div>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ minHeight: '300px' }}>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
             <h2 className="font-semibold text-text-muted text-sm mb-2">Next Steps</h2>
 
             <div className="flex gap-2 mb-3">
@@ -1726,7 +1726,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               </Button>
             </div>
 
-            <div className="space-y-2 flex-1 overflow-auto">
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
               {isLoadingNextSteps ? (
                 <div className="text-sm text-text-muted text-center py-4">Loading next steps...</div>
               ) : journeyNextSteps.length === 0 ? (
@@ -2220,7 +2220,7 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
-                <div className="text-sm text-text-muted">Last Action Date</div>
+                <div className="text-sm text-text-muted">Action Date</div>
               </div>
               <div className="text-text ml-5">
                 {formatDateSafe(journey?.Action_Date) !== "-" ? formatDateSafe(journey?.Action_Date) : "Not available"}
