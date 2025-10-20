@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { Save, Lock, Link } from "lucide-react";
+import { Save, Lock, Link, ChevronDown, ChevronUp } from "lucide-react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
@@ -32,6 +32,7 @@ const PerformanceSheet = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged } = useSocket();
   const { user } = useAuth();
@@ -340,6 +341,18 @@ const PerformanceSheet = () => {
     setSearchQuery(entity.label);
     setNewLink({ ...newLink, entityId: entity.id });
     setShowResults(false);
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
   };
 
   const handleEdit = () => {
@@ -951,22 +964,53 @@ const PerformanceSheet = () => {
         tabs={visibleTabs}
       />
 
-      <div className="p-6">
-        {activeTabData?.sections?.map((section: any) => (
-          <div key={section.id} className="mb-8">
-            <h2 className="text-lg font-semibold text-text mb-4">{section.title}</h2>
-            <div
-              className="grid gap-4"
-              style={{
-                gridTemplateColumns: `repeat(${section.columns || 2}, minmax(0, 1fr))`,
-              }}
-            >
-              {section.fields
-                ?.sort((a: any, b: any) => a.sequence - b.sequence)
-                .map((field: any) => renderField(field))}
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-center w-full">
+        <div className="p-8 max-w-4xl w-full">
+          {activeTabData?.sections?.map((section: any, index: number) => {
+            const isCollapsed = collapsedSections.has(section.id);
+            const totalFields = section.fields?.length || 0;
+            const filledFields = section.fields?.filter((field: any) => {
+              const value = getNestedValue(formData, field.id);
+              return value !== null && value !== undefined && value !== "";
+            }).length || 0;
+            const isLastSection = index === activeTabData.sections.length - 1;
+
+            return (
+              <div key={section.id} className={`pb-8 ${!isLastSection ? 'mb-8 border-b border-border' : ''}`}>
+                <div className={`flex items-center justify-between ${!isCollapsed ? 'mb-4' : ''}`}>
+                  <h2 className="text-lg font-semibold text-text">{section.title}</h2>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
+                      {filledFields}/{totalFields}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.id)}
+                      className="text-text-muted hover:text-text transition-all cursor-pointer"
+                    >
+                      <ChevronDown
+                        size={20}
+                        className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+                      />
+                    </button>
+                  </div>
+                </div>
+                {!isCollapsed && (
+                  <div
+                    className="grid gap-4"
+                    style={{
+                      gridTemplateColumns: `repeat(${section.columns || 2}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {section.fields
+                      ?.sort((a: any, b: any) => a.sequence - b.sequence)
+                      .map((field: any) => renderField(field))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <Modal
