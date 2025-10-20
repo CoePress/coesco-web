@@ -52,6 +52,13 @@ export function formatDuration(ms: number): string {
   return parts.join(" ");
 }
 
+export const ms = {
+  seconds: (n: number) => n * 1000,
+  minutes: (n: number) => n * 60 * 1000,
+  hours: (n: number) => n * 60 * 60 * 1000,
+  days: (n: number) => n * 24 * 60 * 60 * 1000,
+};
+
 export function isProductClassDescendant(childId: string, parentId: string, productClasses: ProductClass[]): boolean {
   const child = productClasses.find(pc => pc.id === childId);
   if (!child)

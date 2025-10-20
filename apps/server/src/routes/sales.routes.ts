@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { customerController, journeyController, quoteController } from "@/controllers";
+import { customerController, journeyController, performanceController, quoteController } from "@/controllers";
 
 const router = Router();
 
@@ -56,5 +56,26 @@ router.post("/quotes/:quoteId/accept", quoteController.acceptQuote);
 router.post("/quotes/:quoteId/reject", quoteController.rejectQuote);
 router.post("/quotes/:quoteId/send", quoteController.sendQuote);
 router.get("/quotes/:quoteId/export/pdf", quoteController.exportPDF);
+
+// Performance Versions
+router.post("/performance-versions", performanceController.createPerformanceSheetVersion);
+router.get("/performance-versions", performanceController.getPerformanceSheetVersions);
+router.get("/performance-versions/:versionId", performanceController.getPerformanceSheetVersion);
+router.patch("/performance-versions/:versionId", performanceController.updatePerformanceSheetVersion);
+router.delete("/performance-versions/:versionId", performanceController.deletePerformanceSheetVersion);
+
+// Performance Sheets
+router.post("/performance-sheets", performanceController.createPerformanceSheet);
+router.get("/performance-sheets", performanceController.getPerformanceSheets);
+router.get("/performance-sheets/:sheetId", performanceController.getPerformanceSheet);
+router.patch("/performance-sheets/:sheetId", performanceController.updatePerformanceSheet);
+router.delete("/performance-sheets/:sheetId", performanceController.deletePerformanceSheet);
+
+// Performance Links
+router.post("/performance-links", performanceController.createPerformanceSheetLink);
+router.get("/performance-links", performanceController.getPerformanceSheetLinks);
+router.get("/performance-links/:linkId", performanceController.getPerformanceSheetLink);
+router.patch("/performance-links/:linkId", performanceController.updatePerformanceSheetLink);
+router.delete("/performance-links/:linkId", performanceController.deletePerformanceSheetLink);
 
 export default router;

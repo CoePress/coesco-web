@@ -24,6 +24,8 @@ export { default as SalesDashboard } from "./sales/dashboard";
 export { default as JourneyDetails } from "./sales/journey-details";
 export { default as PerformanceSheet } from "./performance/performance-sheet";
 export { default as PerformanceSheets } from "./performance/performance-sheets";
+export { default as PerformanceSheetVersionBuilder } from "./performance/performance-sheet-version-builder";
+export { default as PerformanceSheetVersions } from "./performance/performance-sheet-versions";
 export { default as Pipeline } from "./sales/pipeline";
 export { default as ProductDetails } from "./sales/product-details";
 export { default as Products } from "./sales/products";

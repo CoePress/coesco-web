@@ -15,6 +15,7 @@ import { FormController } from "./core/form.controller";
 import { JourneyNoteController } from "./core/journey-note.controller";
 import { LegacyController } from "./core/legacy.controller";
 import { LockController } from "./core/lock.controller";
+import { SearchController } from "./core/search.controller";
 import { SettingsController } from "./core/settings.controller";
 import { TagController } from "./core/tag.controller";
 import { WebhookController } from "./core/webhook.controller";
@@ -22,6 +23,7 @@ import { ResourceMonitoringController } from "./production/resource-monitoring.c
 import { ResourceController } from "./production/resource.controller";
 import { CustomerController } from "./sales/customer.controller";
 import { JourneyController } from "./sales/journey.controller";
+import { PerformanceController } from "./sales/performance.controller";
 import { QuoteController } from "./sales/quote.controller";
 
 // Admin
@@ -48,6 +50,7 @@ export const formController = new FormController();
 export const journeyNoteController = new JourneyNoteController();
 export const legacyController = new LegacyController();
 export const lockController = new LockController();
+export const searchController = new SearchController();
 export const settingsController = new SettingsController();
 export const tagController = new TagController();
 export const webhookController = new WebhookController();
@@ -59,4 +62,5 @@ export const resourceController = new ResourceController();
 // Sales
 export const customerController = new CustomerController();
 export const journeyController = new JourneyController();
+export const performanceController = new PerformanceController();
 export const quoteController = new QuoteController();

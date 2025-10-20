@@ -20,6 +20,7 @@ export class BaseRepository<T> {
     const { query, countQuery, page, take, hasComputedSearch } = await this.buildQueryParams(
       params,
       searchFields,
+      params?.includeDeleted,
     );
 
     const client = tx ?? this.model;
@@ -71,12 +72,12 @@ export class BaseRepository<T> {
     };
 
     if (params?.include) {
-      const { include } = buildQuery(params, []);
+      const { include } = buildQuery(params, [], params?.includeDeleted, this.modelName);
       if (include)
         query.include = include;
     }
     else if (params?.select) {
-      const { select } = buildQuery(params, []);
+      const { select } = buildQuery(params, [], params?.includeDeleted, this.modelName);
       if (select)
         query.select = select;
     }
@@ -234,6 +235,7 @@ export class BaseRepository<T> {
 
   private async getScope(
     columns?: string[],
+    includeDeleted?: boolean | "only",
   ): Promise<Record<string, any> | undefined> {
     const ctx = getEmployeeContext();
     const cols = columns ?? (await this.getColumns());
@@ -245,7 +247,11 @@ export class BaseRepository<T> {
     }
 
     if (cols.includes("deletedAt")) {
-      scope.push({ deletedAt: null });
+      if (includeDeleted === "only") {
+        scope.push({ deletedAt: { not: null } });
+      } else if (!includeDeleted) {
+        scope.push({ deletedAt: null });
+      }
     }
 
     return scope.length ? { AND: scope } : undefined;
@@ -288,6 +294,7 @@ export class BaseRepository<T> {
   private async buildQueryParams(
     params?: IQueryParams<T>,
     searchFields?: (string | { field: string; weight: number })[],
+    includeDeleted?: boolean | "only",
   ): Promise<any> {
     const transformedOrderBy = this.transformSort(params?.sort, params?.order);
     const transforms = this.getTransforms();
@@ -304,10 +311,12 @@ export class BaseRepository<T> {
     const { where, orderBy, page, take, skip, select, include } = buildQuery(
       queryParams,
       regularSearchFields,
+      includeDeleted,
+      this.modelName,
     );
 
     const columns = await this.getColumns();
-    const scope = await this.getScope(columns);
+    const scope = await this.getScope(columns, includeDeleted);
 
     const finalWhere = { AND: [where ?? {}, scope ?? {}] };
 

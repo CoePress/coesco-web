@@ -9,7 +9,7 @@ import { ThemeProvider } from "./contexts/theme.context.tsx";
 import { SocketProvider } from "./contexts/socket.context.tsx";
 import { ToastProvider } from "./contexts/toast.context.tsx";
 import { PostHogProvider } from 'posthog-js/react'
-import { env } from "./config/env.ts";
+import { env, __dev__ } from "./config/env.ts";
 
 const options = {
   api_host: env.VITE_PUBLIC_POSTHOG_HOST
@@ -22,9 +22,13 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <AppProvider>
             <ToastProvider>
-              <PostHogProvider apiKey={env.VITE_PUBLIC_POSTHOG_KEY} options={options}>
-              <App />
-              </PostHogProvider>
+              {!__dev__ ? (
+                <PostHogProvider apiKey={env.VITE_PUBLIC_POSTHOG_KEY} options={options}>
+                  <App />
+                </PostHogProvider>
+              ) : (
+                <App />
+              )}
             </ToastProvider>
           </AppProvider>
         </ThemeProvider>
