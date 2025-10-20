@@ -63,7 +63,7 @@ const Input = ({
         autoComplete={autoComplete}
         className={`
           w-full text-sm px-3 py-1.5 rounded
-          border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+          border focus:outline-none focus:border-primary
           bg-foreground text-text
           disabled:bg-surface disabled:text-text-muted
           ${error ? "border-error" : "border-border"}

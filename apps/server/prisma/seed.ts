@@ -1,7 +1,7 @@
 /* eslint-disable node/prefer-global/process */
 import { FormFieldControlType, FormFieldDataType, FormStatus, ItemType, MachineControllerType, MachineType } from "@prisma/client";
 
-import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, closeDatabaseConnections } from "@/scripts/data-pipeline";
+import { _migrateEmployees, _migrateDepartments, _migrateEmployeeManagers, _migrateJourneyNotes, closeDatabaseConnections } from "@/scripts/data-pipeline";
 import { legacyService } from "@/services";
 import { MicrosoftService } from "@/services/admin/microsoft.service";
 import {
@@ -27,6 +27,7 @@ import {
 } from "@/repositories";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import defaultUsers from "@/config/default-users.json";
+import { RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED } from "@/templates/performance-sheet";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
@@ -287,43 +288,15 @@ async function seedPerformanceSheetVersions() {
     const existingVersions = await prisma.performanceSheetVersion.count();
 
     if (existingVersions === 0) {
-      logger.info("Seeding sample performance sheet versions...");
-
-      const sampleSections = [
-        {
-          id: "section-1",
-          title: "Machine Information",
-          fields: [
-            { id: "field-1", label: "Machine Model", type: "text", required: true },
-            { id: "field-2", label: "Serial Number", type: "text", required: true },
-            { id: "field-3", label: "Year Manufactured", type: "number", required: false },
-          ],
-        },
-        {
-          id: "section-2",
-          title: "Performance Metrics",
-          fields: [
-            { id: "field-4", label: "Maximum Speed (RPM)", type: "number", required: true },
-            { id: "field-5", label: "Power Consumption (kW)", type: "number", required: true },
-            { id: "field-6", label: "Efficiency Rating", type: "text", required: false },
-          ],
-        },
-        {
-          id: "section-3",
-          title: "Additional Notes",
-          fields: [
-            { id: "field-7", label: "Comments", type: "textarea", required: false },
-          ],
-        },
-      ];
+      logger.info("Seeding performance sheet versions...");
 
       await performanceSheetVersionRepository.create({
-        sections: sampleSections,
+        sections: [RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED],
         createdById: "system",
         updatedById: "system",
       }, undefined, true);
 
-      logger.info("Seeded sample performance sheet version");
+      logger.info("Seeded performance sheet version with 2 tabs (RFQ and TDDBHD)");
     }
   }
   catch (error) {
@@ -845,6 +818,7 @@ export async function seedDatabase() {
   await seedServiceTechDailyForm();
   await seedPerformanceSheetVersions();
   await seedCatalog();
+  await _migrateJourneyNotes(legacyService);
 
   logger.info("All seeding completed successfully");
 }

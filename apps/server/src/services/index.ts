@@ -25,13 +25,16 @@ import { MessageService } from "./core/message.service";
 import { SessionService } from "./core/session.service";
 import { SocketService } from "./core/socket.service";
 import { TagService } from "./core/tag.service";
+import { WebhookService } from "./core/webhook.service";
 import { MachineMonitorService } from "./production/machining.service";
 import { ResourceMonitoringService } from "./production/resource-monitoring.service";
 import { ResourceService } from "./production/resource.service";
 import { AddressService } from "./sales/address.service";
 import { ContactService } from "./sales/contact.service";
 import { CustomerService } from "./sales/customer.service";
+import { JourneyNoteService } from "./sales/journey-note.service";
 import { JourneyService } from "./sales/journey.service";
+import { PerformanceService } from "./sales/performance.service";
 import { QuoteService } from "./sales/quote.service";
 
 // Admin
@@ -63,6 +66,7 @@ export const messageService = new MessageService();
 export const sessionService = new SessionService();
 export const socketService = new SocketService();
 export const tagService = new TagService();
+export const webhookService = new WebhookService();
 
 // Production
 export const machiningService = new MachineMonitorService();
@@ -73,7 +77,9 @@ export const resourceService = new ResourceService();
 export const addressService = new AddressService();
 export const contactService = new ContactService();
 export const customerService = new CustomerService();
+export const journeyNoteService = new JourneyNoteService();
 export const journeyService = new JourneyService();
+export const performanceService = new PerformanceService();
 export const quoteService = new QuoteService();
 
 export async function initializeServices() {
@@ -82,6 +88,7 @@ export async function initializeServices() {
   // await mcpService.initialize();
   await socketService.initialize(io);
   await authService.initializeDefaultUser();
+  await webhookService.initialize();
 
   const collectMachineData = true;
 

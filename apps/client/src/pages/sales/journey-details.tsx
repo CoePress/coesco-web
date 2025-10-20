@@ -202,10 +202,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
   const lastFetchedCompanyId = useRef<string>("");
   const justSelectedCompany = useRef<boolean>(false);
 
-  const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
-  const [nextSteps, setNextSteps] = useState(journey?.Next_Steps ?? "");
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const [showNextStepsSavePrompt, setShowNextStepsSavePrompt] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
@@ -220,6 +216,227 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
   const [showAddJourneyContactModal, setShowAddJourneyContactModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<any>(null);
+
+  const [journeyNotes, setJourneyNotes] = useState<any[]>([]);
+  const [journeyNextSteps, setJourneyNextSteps] = useState<any[]>([]);
+  const [newNoteBody, setNewNoteBody] = useState("");
+  const [newNextStepBody, setNewNextStepBody] = useState("");
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isCreatingNextStep, setIsCreatingNextStep] = useState(false);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [isLoadingNextSteps, setIsLoadingNextSteps] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteBody, setEditingNoteBody] = useState("");
+  const [editingNextStepId, setEditingNextStepId] = useState<string | null>(null);
+  const [editingNextStepBody, setEditingNextStepBody] = useState("");
+  const [noteToDelete, setNoteToDelete] = useState<any>(null);
+  const [nextStepToDelete, setNextStepToDelete] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!journey?.ID && !journey?.id) return;
+      setIsLoadingNotes(true);
+      try {
+        const journeyId = journey.ID || journey.id;
+        const noteData = await api.get('/core/journey-notes', {
+          filter: JSON.stringify({
+            journeyId: journeyId,
+            type: "note"
+          }),
+          sort: 'createdAt',
+          order: 'desc'
+        });
+        if (noteData?.success && Array.isArray(noteData.data)) {
+          setJourneyNotes(noteData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+        setJourneyNotes([]);
+      } finally {
+        setIsLoadingNotes(false);
+      }
+    };
+    fetchNotes();
+  }, [journey?.ID, journey?.id]);
+
+  useEffect(() => {
+    const fetchNextSteps = async () => {
+      if (!journey?.ID && !journey?.id) return;
+      setIsLoadingNextSteps(true);
+      try {
+        const journeyId = journey.ID || journey.id;
+        const nextStepData = await api.get('/core/journey-notes', {
+          filter: JSON.stringify({
+            journeyId: journeyId,
+            type: "next_step"
+          }),
+          sort: 'createdAt',
+          order: 'desc'
+        });
+        if (nextStepData?.success && Array.isArray(nextStepData.data)) {
+          setJourneyNextSteps(nextStepData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching next steps:', error);
+        setJourneyNextSteps([]);
+      } finally {
+        setIsLoadingNextSteps(false);
+      }
+    };
+    fetchNextSteps();
+  }, [journey?.ID, journey?.id]);
+
+  const handleCreateNote = async () => {
+    if (!newNoteBody.trim() || !journey?.ID && !journey?.id) return;
+    setIsCreatingNote(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const newNote = await api.post('/core/journey-notes', {
+        body: newNoteBody.trim(),
+        journeyId: journeyId,
+        type: "note",
+        createdBy: employee?.initials
+      });
+      if (newNote?.success && newNote.data) {
+        setJourneyNotes(prev => [newNote.data, ...prev]);
+        setNewNoteBody("");
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+      alert('Failed to create note. Please try again.');
+    } finally {
+      setIsCreatingNote(false);
+    }
+  };
+
+  const handleCreateNextStep = async () => {
+    if (!newNextStepBody.trim() || !journey?.ID && !journey?.id) return;
+    setIsCreatingNextStep(true);
+    try {
+      const journeyId = journey.ID || journey.id;
+      const newNextStep = await api.post('/core/journey-notes', {
+        body: newNextStepBody.trim(),
+        journeyId: journeyId,
+        type: "next_step",
+        createdBy: employee?.initials
+      });
+      if (newNextStep?.success && newNextStep.data) {
+        setJourneyNextSteps(prev => [newNextStep.data, ...prev]);
+        setNewNextStepBody("");
+      }
+    } catch (error) {
+      console.error('Error creating next step:', error);
+      alert('Failed to create next step. Please try again.');
+    } finally {
+      setIsCreatingNextStep(false);
+    }
+  };
+
+  const handleEditNote = (note: any) => {
+    setEditingNoteId(note.id);
+    setEditingNoteBody(note.body || "");
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteId || !editingNoteBody.trim()) return;
+    setIsSaving(true);
+    try {
+      const result = await api.patch(`/core/journey-notes/${editingNoteId}`, {
+        body: editingNoteBody.trim()
+      });
+      if (result?.success && result.data) {
+        setJourneyNotes(prev => prev.map(note =>
+          note.id === editingNoteId ? result.data : note
+        ));
+        setEditingNoteId(null);
+        setEditingNoteBody("");
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('Failed to update note. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteBody("");
+  };
+
+  const handleDeleteNote = (note: any) => {
+    setNoteToDelete(note);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) return;
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/core/journey-notes/${noteToDelete.id}`);
+      if (result !== null) {
+        setJourneyNotes(prev => prev.filter(note => note.id !== noteToDelete.id));
+        setNoteToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditNextStep = (nextStep: any) => {
+    setEditingNextStepId(nextStep.id);
+    setEditingNextStepBody(nextStep.body || "");
+  };
+
+  const handleSaveNextStep = async () => {
+    if (!editingNextStepId || !editingNextStepBody.trim()) return;
+    setIsSaving(true);
+    try {
+      const result = await api.patch(`/core/journey-notes/${editingNextStepId}`, {
+        body: editingNextStepBody.trim()
+      });
+      if (result?.success && result.data) {
+        setJourneyNextSteps(prev => prev.map(step =>
+          step.id === editingNextStepId ? result.data : step
+        ));
+        setEditingNextStepId(null);
+        setEditingNextStepBody("");
+      }
+    } catch (error) {
+      console.error('Error updating next step:', error);
+      alert('Failed to update next step. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEditNextStep = () => {
+    setEditingNextStepId(null);
+    setEditingNextStepBody("");
+  };
+
+  const handleDeleteNextStep = (nextStep: any) => {
+    setNextStepToDelete(nextStep);
+  };
+
+  const confirmDeleteNextStep = async () => {
+    if (!nextStepToDelete) return;
+    setIsSaving(true);
+    try {
+      const result = await api.delete(`/core/journey-notes/${nextStepToDelete.id}`);
+      if (result !== null) {
+        setJourneyNextSteps(prev => prev.filter(step => step.id !== nextStepToDelete.id));
+        setNextStepToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting next step:', error);
+      alert('Failed to delete next step. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (journey) {
@@ -236,16 +453,8 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
         setCompanyName(journey?.Target_Account || journey?.companyName || "");
         lastFetchedCompanyId.current = journey?.Company_ID || "";
       }
-
-      if (!showSavePrompt) {
-        setNotes(journey?.Notes ?? journey?.notes ?? "");
-      }
-
-      if (!showNextStepsSavePrompt) {
-        setNextSteps(journey?.Next_Steps ?? "");
-      }
     }
-  }, [journey, isEditingDetails, isEditingCustomer, showSavePrompt, showNextStepsSavePrompt]);
+  }, [journey, isEditingDetails, isEditingCustomer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -414,30 +623,6 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       setCompanySearchResults([]);
       setShowCompanyResults(false);
     }
-  };
-
-  const handleSaveNotes = async () => {
-    const updates = { Notes: notes };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    if (success) { setShowSavePrompt(false); updateJourney(updates); } 
-    else { setNotes(journey?.Notes ?? journey?.notes ?? ""); setShowSavePrompt(false); }
-  };
-
-  const handleCancelNotes = () => {
-    setNotes(journey?.Notes ?? journey?.notes ?? "");
-    setShowSavePrompt(false);
-  };
-
-  const handleSaveNextSteps = async () => {
-    const updates = { Next_Steps: nextSteps };
-    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
-    setShowNextStepsSavePrompt(false);
-    if (success) updateJourney(updates); else setNextSteps(journey?.Next_Steps ?? "");
-  };
-
-  const handleCancelNextSteps = () => {
-    setNextSteps(journey?.Next_Steps ?? "");
-    setShowNextStepsSavePrompt(false);
   };
 
   const handleSetPrimaryContact = async (contactId: string, JourneyID: string) => {
@@ -1226,7 +1411,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               </div>
 
               <div>
-                <div className="text-sm text-text-muted">Last Action Date</div>
+                <div className="text-sm text-text-muted">Action Date</div>
                 {isEditingDetails ? (
                   <input
                     type="date"
@@ -1415,41 +1600,216 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
 
         </div>
 
-        <div className="grid grid-cols-3 gap-2 flex-1">
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold text-text-muted text-sm mb-1">Notes</h2>
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+            <h2 className="font-semibold text-text-muted text-sm mb-2">Notes</h2>
+
+            <div className="flex gap-2 mb-3">
+              <textarea
+                className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                value={newNoteBody}
+                onChange={(e) => setNewNoteBody(e.target.value)}
+                placeholder="Enter a new note..."
+                rows={2}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateNote}
+                disabled={isCreatingNote || !newNoteBody.trim()}
+              >
+                {isCreatingNote ? "Adding..." : "Add Note"}
+              </Button>
             </div>
-            <textarea
-              className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={() => {
-                if (notes !== (journey?.Notes ?? journey?.notes ?? "")) {
-                  setShowSavePrompt(true);
-                }
-              }}
-            />
+
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
+              {isLoadingNotes ? (
+                <div className="text-sm text-text-muted text-center py-4">Loading notes...</div>
+              ) : journeyNotes.length === 0 ? (
+                <div className="text-sm text-text-muted text-center py-4">No notes yet</div>
+              ) : (
+                journeyNotes.map((note) => (
+                  <div key={note.id} className="p-2 bg-surface rounded border border-border">
+                    {editingNoteId === note.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full p-2 bg-background rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={editingNoteBody}
+                          onChange={(e) => setEditingNoteBody(e.target.value)}
+                          rows={3}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleSaveNote}
+                            disabled={isSaving || !editingNoteBody.trim()}
+                          >
+                            {isSaving ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleCancelEditNote}
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-text">
+                              {note.createdBy || "Unknown"}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : "N/A"}
+                            </span>
+                            {note.updatedAt && note.updatedAt !== note.createdAt && (
+                              <span className="text-xs text-text-muted">
+                                Updated: {new Date(note.updatedAt).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleEditNote(note)}
+                              disabled={isSaving || editingNoteId !== null}
+                              className="!p-1 !h-6 !w-6"
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleDeleteNote(note)}
+                              disabled={isSaving || editingNoteId !== null}
+                              className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                            >
+                              <Trash2 size={12} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-text whitespace-pre-wrap">
+                          {note.body || ""}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold text-text-muted text-sm mb-1">Next Steps</h2>
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col" style={{ maxHeight: '400px' }}>
+            <h2 className="font-semibold text-text-muted text-sm mb-2">Next Steps</h2>
+
+            <div className="flex gap-2 mb-3">
+              <textarea
+                className="flex-1 p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                value={newNextStepBody}
+                onChange={(e) => setNewNextStepBody(e.target.value)}
+                placeholder="Enter a new next step..."
+                rows={2}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateNextStep}
+                disabled={isCreatingNextStep || !newNextStepBody.trim()}
+              >
+                {isCreatingNextStep ? "Adding..." : "Add Next Step"}
+              </Button>
             </div>
-            <textarea
-              className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-              value={nextSteps}
-              onChange={(e) => setNextSteps(e.target.value)}
-              onBlur={() => {
-                if (nextSteps !== (journey?.Next_Steps ?? "")) {
-                  setShowNextStepsSavePrompt(true);
-                }
-              }}
-              placeholder="Enter next steps..."
-            />
+
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
+              {isLoadingNextSteps ? (
+                <div className="text-sm text-text-muted text-center py-4">Loading next steps...</div>
+              ) : journeyNextSteps.length === 0 ? (
+                <div className="text-sm text-text-muted text-center py-4">No next steps yet</div>
+              ) : (
+                journeyNextSteps.map((nextStep) => (
+                  <div key={nextStep.id} className="p-2 bg-surface rounded border border-border">
+                    {editingNextStepId === nextStep.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full p-2 bg-background rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={editingNextStepBody}
+                          onChange={(e) => setEditingNextStepBody(e.target.value)}
+                          rows={3}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleSaveNextStep}
+                            disabled={isSaving || !editingNextStepBody.trim()}
+                          >
+                            {isSaving ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            variant="secondary-outline"
+                            size="sm"
+                            onClick={handleCancelEditNextStep}
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-text">
+                              {nextStep.createdBy || "Unknown"}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              Created: {nextStep.createdAt ? new Date(nextStep.createdAt).toLocaleString() : "N/A"}
+                            </span>
+                            {nextStep.updatedAt && nextStep.updatedAt !== nextStep.createdAt && (
+                              <span className="text-xs text-text-muted">
+                                Updated: {new Date(nextStep.updatedAt).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleEditNextStep(nextStep)}
+                              disabled={isSaving || editingNextStepId !== null}
+                              className="!p-1 !h-6 !w-6"
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              variant="secondary-outline"
+                              size="sm"
+                              onClick={() => handleDeleteNextStep(nextStep)}
+                              disabled={isSaving || editingNextStepId !== null}
+                              className="!p-1 !h-6 !w-6 border-red-300 hover:bg-red-50 hover:border-red-400"
+                            >
+                              <Trash2 size={12} className="text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-text whitespace-pre-wrap">
+                          {nextStep.body || ""}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col h-full">
+          <div className="bg-foreground rounded shadow-sm border p-2 flex flex-col">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-text-muted text-sm">Visit Logging</h2>
               <div className="flex gap-2">
@@ -1486,136 +1846,77 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-auto">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <div className="text-sm text-text-muted mb-2">Visit Date</div>
-                    {isEditingVisitLogging ? (
-                      <input
-                        type="date"
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={detailsForm.visitDate || ""}
-                        onChange={(e) =>
-                          setDetailsForm((s) => ({ ...s, visitDate: e.target.value }))
-                        }
-                      />
-                    ) : (
-                      <div className="text-sm text-text p-2 bg-background rounded border">
-                        {(() => {
-                          try {
-                            return journey?.Visit_Date ? formatDate(journey.Visit_Date) : "No visit date recorded";
-                          } catch (error) {
-                            return journey?.Visit_Date || "No visit date recorded";
-                          }
-                        })()}
-                      </div>
-                    )}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm text-text-muted mb-2">Visit Date</div>
+                {isEditingVisitLogging ? (
+                  <input
+                    type="date"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.visitDate || ""}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, visitDate: e.target.value }))
+                    }
+                  />
+                ) : (
+                  <div className="text-sm text-text p-2 bg-background rounded border">
+                    {(() => {
+                      try {
+                        return journey?.Visit_Date ? formatDate(journey.Visit_Date) : "No visit date recorded";
+                      } catch (error) {
+                        return journey?.Visit_Date || "No visit date recorded";
+                      }
+                    })()}
                   </div>
+                )}
+              </div>
 
-                  <div>
-                    <div className="text-sm text-text-muted mb-2">Anticipated Visit Date</div>
-                    {isEditingVisitLogging ? (
-                      <input
-                        type="date"
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
-                        value={detailsForm.anticipatedVisitDate || ""}
-                        onChange={(e) =>
-                          setDetailsForm((s) => ({ ...s, anticipatedVisitDate: e.target.value }))
-                        }
-                      />
-                    ) : (
-                      <div className="text-sm text-text p-2 bg-background rounded border">
-                        {(() => {
-                          try {
-                            return journey?.Anticipated_Visit_Date ? formatDate(journey.Anticipated_Visit_Date) : "No anticipated visit date";
-                          } catch (error) {
-                            return journey?.Anticipated_Visit_Date || "No anticipated visit date";
-                          }
-                        })()}
-                      </div>
-                    )}
+              <div>
+                <div className="text-sm text-text-muted mb-2">Anticipated Visit Date</div>
+                {isEditingVisitLogging ? (
+                  <input
+                    type="date"
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text"
+                    value={detailsForm.anticipatedVisitDate || ""}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, anticipatedVisitDate: e.target.value }))
+                    }
+                  />
+                ) : (
+                  <div className="text-sm text-text p-2 bg-background rounded border">
+                    {(() => {
+                      try {
+                        return journey?.Anticipated_Visit_Date ? formatDate(journey.Anticipated_Visit_Date) : "No anticipated visit date";
+                      } catch (error) {
+                        return journey?.Anticipated_Visit_Date || "No anticipated visit date";
+                      }
+                    })()}
                   </div>
+                )}
+              </div>
 
-                  <div>
-                    <div className="text-sm text-text-muted mb-2">Visit Outcome</div>
-                    {isEditingVisitLogging ? (
-                      <textarea
-                        className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
-                        value={detailsForm.visitOutcome || ""}
-                        onChange={(e) =>
-                          setDetailsForm((s) => ({ ...s, visitOutcome: e.target.value }))
-                        }
-                        rows={4}
-                        placeholder="Enter visit outcome details..."
-                      />
-                    ) : (
-                      <div className="text-sm text-text p-2 bg-background rounded border min-h-[80px] whitespace-pre-wrap">
-                        {journey?.Visit_Outcome || "No visit outcome recorded"}
-                      </div>
-                    )}
+              <div>
+                <div className="text-sm text-text-muted mb-2">Visit Outcome</div>
+                {isEditingVisitLogging ? (
+                  <textarea
+                    className="w-full rounded border border-border px-2 py-1 text-sm bg-background text-text resize-none"
+                    value={detailsForm.visitOutcome || ""}
+                    onChange={(e) =>
+                      setDetailsForm((s) => ({ ...s, visitOutcome: e.target.value }))
+                    }
+                    rows={4}
+                    placeholder="Enter visit outcome details..."
+                  />
+                ) : (
+                  <div className="text-sm text-text p-2 bg-background rounded border min-h-[80px] whitespace-pre-wrap">
+                    {journey?.Visit_Outcome || "No visit outcome recorded"}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-
-      <Modal
-        isOpen={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Notes?</p>
-        <div className="flex justify-end gap-2">
-          <Button 
-            variant="primary" 
-            size="sm" 
-            onClick={handleSaveNotes}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNotes}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showNextStepsSavePrompt}
-        onClose={() => setShowNextStepsSavePrompt(false)}
-        title="Save Changes?"
-        size="sm"
-      >
-        <p className="mb-4">Do you want to save your changes to Next Steps?</p>
-        <div className="flex justify-end gap-2">
-          <Button 
-            variant="primary" 
-            size="sm" 
-            onClick={handleSaveNextSteps}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            variant="secondary-outline"
-            size="sm"
-            onClick={handleCancelNextSteps}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
 
       <AddJourneyContactModal
         isOpen={showAddJourneyContactModal}
@@ -1654,6 +1955,76 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
               className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
             >
               {isSaving ? "Deleting..." : "Delete Contact"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!noteToDelete}
+        onClose={() => setNoteToDelete(null)}
+        title="Delete Note"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-text">
+            Are you sure you want to delete this note?
+          </p>
+          <p className="text-text-muted text-sm">
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              size="sm"
+              onClick={() => setNoteToDelete(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={confirmDeleteNote}
+              disabled={isSaving}
+              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+            >
+              {isSaving ? "Deleting..." : "Delete Note"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!nextStepToDelete}
+        onClose={() => setNextStepToDelete(null)}
+        title="Delete Next Step"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-text">
+            Are you sure you want to delete this next step?
+          </p>
+          <p className="text-text-muted text-sm">
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary-outline"
+              size="sm"
+              onClick={() => setNextStepToDelete(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={confirmDeleteNextStep}
+              disabled={isSaving}
+              className="!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700"
+            >
+              {isSaving ? "Deleting..." : "Delete Next Step"}
             </Button>
           </div>
         </div>
@@ -1849,7 +2220,7 @@ function JourneyQuotesTab({ journey, updateJourney, employee }: { journey: any |
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
-                <div className="text-sm text-text-muted">Last Action Date</div>
+                <div className="text-sm text-text-muted">Action Date</div>
               </div>
               <div className="text-text ml-5">
                 {formatDateSafe(journey?.Action_Date) !== "-" ? formatDateSafe(journey?.Action_Date) : "Not available"}
@@ -2028,7 +2399,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
       setIsLoading(true);
       try {
         const journeyId = journey.ID || journey.id;
-        const tagData = await api.get('/tags', {
+        const tagData = await api.get('/core/tags', {
           filter: JSON.stringify({
             parentTable: 'journeys',
             parentId: journeyId
@@ -2057,7 +2428,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
       const journeyId = journey.ID || journey.id;
       const tagDescription = newTagInput.trim().toUpperCase();
       
-      const newTag = await api.post('/tags', {
+      const newTag = await api.post('/core/tags', {
         description: tagDescription,
         parentTable: 'journeys',
         parentId: journeyId,
@@ -2078,7 +2449,7 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   const handleDeleteTag = async (tagId: string) => {
     setIsSaving(true);
     try {
-      const result = await api.delete(`/tags/${tagId}`);
+      const result = await api.delete(`/core/tags/${tagId}`);
       
       if (result !== null) {
         setTags(prev => prev.filter(tag => tag.id !== tagId));
@@ -2160,6 +2531,139 @@ function JourneyTagsTab({ journey, employee }: { journey: any | null; employee: 
   );
 }
 
+function JourneyLegacyTab({ journey, updateJourney, employee }: { journey: any | null; updateJourney: (updates: Record<string, any>) => void; employee: any }) {
+  const [notes, setNotes] = useState(journey?.Notes ?? journey?.notes ?? "");
+  const [nextSteps, setNextSteps] = useState(journey?.Next_Steps ?? "");
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showNextStepsSavePrompt, setShowNextStepsSavePrompt] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const api = useApi();
+
+  useEffect(() => {
+    if (journey) {
+      if (!showSavePrompt) {
+        setNotes(journey?.Notes ?? journey?.notes ?? "");
+      }
+      if (!showNextStepsSavePrompt) {
+        setNextSteps(journey?.Next_Steps ?? "");
+      }
+    }
+  }, [journey, showSavePrompt, showNextStepsSavePrompt]);
+
+  const handleSaveNotes = async () => {
+    const updates = { Notes: notes };
+    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
+    if (success) { setShowSavePrompt(false); updateJourney(updates); }
+    else { setNotes(journey?.Notes ?? journey?.notes ?? ""); setShowSavePrompt(false); }
+  };
+
+  const handleCancelNotes = () => {
+    setNotes(journey?.Notes ?? journey?.notes ?? "");
+    setShowSavePrompt(false);
+  };
+
+  const handleSaveNextSteps = async () => {
+    const updates = { Next_Steps: nextSteps };
+    const success = await saveJourneyUpdates(api, journey, updates, updates, employee, setIsSaving);
+    setShowNextStepsSavePrompt(false);
+    if (success) updateJourney(updates); else setNextSteps(journey?.Next_Steps ?? "");
+  };
+
+  const handleCancelNextSteps = () => {
+    setNextSteps(journey?.Next_Steps ?? "");
+    setShowNextStepsSavePrompt(false);
+  };
+
+  if (!journey) return null;
+
+  return (
+    <div className="flex flex-1 flex-col p-4 gap-4">
+      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
+        <h3 className="text-lg font-semibold text-text mb-4">Legacy Notes</h3>
+        <textarea
+          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => {
+            if (notes !== (journey?.Notes ?? journey?.notes ?? "")) {
+              setShowSavePrompt(true);
+            }
+          }}
+        />
+      </div>
+
+      <div className="bg-foreground rounded shadow-sm border p-4 flex flex-col" style={{ height: '400px' }}>
+        <h3 className="text-lg font-semibold text-text mb-4">Legacy Next Steps</h3>
+        <textarea
+          className="flex-1 w-full p-2 bg-surface rounded border border-border text-sm text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+          value={nextSteps}
+          onChange={(e) => setNextSteps(e.target.value)}
+          onBlur={() => {
+            if (nextSteps !== (journey?.Next_Steps ?? "")) {
+              setShowNextStepsSavePrompt(true);
+            }
+          }}
+          placeholder="Enter next steps..."
+        />
+      </div>
+
+      <Modal
+        isOpen={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        title="Save Changes?"
+        size="sm"
+      >
+        <p className="mb-4">Do you want to save your changes to Legacy Notes?</p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveNotes}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={handleCancelNotes}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showNextStepsSavePrompt}
+        onClose={() => setShowNextStepsSavePrompt(false)}
+        title="Save Changes?"
+        size="sm"
+      >
+        <p className="mb-4">Do you want to save your changes to Legacy Next Steps?</p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveNextSteps}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            variant="secondary-outline"
+            size="sm"
+            onClick={handleCancelNextSteps}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
 function JourneyActionsTab({ journey }: { journey: any | null }) {
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -2168,12 +2672,12 @@ function JourneyActionsTab({ journey }: { journey: any | null }) {
 
   const handleDeleteJourney = async () => {
     if (!journey?.ID && !journey?.id) return;
-    
+
     setIsDeleting(true);
     try {
       const journeyId = journey.ID || journey.id;
       const result = await deleteApi(`/legacy/std/Journey/${journeyId}`);
-      
+
       if (result !== null) {
         navigate('/sales/pipeline');
       } else {
@@ -2193,7 +2697,7 @@ function JourneyActionsTab({ journey }: { journey: any | null }) {
     <div className="flex flex-1 flex-col p-4">
       <div className="bg-foreground rounded shadow-sm border p-4">
         <h3 className="text-lg font-semibold text-text mb-4">Journey Actions</h3>
-        
+
         <div className="space-y-4">
           <div className="border border-red-200 bg-red-50 rounded p-4">
             <div className="flex items-start gap-3">
@@ -2342,6 +2846,7 @@ const JourneyDetailsPage = () => {
           { label: "Quote Info", value: "quotes" },
           { label: "History", value: "history" },
           { label: "Tags", value: "tags" },
+          { label: "Legacy", value: "legacy" },
           { label: "Journey Actions", value: "actions" },
         ]}
       />
@@ -2349,6 +2854,7 @@ const JourneyDetailsPage = () => {
       {activeTab === "quotes" && <JourneyQuotesTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "history" && <JourneyHistoryTab journey={journeyData} />}
       {activeTab === "tags" && <JourneyTagsTab journey={journeyData} employee={employee} />}
+      {activeTab === "legacy" && <JourneyLegacyTab journey={journeyData} updateJourney={updateJourney} employee={employee} />}
       {activeTab === "actions" && <JourneyActionsTab journey={journeyData} />}
     </div>
   );

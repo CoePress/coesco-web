@@ -1489,6 +1489,181 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
+export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
+  const originalService = legacyService;
+
+  if (legacyServiceInstance) {
+    legacyService = legacyServiceInstance;
+  }
+  else {
+    await legacyService.initialize();
+  }
+
+  const existingNotesCount = await mainDatabase.journeyNote.count();
+  if (existingNotesCount > 0) {
+    logger.info(`Found ${existingNotesCount} existing journey notes. Skipping migration.`);
+    legacyService = originalService;
+    return {
+      total: 0,
+      created: 0,
+      skipped: existingNotesCount,
+      errors: 0,
+      errorDetails: [],
+    };
+  }
+
+  const result: MigrationResult = {
+    total: 0,
+    created: 0,
+    skipped: 0,
+    errors: 0,
+    errorDetails: [],
+  };
+
+  try {
+    logger.info("Starting journey notes migration...");
+
+    const params = {
+      filter: null,
+      sort: null,
+      order: null,
+      offset: 0,
+    };
+
+    const totalCount = await legacyService.getCount("std", "Journey", params);
+    const legacyFetchSize = 5000;
+    const expectedBatches = Math.ceil(totalCount / legacyFetchSize);
+
+    logger.info(`Found ${totalCount} journeys, expecting ${expectedBatches} batches of ${legacyFetchSize}`);
+
+    let totalProcessed = 0;
+    let currentBatch = 0;
+
+    while (totalProcessed < totalCount) {
+      const paginatedResult = await legacyService.getAllPaginated(
+        "std",
+        "Journey",
+        { ...params, totalCount },
+        legacyFetchSize,
+      );
+
+      if (!paginatedResult.records || paginatedResult.records.length === 0) {
+        logger.warn("No more records found in Journey");
+        break;
+      }
+
+      const sourceRecords = paginatedResult.records;
+      totalProcessed += sourceRecords.length;
+      currentBatch++;
+
+      logger.info(`Processing batch ${currentBatch}/${expectedBatches}: ${sourceRecords.length} records (offset: ${params.offset})`);
+
+      const allNotes: any[] = [];
+
+      for (const record of sourceRecords) {
+        result.total++;
+
+        const journeyId = record.ID?.toString();
+        if (!journeyId) {
+          result.skipped++;
+          continue;
+        }
+
+        const processNoteField = (text: string, type: "note" | "next_step") => {
+          if (!text?.trim())
+            return;
+
+          const entries: Array<{ body: string; date: Date | null }> = [];
+          let currentEntry = "";
+          let currentDate: Date | null = null;
+
+          for (const line of text.split("\n")) {
+            const trimmedLine = line.trim();
+            const match = trimmedLine.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/);
+
+            if (match) {
+              if (currentEntry.trim())
+                entries.push({ body: currentEntry.trim(), date: currentDate });
+              currentEntry = trimmedLine.replace(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/, "").trim();
+
+              try {
+                const parts = match[1].split("/");
+                const month = Number.parseInt(parts[0], 10);
+                const day = parts.length === 3 ? Number.parseInt(parts[1], 10) : 1;
+                let year = Number.parseInt(parts[parts.length - 1], 10);
+                if (year < 100)
+                  year += year < 50 ? 2000 : 1900;
+                currentDate = new Date(year, month - 1, day);
+              }
+              catch {
+                currentDate = null;
+              }
+            }
+            else if (trimmedLine) {
+              currentEntry = currentEntry ? `${currentEntry}\n${trimmedLine}` : trimmedLine;
+            }
+          }
+
+          if (currentEntry.trim())
+            entries.push({ body: currentEntry.trim(), date: currentDate });
+
+          const finalEntries = entries.length ? entries : text.trim() ? [{ body: text.trim(), date: null }] : [];
+
+          for (const entry of finalEntries) {
+            allNotes.push({
+              journeyId,
+              type,
+              body: entry.body,
+              createdBy: "System",
+              createdAt: entry.date || new Date(),
+            });
+          }
+        };
+
+        if (record.Notes)
+          processNoteField(record.Notes.toString(), "note");
+        if (record.Next_Steps)
+          processNoteField(record.Next_Steps.toString(), "next_step");
+      }
+
+      if (allNotes.length > 0) {
+        try {
+          const createResult = await mainDatabase.journeyNote.createMany({
+            data: allNotes,
+            skipDuplicates: true,
+          });
+          result.created += createResult.count;
+        }
+        catch (error: any) {
+          logger.error(`Error creating notes in batch ${currentBatch}:`, error.message);
+          result.errors += allNotes.length;
+        }
+      }
+
+      params.offset = paginatedResult.nextOffset;
+
+      if (!paginatedResult.hasMore || paginatedResult.records.length < legacyFetchSize) {
+        logger.info("No more records to process. Breaking pagination loop.");
+        break;
+      }
+
+      logger.info(`Batch ${currentBatch}/${expectedBatches} complete. Total processed: ${totalProcessed}/${totalCount}, Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+    }
+
+    logger.info(
+      `Migration complete: ${result.created} created, ${result.skipped} skipped, ${result.errors} errors from ${result.total} total records`,
+    );
+  }
+  catch (error: any) {
+    logger.error("Fatal error during journey notes migration:", error.message);
+    throw error;
+  }
+
+  legacyService = originalService;
+
+  return result;
+}
+
 export async function _migrateDepartments(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
   const originalService = legacyService;
 

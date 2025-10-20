@@ -3,8 +3,8 @@ import type { LoginMethod, Session } from "@prisma/client";
 import { createHash } from "node:crypto";
 
 import { sessionRepository } from "@/repositories";
-import { prisma } from "@/utils/prisma";
 import { logger } from "@/utils/logger";
+import { prisma } from "@/utils/prisma";
 
 export interface CreateSessionParams {
   userId: string;
@@ -472,7 +472,7 @@ export class SessionService {
 
     const userMap = new Map(users.map(u => [u.id, u]));
 
-    const sessionsByUser = sessionsByUserRaw.map(s => {
+    const sessionsByUser = sessionsByUserRaw.map((s) => {
       const user = userMap.get(s.userId);
       return {
         userId: s.userId,

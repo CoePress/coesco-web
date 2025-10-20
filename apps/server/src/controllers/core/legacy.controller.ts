@@ -20,10 +20,11 @@ export class LegacyController {
       const { database, table } = req.params;
       const params = buildQueryParams<any>(req.query);
 
-      if (req.query.filter && typeof req.query.filter === 'string') {
+      if (req.query.filter && typeof req.query.filter === "string") {
         try {
           params.filter = JSON.parse(req.query.filter);
-        } catch {
+        }
+        catch {
           // keep it as a string for backwards compatibility
         }
       }

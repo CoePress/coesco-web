@@ -53,7 +53,7 @@ const Select = ({
         className={`
           w-full text-sm px-3 py-1.5 rounded border
           bg-foreground text-text
-          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+          focus:outline-none focus:border-primary
           disabled:bg-surface disabled:text-text-muted
           ${error ? "border-error" : "border-border"}
           ${className}

@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useMemo,
+  useCallback,
 } from "react";
 import { Socket, Manager } from "socket.io-client";
 import { useAuth } from "./auth.context";
@@ -65,7 +66,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     };
   }, []);
 
-  const subscribeToSystemStatus = () => {
+  const subscribeToSystemStatus = useCallback(() => {
     if (!systemSocketRef.current && managerRef.current) {
       systemSocketRef.current = managerRef.current.socket("/system");
 
@@ -91,16 +92,16 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     } else if (systemSocketRef.current?.connected) {
       systemSocketRef.current.emit("system_status:subscribe");
     }
-  };
+  }, []);
 
-  const unsubscribeFromSystemStatus = () => {
+  const unsubscribeFromSystemStatus = useCallback(() => {
     if (systemSocketRef.current?.connected) {
       systemSocketRef.current.emit("system_status:unsubscribe");
       setSystemStatus("");
     }
-  };
+  }, []);
 
-  const subscribeToMachineStates = () => {
+  const subscribeToMachineStates = useCallback(() => {
     if (!iotSocketRef.current && managerRef.current) {
       iotSocketRef.current = managerRef.current.socket("/iot");
 
@@ -123,14 +124,14 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     } else if (iotSocketRef.current?.connected && !isSubscribed) {
       iotSocketRef.current.emit("machine_states:subscribe");
     }
-  };
+  }, [isSubscribed]);
 
-  const unsubscribeFromMachineStates = () => {
+  const unsubscribeFromMachineStates = useCallback(() => {
     if (iotSocketRef.current?.connected) {
       iotSocketRef.current.emit("machine_states:unsubscribe");
       setIsSubscribed(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user?.id && managerRef.current) {
@@ -186,13 +187,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     };
   }, []);
 
-  const emit = (event: string, data: any, callback?: (result: any) => void) => {
+  const emit = useCallback((event: string, data: any, callback?: (result: any) => void) => {
     if (lockSocketRef.current?.connected) {
       lockSocketRef.current.emit(event, data, callback);
     }
-  };
+  }, []);
 
-  const onLockChanged = (callback: (data: any) => void) => {
+  const onLockChanged = useCallback((callback: (data: any) => void) => {
     if (lockSocketRef.current) {
       lockSocketRef.current.on("lock:changed", callback);
       return () => {
@@ -200,7 +201,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       };
     }
     return () => {};
-  };
+  }, []);
 
   const initializeSessionSocket = (userId: string) => {
     if (userId && managerRef.current) {
@@ -229,7 +230,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }
   };
 
-  const onSessionRevoked = (callback: (data: any) => void) => {
+  const onSessionRevoked = useCallback((callback: (data: any) => void) => {
     if (sessionSocketRef.current) {
       sessionSocketRef.current.on("session:revoked", callback);
       return () => {
@@ -237,7 +238,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       };
     }
     return () => {};
-  };
+  }, []);
 
   const contextValue: SocketContextType = useMemo(() => ({
     systemSocket: systemSocketRef.current,
@@ -265,6 +266,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     machineStates,
     isLockConnected,
     isSessionConnected,
+    subscribeToSystemStatus,
+    unsubscribeFromSystemStatus,
+    subscribeToMachineStates,
+    unsubscribeFromMachineStates,
+    emit,
+    onLockChanged,
+    onSessionRevoked,
   ]);
 
   return (
