@@ -1489,53 +1489,7 @@ async function _migrateQuoteNotes(): Promise<MigrationResult> {
   return result;
 }
 
-interface ParsedEntry {
-  body: string;
-  date: Date | null;
-}
-
 export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService): Promise<MigrationResult> {
-  function parseDate(text: string): ParsedEntry[] {
-    if (!text?.trim())
-      return [];
-
-    const entries: ParsedEntry[] = [];
-    let currentEntry = "";
-    let currentDate: Date | null = null;
-
-    for (const line of text.split("\n")) {
-      const trimmedLine = line.trim();
-      const match = trimmedLine.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/);
-
-      if (match) {
-        if (currentEntry.trim())
-          entries.push({ body: currentEntry.trim(), date: currentDate });
-        currentEntry = trimmedLine.replace(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/, "").trim();
-
-        try {
-          const parts = match[1].split("/");
-          const month = Number.parseInt(parts[0], 10);
-          const day = parts.length === 3 ? Number.parseInt(parts[1], 10) : 1;
-          let year = Number.parseInt(parts[parts.length - 1], 10);
-          if (year < 100)
-            year += year < 50 ? 2000 : 1900;
-          currentDate = new Date(year, month - 1, day);
-        }
-        catch {
-          currentDate = null;
-        }
-      }
-      else if (trimmedLine) {
-        currentEntry = currentEntry ? `${currentEntry}\n${trimmedLine}` : trimmedLine;
-      }
-    }
-
-    if (currentEntry.trim())
-      entries.push({ body: currentEntry.trim(), date: currentDate });
-
-    return entries.length ? entries : text.trim() ? [{ body: text.trim(), date: null }] : [];
-  }
-
   const originalService = legacyService;
 
   if (legacyServiceInstance) {
@@ -1615,31 +1569,61 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
           continue;
         }
 
-        if (record.Notes && record.Notes.toString().trim().length > 0) {
-          const noteEntries = parseDate(record.Notes.toString());
-          for (const entry of noteEntries) {
-            allNotes.push({
-              journeyId,
-              type: "note",
-              body: entry.body,
-              createdBy: "System",
-              createdAt: entry.date || new Date(),
-            });
-          }
-        }
+        const processNoteField = (text: string, type: "note" | "next_step") => {
+          if (!text?.trim())
+            return;
 
-        if (record.Next_Steps && record.Next_Steps.toString().trim().length > 0) {
-          const nextStepEntries = parseDate(record.Next_Steps.toString());
-          for (const entry of nextStepEntries) {
+          const entries: Array<{ body: string; date: Date | null }> = [];
+          let currentEntry = "";
+          let currentDate: Date | null = null;
+
+          for (const line of text.split("\n")) {
+            const trimmedLine = line.trim();
+            const match = trimmedLine.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/);
+
+            if (match) {
+              if (currentEntry.trim())
+                entries.push({ body: currentEntry.trim(), date: currentDate });
+              currentEntry = trimmedLine.replace(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[:|-]/, "").trim();
+
+              try {
+                const parts = match[1].split("/");
+                const month = Number.parseInt(parts[0], 10);
+                const day = parts.length === 3 ? Number.parseInt(parts[1], 10) : 1;
+                let year = Number.parseInt(parts[parts.length - 1], 10);
+                if (year < 100)
+                  year += year < 50 ? 2000 : 1900;
+                currentDate = new Date(year, month - 1, day);
+              }
+              catch {
+                currentDate = null;
+              }
+            }
+            else if (trimmedLine) {
+              currentEntry = currentEntry ? `${currentEntry}\n${trimmedLine}` : trimmedLine;
+            }
+          }
+
+          if (currentEntry.trim())
+            entries.push({ body: currentEntry.trim(), date: currentDate });
+
+          const finalEntries = entries.length ? entries : text.trim() ? [{ body: text.trim(), date: null }] : [];
+
+          for (const entry of finalEntries) {
             allNotes.push({
               journeyId,
-              type: "next_step",
+              type,
               body: entry.body,
               createdBy: "System",
               createdAt: entry.date || new Date(),
             });
           }
-        }
+        };
+
+        if (record.Notes)
+          processNoteField(record.Notes.toString(), "note");
+        if (record.Next_Steps)
+          processNoteField(record.Next_Steps.toString(), "next_step");
       }
 
       if (allNotes.length > 0) {
