@@ -51,6 +51,7 @@ export * from './form-submission';
 export * from './item';
 export * from './journey';
 export * from './journey-interaction';
+export * from './journey-note';
 export * from './login-history';
 export * from './machine';
 export * from './machine-status';

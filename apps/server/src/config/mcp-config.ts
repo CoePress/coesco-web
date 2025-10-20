@@ -1467,6 +1467,46 @@ export const SCHEMAS: ISchema[] = [
     },
   },
   {
+    name: "journey-note",
+    description: "Schema for JourneyNote entity",
+    schema: {
+      id: {
+        type: "string",
+        required: true,
+        hasDefault: true,
+      },
+      journeyId: {
+        type: "string",
+        required: true,
+      },
+      body: {
+        type: "string",
+        required: true,
+      },
+      createdBy: {
+        type: "string",
+        required: false,
+      },
+      updatedBy: {
+        type: "string",
+        required: false,
+      },
+      createdAt: {
+        type: "datetime",
+        required: true,
+        hasDefault: true,
+      },
+      updatedAt: {
+        type: "datetime",
+        required: true,
+      },
+      deletedAt: {
+        type: "datetime",
+        required: false,
+      },
+    },
+  },
+  {
     name: "login-history",
     description: "Schema for LoginHistory entity",
     schema: {

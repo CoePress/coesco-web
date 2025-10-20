@@ -69,15 +69,15 @@ model Token {
 }
 
 model Department {
-  id String @id @default(uuid())
-  name String
+  id          String    @id @default(uuid())
+  name        String
   description String?
-  code String @unique
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-  createdById     String
-  updatedById     String
+  code        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String
+  updatedById String
 
   employees Employee[]
 
@@ -107,13 +107,13 @@ model Employee {
   createdById     String
   updatedById     String
 
-  user             User      @relation(fields: [userId], references: [id])
-  department       Department?  @relation(fields: [departmentId], references: [id])
-  manager          Employee?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
-  subordinates     Employee[]   @relation("ManagerSubordinates")
-  journeys         Journey[] @relation("RsmJourneys")
-  createdCompanies Company[] @relation("CustomerCreatedBy")
-  createdJourneys  Journey[] @relation("JourneyCreatedBy")
+  user             User        @relation(fields: [userId], references: [id])
+  department       Department? @relation(fields: [departmentId], references: [id])
+  manager          Employee?   @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     Employee[]  @relation("ManagerSubordinates")
+  journeys         Journey[]   @relation("RsmJourneys")
+  createdCompanies Company[]   @relation("CustomerCreatedBy")
+  createdJourneys  Journey[]   @relation("JourneyCreatedBy")
   chats            Chat[]
 
   @@index([number])
@@ -352,6 +352,19 @@ model Journey {
   @@map("journeys")
 }
 
+model JourneyNote {
+  id        String    @id @default(uuid())
+  journeyId String
+  body      String
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("journey_notes")
+}
+
 enum JourneyStatus {
   ACTIVE
   INACTIVE
@@ -434,12 +447,12 @@ model Quote {
   legacy            Json        @default("{}")
 
   revisions QuoteRevision[]
-
-  @@unique([year, number])
-  @@map("quote_headers")
   /// @transform(quoteNumber: CONCAT(RIGHT(year, 2), '-', LPAD(number, 5, '0')))
   /// @searchFields(year: 2, number: 3, quoteNumber: 5)
   /// @sortFields(quoteNumber: [year, number])
+
+  @@unique([year, number])
+  @@map("quote_headers")
 }
 
 enum QuoteStatus {
@@ -448,18 +461,18 @@ enum QuoteStatus {
 }
 
 model QuoteRevision {
-  id            String              @id @default(uuid())
-  quoteId String
-  revision      String              @default("A")
-  quoteDate     DateTime?
-  status        QuoteRevisionStatus @default(DRAFT)
-  approvedById  String?
-  sentById      String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  deletedAt     DateTime?
-  createdById   String
-  updatedById   String
+  id           String              @id @default(uuid())
+  quoteId      String
+  revision     String              @default("A")
+  quoteDate    DateTime?
+  status       QuoteRevisionStatus @default(DRAFT)
+  approvedById String?
+  sentById     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String
 
   quote Quote?       @relation(fields: [quoteId], references: [id])
   items QuoteItem[]
@@ -1185,15 +1198,15 @@ model NtfyDevice {
 }
 
 model EmailLog {
-  id          String    @id @default(uuid())
-  to          String
-  subject     String
-  template    String?
-  status      EmailStatus @default(PENDING)
-  sentAt      DateTime?
-  error       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String      @id @default(uuid())
+  to        String
+  subject   String
+  template  String?
+  status    EmailStatus @default(PENDING)
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@map("email_logs")
 }
@@ -1205,21 +1218,21 @@ enum EmailStatus {
 }
 
 model ExternalAccessLink {
-  id             String      @id @default(uuid())
-  token          String      @unique
-  purpose        AccessPurpose
-  resourceId     String?
-  resourceType   String?
-  expiresAt      DateTime?
-  usedAt         DateTime?
-  revokedAt      DateTime?
-  maxUses        Int?
-  useCount       Int         @default(0)
-  metadata       Json?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  createdById    String?
-  updatedById    String?
+  id           String        @id @default(uuid())
+  token        String        @unique
+  purpose      AccessPurpose
+  resourceId   String?
+  resourceType String?
+  expiresAt    DateTime?
+  usedAt       DateTime?
+  revokedAt    DateTime?
+  maxUses      Int?
+  useCount     Int           @default(0)
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdById  String?
+  updatedById  String?
 
   @@map("external_access_links")
 }
@@ -1231,7 +1244,7 @@ enum AccessPurpose {
 }
 
 model BugReport {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   description String
   userEmail   String?
@@ -1241,7 +1254,7 @@ model BugReport {
   issueKey    String?
   issueUrl    String?
   status      BugReportStatus @default(SUBMITTED)
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime        @default(now())
   createdById String?
 
   @@map("bug_reports")
@@ -1314,5 +1327,3 @@ model LoginHistory {
   @@index([success])
   @@map("login_history")
 }
-
-

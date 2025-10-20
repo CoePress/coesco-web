@@ -6,6 +6,7 @@ import {
   List,
   RefreshCcw,
   Info,
+  Download,
 } from "lucide-react";
 import {
   LineChart,
@@ -19,6 +20,7 @@ import {
 } from "recharts";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ExcelJS from "exceljs";
 
 import { Button } from "@/components";
 import { formatCurrency } from "@/utils";
@@ -419,6 +421,124 @@ const SalesDashboard = () => {
     }
   };
 
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+
+    const kpiSheet = workbook.addWorksheet("KPI Summary");
+
+    kpiSheet.addTable({
+      name: "KPITable",
+      ref: "A1",
+      headerRow: true,
+      totalsRow: false,
+      style: {
+        theme: "TableStyleMedium2",
+        showRowStripes: true,
+      },
+      columns: [
+        { name: "Metric", filterButton: false },
+        { name: "Value", filterButton: false },
+      ],
+      rows: [
+        ["Total Revenue", formatCurrency(totalRevenue, false)],
+        ["Conversion Rate", `${Math.round(conversionRate)}%`],
+        ["Active Journeys", totalJourneysWithValue],
+      ],
+    });
+
+    kpiSheet.getColumn(1).width = 25;
+    kpiSheet.getColumn(2).width = 20;
+
+    const stageData = stageDistribution.map(s => [
+      s.state,
+      s.total,
+      `${s.percentage}%`,
+    ]);
+
+    const stageStartRow = 6;
+    kpiSheet.addTable({
+      name: "StageDistributionTable",
+      ref: `A${stageStartRow}`,
+      headerRow: true,
+      totalsRow: false,
+      style: {
+        theme: "TableStyleMedium2",
+        showRowStripes: true,
+      },
+      columns: [
+        { name: "Stage", filterButton: true },
+        { name: "Total Journeys", filterButton: true },
+        { name: "Percentage", filterButton: true },
+      ],
+      rows: stageData,
+    });
+
+    kpiSheet.getColumn(3).width = 15;
+
+    const journeySheet = workbook.addWorksheet("Journey List");
+    const journeyData = journeys.map(j => {
+      const company = companiesById.get(j.Company_ID);
+      const journeyStageId = mapLegacyStageToId(j.Journey_Stage);
+      const stageInfo = STAGES.find(s => s.id === journeyStageId) || STAGES[0];
+      return [
+        j.ID,
+        company?.CustDlrName || j.Target_Account || `Company ${j.Company_ID}`,
+        stageInfo.label,
+        j.Journey_Status || "open",
+        j.Journey_Value ? formatCurrency(j.Journey_Value, false) : "$0",
+        j.Journey_Start_Date ? new Date(j.Journey_Start_Date).toLocaleDateString() : "",
+        j.CreateDT ? new Date(j.CreateDT).toLocaleDateString() : "",
+      ];
+    });
+
+    journeySheet.addTable({
+      name: "JourneyTable",
+      ref: "A1",
+      headerRow: true,
+      totalsRow: false,
+      style: {
+        theme: "TableStyleMedium2",
+        showRowStripes: true,
+      },
+      columns: [
+        { name: "Link to Journey", filterButton: true },
+        { name: "Company", filterButton: true },
+        { name: "Stage", filterButton: true },
+        { name: "Status", filterButton: true },
+        { name: "Value", filterButton: true },
+        { name: "Start Date", filterButton: true },
+        { name: "Created Date", filterButton: true },
+      ],
+      rows: journeyData,
+    });
+
+    journeys.forEach((j, index) => {
+      const cell = journeySheet.getCell(`A${index + 2}`);
+      cell.value = {
+        text: j.ID,
+        hyperlink: `https://portal.cpec.com/sales/pipeline/${j.ID}`
+      };
+      cell.font = { color: { argb: 'FF0563C1' }, underline: true };
+    });
+
+    journeySheet.getColumn(1).width = 38;
+    journeySheet.getColumn(2).width = 30;
+    journeySheet.getColumn(3).width = 20;
+    journeySheet.getColumn(4).width = 15;
+    journeySheet.getColumn(5).width = 15;
+    journeySheet.getColumn(6).width = 15;
+    journeySheet.getColumn(7).width = 15;
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `sales-dashboard-${startDate}-to-${endDate}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const Actions = () => {
     return (
       <div className="flex gap-2 items-center">
@@ -443,6 +563,10 @@ const SalesDashboard = () => {
         <Button onClick={refreshData} disabled={isLoading}>
           <RefreshCcw size={20} className={isLoading ? "animate-spin" : ""} />
           {isLoading ? "Refreshing..." : "Refresh"}
+        </Button>
+        <Button onClick={exportToExcel} disabled={isLoading}>
+          <Download size={20} />
+          Export
         </Button>
       </div>
     );
