@@ -2,7 +2,7 @@ import { PlusCircleIcon, Edit2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { Button, Modal, Table, Toolbar, Input } from "@/components";
+import { Button, Modal, Table, Toolbar } from "@/components";
 import { TableColumn } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { IApiResponse } from "@/utils/types";

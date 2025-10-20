@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, X, Plus, Trash2, GripVertical, Edit2 } from 'lucide-react';
+import { Save, X, Plus, Trash2, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button, Input, PageHeader, Modal, Select } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
@@ -37,7 +37,7 @@ interface Section {
 const PerformanceSheetVersionBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, patch, post } = useApi<any>();
+  const { get, patch } = useApi<any>();
   const toast = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -47,6 +47,11 @@ const PerformanceSheetVersionBuilder = () => {
   const [selectedSubsectionId, setSelectedSubsectionId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
+  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+  const [editingSubsection, setEditingSubsection] = useState<Subsection | null>(null);
+  const [isSubsectionModalOpen, setIsSubsectionModalOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'section' | 'subsection' | 'field', id: string, parentId?: string, subParentId?: string } | null>(null);
 
   const fetchVersion = async () => {
     if (!id) return;
@@ -108,15 +113,30 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
-      label: 'New Tab',
-      value: `section-${Date.now()}`,
+      label: '',
+      value: '',
       sequence: maxSequence + 1,
       sections: []
     };
 
-    setSections([...sections, newSection]);
-    setSelectedSectionId(newSection.id);
-    setSelectedSubsectionId(null);
+    setEditingSection(newSection);
+    setIsSectionModalOpen(true);
+  };
+
+  const saveSection = (section: Section, isNew: boolean = false) => {
+    if (isNew) {
+      setSections([...sections, section]);
+      setSelectedSectionId(section.id);
+      setSelectedSubsectionId(null);
+    } else {
+      setSections(sections.map(s => s.id === section.id ? section : s));
+    }
+    setIsSectionModalOpen(false);
+    setEditingSection(null);
+  };
+
+  const confirmRemoveSection = (sectionId: string) => {
+    setDeleteConfirmation({ type: 'section', id: sectionId });
   };
 
   const removeSection = (sectionId: string) => {
@@ -133,12 +153,43 @@ const PerformanceSheetVersionBuilder = () => {
       setSelectedSectionId(null);
       setSelectedSubsectionId(null);
     }
+    setDeleteConfirmation(null);
   };
 
-  const updateSection = (sectionId: string, updates: Partial<Section>) => {
-    setSections(sections.map(section =>
-      section.id === sectionId ? { ...section, ...updates } : section
-    ));
+  const editSection = (sectionId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      setEditingSection(section);
+      setIsSectionModalOpen(true);
+    }
+  };
+
+  const moveSectionUp = (sectionId: string) => {
+    const sortedSections = [...sections].sort((a, b) => a.sequence - b.sequence);
+    const index = sortedSections.findIndex(s => s.id === sectionId);
+
+    if (index > 0) {
+      [sortedSections[index], sortedSections[index - 1]] = [sortedSections[index - 1], sortedSections[index]];
+      const updatedSections = sortedSections.map((section, idx) => ({
+        ...section,
+        sequence: idx + 1
+      }));
+      setSections(updatedSections);
+    }
+  };
+
+  const moveSectionDown = (sectionId: string) => {
+    const sortedSections = [...sections].sort((a, b) => a.sequence - b.sequence);
+    const index = sortedSections.findIndex(s => s.id === sectionId);
+
+    if (index < sortedSections.length - 1) {
+      [sortedSections[index], sortedSections[index + 1]] = [sortedSections[index + 1], sortedSections[index]];
+      const updatedSections = sortedSections.map((section, idx) => ({
+        ...section,
+        sequence: idx + 1
+      }));
+      setSections(updatedSections);
+    }
   };
 
   const addSubsection = (sectionId: string) => {
@@ -151,19 +202,42 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSubsection: Subsection = {
       id: `subsection-${Date.now()}`,
-      title: 'New Section',
+      title: '',
       sequence: maxSequence + 1,
       columns: 4,
       fields: []
     };
 
-    setSections(sections.map(s =>
-      s.id === sectionId
-        ? { ...s, sections: [...s.sections, newSubsection] }
-        : s
-    ));
+    setEditingSubsection(newSubsection);
+    setIsSubsectionModalOpen(true);
+  };
 
-    setSelectedSubsectionId(newSubsection.id);
+  const saveSubsection = (sectionId: string, subsection: Subsection, isNew: boolean = false) => {
+    if (isNew) {
+      setSections(sections.map(s =>
+        s.id === sectionId
+          ? { ...s, sections: [...s.sections, subsection] }
+          : s
+      ));
+      setSelectedSubsectionId(subsection.id);
+    } else {
+      setSections(sections.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              sections: section.sections.map(sub =>
+                sub.id === subsection.id ? subsection : sub
+              )
+            }
+          : section
+      ));
+    }
+    setIsSubsectionModalOpen(false);
+    setEditingSubsection(null);
+  };
+
+  const confirmRemoveSubsection = (sectionId: string, subsectionId: string) => {
+    setDeleteConfirmation({ type: 'subsection', id: subsectionId, parentId: sectionId });
   };
 
   const removeSubsection = (sectionId: string, subsectionId: string) => {
@@ -182,19 +256,56 @@ const PerformanceSheetVersionBuilder = () => {
         setSelectedSubsectionId(null);
       }
     }
+    setDeleteConfirmation(null);
   };
 
-  const updateSubsection = (sectionId: string, subsectionId: string, updates: Partial<Subsection>) => {
-    setSections(sections.map(section =>
-      section.id === sectionId
-        ? {
-            ...section,
-            sections: section.sections.map(subsection =>
-              subsection.id === subsectionId ? { ...subsection, ...updates } : subsection
-            )
-          }
-        : section
-    ));
+  const editSubsection = (sectionId: string, subsectionId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    const subsection = section?.sections.find(s => s.id === subsectionId);
+    if (subsection) {
+      setEditingSubsection(subsection);
+      setIsSubsectionModalOpen(true);
+    }
+  };
+
+  const moveSubsectionUp = (sectionId: string, subsectionId: string) => {
+    setSections(sections.map(section => {
+      if (section.id !== sectionId) return section;
+
+      const sortedSubsections = [...section.sections].sort((a, b) => a.sequence - b.sequence);
+      const index = sortedSubsections.findIndex(s => s.id === subsectionId);
+
+      if (index > 0) {
+        [sortedSubsections[index], sortedSubsections[index - 1]] = [sortedSubsections[index - 1], sortedSubsections[index]];
+        const updatedSubsections = sortedSubsections.map((subsection, idx) => ({
+          ...subsection,
+          sequence: idx + 1
+        }));
+        return { ...section, sections: updatedSubsections };
+      }
+
+      return section;
+    }));
+  };
+
+  const moveSubsectionDown = (sectionId: string, subsectionId: string) => {
+    setSections(sections.map(section => {
+      if (section.id !== sectionId) return section;
+
+      const sortedSubsections = [...section.sections].sort((a, b) => a.sequence - b.sequence);
+      const index = sortedSubsections.findIndex(s => s.id === subsectionId);
+
+      if (index < sortedSubsections.length - 1) {
+        [sortedSubsections[index], sortedSubsections[index + 1]] = [sortedSubsections[index + 1], sortedSubsections[index]];
+        const updatedSubsections = sortedSubsections.map((subsection, idx) => ({
+          ...subsection,
+          sequence: idx + 1
+        }));
+        return { ...section, sections: updatedSubsections };
+      }
+
+      return section;
+    }));
   };
 
   const addField = (sectionId: string, subsectionId: string) => {
@@ -242,6 +353,10 @@ const PerformanceSheetVersionBuilder = () => {
     setEditingField(null);
   };
 
+  const confirmRemoveField = (sectionId: string, subsectionId: string, fieldId: string) => {
+    setDeleteConfirmation({ type: 'field', id: fieldId, parentId: subsectionId, subParentId: sectionId });
+  };
+
   const removeField = (sectionId: string, subsectionId: string, fieldId: string) => {
     setSections(sections.map(section =>
       section.id === sectionId
@@ -255,6 +370,73 @@ const PerformanceSheetVersionBuilder = () => {
           }
         : section
     ));
+    setDeleteConfirmation(null);
+  };
+
+  const moveFieldUp = (sectionId: string, subsectionId: string, fieldId: string) => {
+    setSections(sections.map(section => {
+      if (section.id !== sectionId) return section;
+
+      return {
+        ...section,
+        sections: section.sections.map(subsection => {
+          if (subsection.id !== subsectionId) return subsection;
+
+          const sortedFields = [...subsection.fields].sort((a, b) => a.sequence - b.sequence);
+          const index = sortedFields.findIndex(f => f.id === fieldId);
+
+          if (index > 0) {
+            [sortedFields[index], sortedFields[index - 1]] = [sortedFields[index - 1], sortedFields[index]];
+            const updatedFields = sortedFields.map((field, idx) => ({
+              ...field,
+              sequence: idx + 1
+            }));
+            return { ...subsection, fields: updatedFields };
+          }
+
+          return subsection;
+        })
+      };
+    }));
+  };
+
+  const moveFieldDown = (sectionId: string, subsectionId: string, fieldId: string) => {
+    setSections(sections.map(section => {
+      if (section.id !== sectionId) return section;
+
+      return {
+        ...section,
+        sections: section.sections.map(subsection => {
+          if (subsection.id !== subsectionId) return subsection;
+
+          const sortedFields = [...subsection.fields].sort((a, b) => a.sequence - b.sequence);
+          const index = sortedFields.findIndex(f => f.id === fieldId);
+
+          if (index < sortedFields.length - 1) {
+            [sortedFields[index], sortedFields[index + 1]] = [sortedFields[index + 1], sortedFields[index]];
+            const updatedFields = sortedFields.map((field, idx) => ({
+              ...field,
+              sequence: idx + 1
+            }));
+            return { ...subsection, fields: updatedFields };
+          }
+
+          return subsection;
+        })
+      };
+    }));
+  };
+
+  const handleSelectSection = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    const section = sections.find(s => s.id === sectionId);
+    if (section?.sections && section.sections.length > 0) {
+      const firstSubsection = section.sections.reduce((min: Subsection, subsection: Subsection) =>
+        subsection.sequence < min.sequence ? subsection : min, section.sections[0]);
+      setSelectedSubsectionId(firstSubsection.id);
+    } else {
+      setSelectedSubsectionId(null);
+    }
   };
 
   const selectedSection = sections.find(s => s.id === selectedSectionId);
@@ -306,10 +488,12 @@ const PerformanceSheetVersionBuilder = () => {
             <SectionsPanel
               sections={sections}
               selectedSectionId={selectedSectionId}
-              onSelectSection={setSelectedSectionId}
+              onSelectSection={handleSelectSection}
               onAddSection={addSection}
-              onRemoveSection={removeSection}
-              onUpdateSection={updateSection}
+              onEditSection={editSection}
+              onRemoveSection={confirmRemoveSection}
+              onMoveUp={moveSectionUp}
+              onMoveDown={moveSectionDown}
             />
 
             <SubsectionsPanel
@@ -317,28 +501,60 @@ const PerformanceSheetVersionBuilder = () => {
               selectedSubsectionId={selectedSubsectionId}
               onSelectSubsection={setSelectedSubsectionId}
               onAddSubsection={addSubsection}
-              onRemoveSubsection={removeSubsection}
-              onUpdateSubsection={updateSubsection}
+              onEditSubsection={editSubsection}
+              onRemoveSubsection={confirmRemoveSubsection}
+              onMoveUp={moveSubsectionUp}
+              onMoveDown={moveSubsectionDown}
             />
 
             <FieldsPanel
               section={selectedSection}
               subsection={selectedSubsection}
               onAddField={addField}
-              onEditField={(field) => {
+              onEditField={(field: any) => {
                 setEditingField(field);
                 setIsFieldModalOpen(true);
               }}
-              onRemoveField={removeField}
+              onRemoveField={confirmRemoveField}
+              onMoveUp={moveFieldUp}
+              onMoveDown={moveFieldDown}
             />
           </div>
         </div>
       </div>
 
+      {isSectionModalOpen && editingSection && (
+        <SectionEditorModal
+          section={editingSection}
+          onSave={(section: any) => {
+            const isNew = !sections.some(s => s.id === section.id);
+            saveSection(section, isNew);
+          }}
+          onClose={() => {
+            setIsSectionModalOpen(false);
+            setEditingSection(null);
+          }}
+        />
+      )}
+
+      {isSubsectionModalOpen && editingSubsection && (
+        <SubsectionEditorModal
+          subsection={editingSubsection}
+          onSave={(subsection : any) => {
+            const isNew = !selectedSection?.sections.some(s => s.id === subsection.id);
+            saveSubsection(selectedSectionId!, subsection, isNew);
+          }}
+          onClose={() => {
+            setIsSubsectionModalOpen(false);
+            setEditingSubsection(null);
+          }}
+        />
+      )}
+
       {isFieldModalOpen && editingField && (
         <FieldEditorModal
           field={editingField}
-          onSave={(field) => {
+          onSave={(field : any) => {
             const isNew = !selectedSubsection?.fields.some(f => f.id === field.id);
             saveField(selectedSectionId!, selectedSubsectionId!, field, isNew);
           }}
@@ -348,11 +564,42 @@ const PerformanceSheetVersionBuilder = () => {
           }}
         />
       )}
+
+      {deleteConfirmation && (
+        <Modal isOpen={true} onClose={() => setDeleteConfirmation(null)} title="Confirm Delete" size="sm">
+          <div className="space-y-4">
+            <p className="text-text">
+              Are you sure you want to delete this {deleteConfirmation.type}? This action cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary-outline" onClick={() => setDeleteConfirmation(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (deleteConfirmation.type === 'section') {
+                    removeSection(deleteConfirmation.id);
+                  } else if (deleteConfirmation.type === 'subsection') {
+                    removeSubsection(deleteConfirmation.subParentId!, deleteConfirmation.id);
+                  } else if (deleteConfirmation.type === 'field') {
+                    removeField(deleteConfirmation.subParentId!, deleteConfirmation.parentId!, deleteConfirmation.id);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
-const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSection, onRemoveSection, onUpdateSection }: any) => {
+const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSection, onEditSection, onRemoveSection, onMoveUp, onMoveDown }: any) => {
+  const sortedSections = [...sections].sort((a, b) => a.sequence - b.sequence);
+
   return (
     <div className="w-64 border border-border rounded bg-foreground flex flex-col">
       <div className="p-2 border-b flex items-center justify-between">
@@ -361,33 +608,51 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
           <Plus size={14} />
         </Button>
       </div>
-      <div className="p-2 flex-1 overflow-y-auto space-y-1">
-        {sections.sort((a: any, b: any) => a.sequence - b.sequence).map((section: any) => (
+      <div className="p-2 flex-1 overflow-y-auto space-y-2">
+        {sortedSections.map((section: any, index: number) => (
           <div
             key={section.id}
-            className={`p-2 rounded cursor-pointer flex items-center gap-2 ${
+            className={`border border-border rounded ${
               selectedSectionId === section.id
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-surface text-text-muted'
+                ? 'bg-primary/10 border-primary'
+                : 'bg-surface'
             }`}
           >
-            <GripVertical size={14} className="opacity-50" />
             <div
-              className="flex-1"
+              className="p-2 cursor-pointer"
               onClick={() => onSelectSection(section.id)}
             >
-              <div className="font-medium text-sm">{section.label}</div>
-              <div className="text-xs opacity-75">{section.value}</div>
+              <div className="font-medium text-sm text-text">{section.label}</div>
+              <div className="text-xs text-text-muted">{section.value}</div>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveSection(section.id);
-              }}
-              className="text-error hover:text-error/80"
-            >
-              <Trash2 size={14} />
-            </button>
+            <div className="flex gap-1 p-2 pt-0">
+              <button
+                onClick={() => onMoveUp(section.id)}
+                disabled={index === 0}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                onClick={() => onMoveDown(section.id)}
+                disabled={index === sortedSections.length - 1}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronDown size={14} />
+              </button>
+              <button
+                onClick={() => onEditSection(section.id)}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors flex items-center justify-center"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                onClick={() => onRemoveSection(section.id)}
+                className="flex-1 px-2 py-1 text-xs bg-error/20 border border-error/50 rounded text-error hover:bg-error/30 transition-colors flex items-center justify-center"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -395,17 +660,19 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
   );
 };
 
-const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, onAddSubsection, onRemoveSubsection, onUpdateSubsection }: any) => {
+const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, onAddSubsection, onEditSubsection, onRemoveSubsection, onMoveUp, onMoveDown }: any) => {
   if (!section) {
     return (
-      <div className="flex-1 border border-border rounded bg-foreground flex items-center justify-center">
+      <div className="w-64 border border-border rounded bg-foreground flex items-center justify-center">
         <div className="text-text-muted text-sm">Select a tab to view sections</div>
       </div>
     );
   }
 
+  const sortedSubsections = [...section.sections].sort((a: any, b: any) => a.sequence - b.sequence);
+
   return (
-    <div className="flex-1 border border-border rounded bg-foreground flex flex-col">
+    <div className="w-64 border border-border rounded bg-foreground flex flex-col">
       <div className="p-2 border-b flex items-center justify-between">
         <h3 className="text-sm text-text-muted">Sections</h3>
         <Button onClick={() => onAddSubsection(section.id)} size="sm" variant="secondary-outline">
@@ -413,37 +680,50 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
         </Button>
       </div>
       <div className="p-2 flex-1 overflow-y-auto space-y-2">
-        {section.sections.sort((a: any, b: any) => a.sequence - b.sequence).map((subsection: any) => (
+        {sortedSubsections.map((subsection: any, index: number) => (
           <div
             key={subsection.id}
-            className={`p-2 border border-border rounded ${
+            className={`border border-border rounded ${
               selectedSubsectionId === subsection.id
                 ? 'bg-primary/10 border-primary'
                 : 'bg-surface'
             }`}
           >
-            <div className="flex items-start gap-2 mb-2">
-              <GripVertical size={14} className="opacity-50 mt-1" />
-              <div className="flex-1">
-                <Input
-                  value={subsection.title}
-                  onChange={(e) => onUpdateSubsection(section.id, subsection.id, { title: e.target.value })}
-                  placeholder="Section title"
-                />
-              </div>
+            <div
+              className="p-2 cursor-pointer"
+              onClick={() => onSelectSubsection(subsection.id)}
+            >
+              <div className="font-medium text-sm text-text">{subsection.title}</div>
+              <div className="text-xs text-text-muted">{subsection.fields?.length || 0} fields</div>
+            </div>
+            <div className="flex gap-1 p-2 pt-0">
+              <button
+                onClick={() => onMoveUp(section.id, subsection.id)}
+                disabled={index === 0}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                onClick={() => onMoveDown(section.id, subsection.id)}
+                disabled={index === sortedSubsections.length - 1}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronDown size={14} />
+              </button>
+              <button
+                onClick={() => onEditSubsection(section.id, subsection.id)}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors flex items-center justify-center"
+              >
+                <Edit2 size={14} />
+              </button>
               <button
                 onClick={() => onRemoveSubsection(section.id, subsection.id)}
-                className="text-error hover:text-error/80"
+                className="flex-1 px-2 py-1 text-xs bg-error/20 border border-error/50 rounded text-error hover:bg-error/30 transition-colors flex items-center justify-center"
               >
                 <Trash2 size={14} />
               </button>
             </div>
-            <button
-              onClick={() => onSelectSubsection(subsection.id)}
-              className="w-full text-xs text-left text-text-muted hover:text-text"
-            >
-              {subsection.fields?.length || 0} fields
-            </button>
           </div>
         ))}
       </div>
@@ -451,7 +731,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
   );
 };
 
-const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveField }: any) => {
+const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveField, onMoveUp, onMoveDown }: any) => {
   if (!subsection) {
     return (
       <div className="flex-1 border border-border rounded bg-foreground flex items-center justify-center">
@@ -459,6 +739,8 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
       </div>
     );
   }
+
+  const sortedFields = [...subsection.fields].sort((a: any, b: any) => a.sequence - b.sequence);
 
   return (
     <div className="flex-1 border border-border rounded bg-foreground flex flex-col">
@@ -468,39 +750,123 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
           <Plus size={14} />
         </Button>
       </div>
-      <div className="p-2 flex-1 overflow-y-auto space-y-1">
-        {subsection.fields.sort((a: any, b: any) => a.sequence - b.sequence).map((field: any, index: number) => (
+      <div className="p-2 flex-1 overflow-y-auto space-y-2">
+        {sortedFields.map((field: any, index: number) => (
           <div
             key={field.id}
-            className="p-2 border border-border rounded bg-surface flex items-center gap-2"
+            className="border border-border rounded bg-surface"
           >
-            <GripVertical size={14} className="opacity-50" />
-            <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
-              {index + 1}
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-medium text-text">{field.label}</div>
-              <div className="text-xs text-text-muted">
-                {field.id} • {field.type} • span {field.size}
-                {field.required && ' • required'}
+            <div className="p-2 flex items-center gap-2">
+              <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
+                {index + 1}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-text">{field.label}</div>
+                <div className="text-xs text-text-muted">
+                  {field.id} • {field.type} • span {field.size}
+                  {field.required && ' • required'}
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => onEditField(field)}
-              className="text-text-muted hover:text-text"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button
-              onClick={() => onRemoveField(section.id, subsection.id, field.id)}
-              className="text-error hover:text-error/80"
-            >
-              <Trash2 size={14} />
-            </button>
+            <div className="flex gap-1 p-2 pt-0">
+              <button
+                onClick={() => onMoveUp(section.id, subsection.id, field.id)}
+                disabled={index === 0}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                onClick={() => onMoveDown(section.id, subsection.id, field.id)}
+                disabled={index === sortedFields.length - 1}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <ChevronDown size={14} />
+              </button>
+              <button
+                onClick={() => onEditField(field)}
+                className="flex-1 px-2 py-1 text-xs bg-surface border border-border rounded text-text hover:bg-background transition-colors flex items-center justify-center"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                onClick={() => onRemoveField(section.id, subsection.id, field.id)}
+                className="flex-1 px-2 py-1 text-xs bg-error/20 border border-error/50 rounded text-error hover:bg-error/30 transition-colors flex items-center justify-center"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
     </div>
+  );
+};
+
+const SectionEditorModal = ({ section, onSave, onClose }: any) => {
+  const [editedSection, setEditedSection] = useState<Section>(section);
+
+  return (
+    <Modal isOpen={true} onClose={onClose} title={section.label ? "Edit Tab" : "Add Tab"} size="md">
+      <div className="space-y-4">
+        <Input
+          label="Tab Label"
+          value={editedSection.label}
+          onChange={(e) => setEditedSection({ ...editedSection, label: e.target.value })}
+          placeholder="e.g., Buyer Details"
+        />
+
+        <Input
+          label="Tab Value (identifier)"
+          value={editedSection.value}
+          onChange={(e) => setEditedSection({ ...editedSection, value: e.target.value })}
+          placeholder="e.g., buyer-details"
+        />
+
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary-outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => onSave(editedSection)}>
+            Save Tab
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const SubsectionEditorModal = ({ subsection, onSave, onClose }: any) => {
+  const [editedSubsection, setEditedSubsection] = useState<Subsection>(subsection);
+
+  return (
+    <Modal isOpen={true} onClose={onClose} title={subsection.title ? "Edit Section" : "Add Section"} size="md">
+      <div className="space-y-4">
+        <Input
+          label="Section Title"
+          value={editedSubsection.title}
+          onChange={(e) => setEditedSubsection({ ...editedSubsection, title: e.target.value })}
+          placeholder="e.g., Quote Dates"
+        />
+
+        <Input
+          label="Number of Columns"
+          type="number"
+          value={editedSubsection.columns.toString()}
+          onChange={(e) => setEditedSubsection({ ...editedSubsection, columns: parseInt(e.target.value) || 4 })}
+          placeholder="4"
+        />
+
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary-outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => onSave(editedSubsection)}>
+            Save Section
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 };
 
