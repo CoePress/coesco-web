@@ -429,8 +429,6 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
   // Performance results table section
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
-    const initLength = tableData[0]?.length || 0;
-    const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
 
     return (
       <Card className="mb-4 p-4">
@@ -447,28 +445,25 @@ const SummaryReport: React.FC<SummaryReportProps> = ({ data, isEditing }) => {
               </tr>
             </thead>
             <tbody>
-              {lengthRows.map((length) => {
-                const rowData = tableData.find((row: TableRowData) => row.length === length);
-                return (
-                  <tr key={length} className="bg-muted">
-                    <td className="border border-border p-2 text-center text-black dark:text-white">
-                      {rowData?.length || length}
-                    </td>
-                    <td className="border border-border p-2 text-center text-black dark:text-white">
-                      {rowData?.spm_at_fa1 || "#N/A"}
-                    </td>
-                    <td className="border border-border p-2 text-center text-black dark:text-white">
-                      {rowData?.fpm_fa1 || "#N/A"}
-                    </td>
-                    <td className="border border-border p-2 text-center text-black dark:text-white">
-                      {rowData?.spm_at_fa2 || "#N/A"}
-                    </td>
-                    <td className="border border-border p-2 text-center text-black dark:text-white">
-                      {rowData?.fpm_fa2 || "#N/A"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {tableData.map((rowData: TableRowData, index: number) => (
+                <tr key={index} className="bg-muted">
+                  <td className="border border-border p-2 text-center text-black dark:text-white">
+                    {typeof rowData.length === 'number' ? rowData.length.toFixed(4) : rowData.length || "#N/A"}
+                  </td>
+                  <td className="border border-border p-2 text-center text-black dark:text-white">
+                    {rowData.spm_at_fa1 || "#N/A"}
+                  </td>
+                  <td className="border border-border p-2 text-center text-black dark:text-white">
+                    {rowData.fpm_fa1 || "#N/A"}
+                  </td>
+                  <td className="border border-border p-2 text-center text-black dark:text-white">
+                    {rowData.spm_at_fa2 || "#N/A"}
+                  </td>
+                  <td className="border border-border p-2 text-center text-black dark:text-white">
+                    {rowData.fpm_fa2 || "#N/A"}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -111,13 +111,18 @@ def calculate_values(data: time_input, init_values: dict, feed_angle: int = 0, i
     
     # Calculate SPM based on cycle time and straightener speed limits
     natural_spm = 60 / cycle_time
-    spm_at_max_speed = data.str_max_sp_inch / length
     
-    if (natural_spm * length) < data.str_max_sp_inch:
-        # Use natural SPM, but ensure minimum of 1 for reasonable operation
-        strokes_per_minute = max(1, round(natural_spm))
-    else: 
-        strokes_per_minute = max(1, floor(spm_at_max_speed))
+    # Handle case when str_max_sp_inch is 0 or not set - use natural SPM
+    if data.str_max_sp_inch <= 0:
+        strokes_per_minute = natural_spm
+    else:
+        spm_at_max_speed = data.str_max_sp_inch / length
+        
+        if (natural_spm * length) < data.str_max_sp_inch:
+            # Use natural SPM
+            strokes_per_minute = natural_spm
+        else: 
+            strokes_per_minute = max(1, floor(spm_at_max_speed))
 
     return {
         "length": length,

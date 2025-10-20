@@ -1463,14 +1463,43 @@ def generate_minimum_feed_values(data: Dict[str, Any]) -> Dict[str, Any]:
                     "chartMinLength": 0.5,
                     "lengthIncrement": 0.5,
                     "feedAngle1": 180.0,
-                    "feedAngle2": 180.0,
-                    "calculations": feed_result
+                    "feedAngle2": 240.0,
+                    "ratio": feed_result.get("ratio", 3),
+                    "match": feed_result.get("match", 0),
+                    "matchCheck": feed_result.get("match_check", ""),
+                    "regen": feed_result.get("regen", 0),
+                    "maxVelocity": feed_result.get("max_vel", 0),
+                    "reflInertia": feed_result.get("refl_inertia", 0),
+                    "motorInertia": feed_result.get("motor_inertia", 0),
+                    "maxMotorRPM": feed_result.get("max_motor_rpm", 0),
+                    "settleTime": feed_result.get("settle_time", 0),
+                    "feedCheck": feed_result.get("feed_check", ""),
+                    "torque": {
+                        "frictional": feed_result.get("frictiaonal_torque", 0),
+                        "loop": feed_result.get("loop_torque", 0),
+                        "settle": feed_result.get("settle_torque", 0),
+                        "peak": feed_result.get("peak_torque", 0),
+                        "peakCheck": feed_result.get("peak_torque_check", ""),
+                        "acceleration": feed_result.get("acceleration_torque", 0),
+                        "accelerationCheck": feed_result.get("acceleration_torque_check", ""),
+                        "rms": {
+                            "motor": feed_result.get("motor_rms_torque", 0),
+                            "feedAngle1": feed_result.get("rms_torque_fa1", 0),
+                            "feedAngle1Check": feed_result.get("rms_torque_fa1_check", ""),
+                            "feedAngle2": feed_result.get("rms_torque_fa2", 0),
+                            "feedAngle2Check": feed_result.get("rms_torque_fa2_check", ""),
+                            "motorCheck": "",
+                            "motorPeak": feed_result.get("motor_peak_torque", 0)
+                        }
+                    },
+                    "tableValues": feed_result.get("table_values", [])
                 }
             },
             "common": {
                 "equipment": {
                     "feed": {
-                        "model": final_feed_model
+                        "model": final_feed_model,
+                        "maximumVelocity": feed_result.get("max_vel", 0)
                     }
                 }
             }

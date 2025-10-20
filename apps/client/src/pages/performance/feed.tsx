@@ -991,25 +991,15 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
   const performanceResultsSection = useMemo(() => {
     const tableData = localData.feed?.feed?.tableValues || [];
 
-
-    const initLength = tableData[0]?.length || 0;
-    const lengthRows = [initLength, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92];
-
-    // Skip memory optimization for now to fix the hooks error
-    const optimizedLengthRows = lengthRows;
-
-    // Prepare data for VirtualTable
-    const virtualTableData = optimizedLengthRows.map((length) => {
-      const rowData = tableData.find((row: TableRowData) => row.length === length);
-      return {
-        id: length,
-        length: rowData?.length || length,
-        spm_at_fa1: rowData?.spm_at_fa1 || "#N/A",
-        fpm_fa1: rowData?.fpm_fa1 || "#N/A",
-        spm_at_fa2: rowData?.spm_at_fa2 || "#N/A",
-        fpm_fa2: rowData?.fpm_fa2 || "#N/A",
-      };
-    });
+    // Use the actual calculated data instead of hardcoded length values
+    const virtualTableData = tableData.map((rowData: TableRowData, index: number) => ({
+      id: index,
+      length: rowData.length || 0,
+      spm_at_fa1: rowData.spm_at_fa1 || "#N/A",
+      fpm_fa1: rowData.fpm_fa1 || "#N/A",
+      spm_at_fa2: rowData.spm_at_fa2 || "#N/A",
+      fpm_fa2: rowData.fpm_fa2 || "#N/A",
+    }));
 
     const columns = [
       {
@@ -1017,7 +1007,7 @@ const Feed: React.FC<FeedProps> = ({ data, isEditing }) => {
         header: 'Length',
         className: 'text-center text-black dark:text-white',
         headerClassName: 'bg-muted !text-black dark:!text-white border border-border',
-        render: (value: any) => <span className="text-black dark:text-white">{value}</span>
+        render: (value: any) => <span className="text-black dark:text-white">{typeof value === 'number' ? value.toFixed(4) : value}</span>
       },
       {
         key: 'spm_at_fa1',
