@@ -1,8 +1,67 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 import type { IQueryBuilderResult, IQueryParams } from "@/types";
 
 export const prisma = new PrismaClient();
+
+const relationFieldCache = new Map<string, Set<string>>();
+const modelSoftDeleteCache = new Map<string, boolean>();
+
+function normalizeModelName(modelName: string): string {
+  const pascalModelName = modelName.charAt(0).toUpperCase() + modelName.slice(1);
+  const found = Prisma.dmmf.datamodel.models.find(m =>
+    m.name === modelName || m.name === pascalModelName,
+  );
+  return found?.name || modelName;
+}
+
+function modelHasSoftDelete(modelName: string): boolean {
+  const normalized = normalizeModelName(modelName);
+
+  if (modelSoftDeleteCache.has(normalized)) {
+    return modelSoftDeleteCache.get(normalized)!;
+  }
+
+  const model = Prisma.dmmf.datamodel.models.find(m => m.name === normalized);
+  const hasSoftDelete = model?.fields.some(f => f.name === "deletedAt") ?? false;
+
+  modelSoftDeleteCache.set(normalized, hasSoftDelete);
+  return hasSoftDelete;
+}
+
+function getListRelationFields(modelName: string): Set<string> {
+  const normalized = normalizeModelName(modelName);
+
+  if (relationFieldCache.has(normalized)) {
+    return relationFieldCache.get(normalized)!;
+  }
+
+  const model = Prisma.dmmf.datamodel.models.find(m => m.name === normalized);
+
+  if (!model) {
+    return new Set();
+  }
+
+  const listFields = new Set(
+    model.fields
+      .filter(field => field.kind === "object" && field.isList)
+      .map(field => field.name),
+  );
+
+  relationFieldCache.set(normalized, listFields);
+  return listFields;
+}
+
+function getRelationTargetModel(modelName: string, fieldName: string): string | null {
+  const normalized = normalizeModelName(modelName);
+  const model = Prisma.dmmf.datamodel.models.find(m => m.name === normalized);
+
+  if (!model)
+    return null;
+
+  const field = model.fields.find(f => f.name === fieldName);
+  return field?.kind === "object" && field.type ? field.type : null;
+}
 
 function normalizeSearchFields(searchFields?: Array<string | { field: string; weight: number }>) {
   return (searchFields || []).map(f =>
@@ -36,15 +95,17 @@ function parseComplexParam(param: any) {
   return param;
 }
 
-function buildNestedInclude(paths: string[]) {
+function buildNestedInclude(paths: string[], includeDeleted?: boolean | "only", modelName?: string) {
   const result: any = {};
   paths.forEach((path) => {
     const parts = path.split(".");
     let current = result;
+    let currentModel = modelName;
+
     parts.forEach((part, index) => {
       if (index === parts.length - 1) {
         if (!current[part] || current[part] === true) {
-          current[part] = true;
+          current[part] = applyDeletedAtFilter({}, includeDeleted, currentModel, part);
         }
       }
       else {
@@ -55,10 +116,44 @@ function buildNestedInclude(paths: string[]) {
           current[part] = { include: {} };
         }
         current = current[part].include;
+
+        if (currentModel) {
+          const nextModel = getRelationTargetModel(currentModel, part);
+          if (nextModel) {
+            currentModel = nextModel;
+          }
+        }
       }
     });
   });
   return result;
+}
+
+function applyDeletedAtFilter(config: any, includeDeleted?: boolean | "only", modelName?: string, fieldName?: string) {
+  if (includeDeleted === true) {
+    return config === true || (typeof config === "object" && Object.keys(config).length === 0) ? true : config;
+  }
+
+  if (modelName && fieldName) {
+    const listFields = getListRelationFields(modelName);
+    if (!listFields.has(fieldName)) {
+      return config === true || (typeof config === "object" && Object.keys(config).length === 0) ? true : config;
+    }
+
+    const targetModel = getRelationTargetModel(modelName, fieldName);
+    if (!targetModel || !modelHasSoftDelete(targetModel)) {
+      return config === true || (typeof config === "object" && Object.keys(config).length === 0) ? true : config;
+    }
+  }
+
+  const baseConfig = config === true || (typeof config === "object" && Object.keys(config).length === 0) ? {} : config;
+
+  if (includeDeleted === "only") {
+    return { ...baseConfig, where: { ...(baseConfig.where || {}), deletedAt: { not: null } } };
+  }
+  else {
+    return { ...baseConfig, where: { ...(baseConfig.where || {}), deletedAt: null } };
+  }
 }
 
 function processFilterValue(value: any): any {
@@ -92,7 +187,7 @@ function processFilterValue(value: any): any {
   return value;
 }
 
-function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderResult) {
+function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderResult, includeDeleted?: boolean | "only", modelName?: string) {
   if (params.select) {
     const parsedSelect = parseComplexParam(params.select);
     if (Array.isArray(parsedSelect)) {
@@ -101,7 +196,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
           item => typeof item === "string" && item.includes("."),
         )
       ) {
-        result.select = buildNestedInclude(parsedSelect);
+        result.select = buildNestedInclude(parsedSelect, includeDeleted, modelName);
       }
       else {
         result.select = parsedSelect.reduce(
@@ -134,15 +229,15 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
           item => typeof item === "string" && item.includes("."),
         )
       ) {
-        result.include = buildNestedInclude(parsedInclude);
+        result.include = buildNestedInclude(parsedInclude, includeDeleted, modelName);
       }
       else {
         result.include = parsedInclude.reduce(
           (acc, field) => {
-            acc[field] = true;
+            acc[field] = applyDeletedAtFilter(true, includeDeleted, modelName, field);
             return acc;
           },
-          {} as Record<string, boolean>,
+          {} as Record<string, any>,
         );
       }
     }
@@ -152,7 +247,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
   }
 }
 
-export function buildQuery(params: IQueryParams<any>, searchFields?: Array<string | { field: string; weight: number }>): IQueryBuilderResult {
+export function buildQuery(params: IQueryParams<any>, searchFields?: Array<string | { field: string; weight: number }>, includeDeleted?: boolean | "only", modelName?: string): IQueryBuilderResult {
   const page = typeof params.page === "string" ? Number.parseInt(params.page, 10) : (params.page || 1);
   const result: IQueryBuilderResult = {
     where: {},
@@ -247,7 +342,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
     }
   }
 
-  buildSelectOrInclude(params, result);
+  buildSelectOrInclude(params, result, includeDeleted, modelName);
 
   return result;
 }

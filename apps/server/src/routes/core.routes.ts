@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { chatController, lockController, settingsController, tagController } from "@/controllers";
+import { chatController, lockController, searchController, settingsController, tagController } from "@/controllers";
 
 const router = Router();
 
@@ -43,5 +43,8 @@ router.get("/tags", tagController.getTags);
 router.get("/tags/:tagId", tagController.getTag);
 router.patch("/tags/:tagId", tagController.updateTag);
 router.delete("/tags/:tagId", tagController.deleteTag);
+
+// Search
+router.get("/search", searchController.searchEntities);
 
 export default router;

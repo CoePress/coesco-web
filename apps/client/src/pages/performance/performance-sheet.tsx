@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { Save, Lock, Link } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";
 import { useSocket } from "@/contexts/socket.context";
@@ -10,17 +10,15 @@ import { ms } from "@/utils";
 import Loader from "@/components/ui/loader";
 
 type PerformanceTabValue = string;
-
+type ModalType = 'links' | 'save-confirmation' | 'cancel-confirmation' | 'continue' | 'delete-link' | 'create-link' | null;
 
 const PerformanceSheet = () => {
   const [activeTab, setActiveTab] = useState<PerformanceTabValue>("");
   const [isLocked, setIsLocked] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [lockInfo, setLockInfo] = useState<any>(null);
-  const [showLinksModal, setShowLinksModal] = useState(false);
-  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
-  const [showContinueModal, setShowContinueModal] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [linkToDelete, setLinkToDelete] = useState<any>(null);
   const [addMode, setAddMode] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [originalData, setOriginalData] = useState<Record<string, any>>({});
@@ -29,6 +27,11 @@ const PerformanceSheet = () => {
     entityType: string;
     entityId: string;
   }>({ entityType: "quote", entityId: "" });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const { id: performanceSheetId } = useParams();
   const { emit, isLockConnected, onLockChanged } = useSocket();
   const { user } = useAuth();
@@ -37,8 +40,10 @@ const PerformanceSheet = () => {
   const { patch: updateSheet } = useApi();
   const { post: createLink } = useApi();
   const { delete: deleteLink } = useApi();
+  const { get: searchEntities } = useApi<any>();
   const toast = useToast();
   const lockExtendIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const queryParams = useMemo(() => {
     return {
@@ -95,6 +100,21 @@ const PerformanceSheet = () => {
   const links = useMemo(() => {
     return performanceSheet?.data?.links || [];
   }, [performanceSheet]);
+
+  const getEntityPath = (entityType: string, entityId: string) => {
+    switch (entityType) {
+      case "company":
+        return `/sales/companies/${entityId}`;
+      case "contact":
+        return `/sales/contacts/${entityId}`;
+      case "journey":
+        return `/sales/journeys/${entityId}`;
+      case "quote":
+        return `/sales/quotes/${entityId}`;
+      default:
+        return "#";
+    }
+  };
 
   const fetchSheet = async () => {
     if (!performanceSheetId) return;
@@ -154,7 +174,7 @@ const PerformanceSheet = () => {
         const hasChanges = JSON.stringify(saved.formData) !== JSON.stringify(data);
         if (hasChanges) {
           setSavedProgress(saved);
-          setShowContinueModal(true);
+          setModalType('continue');
         }
       }
     }
@@ -245,13 +265,53 @@ const PerformanceSheet = () => {
       setFormData(savedProgress.formData || {});
       toast.success('Continuing from where you left off');
     }
-    setShowContinueModal(false);
+    setModalType(null);
   };
 
   const handleStartFresh = () => {
     clearLocalStorage();
     toast.info('Starting fresh with original data');
-    setShowContinueModal(false);
+    setModalType(null);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setSelectedEntity(null);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!value.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await searchEntities(`/core/search`, {
+          entityType: newLink.entityType,
+          query: value,
+          limit: "5",
+        });
+        setSearchResults(response?.data || []);
+        setShowResults(true);
+      } catch (error) {
+        console.error("Search failed:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleSelectEntity = (entity: any) => {
+    setSelectedEntity(entity);
+    setSearchQuery(entity.label);
+    setNewLink({ ...newLink, entityId: entity.id });
+    setShowResults(false);
   };
 
   const handleEdit = () => {
@@ -284,7 +344,7 @@ const PerformanceSheet = () => {
 
   const handleCancel = () => {
     if (hasChanges) {
-      setShowCancelConfirmation(true);
+      setModalType('cancel-confirmation');
       return;
     }
 
@@ -296,7 +356,7 @@ const PerformanceSheet = () => {
 
     if (!performanceSheetId || !isLockConnected) {
       toast.error("Cannot release lock. Connection not available.");
-      setShowCancelConfirmation(false);
+      setModalType(null);
       return;
     }
 
@@ -312,7 +372,7 @@ const PerformanceSheet = () => {
           setIsEditing(false);
           setIsLocked(false);
           setLockInfo(null);
-          setShowCancelConfirmation(false);
+          setModalType(null);
           clearLocalStorage();
           toast.info("Edit cancelled and lock released.");
 
@@ -322,14 +382,14 @@ const PerformanceSheet = () => {
           }
         } else {
           toast.error("Failed to release lock.");
-          setShowCancelConfirmation(false);
+          setModalType(null);
         }
       }
     );
   };
 
   const handleSave = () => {
-    setShowSaveConfirmation(true);
+    setModalType('save-confirmation');
   };
 
   const handleConfirmSave = async () => {
@@ -342,7 +402,7 @@ const PerformanceSheet = () => {
 
       if (!isLockConnected) {
         toast.error("Cannot release lock. Connection not available.");
-        setShowSaveConfirmation(false);
+        setModalType(null);
         return;
       }
 
@@ -358,7 +418,7 @@ const PerformanceSheet = () => {
             setIsEditing(false);
             setIsLocked(false);
             setLockInfo(null);
-            setShowSaveConfirmation(false);
+            setModalType(null);
             setOriginalData(formData);
             clearLocalStorage();
             toast.success("Changes saved and lock released.");
@@ -369,14 +429,14 @@ const PerformanceSheet = () => {
             }
           } else {
             toast.error("Failed to release lock.");
-            setShowSaveConfirmation(false);
+            setModalType(null);
           }
         }
       );
     } catch (error) {
       console.error("Failed to save performance sheet:", error);
       toast.error("Failed to save performance sheet.");
-      setShowSaveConfirmation(false);
+      setModalType(null);
     }
   };
 
@@ -496,7 +556,7 @@ const PerformanceSheet = () => {
     if (isLocked && lockInfo?.userId && lockInfo.userId !== user?.id) {
       return (
         <div className="flex gap-2">
-          <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
+          <Button variant="secondary-outline" onClick={() => setModalType('links')}>
             <Link size={16} /> Links ({links.length})
           </Button>
           <Button variant="secondary" disabled>
@@ -508,7 +568,7 @@ const PerformanceSheet = () => {
 
     return (
       <div className="flex gap-2">
-        <Button variant="secondary-outline" onClick={() => setShowLinksModal(true)}>
+        <Button variant="secondary-outline" onClick={() => setModalType('links')}>
           <Link size={16} /> Links ({links.length})
         </Button>
         <Button variant="secondary" onClick={handleEdit} disabled={!isLockConnected}>
@@ -518,6 +578,319 @@ const PerformanceSheet = () => {
     );
   };
 
+  const closeModal = () => {
+    setModalType(null);
+    if (modalType === 'links') {
+      setAddMode(false);
+      setNewLink({ entityType: "quote", entityId: "" });
+      setSearchQuery("");
+      setSearchResults([]);
+      setSelectedEntity(null);
+      setShowResults(false);
+    }
+    if (modalType === 'delete-link') {
+      setLinkToDelete(null);
+    }
+  };
+
+  const getModalConfig = () => {
+    switch (modalType) {
+      case 'links':
+        return { title: 'Links', size: 'sm' as const, overflow: 'visible' as const };
+      case 'save-confirmation':
+        return { title: 'Confirm Save', size: 'xs' as const };
+      case 'cancel-confirmation':
+        return { title: 'Unsaved Changes', size: 'xs' as const };
+      case 'continue':
+        return { title: 'Continue Previous Session?', size: 'xs' as const };
+      case 'delete-link':
+        return { title: 'Confirm Delete', size: 'xs' as const };
+      case 'create-link':
+        return { title: 'Confirm Add Link', size: 'xs' as const };
+      default:
+        return { title: '', size: 'sm' as const };
+    }
+  };
+
+  const renderModalContent = () => {
+    switch (modalType) {
+      case 'links':
+        return !addMode ? (
+          <div>
+            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
+              {links.length === 0 ? (
+                <div className="text-center text-text-muted text-sm py-4">
+                  No links added yet
+                </div>
+              ) : (
+                links.map((link: any) => (
+                  <div
+                    key={link.id}
+                    className="flex items-center px-2 py-1 justify-between rounded text-sm border border-transparent group">
+                    <RouterLink
+                      to={getEntityPath(link.entityType, link.entityId)}
+                      className="flex items-center gap-2 flex-1 hover:underline rounded px-1 py-0.5 -mx-1 hover:bg-surface/50 transition">
+                      <span className="font-medium capitalize text-text-muted">
+                        {link.entityType}
+                      </span>
+                      <span className="text-xs text-text">
+                        {link.label || link.entityId}
+                      </span>
+                    </RouterLink>
+                    <button
+                      onClick={() => {
+                        setLinkToDelete(link);
+                        setModalType('delete-link');
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 text-xs ml-2 shrink-0">
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setAddMode(true)}
+              className="w-full">
+              Add
+            </Button>
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setModalType('create-link');
+            }}>
+            <Select
+              label="Entity Type"
+              name="entityType"
+              value={newLink.entityType}
+              onChange={(e) => {
+                setNewLink({ ...newLink, entityType: e.target.value, entityId: "" });
+                setSearchQuery("");
+                setSearchResults([]);
+                setSelectedEntity(null);
+                setShowResults(false);
+              }}
+              options={[
+                { value: "quote", label: "Quote" },
+                { value: "journey", label: "Journey" },
+                { value: "contact", label: "Contact" },
+                { value: "company", label: "Company" },
+              ]}
+            />
+            <div className="relative">
+              <Input
+                label="Search Entity"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                required
+                autoComplete="off"
+                placeholder={`Search for ${newLink.entityType}...`}
+              />
+              {isSearching && (
+                <div className="absolute right-3 top-9 text-text-muted text-sm">
+                  Searching...
+                </div>
+              )}
+              {showResults && searchResults.length > 0 && (
+                <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg max-h-60 overflow-y-auto">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      type="button"
+                      onClick={() => handleSelectEntity(result)}
+                      className="w-full text-left px-3 py-2 hover:bg-surface transition text-sm text-text">
+                      {result.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showResults && searchResults.length === 0 && !isSearching && (
+                <div className="absolute z-[9999] w-full mt-1 bg-foreground border border-border rounded shadow-lg">
+                  <div className="px-3 py-2 text-sm text-text-muted">
+                    No results found
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="secondary-outline"
+                size="md"
+                onClick={() => {
+                  setAddMode(false);
+                  setNewLink({ entityType: "quote", entityId: "" });
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setSelectedEntity(null);
+                  setShowResults(false);
+                }}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                type="submit"
+                disabled={!selectedEntity}>
+                Save
+              </Button>
+            </div>
+          </form>
+        );
+
+      case 'save-confirmation':
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-text">
+              Are you sure you want to save your changes and release the lock?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => setModalType(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmSave}>
+                Save
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'cancel-confirmation':
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-text">
+              You have unsaved changes. Are you sure you want to discard them and release the lock?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => setModalType(null)}>
+                Keep Editing
+              </Button>
+              <Button
+                variant="primary"
+                onClick={performCancel}>
+                Discard Changes
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'continue':
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-text">
+              You have unsaved changes from a previous session. Would you like to continue where you left off?
+            </p>
+            {savedProgress && (
+              <div className="text-text-muted text-sm">
+                <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={handleStartFresh}>
+                Start Fresh
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleContinueProgress}>
+                Continue
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'delete-link':
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-text">
+              Are you sure you want to delete this link?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => {
+                  setModalType('links');
+                  setLinkToDelete(null);
+                }}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  if (!linkToDelete) return;
+                  try {
+                    await deleteLink(`/sales/performance-links/${linkToDelete.id}`);
+                    toast.success("Link deleted");
+                    setModalType(null);
+                    setLinkToDelete(null);
+                    fetchSheet();
+                  } catch (error) {
+                    toast.error("Failed to delete link");
+                    setModalType(null);
+                  }
+                }}>
+                Delete
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'create-link':
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-text">
+              Are you sure you want to add this link?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary-outline"
+                onClick={() => setModalType('links')}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  try {
+                    await createLink("/sales/performance-links", {
+                      performanceSheetId,
+                      entityType: newLink.entityType,
+                      entityId: newLink.entityId,
+                    });
+                    toast.success("Link created");
+                    setModalType(null);
+                    setAddMode(false);
+                    setNewLink({ entityType: "quote", entityId: "" });
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setSelectedEntity(null);
+                    setShowResults(false);
+                    fetchSheet();
+                  } catch (error) {
+                    toast.error("Failed to create link");
+                    setModalType(null);
+                  }
+                }}>
+                Add Link
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   if (sheetLoading) {
     return (
@@ -578,201 +951,12 @@ const PerformanceSheet = () => {
       </div>
 
       <Modal
-        isOpen={showLinksModal}
-        onClose={() => {
-          setShowLinksModal(false);
-          setAddMode(false);
-          setNewLink({ entityType: "quote", entityId: "" });
-        }}
-        title="Links"
-        size="sm">
-        {!addMode ? (
-          <div>
-            <div className="bg-foreground rounded border border-border p-2 flex flex-col gap-1 mb-4">
-              {links.length === 0 ? (
-                <div className="text-center text-text-muted text-sm py-4">
-                  No links added yet
-                </div>
-              ) : (
-                links.map((link: any) => (
-                  <div
-                    key={link.id}
-                    className="flex items-center px-2 py-1 justify-between rounded hover:bg-surface/80 transition text-sm border border-transparent group">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium capitalize text-text-muted">
-                        {link.entityType}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        #{link.entityId}
-                      </span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await deleteLink(`/sales/performance-sheet-links/${link.id}`);
-                          toast.success("Link deleted");
-                          fetchSheet();
-                        } catch (error) {
-                          toast.error("Failed to delete link");
-                        }
-                      }}
-                      className="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 text-xs">
-                      Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setAddMode(true)}
-              className="w-full">
-              Add
-            </Button>
-          </div>
-        ) : (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                await createLink("/sales/performance-sheet-links", {
-                  performanceSheetId,
-                  entityType: newLink.entityType,
-                  entityId: newLink.entityId,
-                });
-                toast.success("Link created");
-                setAddMode(false);
-                setNewLink({ entityType: "quote", entityId: "" });
-                fetchSheet();
-              } catch (error) {
-                toast.error("Failed to create link");
-              }
-            }}>
-            <Select
-              label="Entity Type"
-              name="entityType"
-              value={newLink.entityType}
-              onChange={(e) =>
-                setNewLink({ ...newLink, entityType: e.target.value })
-              }
-              options={[
-                { value: "quote", label: "Quote" },
-                { value: "journey", label: "Journey" },
-                { value: "contact", label: "Contact" },
-                { value: "company", label: "Company" },
-              ]}
-            />
-            <Input
-              label="Entity ID"
-              type="text"
-              value={newLink.entityId}
-              onChange={(e) =>
-                setNewLink({ ...newLink, entityId: e.target.value })
-              }
-              required
-              autoComplete="off"
-            />
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="secondary-outline"
-                size="md"
-                onClick={() => {
-                  setAddMode(false);
-                  setNewLink({ entityType: "quote", entityId: "" });
-                }}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                type="submit"
-                disabled={!newLink.entityId}>
-                Save
-              </Button>
-            </div>
-          </form>
-        )}
-      </Modal>
-
-      <Modal
-        isOpen={showSaveConfirmation}
-        onClose={() => setShowSaveConfirmation(false)}
-        title="Confirm Save"
-        size="xs">
-        <div className="space-y-4">
-          <p className="text-sm text-text">
-            Are you sure you want to save your changes and release the lock?
-          </p>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary-outline"
-              onClick={() => setShowSaveConfirmation(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirmSave}>
-              Save
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showCancelConfirmation}
-        onClose={() => setShowCancelConfirmation(false)}
-        title="Unsaved Changes"
-        size="xs">
-        <div className="space-y-4">
-          <p className="text-sm text-text">
-            You have unsaved changes. Are you sure you want to discard them and release the lock?
-          </p>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary-outline"
-              onClick={() => setShowCancelConfirmation(false)}>
-              Keep Editing
-            </Button>
-            <Button
-              variant="primary"
-              onClick={performCancel}>
-              Discard Changes
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showContinueModal}
-        onClose={() => {}}
-        title="Continue Previous Session?"
-        size="xs">
-        <div className="space-y-4">
-          <p className="text-sm text-text">
-            You have unsaved changes from a previous session. Would you like to continue where you left off?
-          </p>
-          {savedProgress && (
-            <div className="text-text-muted text-sm">
-              <p>Last saved: {new Date(savedProgress.savedAt).toLocaleString()}</p>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary-outline"
-              onClick={handleStartFresh}>
-              Start Fresh
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleContinueProgress}>
-              Continue
-            </Button>
-          </div>
-        </div>
+        isOpen={modalType !== null}
+        onClose={modalType === 'continue' ? () => {} : closeModal}
+        title={getModalConfig().title}
+        size={getModalConfig().size}
+        overflow={getModalConfig().overflow}>
+        {renderModalContent()}
       </Modal>
     </div>
   );

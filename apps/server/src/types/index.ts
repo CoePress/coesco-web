@@ -21,6 +21,7 @@ export interface IQueryParams<T> {
   dateTo?: Date | string;
   include?: string[] | Record<string, any> | string;
   select?: string[] | Record<string, any> | string;
+  includeDeleted?: boolean | "only";
 }
 
 export interface IQueryBuilderResult {
