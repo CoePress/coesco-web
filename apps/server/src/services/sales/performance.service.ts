@@ -52,7 +52,7 @@ export class PerformanceService {
         result.data.links.map(async (link: any) => {
           const label = await this.getLabelForEntity(link.entityType, link.entityId);
           return { ...link, label };
-        })
+        }),
       );
       result.data.links = enrichedLinks;
     }
@@ -101,7 +101,8 @@ export class PerformanceService {
         default:
           return entityId;
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Error fetching label for ${entityType} ${entityId}:`, error);
       return entityId;
     }
