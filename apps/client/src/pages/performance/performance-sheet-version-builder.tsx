@@ -6,13 +6,12 @@ import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
 
 type FieldType = 'text' | 'number' | 'date' | 'textarea' | 'select' | 'checkbox';
-type FieldSize = 'sm' | 'md' | 'lg' | 'full';
 
 interface Field {
   id: string;
   label: string;
   type: FieldType;
-  size: FieldSize;
+  size: number;
   sequence: number;
   required: boolean;
   default?: any;
@@ -53,7 +52,7 @@ const PerformanceSheetVersionBuilder = () => {
     if (!id) return;
 
     setLoading(true);
-    const response = await get(`/sales/performance-sheet-versions/${id}`);
+    const response = await get(`/sales/performance-versions/${id}`);
 
     if (response?.success && response.data) {
       setVersionData(response.data);
@@ -86,12 +85,12 @@ const PerformanceSheetVersionBuilder = () => {
     if (!id) return;
 
     try {
-      await patch(`/sales/performance-sheet-versions/${id}`, {
+      await patch(`/sales/performance-versions/${id}`, {
         sections: sections
       });
 
       toast.success('Version updated successfully!');
-      navigate(`/sales/performance-sheet-versions`);
+      navigate(`/admin/performance-sheet-versions`);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save changes');
@@ -99,7 +98,7 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/sales/performance-sheet-versions`);
+    navigate(`/admin/performance-sheet-versions`);
   };
 
   const addSection = () => {
@@ -109,7 +108,7 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
-      label: 'New Section',
+      label: 'New Tab',
       value: `section-${Date.now()}`,
       sequence: maxSequence + 1,
       sections: []
@@ -152,9 +151,9 @@ const PerformanceSheetVersionBuilder = () => {
 
     const newSubsection: Subsection = {
       id: `subsection-${Date.now()}`,
-      title: 'New Subsection',
+      title: 'New Section',
       sequence: maxSequence + 1,
-      columns: 2,
+      columns: 4,
       fields: []
     };
 
@@ -211,7 +210,7 @@ const PerformanceSheetVersionBuilder = () => {
       id: 'new.field',
       label: 'New Field',
       type: 'text',
-      size: 'md',
+      size: 1,
       sequence: maxSequence + 1,
       required: false
     };
@@ -286,7 +285,7 @@ const PerformanceSheetVersionBuilder = () => {
     return (
       <div className="w-full flex-1 flex flex-col items-center justify-center">
         <div className="text-error text-lg mb-4">Version not found</div>
-        <Button onClick={() => navigate('/sales/performance-sheet-versions')}>
+        <Button onClick={() => navigate('/admin/performance-sheet-versions')}>
           Back to Versions
         </Button>
       </div>
@@ -357,7 +356,7 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
   return (
     <div className="w-64 border border-border rounded bg-foreground flex flex-col">
       <div className="p-2 border-b flex items-center justify-between">
-        <h3 className="text-sm text-text-muted">Sections (Tabs)</h3>
+        <h3 className="text-sm text-text-muted">Tabs</h3>
         <Button onClick={onAddSection} size="sm" variant="secondary-outline">
           <Plus size={14} />
         </Button>
@@ -400,7 +399,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
   if (!section) {
     return (
       <div className="flex-1 border border-border rounded bg-foreground flex items-center justify-center">
-        <div className="text-text-muted text-sm">Select a section to view subsections</div>
+        <div className="text-text-muted text-sm">Select a tab to view sections</div>
       </div>
     );
   }
@@ -408,7 +407,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
   return (
     <div className="flex-1 border border-border rounded bg-foreground flex flex-col">
       <div className="p-2 border-b flex items-center justify-between">
-        <h3 className="text-sm text-text-muted">Subsections</h3>
+        <h3 className="text-sm text-text-muted">Sections</h3>
         <Button onClick={() => onAddSubsection(section.id)} size="sm" variant="secondary-outline">
           <Plus size={14} />
         </Button>
@@ -429,18 +428,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
                 <Input
                   value={subsection.title}
                   onChange={(e) => onUpdateSubsection(section.id, subsection.id, { title: e.target.value })}
-                  placeholder="Subsection title"
-                  className="mb-1"
-                />
-                <Select
-                  value={subsection.columns.toString()}
-                  onChange={(e) => onUpdateSubsection(section.id, subsection.id, { columns: parseInt(e.target.value) })}
-                  options={[
-                    { value: '1', label: '1 Column' },
-                    { value: '2', label: '2 Columns' },
-                    { value: '3', label: '3 Columns' },
-                    { value: '4', label: '4 Columns' }
-                  ]}
+                  placeholder="Section title"
                 />
               </div>
               <button
@@ -467,7 +455,7 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
   if (!subsection) {
     return (
       <div className="flex-1 border border-border rounded bg-foreground flex items-center justify-center">
-        <div className="text-text-muted text-sm">Select a subsection to view fields</div>
+        <div className="text-text-muted text-sm">Select a section to view fields</div>
       </div>
     );
   }
@@ -493,7 +481,7 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
             <div className="flex-1">
               <div className="text-sm font-medium text-text">{field.label}</div>
               <div className="text-xs text-text-muted">
-                {field.id} • {field.type} • {field.size}
+                {field.id} • {field.type} • span {field.size}
                 {field.required && ' • required'}
               </div>
             </div>
@@ -528,11 +516,11 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
     { value: 'checkbox', label: 'Checkbox' }
   ];
 
-  const fieldSizes: { value: FieldSize; label: string }[] = [
-    { value: 'sm', label: 'Small' },
-    { value: 'md', label: 'Medium' },
-    { value: 'lg', label: 'Large' },
-    { value: 'full', label: 'Full Width' }
+  const fieldSizes: { value: string; label: string }[] = [
+    { value: '1', label: 'Span 1 Column' },
+    { value: '2', label: 'Span 2 Columns' },
+    { value: '3', label: 'Span 3 Columns' },
+    { value: '4', label: 'Span 4 Columns (Full Width)' }
   ];
 
   return (
@@ -560,9 +548,9 @@ const FieldEditorModal = ({ field, onSave, onClose }: any) => {
         />
 
         <Select
-          label="Size"
-          value={editedField.size}
-          onChange={(e) => setEditedField({ ...editedField, size: e.target.value as FieldSize })}
+          label="Size (Column Span)"
+          value={editedField.size.toString()}
+          onChange={(e) => setEditedField({ ...editedField, size: parseInt(e.target.value) })}
           options={fieldSizes}
         />
 

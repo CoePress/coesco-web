@@ -480,18 +480,9 @@ const PerformanceSheet = () => {
     };
 
     const getSizeClass = () => {
-      switch (field.size) {
-        case "sm":
-          return "col-span-1";
-        case "md":
-          return "col-span-1";
-        case "lg":
-          return "col-span-2";
-        case "full":
-          return "col-span-full";
-        default:
-          return "col-span-1";
-      }
+      const span = field.size || 1;
+      if (span >= 4) return "col-span-full";
+      return `col-span-${span}`;
     };
 
     const renderInput = () => {
