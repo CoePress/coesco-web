@@ -259,16 +259,17 @@ enum CompanyStatus {
 }
 
 model Contact {
-  id          String    @id @default(uuid())
+  id          String      @id @default(uuid())
   companyId   String
   firstName   String
   lastName    String?
   email       String?
   phone       String?
   title       String?
-  isPrimary   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  type        ContactType @default(Sales)
+  isPrimary   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?
   createdById String
   updatedById String
@@ -279,6 +280,15 @@ model Contact {
 
   @@index([createdById])
   @@map("contacts")
+}
+
+enum ContactType {
+  Accounting
+  Engineering
+  Inactive
+  Left_Company
+  Parts_Service
+  Sales
 }
 
 model Address {
@@ -352,18 +362,19 @@ model Journey {
   @@map("journeys")
 }
 
-model JourneyNote {
-  id        String    @id @default(uuid())
-  journeyId String
-  type      String    @default("note")
-  body      String
-  createdBy String?
-  updatedBy String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+model Note {
+  id         String    @id @default(uuid())
+  entityId   String
+  entityType String
+  type       String    @default("note")
+  body       String
+  createdBy  String?
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 
-  @@map("journey_notes")
+  @@map("notes")
 }
 
 enum JourneyStatus {

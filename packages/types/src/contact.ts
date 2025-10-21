@@ -1,4 +1,6 @@
 // Auto-generated from Prisma schema
+import { ContactType } from './contact-type';
+
 export interface Contact {
   id?: string;
   companyId: string;
@@ -7,6 +9,7 @@ export interface Contact {
   email?: string;
   phone?: string;
   title?: string;
+  type?: ContactType;
   isPrimary?: boolean;
   createdAt?: Date | string;
   updatedAt: Date | string;

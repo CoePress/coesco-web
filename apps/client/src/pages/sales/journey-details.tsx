@@ -238,9 +238,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       setIsLoadingNotes(true);
       try {
         const journeyId = journey.ID || journey.id;
-        const noteData = await api.get('/core/journey-notes', {
+        const noteData = await api.get('/core/notes', {
           filter: JSON.stringify({
-            journeyId: journeyId,
+            entityId: journeyId,
+            entityType: "journey",
             type: "note"
           }),
           sort: 'createdAt',
@@ -265,9 +266,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
       setIsLoadingNextSteps(true);
       try {
         const journeyId = journey.ID || journey.id;
-        const nextStepData = await api.get('/core/journey-notes', {
+        const nextStepData = await api.get('/core/notes', {
           filter: JSON.stringify({
-            journeyId: journeyId,
+            entityId: journeyId,
+            entityType: "journey",
             type: "next_step"
           }),
           sort: 'createdAt',
@@ -291,9 +293,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setIsCreatingNote(true);
     try {
       const journeyId = journey.ID || journey.id;
-      const newNote = await api.post('/core/journey-notes', {
+      const newNote = await api.post('/core/notes', {
         body: newNoteBody.trim(),
-        journeyId: journeyId,
+        entityId: journeyId,
+        entityType: "journey",
         type: "note",
         createdBy: employee?.initials
       });
@@ -314,9 +317,10 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     setIsCreatingNextStep(true);
     try {
       const journeyId = journey.ID || journey.id;
-      const newNextStep = await api.post('/core/journey-notes', {
+      const newNextStep = await api.post('/core/notes', {
         body: newNextStepBody.trim(),
-        journeyId: journeyId,
+        entityId: journeyId,
+        entityType: "journey",
         type: "next_step",
         createdBy: employee?.initials
       });
@@ -341,7 +345,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     if (!editingNoteId || !editingNoteBody.trim()) return;
     setIsSaving(true);
     try {
-      const result = await api.patch(`/core/journey-notes/${editingNoteId}`, {
+      const result = await api.patch(`/core/notes/${editingNoteId}`, {
         body: editingNoteBody.trim()
       });
       if (result?.success && result.data) {
@@ -372,7 +376,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     if (!noteToDelete) return;
     setIsSaving(true);
     try {
-      const result = await api.delete(`/core/journey-notes/${noteToDelete.id}`);
+      const result = await api.delete(`/core/notes/${noteToDelete.id}`);
       if (result !== null) {
         setJourneyNotes(prev => prev.filter(note => note.id !== noteToDelete.id));
         setNoteToDelete(null);
@@ -394,7 +398,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     if (!editingNextStepId || !editingNextStepBody.trim()) return;
     setIsSaving(true);
     try {
-      const result = await api.patch(`/core/journey-notes/${editingNextStepId}`, {
+      const result = await api.patch(`/core/notes/${editingNextStepId}`, {
         body: editingNextStepBody.trim()
       });
       if (result?.success && result.data) {
@@ -425,7 +429,7 @@ function JourneyDetailsTab({ journey, journeyContacts, updateJourney, setJourney
     if (!nextStepToDelete) return;
     setIsSaving(true);
     try {
-      const result = await api.delete(`/core/journey-notes/${nextStepToDelete.id}`);
+      const result = await api.delete(`/core/notes/${nextStepToDelete.id}`);
       if (result !== null) {
         setJourneyNextSteps(prev => prev.filter(step => step.id !== nextStepToDelete.id));
         setNextStepToDelete(null);
