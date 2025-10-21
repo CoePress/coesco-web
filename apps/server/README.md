@@ -132,35 +132,60 @@ sudo systemctl stop fanuc.service
 sudo systemctl status fanuc.service
 journalctl -f --output=cat -u fanuc.service
 
+## Deployment Setup
+
+### First-Time Setup: SSH Keys (One-time)
+
+To deploy without password prompts, set up SSH key authentication:
+
+**Windows (PowerShell):**
+```powershell
+# Create .ssh directory if it doesn't exist
+mkdir $env:USERPROFILE\.ssh -ErrorAction SilentlyContinue
+
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N ""
+
+# Copy key to production server (will ask for password one last time)
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh administrator@cp-portal-1 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && chmod 700 ~/.ssh"
+```
+
+**Linux/Mac:**
+```bash
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+
+# Copy key to production server
+ssh-copy-id administrator@cp-portal-1
+```
+
+**On Production Server (passwordless sudo):**
+```bash
+# SSH into production
+ssh administrator@cp-portal-1
+
+# Set up passwordless sudo
+echo 'administrator ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/administrator
+sudo chmod 0440 /etc/sudoers.d/administrator
+
+exit
+```
+
+After setup, you can deploy without entering any passwords.
+
 ## Server Deployment
 
-```bash
-# 1. Prune the monorepo for your server app (source only)
-turbo prune @coesco/server --out-dir deploy
+Run the deployment script:
 
-# 2. Send ONLY the source files to production
-cd deploy
-scp -r . administrator@cp-portal-1:/home/administrator/coesco/
-
-# 3. Install dependencies on production
-cd /home/administrator/coesco
-npm install
-
-# 4. Run database migrations
-cd apps/server
-npm run db:migrate:deploy
-
-# 5. Generate Prisma client
-npm run db:generate
-
-# 6. Build the server app
-cd ../..
-turbo run build --filter=@coesco/server
-
-# 7. Restart the service
-sudo systemctl restart server.service
-
-# 8. Check service status
-sudo systemctl status server.service
-journalctl -f --output=cat -u server.service
+```powershell
+.\scripts\server-deploy.ps1
 ```
+
+This script handles:
+1. Pruning the monorepo
+2. Deleting old source files
+3. Uploading new files
+4. Installing dependencies
+5. Running database migrations
+6. Building the application
+7. Restarting the service
