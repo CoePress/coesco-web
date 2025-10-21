@@ -37,6 +37,26 @@ npm run db:generate
 npm run db:reset
 ```
 
+## Database Backups
+
+Automated daily backups run at 2:00 AM (America/New_York) via cron job.
+
+### Configuration
+
+```env
+BACKUP_DIR=./backups
+BACKUP_RETENTION_DAYS=14
+BACKUP_ENABLED=true
+```
+
+### Manual Backup
+
+```bash
+# Backups are created automatically
+# To restore:
+gunzip -c ./backups/backup-YYYY-MM-DD.sql.gz | psql "YOUR_DATABASE_URL"
+```
+
 ## API Key Management
 
 API keys are used for system-level access to the server endpoints via the `x-api-key` header.

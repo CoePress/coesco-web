@@ -55,6 +55,10 @@ const envSchema = z.object({
   QUOTE_DB: z.string(),
 
   API_KEYS: z.string().min(1).describe("Comma-separated list of valid API keys for system access"),
+
+  BACKUP_DIR: z.string().optional(),
+  BACKUP_RETENTION_DAYS: z.string().transform(Number).optional(),
+  BACKUP_ENABLED: z.string().transform(val => val === "true").default("true"),
 });
 
 const parsed = envSchema.safeParse(process.env);
