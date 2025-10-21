@@ -484,7 +484,7 @@ const PerformanceSheetVersionBuilder = () => {
 
       <div className="p-2 flex flex-col flex-1 overflow-hidden gap-2">
         <div className="flex-1 overflow-hidden">
-          <div className="flex h-full gap-2">
+          <div className="grid grid-cols-3 h-full gap-2">
             <SectionsPanel
               sections={sections}
               selectedSectionId={selectedSectionId}
@@ -601,7 +601,7 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
   const sortedSections = [...sections].sort((a, b) => a.sequence - b.sequence);
 
   return (
-    <div className="w-64 border border-border rounded bg-foreground flex flex-col">
+    <div className="border border-border rounded bg-foreground flex flex-col overflow-hidden">
       <div className="p-2 border-b flex items-center justify-between">
         <h3 className="text-sm text-text-muted">Tabs</h3>
         <Button onClick={onAddSection} size="sm" variant="secondary-outline">
@@ -624,6 +624,7 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
             >
               <div className="font-medium text-sm text-text">{section.label}</div>
               <div className="text-xs text-text-muted">{section.value}</div>
+              <div className="text-xs text-text-muted">{section.sections?.length || 0} sections</div>
             </div>
             <div className="flex gap-1 p-2 pt-0">
               <button
@@ -663,7 +664,7 @@ const SectionsPanel = ({ sections, selectedSectionId, onSelectSection, onAddSect
 const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, onAddSubsection, onEditSubsection, onRemoveSubsection, onMoveUp, onMoveDown }: any) => {
   if (!section) {
     return (
-      <div className="w-64 border border-border rounded bg-foreground flex items-center justify-center">
+      <div className="border border-border rounded bg-foreground flex items-center justify-center">
         <div className="text-text-muted text-sm">Select a tab to view sections</div>
       </div>
     );
@@ -672,7 +673,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
   const sortedSubsections = [...section.sections].sort((a: any, b: any) => a.sequence - b.sequence);
 
   return (
-    <div className="w-64 border border-border rounded bg-foreground flex flex-col">
+    <div className="border border-border rounded bg-foreground flex flex-col overflow-hidden">
       <div className="p-2 border-b flex items-center justify-between">
         <h3 className="text-sm text-text-muted">Sections</h3>
         <Button onClick={() => onAddSubsection(section.id)} size="sm" variant="secondary-outline">
@@ -694,6 +695,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
               onClick={() => onSelectSubsection(subsection.id)}
             >
               <div className="font-medium text-sm text-text">{subsection.title}</div>
+              <div className="text-xs text-text-muted">{subsection.id}</div>
               <div className="text-xs text-text-muted">{subsection.fields?.length || 0} fields</div>
             </div>
             <div className="flex gap-1 p-2 pt-0">
@@ -734,7 +736,7 @@ const SubsectionsPanel = ({ section, selectedSubsectionId, onSelectSubsection, o
 const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveField, onMoveUp, onMoveDown }: any) => {
   if (!subsection) {
     return (
-      <div className="flex-1 border border-border rounded bg-foreground flex items-center justify-center">
+      <div className="border border-border rounded bg-foreground flex items-center justify-center">
         <div className="text-text-muted text-sm">Select a section to view fields</div>
       </div>
     );
@@ -743,7 +745,7 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
   const sortedFields = [...subsection.fields].sort((a: any, b: any) => a.sequence - b.sequence);
 
   return (
-    <div className="flex-1 border border-border rounded bg-foreground flex flex-col">
+    <div className="border border-border rounded bg-foreground flex flex-col">
       <div className="p-2 border-b flex items-center justify-between">
         <h3 className="text-sm text-text-muted">Fields</h3>
         <Button onClick={() => onAddField(section.id, subsection.id)} size="sm" variant="secondary-outline">
