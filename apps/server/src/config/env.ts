@@ -53,6 +53,8 @@ const envSchema = z.object({
   QUOTE_HOST: z.string(),
   QUOTE_PORT: z.string(),
   QUOTE_DB: z.string(),
+
+  API_KEYS: z.string().min(1).describe("Comma-separated list of valid API keys for system access"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -66,6 +68,10 @@ export const env = parsed.data!;
 export const __dev__ = env.NODE_ENV === "development";
 export const __test__ = env.NODE_ENV === "test";
 export const __prod__ = env.NODE_ENV === "production";
+
+export const API_KEYS = new Set(
+  env.API_KEYS.split(",").map(key => key.trim()).filter(key => key.length > 0),
+);
 
 export const cookieOptions: CookieOptions = {
   httpOnly: true,

@@ -369,7 +369,7 @@ export const cookieOptions: CookieOptions = {
 ## Pre-Production Checklist
 
 ### Immediate (Before Any Production Deployment)
-- [ ] Remove hardcoded API keys and move to environment variables
+- [x] Remove hardcoded API keys and move to environment variables
 - [ ] Set up database migrations (convert from `db push` to `migrate`)
 - [ ] Configure automated database backups with tested restore procedures
 - [ ] Increase test coverage to minimum 70%

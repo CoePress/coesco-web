@@ -10,6 +10,44 @@ npx prisma db push
 
 npx prisma generate
 
+## API Key Management
+
+API keys are used for system-level access to the server endpoints via the `x-api-key` header.
+
+### Generating API Keys
+
+Generate a new API key using Node.js crypto:
+
+```bash
+node -e "console.log(require('crypto').randomUUID())"
+```
+
+### Configuring API Keys
+
+Add API keys to your `.env` file as a comma-separated list:
+
+```env
+API_KEYS=fe2ac930-94d5-41a4-9ad3-1c1f5910391c,another-key-here,third-key-here
+```
+
+### Rotating API Keys
+
+To rotate API keys safely without downtime:
+
+1. Generate a new API key
+2. Add the new key to the `API_KEYS` environment variable (keep old keys)
+3. Restart the server: `sudo systemctl restart server.service`
+4. Update all clients/services to use the new key
+5. Once all clients are updated, remove the old key from `API_KEYS`
+6. Restart the server again
+
+### Using API Keys
+
+Include the API key in requests via the `x-api-key` header:
+
+```bash
+curl -H "x-api-key: your-api-key-here" https://api.cpec.com/endpoint
+```
 
 ## Devices
 
