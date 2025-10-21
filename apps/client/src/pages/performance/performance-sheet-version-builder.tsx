@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, X, Plus, Trash2, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
-import { Button, Input, PageHeader, Modal, Select } from '@/components';
+import { Save, X, Plus, Trash2, Edit2, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { Button, Input, PageHeader, Modal, Select, Tabs, DatePicker, Textarea, Checkbox } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
@@ -442,8 +442,194 @@ const PerformanceSheetVersionBuilder = () => {
   const selectedSection = sections.find(s => s.id === selectedSectionId);
   const selectedSubsection = selectedSection?.sections.find(s => s.id === selectedSubsectionId);
 
+  const openPreview = () => {
+    const previewWindow = window.open('', 'Performance Sheet Preview', 'width=1200,height=800,scrollbars=yes');
+
+    if (!previewWindow) {
+      toast.error('Failed to open preview window. Please allow popups.');
+      return;
+    }
+
+    const visibleTabs = sections
+      .sort((a, b) => a.sequence - b.sequence)
+      .map(tab => ({ label: tab.label, value: tab.value }));
+
+    const firstTab = visibleTabs[0]?.value || '';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Performance Sheet Preview</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 0; background: #0a0a0a; color: #fafafa; font-family: system-ui, -apple-system, sans-serif; }
+            .col-span-1 { grid-column: span 1 / span 1; }
+            .col-span-2 { grid-column: span 2 / span 2; }
+            .col-span-3 { grid-column: span 3 / span 3; }
+            .col-span-4, .col-span-full { grid-column: 1 / -1; }
+          </style>
+        </head>
+        <body>
+          <div id="preview-root"></div>
+          <script>
+            window.previewState = {
+              activeTab: '${firstTab}',
+              collapsedSections: new Set(),
+              tabs: ${JSON.stringify(visibleTabs)},
+              sections: ${JSON.stringify(sections)}
+            };
+
+            window.setActiveTab = function(tabValue) {
+              window.previewState.activeTab = tabValue;
+              window.render();
+            };
+
+            window.toggleSection = function(sectionId) {
+              if (window.previewState.collapsedSections.has(sectionId)) {
+                window.previewState.collapsedSections.delete(sectionId);
+              } else {
+                window.previewState.collapsedSections.add(sectionId);
+              }
+              window.render();
+            };
+
+            window.render = function() {
+              const state = window.previewState;
+              const activeTabData = state.sections.find(s => s.value === state.activeTab);
+              const root = document.getElementById('preview-root');
+
+              const tabsHtml = state.tabs.map(tab => {
+                const isActive = state.activeTab === tab.value;
+                return \`
+                  <button
+                    onclick="window.setActiveTab('\${tab.value}')"
+                    style="padding: 0.75rem 1rem; border: none; background: \${isActive ? '#0a0a0a' : 'transparent'}; color: \${isActive ? '#fafafa' : '#a3a3a3'}; cursor: pointer; border-bottom: 2px solid \${isActive ? '#3b82f6' : 'transparent'}; transition: all 0.2s; font-size: 0.875rem;"
+                  >
+                    \${tab.label}
+                  </button>
+                \`;
+              }).join('');
+
+              const sectionsHtml = activeTabData?.sections?.sort((a, b) => a.sequence - b.sequence).map((section, index) => {
+                const isCollapsed = state.collapsedSections.has(section.id);
+                const isLastSection = index === activeTabData.sections.length - 1;
+
+                const fieldsHtml = !isCollapsed ? section.fields?.sort((a, b) => a.sequence - b.sequence).map(field => {
+                  const span = field.size || 1;
+                  const spanClass = span >= 4 ? 'col-span-full' : \`col-span-\${span}\`;
+
+                  let inputHtml = '';
+                  if (field.type === 'textarea') {
+                    inputHtml = \`
+                      <textarea
+                        disabled
+                        placeholder="Enter value..."
+                        style="width: 100%; padding: 0.5rem 0.75rem; background: #262626; border: 1px solid #404040; border-radius: 0.375rem; color: #fafafa; font-size: 0.875rem; opacity: 0.6; min-height: 80px; resize: vertical;"
+                      ></textarea>
+                    \`;
+                  } else if (field.type === 'select') {
+                    inputHtml = \`
+                      <select
+                        disabled
+                        style="width: 100%; padding: 0.5rem 0.75rem; background: #262626; border: 1px solid #404040; border-radius: 0.375rem; color: #fafafa; font-size: 0.875rem; opacity: 0.6;"
+                      >
+                        <option>Select...</option>
+                      </select>
+                    \`;
+                  } else if (field.type === 'checkbox') {
+                    inputHtml = \`
+                      <input
+                        type="checkbox"
+                        disabled
+                        style="width: 1rem; height: 1rem; opacity: 0.6;"
+                      />
+                    \`;
+                  } else {
+                    inputHtml = \`
+                      <input
+                        type="\${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}"
+                        disabled
+                        placeholder="Enter value..."
+                        style="width: 100%; padding: 0.5rem 0.75rem; background: #262626; border: 1px solid #404040; border-radius: 0.375rem; color: #fafafa; font-size: 0.875rem; opacity: 0.6;"
+                      />
+                    \`;
+                  }
+
+                  return \`
+                    <div class="\${spanClass}">
+                      <label style="display: block; font-size: 0.875rem; color: #a3a3a3; margin-bottom: 0.5rem;">
+                        \${field.label}\${field.required ? ' *' : ''}
+                      </label>
+                      \${inputHtml}
+                    </div>
+                  \`;
+                }).join('') : '';
+
+                return \`
+                  <div style="padding-bottom: 2rem; \${!isLastSection ? 'margin-bottom: 2rem; border-bottom: 1px solid #404040;' : ''}">
+                    <div style="display: flex; align-items: center; justify-content: space-between; \${!isCollapsed ? 'margin-bottom: 1rem;' : ''}">
+                      <h2 style="font-size: 1.125rem; font-weight: 600; color: #fafafa; margin: 0;">\${section.title}</h2>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.875rem; color: #a3a3a3;">0/\${section.fields?.length || 0}</span>
+                        <button
+                          onclick="window.toggleSection('\${section.id}')"
+                          style="background: none; border: none; color: #a3a3a3; cursor: pointer; padding: 0.25rem; display: flex; align-items: center;"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="transform: \${isCollapsed ? '' : 'rotate(180deg)'}; transition: transform 0.2s;">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    \${!isCollapsed ? \`
+                      <div style="display: grid; gap: 1rem; grid-template-columns: repeat(\${section.columns || 2}, minmax(0, 1fr));">
+                        \${fieldsHtml}
+                      </div>
+                    \` : ''}
+                  </div>
+                \`;
+              }).join('') || '<p style="color: #a3a3a3; text-align: center; padding: 2rem;">No sections defined for this tab</p>';
+
+              root.innerHTML = \`
+                <div style="min-height: 100vh; background: #0a0a0a;">
+                  <div style="border-bottom: 1px solid #404040; background: #171717; padding: 1.5rem 2rem;">
+                    <h1 style="font-size: 1.5rem; font-weight: 600; color: #fafafa; margin: 0;">Performance Sheet Preview</h1>
+                    <p style="font-size: 0.875rem; color: #a3a3a3; margin: 0.25rem 0 0 0;">Version Preview</p>
+                  </div>
+
+                  <div style="border-bottom: 1px solid #404040; background: #171717;">
+                    <div style="display: flex; gap: 0.5rem; padding: 0 2rem;">
+                      \${tabsHtml}
+                    </div>
+                  </div>
+
+                  <div style="display: flex; justify-content: center; width: 100%;">
+                    <div style="padding: 2rem; max-width: 64rem; width: 100%;">
+                      \${sectionsHtml}
+                    </div>
+                  </div>
+                </div>
+              \`;
+            };
+
+            window.render();
+          </script>
+        </body>
+      </html>
+    `;
+
+    previewWindow.document.open();
+    previewWindow.document.write(html);
+    previewWindow.document.close();
+  };
+
   const Actions = () => (
     <div className="flex gap-2">
+      <Button onClick={openPreview} variant='secondary-outline'>
+        <Eye size={16} />
+        Preview
+      </Button>
       <Button onClick={handleCancel} variant='secondary-outline'>
         <X size={16} />
         Cancel

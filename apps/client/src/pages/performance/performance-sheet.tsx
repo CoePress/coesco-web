@@ -34,7 +34,7 @@ const PerformanceSheet = () => {
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const { id: performanceSheetId } = useParams();
-  const { emit, isLockConnected, onLockChanged } = useSocket();
+  const { emit, isLockConnected, onLockChanged, calculatePerformanceSheet, isPerformanceConnected } = useSocket();
   const { user } = useAuth();
   const { get: getLockStatus } = useApi();
   const { get: getSheet, response: performanceSheet, loading: sheetLoading, error: sheetError } = useApi<any>();
@@ -286,7 +286,46 @@ const PerformanceSheet = () => {
   }, [onLockChanged, performanceSheetId, user?.id, isEditing]);
 
   const handleFieldChange = (fieldId: string, value: any) => {
-    setFormData((prev) => setNestedValue(prev, fieldId, value));
+    const updatedData = setNestedValue(formData, fieldId, value);
+    setFormData(updatedData);
+
+    if (isPerformanceConnected && performanceSheet?.data?.version?.sections) {
+      const bundledData = bundleFormDataByTabsAndSections(updatedData);
+      calculatePerformanceSheet(bundledData, "main.py", (response) => {
+        if (response?.ok) {
+          console.log("Calculation result:", response.result);
+        }
+      });
+    }
+  };
+
+  const bundleFormDataByTabsAndSections = (data: Record<string, any>) => {
+    const bundled: Record<string, any> = {};
+
+    if (!performanceSheet?.data?.version?.sections) return data;
+
+    performanceSheet.data.version.sections.forEach((tab: any) => {
+      tab.sections?.forEach((section: any) => {
+        section.fields?.forEach((field: any) => {
+          const fieldValue = getNestedValue(data, field.id);
+          if (fieldValue !== undefined && fieldValue !== null && fieldValue !== "") {
+            const keys = field.id.split(".");
+            let current = bundled;
+
+            for (let i = 0; i < keys.length - 1; i++) {
+              if (!current[keys[i]]) {
+                current[keys[i]] = {};
+              }
+              current = current[keys[i]];
+            }
+
+            current[keys[keys.length - 1]] = fieldValue;
+          }
+        });
+      });
+    });
+
+    return bundled;
   };
 
   const handleContinueProgress = () => {

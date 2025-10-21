@@ -27,7 +27,17 @@ import {
 } from "@/repositories";
 import serviceTechDailyTemplate from "@/templates/service-tech-daily.json";
 import defaultUsers from "@/config/default-users.json";
-import { RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED } from "@/templates/performance-sheet";
+import {
+  RFQ_PERFORMANCE_SHEET_SEED,
+  MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
+  TDDBHD_PERFORMANCE_SHEET_SEED,
+  REEL_DRIVE_PERFORMANCE_SHEET_SEED,
+  STR_UTILITY_PERFORMANCE_SHEET_SEED,
+  ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
+  FEED_PERFORMANCE_SHEET_SEED,
+  SHEAR_PERFORMANCE_SHEET_SEED,
+  SUMMARY_REPORT_PERFORMANCE_SHEET_SEED,
+} from "@/templates/performance-sheet";
 import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
@@ -291,12 +301,22 @@ async function seedPerformanceSheetVersions() {
       logger.info("Seeding performance sheet versions...");
 
       await performanceSheetVersionRepository.create({
-        sections: [RFQ_PERFORMANCE_SHEET_SEED, TDDBHD_PERFORMANCE_SHEET_SEED],
+        sections: [
+          RFQ_PERFORMANCE_SHEET_SEED,
+          MATERIAL_SPECS_PERFORMANCE_SHEET_SEED,
+          TDDBHD_PERFORMANCE_SHEET_SEED,
+          REEL_DRIVE_PERFORMANCE_SHEET_SEED,
+          STR_UTILITY_PERFORMANCE_SHEET_SEED,
+          ROLL_STR_BACKBEND_PERFORMANCE_SHEET_SEED,
+          FEED_PERFORMANCE_SHEET_SEED,
+          SHEAR_PERFORMANCE_SHEET_SEED,
+          SUMMARY_REPORT_PERFORMANCE_SHEET_SEED,
+        ],
         createdById: "system",
         updatedById: "system",
       }, undefined, true);
 
-      logger.info("Seeded performance sheet version with 2 tabs (RFQ and TDDBHD)");
+      logger.info("Seeded performance sheet version with 9 tabs");
     }
   }
   catch (error) {
