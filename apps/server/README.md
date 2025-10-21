@@ -209,3 +209,6 @@ This script handles:
 5. Running database migrations
 6. Building the application
 7. Restarting the service
+
+docker build -f apps/server/Dockerfile -t coesco-server:latest .
+docker run -p 3000:3000 coesco-server:latest
