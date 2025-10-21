@@ -1,8 +1,42 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 
+import { __dev__, env } from "@/config/env";
 import type { IQueryBuilderResult, IQueryParams } from "@/types";
+import { logger } from "./logger";
 
-export const prisma = new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: __dev__
+    ? [
+        { level: "query", emit: "event" },
+        { level: "error", emit: "stdout" },
+        { level: "warn", emit: "stdout" },
+      ]
+    : [
+        { level: "error", emit: "stdout" },
+        { level: "warn", emit: "stdout" },
+      ],
+  datasources: {
+    db: {
+      url: `${env.DATABASE_URL}?connection_limit=${env.DATABASE_CONNECTION_LIMIT}&pool_timeout=${env.DATABASE_POOL_TIMEOUT}&connect_timeout=${env.DATABASE_CONNECTION_TIMEOUT}`,
+    },
+  },
+});
+
+if (__dev__) {
+  prisma.$on("query" as never, (e: Prisma.QueryEvent) => {
+    if (e.duration > 1000) {
+      logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
+    }
+  });
+}
+
+if (__dev__) {
+  globalForPrisma.prisma = prisma;
+}
 
 const relationFieldCache = new Map<string, Set<string>>();
 const modelSoftDeleteCache = new Map<string, boolean>();
