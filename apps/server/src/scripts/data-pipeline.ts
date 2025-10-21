@@ -1499,7 +1499,7 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
     await legacyService.initialize();
   }
 
-  const existingNotesCount = await mainDatabase.journeyNote.count();
+  const existingNotesCount = await mainDatabase.note.count();
   if (existingNotesCount > 0) {
     logger.info(`Found ${existingNotesCount} existing journey notes. Skipping migration.`);
     legacyService = originalService;
@@ -1611,7 +1611,8 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
 
           for (const entry of finalEntries) {
             allNotes.push({
-              journeyId,
+              entityId: journeyId,
+              entityType: "journey",
               type,
               body: entry.body,
               createdBy: "System",
@@ -1628,7 +1629,7 @@ export async function _migrateJourneyNotes(legacyServiceInstance?: LegacyService
 
       if (allNotes.length > 0) {
         try {
-          const createResult = await mainDatabase.journeyNote.createMany({
+          const createResult = await mainDatabase.note.createMany({
             data: allNotes,
             skipDuplicates: true,
           });

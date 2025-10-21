@@ -263,14 +263,11 @@ const JourneyCard = memo(({
       <AddTagsModal
         isOpen={showTagsModal}
         onClose={() => {
-          console.log('AddTagsModal onClose called');
           setShowTagsModal(false);
         }}
         journeyId={journey.id.toString()}
         onTagsUpdated={handleTagsUpdated}
       />
-      {/* Debug: Always show modal state */}
-      {console.log('showTagsModal state:', showTagsModal)}
     </div>
   );
 });

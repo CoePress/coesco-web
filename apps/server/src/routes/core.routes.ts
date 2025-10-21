@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { chatController, journeyNoteController, lockController, searchController, settingsController, tagController } from "@/controllers";
+import { chatController, lockController, noteController, searchController, settingsController, tagController } from "@/controllers";
 
 const router = Router();
 
@@ -47,11 +47,11 @@ router.delete("/tags/:tagId", tagController.deleteTag);
 // Search
 router.get("/search", searchController.searchEntities);
 
-// Journey Notes
-router.post("/journey-notes", journeyNoteController.createJourneyNote);
-router.get("/journey-notes", journeyNoteController.getJourneyNotes);
-router.get("/journey-notes/:journeyNoteId", journeyNoteController.getJourneyNote);
-router.patch("/journey-notes/:journeyNoteId", journeyNoteController.updateJourneyNote);
-router.delete("/journey-notes/:journeyNoteId", journeyNoteController.deleteJourneyNote);
+// Notes
+router.post("/notes", noteController.createNote);
+router.get("/notes", noteController.getNotes);
+router.get("/notes/:noteId", noteController.getNote);
+router.patch("/notes/:noteId", noteController.updateNote);
+router.delete("/notes/:noteId", noteController.deleteNote);
 
 export default router;
