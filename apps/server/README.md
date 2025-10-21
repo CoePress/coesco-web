@@ -2,13 +2,40 @@
 
 ## Development
 
-npx prisma migrate dev --name init
+### Initial Setup
 
-npx prisma migrate dev
-
-npx prisma db push
-
+```bash
+npm install
 npx prisma generate
+npm run dev
+```
+
+## Database Migrations
+
+### Making Schema Changes
+
+1. Edit `prisma/schema.prisma`
+2. Create and apply migration:
+   ```bash
+   npm run db:migrate -- --name your_change_description
+   ```
+3. Commit the migration files to git
+
+### Useful Commands
+
+```bash
+# Check migration status
+npm run db:migrate:status
+
+# Apply pending migrations (production)
+npm run db:migrate:deploy
+
+# Generate Prisma client
+npm run db:generate
+
+# Reset database (dev only - deletes all data)
+npm run db:reset
+```
 
 ## API Key Management
 
@@ -107,6 +134,7 @@ journalctl -f --output=cat -u fanuc.service
 
 ## Server Deployment
 
+```bash
 # 1. Prune the monorepo for your server app (source only)
 turbo prune @coesco/server --out-dir deploy
 
@@ -118,17 +146,21 @@ scp -r . administrator@cp-portal-1:/home/administrator/coesco/
 cd /home/administrator/coesco
 npm install
 
-# 4. Generate Prisma client
+# 4. Run database migrations
 cd apps/server
-npx prisma generate
+npm run db:migrate:deploy
 
-# 5. Build the server app
+# 5. Generate Prisma client
+npm run db:generate
+
+# 6. Build the server app
 cd ../..
 turbo run build --filter=@coesco/server
 
-# 6. Restart the service
+# 7. Restart the service
 sudo systemctl restart server.service
 
-# 7. Check service status
+# 8. Check service status
 sudo systemctl status server.service
 journalctl -f --output=cat -u server.service
+```

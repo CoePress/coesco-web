@@ -370,7 +370,7 @@ export const cookieOptions: CookieOptions = {
 
 ### Immediate (Before Any Production Deployment)
 - [x] Remove hardcoded API keys and move to environment variables
-- [ ] Set up database migrations (convert from `db push` to `migrate`)
+- [x] Set up database migrations (convert from `db push` to `migrate`)
 - [ ] Configure automated database backups with tested restore procedures
 - [ ] Increase test coverage to minimum 70%
 - [ ] Create Dockerfile and containerization strategy
