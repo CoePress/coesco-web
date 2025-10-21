@@ -931,7 +931,7 @@ const FieldsPanel = ({ section, subsection, onAddField, onEditField, onRemoveFie
   const sortedFields = [...subsection.fields].sort((a: any, b: any) => a.sequence - b.sequence);
 
   return (
-    <div className="border border-border rounded bg-foreground flex flex-col">
+    <div className="border border-border rounded bg-foreground flex flex-col overflow-hidden">
       <div className="p-2 border-b flex items-center justify-between">
         <h3 className="text-sm text-text-muted">Fields</h3>
         <Button onClick={() => onAddField(section.id, subsection.id)} size="sm" variant="secondary-outline">
