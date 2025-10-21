@@ -310,7 +310,7 @@ export const cookieOptions: CookieOptions = {
 - [x] Complete `.env.example` documentation
 - [ ] Implement comprehensive health check endpoints
 - [ ] Fix Redis connection to use REDIS_URL
-- [ ] Replace all console.log/error with logger
+- [x] Replace all console.log/error with logger
 
 ### Within First Week
 - [ ] Set up monitoring and error tracking (Sentry)

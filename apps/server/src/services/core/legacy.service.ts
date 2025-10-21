@@ -790,8 +790,6 @@ export class LegacyService {
       ${whereClause}
     `;
 
-    console.log(query);
-
     try {
       const result = await this.getDatabaseConnection(database)?.query(query);
       return true;

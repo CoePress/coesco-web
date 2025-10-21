@@ -142,13 +142,6 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      console.log("[IP Debug] Headers:", {
-        "x-forwarded-for": req.headers["x-forwarded-for"],
-        "x-real-ip": req.headers["x-real-ip"],
-        "req.ip": req.ip,
-        "getClientIp": getClientIp(req),
-      });
-
       const session = await sessionService.createSession({
         userId: user.id,
         token,
@@ -160,7 +153,6 @@ export class AuthService {
       });
 
       sessionId = session.id;
-      console.log("[Auth Service] Created session with ID:", sessionId);
 
       await loginHistoryService.logAttempt({
         userId: user.id,
@@ -171,11 +163,6 @@ export class AuthService {
         userAgent: req.headers["user-agent"],
       });
     }
-    else {
-      console.log("[Auth Service] No req object, sessionId will be undefined");
-    }
-
-    console.log("[Auth Service] Returning login response with sessionId:", sessionId);
 
     return {
       token,
@@ -466,6 +453,7 @@ export class AuthService {
       return;
     }
 
+    // eslint-disable-next-line node/prefer-global/process
     const defaultUsersPath = join(process.cwd(), "src/config/default-users.json");
     const defaultUsers = JSON.parse(readFileSync(defaultUsersPath, "utf-8"));
 
