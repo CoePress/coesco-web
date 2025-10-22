@@ -54,13 +54,13 @@ export class CronService {
     logger.info("Stopping cron jobs..");
 
     this.jobs.forEach(job => job.stop());
+    this.jobs = [];
 
     while (this.runningJobs.size > 0) {
       logger.info(`Waiting for ${this.runningJobs.size} jobs to complete..`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    this.jobs = [];
     logger.info("All cron jobs stopped");
   }
 

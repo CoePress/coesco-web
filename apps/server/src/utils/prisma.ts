@@ -224,7 +224,7 @@ function processFilterValue(value: any): any {
 function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderResult, includeDeleted?: boolean | "only", modelName?: string) {
   if (params.select) {
     const parsedSelect = parseComplexParam(params.select);
-    if (Array.isArray(parsedSelect)) {
+    if (Array.isArray(parsedSelect) && parsedSelect.length > 0) {
       if (
         parsedSelect.some(
           item => typeof item === "string" && item.includes("."),
@@ -242,7 +242,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
         );
       }
     }
-    else if (parsedSelect && typeof parsedSelect === "object") {
+    else if (parsedSelect && typeof parsedSelect === "object" && !Array.isArray(parsedSelect)) {
       result.select = parsedSelect;
     }
   }
@@ -257,7 +257,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
   }
   else if (params.include) {
     const parsedInclude = parseComplexParam(params.include);
-    if (Array.isArray(parsedInclude)) {
+    if (Array.isArray(parsedInclude) && parsedInclude.length > 0) {
       if (
         parsedInclude.some(
           item => typeof item === "string" && item.includes("."),
@@ -275,7 +275,7 @@ function buildSelectOrInclude(params: IQueryParams<any>, result: IQueryBuilderRe
         );
       }
     }
-    else if (parsedInclude && typeof parsedInclude === "object") {
+    else if (parsedInclude && typeof parsedInclude === "object" && !Array.isArray(parsedInclude)) {
       result.include = parsedInclude;
     }
   }

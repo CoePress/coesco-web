@@ -1,15 +1,19 @@
+/* eslint-disable import/first */
 /* eslint-disable dot-notation */
 import type { AuditLog, BugReport, EmailLog } from "@prisma/client";
 
 import fs from "node:fs";
 
-import { env } from "@/config/env";
-import { auditLogRepository, bugReportRepository, emailLogRepository } from "@/repositories";
-import { employeeService } from "@/services";
-
-import { AuditService } from "../audit.service";
-
 jest.mock("node:fs");
+jest.mock("@/config/env", () => ({
+  env: {
+    LOGS_DIR: "/var/logs",
+    NODE_ENV: "test",
+  },
+  __dev__: false,
+  __test__: true,
+  __prod__: false,
+}));
 jest.mock("@/repositories", () => ({
   auditLogRepository: {
     getAll: jest.fn(),
@@ -29,6 +33,12 @@ jest.mock("@/services", () => ({
     getEmployeeById: jest.fn(),
   },
 }));
+
+import { env } from "@/config/env";
+import { auditLogRepository, bugReportRepository, emailLogRepository } from "@/repositories";
+import { employeeService } from "@/services";
+
+import { AuditService } from "../audit.service";
 
 describe("auditService", () => {
   let auditService: AuditService;
