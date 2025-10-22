@@ -11,6 +11,9 @@ router.get("/logs/login-attempts", auditController.getLoginAttempts);
 router.get("/logs/files", auditController.getLogFiles);
 router.get("/logs/files/:file", auditController.getLogFile);
 
+router.get("/backups", auditController.getBackupFiles);
+router.get("/backups/:file", auditController.getBackupFile);
+
 // Sessions
 router.get("/sessions/dashboard-metrics", sessionsController.getDashboardMetrics);
 router.get("/sessions", sessionsController.getSessions);

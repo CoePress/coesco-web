@@ -199,4 +199,74 @@ export class BackupService {
       return { success: false, error: errorMessage };
     }
   }
+
+  async getBackupFiles(page = 1, limit = 25) {
+    try {
+      await this.ensureBackupDirectory();
+
+      const files = await fs.readdir(this.backupDir);
+      const backupFiles = files
+        .filter(f => f.startsWith("backup-") && f.endsWith(".sql.gz"))
+        .sort()
+        .reverse();
+
+      const total = backupFiles.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedFiles = backupFiles.slice(startIndex, endIndex);
+
+      return {
+        success: true,
+        data: paginatedFiles,
+        meta: {
+          total,
+          page,
+          totalPages,
+        },
+      };
+    }
+    catch (error) {
+      logger.error("Failed to get backup files:", error);
+      return {
+        success: true,
+        data: [],
+        meta: {
+          total: 0,
+          page: 1,
+          totalPages: 0,
+        },
+      };
+    }
+  }
+
+  async getBackupFile(filename: string) {
+    try {
+      const filepath = path.join(this.backupDir, filename);
+
+      await fs.access(filepath);
+
+      const normalizedPath = path.normalize(filepath);
+      const normalizedBackupDir = path.normalize(this.backupDir);
+      if (!normalizedPath.startsWith(normalizedBackupDir)) {
+        throw new Error("Invalid backup file path");
+      }
+
+      return {
+        success: true,
+        data: {
+          path: filepath,
+          isGzipped: filepath.endsWith(".gz"),
+        },
+      };
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to get backup file ${filename}:`, error);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
 }

@@ -30,8 +30,8 @@ import { AdminDashboard, Companies, CompanyDetails, ConfigurationBuilder, Contac
 import Design from "@/pages/sandbox/design";
 import LegacyExplorer from "@/pages/sandbox/legacy-explorer";
 import Sandbox from "@/pages/sandbox/sandbox";
-import FormSubmissions from "@/pages/service/form-submissions";
 import FormSubmissionView from "@/pages/service/form-submission-view";
+import FormSubmissions from "@/pages/service/form-submissions";
 import SyncTest from "@/pages/service/sync-test";
 
 import { __dev__ } from "./env";
@@ -236,7 +236,7 @@ const adminModule: Module = {
   icon: ShieldIcon,
   status: "active",
   pages: [
-      {
+    {
       slug: null,
       label: "Dashboard",
       icon: LayoutDashboardIcon,
@@ -256,8 +256,8 @@ const adminModule: Module = {
       ],
     },
     {
-      slug: "performance-sheet-versions",
-      label: "Performance Sheet Versions",
+      slug: "performance-sheets",
+      label: "Performance Sheets",
       icon: FileCogIcon,
       component: PerformanceSheetVersions,
       children: [
