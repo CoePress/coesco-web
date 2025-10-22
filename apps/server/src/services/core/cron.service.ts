@@ -1,7 +1,7 @@
 import { CronJob } from "cron";
 
 import { env } from "@/config/env";
-import { backupService, microsoftService } from "@/services";
+import { backupService, microsoftService, sessionService } from "@/services";
 import { logger } from "@/utils/logger";
 
 export class CronService {
@@ -35,6 +35,19 @@ export class CronService {
       );
       logger.info("Database backup cron job scheduled for 2:00 AM daily");
     }
+
+    this.jobs.push(
+      new CronJob(
+        "0 3 * * *",
+        this.wrapJob("session-cleanup", async () => {
+          await sessionService.deleteExpiredSessions();
+        }),
+        null,
+        true,
+        "America/New_York",
+      ),
+    );
+    logger.info("Session cleanup cron job scheduled for 3:00 AM daily");
   }
 
   async stop(): Promise<void> {
