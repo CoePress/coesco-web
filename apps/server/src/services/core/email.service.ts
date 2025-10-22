@@ -79,7 +79,7 @@ export class EmailService {
     try {
       const html = await this.loadTemplate(options.templateName, options.variables);
 
-      return this.sendEmail({
+      return await this.sendEmail({
         from: options.from,
         to: options.to,
         subject: options.subject,
