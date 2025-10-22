@@ -18,6 +18,14 @@ export class BackupService {
     this.retentionDays = env.BACKUP_RETENTION_DAYS || 14;
   }
 
+  get backupDirectory(): string {
+    return this.backupDir;
+  }
+
+  get retention(): number {
+    return this.retentionDays;
+  }
+
   async initialize(): Promise<void> {
     try {
       await fs.mkdir(this.backupDir, { recursive: true });
@@ -167,7 +175,7 @@ export class BackupService {
     }
   }
 
-  private async ensureBackupDirectory(): Promise<void> {
+  async ensureBackupDirectory(): Promise<void> {
     try {
       await fs.access(this.backupDir);
     }

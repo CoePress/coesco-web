@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { ZodError } from "zod";
 
-import { env } from "@/config/env";
+import * as envModule from "@/config/env";
 
 import {
   AppError,
@@ -213,15 +213,14 @@ describe("error.middleware", () => {
     });
 
     it("should include stack trace in development mode", () => {
-      const originalEnv = env.NODE_ENV;
-      env.NODE_ENV = "development";
+      Object.defineProperty(envModule, "__dev__", {
+        value: true,
+        writable: true,
+        configurable: true,
+      });
 
       const error = new Error("Test error");
       error.stack = "Error: Test error\n    at someFunction (file.ts:10:20)\n    at anotherFunction (file.ts:5:10)";
-
-      jest.mock("@/config/env", () => ({
-        __prod__: false,
-      }));
 
       errorHandler(error, mockRequest, mockResponse, mockNext);
 
@@ -233,19 +232,22 @@ describe("error.middleware", () => {
         }),
       );
 
-      env.NODE_ENV = originalEnv;
+      Object.defineProperty(envModule, "__dev__", {
+        value: false,
+        writable: true,
+        configurable: true,
+      });
     });
 
     it("should not include stack trace in production mode", () => {
-      const originalEnv = env.NODE_ENV;
-      env.NODE_ENV = "production";
+      Object.defineProperty(envModule, "__dev__", {
+        value: false,
+        writable: true,
+        configurable: true,
+      });
 
       const error = new Error("Test error");
       error.stack = "Error: Test error\n    at someFunction (file.ts:10:20)\n    at anotherFunction (file.ts:5:10)";
-
-      jest.mock("@/config/env", () => ({
-        __prod__: true,
-      }));
 
       errorHandler(error, mockRequest, mockResponse, mockNext);
 
@@ -253,8 +255,6 @@ describe("error.middleware", () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: "Test error",
       });
-
-      env.NODE_ENV = originalEnv;
     });
 
     it("should not include stack trace if error has no stack", () => {
