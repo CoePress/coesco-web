@@ -1,6 +1,8 @@
 {
   "permissions": {
-    "allow": [],
+    "allow": [
+      "Bash(npm run test:coverage:*)"
+    ],
     "deny": [],
     "ask": [
       "Bash(mkdir:*)",
