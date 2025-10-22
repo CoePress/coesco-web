@@ -9,6 +9,10 @@ describe("webhookService", () => {
     webhookService = new WebhookService();
   });
 
+  afterEach(() => {
+    jest.clearAllTimers();
+  });
+
   describe("initialize", () => {
     it("should register default handlers", async () => {
       await webhookService.initialize();

@@ -46,6 +46,11 @@ describe("cronService", () => {
     cronService = new CronService();
   });
 
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
   describe("initialize", () => {
     it("should create sync-employees cron job", async () => {
       await cronService.initialize();
@@ -131,19 +136,25 @@ describe("cronService", () => {
     });
 
     it("should wait for running jobs to complete", async () => {
+      jest.useFakeTimers();
+
       await cronService.initialize();
 
       cronService["runningJobs"].add("test-job");
 
       const stopPromise = cronService.stop();
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await Promise.resolve();
 
       expect(cronService["jobs"]).toHaveLength(0);
 
       cronService["runningJobs"].delete("test-job");
 
+      jest.runAllTimers();
+
       await stopPromise;
+
+      jest.useRealTimers();
     });
   });
 

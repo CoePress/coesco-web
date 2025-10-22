@@ -20,6 +20,10 @@ describe("backupService", () => {
     backupService = new BackupService();
   });
 
+  afterEach(() => {
+    jest.clearAllTimers();
+  });
+
   describe("constructor", () => {
     it("should use env variables for backupDir and retentionDays", () => {
       expect(backupService.backupDirectory).toBe(env.BACKUP_DIR || path.join(process.cwd(), "backups"));

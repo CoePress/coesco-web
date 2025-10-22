@@ -29,6 +29,7 @@ describe("cacheService", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.clearAllTimers();
   });
 
   describe("constructor", () => {
