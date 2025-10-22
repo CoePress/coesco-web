@@ -95,7 +95,7 @@ const PerformanceSheetVersionBuilder = () => {
       });
 
       toast.success('Version updated successfully!');
-      navigate(`/admin/performance-sheet-versions`);
+      navigate(`/admin/performance-sheets`);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save changes');
@@ -103,7 +103,7 @@ const PerformanceSheetVersionBuilder = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/admin/performance-sheet-versions`);
+    navigate(`/admin/performance-sheets`);
   };
 
   const addSection = () => {
