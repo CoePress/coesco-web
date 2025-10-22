@@ -1,7 +1,9 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 
-import { __dev__, env } from "@/config/env";
 import type { IQueryBuilderResult, IQueryParams } from "@/types";
+
+import { __dev__, __test__, env } from "@/config/env";
+
 import { logger } from "./logger";
 
 const globalForPrisma = globalThis as unknown as {
@@ -309,7 +311,9 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
         filterObj = JSON.parse(params.filter);
       }
       catch (error) {
-        console.error("Invalid filter format:", error);
+        if (!__test__) {
+          logger.warn("Invalid filter format:", error);
+        }
       }
     }
     else if (typeof params.filter === "object") {
