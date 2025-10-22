@@ -23,10 +23,10 @@ export class BaseRepository<T> {
       params?.includeDeleted,
     );
 
-    const client = tx ?? this.model;
+    const model = tx?.[this.modelName as keyof typeof tx] ?? this.model;
 
     if (hasComputedSearch && params?.search) {
-      const allItems = await client.findMany(query);
+      const allItems = await model.findMany(query);
       const total = allItems.length;
       const totalPages = take ? Math.ceil(total / take) : 1;
 
@@ -43,8 +43,8 @@ export class BaseRepository<T> {
     }
 
     const [items, total] = await Promise.all([
-      client.findMany(query),
-      client.count(countQuery),
+      model.findMany(query),
+      model.count(countQuery),
     ]);
 
     const totalPages = take ? Math.ceil(total / (take || 1)) : 1;
@@ -249,7 +249,8 @@ export class BaseRepository<T> {
     if (cols.includes("deletedAt")) {
       if (includeDeleted === "only") {
         scope.push({ deletedAt: { not: null } });
-      } else if (!includeDeleted) {
+      }
+      else if (!includeDeleted) {
         scope.push({ deletedAt: null });
       }
     }
