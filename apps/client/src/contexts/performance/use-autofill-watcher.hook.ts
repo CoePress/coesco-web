@@ -81,7 +81,7 @@ export function useAutoFillWatcher(
             tabAutoFillStatus: autoFillState.tabAutoFillStatus,
             fillableTabs: autoFillState.fillableTabs,
             isManualMode: true,
-            hasTriggeredOnSave: autoFillState.hasTriggeredOnSave,
+            hasTriggeredOnSave: autoFillState,
             manualTrigger: useCallback(() => {
                 if (performanceData && sheetId) {
                     triggerAutoFill(performanceData, sheetId, true);
@@ -331,7 +331,7 @@ export function useAutoFillWatcher(
 
         // Manual mode status
         isManualMode: autoFillState.settings.manualModeOnly,
-        hasTriggeredOnSave: autoFillState.hasTriggeredOnSave,
+        hasTriggeredOnSave: autoFillState,
 
         // Manual trigger function
         manualTrigger: useCallback(() => {

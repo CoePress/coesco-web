@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { Zap, Users, Database, Wifi, Activity, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components';
 import { useMemoryMonitor } from '@/hooks/use-memory-management';
-import { usePerformanceServiceWorker } from '@/hooks/use-performance-service-worker';
 
 export interface PerformanceOptimizationSummaryProps {
     className?: string;
@@ -20,7 +19,6 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
 }) => {
     const [isExpanded, setIsExpanded] = useState(showDetails);
     const { memoryStats, isHighMemory } = useMemoryMonitor();
-    const { isOnline, cacheStatus } = usePerformanceServiceWorker();
 
     const optimizations = [
         {
@@ -148,16 +146,6 @@ const PerformanceOptimizationSummary: React.FC<PerformanceOptimizationSummaryPro
 
             {/* System status indicators */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                    <Wifi size={16} className={isOnline ? 'text-green-600' : 'text-red-600'} />
-                    <span className="text-sm text-foreground">{isOnline ? 'Online' : 'Offline'}</span>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                    <Database size={16} className="text-primary" />
-                    <span className="text-sm text-foreground">{cacheStatus?.performance.size || 0} Cached</span>
-                </div>
-
                 <div className="flex items-center gap-2 p-2 bg-muted rounded">
                     <Activity size={16} className={isHighMemory ? 'text-red-600' : 'text-green-600'} />
                     <span className="text-sm text-foreground">

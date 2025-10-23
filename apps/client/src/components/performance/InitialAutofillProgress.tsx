@@ -21,7 +21,7 @@ export const InitialAutofillProgress: React.FC<InitialAutofillProgressProps> = (
 }) => {
     const { state, getCompletionProgress } = useAutoFill();
 
-    if (!performanceData || !state.isInitialTriggerMode) {
+    if (!performanceData || !state.isAutoFilling) {
         return null;
     }
 
