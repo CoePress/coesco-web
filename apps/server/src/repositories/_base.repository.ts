@@ -300,10 +300,17 @@ export class BaseRepository<T> {
     const transformedOrderBy = this.transformSort(params?.sort, params?.order);
     const transforms = this.getTransforms();
 
+    const hasTransformedFields = searchFields && searchFields.length > 0
+      && Object.keys(transforms).length > 0;
+
     const regularSearchFields = searchFields?.filter((sf) => {
       const fieldName = typeof sf === "string" ? sf : sf.field;
       return !transforms[fieldName];
     });
+
+    const hasComputedSearch = Boolean(
+      params?.search && hasTransformedFields && regularSearchFields && regularSearchFields.length < searchFields!.length,
+    );
 
     const queryParams = transformedOrderBy
       ? { ...params, sort: undefined, order: undefined }
@@ -335,7 +342,7 @@ export class BaseRepository<T> {
 
     const countQuery = { where: finalWhere };
 
-    return { query, countQuery, page, take, hasComputedSearch: false };
+    return { query, countQuery, page, take, hasComputedSearch };
   }
 
   private async log(

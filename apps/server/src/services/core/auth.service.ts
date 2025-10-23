@@ -31,6 +31,48 @@ export class AuthService {
     });
   }
 
+  private async safeLogAttempt(data: Parameters<typeof loginHistoryService.logAttempt>[0]): Promise<void> {
+    try {
+      await loginHistoryService.logAttempt(data);
+    }
+    catch (error) {
+      console.error("Failed to log login attempt:", error);
+    }
+  }
+
+  private async createSessionWithRetry(
+    data: Parameters<typeof sessionService.createSession>[0],
+    maxRetries = 3,
+  ): Promise<any> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await sessionService.createSession(data);
+      }
+      catch (error) {
+        lastError = error as Error;
+        console.error(`Session creation attempt ${attempt}/${maxRetries} failed:`, error);
+
+        if (attempt < maxRetries) {
+          const delayMs = Math.min(1000 * 2 ** (attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  private async safeQueuePasswordResetEmail(data: { to: string; resetToken: string; firstName: string }): Promise<void> {
+    try {
+      await emailService.sendPasswordReset(data);
+    }
+    catch (error) {
+      console.error("Failed to send password reset email:", error);
+    }
+  }
+
   private generateTokens(userId: string): IAuthTokens {
     const token = sign({ userId, role: UserRole.USER }, env.JWT_SECRET, {
       expiresIn: env.JWT_EXPIRES_IN,
@@ -74,7 +116,7 @@ export class AuthService {
 
     if (!user || !user.employee) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           username,
           loginMethod: LoginMethod.PASSWORD,
           success: false,
@@ -88,7 +130,7 @@ export class AuthService {
 
     if (!user.isActive) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -103,7 +145,7 @@ export class AuthService {
 
     if (!user.password) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -119,7 +161,7 @@ export class AuthService {
     const isValidPassword = await compare(password, user.password);
     if (!isValidPassword) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username,
           loginMethod: LoginMethod.PASSWORD,
@@ -142,7 +184,7 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      const session = await sessionService.createSession({
+      const session = await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -154,7 +196,7 @@ export class AuthService {
 
       sessionId = session.id;
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username,
         loginMethod: LoginMethod.PASSWORD,
@@ -319,7 +361,7 @@ export class AuthService {
 
     if (!user || !user.employee) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           username: userInfo.userPrincipalName || userInfo.mail,
           loginMethod: LoginMethod.MICROSOFT,
           success: false,
@@ -333,7 +375,7 @@ export class AuthService {
 
     if (!user.isActive) {
       if (req) {
-        await loginHistoryService.logAttempt({
+        await this.safeLogAttempt({
           userId: user.id,
           username: user.username || userInfo.userPrincipalName,
           loginMethod: LoginMethod.MICROSOFT,
@@ -356,7 +398,7 @@ export class AuthService {
     let sessionId: string | undefined;
 
     if (req) {
-      const session = await sessionService.createSession({
+      const session = await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -368,7 +410,7 @@ export class AuthService {
 
       sessionId = session.id;
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username: user.username || userInfo.userPrincipalName,
         loginMethod: LoginMethod.MICROSOFT,
@@ -521,7 +563,7 @@ export class AuthService {
       },
     });
 
-    await emailService.sendPasswordReset({
+    this.safeQueuePasswordResetEmail({
       to: email,
       resetToken,
       firstName: employee.firstName,
@@ -733,7 +775,7 @@ export class AuthService {
     const { token, refreshToken } = this.generateTokens(user.id);
 
     if (req) {
-      await sessionService.createSession({
+      await this.createSessionWithRetry({
         userId: user.id,
         token,
         refreshToken,
@@ -743,7 +785,7 @@ export class AuthService {
         expiresIn: this.parseExpiresIn(env.JWT_EXPIRES_IN),
       });
 
-      await loginHistoryService.logAttempt({
+      await this.safeLogAttempt({
         userId: user.id,
         username: user.username!,
         loginMethod: LoginMethod.PASSWORD,
