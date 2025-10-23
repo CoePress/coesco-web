@@ -13,7 +13,7 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
-import { getClientIp } from "@/utils";
+import { getClientIp, logger } from "@/utils";
 import { prisma } from "@/utils/prisma";
 
 import { emailService, loginHistoryService, sessionService } from "..";
@@ -36,7 +36,7 @@ export class AuthService {
       await loginHistoryService.logAttempt(data);
     }
     catch (error) {
-      console.error("Failed to log login attempt:", error);
+      logger.error("Failed to log login attempt:", error);
     }
   }
 
@@ -52,7 +52,7 @@ export class AuthService {
       }
       catch (error) {
         lastError = error as Error;
-        console.error(`Session creation attempt ${attempt}/${maxRetries} failed:`, error);
+        logger.error(`Session creation attempt ${attempt}/${maxRetries} failed:`, error);
 
         if (attempt < maxRetries) {
           const delayMs = Math.min(1000 * 2 ** (attempt - 1), 5000);
@@ -69,7 +69,7 @@ export class AuthService {
       await emailService.sendPasswordReset(data);
     }
     catch (error) {
-      console.error("Failed to send password reset email:", error);
+      logger.error("Failed to send password reset email:", error);
     }
   }
 

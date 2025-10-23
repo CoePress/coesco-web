@@ -3,6 +3,7 @@ import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } 
 import type { IQueryParams } from "@/types";
 
 import { performanceSheetLinkRepository, performanceSheetRepository, performanceSheetVersionRepository } from "@/repositories";
+import { logger } from "@/utils";
 import { prisma } from "@/utils/prisma";
 
 export class PerformanceService {
@@ -163,7 +164,7 @@ export class PerformanceService {
       }
     }
     catch (error) {
-      console.error(`Error fetching label for ${entityType} ${entityId}:`, error);
+      logger.error(`Error fetching label for ${entityType} ${entityId}:`, error);
       return entityId;
     }
   }

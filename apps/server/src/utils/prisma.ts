@@ -124,7 +124,7 @@ function parseComplexParam(param: any) {
       return JSON.parse(param);
     }
     catch (error) {
-      console.error("Invalid JSON format:", error);
+      logger.error("Invalid JSON format:", error);
       return null;
     }
   }
