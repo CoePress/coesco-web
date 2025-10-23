@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { Save, Lock, Link, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, Lock, Link, ChevronDown } from "lucide-react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth.context";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, X, Plus, Trash2, Edit2, ChevronUp, ChevronDown, Eye } from 'lucide-react';
-import { Button, Input, PageHeader, Modal, Select, Tabs, DatePicker, Textarea, Checkbox } from '@/components';
+import { Button, Input, PageHeader, Modal, Select } from '@/components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
