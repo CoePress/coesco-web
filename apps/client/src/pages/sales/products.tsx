@@ -347,6 +347,7 @@ const Products = () => {
         <Toolbar
           onSearch={handleSearchChange}
           searchPlaceholder="Search products..."
+          searchValue={searchQuery}
           onFilterChange={handleFilterChange}
           filterValues={filterValues}
           actions={
