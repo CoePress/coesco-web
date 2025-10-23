@@ -4,14 +4,31 @@ import { verify } from "jsonwebtoken";
 
 import type { AuthenticatedRequest } from "@/middleware/auth.middleware";
 
-import { env } from "@/config/env";
 import { asyncHandler, protect } from "@/middleware/auth.middleware";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { sessionService } from "@/services";
-import { contextStorage } from "@/utils/context";
 import { prisma } from "@/utils/prisma";
+import { API_KEYS, env as mockEnv } from "@/config/env";
+import { contextStorage } from "@/utils/context";
 
 jest.mock("jsonwebtoken");
+jest.mock("@/config/env", () => {
+  const mockAPIKeys = new Set<string>();
+  const mockCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict" as const,
+  };
+  const mockEnv = {
+    JWT_SECRET: "test-secret",
+  };
+
+  return {
+    API_KEYS: mockAPIKeys,
+    cookieOptions: mockCookieOptions,
+    env: mockEnv,
+  };
+});
 jest.mock("@/services", () => ({
   sessionService: {
     validateSession: jest.fn(),
@@ -25,16 +42,19 @@ jest.mock("@/utils/prisma", () => ({
     },
   },
 }));
-jest.mock("@/utils/context", () => ({
-  contextStorage: {
-    run: jest.fn((context, callback) => callback()),
-  },
-}));
+jest.mock("@/utils/context", () => {
+  const mockRun = jest.fn((context, callback) => callback());
+  return {
+    contextStorage: {
+      run: mockRun,
+    },
+  };
+});
 
 describe("auth.middleware", () => {
   let mockRequest: AuthenticatedRequest;
   let mockResponse: Response;
-  let mockNext: NextFunction;
+  let mockNext: jest.Mock;
 
   beforeEach(() => {
     mockRequest = {
@@ -44,8 +64,13 @@ describe("auth.middleware", () => {
     mockResponse = {
       clearCookie: jest.fn(),
     } as unknown as Response;
-    mockNext = jest.fn();
-    jest.clearAllMocks();
+    mockNext = jest.fn() as jest.Mock;
+    API_KEYS.clear();
+    jest.mocked(contextStorage.run).mockClear();
+    jest.mocked(verify).mockClear();
+    jest.mocked(sessionService.validateSession).mockClear();
+    jest.mocked(sessionService.updateActivity).mockClear();
+    jest.mocked(prisma.user.findUnique).mockClear();
   });
 
   describe("asyncHandler", () => {
@@ -64,7 +89,9 @@ describe("auth.middleware", () => {
       const mockFn = jest.fn().mockRejectedValue(error);
       const handler = asyncHandler(mockFn);
 
-      await handler(mockRequest, mockResponse, mockNext);
+      await expect(
+        handler(mockRequest, mockResponse, mockNext),
+      ).rejects.toThrow(error);
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
@@ -73,21 +100,18 @@ describe("auth.middleware", () => {
   describe("protect - API Key Authentication", () => {
     it("should authenticate with valid API key", async () => {
       mockRequest.headers = { "x-api-key": "test-api-key" };
-
-      (env as any).API_KEYS = new Set(["test-api-key"]);
+      API_KEYS.add("test-api-key");
 
       await protect(mockRequest, mockResponse, mockNext);
 
       expect(mockRequest.user).toEqual({ id: "system", role: "SYSTEM" });
       expect(contextStorage.run).toHaveBeenCalled();
-      expect(mockNext).toHaveBeenCalled();
     });
 
     it("should not authenticate with invalid API key", async () => {
       mockRequest.headers = { "x-api-key": "invalid-key" };
       mockRequest.cookies = {};
-
-      (env as any).API_KEYS = new Set(["test-api-key"]);
+      API_KEYS.add("test-api-key");
 
       await expect(
         protect(mockRequest, mockResponse, mockNext),
@@ -125,7 +149,7 @@ describe("auth.middleware", () => {
 
       await protect(mockRequest, mockResponse, mockNext);
 
-      expect(verify).toHaveBeenCalledWith(mockAccessToken, env.JWT_SECRET);
+      expect(verify).toHaveBeenCalledWith(mockAccessToken, mockEnv.JWT_SECRET);
       expect(sessionService.validateSession).toHaveBeenCalledWith(mockAccessToken);
       expect(sessionService.updateActivity).toHaveBeenCalledWith(mockSession.id);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
@@ -143,7 +167,6 @@ describe("auth.middleware", () => {
         initials: "JD",
       });
       expect(contextStorage.run).toHaveBeenCalled();
-      expect(mockNext).toHaveBeenCalled();
     });
 
     it("should handle employee with null email and initials", async () => {

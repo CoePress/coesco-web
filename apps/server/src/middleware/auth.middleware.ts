@@ -14,7 +14,10 @@ import { UnauthorizedError } from "./error.middleware";
 
 export function asyncHandler(fn: any) {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    return Promise.resolve(fn(req, res, next)).catch((error) => {
+      next(error);
+      throw error;
+    });
   };
 }
 
@@ -112,6 +115,9 @@ export const protect = asyncHandler(
       contextStorage.run(context, () => next());
     }
     catch (error) {
+      if (error instanceof UnauthorizedError) {
+        throw error;
+      }
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);
       throw new UnauthorizedError("Invalid session");
