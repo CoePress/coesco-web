@@ -460,7 +460,7 @@ export class BaseRepository<T> {
       `SELECT COUNT(*) as count
        FROM "${tableName}"
        WHERE (${similarityConditions})
-       ${whereClause}`
+       ${whereClause}`,
     );
 
     const total = Number(countResult[0]?.count ?? 0);
@@ -473,7 +473,7 @@ export class BaseRepository<T> {
        ${whereClause}
        ORDER BY similarity_score DESC
        LIMIT ${take}
-       OFFSET ${skip}`
+       OFFSET ${skip}`,
     );
 
     const totalPages = Math.ceil(total / take);
@@ -497,21 +497,22 @@ export class BaseRepository<T> {
       for (const condition of scope.AND) {
         if (condition.deletedAt !== undefined) {
           if (condition.deletedAt === null) {
-            conditions.push('"deletedAt" IS NULL');
-          } else if (condition.deletedAt?.not === null) {
-            conditions.push('"deletedAt" IS NOT NULL');
+            conditions.push("\"deletedAt\" IS NULL");
+          }
+          else if (condition.deletedAt?.not === null) {
+            conditions.push("\"deletedAt\" IS NOT NULL");
           }
         }
         if (condition.ownerId !== undefined) {
           if (condition.ownerId === null) {
-            conditions.push('"ownerId" IS NULL');
+            conditions.push("\"ownerId\" IS NULL");
           }
         }
         if (condition.OR && Array.isArray(condition.OR)) {
           const orConditions = condition.OR.map((or: any) => {
             if (or.ownerId !== undefined) {
               if (or.ownerId === null) {
-                return '"ownerId" IS NULL';
+                return "\"ownerId\" IS NULL";
               }
               return `"ownerId" = '${or.ownerId}'`;
             }

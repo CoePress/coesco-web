@@ -1002,7 +1002,7 @@ describe("baseRepository", () => {
     it("should rollback create when audit log fails", async () => {
       repository.setColumns(["id", "name"]);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async fn => {
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
         const mockClient = {
           TestModel: {
             create: jest.fn().mockResolvedValue({ id: "new-123", name: "Test" }),
@@ -1023,7 +1023,7 @@ describe("baseRepository", () => {
     it("should rollback update when database write fails", async () => {
       repository.setColumns(["id", "name"]);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async fn => {
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
         const mockClient = {
           TestModel: {
             findFirst: jest.fn().mockResolvedValue({ id: "test-123", name: "Old" }),

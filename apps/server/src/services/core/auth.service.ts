@@ -13,7 +13,8 @@ import type { IAuthResponse, IAuthTokens } from "@/types";
 
 import { __dev__, env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
-import { getClientIp, logger } from "@/utils";
+import { getClientIp } from "@/utils";
+import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 import { emailService, loginHistoryService, sessionService } from "..";

@@ -1,4 +1,5 @@
 import type { Application } from "express";
+
 import request from "supertest";
 
 export class TestServer {

@@ -34,8 +34,8 @@ export class AuditController {
   });
 
   getLogFiles = asyncWrapper(async (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 25;
+    const page = Number.parseInt(req.query.page as string) || 1;
+    const limit = Number.parseInt(req.query.limit as string) || 25;
     const result = await auditService.getLogFiles(page, limit);
     res.status(HTTP_STATUS.OK).json(result);
   });
@@ -67,8 +67,8 @@ export class AuditController {
   };
 
   getBackupFiles = asyncWrapper(async (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 25;
+    const page = Number.parseInt(req.query.page as string) || 1;
+    const limit = Number.parseInt(req.query.limit as string) || 25;
     const result = await backupService.getBackupFiles(page, limit);
     res.status(HTTP_STATUS.OK).json(result);
   });

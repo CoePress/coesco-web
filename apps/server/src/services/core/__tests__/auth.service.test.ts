@@ -6,9 +6,9 @@ import { sign, verify } from "jsonwebtoken";
 
 import { env } from "@/config/env";
 import { UnauthorizedError } from "@/middleware/error.middleware";
+import { emailService, loginHistoryService, sessionService } from "@/services";
 import { prisma } from "@/utils/prisma";
 
-import { emailService, loginHistoryService, sessionService } from "@/services";
 import { AuthService } from "../auth.service";
 
 jest.mock("bcrypt");
@@ -50,7 +50,7 @@ jest.mock("@azure/msal-node", () => ({
   })),
 }));
 
-describe("AuthService", () => {
+describe("authService", () => {
   let authService: AuthService;
   let mockRequest: Partial<Request>;
 

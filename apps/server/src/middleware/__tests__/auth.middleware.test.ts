@@ -1,15 +1,15 @@
-import type { NextFunction, Response } from "express";
+import type { Response } from "express";
 
 import { verify } from "jsonwebtoken";
 
 import type { AuthenticatedRequest } from "@/middleware/auth.middleware";
 
+import { API_KEYS, env as mockEnv } from "@/config/env";
 import { asyncHandler, protect } from "@/middleware/auth.middleware";
 import { UnauthorizedError } from "@/middleware/error.middleware";
 import { sessionService } from "@/services";
-import { prisma } from "@/utils/prisma";
-import { API_KEYS, env as mockEnv } from "@/config/env";
 import { contextStorage } from "@/utils/context";
+import { prisma } from "@/utils/prisma";
 
 jest.mock("jsonwebtoken");
 jest.mock("@/config/env", () => {

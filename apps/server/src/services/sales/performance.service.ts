@@ -3,7 +3,7 @@ import type { PerformanceSheet, PerformanceSheetLink, PerformanceSheetVersion } 
 import type { IQueryParams } from "@/types";
 
 import { performanceSheetLinkRepository, performanceSheetRepository, performanceSheetVersionRepository } from "@/repositories";
-import { logger } from "@/utils";
+import { logger } from "@/utils/logger";
 import { prisma } from "@/utils/prisma";
 
 export class PerformanceService {

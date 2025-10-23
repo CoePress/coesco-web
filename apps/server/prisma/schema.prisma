@@ -600,6 +600,7 @@ model Item {
 
   options    OptionDetails[]
   quoteItems QuoteItem[]
+  /// @searchFields(modelNumber: 3, description: 2, type: 1)
 
   @@index([createdById])
   @@map("items")

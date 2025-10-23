@@ -1,6 +1,7 @@
+/* eslint-disable node/prefer-global/buffer */
 import { env } from "@/config/env";
 import { bugReportRepository } from "@/repositories";
-import { logger } from "@/utils";
+import { logger } from "@/utils/logger";
 
 interface CreateBugReportInput {
   description: string;
