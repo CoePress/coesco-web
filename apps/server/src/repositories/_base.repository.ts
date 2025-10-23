@@ -17,6 +17,11 @@ export class BaseRepository<T> {
 
   async getAll(params?: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     const searchFields = this.getSearchFields();
+
+    if (params?.fuzzy && params?.search) {
+      return this.fuzzySearch(params, tx);
+    }
+
     const { query, countQuery, page, take, hasComputedSearch } = await this.buildQueryParams(
       params,
       searchFields,
@@ -410,5 +415,115 @@ export class BaseRepository<T> {
 
   protected getTransforms(): Record<string, string> {
     return {};
+  }
+
+  private async fuzzySearch(params: IQueryParams<T>, tx?: Prisma.TransactionClient) {
+    if (!this.modelName) {
+      throw new Error("Model name is required for fuzzy search");
+    }
+
+    const searchFields = this.getSearchFields();
+    if (!searchFields || searchFields.length === 0) {
+      throw new Error("Search fields must be defined for fuzzy search");
+    }
+
+    const threshold = params.fuzzyThreshold ?? 0.3;
+    const searchTerm = params.search!;
+    const page = params.page ?? 1;
+    const take = params.limit ?? 25;
+    const skip = (page - 1) * take;
+
+    const columns = await this.getColumns();
+    const scope = await this.getScope(columns, params?.includeDeleted);
+
+    const fieldNames = searchFields.map(f => typeof f === "string" ? f : f.field);
+
+    const similarityConditions = fieldNames
+      .map(field => `similarity(CAST("${field}" AS TEXT), ${Prisma.raw(`'${searchTerm.replace(/'/g, "''")}'`)}) > ${threshold}`)
+      .join(" OR ");
+
+    const maxSimilarity = fieldNames
+      .map(field => `similarity(CAST("${field}" AS TEXT), ${Prisma.raw(`'${searchTerm.replace(/'/g, "''")}'`)})`)
+      .join(", ");
+
+    const tableName = deriveTableNames(this.modelName)[0];
+
+    let whereClause = "";
+    if (scope) {
+      const scopeConditions = this.buildScopeSQL(scope);
+      if (scopeConditions) {
+        whereClause = `AND ${scopeConditions}`;
+      }
+    }
+
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*) as count
+       FROM "${tableName}"
+       WHERE (${similarityConditions})
+       ${whereClause}`
+    );
+
+    const total = Number(countResult[0]?.count ?? 0);
+
+    const items = await prisma.$queryRawUnsafe(
+      `SELECT *,
+              GREATEST(${maxSimilarity}) as similarity_score
+       FROM "${tableName}"
+       WHERE (${similarityConditions})
+       ${whereClause}
+       ORDER BY similarity_score DESC
+       LIMIT ${take}
+       OFFSET ${skip}`
+    );
+
+    const totalPages = Math.ceil(total / take);
+
+    return {
+      success: true,
+      data: items,
+      meta: {
+        page,
+        limit: take,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  private buildScopeSQL(scope: Record<string, any>): string {
+    const conditions: string[] = [];
+
+    if (scope.AND && Array.isArray(scope.AND)) {
+      for (const condition of scope.AND) {
+        if (condition.deletedAt !== undefined) {
+          if (condition.deletedAt === null) {
+            conditions.push('"deletedAt" IS NULL');
+          } else if (condition.deletedAt?.not === null) {
+            conditions.push('"deletedAt" IS NOT NULL');
+          }
+        }
+        if (condition.ownerId !== undefined) {
+          if (condition.ownerId === null) {
+            conditions.push('"ownerId" IS NULL');
+          }
+        }
+        if (condition.OR && Array.isArray(condition.OR)) {
+          const orConditions = condition.OR.map((or: any) => {
+            if (or.ownerId !== undefined) {
+              if (or.ownerId === null) {
+                return '"ownerId" IS NULL';
+              }
+              return `"ownerId" = '${or.ownerId}'`;
+            }
+            return "";
+          }).filter(Boolean);
+          if (orConditions.length > 0) {
+            conditions.push(`(${orConditions.join(" OR ")})`);
+          }
+        }
+      }
+    }
+
+    return conditions.join(" AND ");
   }
 }
