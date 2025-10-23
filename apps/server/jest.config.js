@@ -25,6 +25,12 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  globalSetup: '<rootDir>/globalSetup.ts',
+  globalTeardown: '<rootDir>/globalTeardown.ts',
   testTimeout: 10000,
   verbose: true,
+  clearMocks: true,
+  restoreMocks: true,
+  resetMocks: true,
 };
