@@ -988,7 +988,7 @@ const PerformanceSheet = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="w-full flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={performanceSheet.data.name || "Performance Sheet"}
         description={`Version: ${performanceSheet.data.version?.id?.slice(-8) || "Unknown"}`}
@@ -1003,52 +1003,54 @@ const PerformanceSheet = () => {
         tabs={visibleTabs}
       />
 
-      <div className="flex justify-center w-full">
-        <div className="p-8 max-w-4xl w-full">
-          {activeTabData?.sections?.map((section: any, index: number) => {
-            const isCollapsed = collapsedSections.has(section.id);
-            const totalFields = section.fields?.length || 0;
-            const filledFields = section.fields?.filter((field: any) => {
-              const value = getNestedValue(formData, field.id);
-              return value !== null && value !== undefined && value !== "";
-            }).length || 0;
-            const isLastSection = index === activeTabData.sections.length - 1;
+      <div className="flex-1 overflow-auto">
+        <div className="flex justify-center w-full">
+          <div className="p-8 max-w-4xl w-full">
+            {activeTabData?.sections?.map((section: any, index: number) => {
+              const isCollapsed = collapsedSections.has(section.id);
+              const totalFields = section.fields?.length || 0;
+              const filledFields = section.fields?.filter((field: any) => {
+                const value = getNestedValue(formData, field.id);
+                return value !== null && value !== undefined && value !== "";
+              }).length || 0;
+              const isLastSection = index === activeTabData.sections.length - 1;
 
-            return (
-              <div key={section.id} className={`pb-8 ${!isLastSection ? 'mb-8 border-b border-border' : ''}`}>
-                <div className={`flex items-center justify-between ${!isCollapsed ? 'mb-4' : ''}`}>
-                  <h2 className="text-lg font-semibold text-text">{section.title}</h2>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
-                      {filledFields}/{totalFields}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection(section.id)}
-                      className="text-text-muted hover:text-text transition-all cursor-pointer"
+              return (
+                <div key={section.id} className={`pb-8 ${!isLastSection ? 'mb-8 border-b border-border' : ''}`}>
+                  <div className={`flex items-center justify-between ${!isCollapsed ? 'mb-4' : ''}`}>
+                    <h2 className="text-lg font-semibold text-text">{section.title}</h2>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm ${filledFields === totalFields ? 'text-success' : 'text-error'}`}>
+                        {filledFields}/{totalFields}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleSection(section.id)}
+                        className="text-text-muted hover:text-text transition-all cursor-pointer"
+                      >
+                        <ChevronDown
+                          size={20}
+                          className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                  {!isCollapsed && (
+                    <div
+                      className="grid gap-4"
+                      style={{
+                        gridTemplateColumns: `repeat(${section.columns || 2}, minmax(0, 1fr))`,
+                      }}
                     >
-                      <ChevronDown
-                        size={20}
-                        className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
-                      />
-                    </button>
-                  </div>
+                      {section.fields
+                        ?.sort((a: any, b: any) => a.sequence - b.sequence)
+                        .map((field: any) => renderField(field))}
+                    </div>
+                  )}
                 </div>
-                {!isCollapsed && (
-                  <div
-                    className="grid gap-4"
-                    style={{
-                      gridTemplateColumns: `repeat(${section.columns || 2}, minmax(0, 1fr))`,
-                    }}
-                  >
-                    {section.fields
-                      ?.sort((a: any, b: any) => a.sequence - b.sequence)
-                      .map((field: any) => renderField(field))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
