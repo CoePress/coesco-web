@@ -4,6 +4,7 @@ import type { IQueryParams } from "@/types";
 
 import { deriveTableNames, getObjectDiff } from "@/utils";
 import { getEmployeeContext } from "@/utils/context";
+import { logger } from "@/utils/logger";
 import { buildQuery, prisma } from "@/utils/prisma";
 
 const columnCache = new Map<string, string[]>();
@@ -417,36 +418,71 @@ export class BaseRepository<T> {
     return {};
   }
 
+  private isEnumField(fieldName: string): boolean {
+    const pascalModelName = this.modelName!.charAt(0).toUpperCase() + this.modelName!.slice(1);
+    const model = Prisma.dmmf.datamodel.models.find(m =>
+      m.name === this.modelName || m.name === pascalModelName,
+    );
+
+    if (!model) {
+      return false;
+    }
+
+    const field = model.fields.find(f => f.name === fieldName);
+    return field?.kind === "enum";
+  }
+
   private async fuzzySearch(params: IQueryParams<T>, tx?: Prisma.TransactionClient) {
     if (!this.modelName) {
       throw new Error("Model name is required for fuzzy search");
     }
 
     const searchFields = this.getSearchFields();
+    logger.info(`[FUZZY] Search fields before filtering:`, searchFields);
+
     if (!searchFields || searchFields.length === 0) {
       throw new Error("Search fields must be defined for fuzzy search");
     }
 
-    const threshold = params.fuzzyThreshold ?? 0.3;
+    const filteredSearchFields = searchFields.filter(f => {
+      const fieldName = typeof f === "string" ? f : f.field;
+      const isEnum = this.isEnumField(fieldName);
+      logger.info(`[FUZZY] Field ${fieldName} is enum: ${isEnum}`);
+      return !isEnum;
+    });
+
+    logger.info(`[FUZZY] Search fields after filtering:`, filteredSearchFields);
+
+    if (filteredSearchFields.length === 0) {
+      throw new Error("No valid search fields available for fuzzy search after filtering enum fields");
+    }
+
+    const threshold = params.fuzzyThreshold ?? 0.1;
     const searchTerm = params.search!;
     const page = params.page ?? 1;
     const take = params.limit ?? 25;
     const skip = (page - 1) * take;
 
+    logger.info(`[FUZZY] Search term: "${searchTerm}", threshold: ${threshold}`);
+
     const columns = await this.getColumns();
     const scope = await this.getScope(columns, params?.includeDeleted);
 
-    const fieldNames = searchFields.map(f => typeof f === "string" ? f : f.field);
+    const fieldNames = filteredSearchFields.map(f => typeof f === "string" ? f : f.field);
+    const escapedSearchTerm = searchTerm.replace(/'/g, "''");
 
     const similarityConditions = fieldNames
-      .map(field => `similarity(CAST("${field}" AS TEXT), ${Prisma.raw(`'${searchTerm.replace(/'/g, "''")}'`)}) > ${threshold}`)
+      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}') > ${threshold}`)
       .join(" OR ");
 
     const maxSimilarity = fieldNames
-      .map(field => `similarity(CAST("${field}" AS TEXT), ${Prisma.raw(`'${searchTerm.replace(/'/g, "''")}'`)})`)
+      .map(field => `similarity(CAST("${field}" AS TEXT), '${escapedSearchTerm}')`)
       .join(", ");
 
-    const tableName = deriveTableNames(this.modelName)[0];
+    const tableNames = deriveTableNames(this.modelName);
+    const tableName = tableNames[tableNames.length - 1];
+
+    logger.info(`[FUZZY] Table name: ${tableName}`);
 
     let whereClause = "";
     if (scope) {
@@ -456,25 +492,61 @@ export class BaseRepository<T> {
       }
     }
 
-    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-      `SELECT COUNT(*) as count
+    const countQuery = `SELECT COUNT(*) as count
        FROM "${tableName}"
        WHERE (${similarityConditions})
-       ${whereClause}`,
-    );
+       ${whereClause}`;
+
+    logger.info(`[FUZZY] Count query:`, countQuery);
+
+    const debugQuery = `SELECT "modelNumber", "description",
+              GREATEST(${maxSimilarity}) as similarity_score
+       FROM "${tableName}"
+       ${whereClause ? `WHERE ${whereClause.replace('AND ', '')}` : ''}
+       ORDER BY similarity_score DESC
+       LIMIT 10`;
+
+    logger.info(`[FUZZY] Debug query (top 10 similarities):`, debugQuery);
+
+    try {
+      const debugResults = await prisma.$queryRawUnsafe<Array<any>>(debugQuery);
+      logger.info(`[FUZZY] Top 10 similarity scores:`, JSON.stringify(debugResults.map((r: any) => ({
+        modelNumber: r.modelNumber,
+        description: r.description?.substring(0, 50),
+        score: r.similarity_score
+      }))));
+    } catch (err) {
+      logger.error(`[FUZZY] Debug query failed:`, err);
+    }
+
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(countQuery);
 
     const total = Number(countResult[0]?.count ?? 0);
 
-    const items = await prisma.$queryRawUnsafe(
-      `SELECT *,
+    logger.info(`[FUZZY] Total results: ${total}`);
+
+    const selectQuery = `SELECT *,
               GREATEST(${maxSimilarity}) as similarity_score
        FROM "${tableName}"
        WHERE (${similarityConditions})
        ${whereClause}
        ORDER BY similarity_score DESC
        LIMIT ${take}
-       OFFSET ${skip}`,
-    );
+       OFFSET ${skip}`;
+
+    logger.info(`[FUZZY] Select query:`, selectQuery);
+
+    const items = await prisma.$queryRawUnsafe(selectQuery);
+
+    logger.info(`[FUZZY] Items returned: ${Array.isArray(items) ? items.length : 0}`);
+    if (Array.isArray(items) && items.length > 0) {
+      const itemsWithScores = (items as any[]).slice(0, 5).map(item => ({
+        modelNumber: item.modelNumber,
+        description: item.description?.substring(0, 50),
+        score: item.similarity_score
+      }));
+      logger.info(`[FUZZY] Top items with scores:`, JSON.stringify(itemsWithScores));
+    }
 
     const totalPages = Math.ceil(total / take);
 

@@ -110,8 +110,10 @@ const Products = () => {
       limit,
       sort,
       order,
-      search: searchQuery || undefined,
-      fuzzy: fuzzySearch || undefined,
+      ...(searchQuery && {
+        search: searchQuery,
+        fuzzy: fuzzySearch
+      }),
     });
 
     if (response?.success) {

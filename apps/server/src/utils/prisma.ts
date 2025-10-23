@@ -99,16 +99,30 @@ function getRelationTargetModel(modelName: string, fieldName: string): string | 
   return field?.kind === "object" && field.type ? field.type : null;
 }
 
+function isEnumField(modelName: string, fieldName: string): boolean {
+  const normalized = normalizeModelName(modelName);
+  const model = Prisma.dmmf.datamodel.models.find(m => m.name === normalized);
+
+  if (!model) {
+    return false;
+  }
+
+  const field = model.fields.find(f => f.name === fieldName);
+  return field?.kind === "enum";
+}
+
 function normalizeSearchFields(searchFields?: Array<string | { field: string; weight: number }>) {
   return (searchFields || []).map(f =>
     typeof f === "string" ? { field: f, weight: 1 } : f,
   );
 }
 
-function buildSearchWhere(search: string, normalized: { field: string; weight: number }[]) {
-  return normalized.map(({ field }) => ({
-    [field]: { contains: search, mode: "insensitive" },
-  }));
+function buildSearchWhere(search: string, normalized: { field: string; weight: number }[], modelName?: string) {
+  return normalized
+    .filter(({ field }) => !modelName || !isEnumField(modelName, field))
+    .map(({ field }) => ({
+      [field]: { contains: search, mode: "insensitive" },
+    }));
 }
 
 function resolveSearchOrdering(sort: string | undefined, normalized: { field: string; weight: number }[]) {
@@ -298,7 +312,7 @@ export function buildQuery(params: IQueryParams<any>, searchFields?: Array<strin
   const normalizedSearch = normalizeSearchFields(searchFields);
 
   if (params.search && normalizedSearch.length > 0) {
-    result.where.OR = buildSearchWhere(params.search, normalizedSearch);
+    result.where.OR = buildSearchWhere(params.search, normalizedSearch, modelName);
     const searchOrder = resolveSearchOrdering(params.sort, normalizedSearch);
     if (searchOrder)
       result.orderBy = searchOrder;
